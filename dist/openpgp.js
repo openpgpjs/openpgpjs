@@ -20979,6 +20979,8 @@ process.chdir = function (dir) {
 process.umask = function() { return 0; };
 
 },{}],69:[function(require,module,exports){
+'use strict';
+
 /*
 node-bzip - a pure-javascript Node.JS module for decoding bzip2 data
 
@@ -21011,14 +21013,14 @@ Robert Sedgewick, and Jon L. Bentley.
 var BITMASK = [0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF];
 
 // offset in bytes
-var BitReader = function(stream) {
+var BitReader = function BitReader(stream) {
   this.stream = stream;
   this.bitOffset = 0;
   this.curByte = 0;
   this.hasByte = false;
 };
 
-BitReader.prototype._ensureByte = function() {
+BitReader.prototype._ensureByte = function () {
   if (!this.hasByte) {
     this.curByte = this.stream.readByte();
     this.hasByte = true;
@@ -21026,7 +21028,7 @@ BitReader.prototype._ensureByte = function() {
 };
 
 // reads bits from the buffer
-BitReader.prototype.read = function(bits) {
+BitReader.prototype.read = function (bits) {
   var result = 0;
   while (bits > 0) {
     this._ensureByte();
@@ -21041,7 +21043,7 @@ BitReader.prototype.read = function(bits) {
     } else {
       result <<= bits;
       var shift = remaining - bits;
-      result |= (this.curByte & (BITMASK[bits] << shift)) >> shift;
+      result |= (this.curByte & BITMASK[bits] << shift) >> shift;
       this.bitOffset += bits;
       bits = 0;
     }
@@ -21050,7 +21052,7 @@ BitReader.prototype.read = function(bits) {
 };
 
 // seek to an arbitrary point in the buffer (expressed in bits)
-BitReader.prototype.seek = function(pos) {
+BitReader.prototype.seek = function (pos) {
   var n_bit = pos % 8;
   var n_byte = (pos - n_bit) / 8;
   this.bitOffset = n_bit;
@@ -21059,8 +21061,9 @@ BitReader.prototype.seek = function(pos) {
 };
 
 // reads 6 bytes worth of data using the read method
-BitReader.prototype.pi = function() {
-  var buf = new Uint8Array(6), i;
+BitReader.prototype.pi = function () {
+  var buf = new Uint8Array(6),
+      i;
   for (i = 0; i < buf.length; i++) {
     buf[i] = this.read(8);
   }
@@ -21074,6 +21077,8 @@ function bufToHex(buf) {
 module.exports = BitReader;
 
 },{}],70:[function(require,module,exports){
+"use strict";
+
 /* CRC32, used in Bzip2 implementation.
  * This is a port of CRC32.java from the jbzip2 implementation at
  *   https://code.google.com/p/jbzip2
@@ -21104,47 +21109,14 @@ module.exports = BitReader;
  *   Copyright (c) 2013 C. Scott Ananian
  * with the same licensing terms as Matthew Francis' original implementation.
  */
-module.exports = (function() {
+module.exports = function () {
 
   /**
    * A static CRC lookup table
    */
-  var crc32Lookup = new Uint32Array([
-    0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b, 0x1a864db2, 0x1e475005,
-    0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61, 0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd,
-    0x4c11db70, 0x48d0c6c7, 0x4593e01e, 0x4152fda9, 0x5f15adac, 0x5bd4b01b, 0x569796c2, 0x52568b75,
-    0x6a1936c8, 0x6ed82b7f, 0x639b0da6, 0x675a1011, 0x791d4014, 0x7ddc5da3, 0x709f7b7a, 0x745e66cd,
-    0x9823b6e0, 0x9ce2ab57, 0x91a18d8e, 0x95609039, 0x8b27c03c, 0x8fe6dd8b, 0x82a5fb52, 0x8664e6e5,
-    0xbe2b5b58, 0xbaea46ef, 0xb7a96036, 0xb3687d81, 0xad2f2d84, 0xa9ee3033, 0xa4ad16ea, 0xa06c0b5d,
-    0xd4326d90, 0xd0f37027, 0xddb056fe, 0xd9714b49, 0xc7361b4c, 0xc3f706fb, 0xceb42022, 0xca753d95,
-    0xf23a8028, 0xf6fb9d9f, 0xfbb8bb46, 0xff79a6f1, 0xe13ef6f4, 0xe5ffeb43, 0xe8bccd9a, 0xec7dd02d,
-    0x34867077, 0x30476dc0, 0x3d044b19, 0x39c556ae, 0x278206ab, 0x23431b1c, 0x2e003dc5, 0x2ac12072,
-    0x128e9dcf, 0x164f8078, 0x1b0ca6a1, 0x1fcdbb16, 0x018aeb13, 0x054bf6a4, 0x0808d07d, 0x0cc9cdca,
-    0x7897ab07, 0x7c56b6b0, 0x71159069, 0x75d48dde, 0x6b93dddb, 0x6f52c06c, 0x6211e6b5, 0x66d0fb02,
-    0x5e9f46bf, 0x5a5e5b08, 0x571d7dd1, 0x53dc6066, 0x4d9b3063, 0x495a2dd4, 0x44190b0d, 0x40d816ba,
-    0xaca5c697, 0xa864db20, 0xa527fdf9, 0xa1e6e04e, 0xbfa1b04b, 0xbb60adfc, 0xb6238b25, 0xb2e29692,
-    0x8aad2b2f, 0x8e6c3698, 0x832f1041, 0x87ee0df6, 0x99a95df3, 0x9d684044, 0x902b669d, 0x94ea7b2a,
-    0xe0b41de7, 0xe4750050, 0xe9362689, 0xedf73b3e, 0xf3b06b3b, 0xf771768c, 0xfa325055, 0xfef34de2,
-    0xc6bcf05f, 0xc27dede8, 0xcf3ecb31, 0xcbffd686, 0xd5b88683, 0xd1799b34, 0xdc3abded, 0xd8fba05a,
-    0x690ce0ee, 0x6dcdfd59, 0x608edb80, 0x644fc637, 0x7a089632, 0x7ec98b85, 0x738aad5c, 0x774bb0eb,
-    0x4f040d56, 0x4bc510e1, 0x46863638, 0x42472b8f, 0x5c007b8a, 0x58c1663d, 0x558240e4, 0x51435d53,
-    0x251d3b9e, 0x21dc2629, 0x2c9f00f0, 0x285e1d47, 0x36194d42, 0x32d850f5, 0x3f9b762c, 0x3b5a6b9b,
-    0x0315d626, 0x07d4cb91, 0x0a97ed48, 0x0e56f0ff, 0x1011a0fa, 0x14d0bd4d, 0x19939b94, 0x1d528623,
-    0xf12f560e, 0xf5ee4bb9, 0xf8ad6d60, 0xfc6c70d7, 0xe22b20d2, 0xe6ea3d65, 0xeba91bbc, 0xef68060b,
-    0xd727bbb6, 0xd3e6a601, 0xdea580d8, 0xda649d6f, 0xc423cd6a, 0xc0e2d0dd, 0xcda1f604, 0xc960ebb3,
-    0xbd3e8d7e, 0xb9ff90c9, 0xb4bcb610, 0xb07daba7, 0xae3afba2, 0xaafbe615, 0xa7b8c0cc, 0xa379dd7b,
-    0x9b3660c6, 0x9ff77d71, 0x92b45ba8, 0x9675461f, 0x8832161a, 0x8cf30bad, 0x81b02d74, 0x857130c3,
-    0x5d8a9099, 0x594b8d2e, 0x5408abf7, 0x50c9b640, 0x4e8ee645, 0x4a4ffbf2, 0x470cdd2b, 0x43cdc09c,
-    0x7b827d21, 0x7f436096, 0x7200464f, 0x76c15bf8, 0x68860bfd, 0x6c47164a, 0x61043093, 0x65c52d24,
-    0x119b4be9, 0x155a565e, 0x18197087, 0x1cd86d30, 0x029f3d35, 0x065e2082, 0x0b1d065b, 0x0fdc1bec,
-    0x3793a651, 0x3352bbe6, 0x3e119d3f, 0x3ad08088, 0x2497d08d, 0x2056cd3a, 0x2d15ebe3, 0x29d4f654,
-    0xc5a92679, 0xc1683bce, 0xcc2b1d17, 0xc8ea00a0, 0xd6ad50a5, 0xd26c4d12, 0xdf2f6bcb, 0xdbee767c,
-    0xe3a1cbc1, 0xe760d676, 0xea23f0af, 0xeee2ed18, 0xf0a5bd1d, 0xf464a0aa, 0xf9278673, 0xfde69bc4,
-    0x89b8fd09, 0x8d79e0be, 0x803ac667, 0x84fbdbd0, 0x9abc8bd5, 0x9e7d9662, 0x933eb0bb, 0x97ffad0c,
-    0xafb010b1, 0xab710d06, 0xa6322bdf, 0xa2f33668, 0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4
-  ]);
+  var crc32Lookup = new Uint32Array([0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b, 0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61, 0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd, 0x4c11db70, 0x48d0c6c7, 0x4593e01e, 0x4152fda9, 0x5f15adac, 0x5bd4b01b, 0x569796c2, 0x52568b75, 0x6a1936c8, 0x6ed82b7f, 0x639b0da6, 0x675a1011, 0x791d4014, 0x7ddc5da3, 0x709f7b7a, 0x745e66cd, 0x9823b6e0, 0x9ce2ab57, 0x91a18d8e, 0x95609039, 0x8b27c03c, 0x8fe6dd8b, 0x82a5fb52, 0x8664e6e5, 0xbe2b5b58, 0xbaea46ef, 0xb7a96036, 0xb3687d81, 0xad2f2d84, 0xa9ee3033, 0xa4ad16ea, 0xa06c0b5d, 0xd4326d90, 0xd0f37027, 0xddb056fe, 0xd9714b49, 0xc7361b4c, 0xc3f706fb, 0xceb42022, 0xca753d95, 0xf23a8028, 0xf6fb9d9f, 0xfbb8bb46, 0xff79a6f1, 0xe13ef6f4, 0xe5ffeb43, 0xe8bccd9a, 0xec7dd02d, 0x34867077, 0x30476dc0, 0x3d044b19, 0x39c556ae, 0x278206ab, 0x23431b1c, 0x2e003dc5, 0x2ac12072, 0x128e9dcf, 0x164f8078, 0x1b0ca6a1, 0x1fcdbb16, 0x018aeb13, 0x054bf6a4, 0x0808d07d, 0x0cc9cdca, 0x7897ab07, 0x7c56b6b0, 0x71159069, 0x75d48dde, 0x6b93dddb, 0x6f52c06c, 0x6211e6b5, 0x66d0fb02, 0x5e9f46bf, 0x5a5e5b08, 0x571d7dd1, 0x53dc6066, 0x4d9b3063, 0x495a2dd4, 0x44190b0d, 0x40d816ba, 0xaca5c697, 0xa864db20, 0xa527fdf9, 0xa1e6e04e, 0xbfa1b04b, 0xbb60adfc, 0xb6238b25, 0xb2e29692, 0x8aad2b2f, 0x8e6c3698, 0x832f1041, 0x87ee0df6, 0x99a95df3, 0x9d684044, 0x902b669d, 0x94ea7b2a, 0xe0b41de7, 0xe4750050, 0xe9362689, 0xedf73b3e, 0xf3b06b3b, 0xf771768c, 0xfa325055, 0xfef34de2, 0xc6bcf05f, 0xc27dede8, 0xcf3ecb31, 0xcbffd686, 0xd5b88683, 0xd1799b34, 0xdc3abded, 0xd8fba05a, 0x690ce0ee, 0x6dcdfd59, 0x608edb80, 0x644fc637, 0x7a089632, 0x7ec98b85, 0x738aad5c, 0x774bb0eb, 0x4f040d56, 0x4bc510e1, 0x46863638, 0x42472b8f, 0x5c007b8a, 0x58c1663d, 0x558240e4, 0x51435d53, 0x251d3b9e, 0x21dc2629, 0x2c9f00f0, 0x285e1d47, 0x36194d42, 0x32d850f5, 0x3f9b762c, 0x3b5a6b9b, 0x0315d626, 0x07d4cb91, 0x0a97ed48, 0x0e56f0ff, 0x1011a0fa, 0x14d0bd4d, 0x19939b94, 0x1d528623, 0xf12f560e, 0xf5ee4bb9, 0xf8ad6d60, 0xfc6c70d7, 0xe22b20d2, 0xe6ea3d65, 0xeba91bbc, 0xef68060b, 0xd727bbb6, 0xd3e6a601, 0xdea580d8, 0xda649d6f, 0xc423cd6a, 0xc0e2d0dd, 0xcda1f604, 0xc960ebb3, 0xbd3e8d7e, 0xb9ff90c9, 0xb4bcb610, 0xb07daba7, 0xae3afba2, 0xaafbe615, 0xa7b8c0cc, 0xa379dd7b, 0x9b3660c6, 0x9ff77d71, 0x92b45ba8, 0x9675461f, 0x8832161a, 0x8cf30bad, 0x81b02d74, 0x857130c3, 0x5d8a9099, 0x594b8d2e, 0x5408abf7, 0x50c9b640, 0x4e8ee645, 0x4a4ffbf2, 0x470cdd2b, 0x43cdc09c, 0x7b827d21, 0x7f436096, 0x7200464f, 0x76c15bf8, 0x68860bfd, 0x6c47164a, 0x61043093, 0x65c52d24, 0x119b4be9, 0x155a565e, 0x18197087, 0x1cd86d30, 0x029f3d35, 0x065e2082, 0x0b1d065b, 0x0fdc1bec, 0x3793a651, 0x3352bbe6, 0x3e119d3f, 0x3ad08088, 0x2497d08d, 0x2056cd3a, 0x2d15ebe3, 0x29d4f654, 0xc5a92679, 0xc1683bce, 0xcc2b1d17, 0xc8ea00a0, 0xd6ad50a5, 0xd26c4d12, 0xdf2f6bcb, 0xdbee767c, 0xe3a1cbc1, 0xe760d676, 0xea23f0af, 0xeee2ed18, 0xf0a5bd1d, 0xf464a0aa, 0xf9278673, 0xfde69bc4, 0x89b8fd09, 0x8d79e0be, 0x803ac667, 0x84fbdbd0, 0x9abc8bd5, 0x9e7d9662, 0x933eb0bb, 0x97ffad0c, 0xafb010b1, 0xab710d06, 0xa6322bdf, 0xa2f33668, 0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4]);
 
-  var CRC32 = function() {
+  var CRC32 = function CRC32() {
     /**
      * The current CRC
      */
@@ -21153,16 +21125,16 @@ module.exports = (function() {
     /**
      * @return The current CRC
      */
-    this.getCRC = function() {
-      return (~crc) >>> 0; // return an unsigned value
+    this.getCRC = function () {
+      return ~crc >>> 0; // return an unsigned value
     };
 
     /**
      * Update the CRC with a single byte
      * @param value The value to update the CRC with
      */
-    this.updateCRC = function(value) {
-      crc = (crc << 8) ^ crc32Lookup[((crc >>> 24) ^ value) & 0xff];
+    this.updateCRC = function (value) {
+      crc = crc << 8 ^ crc32Lookup[(crc >>> 24 ^ value) & 0xff];
     };
 
     /**
@@ -21170,16 +21142,18 @@ module.exports = (function() {
      * @param value The value to update the CRC with
      * @param count The number of bytes
      */
-    this.updateCRCRun = function(value, count) {
+    this.updateCRCRun = function (value, count) {
       while (count-- > 0) {
-        crc = (crc << 8) ^ crc32Lookup[((crc >>> 24) ^ value) & 0xff];
+        crc = crc << 8 ^ crc32Lookup[(crc >>> 24 ^ value) & 0xff];
       }
     };
   };
   return CRC32;
-})();
+}();
 
 },{}],71:[function(require,module,exports){
+'use strict';
+
 /*
 seek-bzip - a pure-javascript module for seeking within bzip2 data
 
@@ -21228,10 +21202,11 @@ var GROUP_SIZE = 50;
 var WHOLEPI = "314159265359";
 var SQRTPI = "177245385090";
 
-var mtf = function(array, index) {
-  var src = array[index], i;
+var mtf = function mtf(array, index) {
+  var src = array[index],
+      i;
   for (i = index; i > 0; i--) {
-    array[i] = array[i-1];
+    array[i] = array[i - 1];
   }
   array[0] = src;
   return src;
@@ -21249,30 +21224,32 @@ var Err = {
   END_OF_BLOCK: -8
 };
 var ErrorMessages = {};
-ErrorMessages[Err.LAST_BLOCK] =            "Bad file checksum";
-ErrorMessages[Err.NOT_BZIP_DATA] =         "Not bzip data";
-ErrorMessages[Err.UNEXPECTED_INPUT_EOF] =  "Unexpected input EOF";
+ErrorMessages[Err.LAST_BLOCK] = "Bad file checksum";
+ErrorMessages[Err.NOT_BZIP_DATA] = "Not bzip data";
+ErrorMessages[Err.UNEXPECTED_INPUT_EOF] = "Unexpected input EOF";
 ErrorMessages[Err.UNEXPECTED_OUTPUT_EOF] = "Unexpected output EOF";
-ErrorMessages[Err.DATA_ERROR] =            "Data error";
-ErrorMessages[Err.OUT_OF_MEMORY] =         "Out of memory";
+ErrorMessages[Err.DATA_ERROR] = "Data error";
+ErrorMessages[Err.OUT_OF_MEMORY] = "Out of memory";
 ErrorMessages[Err.OBSOLETE_INPUT] = "Obsolete (pre 0.9.5) bzip format not supported.";
 
-var _throw = function(status, optDetail) {
+var _throw = function _throw(status, optDetail) {
   var msg = ErrorMessages[status] || 'unknown error';
-  if (optDetail) { msg += ': '+optDetail; }
+  if (optDetail) {
+    msg += ': ' + optDetail;
+  }
   var e = new TypeError(msg);
   e.errorCode = status;
   throw e;
 };
 
-var Bunzip = function(inputStream, outputStream) {
+var Bunzip = function Bunzip(inputStream, outputStream) {
   this.writePos = this.writeCurrent = this.writeCount = 0;
 
   this._start_bunzip(inputStream, outputStream);
 };
-Bunzip.prototype._init_block = function() {
+Bunzip.prototype._init_block = function () {
   var moreBlocks = this._get_next_block();
-  if ( !moreBlocks ) {
+  if (!moreBlocks) {
     this.writeCount = -1;
     return false; /* no more blocks */
   }
@@ -21280,16 +21257,13 @@ Bunzip.prototype._init_block = function() {
   return true;
 };
 /* XXX micro-bunzip uses (inputStream, inputBuffer, len) as arguments */
-Bunzip.prototype._start_bunzip = function(inputStream, outputStream) {
+Bunzip.prototype._start_bunzip = function (inputStream, outputStream) {
   /* Ensure that file starts with "BZh['1'-'9']." */
   var buf = new Uint8Array(4);
-  if (inputStream.read(buf, 0, 4) !== 4 ||
-      String.fromCharCode(buf[0], buf[1], buf[2]) !== 'BZh')
-    _throw(Err.NOT_BZIP_DATA, 'bad magic');
+  if (inputStream.read(buf, 0, 4) !== 4 || String.fromCharCode(buf[0], buf[1], buf[2]) !== 'BZh') _throw(Err.NOT_BZIP_DATA, 'bad magic');
 
   var level = buf[3] - 0x30;
-  if (level < 1 || level > 9)
-    _throw(Err.NOT_BZIP_DATA, 'level out of range');
+  if (level < 1 || level > 9) _throw(Err.NOT_BZIP_DATA, 'level out of range');
 
   this.reader = new BitReader(inputStream);
 
@@ -21300,68 +21274,60 @@ Bunzip.prototype._start_bunzip = function(inputStream, outputStream) {
   this.outputStream = outputStream;
   this.streamCRC = 0;
 };
-Bunzip.prototype._get_next_block = function() {
+Bunzip.prototype._get_next_block = function () {
   var i, j, k;
   var reader = this.reader;
   // this is get_next_block() function from micro-bunzip:
   /* Read in header signature and CRC, then validate signature.
      (last block signature means CRC is for whole file, return now) */
   var h = reader.pi();
-  if (h === SQRTPI) { // last block
+  if (h === SQRTPI) {
+    // last block
     return false; /* no more blocks */
   }
-  if (h !== WHOLEPI)
-    _throw(Err.NOT_BZIP_DATA);
+  if (h !== WHOLEPI) _throw(Err.NOT_BZIP_DATA);
   this.targetBlockCRC = reader.read(32) >>> 0; // (convert to unsigned)
-  this.streamCRC = (this.targetBlockCRC ^
-                    ((this.streamCRC << 1) | (this.streamCRC>>>31))) >>> 0;
+  this.streamCRC = (this.targetBlockCRC ^ (this.streamCRC << 1 | this.streamCRC >>> 31)) >>> 0;
   /* We can add support for blockRandomised if anybody complains.  There was
      some code for this in busybox 1.0.0-pre3, but nobody ever noticed that
      it didn't actually work. */
-  if (reader.read(1))
-    _throw(Err.OBSOLETE_INPUT);
+  if (reader.read(1)) _throw(Err.OBSOLETE_INPUT);
   var origPointer = reader.read(24);
-  if (origPointer > this.dbufSize)
-    _throw(Err.DATA_ERROR, 'initial position out of bounds');
+  if (origPointer > this.dbufSize) _throw(Err.DATA_ERROR, 'initial position out of bounds');
   /* mapping table: if some byte values are never used (encoding things
      like ascii text), the compression code removes the gaps to have fewer
      symbols to deal with, and writes a sparse bitfield indicating which
      values were present.  We make a translation table to convert the symbols
      back to the corresponding bytes. */
   var t = reader.read(16);
-  var symToByte = new Uint8Array(256), symTotal = 0;
+  var symToByte = new Uint8Array(256),
+      symTotal = 0;
   for (i = 0; i < 16; i++) {
-    if (t & (1 << (0xF - i))) {
+    if (t & 1 << 0xF - i) {
       var o = i * 16;
       k = reader.read(16);
-      for (j = 0; j < 16; j++)
-        if (k & (1 << (0xF - j)))
-          symToByte[symTotal++] = o + j;
+      for (j = 0; j < 16; j++) if (k & 1 << 0xF - j) symToByte[symTotal++] = o + j;
     }
   }
 
   /* How many different huffman coding groups does this block use? */
   var groupCount = reader.read(3);
-  if (groupCount < MIN_GROUPS || groupCount > MAX_GROUPS)
-    _throw(Err.DATA_ERROR);
+  if (groupCount < MIN_GROUPS || groupCount > MAX_GROUPS) _throw(Err.DATA_ERROR);
   /* nSelectors: Every GROUP_SIZE many symbols we select a new huffman coding
      group.  Read in the group selector list, which is stored as MTF encoded
      bit runs.  (MTF=Move To Front, as each value is used it's moved to the
      start of the list.) */
   var nSelectors = reader.read(15);
-  if (nSelectors === 0)
-    _throw(Err.DATA_ERROR);
+  if (nSelectors === 0) _throw(Err.DATA_ERROR);
 
   var mtfSymbol = new Uint8Array(256);
-  for (i = 0; i < groupCount; i++)
-    mtfSymbol[i] = i;
+  for (i = 0; i < groupCount; i++) mtfSymbol[i] = i;
 
   var selectors = new Uint8Array(nSelectors); // was 32768...
 
   for (i = 0; i < nSelectors; i++) {
     /* Get next value */
-    for (j = 0; reader.read(1); j++)
-      if (j >= groupCount) _throw(Err.DATA_ERROR);
+    for (j = 0; reader.read(1); j++) if (j >= groupCount) _throw(Err.DATA_ERROR);
     /* Decode MTF to get the next selector */
     selectors[i] = mtf(mtfSymbol, j);
   }
@@ -21369,9 +21335,11 @@ Bunzip.prototype._get_next_block = function() {
   /* Read the huffman coding tables for each group, which code for symTotal
      literal symbols, plus two run symbols (RUNA, RUNB) */
   var symCount = symTotal + 2;
-  var groups = [], hufGroup;
+  var groups = [],
+      hufGroup;
   for (j = 0; j < groupCount; j++) {
-    var length = new Uint8Array(symCount), temp = new Uint16Array(MAX_HUFCODE_BITS + 1);
+    var length = new Uint8Array(symCount),
+        temp = new Uint16Array(MAX_HUFCODE_BITS + 1);
     /* Read huffman code lengths for each symbol.  They're stored in
        a way similar to mtf; record a starting value for the first symbol,
        and an offset from the previous value for everys symbol after that. */
@@ -21381,24 +21349,17 @@ Bunzip.prototype._get_next_block = function() {
         if (t < 1 || t > MAX_HUFCODE_BITS) _throw(Err.DATA_ERROR);
         /* If first bit is 0, stop.  Else second bit indicates whether
            to increment or decrement the value. */
-        if(!reader.read(1))
-          break;
-        if(!reader.read(1))
-          t++;
-        else
-          t--;
+        if (!reader.read(1)) break;
+        if (!reader.read(1)) t++;else t--;
       }
       length[i] = t;
     }
 
     /* Find largest and smallest lengths in this group */
-    var minLen,  maxLen;
+    var minLen, maxLen;
     minLen = maxLen = length[0];
     for (i = 1; i < symCount; i++) {
-      if (length[i] > maxLen)
-        maxLen = length[i];
-      else if (length[i] < minLen)
-        minLen = length[i];
+      if (length[i] > maxLen) maxLen = length[i];else if (length[i] < minLen) minLen = length[i];
     }
 
     /* Calculate permute[], base[], and limit[] tables from length[].
@@ -21422,13 +21383,10 @@ Bunzip.prototype._get_next_block = function() {
     var pp = 0;
     for (i = minLen; i <= maxLen; i++) {
       temp[i] = hufGroup.limit[i] = 0;
-      for (t = 0; t < symCount; t++)
-        if (length[t] === i)
-          hufGroup.permute[pp++] = t;
+      for (t = 0; t < symCount; t++) if (length[t] === i) hufGroup.permute[pp++] = t;
     }
     /* Count symbols coded for at each bit length */
-    for (i = 0; i < symCount; i++)
-      temp[length[i]]++;
+    for (i = 0; i < symCount; i++) temp[length[i]]++;
     /* Calculate limit[] (the largest symbol-coding value at each bit
      * length, which is (previous limit<<1)+symbols at this level), and
      * base[] (number of symbols to ignore at each bit length, which is
@@ -21457,31 +21415,38 @@ Bunzip.prototype._get_next_block = function() {
 
   /* Initialize symbol occurrence counters and symbol Move To Front table */
   var byteCount = new Uint32Array(256);
-  for (i = 0; i < 256; i++)
-    mtfSymbol[i] = i;
+  for (i = 0; i < 256; i++) mtfSymbol[i] = i;
   /* Loop through compressed symbols. */
-  var runPos = 0, dbufCount = 0, selector = 0, uc;
+  var runPos = 0,
+      dbufCount = 0,
+      selector = 0,
+      uc;
   var dbuf = this.dbuf = new Uint32Array(this.dbufSize);
   symCount = 0;
   for (;;) {
     /* Determine which huffman coding group to use. */
-    if (!(symCount--)) {
+    if (!symCount--) {
       symCount = GROUP_SIZE - 1;
-      if (selector >= nSelectors) { _throw(Err.DATA_ERROR); }
+      if (selector >= nSelectors) {
+        _throw(Err.DATA_ERROR);
+      }
       hufGroup = groups[selectors[selector++]];
     }
     /* Read next huffman-coded symbol. */
     i = hufGroup.minLen;
     j = reader.read(i);
-    for (;;i++) {
-      if (i > hufGroup.maxLen) { _throw(Err.DATA_ERROR); }
-      if (j <= hufGroup.limit[i])
-        break;
-      j = (j << 1) | reader.read(1);
+    for (;; i++) {
+      if (i > hufGroup.maxLen) {
+        _throw(Err.DATA_ERROR);
+      }
+      if (j <= hufGroup.limit[i]) break;
+      j = j << 1 | reader.read(1);
     }
     /* Huffman decode value to get nextSym (with bounds checking) */
     j -= hufGroup.base[i];
-    if (j < 0 || j >= MAX_SYMBOLS) { _throw(Err.DATA_ERROR); }
+    if (j < 0 || j >= MAX_SYMBOLS) {
+      _throw(Err.DATA_ERROR);
+    }
     var nextSym = hufGroup.permute[j];
     /* We have now decoded the symbol, which indicates either a new literal
        byte, or a repeated run of the most recent literal byte.  First,
@@ -21489,7 +21454,7 @@ Bunzip.prototype._get_next_block = function() {
        how many times to repeat the last literal. */
     if (nextSym === SYMBOL_RUNA || nextSym === SYMBOL_RUNB) {
       /* If this is the start of a new run, zero out counter */
-      if (!runPos){
+      if (!runPos) {
         runPos = 1;
         t = 0;
       }
@@ -21500,10 +21465,7 @@ Bunzip.prototype._get_next_block = function() {
          the basic or 0/1 method (except all bits 0, which would use no
          symbols, but a run of length 0 doesn't mean anything in this
          context).  Thus space is saved. */
-      if (nextSym === SYMBOL_RUNA)
-        t += runPos;
-      else
-        t += 2 * runPos;
+      if (nextSym === SYMBOL_RUNA) t += runPos;else t += 2 * runPos;
       runPos <<= 1;
       continue;
     }
@@ -21511,17 +21473,17 @@ Bunzip.prototype._get_next_block = function() {
        how many times to repeat the last literal, so append that many
        copies to our buffer of decoded symbols (dbuf) now.  (The last
        literal used is the one at the head of the mtfSymbol array.) */
-    if (runPos){
+    if (runPos) {
       runPos = 0;
-      if (dbufCount + t > this.dbufSize) { _throw(Err.DATA_ERROR); }
+      if (dbufCount + t > this.dbufSize) {
+        _throw(Err.DATA_ERROR);
+      }
       uc = symToByte[mtfSymbol[0]];
       byteCount[uc] += t;
-      while (t--)
-        dbuf[dbufCount++] = uc;
+      while (t--) dbuf[dbufCount++] = uc;
     }
     /* Is this the terminating symbol? */
-    if (nextSym > symTotal)
-      break;
+    if (nextSym > symTotal) break;
     /* At this point, nextSym indicates a new literal character.  Subtract
        one to get the position in the MTF array at which this literal is
        currently to be found.  (Note that the result can't be -1 or 0,
@@ -21529,7 +21491,9 @@ Bunzip.prototype._get_next_block = function() {
        first symbol in the mtf array, position 0, would have been handled
        as part of a run above.  Therefore 1 unused mtf position minus
        2 non-literal nextSym values equals -1.) */
-    if (dbufCount >= this.dbufSize) { _throw(Err.DATA_ERROR); }
+    if (dbufCount >= this.dbufSize) {
+      _throw(Err.DATA_ERROR);
+    }
     i = nextSym - 1;
     uc = mtf(mtfSymbol, i);
     uc = symToByte[uc];
@@ -21543,7 +21507,9 @@ Bunzip.prototype._get_next_block = function() {
      Now undo the Burrows-Wheeler transform on dbuf.
      See http://dogma.net/markn/articles/bwt/bwt.htm
   */
-  if (origPointer < 0 || origPointer >= dbufCount) { _throw(Err.DATA_ERROR); }
+  if (origPointer < 0 || origPointer >= dbufCount) {
+    _throw(Err.DATA_ERROR);
+  }
   /* Turn byteCount into cumulative occurrence counts of 0 to n-1. */
   j = 0;
   for (i = 0; i < 256; i++) {
@@ -21554,16 +21520,18 @@ Bunzip.prototype._get_next_block = function() {
   /* Figure out what order dbuf would be in if we sorted it. */
   for (i = 0; i < dbufCount; i++) {
     uc = dbuf[i] & 0xff;
-    dbuf[byteCount[uc]] |= (i << 8);
+    dbuf[byteCount[uc]] |= i << 8;
     byteCount[uc]++;
   }
   /* Decode first byte by hand to initialize "previous" byte.  Note that it
      doesn't get output, and if the first three characters are identical
      it doesn't qualify as a run (hence writeRunCountdown=5). */
-  var pos = 0, current = 0, run = 0;
+  var pos = 0,
+      current = 0,
+      run = 0;
   if (dbufCount) {
     pos = dbuf[origPointer];
-    current = (pos & 0xff);
+    current = pos & 0xff;
     pos >>= 8;
     run = -1;
   }
@@ -21580,17 +21548,22 @@ Bunzip.prototype._get_next_block = function() {
    error (all errors are negative numbers).  If out_fd!=-1, outbuf and len
    are ignored, data is written to out_fd and return is RETVAL_OK or error.
 */
-Bunzip.prototype._read_bunzip = function(outputBuffer, len) {
-    var copies, previous, outbyte;
-    /* james@jamestaylor.org: writeCount goes to -1 when the buffer is fully
-       decoded, which results in this returning RETVAL_LAST_BLOCK, also
-       equal to -1... Confusing, I'm returning 0 here to indicate no
-       bytes written into the buffer */
-  if (this.writeCount < 0) { return 0; }
+Bunzip.prototype._read_bunzip = function (outputBuffer, len) {
+  var copies, previous, outbyte;
+  /* james@jamestaylor.org: writeCount goes to -1 when the buffer is fully
+     decoded, which results in this returning RETVAL_LAST_BLOCK, also
+     equal to -1... Confusing, I'm returning 0 here to indicate no
+     bytes written into the buffer */
+  if (this.writeCount < 0) {
+    return 0;
+  }
 
   var gotcount = 0;
-  var dbuf = this.dbuf, pos = this.writePos, current = this.writeCurrent;
-  var dbufCount = this.writeCount, outputsize = this.outputsize;
+  var dbuf = this.dbuf,
+      pos = this.writePos,
+      current = this.writeCurrent;
+  var dbufCount = this.writeCount,
+      outputsize = this.outputsize;
   var run = this.writeRun;
 
   while (dbufCount) {
@@ -21599,7 +21572,7 @@ Bunzip.prototype._read_bunzip = function(outputBuffer, len) {
     pos = dbuf[pos];
     current = pos & 0xff;
     pos >>= 8;
-    if (run++ === 3){
+    if (run++ === 3) {
       copies = current;
       outbyte = previous;
       current = -1;
@@ -21612,33 +21585,38 @@ Bunzip.prototype._read_bunzip = function(outputBuffer, len) {
       this.outputStream.writeByte(outbyte);
       this.nextoutput++;
     }
-    if (current != previous)
-      run = 0;
+    if (current != previous) run = 0;
   }
   this.writeCount = dbufCount;
   // check CRC
   if (this.blockCRC.getCRC() !== this.targetBlockCRC) {
-    _throw(Err.DATA_ERROR, "Bad block CRC "+
-           "(got "+this.blockCRC.getCRC().toString(16)+
-           " expected "+this.targetBlockCRC.toString(16)+")");
+    _throw(Err.DATA_ERROR, "Bad block CRC " + "(got " + this.blockCRC.getCRC().toString(16) + " expected " + this.targetBlockCRC.toString(16) + ")");
   }
   return this.nextoutput;
 };
 
-var coerceInputStream = function(input) {
-  if ('readByte' in input) { return input; }
+var coerceInputStream = function coerceInputStream(input) {
+  if ('readByte' in input) {
+    return input;
+  }
   var inputStream = new Stream();
   inputStream.pos = 0;
-  inputStream.readByte = function() { return input[this.pos++]; };
-  inputStream.seek = function(pos) { this.pos = pos; };
-  inputStream.eof = function() { return this.pos >= input.length; };
+  inputStream.readByte = function () {
+    return input[this.pos++];
+  };
+  inputStream.seek = function (pos) {
+    this.pos = pos;
+  };
+  inputStream.eof = function () {
+    return this.pos >= input.length;
+  };
   return inputStream;
 };
-var coerceOutputStream = function(output) {
+var coerceOutputStream = function coerceOutputStream(output) {
   var outputStream = new Stream();
   var resizeOk = true;
   if (output) {
-    if (typeof(output)==='number') {
+    if (typeof output === 'number') {
       outputStream.buffer = new Uint8Array(output);
       resizeOk = false;
     } else if ('writeByte' in output) {
@@ -21651,19 +21629,18 @@ var coerceOutputStream = function(output) {
     outputStream.buffer = new Uint8Array(16384);
   }
   outputStream.pos = 0;
-  outputStream.writeByte = function(_byte) {
+  outputStream.writeByte = function (_byte) {
     if (resizeOk && this.pos >= this.buffer.length) {
-      var newBuffer = new Uint8Array(this.buffer.length*2);
+      var newBuffer = new Uint8Array(this.buffer.length * 2);
       newBuffer.set(this.buffer);
       this.buffer = newBuffer;
     }
     this.buffer[this.pos++] = _byte;
   };
-  outputStream.getBuffer = function() {
+  outputStream.getBuffer = function () {
     // trim buffer
     if (this.pos !== this.buffer.length) {
-      if (!resizeOk)
-        throw new TypeError('outputsize does not match decoded input');
+      if (!resizeOk) throw new TypeError('outputsize does not match decoded input');
       var newBuffer = new Uint8Array(this.pos);
       newBuffer.set(this.buffer.subarray(0, this.pos));
       this.buffer = newBuffer;
@@ -21678,7 +21655,7 @@ var coerceOutputStream = function(output) {
 Bunzip.Err = Err;
 // 'input' can be a stream or a buffer
 // 'output' can be a stream or a buffer or a number (buffer size)
-Bunzip.decode = function(input, output, multistream) {
+Bunzip.decode = function (input, output, multistream) {
   // make a stream from a buffer, if necessary
   var inputStream = coerceInputStream(input);
   var outputStream = coerceOutputStream(output);
@@ -21691,22 +21668,17 @@ Bunzip.decode = function(input, output, multistream) {
     } else {
       var targetStreamCRC = bz.reader.read(32) >>> 0; // (convert to unsigned)
       if (targetStreamCRC !== bz.streamCRC) {
-        _throw(Err.DATA_ERROR, "Bad stream CRC "+
-               "(got "+bz.streamCRC.toString(16)+
-               " expected "+targetStreamCRC.toString(16)+")");
+        _throw(Err.DATA_ERROR, "Bad stream CRC " + "(got " + bz.streamCRC.toString(16) + " expected " + targetStreamCRC.toString(16) + ")");
       }
-      if (multistream &&
-          'eof' in inputStream &&
-          !inputStream.eof()) {
+      if (multistream && 'eof' in inputStream && !inputStream.eof()) {
         // note that start_bunzip will also resync the bit reader to next byte
         bz._start_bunzip(inputStream, outputStream);
       } else break;
     }
   }
-  if ('getBuffer' in outputStream)
-    return outputStream.getBuffer();
+  if ('getBuffer' in outputStream) return outputStream.getBuffer();
 };
-Bunzip.decodeBlock = function(input, pos, output) {
+Bunzip.decodeBlock = function (input, pos, output) {
   // make a stream from a buffer, if necessary
   var inputStream = coerceInputStream(input);
   var outputStream = coerceOutputStream(output);
@@ -21725,19 +21697,18 @@ Bunzip.decodeBlock = function(input, pos, output) {
     bz._read_bunzip();
     // XXX keep writing?
   }
-  if ('getBuffer' in outputStream)
-    return outputStream.getBuffer();
+  if ('getBuffer' in outputStream) return outputStream.getBuffer();
 };
 /* Reads bzip2 file from stream or buffer `input`, and invoke
  * `callback(position, size)` once for each bzip2 block,
  * where position gives the starting position (in *bits*)
  * and size gives uncompressed size of the block (in *bytes*). */
-Bunzip.table = function(input, callback, multistream) {
+Bunzip.table = function (input, callback, multistream) {
   // make a stream from a buffer, if necessary
   var inputStream = new Stream();
   inputStream.delegate = coerceInputStream(input);
   inputStream.pos = 0;
-  inputStream.readByte = function() {
+  inputStream.readByte = function () {
     this.pos++;
     return this.delegate.readByte();
   };
@@ -21746,15 +21717,19 @@ Bunzip.table = function(input, callback, multistream) {
   }
   var outputStream = new Stream();
   outputStream.pos = 0;
-  outputStream.writeByte = function() { this.pos++; };
+  outputStream.writeByte = function () {
+    this.pos++;
+  };
 
   var bz = new Bunzip(inputStream, outputStream);
   var blockSize = bz.dbufSize;
   while (true) {
     if ('eof' in inputStream && inputStream.eof()) break;
 
-    var position = inputStream.pos*8 + bz.reader.bitOffset;
-    if (bz.reader.hasByte) { position -= 8; }
+    var position = inputStream.pos * 8 + bz.reader.bitOffset;
+    if (bz.reader.hasByte) {
+      position -= 8;
+    }
 
     if (bz._init_block()) {
       var start = outputStream.pos;
@@ -21762,13 +21737,10 @@ Bunzip.table = function(input, callback, multistream) {
       callback(position, outputStream.pos - start);
     } else {
       var crc = bz.reader.read(32); // (but we ignore the crc)
-      if (multistream &&
-          'eof' in inputStream &&
-          !inputStream.eof()) {
+      if (multistream && 'eof' in inputStream && !inputStream.eof()) {
         // note that start_bunzip will also resync the bit reader to next byte
         bz._start_bunzip(inputStream, outputStream);
-        console.assert(bz.dbufSize === blockSize,
-                       "shouldn't change block size within multistream file");
+        console.assert(bz.dbufSize === blockSize, "shouldn't change block size within multistream file");
       } else break;
     }
   }
@@ -21782,46 +21754,47 @@ Bunzip.license = pjson.license;
 module.exports = Bunzip;
 
 },{"../package.json":73,"./bitreader":69,"./crc32":70,"./stream":72}],72:[function(require,module,exports){
+"use strict";
+
 /* very simple input/output stream interface */
-var Stream = function() {
-};
+var Stream = function Stream() {};
 
 // input streams //////////////
 /** Returns the next byte, or -1 for EOF. */
-Stream.prototype.readByte = function() {
+Stream.prototype.readByte = function () {
   throw new Error("abstract method readByte() not implemented");
 };
 /** Attempts to fill the buffer; returns number of bytes read, or
  *  -1 for EOF. */
-Stream.prototype.read = function(buffer, bufOffset, length) {
+Stream.prototype.read = function (buffer, bufOffset, length) {
   var bytesRead = 0;
   while (bytesRead < length) {
     var c = this.readByte();
-    if (c < 0) { // EOF
-      return (bytesRead===0) ? -1 : bytesRead;
+    if (c < 0) {
+      // EOF
+      return bytesRead === 0 ? -1 : bytesRead;
     }
     buffer[bufOffset++] = c;
     bytesRead++;
   }
   return bytesRead;
 };
-Stream.prototype.seek = function(new_pos) {
+Stream.prototype.seek = function (new_pos) {
   throw new Error("abstract method seek() not implemented");
 };
 
 // output streams ///////////
-Stream.prototype.writeByte = function(_byte) {
+Stream.prototype.writeByte = function (_byte) {
   throw new Error("abstract method readByte() not implemented");
 };
-Stream.prototype.write = function(buffer, bufOffset, length) {
+Stream.prototype.write = function (buffer, bufOffset, length) {
   var i;
-  for (i=0; i<length; i++) {
+  for (i = 0; i < length; i++) {
     this.writeByte(buffer[bufOffset++]);
   }
   return length;
 };
-Stream.prototype.flush = function() {
-};
+Stream.prototype.flush = function () {};
 
 module.exports = Stream;
 
@@ -23782,7 +23755,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.2.2",
+  versionstring: "OpenPGP.js v4.3.0",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -24184,7 +24157,7 @@ exports.default = {
     cipherfn = new _cipher2.default[cipherfn](key);
     const block_size = cipherfn.blockSize;
 
-    let iblock = new Uint8Array(block_size);
+    const iblock = new Uint8Array(block_size);
     let ablock = new Uint8Array(block_size);
 
     let i;
@@ -24192,29 +24165,11 @@ exports.default = {
     let n;
     let text = new Uint8Array(ciphertext.length - block_size);
 
-    // initialisation vector
-    for (i = 0; i < block_size; i++) {
-      iblock[i] = 0;
-    }
-
-    iblock = cipherfn.encrypt(iblock);
-    for (i = 0; i < block_size; i++) {
-      ablock[i] = ciphertext[i];
-      iblock[i] ^= ablock[i];
-    }
-
-    ablock = cipherfn.encrypt(ablock);
-
-    // test check octets
-    if (iblock[block_size - 2] !== (ablock[0] ^ ciphertext[block_size]) || iblock[block_size - 1] !== (ablock[1] ^ ciphertext[block_size + 1])) {
-      throw new Error('CFB decrypt: invalid key');
-    }
-
     /*  RFC4880: Tag 18 and Resync:
      *  [...] Unlike the Symmetrically Encrypted Data Packet, no
      *  special CFB resynchronization is done after encrypting this prefix
      *  data.  See "OpenPGP CFB Mode" below for more details.
-      */
+     */
 
     j = 0;
     if (resync) {
@@ -25394,6 +25349,7 @@ exports.default = {
    * @returns {Object}
    */
   tripledes: _des2.default.TripleDES,
+  '3des': _des2.default.TripleDES,
   /**
    * CAST-128 Block Cipher (ID 3)
    * @function
@@ -25812,7 +25768,7 @@ function rightXorMut(data, padding) {
 
 function pad(data, padding, padding2) {
   // if |M| in {n, 2n, 3n, ...}
-  if (data.length % blockLength === 0) {
+  if (data.length && data.length % blockLength === 0) {
     // then return M xor→ B,
     return rightXorMut(data, padding);
   }
@@ -28017,7 +27973,11 @@ Curve.prototype.keyFromSecret = function (secret) {
 };
 
 Curve.prototype.keyFromPublic = function (pub) {
-  return new _key2.default(this, { pub: pub });
+  const keyPair = new _key2.default(this, { pub: pub });
+  if (this.keyType === _enums2.default.publicKey.ecdsa && keyPair.keyPair.validate().result !== true) {
+    throw new Error('Invalid elliptic public key');
+  }
+  return keyPair;
 };
 
 Curve.prototype.genKeyPair = async function () {
@@ -32467,6 +32427,22 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIds.map(async function (userId, index) {
+    function createdPreferredAlgos(algos, configAlgo) {
+      if (configAlgo) {
+        // Not `uncompressed` / `plaintext`
+        const configIndex = algos.indexOf(configAlgo);
+        if (configIndex >= 1) {
+          // If it is included and not in first place,
+          algos.splice(configIndex, 1); // remove it.
+        }
+        if (configIndex !== 0) {
+          // If it was included and not in first place, or wasn't included,
+          algos.unshift(configAlgo); // add it to the front.
+        }
+      }
+      return algos;
+    }
+
     const userIdPacket = new _packet2.default.Userid();
     userIdPacket.format(userId);
 
@@ -32478,26 +32454,16 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretKeyPacket);
     signaturePacket.keyFlags = [_enums2.default.keyFlags.certify_keys | _enums2.default.keyFlags.sign_data];
-    signaturePacket.preferredSymmetricAlgorithms = [];
+    signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
     // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
-    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes256);
-    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes128);
-    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.aes192);
-    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.cast5);
-    signaturePacket.preferredSymmetricAlgorithms.push(_enums2.default.symmetric.tripledes);
+    _enums2.default.symmetric.aes256, _enums2.default.symmetric.aes128, _enums2.default.symmetric.aes192, _enums2.default.symmetric.cast5, _enums2.default.symmetric.tripledes], _config2.default.encryption_cipher);
     if (_config2.default.aead_protect && _config2.default.aead_protect_version === 4) {
-      signaturePacket.preferredAeadAlgorithms = [];
-      signaturePacket.preferredAeadAlgorithms.push(_enums2.default.aead.eax);
-      signaturePacket.preferredAeadAlgorithms.push(_enums2.default.aead.ocb);
+      signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([_enums2.default.aead.eax, _enums2.default.aead.ocb], _config2.default.aead_mode);
     }
-    signaturePacket.preferredHashAlgorithms = [];
+    signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
     // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
-    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha512);
-    signaturePacket.preferredHashAlgorithms.push(_enums2.default.hash.sha1);
-    signaturePacket.preferredCompressionAlgorithms = [];
-    signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zlib);
-    signaturePacket.preferredCompressionAlgorithms.push(_enums2.default.compression.zip);
+    _enums2.default.hash.sha256, _enums2.default.hash.sha512, _enums2.default.hash.sha1], _config2.default.prefer_hash_algorithm);
+    signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([_enums2.default.compression.zlib, _enums2.default.compression.zip], _config2.default.compression);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
     }
@@ -32701,7 +32667,7 @@ async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = 
  */
 async function getPreferredAlgo(type, keys, date = new Date(), userId = {}) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
-  const defaultAlgo = type === 'symmetric' ? _config2.default.encryption_cipher : _config2.default.aead_mode;
+  const defaultAlgo = type === 'symmetric' ? _enums2.default.symmetric.aes128 : _enums2.default.aead.eax;
   const prioMap = {};
   await Promise.all(keys.map(async function (key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
@@ -33343,6 +33309,7 @@ Message.prototype.decrypt = async function (privateKeys, passwords, sessionKeys,
 Message.prototype.decryptSessionKeys = async function (privateKeys, passwords) {
   let keyPackets = [];
 
+  let exception;
   if (passwords) {
     const symESKeyPacketlist = this.packets.filterByTag(_enums2.default.packet.symEncryptedSessionKey);
     if (!symESKeyPacketlist) {
@@ -33371,23 +33338,35 @@ Message.prototype.decryptSessionKeys = async function (privateKeys, passwords) {
       throw new Error('No public key encrypted session key packet found.');
     }
     await Promise.all(pkESKeyPacketlist.map(async function (keyPacket) {
-      const privateKeyPackets = new _packet2.default.List();
-      privateKeys.forEach(privateKey => {
-        privateKeyPackets.concat(privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket));
-      });
-      await Promise.all(privateKeyPackets.map(async function (privateKeyPacket) {
-        if (!privateKeyPacket) {
-          return;
+      await Promise.all(privateKeys.map(async function (privateKey) {
+        const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
+        let algos = [_enums2.default.symmetric.aes256, // Old OpenPGP.js default fallback
+        _enums2.default.symmetric.aes128, // RFC4880bis fallback
+        _enums2.default.symmetric.tripledes // RFC4880 fallback
+        ];
+        if (primaryUser && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
+          algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
         }
-        if (!privateKeyPacket.isDecrypted()) {
-          throw new Error('Private key is not decrypted.');
-        }
-        try {
-          await keyPacket.decrypt(privateKeyPacket);
-          keyPackets.push(keyPacket);
-        } catch (err) {
-          _util2.default.print_debug_error(err);
-        }
+
+        const privateKeyPackets = privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket);
+        await Promise.all(privateKeyPackets.map(async function (privateKeyPacket) {
+          if (!privateKeyPacket) {
+            return;
+          }
+          if (!privateKeyPacket.isDecrypted()) {
+            throw new Error('Private key is not decrypted.');
+          }
+          try {
+            await keyPacket.decrypt(privateKeyPacket);
+            if (!algos.includes(_enums2.default.write(_enums2.default.symmetric, keyPacket.sessionKeyAlgorithm))) {
+              throw new Error('A non-preferred symmetric algorithm was used.');
+            }
+            keyPackets.push(keyPacket);
+          } catch (err) {
+            _util2.default.print_debug_error(err);
+            exception = err;
+          }
+        }));
       }));
       _webStreamTools2.default.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
       keyPacket.encrypted = null;
@@ -33412,7 +33391,7 @@ Message.prototype.decryptSessionKeys = async function (privateKeys, passwords) {
 
     return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
   }
-  throw new Error('Session key decryption failed.');
+  throw exception || new Error('Session key decryption failed.');
 };
 
 /**
@@ -33420,7 +33399,8 @@ Message.prototype.decryptSessionKeys = async function (privateKeys, passwords) {
  * @returns {(Uint8Array|null)} literal body of the message as Uint8Array
  */
 Message.prototype.getLiteralData = function () {
-  const literal = this.packets.findPacket(_enums2.default.packet.literal);
+  const msg = this.unwrapCompressed();
+  const literal = msg.packets.findPacket(_enums2.default.packet.literal);
   return literal && literal.getBytes() || null;
 };
 
@@ -33429,7 +33409,8 @@ Message.prototype.getLiteralData = function () {
  * @returns {(String|null)} filename of literal data packet as string
  */
 Message.prototype.getFilename = function () {
-  const literal = this.packets.findPacket(_enums2.default.packet.literal);
+  const msg = this.unwrapCompressed();
+  const literal = msg.packets.findPacket(_enums2.default.packet.literal);
   return literal && literal.getFilename() || null;
 };
 
@@ -33438,7 +33419,8 @@ Message.prototype.getFilename = function () {
  * @returns {(String|null)} literal body of the message interpreted as text
  */
 Message.prototype.getText = function () {
-  const literal = this.packets.findPacket(_enums2.default.packet.literal);
+  const msg = this.unwrapCompressed();
+  const literal = msg.packets.findPacket(_enums2.default.packet.literal);
   if (literal) {
     return literal.getText();
   }
@@ -33802,25 +33784,38 @@ Message.prototype.verifyDetached = function (signature, keys, date = new Date())
  * @async
  */
 async function createVerificationObject(signature, literalDataList, keys, date = new Date()) {
-  let keyPacket = null;
+  let primaryKey = null;
+  let signingKey = null;
   await Promise.all(keys.map(async function (key) {
     // Look for the unique key that matches issuerKeyId of signature
-    const result = await key.getSigningKey(signature.issuerKeyId, date);
+    const result = await key.getSigningKey(signature.issuerKeyId, null);
     if (result) {
-      keyPacket = result.keyPacket;
+      primaryKey = key;
+      signingKey = result;
     }
   }));
 
+  const signaturePacket = signature.correspondingSig || signature;
   const verifiedSig = {
     keyid: signature.issuerKeyId,
-    verified: keyPacket ? signature.verify(keyPacket, signature.signatureType, literalDataList[0]) : Promise.resolve(null)
+    verified: (async () => {
+      if (!signingKey) {
+        return null;
+      }
+      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0]);
+      const sig = await signaturePacket;
+      if (sig.isExpired(date) || !(sig.created >= signingKey.getCreationTime() && sig.created < (await (signingKey === primaryKey ? signingKey.getExpirationTime() : signingKey.getExpirationTime(primaryKey, date))))) {
+        return null;
+      }
+      return verified;
+    })(),
+    signature: (async () => {
+      const sig = await signaturePacket;
+      const packetlist = new _packet2.default.List();
+      packetlist.push(sig);
+      return new _signature.Signature(packetlist);
+    })()
   };
-
-  verifiedSig.signature = Promise.resolve(signature.correspondingSig || signature).then(signature => {
-    const packetlist = new _packet2.default.List();
-    packetlist.push(signature);
-    return new _signature.Signature(packetlist);
-  });
 
   // Mark potential promise rejections as "handled". This is needed because in
   // some cases, we reject them before the user has a reasonable chance to
@@ -36307,24 +36302,10 @@ List.prototype.filterByTag = function (...args) {
 /**
  * Traverses packet tree and returns first matching packet
  * @param  {module:enums.packet} type The packet type
- * @returns {module:packet/packet|null}
+ * @returns {module:packet/packet|undefined}
  */
 List.prototype.findPacket = function (type) {
-  const packetlist = this.filterByTag(type);
-  if (packetlist.length) {
-    return packetlist[0];
-  }
-  let found = null;
-  for (let i = 0; i < this.length; i++) {
-    if (this[i].packets.length) {
-      found = this[i].packets.findPacket(type);
-      if (found) {
-        return found;
-      }
-    }
-  }
-
-  return null;
+  return this.find(packet => packet.tag === type);
 };
 
 /**
@@ -36473,6 +36454,11 @@ function PublicKey(date = new Date()) {
    * @type {Date}
    */
   this.created = _util2.default.normalizeDate(date);
+  /**
+   * Public key algorithm.
+   * @type {String}
+   */
+  this.algorithm = null;
   /**
    * Algorithm specific params
    * @type {Array<Object>}
@@ -36736,7 +36722,10 @@ function PublicKeyEncryptedSessionKey() {
   this.version = 3;
 
   this.publicKeyId = new _keyid2.default();
+  this.publicKeyAlgorithm = null;
+
   this.sessionKey = null;
+  this.sessionKeyAlgorithm = null;
 
   /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
@@ -36857,7 +36846,7 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   key = _util2.default.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
   if (!_util2.default.equalsUint8Array(checksum, _util2.default.write_checksum(key))) {
-    throw new Error('Checksum mismatch');
+    throw new Error('Decryption error');
   } else {
     this.sessionKey = key;
     this.sessionKeyAlgorithm = _enums2.default.read(_enums2.default.symmetric, decoded.charCodeAt(0));
@@ -38055,6 +38044,10 @@ Signature.prototype.hash = async function (signatureType, data, toHash, streamin
 Signature.prototype.verify = async function (key, signatureType, data) {
   const publicKeyAlgorithm = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = _enums2.default.write(_enums2.default.hash, this.hashAlgorithm);
+
+  if (publicKeyAlgorithm !== _enums2.default.write(_enums2.default.publicKey, key.algorithm)) {
+    throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
+  }
 
   let toHash;
   let hash;
