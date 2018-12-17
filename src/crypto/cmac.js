@@ -48,7 +48,7 @@ function rightXorMut(data, padding) {
 
 function pad(data, padding, padding2) {
   // if |M| in {n, 2n, 3n, ...}
-  if (data.length % blockLength === 0) {
+  if (data.length && data.length % blockLength === 0) {
     // then return M xor→ B,
     return rightXorMut(data, padding);
   }

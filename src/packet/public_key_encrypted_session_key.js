@@ -52,7 +52,10 @@ function PublicKeyEncryptedSessionKey() {
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
+  this.publicKeyAlgorithm = null;
+
   this.sessionKey = null;
+  this.sessionKeyAlgorithm = null;
 
   /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
@@ -150,7 +153,7 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   key = util.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
   if (!util.equalsUint8Array(checksum, util.write_checksum(key))) {
-    throw new Error('Checksum mismatch');
+    throw new Error('Decryption error');
   } else {
     this.sessionKey = key;
     this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded.charCodeAt(0));

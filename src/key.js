@@ -1451,6 +1451,19 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIds.map(async function(userId, index) {
+    function createdPreferredAlgos(algos, configAlgo) {
+      if (configAlgo) { // Not `uncompressed` / `plaintext`
+        const configIndex = algos.indexOf(configAlgo);
+        if (configIndex >= 1) { // If it is included and not in first place,
+          algos.splice(configIndex, 1); // remove it.
+        }
+        if (configIndex !== 0) { // If it was included and not in first place, or wasn't included,
+          algos.unshift(configAlgo); // add it to the front.
+        }
+      }
+      return algos;
+    }
+
     const userIdPacket = new packet.Userid();
     userIdPacket.format(userId);
 
@@ -1462,26 +1475,30 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretKeyPacket);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.preferredSymmetricAlgorithms = [];
-    // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+    signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
+      // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
+      enums.symmetric.aes256,
+      enums.symmetric.aes128,
+      enums.symmetric.aes192,
+      enums.symmetric.cast5,
+      enums.symmetric.tripledes
+    ], config.encryption_cipher);
     if (config.aead_protect && config.aead_protect_version === 4) {
-      signaturePacket.preferredAeadAlgorithms = [];
-      signaturePacket.preferredAeadAlgorithms.push(enums.aead.eax);
-      signaturePacket.preferredAeadAlgorithms.push(enums.aead.ocb);
+      signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
+        enums.aead.eax,
+        enums.aead.ocb
+      ], config.aead_mode);
     }
-    signaturePacket.preferredHashAlgorithms = [];
-    // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
-    signaturePacket.preferredCompressionAlgorithms = [];
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+    signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
+      // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
+      enums.hash.sha256,
+      enums.hash.sha512,
+      enums.hash.sha1
+    ], config.prefer_hash_algorithm);
+    signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
+      enums.compression.zlib,
+      enums.compression.zip
+    ], config.compression);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
     }
@@ -1690,7 +1707,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), user
  */
 export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
-  const defaultAlgo = type === 'symmetric' ? config.encryption_cipher : config.aead_mode;
+  const defaultAlgo = type === 'symmetric' ? enums.symmetric.aes128 : enums.aead.eax;
   const prioMap = {};
   await Promise.all(keys.map(async function(key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
