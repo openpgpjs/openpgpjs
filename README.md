@@ -379,17 +379,17 @@ var options = {
 openpgp.generateKey(options).then(function(key) {
     var privkey = key.privateKeyArmored; // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
     var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
-    var revocationSignature = key.revocationSignature; // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+    var revocationCertificate = key.revocationCertificate; // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 });
 ```
 
 #### Revoke a key
 
-Using a revocation signature:
+Using a revocation certificate:
 ```js
 var options = {
     key: openpgp.key.readArmored(pubkey).keys[0],
-    revocationSignature: revocationSignature
+    revocationCertificate: revocationCertificate
 };
 ```
 
