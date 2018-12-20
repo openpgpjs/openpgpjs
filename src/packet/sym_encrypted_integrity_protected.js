@@ -32,6 +32,7 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 
+const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
@@ -104,7 +105,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
   tohash = util.concat([tohash, hash]);
 
   if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    this.encrypted = aesEncrypt(sessionKeyAlgorithm, util.concat([prefix, tohash]), key);
+    this.encrypted = await aesEncrypt(sessionKeyAlgorithm, util.concat([prefix, tohash]), key);
   } else {
     tohash = await stream.readToEnd(tohash);
     this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
@@ -168,6 +169,14 @@ export default SymEncryptedIntegrityProtected;
 
 
 function aesEncrypt(algo, pt, key) {
+  if (
+    util.getWebCrypto() &&
+    key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    !util.isStream(pt) &&
+    pt.length >= 3000 * config.min_bytes_for_web_crypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
+  ) { // Web Crypto
+    return webEncrypt(algo, pt, key);
+  }
   if (nodeCrypto) { // Node crypto library.
     return nodeEncrypt(algo, pt, key);
   } // asm.js fallback
@@ -188,6 +197,22 @@ function aesDecrypt(algo, ct, key) {
     }
   }
   return stream.slice(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
+}
+
+function xorMut(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    a[i] = a[i] ^ b[i];
+  }
+}
+
+async function webEncrypt(algo, pt, key) {
+  const ALGO = 'AES-CBC';
+  const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
+  const { blockSize } = crypto.cipher[algo];
+  const cbc_pt = util.concatUint8Array([new Uint8Array(blockSize), pt]);
+  const ct = new Uint8Array(await webCrypto.encrypt({ name: ALGO, iv: new Uint8Array(blockSize) }, _key, cbc_pt)).subarray(0, pt.length);
+  xorMut(ct, pt);
+  return ct;
 }
 
 function nodeEncrypt(algo, pt, key) {
