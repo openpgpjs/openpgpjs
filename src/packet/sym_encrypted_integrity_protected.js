@@ -24,17 +24,11 @@
  * @requires util
  */
 
-import { AES_CFB } from 'asmcrypto.js/dist_es5/aes/cfb';
-
 import stream from 'web-stream-tools';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-
-const webCrypto = util.getWebCrypto();
-const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -95,22 +89,14 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
 SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   let bytes = this.packets.write();
   if (!streaming) bytes = await stream.readToEnd(bytes);
-  const prefixrandom = await crypto.getPrefixRandom(sessionKeyAlgorithm);
-  const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-  const prefix = util.concat([prefixrandom, repeat]);
+  const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  let tohash = util.concat([bytes, mdc]);
-  const hash = await crypto.hash.sha1(util.concat([prefix, stream.passiveClone(tohash)]));
-  tohash = util.concat([tohash, hash]);
+  const tohash = util.concat([prefix, bytes, mdc]);
+  const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
+  const plaintext = util.concat([tohash, hash]);
 
-  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    this.encrypted = await aesEncrypt(sessionKeyAlgorithm, util.concat([prefix, tohash]), key);
-  } else {
-    tohash = await stream.readToEnd(tohash);
-    this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
-    this.encrypted = stream.slice(this.encrypted, 0, prefix.length + tohash.length);
-  }
+  this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
   return true;
 };
 
@@ -126,12 +112,8 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   if (!streaming) this.encrypted = await stream.readToEnd(this.encrypted);
   const encrypted = stream.clone(this.encrypted);
   const encryptedClone = stream.passiveClone(encrypted);
-  let decrypted;
-  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key, streaming);
-  } else {
-    decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, await stream.readToEnd(encrypted), false);
-  }
+  let decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+  decrypted = stream.slice(decrypted, crypto.cipher[sessionKeyAlgorithm].blockSize + 2); // Remove random prefix
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
@@ -159,72 +141,3 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
 };
 
 export default SymEncryptedIntegrityProtected;
-
-
-//////////////////////////
-//                      //
-//   Helper functions   //
-//                      //
-//////////////////////////
-
-
-function aesEncrypt(algo, pt, key) {
-  if (
-    util.getWebCrypto() &&
-    key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    !util.isStream(pt) &&
-    pt.length >= 3000 * config.min_bytes_for_web_crypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
-  ) { // Web Crypto
-    return webEncrypt(algo, pt, key);
-  }
-  if (nodeCrypto) { // Node crypto library.
-    return nodeEncrypt(algo, pt, key);
-  } // asm.js fallback
-  const cfb = new AES_CFB(key);
-  return stream.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
-}
-
-function aesDecrypt(algo, ct, key) {
-  let pt;
-  if (nodeCrypto) { // Node crypto library.
-    pt = nodeDecrypt(algo, ct, key);
-  } else { // asm.js fallback
-    if (util.isStream(ct)) {
-      const cfb = new AES_CFB(key);
-      pt = stream.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
-    } else {
-      pt = AES_CFB.decrypt(ct, key);
-    }
-  }
-  return stream.slice(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
-}
-
-function xorMut(a, b) {
-  for (let i = 0; i < a.length; i++) {
-    a[i] = a[i] ^ b[i];
-  }
-}
-
-async function webEncrypt(algo, pt, key) {
-  const ALGO = 'AES-CBC';
-  const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
-  const { blockSize } = crypto.cipher[algo];
-  const cbc_pt = util.concatUint8Array([new Uint8Array(blockSize), pt]);
-  const ct = new Uint8Array(await webCrypto.encrypt({ name: ALGO, iv: new Uint8Array(blockSize) }, _key, cbc_pt)).subarray(0, pt.length);
-  xorMut(ct, pt);
-  return ct;
-}
-
-function nodeEncrypt(algo, pt, key) {
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
-  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return stream.transform(pt, value => new Uint8Array(cipherObj.update(new Buffer(value))));
-}
-
-function nodeDecrypt(algo, ct, key) {
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
-  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return stream.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
-}
