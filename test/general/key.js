@@ -1983,10 +1983,21 @@ describe('Key', function() {
     const pubKey = (await openpgp.key.readArmored(priv_key_2000_2008)).keys[0];
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
+    pubKey.users[0].selfCertifications[0].keyFlags = [1];
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime).to.equal(Infinity);
     const encryptExpirationTime = await pubKey.getExpirationTime('encrypt_sign');
     expect(encryptExpirationTime.toISOString()).to.equal('2008-02-12T17:12:08.000Z');
+  });
+
+  it('Method getExpirationTime V4 Key with capabilities - capable primary key', async function() {
+    const pubKey = (await openpgp.key.readArmored(priv_key_2000_2008)).keys[0];
+    expect(pubKey).to.exist;
+    expect(pubKey).to.be.an.instanceof(openpgp.key.Key);
+    const expirationTime = await pubKey.getExpirationTime();
+    expect(expirationTime).to.equal(Infinity);
+    const encryptExpirationTime = await pubKey.getExpirationTime('encrypt_sign');
+    expect(encryptExpirationTime).to.equal(Infinity);
   });
 
   it('update() - throw error if fingerprints not equal', async function() {

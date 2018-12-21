@@ -510,13 +510,17 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
   const sigExpiry = selfCert.getExpirationTime();
   let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
   if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-    const encryptKey = await this.getEncryptionKey(keyId, null, userId);
+    const encryptKey =
+      await this.getEncryptionKey(keyId, expiry, userId) ||
+      await this.getEncryptionKey(keyId, null, userId);
     if (!encryptKey) return null;
     const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket);
     if (encryptExpiry < expiry) expiry = encryptExpiry;
   }
   if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-    const signKey = await this.getSigningKey(keyId, null, userId);
+    const signKey =
+      await this.getSigningKey(keyId, expiry, userId) ||
+      await this.getSigningKey(keyId, null, userId);
     if (!signKey) return null;
     const signExpiry = await signKey.getExpirationTime(this.keyPacket);
     if (signExpiry < expiry) expiry = signExpiry;
@@ -1632,7 +1636,7 @@ function isDataExpired(keyPacket, signature, date=new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate < expirationTime) ||
+    return !(keyPacket.created <= normDate && normDate <= expirationTime) ||
       (signature && signature.isExpired(date));
   }
   return false;

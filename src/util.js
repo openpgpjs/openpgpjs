@@ -165,7 +165,7 @@ export default {
   },
 
   normalizeDate: function (time = Date.now()) {
-      return time === null ? time : new Date(Math.floor(+time / 1000) * 1000);
+    return time === null || time === Infinity ? time : new Date(Math.floor(+time / 1000) * 1000);
   },
 
   /**
