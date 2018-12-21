@@ -36,45 +36,6 @@ const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
 export default {
-
-  /**
-   * Decrypts the prefixed data for the Modification Detection Code (MDC) computation
-   * @param {String} cipherfn.encrypt Cipher function to use,
-   *  @see module:crypto/cipher.
-   * @param {Uint8Array} key Uint8Array representation of key to be used to check the mdc
-   * This will be passed to the cipherfn
-   * @param {Uint8Array} ciphertext The encrypted data
-   * @returns {Uint8Array} plaintext Data of D(ciphertext) with blocksize length +2
-   */
-  mdc: function(cipherfn, key, ciphertext) {
-    cipherfn = new cipher[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    let iblock = new Uint8Array(block_size);
-    let ablock = new Uint8Array(block_size);
-    let i;
-
-
-    // initialisation vector
-    for (i = 0; i < block_size; i++) {
-      iblock[i] = 0;
-    }
-
-    iblock = cipherfn.encrypt(iblock);
-    for (i = 0; i < block_size; i++) {
-      ablock[i] = ciphertext[i];
-      iblock[i] ^= ablock[i];
-    }
-
-    ablock = cipherfn.encrypt(ablock);
-
-    const result = new Uint8Array(iblock.length + 2);
-    result.set(iblock);
-    result[iblock.length] = ablock[0] ^ ciphertext[block_size];
-    result[iblock.length + 1] = ablock[1] ^ ciphertext[block_size + 1];
-    return result;
-  },
-
   encrypt: function(algo, key, plaintext, iv) {
     if (algo.substr(0, 3) === 'aes') {
       return aesEncrypt(algo, key, plaintext, iv);
