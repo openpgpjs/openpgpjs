@@ -11,12 +11,12 @@ const messageArmor = `-----BEGIN PGP MESSAGE-----
 Version: OpenPGP.js VERSION
 Comment: https://openpgpjs.org
 
-wYwD3eCUoDfD5yoBA/4rhxaaw+E2ma+LdmLVDBRqxglhIgnM6EgNxzf8J5Ty
-ecQBLOf3BjjC72mJ9RqMmvQ16aG4EXXDAUmCP1sBLj+b7V1t4keeyTn+2nXu
-7Wgu2yq9CvZahRLsayt3y8VodZwTi3K/+gmx1f8EhdLPONQgGkYAqZ3Tyyd0
-KF3pknplvdI+AXqRs0n2vVr89oIdmQPJFSHEoJtltbSNxhwShdzDvOor2FKJ
-vhGWNysion2aBg0fIbgDUKeXKp8YN44LDTk=
-=RYrv
+wYwD3eCUoDfD5yoBA/98Ceee8cVOuwZMscnFXzkldJV6Km/Uozcwsx0+Epqb
+31qF6QosSgEBNGet5PXxV3VU5BnjSeMnK3500NFGgLZUYKLqdHmtwj4hIz7S
+VpX1fVpp5n8729Fuv9MhRcFrrIrRj5h6Mj8G7xIgCQm+uJTla3X8wRXss8/p
+y57epbYHO9JGAZsQl6kFLOsgtlV/NPwAtjsH/AzsQs3Y6WcudHh0XB3E+ncK
+BLn6oaBjcnlwdGVk0wJnjV2YZRiZ7V3lUIDdYIMNpL+5qA==
+=IoHy
 -----END PGP MESSAGE-----`;
 
 const privateKeyArmor = `-----BEGIN PGP PRIVATE KEY BLOCK-----

@@ -187,7 +187,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
         let algos = [
           enums.symmetric.aes256, // Old OpenPGP.js default fallback
           enums.symmetric.aes128, // RFC4880bis fallback
-          enums.symmetric.tripledes // RFC4880 fallback
+          enums.symmetric.tripledes, // RFC4880 fallback
+          enums.symmetric.cast5 // Golang OpenPGP fallback
         ];
         if (primaryUser && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
           algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
