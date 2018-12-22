@@ -65,7 +65,7 @@ let asyncProxy; // instance of the asyncproxy
  * @param {Array<Object>} workers  alternative to path parameter: web workers initialized with 'openpgp.worker.js'
  */
 export function initWorker({ path='openpgp.worker.js', n = 1, workers = [] } = {}) {
-  if (workers.length || (typeof window !== 'undefined' && window.Worker)) {
+  if (workers.length || (typeof window !== 'undefined' && window.Worker && window.MessageChannel)) {
     asyncProxy = new AsyncProxy({ path, n, workers, config });
     return true;
   }
