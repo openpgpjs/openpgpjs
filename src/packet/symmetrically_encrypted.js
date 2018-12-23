@@ -20,14 +20,12 @@
  * @requires config
  * @requires crypto
  * @requires enums
- * @requires util
  */
 
 import stream from 'web-stream-tools';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
-import util from '../util';
 
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
@@ -81,11 +79,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  */
 SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   this.encrypted = await stream.readToEnd(this.encrypted);
-  const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key,
-    this.encrypted.subarray(crypto.cipher[sessionKeyAlgorithm].blockSize + 2),
-    this.encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
-  );
-
+  const decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
   // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
   if (!this.ignore_mdc_error) {
     throw new Error('Decryption failed due to missing MDC.');
@@ -106,10 +100,7 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
 SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
   const data = this.packets.write();
 
-  const prefix = await crypto.getPrefixRandom(algo);
-  const FRE = await crypto.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize));
-  const ciphertext = await crypto.cfb.encrypt(algo, key, data, FRE.subarray(2));
-  this.encrypted = util.concatUint8Array([FRE, ciphertext]);
+  this.encrypted = crypto.cfb.encrypt(await crypto.getPrefixRandom(algo), algo, await stream.readToEnd(data), key, true);
 
   return true;
 };
