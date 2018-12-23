@@ -11408,7 +11408,7 @@ module.exports={
   "_args": [
     [
       "github:openpgpjs/elliptic",
-      "/Users/sunny/Desktop/Protonmail/openpgpjs"
+      "/home/ec2-user/environment/sources/openpgpjs"
     ]
   ],
   "_from": "github:openpgpjs/elliptic",
@@ -11430,7 +11430,7 @@ module.exports={
   ],
   "_resolved": "github:openpgpjs/elliptic#e187e706e11fa51bcd20e46e5119054be4e2a4a6",
   "_spec": "github:openpgpjs/elliptic",
-  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
+  "_where": "/home/ec2-user/environment/sources/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -21803,7 +21803,7 @@ module.exports={
   "_args": [
     [
       "github:openpgpjs/seek-bzip",
-      "/Users/sunny/Desktop/Protonmail/openpgpjs"
+      "/home/ec2-user/environment/sources/openpgpjs"
     ]
   ],
   "_from": "github:openpgpjs/seek-bzip",
@@ -21827,7 +21827,7 @@ module.exports={
   ],
   "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_spec": "github:openpgpjs/seek-bzip",
-  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
+  "_where": "/home/ec2-user/environment/sources/openpgpjs",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
     "seek-table": "./bin/seek-bzip-table"
@@ -22669,7 +22669,10 @@ function Reader(input) {
   if (streamType) {
     const reader = input.getReader();
     this._read = reader.read.bind(reader);
-    this._releaseLock = reader.releaseLock.bind(reader);
+    this._releaseLock = () => {
+      reader.closed.catch(function () {});
+      reader.releaseLock();
+    };
     return;
   }
   let doneReading = false;
@@ -22924,7 +22927,13 @@ function getReader(input) {
  * @returns {WritableStreamDefaultWriter}
  */
 function getWriter(input) {
-  return input.getWriter();
+  const writer = input.getWriter();
+  const releaseLock = writer.releaseLock;
+  writer.releaseLock = () => {
+    writer.closed.catch(function () {});
+    releaseLock.call(writer);
+  };
+  return writer;
 }
 
 /**
@@ -22939,7 +22948,7 @@ async function pipe(input, target, options) {
   input = toStream(input);
   try {
     if (input[_reader.externalBuffer]) {
-      const writer = target.getWriter();
+      const writer = getWriter(target);
       for (let i = 0; i < input[_reader.externalBuffer].length; i++) {
         await writer.ready;
         await writer.write(input[_reader.externalBuffer][i]);
@@ -23235,8 +23244,8 @@ function slice(input, begin = 0, end = Infinity) {
   if (input[_reader.externalBuffer]) {
     input = concat(input[_reader.externalBuffer].concat([input]));
   }
-  if ((0, _util.isUint8Array)(input) && !(NodeBuffer && NodeBuffer.isBuffer(input)) && !_util.isIE11) {
-    // IE11 subarray is buggy
+  if ((0, _util.isUint8Array)(input) && !(NodeBuffer && NodeBuffer.isBuffer(input))) {
+    if (end === Infinity) end = input.length;
     return input.subarray(begin, end);
   }
   return input.slice(begin, end);
@@ -23296,8 +23305,6 @@ exports.default = { isStream: _util.isStream, isUint8Array: _util.isUint8Array, 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
-
 const NodeReadableStream = typeof window === 'undefined' && require('stream').Readable;
 
 /**
@@ -23351,7 +23358,6 @@ function concatUint8Array(arrays) {
   return result;
 }
 
-exports.isIE11 = isIE11;
 exports.isStream = isStream;
 exports.isUint8Array = isUint8Array;
 exports.concatUint8Array = concatUint8Array;
@@ -29781,7 +29787,9 @@ function dearmor(input) {
             if (line.indexOf('=') === -1 && line.indexOf('-') === -1) {
               await writer.write(line);
             } else {
-              let remainder = line + (await reader.readToEnd());
+              let remainder = await reader.readToEnd();
+              if (!remainder.length) remainder = '';
+              remainder = line + remainder;
               remainder = remainder.replace(/[\t\r ]+$/mg, '');
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {
@@ -31493,13 +31501,13 @@ Key.prototype.getExpirationTime = async function (capabilities, keyId, userId) {
   const sigExpiry = selfCert.getExpirationTime();
   let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
   if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-    const encryptKey = await this.getEncryptionKey(keyId, null, userId);
+    const encryptKey = (await this.getEncryptionKey(keyId, expiry, userId)) || (await this.getEncryptionKey(keyId, null, userId));
     if (!encryptKey) return null;
     const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket);
     if (encryptExpiry < expiry) expiry = encryptExpiry;
   }
   if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-    const signKey = await this.getSigningKey(keyId, null, userId);
+    const signKey = (await this.getSigningKey(keyId, expiry, userId)) || (await this.getSigningKey(keyId, null, userId));
     if (!signKey) return null;
     const signExpiry = await signKey.getExpirationTime(this.keyPacket);
     if (signExpiry < expiry) expiry = signExpiry;
@@ -32593,7 +32601,7 @@ function isDataExpired(keyPacket, signature, date = new Date()) {
   const normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate < expirationTime) || signature && signature.isExpired(date);
+    return !(keyPacket.created <= normDate && normDate <= expirationTime) || signature && signature.isExpired(date);
   }
   return false;
 }
@@ -33342,7 +33350,8 @@ Message.prototype.decryptSessionKeys = async function (privateKeys, passwords) {
         const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
         let algos = [_enums2.default.symmetric.aes256, // Old OpenPGP.js default fallback
         _enums2.default.symmetric.aes128, // RFC4880bis fallback
-        _enums2.default.symmetric.tripledes // RFC4880 fallback
+        _enums2.default.symmetric.tripledes, // RFC4880 fallback
+        _enums2.default.symmetric.cast5 // Golang OpenPGP fallback
         ];
         if (primaryUser && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
           algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
@@ -33949,7 +33958,8 @@ function fromText(text, filename, date = new Date(), type = 'utf8') {
  * @static
  */
 function fromBinary(bytes, filename, date = new Date(), type = 'binary') {
-  const streamType = _util2.default.isStream(bytes);
+  let streamType = _util2.default.isStreamLike(bytes);
+
   if (!_util2.default.isUint8Array(bytes) && !streamType) {
     throw new Error('Data must be in the form of a Uint8Array or Stream');
   }
@@ -34081,7 +34091,7 @@ let asyncProxy; // instance of the asyncproxy
  */
 
 function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
-  if (workers.length || typeof window !== 'undefined' && window.Worker) {
+  if (workers.length || typeof window !== 'undefined' && window.Worker && window.MessageChannel) {
     asyncProxy = new _async_proxy2.default({ path, n, workers, config: _config2.default });
     return true;
   }
@@ -38100,7 +38110,7 @@ Signature.prototype.isExpired = function (date = new Date()) {
   const normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
-    return !(this.created <= normDate && normDate < expirationTime);
+    return !(this.created <= normDate && normDate <= expirationTime);
   }
   return false;
 };
@@ -40212,6 +40222,13 @@ exports.default = {
   isUint8Array: _webStreamTools2.default.isUint8Array,
 
   isStream: _webStreamTools2.default.isStream,
+  isStreamLike: function isStreamLike(obj) {
+    if (typeof windows === 'undefined' && typeof obj.pipe == 'function' && typeof obj.read == 'function') {
+      return 'node';
+    } else {
+      return _webStreamTools2.default.isStream(obj);
+    }
+  },
 
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
@@ -40342,7 +40359,7 @@ exports.default = {
   },
 
   normalizeDate: function normalizeDate(time = Date.now()) {
-    return time === null ? time : new Date(Math.floor(+time / 1000) * 1000);
+    return time === null || time === Infinity ? time : new Date(Math.floor(+time / 1000) * 1000);
   },
 
   /**

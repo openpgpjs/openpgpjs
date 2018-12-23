@@ -44,6 +44,16 @@ export default {
   isUint8Array: stream.isUint8Array,
 
   isStream: stream.isStream,
+  isStreamLike: function(obj){
+    if (typeof windows === 'undefined' && 
+        typeof obj.pipe == 'function' && 
+        typeof obj.read == 'function' ) {
+      return 'node'
+    }
+    else {
+      return stream.isStream(obj)
+    }
+  },
 
   /**
    * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)

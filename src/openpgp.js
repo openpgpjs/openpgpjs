@@ -39,7 +39,7 @@
  * {@link module:openpgp}
  */
 
-import stream from 'web-stream-tools';
+import stream  from 'web-stream-tools';
 import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';

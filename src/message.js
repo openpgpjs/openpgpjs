@@ -803,7 +803,8 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
  * @static
  */
 export function fromBinary(bytes, filename, date=new Date(), type='binary') {
-  const streamType = util.isStream(bytes);
+  let  streamType = util.isStreamLike(bytes);
+
   if (!util.isUint8Array(bytes) && !streamType) {
     throw new Error('Data must be in the form of a Uint8Array or Stream');
   }
