@@ -145,7 +145,7 @@ SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
     const modeInstance = await mode(algo, key);
     this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
   } else if (this.encrypted !== null) {
-    const decrypted = crypto.cfb.normalDecrypt(algo, key, this.encrypted, null);
+    const decrypted = await crypto.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(crypto.cipher[algo].blockSize));
 
     this.sessionKeyAlgorithm = enums.read(enums.symmetric, decrypted[0]);
     this.sessionKey = decrypted.subarray(1, decrypted.length);
@@ -188,7 +188,7 @@ SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   } else {
     const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
     const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
-    this.encrypted = crypto.cfb.normalEncrypt(algo, key, private_key, null);
+    this.encrypted = await crypto.cfb.encrypt(algo, key, private_key, new Uint8Array(crypto.cipher[algo].blockSize));
   }
 
   return true;

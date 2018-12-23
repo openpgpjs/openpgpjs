@@ -24,16 +24,11 @@
  * @requires util
  */
 
-import { AES_CFB } from 'asmcrypto.js/dist_es5/aes/cfb';
-
 import stream from 'web-stream-tools';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-
-const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -94,22 +89,14 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
 SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   let bytes = this.packets.write();
   if (!streaming) bytes = await stream.readToEnd(bytes);
-  const prefixrandom = await crypto.getPrefixRandom(sessionKeyAlgorithm);
-  const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-  const prefix = util.concat([prefixrandom, repeat]);
+  const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  let tohash = util.concat([bytes, mdc]);
-  const hash = await crypto.hash.sha1(util.concat([prefix, stream.passiveClone(tohash)]));
-  tohash = util.concat([tohash, hash]);
+  const tohash = util.concat([prefix, bytes, mdc]);
+  const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
+  const plaintext = util.concat([tohash, hash]);
 
-  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    this.encrypted = aesEncrypt(sessionKeyAlgorithm, util.concat([prefix, tohash]), key);
-  } else {
-    tohash = await stream.readToEnd(tohash);
-    this.encrypted = crypto.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
-    this.encrypted = stream.slice(this.encrypted, 0, prefix.length + tohash.length);
-  }
+  this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
   return true;
 };
 
@@ -124,23 +111,14 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
   if (!streaming) this.encrypted = await stream.readToEnd(this.encrypted);
   const encrypted = stream.clone(this.encrypted);
-  const encryptedClone = stream.passiveClone(encrypted);
-  let decrypted;
-  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') { // AES optimizations. Native code for node, asmCrypto for browser.
-    decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key, streaming);
-  } else {
-    decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, await stream.readToEnd(encrypted), false);
-  }
+  const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  const encryptedPrefix = await stream.readToEnd(stream.slice(encryptedClone, 0, crypto.cipher[sessionKeyAlgorithm].blockSize + 2));
-  const prefix = crypto.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
   const realHash = stream.slice(stream.passiveClone(decrypted), -20);
-  const bytes = stream.slice(decrypted, 0, -20);
-  const tohash = util.concat([prefix, stream.passiveClone(bytes)]);
+  const tohash = stream.slice(decrypted, 0, -20);
   const verifyHash = Promise.all([
-    stream.readToEnd(await crypto.hash.sha1(tohash)),
+    stream.readToEnd(await crypto.hash.sha1(stream.passiveClone(tohash))),
     stream.readToEnd(realHash)
   ]).then(([hash, mdc]) => {
     if (!util.equalsUint8Array(hash, mdc)) {
@@ -148,7 +126,8 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
     }
     return new Uint8Array();
   });
-  let packetbytes = stream.slice(bytes, 0, -2);
+  const bytes = stream.slice(tohash, crypto.cipher[sessionKeyAlgorithm].blockSize + 2); // Remove random prefix
+  let packetbytes = stream.slice(bytes, 0, -2); // Remove MDC packet
   packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
   if (!util.isStream(encrypted) || !config.allow_unauthenticated_stream) {
     packetbytes = await stream.readToEnd(packetbytes);
@@ -158,48 +137,3 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
 };
 
 export default SymEncryptedIntegrityProtected;
-
-
-//////////////////////////
-//                      //
-//   Helper functions   //
-//                      //
-//////////////////////////
-
-
-function aesEncrypt(algo, pt, key) {
-  if (nodeCrypto) { // Node crypto library.
-    return nodeEncrypt(algo, pt, key);
-  } // asm.js fallback
-  const cfb = new AES_CFB(key);
-  return stream.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
-}
-
-function aesDecrypt(algo, ct, key) {
-  let pt;
-  if (nodeCrypto) { // Node crypto library.
-    pt = nodeDecrypt(algo, ct, key);
-  } else { // asm.js fallback
-    if (util.isStream(ct)) {
-      const cfb = new AES_CFB(key);
-      pt = stream.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
-    } else {
-      pt = AES_CFB.decrypt(ct, key);
-    }
-  }
-  return stream.slice(pt, crypto.cipher[algo].blockSize + 2); // Remove random prefix
-}
-
-function nodeEncrypt(algo, pt, key) {
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
-  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return stream.transform(pt, value => new Uint8Array(cipherObj.update(new Buffer(value))));
-}
-
-function nodeDecrypt(algo, ct, key) {
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(crypto.cipher[algo].blockSize));
-  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return stream.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
-}

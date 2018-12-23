@@ -28,6 +28,7 @@
  * @requires type/mpi
  * @requires type/oid
  * @requires enums
+ * @requires util
  * @module crypto/crypto
  */
 
@@ -39,6 +40,7 @@ import type_kdf_params from '../type/kdf_params';
 import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
 import enums from '../enums';
+import util from '../util';
 
 function constructParams(types, data) {
   return types.map(function(type, i) {
@@ -291,11 +293,13 @@ export default {
    * Generates a random byte prefix for the specified algorithm
    * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
    * @param {module:enums.symmetric} algo Symmetric encryption algorithm
-   * @returns {Uint8Array}                Random bytes with length equal to the block size of the cipher
+   * @returns {Uint8Array}                Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
    * @async
    */
-  getPrefixRandom: function(algo) {
-    return random.getRandomBytes(cipher[algo].blockSize);
+  getPrefixRandom: async function(algo) {
+    const prefixrandom = await random.getRandomBytes(cipher[algo].blockSize);
+    const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
+    return util.concat([prefixrandom, repeat]);
   },
 
   /**

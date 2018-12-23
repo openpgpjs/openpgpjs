@@ -18,273 +18,68 @@
  */
 
 /**
+ * @requires web-stream-tools
  * @requires crypto/cipher
+ * @requires util
  * @module crypto/cfb
  */
 
+import { AES_CFB } from 'asmcrypto.js/dist_es5/aes/cfb';
+
+import stream from 'web-stream-tools';
 import cipher from './cipher';
+import config from '../config';
+import util from '../util';
+
+const webCrypto = util.getWebCrypto();
+const nodeCrypto = util.getNodeCrypto();
+const Buffer = util.getNodeBuffer();
 
 export default {
-
-  /**
-   * This function encrypts a given plaintext with the specified prefixrandom
-   * using the specified blockcipher
-   * @param {Uint8Array} prefixrandom random bytes of block_size length
-   *  to be used in prefixing the data
-   * @param {String} cipherfn the algorithm cipher class to encrypt
-   *  data in one block_size encryption, {@link module:crypto/cipher}.
-   * @param {Uint8Array} plaintext data to be encrypted
-   * @param {Uint8Array} key key to be used to encrypt the plaintext.
-   * This will be passed to the cipherfn
-   * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the
-   *  "old" style with a resync. Encryption within an
-   *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @returns {Uint8Array} encrypted data
-   */
-  encrypt: function(prefixrandom, cipherfn, plaintext, key, resync) {
-    cipherfn = new cipher[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    const FR = new Uint8Array(block_size);
-    let FRE = new Uint8Array(block_size);
-
-    const new_prefix = new Uint8Array(prefixrandom.length + 2);
-    new_prefix.set(prefixrandom);
-    new_prefix[prefixrandom.length] = prefixrandom[block_size-2];
-    new_prefix[prefixrandom.length+1] = prefixrandom[block_size-1];
-    prefixrandom = new_prefix;
-
-    let ciphertext = new Uint8Array(plaintext.length + 2 + block_size * 2);
-    let i;
-    let n;
-    let begin;
-    const offset = resync ? 0 : 2;
-
-    // 1.  The feedback register (FR) is set to the IV, which is all zeros.
-    for (i = 0; i < block_size; i++) {
-      FR[i] = 0;
+  encrypt: function(algo, key, plaintext, iv) {
+    if (algo.substr(0, 3) === 'aes') {
+      return aesEncrypt(algo, key, plaintext, iv);
     }
 
-    // 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
-    //     encryption of an all-zero value.
-    FRE = cipherfn.encrypt(FR);
-    // 3.  FRE is xored with the first BS octets of random data prefixed to
-    //     the plaintext to produce C[1] through C[BS], the first BS octets
-    //     of ciphertext.
-    for (i = 0; i < block_size; i++) {
-      ciphertext[i] = FRE[i] ^ prefixrandom[i];
-    }
-
-    // 4.  FR is loaded with C[1] through C[BS].
-    FR.set(ciphertext.subarray(0, block_size));
-
-    // 5.  FR is encrypted to produce FRE, the encryption of the first BS
-    //     octets of ciphertext.
-    FRE = cipherfn.encrypt(FR);
-
-    // 6.  The left two octets of FRE get xored with the next two octets of
-    //     data that were prefixed to the plaintext.  This produces C[BS+1]
-    //     and C[BS+2], the next two octets of ciphertext.
-    ciphertext[block_size] = FRE[0] ^ prefixrandom[block_size];
-    ciphertext[block_size + 1] = FRE[1] ^ prefixrandom[block_size + 1];
-
-    if (resync) {
-      // 7.  (The resync step) FR is loaded with C[3] through C[BS+2].
-      FR.set(ciphertext.subarray(2, block_size + 2));
-    } else {
-      FR.set(ciphertext.subarray(0, block_size));
-    }
-    // 8.  FR is encrypted to produce FRE.
-    FRE = cipherfn.encrypt(FR);
-
-    // 9.  FRE is xored with the first BS octets of the given plaintext, now
-    //     that we have finished encrypting the BS+2 octets of prefixed
-    //     data.  This produces C[BS+3] through C[BS+(BS+2)], the next BS
-    //     octets of ciphertext.
-    for (i = 0; i < block_size; i++) {
-      ciphertext[block_size + 2 + i] = FRE[i + offset] ^ plaintext[i];
-    }
-    for (n = block_size; n < plaintext.length + offset; n += block_size) {
-      // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
-      // an 8-octet block).
-      begin = n + 2 - offset;
-      FR.set(ciphertext.subarray(begin, begin + block_size));
-
-      // 11. FR is encrypted to produce FRE.
-      FRE = cipherfn.encrypt(FR);
-
-      // 12. FRE is xored with the next BS octets of plaintext, to produce
-      // the next BS octets of ciphertext.  These are loaded into FR, and
-      // the process is repeated until the plaintext is used up.
-      for (i = 0; i < block_size; i++) {
-        ciphertext[block_size + begin + i] = FRE[i] ^ plaintext[n + i - offset];
-      }
-    }
-
-    ciphertext = ciphertext.subarray(0, plaintext.length + 2 + block_size);
-    return ciphertext;
-  },
-
-  /**
-   * Decrypts the prefixed data for the Modification Detection Code (MDC) computation
-   * @param {String} cipherfn.encrypt Cipher function to use,
-   *  @see module:crypto/cipher.
-   * @param {Uint8Array} key Uint8Array representation of key to be used to check the mdc
-   * This will be passed to the cipherfn
-   * @param {Uint8Array} ciphertext The encrypted data
-   * @returns {Uint8Array} plaintext Data of D(ciphertext) with blocksize length +2
-   */
-  mdc: function(cipherfn, key, ciphertext) {
-    cipherfn = new cipher[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    let iblock = new Uint8Array(block_size);
-    let ablock = new Uint8Array(block_size);
-    let i;
-
-
-    // initialisation vector
-    for (i = 0; i < block_size; i++) {
-      iblock[i] = 0;
-    }
-
-    iblock = cipherfn.encrypt(iblock);
-    for (i = 0; i < block_size; i++) {
-      ablock[i] = ciphertext[i];
-      iblock[i] ^= ablock[i];
-    }
-
-    ablock = cipherfn.encrypt(ablock);
-
-    const result = new Uint8Array(iblock.length + 2);
-    result.set(iblock);
-    result[iblock.length] = ablock[0] ^ ciphertext[block_size];
-    result[iblock.length + 1] = ablock[1] ^ ciphertext[block_size + 1];
-    return result;
-  },
-
-  /**
-   * This function decrypts a given ciphertext using the specified blockcipher
-   * @param {String} cipherfn the algorithm cipher class to decrypt
-   *  data in one block_size encryption, {@link module:crypto/cipher}.
-   * @param {Uint8Array} key Uint8Array representation of key to be used to decrypt the ciphertext.
-   * This will be passed to the cipherfn
-   * @param {Uint8Array} ciphertext to be decrypted
-   * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the
-   *  "old" style with a resync. Decryption within an
-   *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @returns {Uint8Array} the plaintext data
-   */
-  decrypt: function(cipherfn, key, ciphertext, resync) {
-    cipherfn = new cipher[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    const iblock = new Uint8Array(block_size);
-    let ablock = new Uint8Array(block_size);
-
-    let i;
-    let j;
-    let n;
-    let text = new Uint8Array(ciphertext.length - block_size);
-
-    /*  RFC4880: Tag 18 and Resync:
-     *  [...] Unlike the Symmetrically Encrypted Data Packet, no
-     *  special CFB resynchronization is done after encrypting this prefix
-     *  data.  See "OpenPGP CFB Mode" below for more details.
-     */
-
-    j = 0;
-    if (resync) {
-      for (i = 0; i < block_size; i++) {
-        iblock[i] = ciphertext[i + 2];
-      }
-      for (n = block_size + 2; n < ciphertext.length; n += block_size) {
-        ablock = cipherfn.encrypt(iblock);
-
-        for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-          iblock[i] = ciphertext[n + i];
-          if (j < text.length) {
-            text[j] = ablock[i] ^ iblock[i];
-            j++;
-          }
-        }
-      }
-    } else {
-      for (i = 0; i < block_size; i++) {
-        iblock[i] = ciphertext[i];
-      }
-      for (n = block_size; n < ciphertext.length; n += block_size) {
-        ablock = cipherfn.encrypt(iblock);
-        for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-          iblock[i] = ciphertext[n + i];
-          if (j < text.length) {
-            text[j] = ablock[i] ^ iblock[i];
-            j++;
-          }
-        }
-      }
-    }
-
-    n = resync ? 0 : 2;
-
-    text = text.subarray(n, ciphertext.length - block_size - 2 + n);
-
-    return text;
-  },
-
-  normalEncrypt: function(cipherfn, key, plaintext, iv) {
-    cipherfn = new cipher[cipherfn](key);
+    const cipherfn = new cipher[algo](key);
     const block_size = cipherfn.blockSize;
 
     let blocki = new Uint8Array(block_size);
-    const blockc = new Uint8Array(block_size);
+    const blockc = iv;
     let pos = 0;
-    const cyphertext = new Uint8Array(plaintext.length);
+    const ciphertext = new Uint8Array(plaintext.length);
     let i;
     let j = 0;
 
-    if (iv === null) {
-      for (i = 0; i < block_size; i++) {
-        blockc[i] = 0;
-      }
-    } else {
-      for (i = 0; i < block_size; i++) {
-        blockc[i] = iv[i];
-      }
-    }
     while (plaintext.length > block_size * pos) {
       const encblock = cipherfn.encrypt(blockc);
       blocki = plaintext.subarray((pos * block_size), (pos * block_size) + block_size);
       for (i = 0; i < blocki.length; i++) {
         blockc[i] = blocki[i] ^ encblock[i];
-        cyphertext[j++] = blockc[i];
+        ciphertext[j++] = blockc[i];
       }
       pos++;
     }
-    return cyphertext;
+    return ciphertext;
   },
 
-  normalDecrypt: function(cipherfn, key, ciphertext, iv) {
-    cipherfn = new cipher[cipherfn](key);
+  decrypt: async function(algo, key, ciphertext, iv) {
+    if (algo.substr(0, 3) === 'aes') {
+      return aesDecrypt(algo, key, ciphertext, iv);
+    }
+
+    ciphertext = await stream.readToEnd(ciphertext);
+
+    const cipherfn = new cipher[algo](key);
     const block_size = cipherfn.blockSize;
 
-    let blockp;
+    let blockp = iv;
     let pos = 0;
     const plaintext = new Uint8Array(ciphertext.length);
     const offset = 0;
     let i;
     let j = 0;
 
-    if (iv === null) {
-      blockp = new Uint8Array(block_size);
-      for (i = 0; i < block_size; i++) {
-        blockp[i] = 0;
-      }
-    } else {
-      blockp = iv.subarray(0, block_size);
-    }
     while (ciphertext.length > (block_size * pos)) {
       const decblock = cipherfn.encrypt(blockp);
       blockp = ciphertext.subarray((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
@@ -297,3 +92,60 @@ export default {
     return plaintext;
   }
 };
+
+function aesEncrypt(algo, key, pt, iv) {
+  if (
+    util.getWebCrypto() &&
+    key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    !util.isStream(pt) &&
+    pt.length >= 3000 * config.min_bytes_for_web_crypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
+  ) { // Web Crypto
+    return webEncrypt(algo, key, pt, iv);
+  }
+  if (nodeCrypto) { // Node crypto library.
+    return nodeEncrypt(algo, key, pt, iv);
+  } // asm.js fallback
+  const cfb = new AES_CFB(key);
+  return stream.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
+}
+
+function aesDecrypt(algo, key, ct, iv) {
+  if (nodeCrypto) { // Node crypto library.
+    return nodeDecrypt(algo, key, ct, iv);
+  }
+  if (util.isStream(ct)) {
+    const cfb = new AES_CFB(key);
+    return stream.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
+  }
+  return AES_CFB.decrypt(ct, key, iv);
+}
+
+function xorMut(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    a[i] = a[i] ^ b[i];
+  }
+}
+
+async function webEncrypt(algo, key, pt, iv) {
+  const ALGO = 'AES-CBC';
+  const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
+  const { blockSize } = cipher[algo];
+  const cbc_pt = util.concatUint8Array([new Uint8Array(blockSize), pt]);
+  const ct = new Uint8Array(await webCrypto.encrypt({ name: ALGO, iv }, _key, cbc_pt)).subarray(0, pt.length);
+  xorMut(ct, pt);
+  return ct;
+}
+
+function nodeEncrypt(algo, key, pt, iv) {
+  key = new Buffer(key);
+  iv = new Buffer(iv);
+  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  return stream.transform(pt, value => new Uint8Array(cipherObj.update(new Buffer(value))));
+}
+
+function nodeDecrypt(algo, key, ct, iv) {
+  key = new Buffer(key);
+  iv = new Buffer(iv);
+  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  return stream.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
+}
