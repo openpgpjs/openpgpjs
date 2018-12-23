@@ -666,6 +666,10 @@ Signature.prototype.verify = async function (key, signatureType, data) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
+  if (publicKeyAlgorithm !== enums.write(enums.publicKey, key.algorithm)) {
+    throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
+  }
+
   let toHash;
   let hash;
   if (this.hashed) {
@@ -723,7 +727,7 @@ Signature.prototype.isExpired = function (date=new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
-    return !(this.created <= normDate && normDate < expirationTime);
+    return !(this.created <= normDate && normDate <= expirationTime);
   }
   return false;
 };

@@ -291,7 +291,9 @@ function dearmor(input) {
             if (line.indexOf('=') === -1 && line.indexOf('-') === -1) {
               await writer.write(line);
             } else {
-              let remainder = line + await reader.readToEnd();
+              let remainder = await reader.readToEnd();
+              if (!remainder.length) remainder = '';
+              remainder = line + remainder;
               remainder = remainder.replace(/[\t\r ]+$/mg, '');
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {

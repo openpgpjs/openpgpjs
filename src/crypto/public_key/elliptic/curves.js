@@ -177,7 +177,14 @@ Curve.prototype.keyFromSecret = function (secret) { // Only for ed25519
 };
 
 Curve.prototype.keyFromPublic = function (pub) {
-  return new KeyPair(this, { pub: pub });
+  const keyPair = new KeyPair(this, { pub: pub });
+  if (
+    this.keyType === enums.publicKey.ecdsa &&
+    keyPair.keyPair.validate().result !== true
+  ) {
+    throw new Error('Invalid elliptic public key');
+  }
+  return keyPair;
 };
 
 Curve.prototype.genKeyPair = async function () {

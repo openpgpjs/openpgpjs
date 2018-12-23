@@ -290,7 +290,7 @@ async function getLatestValidSignature(signatures, primaryKey, signatureType, da
 /**
  * Returns last created key or key by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
- * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
  * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no signing key has been found
  * @async
@@ -510,13 +510,17 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
   const sigExpiry = selfCert.getExpirationTime();
   let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
   if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-    const encryptKey = await this.getEncryptionKey(keyId, null, userId);
+    const encryptKey =
+      await this.getEncryptionKey(keyId, expiry, userId) ||
+      await this.getEncryptionKey(keyId, null, userId);
     if (!encryptKey) return null;
     const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket);
     if (encryptExpiry < expiry) expiry = encryptExpiry;
   }
   if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-    const signKey = await this.getSigningKey(keyId, null, userId);
+    const signKey =
+      await this.getSigningKey(keyId, expiry, userId) ||
+      await this.getSigningKey(keyId, null, userId);
     if (!signKey) return null;
     const signExpiry = await signKey.getExpirationTime(this.keyPacket);
     if (signExpiry < expiry) expiry = signExpiry;
@@ -528,7 +532,7 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
  * Returns primary user and most significant (latest valid) self signature
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
- * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<{user: module:key.User,
  *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
@@ -742,11 +746,13 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
 /**
  * Signs primary user of key
  * @param  {Array<module:key.Key>} privateKey decrypted private keys for signing
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
-Key.prototype.signPrimaryUser = async function(privateKeys) {
-  const { index, user } = await this.getPrimaryUser() || {};
+Key.prototype.signPrimaryUser = async function(privateKeys, date, userId) {
+  const { index, user } = await this.getPrimaryUser(date, userId) || {};
   if (!user) {
     throw new Error('Could not find primary user');
   }
@@ -776,13 +782,15 @@ Key.prototype.signAllUsers = async function(privateKeys) {
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
  * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
  * @async
  */
-Key.prototype.verifyPrimaryUser = async function(keys) {
+Key.prototype.verifyPrimaryUser = async function(keys, date, userId) {
   const primaryKey = this.keyPacket;
-  const { user } = await this.getPrimaryUser() || {};
+  const { user } = await this.getPrimaryUser(date, userId) || {};
   if (!user) {
     throw new Error('Could not find primary user');
   }
@@ -1454,6 +1462,19 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIds.map(async function(userId, index) {
+    function createdPreferredAlgos(algos, configAlgo) {
+      if (configAlgo) { // Not `uncompressed` / `plaintext`
+        const configIndex = algos.indexOf(configAlgo);
+        if (configIndex >= 1) { // If it is included and not in first place,
+          algos.splice(configIndex, 1); // remove it.
+        }
+        if (configIndex !== 0) { // If it was included and not in first place, or wasn't included,
+          algos.unshift(configAlgo); // add it to the front.
+        }
+      }
+      return algos;
+    }
+
     const userIdPacket = new packet.Userid();
     userIdPacket.format(userId);
 
@@ -1465,26 +1486,30 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretKeyPacket);
     signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
-    signaturePacket.preferredSymmetricAlgorithms = [];
-    // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes256);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes128);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.aes192);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.cast5);
-    signaturePacket.preferredSymmetricAlgorithms.push(enums.symmetric.tripledes);
+    signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
+      // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
+      enums.symmetric.aes256,
+      enums.symmetric.aes128,
+      enums.symmetric.aes192,
+      enums.symmetric.cast5,
+      enums.symmetric.tripledes
+    ], config.encryption_cipher);
     if (config.aead_protect && config.aead_protect_version === 4) {
-      signaturePacket.preferredAeadAlgorithms = [];
-      signaturePacket.preferredAeadAlgorithms.push(enums.aead.eax);
-      signaturePacket.preferredAeadAlgorithms.push(enums.aead.ocb);
+      signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
+        enums.aead.eax,
+        enums.aead.ocb
+      ], config.aead_mode);
     }
-    signaturePacket.preferredHashAlgorithms = [];
-    // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha256);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha512);
-    signaturePacket.preferredHashAlgorithms.push(enums.hash.sha1);
-    signaturePacket.preferredCompressionAlgorithms = [];
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zlib);
-    signaturePacket.preferredCompressionAlgorithms.push(enums.compression.zip);
+    signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
+      // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
+      enums.hash.sha256,
+      enums.hash.sha512,
+      enums.hash.sha1
+    ], config.prefer_hash_algorithm);
+    signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
+      enums.compression.zlib,
+      enums.compression.zip
+    ], config.compression);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
     }
@@ -1618,7 +1643,7 @@ function isDataExpired(keyPacket, signature, date=new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate < expirationTime) ||
+    return !(keyPacket.created <= normDate && normDate <= expirationTime) ||
       (signature && signature.isExpired(date));
   }
   return false;
@@ -1687,16 +1712,16 @@ export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), user
  * @param  {symmetric|aead} type Type of preference to return
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
- * @param  {Object} userId (optional) user ID
+ * @param  {Array} userIds (optional) user IDs
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
+export async function getPreferredAlgo(type, keys, date=new Date(), userIds=[]) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
-  const defaultAlgo = type === 'symmetric' ? config.encryption_cipher : config.aead_mode;
+  const defaultAlgo = type === 'symmetric' ? enums.symmetric.aes128 : enums.aead.eax;
   const prioMap = {};
-  await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser(date, userId);
+  await Promise.all(keys.map(async function(key, i) {
+    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
     if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
@@ -1725,14 +1750,15 @@ export async function getPreferredAlgo(type, keys, date=new Date(), userId={}) {
  * Returns whether aead is supported by all keys in the set
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Array} userIds (optional) user IDs
  * @returns {Promise<Boolean>}
  * @async
  */
-export async function isAeadSupported(keys, date=new Date(), userId={}) {
+export async function isAeadSupported(keys, date=new Date(), userIds=[]) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
-  await Promise.all(keys.map(async function(key) {
-    const primaryUser = await key.getPrimaryUser(date, userId);
+  await Promise.all(keys.map(async function(key, i) {
+    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
     if (!primaryUser || !primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;

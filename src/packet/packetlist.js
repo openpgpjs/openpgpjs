@@ -168,24 +168,10 @@ List.prototype.filterByTag = function (...args) {
 /**
  * Traverses packet tree and returns first matching packet
  * @param  {module:enums.packet} type The packet type
- * @returns {module:packet/packet|null}
+ * @returns {module:packet/packet|undefined}
  */
 List.prototype.findPacket = function (type) {
-  const packetlist = this.filterByTag(type);
-  if (packetlist.length) {
-    return packetlist[0];
-  }
-  let found = null;
-  for (let i = 0; i < this.length; i++) {
-    if (this[i].packets.length) {
-      found = this[i].packets.findPacket(type);
-      if (found) {
-        return found;
-      }
-    }
-  }
-
-  return null;
+  return this.find(packet => packet.tag === type);
 };
 
 /**
