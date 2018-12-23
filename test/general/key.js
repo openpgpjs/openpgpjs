@@ -2325,9 +2325,9 @@ VYGdb3eNlV8CfoEC
     publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
     // Set second user to prefer aes128. We will select this user.
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
-    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserId: {name: 'Test User', email: 'b@c.com'}, armor: false});
+    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: {name: 'Test User', email: 'b@c.com'}, armor: false});
     expect(encrypted.message.packets[0].sessionKeyAlgorithm).to.equal('aes128');
-    await expect(openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserId: {name: 'Test User', email: 'c@c.com'}, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
+    await expect(openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: {name: 'Test User', email: 'c@c.com'}, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
   it('Sign - specific user', async function() {
@@ -2343,11 +2343,11 @@ VYGdb3eNlV8CfoEC
     privateKey.users[0].userId.parse('Test User <b@c.com>');
     // Set second user to prefer aes128. We will select this user.
     privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
-    const signed = await openpgp.sign({message: openpgp.cleartext.fromText('hello'), privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, armor: false});
+    const signed = await openpgp.sign({message: openpgp.cleartext.fromText('hello'), privateKeys: privateKey, fromUserIds: {name: 'Test McTestington', email: 'test@example.com'}, armor: false});
     expect(signed.message.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
-    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserId: {name: 'Test McTestington', email: 'test@example.com'}, detached: true, armor: false});
+    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIds: {name: 'Test McTestington', email: 'test@example.com'}, detached: true, armor: false});
     expect(encrypted.signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
-    await expect(openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserId: {name: 'Not Test McTestington', email: 'test@example.com'}, detached: true, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
+    await expect(openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIds: {name: 'Not Test McTestington', email: 'test@example.com'}, detached: true, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
   it('Find a valid subkey binding signature among many invalid ones', async function() {

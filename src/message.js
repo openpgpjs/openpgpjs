@@ -280,12 +280,12 @@ Message.prototype.getText = function() {
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
- * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
  * @param  {Boolean} streaming         (optional) whether to process data as a stream
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
-Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userId={}, streaming) {
+Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userIds=[], streaming) {
   let symAlgo;
   let aeadAlgo;
   let symEncryptedPacket;
@@ -298,9 +298,9 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     aeadAlgo = sessionKey.aeadAlgorithm;
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userId));
-    if (config.aead_protect && config.aead_protect_version === 4 && await isAeadSupported(keys, date, userId)) {
-      aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userId));
+    symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
+    if (config.aead_protect && config.aead_protect_version === 4 && await isAeadSupported(keys, date, userIds)) {
+      aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds));
     }
   } else if (passwords && passwords.length) {
     symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
@@ -313,7 +313,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     sessionKey = await crypto.generateSessionKey(symAlgo);
   }
 
-  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userId);
+  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userIds);
 
   if (config.aead_protect && (config.aead_protect_version !== 4 || aeadAlgo)) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
@@ -348,16 +348,16 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
  * @param  {Array<String>} passwords   (optional) for message encryption
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the date
- * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
  * @returns {Promise<Message>}          new message with encrypted content
  * @async
  */
-export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard=false, date=new Date(), userId={}) {
+export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard=false, date=new Date(), userIds=[]) {
   const packetlist = new packet.List();
 
   if (publicKeys) {
     const results = await Promise.all(publicKeys.map(async function(publicKey) {
-      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userId);
+      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userIds);
       if (!encryptionKey) {
         throw new Error('Could not find valid key packet for encryption in key ' +
                         publicKey.getKeyId().toHex());
@@ -417,11 +417,11 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
  * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date                    (optional) override the creation time of the signature
- * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
-Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userId={}) {
+Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userIds=[]) {
   const packetlist = new packet.List();
 
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -455,14 +455,14 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, date, userId);
+    const signingKey = await privateKey.getSigningKey(undefined, date, userIds);
     if (!signingKey) {
       throw new Error('Could not find valid key packet for signing in key ' +
                       privateKey.getKeyId().toHex());
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.signatureType = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userId);
+    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userIds);
     onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
     onePassSig.issuerKeyId = signingKey.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -504,16 +504,16 @@ Message.prototype.compress = function(compression) {
  * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature                 (optional) any existing detached signature
  * @param  {Date} date                           (optional) override the creation time of the signature
- * @param  {Object} userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                       (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
-Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date(), userId={}) {
+Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date(), userIds=[]) {
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds));
 };
 
 /**
@@ -522,18 +522,19 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
- * @param  {Object} userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                     (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userId={}) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userIds=[]) {
   const packetlist = new packet.List();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
   const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
-  await Promise.all(privateKeys.map(async privateKey => {
+  await Promise.all(privateKeys.map(async (privateKey, i) => {
+    const userId = userIds[i];
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
