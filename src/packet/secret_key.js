@@ -195,7 +195,7 @@ SecretKey.prototype.encrypt = async function (passphrase) {
     arr = [new Uint8Array([254, enums.write(enums.symmetric, symmetric)])];
     arr.push(s2k.write());
     arr.push(iv);
-    arr.push(crypto.cfb.encrypt(symmetric, key, util.concatUint8Array([
+    arr.push(crypto.cfb.normalEncrypt(symmetric, key, util.concatUint8Array([
       cleartext,
       await crypto.hash.sha1(cleartext)
     ]), iv));
@@ -293,7 +293,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
       }
     }
   } else {
-    const cleartextWithHash = await crypto.cfb.decrypt(symmetric, key, ciphertext, iv);
+    const cleartextWithHash = crypto.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
 
     let hash;
     let hashlen;
