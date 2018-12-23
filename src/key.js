@@ -560,11 +560,14 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
     }
     return null;
   }
+  await Promise.all(users.map(async function (a) {
+    return a.user.revoked || a.user.isRevoked(primaryKey, a.selfCertification, null, date);
+  }));
   // sort by primary user flag and signature creation time
   const primaryUser = users.sort(function(a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
-    return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
+    return B.revoked - A.revoked || A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
   }).pop();
   const { user, selfCertification: cert } = primaryUser;
   if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date)) {
