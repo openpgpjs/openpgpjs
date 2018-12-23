@@ -23451,12 +23451,12 @@ CleartextMessage.prototype.getSigningKeyIds = function () {
  * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @param  {Object} userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
  * @async
  */
-CleartextMessage.prototype.sign = async function (privateKeys, signature = null, date = new Date(), userId = {}) {
-  return new CleartextMessage(this.text, (await this.signDetached(privateKeys, signature, date, userId)));
+CleartextMessage.prototype.sign = async function (privateKeys, signature = null, date = new Date(), userIds = []) {
+  return new CleartextMessage(this.text, (await this.signDetached(privateKeys, signature, date, userIds)));
 };
 
 /**
@@ -23464,15 +23464,15 @@ CleartextMessage.prototype.sign = async function (privateKeys, signature = null,
  * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature             (optional) any existing detached signature
  * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @param  {Object} userId                   (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<module:signature.Signature>}      new detached signature of message content
  * @async
  */
-CleartextMessage.prototype.signDetached = async function (privateKeys, signature = null, date = new Date(), userId = {}) {
+CleartextMessage.prototype.signDetached = async function (privateKeys, signature = null, date = new Date(), userIds = []) {
   const literalDataPacket = new _packet2.default.Literal();
   literalDataPacket.setText(this.text);
 
-  return new _signature.Signature((await (0, _message.createSignaturePackets)(literalDataPacket, privateKeys, signature, date, userId)));
+  return new _signature.Signature((await (0, _message.createSignaturePackets)(literalDataPacket, privateKeys, signature, date, userIds)));
 };
 
 /**
@@ -23755,7 +23755,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.3.0",
+  versionstring: "OpenPGP.js v4.4.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -29781,7 +29781,9 @@ function dearmor(input) {
             if (line.indexOf('=') === -1 && line.indexOf('-') === -1) {
               await writer.write(line);
             } else {
-              let remainder = line + (await reader.readToEnd());
+              let remainder = await reader.readToEnd();
+              if (!remainder.length) remainder = '';
+              remainder = line + remainder;
               remainder = remainder.replace(/[\t\r ]+$/mg, '');
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {
@@ -31284,7 +31286,7 @@ async function getLatestValidSignature(signatures, primaryKey, signatureType, da
 /**
  * Returns last created key or key by given keyId that is available for signing and verification
  * @param  {module:type/keyid} keyId, optional
- * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId, optional user ID
  * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no signing key has been found
  * @async
@@ -31484,7 +31486,7 @@ Key.prototype.verifyPrimaryKey = async function (date = new Date(), userId = {})
  * @async
  */
 Key.prototype.getExpirationTime = async function (capabilities, keyId, userId) {
-  const primaryUser = await this.getPrimaryUser(null);
+  const primaryUser = await this.getPrimaryUser(null, userId);
   if (!primaryUser) {
     throw new Error('Could not find primary user');
   }
@@ -31493,13 +31495,13 @@ Key.prototype.getExpirationTime = async function (capabilities, keyId, userId) {
   const sigExpiry = selfCert.getExpirationTime();
   let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
   if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-    const encryptKey = await this.getEncryptionKey(keyId, null, userId);
+    const encryptKey = (await this.getEncryptionKey(keyId, expiry, userId)) || (await this.getEncryptionKey(keyId, null, userId));
     if (!encryptKey) return null;
     const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket);
     if (encryptExpiry < expiry) expiry = encryptExpiry;
   }
   if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-    const signKey = await this.getSigningKey(keyId, null, userId);
+    const signKey = (await this.getSigningKey(keyId, expiry, userId)) || (await this.getSigningKey(keyId, null, userId));
     if (!signKey) return null;
     const signExpiry = await signKey.getExpirationTime(this.keyPacket);
     if (signExpiry < expiry) expiry = signExpiry;
@@ -31511,7 +31513,7 @@ Key.prototype.getExpirationTime = async function (capabilities, keyId, userId) {
  * Returns primary user and most significant (latest valid) self signature
  * - if multiple primary users exist, returns the one with the latest self signature
  * - otherwise, returns the user with the latest self signature
- * @param  {Date} date use the given date for verification instead of the current time
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<{user: module:key.User,
  *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
@@ -31534,11 +31536,14 @@ Key.prototype.getPrimaryUser = async function (date = new Date(), userId = {}) {
     }
     return null;
   }
+  await Promise.all(users.map(async function (a) {
+    return a.user.revoked || a.user.isRevoked(primaryKey, a.selfCertification, null, date);
+  }));
   // sort by primary user flag and signature creation time
   const primaryUser = users.sort(function (a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
-    return A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
+    return B.revoked - A.revoked || A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
   }).pop();
   const user = primaryUser.user,
         cert = primaryUser.selfCertification;
@@ -31715,11 +31720,13 @@ Key.prototype.applyRevocationCertificate = async function (revocationCertificate
 /**
  * Signs primary user of key
  * @param  {Array<module:key.Key>} privateKey decrypted private keys for signing
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<module:key.Key>} new public key with new certificate signature
  * @async
  */
-Key.prototype.signPrimaryUser = async function (privateKeys) {
-  var _ref2 = (await this.getPrimaryUser()) || {};
+Key.prototype.signPrimaryUser = async function (privateKeys, date, userId) {
+  var _ref2 = (await this.getPrimaryUser(date, userId)) || {};
 
   const index = _ref2.index,
         user = _ref2.user;
@@ -31753,14 +31760,16 @@ Key.prototype.signAllUsers = async function (privateKeys) {
  * - if no arguments are given, verifies the self certificates;
  * - otherwise, verifies all certificates signed with given keys.
  * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
+ * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
  * @async
  */
-Key.prototype.verifyPrimaryUser = async function (keys) {
+Key.prototype.verifyPrimaryUser = async function (keys, date, userId) {
   const primaryKey = this.keyPacket;
 
-  var _ref3 = (await this.getPrimaryUser()) || {};
+  var _ref3 = (await this.getPrimaryUser(date, userId)) || {};
 
   const user = _ref3.user;
 
@@ -32593,7 +32602,7 @@ function isDataExpired(keyPacket, signature, date = new Date()) {
   const normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate < expirationTime) || signature && signature.isExpired(date);
+    return !(keyPacket.created <= normDate && normDate <= expirationTime) || signature && signature.isExpired(date);
   }
   return false;
 }
@@ -32661,16 +32670,16 @@ async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = 
  * @param  {symmetric|aead} type Type of preference to return
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
- * @param  {Object} userId (optional) user ID
+ * @param  {Array} userIds (optional) user IDs
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-async function getPreferredAlgo(type, keys, date = new Date(), userId = {}) {
+async function getPreferredAlgo(type, keys, date = new Date(), userIds = []) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
   const defaultAlgo = type === 'symmetric' ? _enums2.default.symmetric.aes128 : _enums2.default.aead.eax;
   const prioMap = {};
-  await Promise.all(keys.map(async function (key) {
-    const primaryUser = await key.getPrimaryUser(date, userId);
+  await Promise.all(keys.map(async function (key, i) {
+    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
     if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
@@ -32698,14 +32707,15 @@ async function getPreferredAlgo(type, keys, date = new Date(), userId = {}) {
  * Returns whether aead is supported by all keys in the set
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
+ * @param  {Array} userIds (optional) user IDs
  * @returns {Promise<Boolean>}
  * @async
  */
-async function isAeadSupported(keys, date = new Date(), userId = {}) {
+async function isAeadSupported(keys, date = new Date(), userIds = []) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
-  await Promise.all(keys.map(async function (key) {
-    const primaryUser = await key.getPrimaryUser(date, userId);
+  await Promise.all(keys.map(async function (key, i) {
+    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
     if (!primaryUser || !primaryUser.selfCertification.features || !(primaryUser.selfCertification.features[0] & _enums2.default.features.aead)) {
       supported = false;
     }
@@ -33342,7 +33352,8 @@ Message.prototype.decryptSessionKeys = async function (privateKeys, passwords) {
         const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
         let algos = [_enums2.default.symmetric.aes256, // Old OpenPGP.js default fallback
         _enums2.default.symmetric.aes128, // RFC4880bis fallback
-        _enums2.default.symmetric.tripledes // RFC4880 fallback
+        _enums2.default.symmetric.tripledes, // RFC4880 fallback
+        _enums2.default.symmetric.cast5 // Golang OpenPGP fallback
         ];
         if (primaryUser && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
           algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
@@ -33434,12 +33445,12 @@ Message.prototype.getText = function () {
  * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the creation date of the literal package
- * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
  * @param  {Boolean} streaming         (optional) whether to process data as a stream
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
-Message.prototype.encrypt = async function (keys, passwords, sessionKey, wildcard = false, date = new Date(), userId = {}, streaming) {
+Message.prototype.encrypt = async function (keys, passwords, sessionKey, wildcard = false, date = new Date(), userIds = [], streaming) {
   let symAlgo;
   let aeadAlgo;
   let symEncryptedPacket;
@@ -33452,9 +33463,9 @@ Message.prototype.encrypt = async function (keys, passwords, sessionKey, wildcar
     aeadAlgo = sessionKey.aeadAlgorithm;
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = _enums2.default.read(_enums2.default.symmetric, (await (0, _key.getPreferredAlgo)('symmetric', keys, date, userId)));
-    if (_config2.default.aead_protect && _config2.default.aead_protect_version === 4 && (await (0, _key.isAeadSupported)(keys, date, userId))) {
-      aeadAlgo = _enums2.default.read(_enums2.default.aead, (await (0, _key.getPreferredAlgo)('aead', keys, date, userId)));
+    symAlgo = _enums2.default.read(_enums2.default.symmetric, (await (0, _key.getPreferredAlgo)('symmetric', keys, date, userIds)));
+    if (_config2.default.aead_protect && _config2.default.aead_protect_version === 4 && (await (0, _key.isAeadSupported)(keys, date, userIds))) {
+      aeadAlgo = _enums2.default.read(_enums2.default.aead, (await (0, _key.getPreferredAlgo)('aead', keys, date, userIds)));
     }
   } else if (passwords && passwords.length) {
     symAlgo = _enums2.default.read(_enums2.default.symmetric, _config2.default.encryption_cipher);
@@ -33467,7 +33478,7 @@ Message.prototype.encrypt = async function (keys, passwords, sessionKey, wildcar
     sessionKey = await _crypto2.default.generateSessionKey(symAlgo);
   }
 
-  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userId);
+  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userIds);
 
   if (_config2.default.aead_protect && (_config2.default.aead_protect_version !== 4 || aeadAlgo)) {
     symEncryptedPacket = new _packet2.default.SymEncryptedAEADProtected();
@@ -33502,16 +33513,16 @@ Message.prototype.encrypt = async function (keys, passwords, sessionKey, wildcar
  * @param  {Array<String>} passwords   (optional) for message encryption
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                 (optional) override the date
- * @param  {Object} userId             (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
  * @returns {Promise<Message>}          new message with encrypted content
  * @async
  */
-async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard = false, date = new Date(), userId = {}) {
+async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard = false, date = new Date(), userIds = []) {
   const packetlist = new _packet2.default.List();
 
   if (publicKeys) {
     const results = await Promise.all(publicKeys.map(async function (publicKey) {
-      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userId);
+      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userIds);
       if (!encryptionKey) {
         throw new Error('Could not find valid key packet for encryption in key ' + publicKey.getKeyId().toHex());
       }
@@ -33570,11 +33581,11 @@ async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, pass
  * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature          (optional) any existing detached signature to add to the message
  * @param  {Date} date                    (optional) override the creation time of the signature
- * @param  {Object} userId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
-Message.prototype.sign = async function (privateKeys = [], signature = null, date = new Date(), userId = {}) {
+Message.prototype.sign = async function (privateKeys = [], signature = null, date = new Date(), userIds = []) {
   const packetlist = new _packet2.default.List();
 
   const literalDataPacket = this.packets.findPacket(_enums2.default.packet.literal);
@@ -33607,13 +33618,13 @@ Message.prototype.sign = async function (privateKeys = [], signature = null, dat
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
-    const signingKey = await privateKey.getSigningKey(undefined, date, userId);
+    const signingKey = await privateKey.getSigningKey(undefined, date, userIds);
     if (!signingKey) {
       throw new Error('Could not find valid key packet for signing in key ' + privateKey.getKeyId().toHex());
     }
     const onePassSig = new _packet2.default.OnePassSignature();
     onePassSig.signatureType = signatureType;
-    onePassSig.hashAlgorithm = await (0, _key.getPreferredHashAlgo)(privateKey, signingKey.keyPacket, date, userId);
+    onePassSig.hashAlgorithm = await (0, _key.getPreferredHashAlgo)(privateKey, signingKey.keyPacket, date, userIds);
     onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
     onePassSig.issuerKeyId = signingKey.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -33655,16 +33666,16 @@ Message.prototype.compress = function (compression) {
  * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature                 (optional) any existing detached signature
  * @param  {Date} date                           (optional) override the creation time of the signature
- * @param  {Object} userId                       (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                       (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
-Message.prototype.signDetached = async function (privateKeys = [], signature = null, date = new Date(), userId = {}) {
+Message.prototype.signDetached = async function (privateKeys = [], signature = null, date = new Date(), userIds = []) {
   const literalDataPacket = this.packets.findPacket(_enums2.default.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
-  return new _signature.Signature((await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userId)));
+  return new _signature.Signature((await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds)));
 };
 
 /**
@@ -33673,17 +33684,18 @@ Message.prototype.signDetached = async function (privateKeys = [], signature = n
  * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
- * @param  {Object} userId                     (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} userIds                     (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userId = {}) {
+async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userIds = []) {
   const packetlist = new _packet2.default.List();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
   const signatureType = literalDataPacket.text === null ? _enums2.default.signature.binary : _enums2.default.signature.text;
 
-  await Promise.all(privateKeys.map(async privateKey => {
+  await Promise.all(privateKeys.map(async (privateKey, i) => {
+    const userId = userIds[i];
     if (privateKey.isPublic()) {
       throw new Error('Need private key for signing');
     }
@@ -34081,7 +34093,7 @@ let asyncProxy; // instance of the asyncproxy
  */
 
 function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
-  if (workers.length || typeof window !== 'undefined' && window.Worker) {
+  if (workers.length || typeof window !== 'undefined' && window.Worker && window.MessageChannel) {
     asyncProxy = new _async_proxy2.default({ path, n, workers, config: _config2.default });
     return true;
   }
@@ -34306,8 +34318,8 @@ function encryptKey({ privateKey, passphrase }) {
  * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
  * @param  {Boolean} wildcard                     (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                            (optional) override the creation date of the message signature
- * @param  {Object} fromUserId                    (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
- * @param  {Object} toUserId                      (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' }
+ * @param  {Array} fromUserIds                    (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Array} toUserIds                      (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
  * @returns {Promise<Object>}                     Object containing encrypted (and optionally signed) message in the form:
  *
  *     {
@@ -34320,12 +34332,12 @@ function encryptKey({ privateKey, passphrase }) {
  * @async
  * @static
  */
-function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = _config2.default.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, returnSessionKey = false, wildcard = false, date = new Date(), fromUserId = {}, toUserId = {} }) {
-  checkMessage(message);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
+function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = _config2.default.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, returnSessionKey = false, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [] }) {
+  checkMessage(message);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);fromUserIds = toArray(fromUserIds);toUserIds = toArray(toUserIds);
 
   if (!nativeAEAD() && asyncProxy) {
     // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { message, publicKeys, privateKeys, passwords, sessionKey, compression, armor, streaming, detached, signature, returnSessionKey, wildcard, date, fromUserId, toUserId });
+    return asyncProxy.delegate('encrypt', { message, publicKeys, privateKeys, passwords, sessionKey, compression, armor, streaming, detached, signature, returnSessionKey, wildcard, date, fromUserIds, toUserIds });
   }
   const result = {};
   return Promise.resolve().then(async function () {
@@ -34335,14 +34347,14 @@ function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, comp
     if (privateKeys.length || signature) {
       // sign the message only if private keys or signature is specified
       if (detached) {
-        const detachedSignature = await message.signDetached(privateKeys, signature, date, fromUserId);
+        const detachedSignature = await message.signDetached(privateKeys, signature, date, fromUserIds);
         result.signature = armor ? detachedSignature.armor() : detachedSignature;
       } else {
-        message = await message.sign(privateKeys, signature, date, fromUserId);
+        message = await message.sign(privateKeys, signature, date, fromUserIds);
       }
     }
     message = message.compress(compression);
-    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserId, streaming);
+    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserIds, streaming);
   }).then(async encrypted => {
     if (armor) {
       result.data = encrypted.message.armor();
@@ -34424,7 +34436,7 @@ function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, for
  * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Boolean} detached                 (optional) if the return value should contain a detached signature
  * @param  {Date} date                        (optional) override the creation date of the signature
- * @param  {Object} fromUserId                (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
+ * @param  {Array} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<Object>}                 Object containing signed message in the form:
  *
  *     {
@@ -34441,24 +34453,24 @@ function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, for
  * @async
  * @static
  */
-function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserId = {} }) {
+function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [] }) {
   checkCleartextOrMessage(message);
-  privateKeys = toArray(privateKeys);
+  privateKeys = toArray(privateKeys);fromUserIds = toArray(fromUserIds);
 
   if (asyncProxy) {
     // use web worker if available
     return asyncProxy.delegate('sign', {
-      message, privateKeys, armor, streaming, detached, date, fromUserId
+      message, privateKeys, armor, streaming, detached, date, fromUserIds
     });
   }
 
   const result = {};
   return Promise.resolve().then(async function () {
     if (detached) {
-      const signature = await message.signDetached(privateKeys, undefined, date, fromUserId);
+      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds);
       result.signature = armor ? signature.armor() : signature;
     } else {
-      message = await message.sign(privateKeys, undefined, date, fromUserId);
+      message = await message.sign(privateKeys, undefined, date, fromUserIds);
       if (armor) {
         result.data = message.armor();
       } else {
@@ -34529,22 +34541,22 @@ function verify({ message, publicKeys, streaming = message && message.fromStream
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
  * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                        (optional) override the date
- * @param  {Object} toUserId                  (optional) user ID to encrypt for, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
+ * @param  {Array} toUserIds                  (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @returns {Promise<Message>}                 the encrypted session key packets contained in a message object
  * @async
  * @static
  */
-function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), toUserId = {} }) {
-  checkBinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);
+function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), toUserIds = [] }) {
+  checkBinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);toUserIds = toArray(toUserIds);
 
   if (asyncProxy) {
     // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserId });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds });
   }
 
   return Promise.resolve().then(async function () {
 
-    return { message: await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserId) };
+    return { message: await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds) };
   }).catch(onError.bind(null, 'Error encrypting session key'));
 }
 
@@ -38100,7 +38112,7 @@ Signature.prototype.isExpired = function (date = new Date()) {
   const normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
-    return !(this.created <= normDate && normDate < expirationTime);
+    return !(this.created <= normDate && normDate <= expirationTime);
   }
   return false;
 };
@@ -40342,7 +40354,7 @@ exports.default = {
   },
 
   normalizeDate: function normalizeDate(time = Date.now()) {
-    return time === null ? time : new Date(Math.floor(+time / 1000) * 1000);
+    return time === null || time === Infinity ? time : new Date(Math.floor(+time / 1000) * 1000);
   },
 
   /**
