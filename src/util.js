@@ -339,15 +339,15 @@ export default {
   /**
    * Concat a list of Uint8Arrays, Strings or Streams
    * The caller must not mix Uint8Arrays with Strings, but may mix Streams with non-Streams.
-   * @param {Array<Uint8array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
-   * @returns {Uint8array|String|ReadableStream} Concatenated array
+   * @param {Array<Uint8Array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
+   * @returns {Uint8Array|String|ReadableStream} Concatenated array
    */
   concat: stream.concat,
 
   /**
    * Concat Uint8Arrays
-   * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
-   * @returns {Uint8array} Concatenated array
+   * @param {Array<Uint8Array>} Array of Uint8Arrays to concatenate
+   * @returns {Uint8Array} Concatenated array
    */
   concatUint8Array: stream.concatUint8Array,
 
