@@ -24,6 +24,8 @@ matrix:
     - node_js: "9"
       env: BROWSER='MicrosoftEdge' VERSION='17.17134' PLATFORM='Windows 10' OPENPGPJSTEST='saucelabs'
     - node_js: "9"
+      env: BROWSER='Safari' VERSION='9' PLATFORM='OS X 10.11' OPENPGPJSTEST='saucelabs' COMPAT=1
+    - node_js: "9"
       env: BROWSER='Safari' VERSION='10' PLATFORM='macOS 10.12' OPENPGPJSTEST='saucelabs' COMPAT=1
     - node_js: "9"
       env: BROWSER='Safari' VERSION='11' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
