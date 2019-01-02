@@ -23755,7 +23755,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.1",
+  versionstring: "OpenPGP.js v4.4.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -40273,7 +40273,7 @@ exports.default = {
           }
           return;
         }
-        if (typeof MessagePort !== 'undefined' && MessagePort.prototype.isPrototypeOf(value)) {
+        if (Object.prototype.toString.call(value) === '[object MessagePort]') {
           throw new Error("Can't transfer the same stream twice.");
         }
         _util2.default.collectTransferables(value, collection);
@@ -40290,7 +40290,7 @@ exports.default = {
     if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
       Object.entries(obj).forEach(([key, value]) => {
         // recursively search all children
-        if (MessagePort.prototype.isPrototypeOf(value)) {
+        if (Object.prototype.toString.call(value) === '[object MessagePort]') {
           obj[key] = new ReadableStream({
             pull(controller) {
               return new Promise(resolve => {
