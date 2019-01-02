@@ -11408,7 +11408,7 @@ module.exports={
   "_args": [
     [
       "github:openpgpjs/elliptic",
-      "/home/ethomas/Contributions/openpgpjs"
+      "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
   "_from": "github:openpgpjs/elliptic",
@@ -11430,7 +11430,7 @@ module.exports={
   ],
   "_resolved": "github:openpgpjs/elliptic#e187e706e11fa51bcd20e46e5119054be4e2a4a6",
   "_spec": "github:openpgpjs/elliptic",
-  "_where": "/home/ethomas/Contributions/openpgpjs",
+  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -21803,7 +21803,7 @@ module.exports={
   "_args": [
     [
       "github:openpgpjs/seek-bzip",
-      "/home/ethomas/Contributions/openpgpjs"
+      "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
   "_from": "github:openpgpjs/seek-bzip",
@@ -21827,7 +21827,7 @@ module.exports={
   ],
   "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_spec": "github:openpgpjs/seek-bzip",
-  "_where": "/home/ethomas/Contributions/openpgpjs",
+  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
     "seek-table": "./bin/seek-bzip-table"
@@ -22669,10 +22669,7 @@ function Reader(input) {
   if (streamType) {
     const reader = input.getReader();
     this._read = reader.read.bind(reader);
-    this._releaseLock = () => {
-      reader.closed.catch(function () {});
-      reader.releaseLock();
-    };
+    this._releaseLock = reader.releaseLock.bind(reader);
     return;
   }
   let doneReading = false;
@@ -22927,13 +22924,7 @@ function getReader(input) {
  * @returns {WritableStreamDefaultWriter}
  */
 function getWriter(input) {
-  const writer = input.getWriter();
-  const releaseLock = writer.releaseLock;
-  writer.releaseLock = () => {
-    writer.closed.catch(function () {});
-    releaseLock.call(writer);
-  };
-  return writer;
+  return input.getWriter();
 }
 
 /**
@@ -22948,7 +22939,7 @@ async function pipe(input, target, options) {
   input = toStream(input);
   try {
     if (input[_reader.externalBuffer]) {
-      const writer = getWriter(target);
+      const writer = target.getWriter();
       for (let i = 0; i < input[_reader.externalBuffer].length; i++) {
         await writer.ready;
         await writer.write(input[_reader.externalBuffer][i]);
@@ -23244,8 +23235,8 @@ function slice(input, begin = 0, end = Infinity) {
   if (input[_reader.externalBuffer]) {
     input = concat(input[_reader.externalBuffer].concat([input]));
   }
-  if ((0, _util.isUint8Array)(input) && !(NodeBuffer && NodeBuffer.isBuffer(input))) {
-    if (end === Infinity) end = input.length;
+  if ((0, _util.isUint8Array)(input) && !(NodeBuffer && NodeBuffer.isBuffer(input)) && !_util.isIE11) {
+    // IE11 subarray is buggy
     return input.subarray(begin, end);
   }
   return input.slice(begin, end);
@@ -23305,6 +23296,8 @@ exports.default = { isStream: _util.isStream, isUint8Array: _util.isUint8Array, 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
+
 const NodeReadableStream = typeof window === 'undefined' && require('stream').Readable;
 
 /**
@@ -23358,6 +23351,7 @@ function concatUint8Array(arrays) {
   return result;
 }
 
+exports.isIE11 = isIE11;
 exports.isStream = isStream;
 exports.isUint8Array = isUint8Array;
 exports.concatUint8Array = concatUint8Array;
@@ -40698,13 +40692,13 @@ exports.default = {
    * @param {Uint8Array} data
    */
   double: function double(data) {
-    const double_var = new Uint8Array(data.length);
+    const double = new Uint8Array(data.length);
     const last = data.length - 1;
     for (let i = 0; i < last; i++) {
-      double_var[i] = data[i] << 1 ^ data[i + 1] >> 7;
+      double[i] = data[i] << 1 ^ data[i + 1] >> 7;
     }
-    double_var[last] = data[last] << 1 ^ (data[0] >> 7) * 0x87;
-    return double_var;
+    double[last] = data[last] << 1 ^ (data[0] >> 7) * 0x87;
+    return double;
   },
 
   /**
