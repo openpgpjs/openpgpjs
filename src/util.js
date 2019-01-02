@@ -503,13 +503,13 @@ export default {
    * @param {Uint8Array} data
    */
   double: function(data) {
-    const double = new Uint8Array(data.length);
+    const double_var = new Uint8Array(data.length);
     const last = data.length - 1;
     for (let i = 0; i < last; i++) {
-      double[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
+      double_var[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
     }
-    double[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
-    return double;
+    double_var[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
+    return double_var;
   },
 
   /**
