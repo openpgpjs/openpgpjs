@@ -22669,7 +22669,10 @@ function Reader(input) {
   if (streamType) {
     const reader = input.getReader();
     this._read = reader.read.bind(reader);
-    this._releaseLock = reader.releaseLock.bind(reader);
+    this._releaseLock = () => {
+      reader.closed.catch(function () {});
+      reader.releaseLock();
+    };
     return;
   }
   let doneReading = false;
@@ -22924,7 +22927,13 @@ function getReader(input) {
  * @returns {WritableStreamDefaultWriter}
  */
 function getWriter(input) {
-  return input.getWriter();
+  const writer = input.getWriter();
+  const releaseLock = writer.releaseLock;
+  writer.releaseLock = () => {
+    writer.closed.catch(function () {});
+    releaseLock.call(writer);
+  };
+  return writer;
 }
 
 /**
@@ -22939,7 +22948,7 @@ async function pipe(input, target, options) {
   input = toStream(input);
   try {
     if (input[_reader.externalBuffer]) {
-      const writer = target.getWriter();
+      const writer = getWriter(target);
       for (let i = 0; i < input[_reader.externalBuffer].length; i++) {
         await writer.ready;
         await writer.write(input[_reader.externalBuffer][i]);
@@ -23235,8 +23244,8 @@ function slice(input, begin = 0, end = Infinity) {
   if (input[_reader.externalBuffer]) {
     input = concat(input[_reader.externalBuffer].concat([input]));
   }
-  if ((0, _util.isUint8Array)(input) && !(NodeBuffer && NodeBuffer.isBuffer(input)) && !_util.isIE11) {
-    // IE11 subarray is buggy
+  if ((0, _util.isUint8Array)(input) && !(NodeBuffer && NodeBuffer.isBuffer(input))) {
+    if (end === Infinity) end = input.length;
     return input.subarray(begin, end);
   }
   return input.slice(begin, end);
@@ -23296,8 +23305,6 @@ exports.default = { isStream: _util.isStream, isUint8Array: _util.isUint8Array, 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-const isIE11 = typeof navigator !== 'undefined' && !!navigator.userAgent.match(/Trident\/7\.0.*rv:([0-9.]+).*\).*Gecko$/);
-
 const NodeReadableStream = typeof window === 'undefined' && require('stream').Readable;
 
 /**
@@ -23351,7 +23358,6 @@ function concatUint8Array(arrays) {
   return result;
 }
 
-exports.isIE11 = isIE11;
 exports.isStream = isStream;
 exports.isUint8Array = isUint8Array;
 exports.concatUint8Array = concatUint8Array;
@@ -23755,7 +23761,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.2",
+  versionstring: "OpenPGP.js v4.4.3",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -23995,284 +24001,27 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _cfb = require('asmcrypto.js/dist_es5/aes/cfb');
+
+var _webStreamTools = require('web-stream-tools');
+
+var _webStreamTools2 = _interopRequireDefault(_webStreamTools);
+
 var _cipher = require('./cipher');
 
 var _cipher2 = _interopRequireDefault(_cipher);
 
+var _config = require('../config');
+
+var _config2 = _interopRequireDefault(_config);
+
+var _util = require('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = {
-
-  /**
-   * This function encrypts a given plaintext with the specified prefixrandom
-   * using the specified blockcipher
-   * @param {Uint8Array} prefixrandom random bytes of block_size length
-   *  to be used in prefixing the data
-   * @param {String} cipherfn the algorithm cipher class to encrypt
-   *  data in one block_size encryption, {@link module:crypto/cipher}.
-   * @param {Uint8Array} plaintext data to be encrypted
-   * @param {Uint8Array} key key to be used to encrypt the plaintext.
-   * This will be passed to the cipherfn
-   * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the
-   *  "old" style with a resync. Encryption within an
-   *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @returns {Uint8Array} encrypted data
-   */
-  encrypt: function encrypt(prefixrandom, cipherfn, plaintext, key, resync) {
-    cipherfn = new _cipher2.default[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    const FR = new Uint8Array(block_size);
-    let FRE = new Uint8Array(block_size);
-
-    const new_prefix = new Uint8Array(prefixrandom.length + 2);
-    new_prefix.set(prefixrandom);
-    new_prefix[prefixrandom.length] = prefixrandom[block_size - 2];
-    new_prefix[prefixrandom.length + 1] = prefixrandom[block_size - 1];
-    prefixrandom = new_prefix;
-
-    let ciphertext = new Uint8Array(plaintext.length + 2 + block_size * 2);
-    let i;
-    let n;
-    let begin;
-    const offset = resync ? 0 : 2;
-
-    // 1.  The feedback register (FR) is set to the IV, which is all zeros.
-    for (i = 0; i < block_size; i++) {
-      FR[i] = 0;
-    }
-
-    // 2.  FR is encrypted to produce FRE (FR Encrypted).  This is the
-    //     encryption of an all-zero value.
-    FRE = cipherfn.encrypt(FR);
-    // 3.  FRE is xored with the first BS octets of random data prefixed to
-    //     the plaintext to produce C[1] through C[BS], the first BS octets
-    //     of ciphertext.
-    for (i = 0; i < block_size; i++) {
-      ciphertext[i] = FRE[i] ^ prefixrandom[i];
-    }
-
-    // 4.  FR is loaded with C[1] through C[BS].
-    FR.set(ciphertext.subarray(0, block_size));
-
-    // 5.  FR is encrypted to produce FRE, the encryption of the first BS
-    //     octets of ciphertext.
-    FRE = cipherfn.encrypt(FR);
-
-    // 6.  The left two octets of FRE get xored with the next two octets of
-    //     data that were prefixed to the plaintext.  This produces C[BS+1]
-    //     and C[BS+2], the next two octets of ciphertext.
-    ciphertext[block_size] = FRE[0] ^ prefixrandom[block_size];
-    ciphertext[block_size + 1] = FRE[1] ^ prefixrandom[block_size + 1];
-
-    if (resync) {
-      // 7.  (The resync step) FR is loaded with C[3] through C[BS+2].
-      FR.set(ciphertext.subarray(2, block_size + 2));
-    } else {
-      FR.set(ciphertext.subarray(0, block_size));
-    }
-    // 8.  FR is encrypted to produce FRE.
-    FRE = cipherfn.encrypt(FR);
-
-    // 9.  FRE is xored with the first BS octets of the given plaintext, now
-    //     that we have finished encrypting the BS+2 octets of prefixed
-    //     data.  This produces C[BS+3] through C[BS+(BS+2)], the next BS
-    //     octets of ciphertext.
-    for (i = 0; i < block_size; i++) {
-      ciphertext[block_size + 2 + i] = FRE[i + offset] ^ plaintext[i];
-    }
-    for (n = block_size; n < plaintext.length + offset; n += block_size) {
-      // 10. FR is loaded with C[BS+3] to C[BS + (BS+2)] (which is C11-C18 for
-      // an 8-octet block).
-      begin = n + 2 - offset;
-      FR.set(ciphertext.subarray(begin, begin + block_size));
-
-      // 11. FR is encrypted to produce FRE.
-      FRE = cipherfn.encrypt(FR);
-
-      // 12. FRE is xored with the next BS octets of plaintext, to produce
-      // the next BS octets of ciphertext.  These are loaded into FR, and
-      // the process is repeated until the plaintext is used up.
-      for (i = 0; i < block_size; i++) {
-        ciphertext[block_size + begin + i] = FRE[i] ^ plaintext[n + i - offset];
-      }
-    }
-
-    ciphertext = ciphertext.subarray(0, plaintext.length + 2 + block_size);
-    return ciphertext;
-  },
-
-  /**
-   * Decrypts the prefixed data for the Modification Detection Code (MDC) computation
-   * @param {String} cipherfn.encrypt Cipher function to use,
-   *  @see module:crypto/cipher.
-   * @param {Uint8Array} key Uint8Array representation of key to be used to check the mdc
-   * This will be passed to the cipherfn
-   * @param {Uint8Array} ciphertext The encrypted data
-   * @returns {Uint8Array} plaintext Data of D(ciphertext) with blocksize length +2
-   */
-  mdc: function mdc(cipherfn, key, ciphertext) {
-    cipherfn = new _cipher2.default[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    let iblock = new Uint8Array(block_size);
-    let ablock = new Uint8Array(block_size);
-    let i;
-
-    // initialisation vector
-    for (i = 0; i < block_size; i++) {
-      iblock[i] = 0;
-    }
-
-    iblock = cipherfn.encrypt(iblock);
-    for (i = 0; i < block_size; i++) {
-      ablock[i] = ciphertext[i];
-      iblock[i] ^= ablock[i];
-    }
-
-    ablock = cipherfn.encrypt(ablock);
-
-    const result = new Uint8Array(iblock.length + 2);
-    result.set(iblock);
-    result[iblock.length] = ablock[0] ^ ciphertext[block_size];
-    result[iblock.length + 1] = ablock[1] ^ ciphertext[block_size + 1];
-    return result;
-  },
-
-  /**
-   * This function decrypts a given ciphertext using the specified blockcipher
-   * @param {String} cipherfn the algorithm cipher class to decrypt
-   *  data in one block_size encryption, {@link module:crypto/cipher}.
-   * @param {Uint8Array} key Uint8Array representation of key to be used to decrypt the ciphertext.
-   * This will be passed to the cipherfn
-   * @param {Uint8Array} ciphertext to be decrypted
-   * @param {Boolean} resync a boolean value specifying if a resync of the
-   *  IV should be used or not. The encrypteddatapacket uses the
-   *  "old" style with a resync. Decryption within an
-   *  encryptedintegrityprotecteddata packet is not resyncing the IV.
-   * @returns {Uint8Array} the plaintext data
-   */
-  decrypt: function decrypt(cipherfn, key, ciphertext, resync) {
-    cipherfn = new _cipher2.default[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    const iblock = new Uint8Array(block_size);
-    let ablock = new Uint8Array(block_size);
-
-    let i;
-    let j;
-    let n;
-    let text = new Uint8Array(ciphertext.length - block_size);
-
-    /*  RFC4880: Tag 18 and Resync:
-     *  [...] Unlike the Symmetrically Encrypted Data Packet, no
-     *  special CFB resynchronization is done after encrypting this prefix
-     *  data.  See "OpenPGP CFB Mode" below for more details.
-     */
-
-    j = 0;
-    if (resync) {
-      for (i = 0; i < block_size; i++) {
-        iblock[i] = ciphertext[i + 2];
-      }
-      for (n = block_size + 2; n < ciphertext.length; n += block_size) {
-        ablock = cipherfn.encrypt(iblock);
-
-        for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-          iblock[i] = ciphertext[n + i];
-          if (j < text.length) {
-            text[j] = ablock[i] ^ iblock[i];
-            j++;
-          }
-        }
-      }
-    } else {
-      for (i = 0; i < block_size; i++) {
-        iblock[i] = ciphertext[i];
-      }
-      for (n = block_size; n < ciphertext.length; n += block_size) {
-        ablock = cipherfn.encrypt(iblock);
-        for (i = 0; i < block_size && i + n < ciphertext.length; i++) {
-          iblock[i] = ciphertext[n + i];
-          if (j < text.length) {
-            text[j] = ablock[i] ^ iblock[i];
-            j++;
-          }
-        }
-      }
-    }
-
-    n = resync ? 0 : 2;
-
-    text = text.subarray(n, ciphertext.length - block_size - 2 + n);
-
-    return text;
-  },
-
-  normalEncrypt: function normalEncrypt(cipherfn, key, plaintext, iv) {
-    cipherfn = new _cipher2.default[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    let blocki = new Uint8Array(block_size);
-    const blockc = new Uint8Array(block_size);
-    let pos = 0;
-    const cyphertext = new Uint8Array(plaintext.length);
-    let i;
-    let j = 0;
-
-    if (iv === null) {
-      for (i = 0; i < block_size; i++) {
-        blockc[i] = 0;
-      }
-    } else {
-      for (i = 0; i < block_size; i++) {
-        blockc[i] = iv[i];
-      }
-    }
-    while (plaintext.length > block_size * pos) {
-      const encblock = cipherfn.encrypt(blockc);
-      blocki = plaintext.subarray(pos * block_size, pos * block_size + block_size);
-      for (i = 0; i < blocki.length; i++) {
-        blockc[i] = blocki[i] ^ encblock[i];
-        cyphertext[j++] = blockc[i];
-      }
-      pos++;
-    }
-    return cyphertext;
-  },
-
-  normalDecrypt: function normalDecrypt(cipherfn, key, ciphertext, iv) {
-    cipherfn = new _cipher2.default[cipherfn](key);
-    const block_size = cipherfn.blockSize;
-
-    let blockp;
-    let pos = 0;
-    const plaintext = new Uint8Array(ciphertext.length);
-    const offset = 0;
-    let i;
-    let j = 0;
-
-    if (iv === null) {
-      blockp = new Uint8Array(block_size);
-      for (i = 0; i < block_size; i++) {
-        blockp[i] = 0;
-      }
-    } else {
-      blockp = iv.subarray(0, block_size);
-    }
-    while (ciphertext.length > block_size * pos) {
-      const decblock = cipherfn.encrypt(blockp);
-      blockp = ciphertext.subarray(pos * block_size + offset, pos * block_size + block_size + offset);
-      for (i = 0; i < blockp.length; i++) {
-        plaintext[j++] = blockp[i] ^ decblock[i];
-      }
-      pos++;
-    }
-
-    return plaintext;
-  }
-}; // Modified by ProtonTech AG
+const webCrypto = _util2.default.getWebCrypto(); // Modified by ProtonTech AG
 
 // Modified by Recurity Labs GmbH
 
@@ -24292,11 +24041,133 @@ exports.default = {
  */
 
 /**
+ * @requires web-stream-tools
  * @requires crypto/cipher
+ * @requires util
  * @module crypto/cfb
  */
 
-},{"./cipher":88}],84:[function(require,module,exports){
+const nodeCrypto = _util2.default.getNodeCrypto();
+const Buffer = _util2.default.getNodeBuffer();
+
+exports.default = {
+  encrypt: function encrypt(algo, key, plaintext, iv) {
+    if (algo.substr(0, 3) === 'aes') {
+      return aesEncrypt(algo, key, plaintext, iv);
+    }
+
+    const cipherfn = new _cipher2.default[algo](key);
+    const block_size = cipherfn.blockSize;
+
+    let blocki = new Uint8Array(block_size);
+    const blockc = iv;
+    let pos = 0;
+    const ciphertext = new Uint8Array(plaintext.length);
+    let i;
+    let j = 0;
+
+    while (plaintext.length > block_size * pos) {
+      const encblock = cipherfn.encrypt(blockc);
+      blocki = plaintext.subarray(pos * block_size, pos * block_size + block_size);
+      for (i = 0; i < blocki.length; i++) {
+        blockc[i] = blocki[i] ^ encblock[i];
+        ciphertext[j++] = blockc[i];
+      }
+      pos++;
+    }
+    return ciphertext;
+  },
+
+  decrypt: async function decrypt(algo, key, ciphertext, iv) {
+    if (algo.substr(0, 3) === 'aes') {
+      return aesDecrypt(algo, key, ciphertext, iv);
+    }
+
+    ciphertext = await _webStreamTools2.default.readToEnd(ciphertext);
+
+    const cipherfn = new _cipher2.default[algo](key);
+    const block_size = cipherfn.blockSize;
+
+    let blockp = iv;
+    let pos = 0;
+    const plaintext = new Uint8Array(ciphertext.length);
+    const offset = 0;
+    let i;
+    let j = 0;
+
+    while (ciphertext.length > block_size * pos) {
+      const decblock = cipherfn.encrypt(blockp);
+      blockp = ciphertext.subarray(pos * block_size + offset, pos * block_size + block_size + offset);
+      for (i = 0; i < blockp.length; i++) {
+        plaintext[j++] = blockp[i] ^ decblock[i];
+      }
+      pos++;
+    }
+
+    return plaintext;
+  }
+};
+
+
+function aesEncrypt(algo, key, pt, iv) {
+  if (_util2.default.getWebCrypto() && key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support
+  !_util2.default.isStream(pt) && pt.length >= 3000 * _config2.default.min_bytes_for_web_crypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
+  ) {
+      // Web Crypto
+      return webEncrypt(algo, key, pt, iv);
+    }
+  if (nodeCrypto) {
+    // Node crypto library.
+    return nodeEncrypt(algo, key, pt, iv);
+  } // asm.js fallback
+  const cfb = new _cfb.AES_CFB(key, iv);
+  return _webStreamTools2.default.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
+}
+
+function aesDecrypt(algo, key, ct, iv) {
+  if (nodeCrypto) {
+    // Node crypto library.
+    return nodeDecrypt(algo, key, ct, iv);
+  }
+  if (_util2.default.isStream(ct)) {
+    const cfb = new _cfb.AES_CFB(key, iv);
+    return _webStreamTools2.default.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
+  }
+  return _cfb.AES_CFB.decrypt(ct, key, iv);
+}
+
+function xorMut(a, b) {
+  for (let i = 0; i < a.length; i++) {
+    a[i] = a[i] ^ b[i];
+  }
+}
+
+async function webEncrypt(algo, key, pt, iv) {
+  const ALGO = 'AES-CBC';
+  const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
+  const blockSize = _cipher2.default[algo].blockSize;
+
+  const cbc_pt = _util2.default.concatUint8Array([new Uint8Array(blockSize), pt]);
+  const ct = new Uint8Array((await webCrypto.encrypt({ name: ALGO, iv }, _key, cbc_pt))).subarray(0, pt.length);
+  xorMut(ct, pt);
+  return ct;
+}
+
+function nodeEncrypt(algo, key, pt, iv) {
+  key = new Buffer(key);
+  iv = new Buffer(iv);
+  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  return _webStreamTools2.default.transform(pt, value => new Uint8Array(cipherObj.update(new Buffer(value))));
+}
+
+function nodeDecrypt(algo, key, ct, iv) {
+  key = new Buffer(key);
+  iv = new Buffer(iv);
+  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  return _webStreamTools2.default.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
+}
+
+},{"../config":81,"../util":154,"./cipher":88,"asmcrypto.js/dist_es5/aes/cfb":6,"web-stream-tools":77}],84:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25858,9 +25729,20 @@ var _enums = require('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
+var _util = require('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// GPG4Browsers - An OpenPGP implementation in javascript
+function constructParams(types, data) {
+  return types.map(function (type, i) {
+    if (data && data[i]) {
+      return new type(data[i]);
+    }
+    return new type();
+  });
+} // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -25890,17 +25772,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @requires type/mpi
  * @requires type/oid
  * @requires enums
+ * @requires util
  * @module crypto/crypto
  */
-
-function constructParams(types, data) {
-  return types.map(function (type, i) {
-    if (data && data[i]) {
-      return new type(data[i]);
-    }
-    return new type();
-  });
-}
 
 exports.default = {
   /**
@@ -26147,11 +26021,13 @@ exports.default = {
    * Generates a random byte prefix for the specified algorithm
    * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
    * @param {module:enums.symmetric} algo Symmetric encryption algorithm
-   * @returns {Uint8Array}                Random bytes with length equal to the block size of the cipher
+   * @returns {Uint8Array}                Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
    * @async
    */
-  getPrefixRandom: function getPrefixRandom(algo) {
-    return _random2.default.getRandomBytes(_cipher2.default[algo].blockSize);
+  getPrefixRandom: async function getPrefixRandom(algo) {
+    const prefixrandom = await _random2.default.getRandomBytes(_cipher2.default[algo].blockSize);
+    const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
+    return _util2.default.concat([prefixrandom, repeat]);
   },
 
   /**
@@ -26168,7 +26044,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":115,"../type/ecdh_symkey":148,"../type/kdf_params":149,"../type/mpi":151,"../type/oid":152,"./cipher":88,"./public_key":108,"./random":111}],92:[function(require,module,exports){
+},{"../enums":115,"../type/ecdh_symkey":148,"../type/kdf_params":149,"../type/mpi":151,"../type/oid":152,"../util":154,"./cipher":88,"./public_key":108,"./random":111}],92:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26643,7 +26519,7 @@ exports.default = {
    * Create a hash on the specified data using the specified algorithm
    * @param {module:enums.hash} algo Hash algorithm type (see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {Uint8Array} data Data to be hashed
-   * @returns {Uint8Array} hash value
+   * @returns {Promise<Uint8Array>} hash value
    */
   digest: function digest(algo, data) {
     switch (algo) {
@@ -37160,7 +37036,7 @@ SecretKey.prototype.encrypt = async function (passphrase) {
     arr = [new Uint8Array([254, _enums2.default.write(_enums2.default.symmetric, symmetric)])];
     arr.push(s2k.write());
     arr.push(iv);
-    arr.push(_crypto2.default.cfb.normalEncrypt(symmetric, key, _util2.default.concatUint8Array([cleartext, await _crypto2.default.hash.sha1(cleartext)]), iv));
+    arr.push(_crypto2.default.cfb.encrypt(symmetric, key, _util2.default.concatUint8Array([cleartext, await _crypto2.default.hash.sha1(cleartext)]), iv));
   }
 
   this.encrypted = _util2.default.concatUint8Array(arr);
@@ -37249,7 +37125,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
       }
     }
   } else {
-    const cleartextWithHash = _crypto2.default.cfb.normalDecrypt(symmetric, key, ciphertext, iv);
+    const cleartextWithHash = await _crypto2.default.cfb.decrypt(symmetric, key, ciphertext, iv);
 
     let hash;
     let hashlen;
@@ -38368,8 +38244,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _cfb = require('asmcrypto.js/dist_es5/aes/cfb');
-
 var _webStreamTools = require('web-stream-tools');
 
 var _webStreamTools2 = _interopRequireDefault(_webStreamTools);
@@ -38392,6 +38266,20 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const VERSION = 1; // A one-octet version number of the data packet.
+
+/**
+ * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
+ * The Symmetrically Encrypted Integrity Protected Data packet is
+ * a variant of the Symmetrically Encrypted Data packet. It is a new feature
+ * created for OpenPGP that addresses the problem of detecting a modification to
+ * encrypted data. It is used in combination with a Modification Detection Code
+ * packet.
+ * @memberof module:packet
+ * @constructor
+ */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -38418,23 +38306,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @requires util
  */
 
-const nodeCrypto = _util2.default.getNodeCrypto();
-const Buffer = _util2.default.getNodeBuffer();
-
-const VERSION = 1; // A one-octet version number of the data packet.
-
-/**
- * Implementation of the Sym. Encrypted Integrity Protected Data Packet (Tag 18)
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.13|RFC4880 5.13}:
- * The Symmetrically Encrypted Integrity Protected Data packet is
- * a variant of the Symmetrically Encrypted Data packet. It is a new feature
- * created for OpenPGP that addresses the problem of detecting a modification to
- * encrypted data. It is used in combination with a Modification Detection Code
- * packet.
- * @memberof module:packet
- * @constructor
- */
 function SymEncryptedIntegrityProtected() {
   this.tag = _enums2.default.packet.symEncryptedIntegrityProtected;
   this.version = VERSION;
@@ -38480,23 +38351,14 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
 SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   let bytes = this.packets.write();
   if (!streaming) bytes = await _webStreamTools2.default.readToEnd(bytes);
-  const prefixrandom = await _crypto2.default.getPrefixRandom(sessionKeyAlgorithm);
-  const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-  const prefix = _util2.default.concat([prefixrandom, repeat]);
+  const prefix = await _crypto2.default.getPrefixRandom(sessionKeyAlgorithm);
   const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
-  let tohash = _util2.default.concat([bytes, mdc]);
-  const hash = await _crypto2.default.hash.sha1(_util2.default.concat([prefix, _webStreamTools2.default.passiveClone(tohash)]));
-  tohash = _util2.default.concat([tohash, hash]);
+  const tohash = _util2.default.concat([prefix, bytes, mdc]);
+  const hash = await _crypto2.default.hash.sha1(_webStreamTools2.default.passiveClone(tohash));
+  const plaintext = _util2.default.concat([tohash, hash]);
 
-  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') {
-    // AES optimizations. Native code for node, asmCrypto for browser.
-    this.encrypted = aesEncrypt(sessionKeyAlgorithm, _util2.default.concat([prefix, tohash]), key);
-  } else {
-    tohash = await _webStreamTools2.default.readToEnd(tohash);
-    this.encrypted = _crypto2.default.cfb.encrypt(prefixrandom, sessionKeyAlgorithm, tohash, key, false);
-    this.encrypted = _webStreamTools2.default.slice(this.encrypted, 0, prefix.length + tohash.length);
-  }
+  this.encrypted = await _crypto2.default.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize));
   return true;
 };
 
@@ -38511,29 +38373,20 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
   if (!streaming) this.encrypted = await _webStreamTools2.default.readToEnd(this.encrypted);
   const encrypted = _webStreamTools2.default.clone(this.encrypted);
-  const encryptedClone = _webStreamTools2.default.passiveClone(encrypted);
-  let decrypted;
-  if (sessionKeyAlgorithm.substr(0, 3) === 'aes') {
-    // AES optimizations. Native code for node, asmCrypto for browser.
-    decrypted = aesDecrypt(sessionKeyAlgorithm, encrypted, key, streaming);
-  } else {
-    decrypted = _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, (await _webStreamTools2.default.readToEnd(encrypted)), false);
-  }
+  const decrypted = await _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize));
 
   // there must be a modification detection code packet as the
   // last packet and everything gets hashed except the hash itself
-  const encryptedPrefix = await _webStreamTools2.default.readToEnd(_webStreamTools2.default.slice(encryptedClone, 0, _crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2));
-  const prefix = _crypto2.default.cfb.mdc(sessionKeyAlgorithm, key, encryptedPrefix);
   const realHash = _webStreamTools2.default.slice(_webStreamTools2.default.passiveClone(decrypted), -20);
-  const bytes = _webStreamTools2.default.slice(decrypted, 0, -20);
-  const tohash = _util2.default.concat([prefix, _webStreamTools2.default.passiveClone(bytes)]);
-  const verifyHash = Promise.all([_webStreamTools2.default.readToEnd((await _crypto2.default.hash.sha1(tohash))), _webStreamTools2.default.readToEnd(realHash)]).then(([hash, mdc]) => {
+  const tohash = _webStreamTools2.default.slice(decrypted, 0, -20);
+  const verifyHash = Promise.all([_webStreamTools2.default.readToEnd((await _crypto2.default.hash.sha1(_webStreamTools2.default.passiveClone(tohash)))), _webStreamTools2.default.readToEnd(realHash)]).then(([hash, mdc]) => {
     if (!_util2.default.equalsUint8Array(hash, mdc)) {
       throw new Error('Modification detected.');
     }
     return new Uint8Array();
   });
-  let packetbytes = _webStreamTools2.default.slice(bytes, 0, -2);
+  const bytes = _webStreamTools2.default.slice(tohash, _crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2); // Remove random prefix
+  let packetbytes = _webStreamTools2.default.slice(bytes, 0, -2); // Remove MDC packet
   packetbytes = _webStreamTools2.default.concat([packetbytes, _webStreamTools2.default.fromAsync(() => verifyHash)]);
   if (!_util2.default.isStream(encrypted) || !_config2.default.allow_unauthenticated_stream) {
     packetbytes = await _webStreamTools2.default.readToEnd(packetbytes);
@@ -38544,54 +38397,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
 
 exports.default = SymEncryptedIntegrityProtected;
 
-//////////////////////////
-//                      //
-//   Helper functions   //
-//                      //
-//////////////////////////
-
-
-function aesEncrypt(algo, pt, key) {
-  if (nodeCrypto) {
-    // Node crypto library.
-    return nodeEncrypt(algo, pt, key);
-  } // asm.js fallback
-  const cfb = new _cfb.AES_CFB(key);
-  return _webStreamTools2.default.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
-}
-
-function aesDecrypt(algo, ct, key) {
-  let pt;
-  if (nodeCrypto) {
-    // Node crypto library.
-    pt = nodeDecrypt(algo, ct, key);
-  } else {
-    // asm.js fallback
-    if (_util2.default.isStream(ct)) {
-      const cfb = new _cfb.AES_CFB(key);
-      pt = _webStreamTools2.default.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
-    } else {
-      pt = _cfb.AES_CFB.decrypt(ct, key);
-    }
-  }
-  return _webStreamTools2.default.slice(pt, _crypto2.default.cipher[algo].blockSize + 2); // Remove random prefix
-}
-
-function nodeEncrypt(algo, pt, key) {
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(_crypto2.default.cipher[algo].blockSize));
-  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return _webStreamTools2.default.transform(pt, value => new Uint8Array(cipherObj.update(new Buffer(value))));
-}
-
-function nodeDecrypt(algo, ct, key) {
-  key = new Buffer(key);
-  const iv = new Buffer(new Uint8Array(_crypto2.default.cipher[algo].blockSize));
-  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return _webStreamTools2.default.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
-}
-
-},{"../config":81,"../crypto":96,"../enums":115,"../util":154,"asmcrypto.js/dist_es5/aes/cfb":6,"web-stream-tools":77}],141:[function(require,module,exports){
+},{"../config":81,"../crypto":96,"../enums":115,"../util":154,"web-stream-tools":77}],141:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38757,7 +38563,7 @@ SymEncryptedSessionKey.prototype.decrypt = async function (passphrase) {
     const modeInstance = await mode(algo, key);
     this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
   } else if (this.encrypted !== null) {
-    const decrypted = _crypto2.default.cfb.normalDecrypt(algo, key, this.encrypted, null);
+    const decrypted = await _crypto2.default.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(_crypto2.default.cipher[algo].blockSize));
 
     this.sessionKeyAlgorithm = _enums2.default.read(_enums2.default.symmetric, decrypted[0]);
     this.sessionKey = decrypted.subarray(1, decrypted.length);
@@ -38798,7 +38604,7 @@ SymEncryptedSessionKey.prototype.encrypt = async function (passphrase) {
   } else {
     const algo_enum = new Uint8Array([_enums2.default.write(_enums2.default.symmetric, this.sessionKeyAlgorithm)]);
     const private_key = _util2.default.concatUint8Array([algo_enum, this.sessionKey]);
-    this.encrypted = _crypto2.default.cfb.normalEncrypt(algo, key, private_key, null);
+    this.encrypted = await _crypto2.default.cfb.encrypt(algo, key, private_key, new Uint8Array(_crypto2.default.cipher[algo].blockSize));
   }
 
   return true;
@@ -38836,6 +38642,10 @@ var _enums = require('../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
+var _util = require('../util');
+
+var _util2 = _interopRequireDefault(_util);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -38850,7 +38660,27 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @memberof module:packet
  * @constructor
  */
-// GPG4Browsers - An OpenPGP implementation in javascript
+function SymmetricallyEncrypted() {
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
+  this.tag = _enums2.default.packet.symmetricallyEncrypted;
+  /**
+   * Encrypted secret-key data
+   */
+  this.encrypted = null;
+  /**
+   * Decrypted packets contained within.
+   * @type {module:packet.List}
+   */
+  this.packets = null;
+  /**
+   * When true, decrypt fails if message is not integrity protected
+   * @see module:config.ignore_mdc_error
+   */
+  this.ignore_mdc_error = _config2.default.ignore_mdc_error;
+} // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -38872,29 +38702,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @requires config
  * @requires crypto
  * @requires enums
+ * @requires util
  */
-
-function SymmetricallyEncrypted() {
-  /**
-   * Packet type
-   * @type {module:enums.packet}
-   */
-  this.tag = _enums2.default.packet.symmetricallyEncrypted;
-  /**
-   * Encrypted secret-key data
-   */
-  this.encrypted = null;
-  /**
-   * Decrypted packets contained within.
-   * @type {module:packet.List}
-   */
-  this.packets = null;
-  /**
-   * When true, decrypt fails if message is not integrity protected
-   * @see module:config.ignore_mdc_error
-   */
-  this.ignore_mdc_error = _config2.default.ignore_mdc_error;
-}
 
 SymmetricallyEncrypted.prototype.read = function (bytes) {
   this.encrypted = bytes;
@@ -38914,7 +38723,8 @@ SymmetricallyEncrypted.prototype.write = function () {
  */
 SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   this.encrypted = await _webStreamTools2.default.readToEnd(this.encrypted);
-  const decrypted = _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
+  const decrypted = await _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted.subarray(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2), this.encrypted.subarray(2, _crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2));
+
   // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
   if (!this.ignore_mdc_error) {
     throw new Error('Decryption failed due to missing MDC.');
@@ -38935,14 +38745,17 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
 SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
   const data = this.packets.write();
 
-  this.encrypted = _crypto2.default.cfb.encrypt((await _crypto2.default.getPrefixRandom(algo)), algo, (await _webStreamTools2.default.readToEnd(data)), key, true);
+  const prefix = await _crypto2.default.getPrefixRandom(algo);
+  const FRE = await _crypto2.default.cfb.encrypt(algo, key, prefix, new Uint8Array(_crypto2.default.cipher[algo].blockSize));
+  const ciphertext = await _crypto2.default.cfb.encrypt(algo, key, data, FRE.subarray(2));
+  this.encrypted = _util2.default.concatUint8Array([FRE, ciphertext]);
 
   return true;
 };
 
 exports.default = SymmetricallyEncrypted;
 
-},{"../config":81,"../crypto":96,"../enums":115,"web-stream-tools":77}],143:[function(require,module,exports){
+},{"../config":81,"../crypto":96,"../enums":115,"../util":154,"web-stream-tools":77}],143:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40528,15 +40341,15 @@ exports.default = {
   /**
    * Concat a list of Uint8Arrays, Strings or Streams
    * The caller must not mix Uint8Arrays with Strings, but may mix Streams with non-Streams.
-   * @param {Array<Uint8array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
-   * @returns {Uint8array|String|ReadableStream} Concatenated array
+   * @param {Array<Uint8Array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
+   * @returns {Uint8Array|String|ReadableStream} Concatenated array
    */
   concat: _webStreamTools2.default.concat,
 
   /**
    * Concat Uint8Arrays
-   * @param {Array<Uint8array>} Array of Uint8Arrays to concatenate
-   * @returns {Uint8array} Concatenated array
+   * @param {Array<Uint8Array>} Array of Uint8Arrays to concatenate
+   * @returns {Uint8Array} Concatenated array
    */
   concatUint8Array: _webStreamTools2.default.concatUint8Array,
 
@@ -40692,13 +40505,13 @@ exports.default = {
    * @param {Uint8Array} data
    */
   double: function double(data) {
-    const double = new Uint8Array(data.length);
+    const double_var = new Uint8Array(data.length);
     const last = data.length - 1;
     for (let i = 0; i < last; i++) {
-      double[i] = data[i] << 1 ^ data[i + 1] >> 7;
+      double_var[i] = data[i] << 1 ^ data[i + 1] >> 7;
     }
-    double[last] = data[last] << 1 ^ (data[0] >> 7) * 0x87;
-    return double;
+    double_var[last] = data[last] << 1 ^ (data[0] >> 7) * 0x87;
+    return double_var;
   },
 
   /**
