@@ -79,8 +79,12 @@ export default {
               const reader = stream.getReader(readable);
               const { port1, port2 } = new MessageChannel();
               port1.onmessage = async function({ data: { action } }) {
-                if (action === 'read') port1.postMessage(await reader.read());
-                else if (action === 'cancel') port1.postMessage(await transformed.cancel());
+                if (action === 'read') {
+                  const result = await reader.read();
+                  port1.postMessage(result, util.getTransferables(result, true));
+                } else if (action === 'cancel') {
+                  port1.postMessage(await transformed.cancel());
+                }
               };
               obj[key] = port2;
               collection.push(port2);
