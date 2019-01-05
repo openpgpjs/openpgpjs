@@ -600,8 +600,5 @@ Below is a collection of resources, many of these were projects that were in som
 * [https://www.hanewin.net/encrypt/](https://www.hanewin.net/encrypt/)
 * [https://github.com/seancolyer/gmail-crypt](https://github.com/seancolyer/gmail-crypt)
 * [https://github.com/mete0r/jspg](https://github.com/mete0r/jspg)
-* [https://fitblip.pub/JSPGP-Stuffs/](https://fitblip.pub/JSPGP-Stuffs/)
-* [http://qooxdoo.org/contrib/project/crypto](http://qooxdoo.org/contrib/project/crypto)
 * [https://github.com/GPGTools/Mobile/wiki/Introduction](https://github.com/GPGTools/Mobile/wiki/Introduction)
-* [http://gpg4browsers.recurity.com/](http://gpg4browsers.recurity.com/)
 * [https://github.com/gmontalvoriv/mailock](https://github.com/gmontalvoriv/mailock)
