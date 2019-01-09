@@ -591,7 +591,7 @@ You want to help, great! It's probably best to send us a message on [Gitter](htt
 
 ### License
 
-GNU Lesser General Public License (3.0 or any later version). Please take a look at the [LICENSE](LICENSE) file for more information.
+[GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl-3.0.en.html) (3.0 or any later version). Please take a look at the [LICENSE](LICENSE) file for more information.
 
 ### Resources
 
