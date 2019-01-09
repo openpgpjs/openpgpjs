@@ -22,12 +22,14 @@
  * @see module:openpgp.destroyWorker
  * @see module:worker/worker
  * @requires util
+ * @requires config
  * @requires crypto
  * @requires packet
  * @module worker/async_proxy
  */
 
 import util from '../util.js';
+import config from '../config';
 import crypto from '../crypto';
 import packet from '../packet';
 
@@ -112,7 +114,7 @@ AsyncProxy.prototype.getID = function() {
  */
 AsyncProxy.prototype.seedRandom = async function(workerId, size) {
   const buf = await crypto.random.getRandomBytes(size);
-  this.workers[workerId].postMessage({ event:'seed-random', buf }, util.getTransferables(buf));
+  this.workers[workerId].postMessage({ event:'seed-random', buf }, util.getTransferables(buf, true));
 };
 
 /**
@@ -145,7 +147,7 @@ AsyncProxy.prototype.delegate = function(method, options) {
 
   return new Promise((resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.workers[workerId].postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables(options));
+    this.workers[workerId].postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables(options, config.zero_copy));
     this.workers[workerId].requests++;
 
     // remember to handle parsing cloned packets from worker

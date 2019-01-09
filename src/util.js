@@ -52,19 +52,19 @@ export default {
    * @param  {Object} obj           the options object to be passed to the web worker
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
-  getTransferables: function(obj) {
+  getTransferables: function(obj, zero_copy) {
     const transferables = [];
-    util.collectTransferables(obj, transferables);
+    util.collectTransferables(obj, transferables, zero_copy);
     return transferables.length ? transferables : undefined;
   },
 
-  collectTransferables: function(obj, collection) {
+  collectTransferables: function(obj, collection, zero_copy) {
     if (!obj) {
       return;
     }
 
-    if (util.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
-      if (config.zero_copy) {
+    if (util.isUint8Array(obj)) {
+      if (zero_copy && collection.indexOf(obj.buffer) === -1) {
         collection.push(obj.buffer);
       }
       return;
@@ -91,7 +91,7 @@ export default {
         if (Object.prototype.toString.call(value) === '[object MessagePort]') {
           throw new Error("Can't transfer the same stream twice.");
         }
-        util.collectTransferables(value, collection);
+        util.collectTransferables(value, collection, zero_copy);
       });
     }
   },
