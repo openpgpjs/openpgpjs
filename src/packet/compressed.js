@@ -147,8 +147,10 @@ function pako_zlib(constructor, options = {}) {
         return obj.result;
       }
     }, () => {
+      if (constructor === pako.Deflate) {
         obj.push([], pako.Z_FINISH);
         return obj.result;
+      }
     });
   };
 }
