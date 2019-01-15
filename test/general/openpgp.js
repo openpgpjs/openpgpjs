@@ -1741,7 +1741,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
                 if (i++ < 4) {
                   let randomBytes = await openpgp.crypto.random.getRandomBytes(10);
                   controller.enqueue(randomBytes);
-                  plaintext.push(randomBytes);
+                  plaintext.push(randomBytes.slice());
                 } else {
                   controller.close();
                 }
