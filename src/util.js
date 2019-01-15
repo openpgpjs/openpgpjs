@@ -64,7 +64,10 @@ export default {
     }
 
     if (util.isUint8Array(obj)) {
-      if (zero_copy && collection.indexOf(obj.buffer) === -1) {
+      if (zero_copy && collection.indexOf(obj.buffer) === -1 && !(
+        navigator.userAgent.indexOf('Version/11.1') !== -1 || // Safari 11.1
+        ((navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56 && navigator.userAgent.indexOf('Edge') === -1) // Chrome < 56
+      )) {
         collection.push(obj.buffer);
       }
       return;
