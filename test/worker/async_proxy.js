@@ -35,7 +35,7 @@ const plaintext = 'short message\nnext line\n한국어/조선말';
 let pubKey;
 
 tryTests('Async Proxy', tests, {
-  if: typeof window !== 'undefined' && window.Worker,
+  if: typeof window !== 'undefined' && window.Worker && window.MessageChannel,
   before: async function() {
     openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
     pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
