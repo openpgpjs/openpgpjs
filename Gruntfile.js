@@ -135,17 +135,28 @@ module.exports = function(grunt) {
         }]
       }
     },
-    uglify: {
+    terser: {
       openpgp: {
         files: {
           'dist/openpgp.min.js' : ['dist/openpgp.js'],
           'dist/openpgp.worker.min.js' : ['dist/openpgp.worker.js']
+        },
+        options: {
+          safari10: true
+        },
+      }
+    },
+    header: {
+      openpgp: {
+        options: {
+            text: '/*! OpenPGP.js v<%= pkg.version %> - ' +
+                '<%= grunt.template.today("yyyy-mm-dd") %> - ' +
+                'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
+        },
+        files: {
+          'dist/openpgp.min.js': 'dist/openpgp.min.js',
+          'dist/openpgp.worker.min.js': 'dist/openpgp.worker.min.js'
         }
-      },
-      options: {
-        banner: '/*! OpenPGP.js v<%= pkg.version %> - ' +
-          '<%= grunt.template.today("yyyy-mm-dd") %> - ' +
-          'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
       }
     },
     jsbeautifier: {
@@ -257,7 +268,8 @@ module.exports = function(grunt) {
 
   // Load the plugin(s)
   grunt.loadNpmTasks('grunt-browserify');
-  grunt.loadNpmTasks('grunt-contrib-uglify-es');
+  grunt.loadNpmTasks('grunt-terser');
+  grunt.loadNpmTasks('grunt-header');
   grunt.loadNpmTasks('grunt-text-replace');
   grunt.loadNpmTasks('grunt-jsbeautifier');
   grunt.loadNpmTasks('grunt-jsdoc');
@@ -305,7 +317,7 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('build', ['browserify:openpgp', 'browserify:worker', 'version', 'uglify', 'replace_min']);
+  grunt.registerTask('build', ['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks
