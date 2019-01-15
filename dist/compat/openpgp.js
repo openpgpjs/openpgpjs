@@ -29663,7 +29663,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.4",
+  versionstring: "OpenPGP.js v4.4.5",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -54645,7 +54645,9 @@ exports.default = {
     }
 
     if (_util2.default.isUint8Array(obj)) {
-      if (zero_copy && collection.indexOf(obj.buffer) === -1) {
+      if (zero_copy && collection.indexOf(obj.buffer) === -1 && !(navigator.userAgent.indexOf('Version/11.1') !== -1 || // Safari 11.1
+      (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56 && navigator.userAgent.indexOf('Edge') === -1 // Chrome < 56
+      )) {
         collection.push(obj.buffer);
       }
       return;
