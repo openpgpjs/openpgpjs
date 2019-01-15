@@ -29663,7 +29663,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.3",
+  versionstring: "OpenPGP.js v4.4.4",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -54631,21 +54631,21 @@ exports.default = {
    * @param  {Object} obj           the options object to be passed to the web worker
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
-  getTransferables: function getTransferables(obj) {
+  getTransferables: function getTransferables(obj, zero_copy) {
     var transferables = [];
-    _util2.default.collectTransferables(obj, transferables);
+    _util2.default.collectTransferables(obj, transferables, zero_copy);
     return transferables.length ? transferables : undefined;
   },
 
-  collectTransferables: function collectTransferables(obj, collection) {
+  collectTransferables: function collectTransferables(obj, collection, zero_copy) {
     var _this = this;
 
     if (!obj) {
       return;
     }
 
-    if (_util2.default.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
-      if (_config2.default.zero_copy) {
+    if (_util2.default.isUint8Array(obj)) {
+      if (zero_copy && collection.indexOf(obj.buffer) === -1) {
         collection.push(obj.buffer);
       }
       return;
@@ -54675,43 +54675,42 @@ exports.default = {
                         port1.onmessage = function () {
                           var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(_ref6) {
                             var action = _ref6.data.action;
+                            var result;
                             return _regenerator2.default.wrap(function _callee$(_context) {
                               while (1) {
                                 switch (_context.prev = _context.next) {
                                   case 0:
                                     if (!(action === 'read')) {
-                                      _context.next = 8;
+                                      _context.next = 7;
+                                      break;
+                                    }
+
+                                    _context.next = 3;
+                                    return reader.read();
+
+                                  case 3:
+                                    result = _context.sent;
+
+                                    port1.postMessage(result, _util2.default.getTransferables(result, true));
+                                    _context.next = 13;
+                                    break;
+
+                                  case 7:
+                                    if (!(action === 'cancel')) {
+                                      _context.next = 13;
                                       break;
                                     }
 
                                     _context.t0 = port1;
-                                    _context.next = 4;
-                                    return reader.read();
+                                    _context.next = 11;
+                                    return transformed.cancel();
 
-                                  case 4:
+                                  case 11:
                                     _context.t1 = _context.sent;
 
                                     _context.t0.postMessage.call(_context.t0, _context.t1);
 
-                                    _context.next = 14;
-                                    break;
-
-                                  case 8:
-                                    if (!(action === 'cancel')) {
-                                      _context.next = 14;
-                                      break;
-                                    }
-
-                                    _context.t2 = port1;
-                                    _context.next = 12;
-                                    return transformed.cancel();
-
-                                  case 12:
-                                    _context.t3 = _context.sent;
-
-                                    _context.t2.postMessage.call(_context.t2, _context.t3);
-
-                                  case 14:
+                                  case 13:
                                   case 'end':
                                     return _context.stop();
                                 }
@@ -54744,7 +54743,7 @@ exports.default = {
         if (Object.prototype.toString.call(value) === '[object MessagePort]') {
           throw new Error("Can't transfer the same stream twice.");
         }
-        _util2.default.collectTransferables(value, collection);
+        _util2.default.collectTransferables(value, collection, zero_copy);
       });
     }
   },
@@ -55610,6 +55609,10 @@ var _util = _dereq_('../util.js');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _config = _dereq_('../config');
+
+var _config2 = _interopRequireDefault(_config);
+
 var _crypto = _dereq_('../crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
@@ -55628,6 +55631,36 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  * @constructor
  */
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @fileoverview Provides functions for maintaining browser workers
+ * @see module:openpgp.initWorker
+ * @see module:openpgp.getWorker
+ * @see module:openpgp.destroyWorker
+ * @see module:worker/worker
+ * @requires util
+ * @requires config
+ * @requires crypto
+ * @requires packet
+ * @module worker/async_proxy
+ */
+
 function AsyncProxy() {
   var _this = this;
 
@@ -55701,35 +55734,6 @@ function AsyncProxy() {
  * Get new request ID
  * @returns {integer}          New unique request ID
 */
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @fileoverview Provides functions for maintaining browser workers
- * @see module:openpgp.initWorker
- * @see module:openpgp.getWorker
- * @see module:openpgp.destroyWorker
- * @see module:worker/worker
- * @requires util
- * @requires crypto
- * @requires packet
- * @module worker/async_proxy
- */
-
 AsyncProxy.prototype.getID = function () {
   return this.currentID++;
 };
@@ -55752,7 +55756,7 @@ AsyncProxy.prototype.seedRandom = function () {
           case 2:
             buf = _context.sent;
 
-            this.workers[workerId].postMessage({ event: 'seed-random', buf: buf }, _util2.default.getTransferables(buf));
+            this.workers[workerId].postMessage({ event: 'seed-random', buf: buf }, _util2.default.getTransferables(buf, true));
 
           case 4:
           case 'end':
@@ -55798,36 +55802,19 @@ AsyncProxy.prototype.delegate = function (method, options) {
     }
   }
 
-  return new _promise2.default(function () {
-    var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(_resolve, reject) {
-      return _regenerator2.default.wrap(function _callee2$(_context2) {
-        while (1) {
-          switch (_context2.prev = _context2.next) {
-            case 0:
-              // clone packets (for web worker structured cloning algorithm)
-              _this2.workers[workerId].postMessage({ id: id, event: method, options: _packet2.default.clone.clonePackets(options) }, _util2.default.getTransferables(options));
-              _this2.workers[workerId].requests++;
+  return new _promise2.default(function (_resolve, reject) {
+    // clone packets (for web worker structured cloning algorithm)
+    _this2.workers[workerId].postMessage({ id: id, event: method, options: _packet2.default.clone.clonePackets(options) }, _util2.default.getTransferables(options, _config2.default.zero_copy));
+    _this2.workers[workerId].requests++;
 
-              // remember to handle parsing cloned packets from worker
-              _this2.tasks[id] = { resolve: function resolve(data) {
-                  return _resolve(_packet2.default.clone.parseClonedPackets(_util2.default.restoreStreams(data), method));
-                }, reject: reject };
-
-            case 3:
-            case 'end':
-              return _context2.stop();
-          }
-        }
-      }, _callee2, _this2);
-    }));
-
-    return function (_x4, _x5) {
-      return _ref3.apply(this, arguments);
-    };
-  }());
+    // remember to handle parsing cloned packets from worker
+    _this2.tasks[id] = { resolve: function resolve(data) {
+        return _resolve(_packet2.default.clone.parseClonedPackets(_util2.default.restoreStreams(data), method));
+      }, reject: reject };
+  });
 };
 
 exports.default = AsyncProxy;
 
-},{"../crypto":357,"../packet":388,"../util.js":415,"babel-runtime/core-js/promise":29,"babel-runtime/helpers/asyncToGenerator":33,"babel-runtime/helpers/toConsumableArray":39,"babel-runtime/regenerator":41}]},{},[378])(378)
+},{"../config":342,"../crypto":357,"../packet":388,"../util.js":415,"babel-runtime/core-js/promise":29,"babel-runtime/helpers/asyncToGenerator":33,"babel-runtime/helpers/toConsumableArray":39,"babel-runtime/regenerator":41}]},{},[378])(378)
 });

@@ -23761,7 +23761,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.3",
+  versionstring: "OpenPGP.js v4.4.4",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -40045,19 +40045,19 @@ exports.default = {
    * @param  {Object} obj           the options object to be passed to the web worker
    * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
    */
-  getTransferables: function getTransferables(obj) {
+  getTransferables: function getTransferables(obj, zero_copy) {
     const transferables = [];
-    _util2.default.collectTransferables(obj, transferables);
+    _util2.default.collectTransferables(obj, transferables, zero_copy);
     return transferables.length ? transferables : undefined;
   },
 
-  collectTransferables: function collectTransferables(obj, collection) {
+  collectTransferables: function collectTransferables(obj, collection, zero_copy) {
     if (!obj) {
       return;
     }
 
-    if (_util2.default.isUint8Array(obj) && collection.indexOf(obj.buffer) === -1) {
-      if (_config2.default.zero_copy) {
+    if (_util2.default.isUint8Array(obj)) {
+      if (zero_copy && collection.indexOf(obj.buffer) === -1) {
         collection.push(obj.buffer);
       }
       return;
@@ -40078,7 +40078,12 @@ exports.default = {
                     port2 = _ref.port2;
 
               port1.onmessage = async function ({ data: { action } }) {
-                if (action === 'read') port1.postMessage((await reader.read()));else if (action === 'cancel') port1.postMessage((await transformed.cancel()));
+                if (action === 'read') {
+                  const result = await reader.read();
+                  port1.postMessage(result, _util2.default.getTransferables(result, true));
+                } else if (action === 'cancel') {
+                  port1.postMessage((await transformed.cancel()));
+                }
               };
               obj[key] = port2;
               collection.push(port2);
@@ -40089,7 +40094,7 @@ exports.default = {
         if (Object.prototype.toString.call(value) === '[object MessagePort]') {
           throw new Error("Can't transfer the same stream twice.");
         }
-        _util2.default.collectTransferables(value, collection);
+        _util2.default.collectTransferables(value, collection, zero_copy);
       });
     }
   },
@@ -40857,6 +40862,10 @@ var _util = require('../util.js');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _config = require('../config');
+
+var _config2 = _interopRequireDefault(_config);
+
 var _crypto = require('../crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
@@ -40875,6 +40884,36 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  * @constructor
  */
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @fileoverview Provides functions for maintaining browser workers
+ * @see module:openpgp.initWorker
+ * @see module:openpgp.getWorker
+ * @see module:openpgp.destroyWorker
+ * @see module:worker/worker
+ * @requires util
+ * @requires config
+ * @requires crypto
+ * @requires packet
+ * @module worker/async_proxy
+ */
+
 function AsyncProxy({ path = 'openpgp.worker.js', n = 1, workers = [], config } = {}) {
   /**
    * Message handling
@@ -40935,35 +40974,6 @@ function AsyncProxy({ path = 'openpgp.worker.js', n = 1, workers = [], config } 
  * Get new request ID
  * @returns {integer}          New unique request ID
 */
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @fileoverview Provides functions for maintaining browser workers
- * @see module:openpgp.initWorker
- * @see module:openpgp.getWorker
- * @see module:openpgp.destroyWorker
- * @see module:worker/worker
- * @requires util
- * @requires crypto
- * @requires packet
- * @module worker/async_proxy
- */
-
 AsyncProxy.prototype.getID = function () {
   return this.currentID++;
 };
@@ -40975,7 +40985,7 @@ AsyncProxy.prototype.getID = function () {
  */
 AsyncProxy.prototype.seedRandom = async function (workerId, size) {
   const buf = await _crypto2.default.random.getRandomBytes(size);
-  this.workers[workerId].postMessage({ event: 'seed-random', buf }, _util2.default.getTransferables(buf));
+  this.workers[workerId].postMessage({ event: 'seed-random', buf }, _util2.default.getTransferables(buf, true));
 };
 
 /**
@@ -41006,9 +41016,9 @@ AsyncProxy.prototype.delegate = function (method, options) {
     }
   }
 
-  return new Promise(async (_resolve, reject) => {
+  return new Promise((_resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.workers[workerId].postMessage({ id: id, event: method, options: _packet2.default.clone.clonePackets(options) }, _util2.default.getTransferables(options));
+    this.workers[workerId].postMessage({ id: id, event: method, options: _packet2.default.clone.clonePackets(options) }, _util2.default.getTransferables(options, _config2.default.zero_copy));
     this.workers[workerId].requests++;
 
     // remember to handle parsing cloned packets from worker
@@ -41018,5 +41028,5 @@ AsyncProxy.prototype.delegate = function (method, options) {
 
 exports.default = AsyncProxy;
 
-},{"../crypto":96,"../packet":127,"../util.js":154}]},{},[117])(117)
+},{"../config":81,"../crypto":96,"../packet":127,"../util.js":154}]},{},[117])(117)
 });
