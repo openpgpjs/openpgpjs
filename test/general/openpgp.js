@@ -1705,7 +1705,11 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             if (openpgp.getWorker()) {
-              expect(encOpt.message.packets[0].data.byteLength).to.equal(0); // transferred buffer should be empty
+              if (navigator.userAgent.indexOf('Safari') !== -1 && (navigator.userAgent.indexOf('Version/11.1') !== -1 || (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56)) {
+                expect(encOpt.message.packets[0].data.byteLength).to.equal(8); // browser doesn't support transfering buffers
+              } else {
+                expect(encOpt.message.packets[0].data.byteLength).to.equal(0); // transferred buffer should be empty
+              }
             }
             expect(decrypted.data).to.deep.equal(new Uint8Array([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01]));
             expect(decrypted.signatures.length).to.equal(0);

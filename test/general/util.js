@@ -137,9 +137,15 @@ describe('Util unit tests', function() {
     it('should return undefined for an empty oject', function() {
       expect(openpgp.util.getTransferables({}, true)).to.be.undefined;
     });
-    it('should return two buffers', function() {
-      expect(openpgp.util.getTransferables(obj, true)).to.deep.equal([buf1.buffer, buf2.buffer]);
-    });
+    if (typeof navigator !== 'undefined') {
+      it('should return two buffers', function() {
+        expect(openpgp.util.getTransferables(obj, true)).to.deep.equal(
+          navigator.userAgent.indexOf('Safari') !== -1 && (navigator.userAgent.indexOf('Version/11.1') !== -1 || (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56) ?
+          undefined :
+          [buf1.buffer, buf2.buffer]
+        );
+      });
+    }
   });
 
   describe("Misc.", function() {
