@@ -96,7 +96,7 @@ async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
-  const key = await genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
+  const { V, Z } = await genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
   const C = aes_kw.wrap(key.Z, m.toString());
   return {
     V: key.V,
