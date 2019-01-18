@@ -58,6 +58,30 @@ async function kdf(hash_algo, X, length, param) {
   return digest.subarray(0, length);
 }
 
+/**
+ * Generate ECDHE ephemeral key and secret from public key
+ *
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {Promise<{V: BN, C: Uint8Array}>}    Returns public part of ephemeral key and generated ephemeral secret
+ * @async
+ */
+async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint) {
+  const curve = new Curve(oid);
+  const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
+  cipher_algo = enums.read(enums.symmetric, cipher_algo);
+  const v = await curve.genKeyPair();
+  Q = curve.keyFromPublic(Q);
+  const S = v.derive(Q);
+  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
+  return {
+    V: new BN(v.getPublic()),
+    Z: Z
+  };
+}
 
 /**
  * Encrypt and wrap a session key
@@ -68,22 +92,38 @@ async function kdf(hash_algo, X, length, param) {
  * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<{V: BN, C: BN}>}            Returns ephemeral key and encoded session key
+ * @returns {Promise<{V: BN, C: BN}>}            Returns public part of ephemeral key and encoded session key
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
+  const key = await genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
+  const C = aes_kw.wrap(key.Z, m.toString());
+  return {
+    V: key.V,
+    C: C
+  };
+}
+
+/**
+ * Generate ECDHE secret from private key and public part of ephemeral key
+ *
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {BN}                     V            Public part of ephemeral key
+ * @param  {Uint8Array}             d            Recipient private key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {Promise<Uint8Array>}                Generated ephemeral secret
+ * @async
+ */
+async function genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint) {
   const curve = new Curve(oid);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
-  const v = await curve.genKeyPair();
-  Q = curve.keyFromPublic(Q);
-  const S = v.derive(Q);
-  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
-  const C = aes_kw.wrap(Z, m.toString());
-  return {
-    V: new BN(v.getPublic()),
-    C: C
-  };
+  V = curve.keyFromPublic(V);
+  d = curve.keyFromPrivate(d);
+  const S = d.derive(V);
+  return kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
 }
 
 /**
@@ -100,14 +140,8 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-  const curve = new Curve(oid);
-  const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = enums.read(enums.symmetric, cipher_algo);
-  V = curve.keyFromPublic(V);
-  d = curve.keyFromPrivate(d);
-  const S = d.derive(V);
-  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
+  const Z = await genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint);
   return new BN(aes_kw.unwrap(Z, C));
 }
 
-export default { encrypt, decrypt };
+export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey };
