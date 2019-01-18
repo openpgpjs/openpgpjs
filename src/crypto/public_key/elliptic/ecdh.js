@@ -66,7 +66,7 @@ async function kdf(hash_algo, X, length, param) {
  * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<{V: BN, C: Uint8Array}>}    Returns public part of ephemeral key and generated ephemeral secret
+ * @returns {Promise<{V: BN, Z: Uint8Array}>}    Returns public part of ephemeral key and generated ephemeral secret
  * @async
  */
 async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint) {
