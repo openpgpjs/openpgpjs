@@ -76,10 +76,9 @@ async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint
   const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q);
   const S = v.derive(Q);
-  return {
-    V: new BN(v.getPublic()),
-    Z: await kdf(hash_algo, S, cipher[cipher_algo].keySize, param)
-  };
+  const V = new BN(v.getPublic());
+  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
+  return { V, Z };
 }
 
 /**
