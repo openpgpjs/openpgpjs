@@ -61,12 +61,12 @@ async function kdf(hash_algo, X, length, param) {
 /**
  * Generate ECDHE ephemeral key and secret from public key
  *
- * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
- * @param  {Uint8Array}             Q            Recipient public key
- * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<{V: BN, Z: Uint8Array}>}    Returns public part of ephemeral key and generated ephemeral secret
+ * @param  {module:type/oid}        oid                 Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo         Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo           Hash algorithm to use
+ * @param  {Uint8Array}             Q                   Recipient public key
+ * @param  {String}                 fingerprint         Recipient fingerprint
+ * @returns {Promise<{V: Uint8Array, Z: Uint8Array}>}   Returns public part of ephemeral key and generated ephemeral secret
  * @async
  */
 async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint) {
@@ -76,7 +76,7 @@ async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint
   const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q);
   const S = v.derive(Q);
-  const V = new BN(v.getPublic());
+  const V = new Uint8Array(v.getPublic());
   const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param);
   return { V, Z };
 }
@@ -95,8 +95,10 @@ async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   const { V, Z } = await genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
-  const C = aes_kw.wrap(Z, m.toString());
-  return { V, C };
+  return {
+      V: BN(V),
+      C: aes_kw.wrap(Z, m.toString())
+  };
 }
 
 /**
