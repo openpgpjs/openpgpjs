@@ -105,7 +105,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
  * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
  * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
- * @param  {BN}                     V            Public part of ephemeral key
+ * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
  * @returns {Promise<Uint8Array>}                Generated ephemeral secret
@@ -127,7 +127,7 @@ async function genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerp
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
  * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
  * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
- * @param  {BN}                     V            Public part of ephemeral key
+ * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
