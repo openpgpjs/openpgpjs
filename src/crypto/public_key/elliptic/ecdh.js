@@ -96,7 +96,7 @@ async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   const { V, Z } = await genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
   return {
-      V: BN(V),
+      V: new BN(V),
       C: aes_kw.wrap(Z, m.toString())
   };
 }
@@ -133,7 +133,7 @@ async function genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerp
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<Uint8Array>}                Value derived from session
+ * @returns {Promise<BN>}                        Value derived from session
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
