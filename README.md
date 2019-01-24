@@ -184,7 +184,7 @@ const encryptDecryptFunction = async() => {
         encrypted = ciphertext.data // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
         return encrypted
     })
-    .then(encrypted => {
+    .then(async encrypted => {
         const options = {
             message: await openpgp.message.readArmored(encrypted),    // parse armored message
             publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for verification (optional)
