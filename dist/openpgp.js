@@ -23761,7 +23761,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.5",
+  versionstring: "OpenPGP.js v4.4.6",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -28024,6 +28024,29 @@ async function kdf(hash_algo, X, length, param) {
 }
 
 /**
+ * Generate ECDHE ephemeral key and secret from public key
+ *
+ * @param  {module:type/oid}        oid                 Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo         Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo           Hash algorithm to use
+ * @param  {Uint8Array}             Q                   Recipient public key
+ * @param  {String}                 fingerprint         Recipient fingerprint
+ * @returns {Promise<{V: Uint8Array, Z: Uint8Array}>}   Returns public part of ephemeral key and generated ephemeral secret
+ * @async
+ */
+async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint) {
+  const curve = new _curves2.default(oid);
+  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
+  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+  const v = await curve.genKeyPair();
+  Q = curve.keyFromPublic(Q);
+  const S = v.derive(Q);
+  const V = new Uint8Array(v.getPublic());
+  const Z = await kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
+  return { V, Z };
+}
+
+/**
  * Encrypt and wrap a session key
  *
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
@@ -28032,22 +28055,41 @@ async function kdf(hash_algo, X, length, param) {
  * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<{V: BN, C: BN}>}            Returns ephemeral key and encoded session key
+ * @returns {Promise<{V: BN, C: BN}>}            Returns public part of ephemeral key and encoded session key
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
+  var _ref = await genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
+
+  const V = _ref.V,
+        Z = _ref.Z;
+
+  return {
+    V: new _bn2.default(V),
+    C: _aes_kw2.default.wrap(Z, m.toString())
+  };
+}
+
+/**
+ * Generate ECDHE secret from private key and public part of ephemeral key
+ *
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {Uint8Array}             V            Public part of ephemeral key
+ * @param  {Uint8Array}             d            Recipient private key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {Promise<Uint8Array>}                Generated ephemeral secret
+ * @async
+ */
+async function genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint) {
   const curve = new _curves2.default(oid);
   const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
-  const v = await curve.genKeyPair();
-  Q = curve.keyFromPublic(Q);
-  const S = v.derive(Q);
-  const Z = await kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
-  const C = _aes_kw2.default.wrap(Z, m.toString());
-  return {
-    V: new _bn2.default(v.getPublic()),
-    C: C
-  };
+  V = curve.keyFromPublic(V);
+  d = curve.keyFromPrivate(d);
+  const S = d.derive(V);
+  return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
 }
 
 /**
@@ -28056,25 +28098,19 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
  * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
  * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
- * @param  {BN}                     V            Public part of ephemeral key
+ * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<Uint8Array>}                Value derived from session
+ * @returns {Promise<BN>}                        Value derived from session
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-  const curve = new _curves2.default(oid);
-  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
-  V = curve.keyFromPublic(V);
-  d = curve.keyFromPrivate(d);
-  const S = d.derive(V);
-  const Z = await kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
+  const Z = await genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint);
   return new _bn2.default(_aes_kw2.default.unwrap(Z, C));
 }
 
-exports.default = { encrypt, decrypt };
+exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey };
 
 },{"../../../enums":115,"../../../type/kdf_params":149,"../../../util":154,"../../aes_kw":82,"../../cipher":88,"../../hash":94,"./curves":102,"bn.js":17}],104:[function(require,module,exports){
 'use strict';

@@ -29663,7 +29663,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.5",
+  versionstring: "OpenPGP.js v4.4.6",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -35212,22 +35212,21 @@ var kdf = function () {
 }();
 
 /**
- * Encrypt and wrap a session key
+ * Generate ECDHE ephemeral key and secret from public key
  *
- * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
- * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
- * @param  {Uint8Array}             Q            Recipient public key
- * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<{V: BN, C: BN}>}            Returns ephemeral key and encoded session key
+ * @param  {module:type/oid}        oid                 Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo         Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo           Hash algorithm to use
+ * @param  {Uint8Array}             Q                   Recipient public key
+ * @param  {String}                 fingerprint         Recipient fingerprint
+ * @returns {Promise<{V: Uint8Array, Z: Uint8Array}>}   Returns public part of ephemeral key and generated ephemeral secret
  * @async
  */
 
 
-var encrypt = function () {
-  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
-    var curve, param, v, S, Z, C;
+var genPublicEphemeralKey = function () {
+  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(oid, cipher_algo, hash_algo, Q, fingerprint) {
+    var curve, param, v, S, V, Z;
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
@@ -35244,16 +35243,13 @@ var encrypt = function () {
 
             Q = curve.keyFromPublic(Q);
             S = v.derive(Q);
-            _context2.next = 10;
+            V = new Uint8Array(v.getPublic());
+            _context2.next = 11;
             return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
 
-          case 10:
+          case 11:
             Z = _context2.sent;
-            C = _aes_kw2.default.wrap(Z, m.toString());
-            return _context2.abrupt('return', {
-              V: new _bn2.default(v.getPublic()),
-              C: C
-            });
+            return _context2.abrupt('return', { V: V, Z: Z });
 
           case 13:
           case 'end':
@@ -35263,8 +35259,98 @@ var encrypt = function () {
     }, _callee2, this);
   }));
 
-  return function encrypt(_x5, _x6, _x7, _x8, _x9, _x10) {
+  return function genPublicEphemeralKey(_x5, _x6, _x7, _x8, _x9) {
     return _ref2.apply(this, arguments);
+  };
+}();
+
+/**
+ * Encrypt and wrap a session key
+ *
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {Promise<{V: BN, C: BN}>}            Returns public part of ephemeral key and encoded session key
+ * @async
+ */
+
+
+var encrypt = function () {
+  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
+    var _ref4, V, Z;
+
+    return _regenerator2.default.wrap(function _callee3$(_context3) {
+      while (1) {
+        switch (_context3.prev = _context3.next) {
+          case 0:
+            _context3.next = 2;
+            return genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
+
+          case 2:
+            _ref4 = _context3.sent;
+            V = _ref4.V;
+            Z = _ref4.Z;
+            return _context3.abrupt('return', {
+              V: new _bn2.default(V),
+              C: _aes_kw2.default.wrap(Z, m.toString())
+            });
+
+          case 6:
+          case 'end':
+            return _context3.stop();
+        }
+      }
+    }, _callee3, this);
+  }));
+
+  return function encrypt(_x10, _x11, _x12, _x13, _x14, _x15) {
+    return _ref3.apply(this, arguments);
+  };
+}();
+
+/**
+ * Generate ECDHE secret from private key and public part of ephemeral key
+ *
+ * @param  {module:type/oid}        oid          Elliptic curve object identifier
+ * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
+ * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {Uint8Array}             V            Public part of ephemeral key
+ * @param  {Uint8Array}             d            Recipient private key
+ * @param  {String}                 fingerprint  Recipient fingerprint
+ * @returns {Promise<Uint8Array>}                Generated ephemeral secret
+ * @async
+ */
+
+
+var genPrivateEphemeralKey = function () {
+  var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(oid, cipher_algo, hash_algo, V, d, fingerprint) {
+    var curve, param, S;
+    return _regenerator2.default.wrap(function _callee4$(_context4) {
+      while (1) {
+        switch (_context4.prev = _context4.next) {
+          case 0:
+            curve = new _curves2.default(oid);
+            param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
+
+            cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+            V = curve.keyFromPublic(V);
+            d = curve.keyFromPrivate(d);
+            S = d.derive(V);
+            return _context4.abrupt('return', kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param));
+
+          case 7:
+          case 'end':
+            return _context4.stop();
+        }
+      }
+    }, _callee4, this);
+  }));
+
+  return function genPrivateEphemeralKey(_x16, _x17, _x18, _x19, _x20, _x21) {
+    return _ref5.apply(this, arguments);
   };
 }();
 
@@ -35274,46 +35360,39 @@ var encrypt = function () {
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
  * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
  * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
- * @param  {BN}                     V            Public part of ephemeral key
+ * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<Uint8Array>}                Value derived from session
+ * @returns {Promise<BN>}                        Value derived from session
  * @async
  */
 
 
 var decrypt = function () {
-  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-    var curve, param, S, Z;
-    return _regenerator2.default.wrap(function _callee3$(_context3) {
+  var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
+    var Z;
+    return _regenerator2.default.wrap(function _callee5$(_context5) {
       while (1) {
-        switch (_context3.prev = _context3.next) {
+        switch (_context5.prev = _context5.next) {
           case 0:
-            curve = new _curves2.default(oid);
-            param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
+            _context5.next = 2;
+            return genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint);
 
-            cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
-            V = curve.keyFromPublic(V);
-            d = curve.keyFromPrivate(d);
-            S = d.derive(V);
-            _context3.next = 8;
-            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
+          case 2:
+            Z = _context5.sent;
+            return _context5.abrupt('return', new _bn2.default(_aes_kw2.default.unwrap(Z, C)));
 
-          case 8:
-            Z = _context3.sent;
-            return _context3.abrupt('return', new _bn2.default(_aes_kw2.default.unwrap(Z, C)));
-
-          case 10:
+          case 4:
           case 'end':
-            return _context3.stop();
+            return _context5.stop();
         }
       }
-    }, _callee3, this);
+    }, _callee5, this);
   }));
 
-  return function decrypt(_x11, _x12, _x13, _x14, _x15, _x16, _x17) {
-    return _ref3.apply(this, arguments);
+  return function decrypt(_x22, _x23, _x24, _x25, _x26, _x27, _x28) {
+    return _ref6.apply(this, arguments);
   };
 }();
 
@@ -35384,7 +35463,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
   var kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
   return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdf_params.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
-}exports.default = { encrypt: encrypt, decrypt: decrypt };
+}exports.default = { encrypt: encrypt, decrypt: decrypt, genPublicEphemeralKey: genPublicEphemeralKey, genPrivateEphemeralKey: genPrivateEphemeralKey };
 
 },{"../../../enums":376,"../../../type/kdf_params":410,"../../../util":415,"../../aes_kw":343,"../../cipher":349,"../../hash":355,"./curves":363,"babel-runtime/helpers/asyncToGenerator":33,"babel-runtime/regenerator":41,"bn.js":42}],365:[function(_dereq_,module,exports){
 'use strict';
