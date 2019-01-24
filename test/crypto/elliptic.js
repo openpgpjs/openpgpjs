@@ -390,4 +390,80 @@ describe('Elliptic Curve Cryptography', async function () {
       )).to.be.rejectedWith(Error, /Key Data Integrity failed/).notify(done);
     });
   });
+  const Q1 = new Uint8Array([
+      64,
+      48,  226,  162,  114,  194,  194,  67, 214,
+      199, 10,  173,  22,  216,  240,  197,  202,
+      114,  49,  127, 107,  152,  58,  119,   48,
+      234,  194,  192,  66,  53,  165,  137,  93 ]);
+  const d1 = new Uint8Array ([
+      65, 200,  132,  198,  77,  86,  126,  196,
+      247, 169,  156,  201,  32,  52,   3,  198,
+      127, 144,  139,  47,  153,  239, 64,  235,
+      61,   7,  17,  214,  64,  211,  215,  80 ]);
+  const Q2 = new Uint8Array([
+      64,
+      154,  115,  36,  108,  33,  153,  64,  184,
+      25,  139,  67,  25,  178,  194,  227,  53,
+      254,  40,  101,  213,  28,  121,  154,  62,
+      27,  99,  92,  126,  33,  223,  122,  91 ]);
+  const d2 = new Uint8Array([
+      123,  99,  163,  24,  201,  87,  0,  9,
+      204,  21,  154,  5,  5,  5,  127,  157,
+      237,  95,  76,  117,  89,  250,  64,  178,
+      72,  69,  69,  58,  89,  228,  113,  112 ]);
+  const fingerprint1 = new Uint8Array([
+      177, 183,
+      116,  123,  76,  133,  245,  212, 151, 243, 236,
+      71,  245,  86,  3,  168,  101,   74,  209,  105 ]);
+  const fingerprint2 = new Uint8Array([
+      177,  83,
+      123,  123,  76,  133,  245, 212, 151, 243, 236,
+      71,  245,  86,  3,  168,  101,  74,  209,  105 ]);
+  async function genPublicEphemeralKey(curve, Q, fingerprint) {
+    const curveObj = new openpgp.crypto.publicKey.elliptic.Curve(curve);
+    const oid = new openpgp.OID(curveObj.oid);
+    return openpgp.crypto.publicKey.elliptic.ecdh.genPublicEphemeralKey(
+        oid,
+        curveObj.cipher,
+        curveObj.hash,
+        Q,
+        fingerprint
+    );
+  }
+  async function genPrivateEphemeralKey(curve, V, d, fingerprint) {
+    const curveObj = new openpgp.crypto.publicKey.elliptic.Curve(curve);
+    const oid = new openpgp.OID(curveObj.oid);
+    return openpgp.crypto.publicKey.elliptic.ecdh.genPrivateEphemeralKey(
+        oid,
+        curveObj.cipher,
+        curveObj.hash,
+        V,
+        d,
+        fingerprint
+    );
+  }
+  const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
+  const ECDHE_VZ2 = await genPublicEphemeralKey("curve25519", Q2, fingerprint1);
+  const ECDHE_Z1 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, d1, fingerprint1);
+  const ECDHE_Z2 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ2.V, d2, fingerprint2);
+  const ECDHE_Z12 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, d2, fingerprint1);
+  describe('ECDHE key generation', function () {
+    it('Invalid curve', function (done) {
+      expect(genPublicEphemeralKey("secp256k1", Q1, fingerprint1)
+        ).to.be.rejectedWith(Error, /Unknown point format/).notify(done);
+    });
+    it('Invalid public part of ephemeral key and private key', function () {
+      expect(Array.from(ECDHE_Z12).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.false;
+    });
+    it('Invalid fingerprint', function () {
+      expect(Array.from(ECDHE_Z2).join(' ') === Array.from(ECDHE_VZ2.Z).join(' ')).to.be.false;
+    });
+    it('Different keys', function () {
+      expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ2.Z).join(' ')).to.be.false;
+    });
+    it('Successful exchange', function () {
+      expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
+    });
+  });
 });
