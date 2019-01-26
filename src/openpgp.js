@@ -673,7 +673,13 @@ function linkStreams(result, message, erroringStream) {
 async function prepareSignatures(signatures) {
   await Promise.all(signatures.map(async signature => {
     signature.signature = await signature.signature;
-    signature.valid = await signature.verified;
+    try {
+      signature.valid = await signature.verified;
+    } catch(e) {
+      signature.valid = null;
+      signature.error = e;
+      util.print_debug_error(e);
+    }
   }));
 }
 
