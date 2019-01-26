@@ -180,7 +180,7 @@ describe('X25519 Cryptography', function () {
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
 
     expect(result).to.exist;
-    expect(result.data).to.equal(openpgp.util.removeTrailingSpaces(randomData));
+    expect(result.data).to.equal(randomData.replace(/[ \t]+$/mg, ''));
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });

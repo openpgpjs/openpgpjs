@@ -702,7 +702,11 @@ export default {
    * Remove trailing spaces and tabs from each line
    */
   removeTrailingSpaces: function(text) {
-    return text.replace(/[ \t]+$/mg, "");
+    return text.split('\n').map(line => {
+      let i = line.length - 1;
+      for (; i >= 0 && (line[i] === ' ' || line[i] === '\t'); i--);
+      return line.substr(0, i + 1);
+    }).join('\n');
   },
 
   /**

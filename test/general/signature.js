@@ -525,7 +525,7 @@ zmuVOdNuWQqxT9Sqa84=
 
     return openpgp.verify({ publicKeys:[pubKey], message:csMsg }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
-      expect(cleartextSig.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
+      expect(cleartextSig.data).to.equal(plaintext.replace(/[ \t]+$/mg, ''));
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
@@ -648,7 +648,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
     }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
-      expect(cleartextSig.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext.replace(/\r/g,'')));
+      expect(cleartextSig.data).to.equal(plaintext.replace(/[ \t\r]+$/mg, ''));
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
@@ -688,7 +688,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
     }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
-      expect(cleartextSig.data).to.equal(openpgp.util.removeTrailingSpaces(plaintext));
+      expect(cleartextSig.data).to.equal(plaintext.replace(/[ \t]+$/mg, ''));
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);

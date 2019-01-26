@@ -243,7 +243,7 @@ function dearmor(input) {
               throw new Error('Misformed armored text');
             }
             // remove trailing whitespace at end of lines
-            line = line.replace(/[\t\r\n ]+$/, '');
+            line = util.removeTrailingSpaces(line.replace(/[\r\n]/g, ''));
             if (!type) {
               if (reSplit.test(line)) {
                 type = getType(line);
@@ -294,7 +294,7 @@ function dearmor(input) {
               let remainder = await reader.readToEnd();
               if (!remainder.length) remainder = '';
               remainder = line + remainder;
-              remainder = remainder.replace(/[\t\r ]+$/mg, '');
+              remainder = util.removeTrailingSpaces(remainder.replace(/\r/g, ''));
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {
                 throw new Error('Misformed armored text');
