@@ -6,7 +6,7 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-describe('Elliptic Curve Cryptography', async function () {
+describe('Elliptic Curve Cryptography', function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const key_data = {
     p256: {
@@ -123,6 +123,12 @@ describe('Elliptic Curve Cryptography', async function () {
       0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
       0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
     ]),
+    hashed: new Uint8Array([
+      0xbe, 0x45, 0xcb, 0x26, 0x05, 0xbf, 0x36, 0xbe,
+      0xbd, 0xe6, 0x84, 0x84, 0x1a, 0x28, 0xf0, 0xfd,
+      0x43, 0xc6, 0x98, 0x50, 0xa3, 0xdc, 0xe5, 0xfe,
+      0xdb, 0xa6, 0x99, 0x28, 0xee, 0x3a, 0x89, 0x91
+    ]),
     signature: {
       r: new Uint8Array([
         0xF1, 0x78, 0x1C, 0xA5, 0x13, 0x21, 0x0C, 0xBA,
@@ -138,7 +144,6 @@ describe('Elliptic Curve Cryptography', async function () {
       ])
     }
   };
-  signature_data.hashed = await openpgp.crypto.hash.digest(8, signature_data.message);
   describe('Basic Operations', function () {
     it('Creating curve from name or oid', function (done) {
       for (let name_or_oid in openpgp.enums.curves) {
@@ -455,26 +460,30 @@ describe('Elliptic Curve Cryptography', async function () {
     );
     return Z;
   }
-  const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
-  const ECDHE_VZ2 = await genPublicEphemeralKey("curve25519", Q2, fingerprint1);
-  const ECDHE_Z1 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, d1, fingerprint1);
-  const ECDHE_Z2 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ2.V, d2, fingerprint2);
-  const ECDHE_Z12 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, d2, fingerprint1);
   describe('ECDHE key generation', function () {
     it('Invalid curve', function (done) {
       expect(genPublicEphemeralKey("secp256k1", Q1, fingerprint1)
         ).to.be.rejectedWith(Error, /Unknown point format/).notify(done);
     });
-    it('Invalid public part of ephemeral key and private key', function () {
+    it('Invalid public part of ephemeral key and private key', async function () {
+      const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
+      const ECDHE_Z12 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, d2, fingerprint1);
       expect(Array.from(ECDHE_Z12).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.false;
     });
-    it('Invalid fingerprint', function () {
+    it('Invalid fingerprint', async function () {
+      const ECDHE_VZ2 = await genPublicEphemeralKey("curve25519", Q2, fingerprint1);
+      const ECDHE_Z2 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ2.V, d2, fingerprint2);
       expect(Array.from(ECDHE_Z2).join(' ') === Array.from(ECDHE_VZ2.Z).join(' ')).to.be.false;
     });
-    it('Different keys', function () {
+    it('Different keys', async function () {
+      const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
+      const ECDHE_VZ2 = await genPublicEphemeralKey("curve25519", Q2, fingerprint1);
+      const ECDHE_Z1 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, d1, fingerprint1);
       expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ2.Z).join(' ')).to.be.false;
     });
-    it('Successful exchange', function () {
+    it('Successful exchange', async function () {
+      const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
+      const ECDHE_Z1 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, d1, fingerprint1);
       expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
     });
   });
