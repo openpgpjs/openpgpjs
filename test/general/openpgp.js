@@ -304,6 +304,37 @@ const twoPasswordGPGFail = ['-----BEGIN PGP MESSAGE-----',
 '=cHCV',
 '-----END PGP MESSAGE-----'].join('\n');
 
+const ecdh_msg_bad = `-----BEGIN PGP MESSAGE-----
+Version: ProtonMail
+Comment: https://protonmail.com
+
+wV4DlF328rtCW+wSAQdA9FsAz4rCdoxY/oZaa68WMPMXbO+wtHs4ZXtAOJOs
+SlwwDaABXYC2dt0hUS2zRAL3gBGf4udH/CKJ1vPE58sNeh0ERYLxPHgwrpqI
+oNVWOWH50kUBIdqd7by8RwLOk9GyV6008iFOlOG90mfjvt2g5DsnSB4wEeMg
+pVu3fXj8iAKvFxvihwv1M7gNtP14StP6CngvyGVVEHQ=
+=mvcB
+-----END PGP MESSAGE-----`;
+
+const ecdh_dec_key = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+Version: OpenPGP.js v4.4.6
+Comment: https://openpgpjs.org
+
+xYYEXEBTPxYJKwYBBAHaRw8BAQdAbXBY+2lpOatB+ZLokS/JIWqrVOseja9S
+ewQxMKN6ueT+CQMIuUXr0XofC6VgJvFLyLwDlyyvT4I1HWGKZ6W9HUaslKvS
+rw362rbMZKKfUtfjRJvpqiIU3Dr7iDkHB5vT7Tp5S7AZ2tNKoh/bwfTKdHsT
+1803InFhX3Rlc3RlcjJAcHJvdG9ubWFpbC5jb20iIDxxYV90ZXN0ZXIyQHBy
+b3Rvbm1haWwuY29tPsJ3BBAWCgAfBQJcQFM/BgsJBwgDAgQVCAoCAxYCAQIZ
+AQIbAwIeAQAKCRClzcrGJTMHyTpjAQCJZ7p0TJBZyPQ8m64N24glaM6oM78q
+2Ogpc0e9LcrPowD6AssY2YfUwJNzVFVzR+Lulzu6XVPjn0pXGMhOl03SrQ3H
+iwRcQFM/EgorBgEEAZdVAQUBAQdAAgJJUhKvjGWMq1sDhrJgvqbHK1t1W5RF
+Xoet5noIlAADAQgH/gkDCOFdJ7Yv2cTZYETRT5+ak/ntmslcAqtk3ebd7Ok3
+tQIjO3TYUbkV1eqrpA4I42kGCUkU4Dy26wxuaLRSsO1u/RgXjExZLP9FlWFI
+h6lLS1bCYQQYFggACQUCXEBTPwIbDAAKCRClzcrGJTMHyfNBAP9sdyU3GHNR
+7+QdwYvQp7wN+2VUd8vIf7iwAHOK1Cj4ywD+NhzjFfGYESJ68nnkrYlYdf+u
+OBqYz6mzZAWQZqsjbg4=
+=zrks
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function withCompression(tests) {
   const compressionTypes = Object.keys(openpgp.enums.compression).map(k => openpgp.enums.compression[k]);
 
@@ -2260,6 +2291,14 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
         const passwords = ['Test', 'Pinata', 'a'];
         const decrypted = await openpgp.decrypt({ message, passwords });
         expect(decrypted.data).to.equal('Hello world');
+      });
+
+      it('should decrypt broken ECC message from old OpenPGP.js', async function() {
+        const { keys: [key] } = await openpgp.key.readArmored(ecdh_dec_key);
+        const message = await openpgp.message.readArmored(ecdh_msg_bad);
+        await key.decrypt('12345');
+        const decrypted = await openpgp.decrypt({ message, privateKeys: [key] });
+        expect(decrypted.data).to.equal('\n');
       });
 
     });

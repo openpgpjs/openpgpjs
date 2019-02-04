@@ -20,6 +20,7 @@
 /**
  * @fileoverview Provides functions for asymmetric encryption and decryption as
  * well as key generation and parameter handling for all public-key cryptosystems.
+ * @requires bn.js
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/random
@@ -32,6 +33,7 @@
  * @module crypto/crypto
  */
 
+import BN from 'bn.js';
 import publicKey from './public_key';
 import cipher from './cipher';
 import random from './random';
@@ -89,9 +91,9 @@ export default {
           const oid = pub_params[0];
           const Q = pub_params[1].toUint8Array();
           const kdf_params = pub_params[2];
-          const res = await publicKey.elliptic.ecdh.encrypt(
+          const { V, C } = await publicKey.elliptic.ecdh.encrypt(
             oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
-          return constructParams(types, [res.V, res.C]);
+          return constructParams(types, [new BN(V), C]);
         }
         default:
           return [];
