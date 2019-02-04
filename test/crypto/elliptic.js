@@ -197,10 +197,10 @@ describe('Elliptic Curve Cryptography', async function () {
       const curve = new elliptic_curves.Curve('p256');
       let key1 = curve.keyFromPrivate(key_data.p256.priv);
       let key2 = curve.keyFromPublic(signature_data.pub);
-      const shared1 = openpgp.util.Uint8Array_to_hex(key1.derive(key2));
+      const shared1 = openpgp.util.Uint8Array_to_hex(key1.derive(key2).toArrayLike(Uint8Array));
       key1 = curve.keyFromPublic(key_data.p256.pub);
       key2 = curve.keyFromPrivate(signature_data.priv);
-      const shared2 = openpgp.util.Uint8Array_to_hex(key2.derive(key1));
+      const shared2 = openpgp.util.Uint8Array_to_hex(key2.derive(key1).toArrayLike(Uint8Array));
       expect(shared1).to.equal(shared2);
       done();
     });
@@ -424,25 +424,36 @@ describe('Elliptic Curve Cryptography', async function () {
   async function genPublicEphemeralKey(curve, Q, fingerprint) {
     const curveObj = new openpgp.crypto.publicKey.elliptic.Curve(curve);
     const oid = new openpgp.OID(curveObj.oid);
-    return openpgp.crypto.publicKey.elliptic.ecdh.genPublicEphemeralKey(
-        oid,
-        curveObj.cipher,
-        curveObj.hash,
-        Q,
-        fingerprint
+    const { V, S } = await openpgp.crypto.publicKey.elliptic.ecdh.genPublicEphemeralKey(
+      curveObj, Q
     );
+    let cipher_algo = curveObj.cipher;
+    const hash_algo = curveObj.hash;
+    const param = openpgp.crypto.publicKey.elliptic.ecdh.buildEcdhParam(
+      openpgp.enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint
+    );
+    cipher_algo = openpgp.enums.read(openpgp.enums.symmetric, cipher_algo);
+    const Z = await openpgp.crypto.publicKey.elliptic.ecdh.kdf(
+      hash_algo, S, openpgp.crypto.cipher[cipher_algo].keySize, param, curveObj, false
+    );
+    return { V, Z };
   }
   async function genPrivateEphemeralKey(curve, V, d, fingerprint) {
     const curveObj = new openpgp.crypto.publicKey.elliptic.Curve(curve);
     const oid = new openpgp.OID(curveObj.oid);
-    return openpgp.crypto.publicKey.elliptic.ecdh.genPrivateEphemeralKey(
-        oid,
-        curveObj.cipher,
-        curveObj.hash,
-        V,
-        d,
-        fingerprint
+    const S = await openpgp.crypto.publicKey.elliptic.ecdh.genPrivateEphemeralKey(
+      curveObj, V, d
     );
+    let cipher_algo = curveObj.cipher;
+    const hash_algo = curveObj.hash;
+    const param = openpgp.crypto.publicKey.elliptic.ecdh.buildEcdhParam(
+      openpgp.enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint
+    );
+    cipher_algo = openpgp.enums.read(openpgp.enums.symmetric, cipher_algo);
+    const Z = await openpgp.crypto.publicKey.elliptic.ecdh.kdf(
+      hash_algo, S, openpgp.crypto.cipher[cipher_algo].keySize, param, curveObj, false
+    );
+    return Z;
   }
   const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
   const ECDHE_VZ2 = await genPublicEphemeralKey("curve25519", Q2, fingerprint1);
