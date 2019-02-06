@@ -27,7 +27,7 @@ import config from './config';
  * Initialize the HKP client and configure it with the key server url and fetch function.
  * @constructor
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
- *   the protocol to use e.g. https://pgp.mit.edu
+ *   the protocol to use e.g. https://keyserver.ubuntu.com
  */
 function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl || config.keyserver;
