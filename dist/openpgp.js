@@ -10020,16 +10020,7 @@ KeyPair.prototype._importPublic = function _importPublic(key, enc) {
 
 // ECDH
 KeyPair.prototype.derive = function derive(pub) {
-  var x = pub.mul(this.priv).getX();
-  var len = x.byteLength();
-
-  // Note: this is not ideal, but the RFC's are unclear
-  // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
-  if (this.ec.curve.type === 'mont') {
-    return x.toArray('le', len);
-  } else {
-    return x.toArray('be', len);
-  }
+  return pub.mul(this.priv).getX();
 };
 
 // ECDSA
@@ -11407,29 +11398,29 @@ utils.intFromLE = intFromLE;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/elliptic",
+      "github:openpgpjs/elliptic#ad81845",
       "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/elliptic",
-  "_id": "elliptic@github:openpgpjs/elliptic#e187e706e11fa51bcd20e46e5119054be4e2a4a6",
+  "_from": "github:openpgpjs/elliptic#ad81845",
+  "_id": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
   "_inBundle": false,
   "_integrity": "",
   "_location": "/elliptic",
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/elliptic",
-    "rawSpec": "github:openpgpjs/elliptic",
-    "saveSpec": "github:openpgpjs/elliptic",
+    "raw": "github:openpgpjs/elliptic#ad81845",
+    "rawSpec": "github:openpgpjs/elliptic#ad81845",
+    "saveSpec": "github:openpgpjs/elliptic#ad81845",
     "fetchSpec": null,
-    "gitCommittish": null
+    "gitCommittish": "ad81845"
   },
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "github:openpgpjs/elliptic#e187e706e11fa51bcd20e46e5119054be4e2a4a6",
-  "_spec": "github:openpgpjs/elliptic",
+  "_resolved": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
+  "_spec": "github:openpgpjs/elliptic#ad81845",
   "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
@@ -21802,11 +21793,11 @@ module.exports = Stream;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/seek-bzip",
+      "github:openpgpjs/seek-bzip#3aca608",
       "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/seek-bzip",
+  "_from": "github:openpgpjs/seek-bzip#3aca608",
   "_id": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_inBundle": false,
   "_integrity": "",
@@ -21816,17 +21807,17 @@ module.exports={
   },
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/seek-bzip",
-    "rawSpec": "github:openpgpjs/seek-bzip",
-    "saveSpec": "github:openpgpjs/seek-bzip",
+    "raw": "github:openpgpjs/seek-bzip#3aca608",
+    "rawSpec": "github:openpgpjs/seek-bzip#3aca608",
+    "saveSpec": "github:openpgpjs/seek-bzip#3aca608",
     "fetchSpec": null,
-    "gitCommittish": null
+    "gitCommittish": "3aca608"
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_spec": "github:openpgpjs/seek-bzip",
+  "_spec": "github:openpgpjs/seek-bzip#3aca608",
   "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
@@ -23761,7 +23752,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.6",
+  versionstring: "OpenPGP.js v4.4.7",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -25697,6 +25688,10 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _bn = require('bn.js');
+
+var _bn2 = _interopRequireDefault(_bn);
+
 var _public_key = require('./public_key');
 
 var _public_key2 = _interopRequireDefault(_public_key);
@@ -25735,14 +25730,7 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function constructParams(types, data) {
-  return types.map(function (type, i) {
-    if (data && data[i]) {
-      return new type(data[i]);
-    }
-    return new type();
-  });
-} // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -25764,6 +25752,7 @@ function constructParams(types, data) {
 /**
  * @fileoverview Provides functions for asymmetric encryption and decryption as
  * well as key generation and parameter handling for all public-key cryptosystems.
+ * @requires bn.js
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/random
@@ -25775,6 +25764,15 @@ function constructParams(types, data) {
  * @requires util
  * @module crypto/crypto
  */
+
+function constructParams(types, data) {
+  return types.map(function (type, i) {
+    if (data && data[i]) {
+      return new type(data[i]);
+    }
+    return new type();
+  });
+}
 
 exports.default = {
   /**
@@ -25817,8 +25815,13 @@ exports.default = {
             const oid = pub_params[0];
             const Q = pub_params[1].toUint8Array();
             const kdf_params = pub_params[2];
-            const res = await _public_key2.default.elliptic.ecdh.encrypt(oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
-            return constructParams(types, [res.V, res.C]);
+
+            var _ref = await _public_key2.default.elliptic.ecdh.encrypt(oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
+
+            const V = _ref.V,
+                  C = _ref.C;
+
+            return constructParams(types, [new _bn2.default(V), C]);
           }
         default:
           return [];
@@ -26044,7 +26047,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":115,"../type/ecdh_symkey":148,"../type/kdf_params":149,"../type/mpi":151,"../type/oid":152,"../util":154,"./cipher":88,"./public_key":108,"./random":111}],92:[function(require,module,exports){
+},{"../enums":115,"../type/ecdh_symkey":148,"../type/kdf_params":149,"../type/mpi":151,"../type/oid":152,"../util":154,"./cipher":88,"./public_key":108,"./random":111,"bn.js":17}],92:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28002,6 +28005,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
+ * @requires bn.js
  * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
@@ -28018,32 +28022,29 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
 }
 
 // Key Derivation Function (RFC 6637)
-async function kdf(hash_algo, X, length, param) {
-  const digest = await _hash2.default.digest(hash_algo, _util2.default.concatUint8Array([new Uint8Array([0, 0, 0, 1]), new Uint8Array(X), param]));
+async function kdf(hash_algo, S, length, param, curve, compat) {
+  const len = compat ? S.byteLength() : curve.curve.curve.p.byteLength();
+  // Note: this is not ideal, but the RFC's are unclear
+  // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
+  const X = curve.curve.curve.type === 'mont' ? S.toArrayLike(Uint8Array, 'le', len) : S.toArrayLike(Uint8Array, 'be', len);
+  const digest = await _hash2.default.digest(hash_algo, _util2.default.concatUint8Array([new Uint8Array([0, 0, 0, 1]), X, param]));
   return digest.subarray(0, length);
 }
 
 /**
  * Generate ECDHE ephemeral key and secret from public key
  *
- * @param  {module:type/oid}        oid                 Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo         Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo           Hash algorithm to use
+ * @param  {Curve}                  curve        Elliptic curve object
  * @param  {Uint8Array}             Q                   Recipient public key
- * @param  {String}                 fingerprint         Recipient fingerprint
- * @returns {Promise<{V: Uint8Array, Z: Uint8Array}>}   Returns public part of ephemeral key and generated ephemeral secret
+ * @returns {Promise<{V: Uint8Array, S: BN}>}   Returns public part of ephemeral key and generated ephemeral secret
  * @async
  */
-async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint) {
-  const curve = new _curves2.default(oid);
-  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+async function genPublicEphemeralKey(curve, Q) {
   const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q);
-  const S = v.derive(Q);
   const V = new Uint8Array(v.getPublic());
-  const Z = await kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
-  return { V, Z };
+  const S = v.derive(Q);
+  return { V, S };
 }
 
 /**
@@ -28059,37 +28060,33 @@ async function genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
-  var _ref = await genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
+  const curve = new _curves2.default(oid);
+
+  var _ref = await genPublicEphemeralKey(curve, Q);
 
   const V = _ref.V,
-        Z = _ref.Z;
+        S = _ref.S;
 
-  return {
-    V: new _bn2.default(V),
-    C: _aes_kw2.default.wrap(Z, m.toString())
-  };
+  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
+  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+  const Z = await kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, false);
+  const C = _aes_kw2.default.wrap(Z, m.toString());
+  return { V, C };
 }
 
 /**
  * Generate ECDHE secret from private key and public part of ephemeral key
  *
- * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {Curve}                  curve        Elliptic curve object
  * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             d            Recipient private key
- * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<Uint8Array>}                Generated ephemeral secret
+ * @returns {Promise<BN>}                        Generated ephemeral secret
  * @async
  */
-async function genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint) {
-  const curve = new _curves2.default(oid);
-  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+async function genPrivateEphemeralKey(curve, V, d) {
   V = curve.keyFromPublic(V);
   d = curve.keyFromPrivate(d);
-  const S = d.derive(V);
-  return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
+  return d.derive(V);
 }
 
 /**
@@ -28106,11 +28103,20 @@ async function genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerp
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-  const Z = await genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint);
+  const curve = new _curves2.default(oid);
+  const S = await genPrivateEphemeralKey(curve, V, d);
+  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
+  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+  try {
+    const Z = await kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, false);
+    return new _bn2.default(_aes_kw2.default.unwrap(Z, C));
+  } catch (e) {}
+  // Work around old OpenPGP.js bug.
+  const Z = await kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, true);
   return new _bn2.default(_aes_kw2.default.unwrap(Z, C));
 }
 
-exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey };
+exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf };
 
 },{"../../../enums":115,"../../../type/kdf_params":149,"../../../util":154,"../../aes_kw":82,"../../cipher":88,"../../hash":94,"./curves":102,"bn.js":17}],104:[function(require,module,exports){
 'use strict';
@@ -29640,7 +29646,7 @@ function dearmor(input) {
               throw new Error('Misformed armored text');
             }
             // remove trailing whitespace at end of lines
-            line = line.replace(/[\t\r\n ]+$/, '');
+            line = _util2.default.removeTrailingSpaces(line.replace(/[\r\n]/g, ''));
             if (!type) {
               if (reSplit.test(line)) {
                 type = getType(line);
@@ -29696,7 +29702,7 @@ function dearmor(input) {
               let remainder = await reader.readToEnd();
               if (!remainder.length) remainder = '';
               remainder = line + remainder;
-              remainder = remainder.replace(/[\t\r ]+$/mg, '');
+              remainder = _util2.default.removeTrailingSpaces(remainder.replace(/\r/g, ''));
               const parts = remainder.split(reSplit);
               if (parts.length === 1) {
                 throw new Error('Misformed armored text');
@@ -34617,7 +34623,13 @@ function linkStreams(result, message, erroringStream) {
 async function prepareSignatures(signatures) {
   await Promise.all(signatures.map(async signature => {
     signature.signature = await signature.signature;
-    signature.valid = await signature.verified;
+    try {
+      signature.valid = await signature.verified;
+    } catch (e) {
+      signature.valid = null;
+      signature.error = e;
+      _util2.default.print_debug_error(e);
+    }
   }));
 }
 
@@ -40747,7 +40759,11 @@ exports.default = {
    * Remove trailing spaces and tabs from each line
    */
   removeTrailingSpaces: function removeTrailingSpaces(text) {
-    return text.replace(/[ \t]+$/mg, "");
+    return text.split('\n').map(line => {
+      let i = line.length - 1;
+      for (; i >= 0 && (line[i] === ' ' || line[i] === '\t'); i--);
+      return line.substr(0, i + 1);
+    }).join('\n');
   },
 
   /**

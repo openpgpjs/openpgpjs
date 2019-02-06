@@ -14048,16 +14048,7 @@ KeyPair.prototype._importPublic = function _importPublic(key, enc) {
 
 // ECDH
 KeyPair.prototype.derive = function derive(pub) {
-  var x = pub.mul(this.priv).getX();
-  var len = x.byteLength();
-
-  // Note: this is not ideal, but the RFC's are unclear
-  // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
-  if (this.ec.curve.type === 'mont') {
-    return x.toArray('le', len);
-  } else {
-    return x.toArray('be', len);
-  }
+  return pub.mul(this.priv).getX();
 };
 
 // ECDSA
@@ -15435,29 +15426,29 @@ utils.intFromLE = intFromLE;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/elliptic",
+      "github:openpgpjs/elliptic#ad81845",
       "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/elliptic",
-  "_id": "elliptic@github:openpgpjs/elliptic#e187e706e11fa51bcd20e46e5119054be4e2a4a6",
+  "_from": "github:openpgpjs/elliptic#ad81845",
+  "_id": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
   "_inBundle": false,
   "_integrity": "",
   "_location": "/elliptic",
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/elliptic",
-    "rawSpec": "github:openpgpjs/elliptic",
-    "saveSpec": "github:openpgpjs/elliptic",
+    "raw": "github:openpgpjs/elliptic#ad81845",
+    "rawSpec": "github:openpgpjs/elliptic#ad81845",
+    "saveSpec": "github:openpgpjs/elliptic#ad81845",
     "fetchSpec": null,
-    "gitCommittish": null
+    "gitCommittish": "ad81845"
   },
   "_requiredBy": [
     "/"
   ],
-  "_resolved": "github:openpgpjs/elliptic#e187e706e11fa51bcd20e46e5119054be4e2a4a6",
-  "_spec": "github:openpgpjs/elliptic",
+  "_resolved": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
+  "_spec": "github:openpgpjs/elliptic#ad81845",
   "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
@@ -26417,11 +26408,11 @@ module.exports = Stream;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/seek-bzip",
+      "github:openpgpjs/seek-bzip#3aca608",
       "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/seek-bzip",
+  "_from": "github:openpgpjs/seek-bzip#3aca608",
   "_id": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_inBundle": false,
   "_integrity": "",
@@ -26431,17 +26422,17 @@ module.exports={
   },
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/seek-bzip",
-    "rawSpec": "github:openpgpjs/seek-bzip",
-    "saveSpec": "github:openpgpjs/seek-bzip",
+    "raw": "github:openpgpjs/seek-bzip#3aca608",
+    "rawSpec": "github:openpgpjs/seek-bzip#3aca608",
+    "saveSpec": "github:openpgpjs/seek-bzip#3aca608",
     "fetchSpec": null,
-    "gitCommittish": null
+    "gitCommittish": "3aca608"
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_spec": "github:openpgpjs/seek-bzip",
+  "_spec": "github:openpgpjs/seek-bzip#3aca608",
   "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
@@ -29663,7 +29654,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.6",
+  versionstring: "OpenPGP.js v4.4.7",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -31834,6 +31825,10 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
+var _bn = _dereq_('bn.js');
+
+var _bn2 = _interopRequireDefault(_bn);
+
 var _public_key = _dereq_('./public_key');
 
 var _public_key2 = _interopRequireDefault(_public_key);
@@ -31872,14 +31867,7 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function constructParams(types, data) {
-  return types.map(function (type, i) {
-    if (data && data[i]) {
-      return new type(data[i]);
-    }
-    return new type();
-  });
-} // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -31901,6 +31889,7 @@ function constructParams(types, data) {
 /**
  * @fileoverview Provides functions for asymmetric encryption and decryption as
  * well as key generation and parameter handling for all public-key cryptosystems.
+ * @requires bn.js
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/random
@@ -31912,6 +31901,15 @@ function constructParams(types, data) {
  * @requires util
  * @module crypto/crypto
  */
+
+function constructParams(types, data) {
+  return types.map(function (type, i) {
+    if (data && data[i]) {
+      return new type(data[i]);
+    }
+    return new type();
+  });
+}
 
 exports.default = {
   /**
@@ -31936,14 +31934,14 @@ exports.default = {
             case 0:
               types = this.getEncSessionKeyParamTypes(algo);
               return _context2.abrupt('return', (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
-                var m, n, e, res, _m, p, g, y, _res, oid, Q, kdf_params, _res2;
+                var m, n, e, res, _m, p, g, y, _res, oid, Q, kdf_params, _ref3, V, C;
 
                 return _regenerator2.default.wrap(function _callee$(_context) {
                   while (1) {
                     switch (_context.prev = _context.next) {
                       case 0:
                         _context.t0 = algo;
-                        _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context.t0 === _enums2.default.publicKey.elgamal ? 10 : _context.t0 === _enums2.default.publicKey.ecdh ? 18 : 25;
+                        _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context.t0 === _enums2.default.publicKey.elgamal ? 10 : _context.t0 === _enums2.default.publicKey.ecdh ? 18 : 27;
                         break;
 
                       case 3:
@@ -31977,13 +31975,15 @@ exports.default = {
                         return _public_key2.default.elliptic.ecdh.encrypt(oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
 
                       case 23:
-                        _res2 = _context.sent;
-                        return _context.abrupt('return', constructParams(types, [_res2.V, _res2.C]));
+                        _ref3 = _context.sent;
+                        V = _ref3.V;
+                        C = _ref3.C;
+                        return _context.abrupt('return', constructParams(types, [new _bn2.default(V), C]));
 
-                      case 25:
+                      case 27:
                         return _context.abrupt('return', []);
 
-                      case 26:
+                      case 28:
                       case 'end':
                         return _context.stop();
                     }
@@ -32021,7 +32021,7 @@ exports.default = {
    * @async
    */
   publicKeyDecrypt: function () {
-    var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(algo, key_params, data_params, fingerprint) {
+    var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(algo, key_params, data_params, fingerprint) {
       return _regenerator2.default.wrap(function _callee4$(_context4) {
         while (1) {
           switch (_context4.prev = _context4.next) {
@@ -32091,7 +32091,7 @@ exports.default = {
     }));
 
     function publicKeyDecrypt(_x5, _x6, _x7, _x8) {
-      return _ref3.apply(this, arguments);
+      return _ref4.apply(this, arguments);
     }
 
     return publicKeyDecrypt;
@@ -32244,7 +32244,7 @@ exports.default = {
    * @async
    */
   getPrefixRandom: function () {
-    var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(algo) {
+    var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(algo) {
       var prefixrandom, repeat;
       return _regenerator2.default.wrap(function _callee5$(_context5) {
         while (1) {
@@ -32267,7 +32267,7 @@ exports.default = {
     }));
 
     function getPrefixRandom(_x9) {
-      return _ref5.apply(this, arguments);
+      return _ref6.apply(this, arguments);
     }
 
     return getPrefixRandom;
@@ -32287,7 +32287,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":376,"../type/ecdh_symkey":409,"../type/kdf_params":410,"../type/mpi":412,"../type/oid":413,"../util":415,"./cipher":349,"./public_key":369,"./random":372,"babel-runtime/helpers/asyncToGenerator":33,"babel-runtime/regenerator":41}],353:[function(_dereq_,module,exports){
+},{"../enums":376,"../type/ecdh_symkey":409,"../type/kdf_params":410,"../type/mpi":412,"../type/oid":413,"../util":415,"./cipher":349,"./public_key":369,"./random":372,"babel-runtime/helpers/asyncToGenerator":33,"babel-runtime/regenerator":41,"bn.js":42}],353:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35185,20 +35185,25 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 // Key Derivation Function (RFC 6637)
 var kdf = function () {
-  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(hash_algo, X, length, param) {
-    var digest;
+  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(hash_algo, S, length, param, curve, compat) {
+    var len, X, digest;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _context.next = 2;
-            return _hash2.default.digest(hash_algo, _util2.default.concatUint8Array([new Uint8Array([0, 0, 0, 1]), new Uint8Array(X), param]));
+            len = compat ? S.byteLength() : curve.curve.curve.p.byteLength();
+            // Note: this is not ideal, but the RFC's are unclear
+            // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
 
-          case 2:
+            X = curve.curve.curve.type === 'mont' ? S.toArrayLike(Uint8Array, 'le', len) : S.toArrayLike(Uint8Array, 'be', len);
+            _context.next = 4;
+            return _hash2.default.digest(hash_algo, _util2.default.concatUint8Array([new Uint8Array([0, 0, 0, 1]), X, param]));
+
+          case 4:
             digest = _context.sent;
             return _context.abrupt('return', digest.subarray(0, length));
 
-          case 4:
+          case 6:
           case 'end':
             return _context.stop();
         }
@@ -35206,7 +35211,7 @@ var kdf = function () {
     }, _callee, this);
   }));
 
-  return function kdf(_x, _x2, _x3, _x4) {
+  return function kdf(_x, _x2, _x3, _x4, _x5, _x6) {
     return _ref.apply(this, arguments);
   };
 }();
@@ -35214,44 +35219,32 @@ var kdf = function () {
 /**
  * Generate ECDHE ephemeral key and secret from public key
  *
- * @param  {module:type/oid}        oid                 Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo         Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo           Hash algorithm to use
+ * @param  {Curve}                  curve        Elliptic curve object
  * @param  {Uint8Array}             Q                   Recipient public key
- * @param  {String}                 fingerprint         Recipient fingerprint
- * @returns {Promise<{V: Uint8Array, Z: Uint8Array}>}   Returns public part of ephemeral key and generated ephemeral secret
+ * @returns {Promise<{V: Uint8Array, S: BN}>}   Returns public part of ephemeral key and generated ephemeral secret
  * @async
  */
 
 
 var genPublicEphemeralKey = function () {
-  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(oid, cipher_algo, hash_algo, Q, fingerprint) {
-    var curve, param, v, S, V, Z;
+  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(curve, Q) {
+    var v, V, S;
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            curve = new _curves2.default(oid);
-            param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-
-            cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
-            _context2.next = 5;
+            _context2.next = 2;
             return curve.genKeyPair();
 
-          case 5:
+          case 2:
             v = _context2.sent;
 
             Q = curve.keyFromPublic(Q);
-            S = v.derive(Q);
             V = new Uint8Array(v.getPublic());
-            _context2.next = 11;
-            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param);
+            S = v.derive(Q);
+            return _context2.abrupt('return', { V: V, S: S });
 
-          case 11:
-            Z = _context2.sent;
-            return _context2.abrupt('return', { V: V, Z: Z });
-
-          case 13:
+          case 7:
           case 'end':
             return _context2.stop();
         }
@@ -35259,7 +35252,7 @@ var genPublicEphemeralKey = function () {
     }, _callee2, this);
   }));
 
-  return function genPublicEphemeralKey(_x5, _x6, _x7, _x8, _x9) {
+  return function genPublicEphemeralKey(_x7, _x8) {
     return _ref2.apply(this, arguments);
   };
 }();
@@ -35280,25 +35273,32 @@ var genPublicEphemeralKey = function () {
 
 var encrypt = function () {
   var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
-    var _ref4, V, Z;
+    var curve, _ref4, V, S, param, Z, C;
 
     return _regenerator2.default.wrap(function _callee3$(_context3) {
       while (1) {
         switch (_context3.prev = _context3.next) {
           case 0:
-            _context3.next = 2;
-            return genPublicEphemeralKey(oid, cipher_algo, hash_algo, Q, fingerprint);
+            curve = new _curves2.default(oid);
+            _context3.next = 3;
+            return genPublicEphemeralKey(curve, Q);
 
-          case 2:
+          case 3:
             _ref4 = _context3.sent;
             V = _ref4.V;
-            Z = _ref4.Z;
-            return _context3.abrupt('return', {
-              V: new _bn2.default(V),
-              C: _aes_kw2.default.wrap(Z, m.toString())
-            });
+            S = _ref4.S;
+            param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
 
-          case 6:
+            cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+            _context3.next = 10;
+            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, false);
+
+          case 10:
+            Z = _context3.sent;
+            C = _aes_kw2.default.wrap(Z, m.toString());
+            return _context3.abrupt('return', { V: V, C: C });
+
+          case 13:
           case 'end':
             return _context3.stop();
         }
@@ -35306,7 +35306,7 @@ var encrypt = function () {
     }, _callee3, this);
   }));
 
-  return function encrypt(_x10, _x11, _x12, _x13, _x14, _x15) {
+  return function encrypt(_x9, _x10, _x11, _x12, _x13, _x14) {
     return _ref3.apply(this, arguments);
   };
 }();
@@ -35314,34 +35314,25 @@ var encrypt = function () {
 /**
  * Generate ECDHE secret from private key and public part of ephemeral key
  *
- * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {Curve}                  curve        Elliptic curve object
  * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             d            Recipient private key
- * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<Uint8Array>}                Generated ephemeral secret
+ * @returns {Promise<BN>}                        Generated ephemeral secret
  * @async
  */
 
 
 var genPrivateEphemeralKey = function () {
-  var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(oid, cipher_algo, hash_algo, V, d, fingerprint) {
-    var curve, param, S;
+  var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(curve, V, d) {
     return _regenerator2.default.wrap(function _callee4$(_context4) {
       while (1) {
         switch (_context4.prev = _context4.next) {
           case 0:
-            curve = new _curves2.default(oid);
-            param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-
-            cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
             V = curve.keyFromPublic(V);
             d = curve.keyFromPrivate(d);
-            S = d.derive(V);
-            return _context4.abrupt('return', kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param));
+            return _context4.abrupt('return', d.derive(V));
 
-          case 7:
+          case 3:
           case 'end':
             return _context4.stop();
         }
@@ -35349,7 +35340,7 @@ var genPrivateEphemeralKey = function () {
     }, _callee4, this);
   }));
 
-  return function genPrivateEphemeralKey(_x16, _x17, _x18, _x19, _x20, _x21) {
+  return function genPrivateEphemeralKey(_x15, _x16, _x17) {
     return _ref5.apply(this, arguments);
   };
 }();
@@ -35371,27 +35362,50 @@ var genPrivateEphemeralKey = function () {
 
 var decrypt = function () {
   var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-    var Z;
+    var curve, S, param, _Z, Z;
+
     return _regenerator2.default.wrap(function _callee5$(_context5) {
       while (1) {
         switch (_context5.prev = _context5.next) {
           case 0:
-            _context5.next = 2;
-            return genPrivateEphemeralKey(oid, cipher_algo, hash_algo, V, d, fingerprint);
+            curve = new _curves2.default(oid);
+            _context5.next = 3;
+            return genPrivateEphemeralKey(curve, V, d);
 
-          case 2:
+          case 3:
+            S = _context5.sent;
+            param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
+
+            cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+            _context5.prev = 6;
+            _context5.next = 9;
+            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, false);
+
+          case 9:
+            _Z = _context5.sent;
+            return _context5.abrupt('return', new _bn2.default(_aes_kw2.default.unwrap(_Z, C)));
+
+          case 13:
+            _context5.prev = 13;
+            _context5.t0 = _context5['catch'](6);
+
+          case 15:
+            _context5.next = 17;
+            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, true);
+
+          case 17:
             Z = _context5.sent;
             return _context5.abrupt('return', new _bn2.default(_aes_kw2.default.unwrap(Z, C)));
 
-          case 4:
+          case 19:
           case 'end':
             return _context5.stop();
         }
       }
-    }, _callee5, this);
+    }, _callee5, this, [[6, 13]]);
   }));
 
-  return function decrypt(_x22, _x23, _x24, _x25, _x26, _x27, _x28) {
+  return function decrypt(_x18, _x19, _x20, _x21, _x22, _x23, _x24) {
     return _ref6.apply(this, arguments);
   };
 }();
@@ -35450,6 +35464,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
+ * @requires bn.js
  * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
@@ -35463,7 +35478,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
   var kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
   return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdf_params.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
-}exports.default = { encrypt: encrypt, decrypt: decrypt, genPublicEphemeralKey: genPublicEphemeralKey, genPrivateEphemeralKey: genPrivateEphemeralKey };
+}exports.default = { encrypt: encrypt, decrypt: decrypt, genPublicEphemeralKey: genPublicEphemeralKey, genPrivateEphemeralKey: genPrivateEphemeralKey, buildEcdhParam: buildEcdhParam, kdf: kdf };
 
 },{"../../../enums":376,"../../../type/kdf_params":410,"../../../util":415,"../../aes_kw":343,"../../cipher":349,"../../hash":355,"./curves":363,"babel-runtime/helpers/asyncToGenerator":33,"babel-runtime/regenerator":41,"bn.js":42}],365:[function(_dereq_,module,exports){
 'use strict';
@@ -37878,7 +37893,7 @@ function dearmor(input) {
 
                           case 8:
                             // remove trailing whitespace at end of lines
-                            line = line.replace(/[\t\r\n ]+$/, '');
+                            line = _util2.default.removeTrailingSpaces(line.replace(/[\r\n]/g, ''));
 
                             if (type) {
                               _context.next = 13;
@@ -38008,7 +38023,7 @@ function dearmor(input) {
 
                             if (!remainder.length) remainder = '';
                             remainder = _line + remainder;
-                            remainder = remainder.replace(/[\t\r ]+$/mg, '');
+                            remainder = _util2.default.removeTrailingSpaces(remainder.replace(/\r/g, ''));
                             parts = remainder.split(reSplit);
 
                             if (!(parts.length === 1)) {
@@ -46164,18 +46179,29 @@ var prepareSignatures = function () {
 
                       case 2:
                         signature.signature = _context17.sent;
-                        _context17.next = 5;
+                        _context17.prev = 3;
+                        _context17.next = 6;
                         return signature.verified;
 
-                      case 5:
-                        signature.valid = _context17.sent;
-
                       case 6:
+                        signature.valid = _context17.sent;
+                        _context17.next = 14;
+                        break;
+
+                      case 9:
+                        _context17.prev = 9;
+                        _context17.t0 = _context17['catch'](3);
+
+                        signature.valid = null;
+                        signature.error = _context17.t0;
+                        _util2.default.print_debug_error(_context17.t0);
+
+                      case 14:
                       case 'end':
                         return _context17.stop();
                     }
                   }
-                }, _callee17, _this7);
+                }, _callee17, _this7, [[3, 9]]);
               }));
 
               return function (_x17) {
@@ -55456,7 +55482,11 @@ exports.default = {
    * Remove trailing spaces and tabs from each line
    */
   removeTrailingSpaces: function removeTrailingSpaces(text) {
-    return text.replace(/[ \t]+$/mg, "");
+    return text.split('\n').map(function (line) {
+      var i = line.length - 1;
+      for (; i >= 0 && (line[i] === ' ' || line[i] === '\t'); i--) {}
+      return line.substr(0, i + 1);
+    }).join('\n');
   },
 
   /**
