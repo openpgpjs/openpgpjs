@@ -23752,7 +23752,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.7",
+  versionstring: "OpenPGP.js v4.4.8",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -32520,7 +32520,7 @@ function isDataExpired(keyPacket, signature, date = new Date()) {
   const normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate <= expirationTime) || signature && signature.isExpired(date);
+    return !(normDate <= expirationTime) || signature && signature.isExpired(date);
   }
   return false;
 }
@@ -38036,7 +38036,7 @@ Signature.prototype.isExpired = function (date = new Date()) {
   const normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
-    return !(this.created <= normDate && normDate <= expirationTime);
+    return !(normDate <= expirationTime);
   }
   return false;
 };
