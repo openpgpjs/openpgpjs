@@ -105,6 +105,19 @@ describe('HKP unit tests', function() {
       '=5obP\r\n' +
       '-----END PGP PUBLIC KEY BLOCK-----';
 
+      const revocation_certificate = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+      Comment: This is a revocation certificate
+
+      iQFFBCABCAAvFiEE6mWHlKTGvbGenE8BstiRuVIg7eYFAlxec9cRHQB0aGlzIGlz
+      IGEgdGVzdC4ACgkQstiRuVIg7eZkywf/QuHU6WaOGmI635xsV8GNyvOOHzDpVuzM
+      AYGIKOLf1l661aS1MIvbXGxI86a3CzLs3K9nqUS7uAZ89vhf6L8RDZSkpn2GzY3K
+      JQb0ZM+qf2TGkVDZ/wI8H/BMkJGCLbvbn6Ywk/o4GQIl/ISJPQTiC5VixayLEUQ3
+      6dnENegfEIptSOPNBOelRPfbT8tqcR6SxibjXYxlCqvdSgt7lui06vGcejl4qNgZ
+      oNMuvQNShV2G9KkPda3AZWCIWzUBuKN5UuE06u68iclH2ckEicQvnmxHnJU/BSC9
+      h3bdqlMa87hRGnWluKpJT+XRP0UGiN8UGWo8OEpdz8KbvVTCUVya4g==
+      =Wjv9
+      -----END PGP PUBLIC KEY BLOCK-----`
+
   beforeEach(function() {
     hkp = new openpgp.HKP(openpgp.config.keyserver);
   });
@@ -137,9 +150,15 @@ describe('HKP unit tests', function() {
     });
   });
 
-  describe('upload', function() {
+  describe('upload public key', function() {
     it('should work', function() {
       return hkp.upload(pub_key);
+    });
+  });
+
+  describe('upload revocation certificate', function() {
+    it('should work', function() {
+      return hkp.upload(revocation_certificate);
     });
   });
 
