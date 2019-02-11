@@ -409,7 +409,7 @@ openpgp.revokeKey(options).then(function(key) {
 #### Lookup public key on HKP server
 
 ```js
-var hkp = new openpgp.HKP('https://pgp.mit.edu');
+var hkp = new openpgp.HKP(); // Defaults to https://keyserver.ubuntu.com, or pass another keyserver URL as a string
 
 var options = {
     query: 'alice@example.com'
