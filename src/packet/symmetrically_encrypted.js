@@ -109,7 +109,7 @@ SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
   const prefix = await crypto.getPrefixRandom(algo);
   const FRE = await crypto.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize));
   const ciphertext = await crypto.cfb.encrypt(algo, key, data, FRE.subarray(2));
-  this.encrypted = util.concatUint8Array([FRE, ciphertext]);
+  this.encrypted = util.concat([FRE, ciphertext]);
 
   return true;
 };
