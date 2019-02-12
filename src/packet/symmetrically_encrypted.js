@@ -80,16 +80,17 @@ SymmetricallyEncrypted.prototype.write = function () {
  * @async
  */
 SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
+  // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
+  if (!this.ignore_mdc_error) {
+    throw new Error('Decryption failed due to missing MDC.');
+  }
+
   this.encrypted = await stream.readToEnd(this.encrypted);
   const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key,
     this.encrypted.subarray(crypto.cipher[sessionKeyAlgorithm].blockSize + 2),
     this.encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
   );
 
-  // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
-  if (!this.ignore_mdc_error) {
-    throw new Error('Decryption failed due to missing MDC.');
-  }
   await this.packets.read(decrypted);
 
   return true;
