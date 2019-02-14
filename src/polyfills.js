@@ -55,12 +55,11 @@ if (typeof TransformStream === 'undefined') {
   require('@mattiasbuelens/web-streams-polyfill');
 }
 if (typeof TextEncoder === 'undefined') {
-  const nodeUtil = util.nodeRequire('util') || {};
-  global.TextEncoder = nodeUtil.TextEncoder;
-  global.TextDecoder = nodeUtil.TextDecoder;
-}
-if (typeof TextEncoder === 'undefined') {
   const textEncoding = require('text-encoding-utf-8');
   global.TextEncoder = textEncoding.TextEncoder;
   global.TextDecoder = textEncoding.TextDecoder;
+  const nodeUtil = util.nodeRequire('util');
+  if (nodeUtil && nodeUtil.TextEncoder) {
+    global.TextEncoder = nodeUtil.TextEncoder;
+  }
 }
