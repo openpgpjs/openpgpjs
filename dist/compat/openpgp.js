@@ -15426,11 +15426,11 @@ utils.intFromLE = intFromLE;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/elliptic#ad81845",
-      "/Users/sunny/Desktop/Protonmail/openpgpjs"
+      "github:openpgpjs/elliptic",
+      "/mnt/c/Users/danie/Documents/mega/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/elliptic#ad81845",
+  "_from": "github:openpgpjs/elliptic",
   "_id": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
   "_inBundle": false,
   "_integrity": "",
@@ -15438,18 +15438,18 @@ module.exports={
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/elliptic#ad81845",
-    "rawSpec": "github:openpgpjs/elliptic#ad81845",
-    "saveSpec": "github:openpgpjs/elliptic#ad81845",
+    "raw": "github:openpgpjs/elliptic",
+    "rawSpec": "github:openpgpjs/elliptic",
+    "saveSpec": "github:openpgpjs/elliptic",
     "fetchSpec": null,
-    "gitCommittish": "ad81845"
+    "gitCommittish": null
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_spec": "github:openpgpjs/elliptic#ad81845",
-  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
+  "_spec": "github:openpgpjs/elliptic",
+  "_where": "/mnt/c/Users/danie/Documents/mega/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -26408,11 +26408,11 @@ module.exports = Stream;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/seek-bzip#3aca608",
-      "/Users/sunny/Desktop/Protonmail/openpgpjs"
+      "github:openpgpjs/seek-bzip",
+      "/mnt/c/Users/danie/Documents/mega/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/seek-bzip#3aca608",
+  "_from": "github:openpgpjs/seek-bzip",
   "_id": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_inBundle": false,
   "_integrity": "",
@@ -26422,18 +26422,18 @@ module.exports={
   },
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/seek-bzip#3aca608",
-    "rawSpec": "github:openpgpjs/seek-bzip#3aca608",
-    "saveSpec": "github:openpgpjs/seek-bzip#3aca608",
+    "raw": "github:openpgpjs/seek-bzip",
+    "rawSpec": "github:openpgpjs/seek-bzip",
+    "saveSpec": "github:openpgpjs/seek-bzip",
     "fetchSpec": null,
-    "gitCommittish": "3aca608"
+    "gitCommittish": null
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_spec": "github:openpgpjs/seek-bzip#3aca608",
-  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
+  "_spec": "github:openpgpjs/seek-bzip",
+  "_where": "/mnt/c/Users/danie/Documents/mega/openpgpjs",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
     "seek-table": "./bin/seek-bzip-table"
@@ -38915,7 +38915,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Initialize the HKP client and configure it with the key server url and fetch function.
  * @constructor
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
- *   the protocol to use e.g. https://pgp.mit.edu
+ *   the protocol to use, e.g. 'https://pgp.mit.edu'; defaults to
+ *   openpgp.config.keyserver (https://keyserver.ubuntu.com)
  */
 function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl || _config2.default.keyserver;
@@ -53231,25 +53232,24 @@ SymmetricallyEncrypted.prototype.decrypt = function () {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _context.next = 2;
-            return _webStreamTools2.default.readToEnd(this.encrypted);
-
-          case 2:
-            this.encrypted = _context.sent;
-            _context.next = 5;
-            return _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted.subarray(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2), this.encrypted.subarray(2, _crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2));
-
-          case 5:
-            decrypted = _context.sent;
-
             if (this.ignore_mdc_error) {
-              _context.next = 8;
+              _context.next = 2;
               break;
             }
 
             throw new Error('Decryption failed due to missing MDC.');
 
-          case 8:
+          case 2:
+            _context.next = 4;
+            return _webStreamTools2.default.readToEnd(this.encrypted);
+
+          case 4:
+            this.encrypted = _context.sent;
+            _context.next = 7;
+            return _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted.subarray(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2), this.encrypted.subarray(2, _crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2));
+
+          case 7:
+            decrypted = _context.sent;
             _context.next = 10;
             return this.packets.read(decrypted);
 
@@ -53301,7 +53301,7 @@ SymmetricallyEncrypted.prototype.encrypt = function () {
           case 9:
             ciphertext = _context2.sent;
 
-            this.encrypted = _util2.default.concatUint8Array([FRE, ciphertext]);
+            this.encrypted = _util2.default.concat([FRE, ciphertext]);
 
             return _context2.abrupt('return', true);
 
@@ -53658,11 +53658,6 @@ if (typeof window !== 'undefined') {
 
 if (typeof TransformStream === 'undefined') {
   _dereq_('@mattiasbuelens/web-streams-polyfill');
-}
-if (typeof TextEncoder === 'undefined') {
-  var nodeUtil = _util2.default.nodeRequire('util') || {};
-  global.TextEncoder = nodeUtil.TextEncoder;
-  global.TextDecoder = nodeUtil.TextDecoder;
 }
 if (typeof TextEncoder === 'undefined') {
   var textEncoding = _dereq_('text-encoding-utf-8');
