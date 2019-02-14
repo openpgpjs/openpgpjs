@@ -29654,7 +29654,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.7",
+  versionstring: "OpenPGP.js v4.4.10",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -38915,7 +38915,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * Initialize the HKP client and configure it with the key server url and fetch function.
  * @constructor
  * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
- *   the protocol to use e.g. https://pgp.mit.edu
+ *   the protocol to use, e.g. 'https://pgp.mit.edu'; defaults to
+ *   openpgp.config.keyserver (https://keyserver.ubuntu.com)
  */
 function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl || _config2.default.keyserver;
@@ -43400,7 +43401,7 @@ function isDataExpired(keyPacket, signature) {
   var normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     var expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate <= expirationTime) || signature && signature.isExpired(date);
+    return !(normDate <= expirationTime) || signature && signature.isExpired(date);
   }
   return false;
 }
@@ -51896,7 +51897,7 @@ Signature.prototype.isExpired = function () {
   var normDate = _util2.default.normalizeDate(date);
   if (normDate !== null) {
     var expirationTime = this.getExpirationTime();
-    return !(this.created <= normDate && normDate <= expirationTime);
+    return !(normDate <= expirationTime);
   }
   return false;
 };
@@ -53231,25 +53232,24 @@ SymmetricallyEncrypted.prototype.decrypt = function () {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _context.next = 2;
-            return _webStreamTools2.default.readToEnd(this.encrypted);
-
-          case 2:
-            this.encrypted = _context.sent;
-            _context.next = 5;
-            return _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted.subarray(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2), this.encrypted.subarray(2, _crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2));
-
-          case 5:
-            decrypted = _context.sent;
-
             if (this.ignore_mdc_error) {
-              _context.next = 8;
+              _context.next = 2;
               break;
             }
 
             throw new Error('Decryption failed due to missing MDC.');
 
-          case 8:
+          case 2:
+            _context.next = 4;
+            return _webStreamTools2.default.readToEnd(this.encrypted);
+
+          case 4:
+            this.encrypted = _context.sent;
+            _context.next = 7;
+            return _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted.subarray(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2), this.encrypted.subarray(2, _crypto2.default.cipher[sessionKeyAlgorithm].blockSize + 2));
+
+          case 7:
+            decrypted = _context.sent;
             _context.next = 10;
             return this.packets.read(decrypted);
 
@@ -53301,7 +53301,7 @@ SymmetricallyEncrypted.prototype.encrypt = function () {
           case 9:
             ciphertext = _context2.sent;
 
-            this.encrypted = _util2.default.concatUint8Array([FRE, ciphertext]);
+            this.encrypted = _util2.default.concat([FRE, ciphertext]);
 
             return _context2.abrupt('return', true);
 
@@ -53660,14 +53660,13 @@ if (typeof TransformStream === 'undefined') {
   _dereq_('@mattiasbuelens/web-streams-polyfill');
 }
 if (typeof TextEncoder === 'undefined') {
-  var nodeUtil = _util2.default.nodeRequire('util') || {};
-  global.TextEncoder = nodeUtil.TextEncoder;
-  global.TextDecoder = nodeUtil.TextDecoder;
-}
-if (typeof TextEncoder === 'undefined') {
   var textEncoding = _dereq_('text-encoding-utf-8');
   global.TextEncoder = textEncoding.TextEncoder;
   global.TextDecoder = textEncoding.TextDecoder;
+  var nodeUtil = _util2.default.nodeRequire('util');
+  if (nodeUtil && nodeUtil.TextEncoder) {
+    global.TextEncoder = nodeUtil.TextEncoder;
+  }
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
