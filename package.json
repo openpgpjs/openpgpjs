@@ -74,17 +74,17 @@
   "dependencies": {
     "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.4",
     "address-rfc2822": "^2.0.3",
-    "asmcrypto.js": "github:openpgpjs/asmcrypto#6e4e407",
+    "asmcrypto.js": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
     "asn1.js": "^5.0.0",
     "bn.js": "^4.11.8",
     "buffer": "^5.0.8",
-    "elliptic": "github:openpgpjs/elliptic#ad81845",
+    "elliptic": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
     "hash.js": "^1.1.3",
     "node-fetch": "^2.1.2",
     "node-localstorage": "~1.3.0",
     "pako": "^1.0.6",
-    "seek-bzip": "github:openpgpjs/seek-bzip#3aca608",
-    "web-stream-tools": "github:openpgpjs/web-stream-tools#84a4977"
+    "seek-bzip": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
+    "web-stream-tools": "github:openpgpjs/web-stream-tools#84a497715c9df271a673f8616318264ab42ab3cc"
   },
   "repository": {
     "type": "git",
