@@ -15426,11 +15426,11 @@ utils.intFromLE = intFromLE;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/elliptic",
-      "/mnt/c/Users/danie/Documents/mega/openpgpjs"
+      "github:openpgpjs/elliptic#ad81845",
+      "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/elliptic",
+  "_from": "github:openpgpjs/elliptic#ad81845",
   "_id": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
   "_inBundle": false,
   "_integrity": "",
@@ -15438,18 +15438,18 @@ module.exports={
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/elliptic",
-    "rawSpec": "github:openpgpjs/elliptic",
-    "saveSpec": "github:openpgpjs/elliptic",
+    "raw": "github:openpgpjs/elliptic#ad81845",
+    "rawSpec": "github:openpgpjs/elliptic#ad81845",
+    "saveSpec": "github:openpgpjs/elliptic#ad81845",
     "fetchSpec": null,
-    "gitCommittish": null
+    "gitCommittish": "ad81845"
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_spec": "github:openpgpjs/elliptic",
-  "_where": "/mnt/c/Users/danie/Documents/mega/openpgpjs",
+  "_spec": "github:openpgpjs/elliptic#ad81845",
+  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -26408,11 +26408,11 @@ module.exports = Stream;
 module.exports={
   "_args": [
     [
-      "github:openpgpjs/seek-bzip",
-      "/mnt/c/Users/danie/Documents/mega/openpgpjs"
+      "github:openpgpjs/seek-bzip#3aca608",
+      "/Users/sunny/Desktop/Protonmail/openpgpjs"
     ]
   ],
-  "_from": "github:openpgpjs/seek-bzip",
+  "_from": "github:openpgpjs/seek-bzip#3aca608",
   "_id": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_inBundle": false,
   "_integrity": "",
@@ -26422,18 +26422,18 @@ module.exports={
   },
   "_requested": {
     "type": "git",
-    "raw": "github:openpgpjs/seek-bzip",
-    "rawSpec": "github:openpgpjs/seek-bzip",
-    "saveSpec": "github:openpgpjs/seek-bzip",
+    "raw": "github:openpgpjs/seek-bzip#3aca608",
+    "rawSpec": "github:openpgpjs/seek-bzip#3aca608",
+    "saveSpec": "github:openpgpjs/seek-bzip#3aca608",
     "fetchSpec": null,
-    "gitCommittish": null
+    "gitCommittish": "3aca608"
   },
   "_requiredBy": [
     "/"
   ],
   "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_spec": "github:openpgpjs/seek-bzip",
-  "_where": "/mnt/c/Users/danie/Documents/mega/openpgpjs",
+  "_spec": "github:openpgpjs/seek-bzip#3aca608",
+  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
     "seek-table": "./bin/seek-bzip-table"
@@ -29654,7 +29654,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.8",
+  versionstring: "OpenPGP.js v4.4.9",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -53658,6 +53658,11 @@ if (typeof window !== 'undefined') {
 
 if (typeof TransformStream === 'undefined') {
   _dereq_('@mattiasbuelens/web-streams-polyfill');
+}
+if (typeof TextEncoder === 'undefined') {
+  var nodeUtil = _util2.default.nodeRequire('util') || {};
+  global.TextEncoder = nodeUtil.TextEncoder;
+  global.TextDecoder = nodeUtil.TextDecoder;
 }
 if (typeof TextEncoder === 'undefined') {
   var textEncoding = _dereq_('text-encoding-utf-8');
