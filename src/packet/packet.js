@@ -242,10 +242,10 @@ export default {
               if (packet_length === Infinity) break;
               throw new Error('Unexpected end of packet');
             }
-            await writer.write(value.slice(0, packet_length - bytesRead));
+            await writer.write(value.subarray(0, packet_length - bytesRead));
             bytesRead += value.length;
             if (bytesRead >= packet_length) {
-              reader.unshift(value.slice(packet_length - bytesRead + value.length));
+              reader.unshift(value.subarray(packet_length - bytesRead + value.length));
               break;
             }
           }

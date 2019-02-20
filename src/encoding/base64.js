@@ -21,6 +21,13 @@ import stream from 'web-stream-tools';
 const b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
 const b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64
 
+const b64toByte = [];
+for (let i = 0; i < b64s.length; i++) {
+  b64toByte[b64s.charCodeAt(i)] = i;
+}
+b64toByte[b64u.charCodeAt(62)] = 62;
+b64toByte[b64u.charCodeAt(63)] = 63;
+
 /**
  * Convert binary array to radix-64
  * @param {Uint8Array | ReadableStream<Uint8Array>} t Uint8Array to convert
@@ -98,7 +105,6 @@ function s2r(t, u = false) {
  */
 function r2s(t, u) {
   // TODO check atob alternative
-  const b64 = u ? b64u : b64s;
   let c;
 
   let s = 0;
@@ -109,7 +115,7 @@ function r2s(t, u) {
     const r = new Uint8Array(Math.ceil(0.75 * tl));
     let index = 0;
     for (let n = 0; n < tl; n++) {
-      c = b64.indexOf(value.charAt(n));
+      c = b64toByte[value.charCodeAt(n)];
       if (c >= 0) {
         if (s) {
           r[index++] = a | ((c >> (6 - s)) & 255);
