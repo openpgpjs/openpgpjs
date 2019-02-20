@@ -132,7 +132,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   if (!util.isStream(encrypted) || !config.allow_unauthenticated_stream) {
     packetbytes = await stream.readToEnd(packetbytes);
   }
-  await this.packets.read(packetbytes);
+  await this.packets.read(packetbytes, streaming);
   return true;
 };
 

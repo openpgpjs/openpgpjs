@@ -69,7 +69,7 @@ function Compressed() {
  * Parsing function for the packet.
  * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
  */
-Compressed.prototype.read = async function (bytes) {
+Compressed.prototype.read = async function (bytes, streaming) {
   await stream.parse(bytes, async reader => {
 
     // One octet that gives the algorithm used to compress the packet.
@@ -78,7 +78,7 @@ Compressed.prototype.read = async function (bytes) {
     // Compressed data, which makes up the remainder of the packet.
     this.compressed = reader.remainder();
 
-    await this.decompress();
+    await this.decompress(streaming);
   });
 };
 
@@ -100,13 +100,13 @@ Compressed.prototype.write = function () {
  * Decompression method for decompressing the compressed data
  * read by read_packet
  */
-Compressed.prototype.decompress = async function () {
+Compressed.prototype.decompress = async function (streaming) {
 
   if (!decompress_fns[this.algorithm]) {
     throw new Error(this.algorithm + ' decompression not supported');
   }
 
-  await this.packets.read(decompress_fns[this.algorithm](this.compressed));
+  await this.packets.read(decompress_fns[this.algorithm](this.compressed), streaming);
 };
 
 /**
