@@ -72,7 +72,7 @@
     "whatwg-fetch": "^2.0.3"
   },
   "dependencies": {
-    "@mattiasbuelens/web-streams-polyfill": "0.1.0-alpha.4",
+    "@mattiasbuelens/web-streams-polyfill": "^0.3.1",
     "address-rfc2822": "^2.0.3",
     "asmcrypto.js": "github:openpgpjs/asmcrypto#6e4e407",
     "asn1.js": "^5.0.0",
