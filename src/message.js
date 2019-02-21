@@ -761,7 +761,7 @@ export async function read(input, fromStream=util.isStream(input)) {
     input = stream.nodeToWeb(input);
   }
   const packetlist = new packet.List();
-  await packetlist.read(input);
+  await packetlist.read(input, fromStream);
   const message = new Message(packetlist);
   message.fromStream = fromStream;
   return message;

@@ -99,7 +99,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
   if (config.aead_protect_version !== 4) {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
   }
-  await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming));
+  await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), streaming);
   return true;
 };
 

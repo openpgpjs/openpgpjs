@@ -38,19 +38,19 @@ List.prototype = [];
  * Reads a stream of binary data and interprents it as a list of packets.
  * @param {Uint8Array | ReadableStream<Uint8Array>} A Uint8Array of bytes.
  */
-List.prototype.read = async function (bytes) {
+List.prototype.read = async function (bytes, streaming) {
   this.stream = stream.transformPair(bytes, async (readable, writable) => {
     const writer = stream.getWriter(writable);
     try {
       while (true) {
         await writer.ready;
-        const done = await packetParser.read(readable, async parsed => {
+        const done = await packetParser.read(readable, streaming, async parsed => {
           try {
             const tag = enums.read(enums.packet, parsed.tag);
             const packet = packets.newPacketFromTag(tag);
             packet.packets = new List();
             packet.fromStream = util.isStream(parsed.packet);
-            await packet.read(parsed.packet);
+            await packet.read(parsed.packet, streaming);
             await writer.write(packet);
           } catch (e) {
             if (!config.tolerant || packetParser.supportsStreaming(parsed.tag)) {
@@ -82,7 +82,7 @@ List.prototype.read = async function (bytes) {
     } else {
       this.stream = null;
     }
-    if (done || value.fromStream) {
+    if (done || packetParser.supportsStreaming(value.tag)) {
       break;
     }
   }

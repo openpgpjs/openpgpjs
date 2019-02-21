@@ -137,7 +137,7 @@ export default {
    * @param {Function} callback Function to call with the parsed packet
    * @returns {Boolean} Returns false if the stream was empty and parsing is done, and true otherwise.
    */
-  read: async function(input, callback) {
+  read: async function(input, streaming, callback) {
     const reader = stream.getReader(input);
     let writer;
     try {
@@ -166,14 +166,16 @@ export default {
         packet_length_type = headerByte & 0x03; // bit 1-0
       }
 
-      const streaming = this.supportsStreaming(tag);
+      const supportsStreaming = this.supportsStreaming(tag);
       let packet = null;
       let callbackReturned;
-      if (streaming) {
+      if (streaming && supportsStreaming) {
         const transform = new TransformStream();
         writer = stream.getWriter(transform.writable);
         packet = transform.readable;
         callbackReturned = callback({ tag, packet });
+      } else {
+        packet = [];
       }
 
       let wasPartialLength;
@@ -224,7 +226,7 @@ export default {
           } else if (lengthByte > 223 && lengthByte < 255) {
             packet_length = 1 << (lengthByte & 0x1F);
             wasPartialLength = true;
-            if (!streaming) {
+            if (!supportsStreaming) {
               throw new TypeError('This packet type does not support partial lengths.');
             }
             // 4.2.2.3. Five-Octet Lengths
@@ -233,35 +235,37 @@ export default {
               8) | await reader.readByte();
           }
         }
-        if (writer && packet_length > 0) {
+        if (packet_length >= 0) {
           let bytesRead = 0;
           while (true) {
-            await writer.ready;
+            if (writer) await writer.ready;
             const { done, value } = await reader.read();
             if (done) {
               if (packet_length === Infinity) break;
               throw new Error('Unexpected end of packet');
             }
-            await writer.write(value.slice(0, packet_length - bytesRead));
+            const chunk = value.subarray(0, packet_length - bytesRead);
+            if (writer) await writer.write(chunk);
+            else packet.push(chunk);
             bytesRead += value.length;
             if (bytesRead >= packet_length) {
-              reader.unshift(value.slice(packet_length - bytesRead + value.length));
+              reader.unshift(value.subarray(packet_length - bytesRead + value.length));
               break;
             }
           }
         }
       } while(wasPartialLength);
 
-      if (!streaming) {
-        packet = await reader.readBytes(packet_length);
+      if (!writer) {
+        packet = util.concatUint8Array(packet);
         await callback({ tag, packet });
       }
       const nextPacket = await reader.peekBytes(2);
       if (writer) {
         await writer.ready;
         await writer.close();
+        await callbackReturned;
       }
-      if (streaming) await callbackReturned;
       return !nextPacket || !nextPacket.length;
     } catch(e) {
       if (writer) {
