@@ -5,12 +5,9 @@
   "requires": true,
   "dependencies": {
     "@mattiasbuelens/web-streams-polyfill": {
-      "version": "0.1.0-alpha.4",
-      "resolved": "https://registry.npmjs.org/@mattiasbuelens/web-streams-polyfill/-/web-streams-polyfill-0.1.0-alpha.4.tgz",
-      "integrity": "sha512-WAsiWLWc7ZNS1b0qFAoKSFLeqXesPa60YelVE3pPKc6pZ4iuSW9l6DBxY4hMPQj1dQCBDrUHJj/NDSjE85bTRQ==",
-      "requires": {
-        "@types/whatwg-streams": "0.0.5"
-      }
+      "version": "0.3.1",
+      "resolved": "https://registry.npmjs.org/@mattiasbuelens/web-streams-polyfill/-/web-streams-polyfill-0.3.1.tgz",
+      "integrity": "sha512-IW+tCurEH2NL2tA3KKFAMXa90WWmTJMZksnQWMABe3bMijV7hEiOLthy4tKGTnUTV8qVf8WTCApiGmKb75Bxkg=="
     },
     "@sinonjs/formatio": {
       "version": "2.0.0",
@@ -20,11 +17,6 @@
       "requires": {
         "samsam": "1.3.0"
       }
-    },
-    "@types/whatwg-streams": {
-      "version": "0.0.5",
-      "resolved": "https://registry.npmjs.org/@types/whatwg-streams/-/whatwg-streams-0.0.5.tgz",
-      "integrity": "sha512-y1UgRuGO64x/v+UIerA2AMquW/qxaIUD95rbf8FYxtVG//D3381+JexnZfcEiZSqXErdxdPmXpz8srY7gs9Grw=="
     },
     "JSONStream": {
       "version": "1.3.3",
