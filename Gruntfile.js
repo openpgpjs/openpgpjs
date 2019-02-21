@@ -47,8 +47,8 @@ module.exports = function(grunt) {
           transform: [
             ["babelify", {
               global: true,
-              // Only babelify web-stream-tools, asmcrypto, address-rfc2822 and seek-bzip in node_modules
-              only: /^(?:.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|.*\/node_modules\/seek-bzip\/|(?!.*\/node_modules\/)).*$/,
+              // Only babelify web-streams-polyfill, web-stream-tools, asmcrypto, address-rfc2822 and seek-bzip in node_modules
+              only: /^(?:.*\/node_modules\/@mattiasbuelens\/web-streams-polyfill\/|.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/address-rfc2822\/|.*\/node_modules\/seek-bzip\/|(?!.*\/node_modules\/)).*$/,
               plugins: compat ? [
                 "transform-async-to-generator",
                 "syntax-async-functions",
