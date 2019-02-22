@@ -235,7 +235,7 @@ export default {
               8) | await reader.readByte();
           }
         }
-        if (packet_length >= 0) {
+        if (packet_length > 0) {
           let bytesRead = 0;
           while (true) {
             if (writer) await writer.ready;
