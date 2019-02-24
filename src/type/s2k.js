@@ -67,7 +67,10 @@ S2K.prototype.get_count = function () {
 S2K.prototype.read = function (bytes) {
   let i = 0;
   this.type = enums.read(enums.s2k, bytes[i++]);
-  this.algorithm = enums.read(enums.hash, bytes[i++]);
+  this.algorithm = bytes[i++];
+  if (this.type !== 'gnu') {
+    this.algorithm = enums.read(enums.hash, this.algorithm);
+  }
 
   switch (this.type) {
     case 'simple':
@@ -87,11 +90,11 @@ S2K.prototype.read = function (bytes) {
       break;
 
     case 'gnu':
-      if (util.Uint8Array_to_str(bytes.subarray(i, 3)) === "GNU") {
+      if (util.Uint8Array_to_str(bytes.subarray(i, i + 3)) === "GNU") {
         i += 3; // GNU
         const gnuExtType = 1000 + bytes[i++];
         if (gnuExtType === 1001) {
-          this.type = gnuExtType;
+          this.type = 'gnu-dummy';
           // GnuPG extension mode 1001 -- don't write secret key at all
         } else {
           throw new Error("Unknown s2k gnu protection mode.");

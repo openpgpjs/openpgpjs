@@ -257,6 +257,9 @@ SecretKey.prototype.decrypt = async function (passphrase) {
     const s2k = new type_s2k();
     i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
+    if (s2k.type === 'gnu-dummy') {
+      return false;
+    }
     key = await produceEncryptionKey(s2k, passphrase, symmetric);
   } else {
     symmetric = s2k_usage;

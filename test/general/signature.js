@@ -340,15 +340,12 @@ describe("Signature", function() {
     const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
     const msg = await openpgp.message.readArmored(msg_arm1);
 
-    await priv_key_gnupg_ext.subKeys[0].keyPacket.decrypt("abcd");
-    return msg.decrypt([priv_key_gnupg_ext]).then(function(msg) {
-      return msg.verify([pub_key]).then(async verified => {
-        openpgp.stream.pipe(msg.getLiteralData(), new WritableStream());
-        expect(verified).to.exist;
-        expect(verified).to.have.length(1);
-        expect(await verified[0].verified).to.be.true;
-        expect((await verified[0].signature).packets.length).to.equal(1);
-      });
+    await priv_key_gnupg_ext.decrypt("abcd");
+    return openpgp.decrypt({ message: msg, privateKeys: [priv_key_gnupg_ext], publicKeys: [pub_key] }).then(function(msg) {
+      expect(msg.signatures).to.exist;
+      expect(msg.signatures).to.have.length(1);
+      expect(msg.signatures[0].valid).to.be.true;
+      expect(msg.signatures[0].signature.packets.length).to.equal(1);
     });
   });
 
