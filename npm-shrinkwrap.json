@@ -1,6 +1,6 @@
 {
   "name": "openpgp",
-  "version": "4.4.7",
+  "version": "4.4.8",
   "lockfileVersion": 1,
   "requires": true,
   "dependencies": {
@@ -269,7 +269,7 @@
     },
     "asmcrypto.js": {
       "version": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
-      "from": "github:openpgpjs/asmcrypto#6e4e407"
+      "from": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83"
     },
     "asn1": {
       "version": "0.2.3",
@@ -2291,7 +2291,7 @@
     },
     "elliptic": {
       "version": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-      "from": "github:openpgpjs/elliptic#ad81845",
+      "from": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
       "requires": {
         "bn.js": "^4.4.0",
         "brorand": "^1.0.1",
@@ -6453,7 +6453,7 @@
     },
     "seek-bzip": {
       "version": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-      "from": "github:openpgpjs/seek-bzip#3aca608",
+      "from": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
       "requires": {
         "commander": "~2.8.1"
       },
@@ -7368,7 +7368,7 @@
     },
     "web-stream-tools": {
       "version": "github:openpgpjs/web-stream-tools#84a497715c9df271a673f8616318264ab42ab3cc",
-      "from": "github:openpgpjs/web-stream-tools#84a4977"
+      "from": "github:openpgpjs/web-stream-tools#84a497715c9df271a673f8616318264ab42ab3cc"
     },
     "websocket-driver": {
       "version": "0.7.0",
