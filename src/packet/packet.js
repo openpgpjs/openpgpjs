@@ -244,7 +244,7 @@ export default {
               if (packet_length === Infinity) break;
               throw new Error('Unexpected end of packet');
             }
-            const chunk = value.subarray(0, packet_length - bytesRead);
+            const chunk = packet_length === Infinity ? value : value.subarray(0, packet_length - bytesRead);
             if (writer) await writer.write(chunk);
             else packet.push(chunk);
             bytesRead += value.length;
