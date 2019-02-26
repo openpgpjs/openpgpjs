@@ -1183,10 +1183,10 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
     }
     for (let i = 0; i < that.bindingSignatures.length; i++) {
       if (that.bindingSignatures[i].issuerKeyId.equals(srcBindSig.issuerKeyId)) {
-        if (srcBindSig.created < that.bindingSignatures[i].created) {
+        if (srcBindSig.created > that.bindingSignatures[i].created) {
           that.bindingSignatures[i] = srcBindSig;
-          return false;
         }
+        return false;
       }
     }
     return true;

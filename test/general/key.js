@@ -2413,6 +2413,20 @@ describe('Key', function() {
     });
   });
 
+  it('update() - merge multiple subkey binding signatures', async function() {
+    const source = (await openpgp.key.readArmored(multipleBindingSignatures)).keys[0];
+    const dest = (await openpgp.key.readArmored(multipleBindingSignatures)).keys[0];
+    // remove last subkey binding signature of destination subkey
+    dest.subKeys[0].bindingSignatures.length = 1;
+    expect((await source.subKeys[0].getExpirationTime(source.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
+    expect((await dest.subKeys[0].getExpirationTime(dest.primaryKey)).toISOString()).to.equal('2018-09-07T06:03:37.000Z');
+    return dest.update(source).then(async () => {
+      expect(dest.subKeys[0].bindingSignatures.length).to.equal(1);
+      // destination key gets new expiration date from source key which has newer subkey binding signature
+      expect((await dest.subKeys[0].getExpirationTime(dest.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
+    });
+  });
+
   it('revoke() - primary key', async function() {
     const privKey = (await openpgp.key.readArmored(priv_key_arm2)).keys[0];
     await privKey.decrypt('hello world');
