@@ -12242,17 +12242,21 @@ utils.intFromLE = intFromLE;
 
 },{"bn.js":17,"minimalistic-assert":50,"minimalistic-crypto-utils":51}],34:[function(require,module,exports){
 module.exports={
+  "_args": [
+    [
+      "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
+      "/Users/sunny/Desktop/Protonmail/openpgpjs"
+    ]
+  ],
   "_from": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_id": "elliptic@6.4.0",
+  "_id": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
   "_inBundle": false,
   "_integrity": "",
   "_location": "/elliptic",
   "_phantomChildren": {},
   "_requested": {
     "type": "git",
-    "raw": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-    "name": "elliptic",
-    "escapedName": "elliptic",
+    "raw": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
     "rawSpec": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
     "saveSpec": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
     "fetchSpec": null,
@@ -12262,7 +12266,7 @@ module.exports={
     "/"
   ],
   "_resolved": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_spec": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
+  "_spec": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
   "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "author": {
     "name": "Fedor Indutny",
@@ -12271,7 +12275,6 @@ module.exports={
   "bugs": {
     "url": "https://github.com/indutny/elliptic/issues"
   },
-  "bundleDependencies": false,
   "dependencies": {
     "bn.js": "^4.4.0",
     "brorand": "^1.0.1",
@@ -12281,7 +12284,6 @@ module.exports={
     "minimalistic-assert": "^1.0.0",
     "minimalistic-crypto-utils": "^1.0.0"
   },
-  "deprecated": false,
   "description": "EC cryptography",
   "devDependencies": {
     "brfs": "^1.4.3",
@@ -22635,8 +22637,14 @@ module.exports = Stream;
 
 },{}],73:[function(require,module,exports){
 module.exports={
+  "_args": [
+    [
+      "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
+      "/Users/sunny/Desktop/Protonmail/openpgpjs"
+    ]
+  ],
   "_from": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_id": "seek-bzip@1.0.5-git",
+  "_id": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_inBundle": false,
   "_integrity": "",
   "_location": "/seek-bzip",
@@ -22645,9 +22653,7 @@ module.exports={
   },
   "_requested": {
     "type": "git",
-    "raw": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-    "name": "seek-bzip",
-    "escapedName": "seek-bzip",
+    "raw": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
     "rawSpec": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
     "saveSpec": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
     "fetchSpec": null,
@@ -22657,7 +22663,7 @@ module.exports={
     "/"
   ],
   "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_spec": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
+  "_spec": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
   "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
   "bin": {
     "seek-bunzip": "./bin/seek-bunzip",
@@ -22666,7 +22672,6 @@ module.exports={
   "bugs": {
     "url": "https://github.com/cscott/seek-bzip/issues"
   },
-  "bundleDependencies": false,
   "contributors": [
     {
       "name": "C. Scott Ananian",
@@ -22686,7 +22691,6 @@ module.exports={
   "dependencies": {
     "commander": "~2.8.1"
   },
-  "deprecated": false,
   "description": "a pure-JavaScript Node.JS module for random-access decoding bzip2 data",
   "devDependencies": {
     "fibers": "~1.0.6",
@@ -24594,7 +24598,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.8",
+  versionstring: "OpenPGP.js v4.4.9",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -32924,10 +32928,10 @@ SubKey.prototype.update = async function (subKey, primaryKey) {
     }
     for (let i = 0; i < that.bindingSignatures.length; i++) {
       if (that.bindingSignatures[i].issuerKeyId.equals(srcBindSig.issuerKeyId)) {
-        if (srcBindSig.created < that.bindingSignatures[i].created) {
+        if (srcBindSig.created > that.bindingSignatures[i].created) {
           that.bindingSignatures[i] = srcBindSig;
-          return false;
         }
+        return false;
       }
     }
     return true;
