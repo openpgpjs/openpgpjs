@@ -50,15 +50,24 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
 }
 
 // Key Derivation Function (RFC 6637)
-async function kdf(hash_algo, S, length, param, curve, compat) {
-  const len = compat ?
-    S.byteLength() :
-    curve.curve.curve.p.byteLength();
+async function kdf(hash_algo, S, length, param, curve, stripLeading=false, stripTrailing=false) {
+  const len = curve.curve.curve.p.byteLength();
   // Note: this is not ideal, but the RFC's are unclear
   // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
-  const X = curve.curve.curve.type === 'mont' ?
+  let X = curve.curve.curve.type === 'mont' ?
     S.toArrayLike(Uint8Array, 'le', len) :
     S.toArrayLike(Uint8Array, 'be', len);
+  let i;
+  if (stripLeading) {
+    // Work around old go crypto bug
+    for (i = 0; i < X.length && X[i] === 0; i++);
+    X = X.subarray(i);
+  }
+  if (stripTrailing) {
+    // Work around old OpenPGP.js bug
+    for (i = X.length - 1; i >= 0 && X[i] === 0; i--);
+    X = X.subarray(0, i + 1);
+  }
   const digest = await hash.digest(hash_algo, util.concatUint8Array([
     new Uint8Array([0, 0, 0, 1]),
     X,
@@ -100,7 +109,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   const { V, S } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
-  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param, curve, false);
+  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param, curve);
   const C = aes_kw.wrap(Z, m.toString());
   return { V, C };
 }
@@ -138,13 +147,17 @@ async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   const S = await genPrivateEphemeralKey(curve, V, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
-  try {
-    const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param, curve, false);
-    return new BN(aes_kw.unwrap(Z, C));
-  } catch(e) {}
-  // Work around old OpenPGP.js bug.
-  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param, curve, true);
-  return new BN(aes_kw.unwrap(Z, C));
+  let err;
+  for (let i = 0; i < 3; i++) {
+    try {
+      // Work around old go crypto bug and old OpenPGP.js bug, respectively.
+      const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param, curve, i === 1, i === 2);
+      return new BN(aes_kw.unwrap(Z, C));
+    } catch (e) {
+      err = e;
+    }
+  }
+  throw err;
 }
 
 export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf };
