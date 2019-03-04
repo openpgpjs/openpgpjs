@@ -31057,7 +31057,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.9",
+  versionstring: "OpenPGP.js v4.4.10",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -36588,25 +36588,39 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 // Key Derivation Function (RFC 6637)
 var kdf = function () {
-  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(hash_algo, S, length, param, curve, compat) {
-    var len, X, digest;
+  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(hash_algo, S, length, param, curve) {
+    var stripLeading = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+    var stripTrailing = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
+    var len, X, i, digest;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            len = compat ? S.byteLength() : curve.curve.curve.p.byteLength();
+            len = curve.curve.curve.p.byteLength();
             // Note: this is not ideal, but the RFC's are unclear
             // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
 
             X = curve.curve.curve.type === 'mont' ? S.toArrayLike(Uint8Array, 'le', len) : S.toArrayLike(Uint8Array, 'be', len);
-            _context.next = 4;
+            i = void 0;
+
+            if (stripLeading) {
+              // Work around old go crypto bug
+              for (i = 0; i < X.length && X[i] === 0; i++) {}
+              X = X.subarray(i);
+            }
+            if (stripTrailing) {
+              // Work around old OpenPGP.js bug
+              for (i = X.length - 1; i >= 0 && X[i] === 0; i--) {}
+              X = X.subarray(0, i + 1);
+            }
+            _context.next = 7;
             return _hash2.default.digest(hash_algo, _util2.default.concatUint8Array([new Uint8Array([0, 0, 0, 1]), X, param]));
 
-          case 4:
+          case 7:
             digest = _context.sent;
             return _context.abrupt('return', digest.subarray(0, length));
 
-          case 6:
+          case 9:
           case 'end':
             return _context.stop();
         }
@@ -36614,7 +36628,7 @@ var kdf = function () {
     }, _callee, this);
   }));
 
-  return function kdf(_x, _x2, _x3, _x4, _x5, _x6) {
+  return function kdf(_x, _x2, _x3, _x4, _x5) {
     return _ref.apply(this, arguments);
   };
 }();
@@ -36655,7 +36669,7 @@ var genPublicEphemeralKey = function () {
     }, _callee2, this);
   }));
 
-  return function genPublicEphemeralKey(_x7, _x8) {
+  return function genPublicEphemeralKey(_x8, _x9) {
     return _ref2.apply(this, arguments);
   };
 }();
@@ -36694,7 +36708,7 @@ var encrypt = function () {
 
             cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
             _context3.next = 10;
-            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, false);
+            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve);
 
           case 10:
             Z = _context3.sent;
@@ -36709,7 +36723,7 @@ var encrypt = function () {
     }, _callee3, this);
   }));
 
-  return function encrypt(_x9, _x10, _x11, _x12, _x13, _x14) {
+  return function encrypt(_x10, _x11, _x12, _x13, _x14, _x15) {
     return _ref3.apply(this, arguments);
   };
 }();
@@ -36743,7 +36757,7 @@ var genPrivateEphemeralKey = function () {
     }, _callee4, this);
   }));
 
-  return function genPrivateEphemeralKey(_x15, _x16, _x17) {
+  return function genPrivateEphemeralKey(_x16, _x17, _x18) {
     return _ref5.apply(this, arguments);
   };
 }();
@@ -36765,8 +36779,7 @@ var genPrivateEphemeralKey = function () {
 
 var decrypt = function () {
   var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-    var curve, S, param, _Z, Z;
-
+    var curve, S, param, err, i, Z;
     return _regenerator2.default.wrap(function _callee5$(_context5) {
       while (1) {
         switch (_context5.prev = _context5.next) {
@@ -36780,35 +36793,46 @@ var decrypt = function () {
             param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
 
             cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
-            _context5.prev = 6;
-            _context5.next = 9;
-            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, false);
+            err = void 0;
+            i = 0;
 
-          case 9:
-            _Z = _context5.sent;
-            return _context5.abrupt('return', new _bn2.default(_aes_kw2.default.unwrap(_Z, C)));
+          case 8:
+            if (!(i < 3)) {
+              _context5.next = 22;
+              break;
+            }
 
-          case 13:
-            _context5.prev = 13;
-            _context5.t0 = _context5['catch'](6);
+            _context5.prev = 9;
+            _context5.next = 12;
+            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, i === 1, i === 2);
 
-          case 15:
-            _context5.next = 17;
-            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, true);
-
-          case 17:
+          case 12:
             Z = _context5.sent;
             return _context5.abrupt('return', new _bn2.default(_aes_kw2.default.unwrap(Z, C)));
 
+          case 16:
+            _context5.prev = 16;
+            _context5.t0 = _context5['catch'](9);
+
+            err = _context5.t0;
+
           case 19:
+            i++;
+            _context5.next = 8;
+            break;
+
+          case 22:
+            throw err;
+
+          case 23:
           case 'end':
             return _context5.stop();
         }
       }
-    }, _callee5, this, [[6, 13]]);
+    }, _callee5, this, [[9, 16]]);
   }));
 
-  return function decrypt(_x18, _x19, _x20, _x21, _x22, _x23, _x24) {
+  return function decrypt(_x19, _x20, _x21, _x22, _x23, _x24, _x25) {
     return _ref6.apply(this, arguments);
   };
 }();
