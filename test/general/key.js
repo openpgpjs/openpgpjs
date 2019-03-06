@@ -1611,6 +1611,39 @@ Jn9lY1FGcIqjyOYanmsOEsSsKZS/exyNIjwi0WRPze+SASRzE/8=
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
+const key_created_2030 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xsBNBHEtJEoBCAC5eMNNia6oZJI7llva4L9/O9/TXd5HZt95hbXCBHr5BTmD
+VDHNYXCpi7L+1qTDJqaAHY/GyeSgiAeFOEKOiyFXhdSgiLmru4DLtp+6cg8C
+AiJR/V/GzN5vtSL7JuQu8LOzYZnPzoNtM9i5P1c0MqTguP9HMSuF+kqId+q5
+siZK+YqZPH0VHNDHOe31ulNeC9jRTaiafg5m0zkI3Go4wRoCt6CzO+hQJ6u+
+knHBQ2YfDBX2PtXn77CAGLgh2heX2Abd1LvvweMlDzqYFhwk+dHEUT8DA0rl
+vJwuOiNAkfRhC4nwtLhikvlOs6Uh8hrblxuab2kTwYsPFawQR5wPEPsJABEB
+AAHNIkNyZWF0ZWQgaW4gMjAzMCA8Y3JlYXRlZEAyMDMwLm9yZz7CwHUEEAEI
+AB8FAnEtJEoGCwkHCAMCBBUICgIDFgIBAhkBAhsDAh4BAAoJEFuE0AYFWFcL
+K8MIAJAowJs1PY10ChPvcoVNDtgO23eXLi1C1x3IBeV2l2JtwvJ8ZTTCiKF/
+IdPIsxKhV39pebFip3hIsjSYCF3SlkGht8XiJBVamsNtXhfY0JB6mkKntVBA
+4OiQ7Aa94mq7nvEwFtwS3W7Wdf8R5BlWTADPwKkXFj3/G7pHy1HiQ/+6xL0U
+RkH57QUsl73IgAH5XaoXbhgvuCD66kQBoSkG6NFh/EUuwHkv6PEAcczGhsr5
+ewDH4+XxhGKY9X71CrVAR5V0UoC3MJM1MNgvkSycciZsz/1oRiWSl7XWChGe
+tlOn21ImIkRmHC4ev3BbbGWiI4WNWmQ9Tm/2Qt/hkAQbOZ3OwE0EcS0kSgEI
+ALSV5Z3NSBV/nftJzYJ7VVWzlzxAMQODj+iWpD28XqchslF0+xS4LVMDvoG7
+Sa6RoHq6muMG+pcP0ho7kpPvXc5LEjhYvOdbdaRWqxBoywAzvMZga+u1vKsy
+087xgmffASkFPqwPDkuOMQ7LSG16NGMDKZGubfdKy+FY+AcL1Cnc76LgEixR
+DPuLZyPRVUOmPWPoEebbHfQRYQpZmEbDY6D3XECm6yM1BlbvL0+SAksP2Ib+
+g9f4NFbXGWVaKYflifbUcnXi5+xZdt4D0k56eySl26Rz0ojt7hzY7d+V/zEm
+KxoHT5OvXV5BV0B/e/nSrOIyQkhTGejON14lOtFV5WsAEQEAAcLAXwQYAQgA
+CQUCcS0kSgIbDAAKCRBbhNAGBVhXC2SqCACJovJpZJTKDBXfRvNMRO2LdTpC
+lAkm9RyBjQ4BGxoqEaXtxJAOyKjDzvD6+zwlJwAWSM4j2oYsaZsSosASfXHj
+kcy5HTRP6MN6pcBnNPlJIlOqVdzqMCStLnFrYpsvl7xD3VrfOOz9gTuZl/n9
+GbziMjGUES8PK63IR/JKI4iNKD9M3xLkHOFjyxHG17AlHPHBdtb7DvKg780H
+Sh4BCGqNrB0ikvMCZwZBpIAck4BGXPeuykFQ93BxCsbVdXIKqK44g5+hG2Bg
+iCzXvu4VCEMxMYOkOV4857v958DC7Z7W6BYEYpa9DP0O2zAwDmhu/kRFfKVQ
+3GOWvBNGqRPrEJ49
+=JOnb
+-----END PGP PUBLIC KEY BLOCK-----
+`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2222,6 +2255,15 @@ describe('Key', function() {
 
     const { user } = await pubKey.getPrimaryUser();
     expect(await user.verifyCertificate(pubKey.primaryKey, user.otherCertifications[0], [certifyingKey])).to.equal(openpgp.enums.keyStatus.revoked);
+  });
+
+  it('Verify certificate of key with future creation date', async function() {
+    const { keys: [pubKey] } = await openpgp.key.readArmored(key_created_2030);
+    const user = pubKey.users[0];
+    expect(await user.verifyCertificate(pubKey.primaryKey, user.selfCertifications[0], [pubKey], pubKey.primaryKey.created)).to.equal(openpgp.enums.keyStatus.valid);
+    const verifyAllResult = await user.verifyAllCertifications(pubKey.primaryKey, [pubKey], pubKey.primaryKey.created);
+    expect(verifyAllResult[0].valid).to.be.true;
+    expect(await user.verify(pubKey.primaryKey, pubKey.primaryKey.created)).to.equal(openpgp.enums.keyStatus.valid);
   });
 
   it('Evaluate key flags to find valid encryption key packet', async function() {

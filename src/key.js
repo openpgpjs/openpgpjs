@@ -957,13 +957,13 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
   const results = await Promise.all(keys.map(async function(key) {
     if (!key.getKeyIds().some(id => id.equals(keyid))) { return; }
     const signingKey = await key.getSigningKey(keyid, date);
-    if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket)) {
+    if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date)) {
       return enums.keyStatus.revoked;
     }
     if (!(certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.cert_generic, dataToVerify))) {
       return enums.keyStatus.invalid;
     }
-    if (certificate.isExpired()) {
+    if (certificate.isExpired(date)) {
       return enums.keyStatus.expired;
     }
     return enums.keyStatus.valid;
@@ -976,15 +976,16 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey The primary key packet
  * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
+ * @param  {Date}                     date        Use the given date instead of the current time
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
  * @async
  */
-User.prototype.verifyAllCertifications = async function(primaryKey, keys) {
+User.prototype.verifyAllCertifications = async function(primaryKey, keys, date=new Date()) {
   const that = this;
   const certifications = this.selfCertifications.concat(this.otherCertifications);
   return Promise.all(certifications.map(async function(certification) {
-    const status = await that.verifyCertificate(primaryKey, certification, keys);
+    const status = await that.verifyCertificate(primaryKey, certification, keys, date);
     return {
       keyid: certification.issuerKeyId,
       valid: status === undefined ? null : status === enums.keyStatus.valid
@@ -997,10 +998,11 @@ User.prototype.verifyAllCertifications = async function(primaryKey, keys) {
  * and validity of self signature
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {Date}                    date       Use the given date instead of the current time
  * @returns {Promise<module:enums.keyStatus>}    Status of user
  * @async
  */
-User.prototype.verify = async function(primaryKey) {
+User.prototype.verify = async function(primaryKey, date=new Date()) {
   if (!this.selfCertifications.length) {
     return enums.keyStatus.no_self_cert;
   }
@@ -1013,13 +1015,13 @@ User.prototype.verify = async function(primaryKey) {
   // TODO replace when Promise.some or Promise.any are implemented
   const results = [enums.keyStatus.invalid].concat(
     await Promise.all(this.selfCertifications.map(async function(selfCertification) {
-      if (selfCertification.revoked || await that.isRevoked(primaryKey, selfCertification)) {
+      if (selfCertification.revoked || await that.isRevoked(primaryKey, selfCertification, undefined, date)) {
         return enums.keyStatus.revoked;
       }
       if (!(selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.cert_generic, dataToVerify))) {
         return enums.keyStatus.invalid;
       }
-      if (selfCertification.isExpired()) {
+      if (selfCertification.isExpired(date)) {
         return enums.keyStatus.expired;
       }
       return enums.keyStatus.valid;
