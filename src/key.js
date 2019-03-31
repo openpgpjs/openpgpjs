@@ -1735,8 +1735,7 @@ export async function getPreferredAlgo(type, keys, date=new Date(), userIds=[]) 
   const prioMap = {};
   await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i]);
-    const noSelfCertOk = !config.require_uid_self_cert && primaryUser && !primaryUser.selfCertification;
-    if (!primaryUser || noSelfCertOk || !primaryUser.selfCertification[prefProperty]) {
+    if (!primaryUser || !primaryUser.selfCertification || !primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
     primaryUser.selfCertification[prefProperty].forEach(function(algo, index) {
