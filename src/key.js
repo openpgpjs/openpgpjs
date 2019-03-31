@@ -316,23 +316,22 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
       }
     }
     const primaryUser = await this.getPrimaryUser(date, userId);
-    const noSelfCertOk = !primaryUser.selfCertification && !config.require_uid_self_cert;
     if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
-      (noSelfCertOk || isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification))) {
+        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification)) {
       return this;
     }
   }
   return null;
 
   function isValidSigningKeyPacket(keyPacket, signature) {
-    if (!signature.verified || signature.revoked !== false) { // Sanity check
+    if (config.require_uid_self_cert && (!signature.verified || signature.revoked !== false)) { // Sanity check
       throw new Error('Signature not verified');
     }
+    const noSelfCertOk = !config.require_uid_self_cert && !signature;
+    const sigValidForSigning = noSelfCertOk || !signature.keyFlags || (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0;
     return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_encrypt) &&
       keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.elgamal) &&
-      keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdh) &&
-      (!signature.keyFlags ||
-        (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
+      keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdh) && sigValidForSigning;
   }
 };
 
