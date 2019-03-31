@@ -362,7 +362,7 @@ Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={
     }
     // if no valid subkey for encryption, evaluate primary key
     const primaryUser = await this.getPrimaryUser(date, userId);
-    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
+    if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) && primaryUser.selfCertification &&
         isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
       return this;
     }
@@ -1699,7 +1699,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), user
   let pref_algo = hash_algo;
   if (key instanceof Key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
-    if (primaryUser && primaryUser.selfCertification.preferredHashAlgorithms) {
+    if (primaryUser && primaryUser.selfCertification && primaryUser.selfCertification.preferredHashAlgorithms) {
       [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
       hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
         pref_algo : hash_algo;
@@ -1774,7 +1774,7 @@ export async function isAeadSupported(keys, date=new Date(), userIds=[]) {
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i]);
-    if (!primaryUser || !primaryUser.selfCertification.features ||
+    if (!primaryUser || !primaryUser.selfCertification || !primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;
     }

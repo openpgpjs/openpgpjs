@@ -190,7 +190,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           enums.symmetric.tripledes, // RFC4880 fallback
           enums.symmetric.cast5 // Golang OpenPGP fallback
         ];
-        if (primaryUser && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
+        if (primaryUser && primaryUser.selfCertification && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
           algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
         }
 
