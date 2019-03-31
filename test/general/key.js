@@ -1644,6 +1644,100 @@ iCzXvu4VCEMxMYOkOV4857v958DC7Z7W6BYEYpa9DP0O2zAwDmhu/kRFfKVQ
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
+const no_self_cert = {
+  one_user_with_self_cert: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: FlowCrypt 5.9.5 Gmail Encryption flowcrypt.com
+Comment: Seamlessly send, receive and search encrypted email
+
+xsBNBFtwMw4BCAC6eAaOzkkGsWwTq1u00wqzaF7voADXH6HuM4D3/DhL2h+G
+WuP9UyNw9eQ6tj/DyYQqG2f+k/1iczhPoyncPIhWEl7sbkMS5ezNVJ9lZ9Bo
+U9f4R2BQh28j4Pj+j7LTtGOKEXAIzp84hku/b3LsQZkRN18B0WQ5EEHzOZ8N
+U9MpXZcDOxjtUv7lMa8N87gX4y2bfseK2WEOU665UcIM7z+OztsAzwvj/Pgj
+cQCK9XMBjTA+Zc1Bec9c5U6Jz7Kj64E5JLBGwF9FOjwT14E9B13dLtI9hxrb
+S+Dv9dxsuUHeEyDQgV/NXRUV5meLs+ray07aGOx5QAhdLNtwv3v2inHXABEB
+AAHNFm5vLnNlbGYuY2VydHNAdGVzdC5jb23CwHUEEAEIACkFAltwMw4GCwkH
+CAMCCRD3haWfR73tLQQVCAoCAxYCAQIZAQIbAwIeAQAAkP0H/171EEmQE/pw
+Q52flL+vxpAmZiFmIcA/KOajFKcmvc+H7wVMAOGm4V9JTQaazLSwodPo3WZv
+jeID3X08dzmrDZWmE1Lc9J9M1fmv0UI0Phzvte5ysa2PxGFB+80AZpOEQgYh
+cf6RvreH1PqamtXouXLprazsmjrfQXxjWZ0gjYrP6SKrPpVj6eYu4aeha8yS
+RslKKwRezU0ugJgeA5uEOHGu59SR3vKrOO3Tv52xayMoecjmV/iXDc7khEug
+X+VSr3fTeZ7hvVKctBsUHcMg8NHTiUS70AdaakQ38uhyT88AhKpSX08EHoeF
+pmZAul1JrSv/5dCLQuUhkIbvHbWnziHOwE0EW3AzDgEIAPCYFrqAQMhDgyzW
+9645ol186DJKbvXyD+FodXU9LDTdH18jY/Y0P1IvpDIXftkbbC/iVjPcGU0n
+LBKEd24S3SzS1tD//VV/+CMQr8bCuSoO3XjvTGIwDtyZPr6P48xVi+lcQBOO
+PN/2kcL+KBzopDjCXN9+9bEIxfy8gXQPIC1Zl7kGMgcWaHk4xTPEp4EX73W3
+MxL2mWM+E254ORwX326+0Qx0P4ODDXx9k1/zO7+mqm5fntqbI10RJmzov7ch
+JC1Ct5dbFeOLff1wHKqRXV+Rkbj55YaLVp+A/DBRJ7FL+gVUy4Ft5FTbQTvU
+MpQ0Qoe2WnZ2boQD7+AvBImBkykAEQEAAcLAXwQYAQgAEwUCW3AzDgkQ94Wl
+n0e97S0CGwwAAJRDCACjBzPmGCs/m6ovuuF1BOFq1rH/y8praLqGwGMR+FSR
+lTwVToLhcPPxMwh6VaD0T2u92B0vUCboDXpK/oYRfZv2JXBJrZgPi1PsCzqG
+mrR0HkHkbvdr1dsCjJmwUFcqR9Iyr9iwmDR2u2+5Fnu/51sMFzfp8JAnzgEy
+VMvaeWfyARgMaFe9wfFlGzV/cU0/GC3l5NW8FjfSMWyt4fLC+xTEVF9wDT/o
+FA7EuEW+8M1oRBiAtFbNlvIEXbtPb3Pti+OMykTxjs5qWhb1HSsjmVTwaiPO
+fJqOEKBB8UzxB+rEi+J4VxMDG1FzDERhKXcQ3LLhfFtwtXKqr7w4g4lCAzQ7
+=twfU
+-----END PGP PUBLIC KEY BLOCK-----`,
+  one_user_no_self_cert: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: FlowCrypt 5.9.6 Gmail Encryption flowcrypt.com
+Comment: Seamlessly send, receive and search encrypted email
+
+xsBNBFtwMw4BCAC6eAaOzkkGsWwTq1u00wqzaF7voADXH6HuM4D3/DhL2h+G
+WuP9UyNw9eQ6tj/DyYQqG2f+k/1iczhPoyncPIhWEl7sbkMS5ezNVJ9lZ9Bo
+U9f4R2BQh28j4Pj+j7LTtGOKEXAIzp84hku/b3LsQZkRN18B0WQ5EEHzOZ8N
+U9MpXZcDOxjtUv7lMa8N87gX4y2bfseK2WEOU665UcIM7z+OztsAzwvj/Pgj
+cQCK9XMBjTA+Zc1Bec9c5U6Jz7Kj64E5JLBGwF9FOjwT14E9B13dLtI9hxrb
+S+Dv9dxsuUHeEyDQgV/NXRUV5meLs+ray07aGOx5QAhdLNtwv3v2inHXABEB
+AAHNFm5vLnNlbGYuY2VydHNAdGVzdC5jb23OwE0EW3AzDgEIAPCYFrqAQMhD
+gyzW9645ol186DJKbvXyD+FodXU9LDTdH18jY/Y0P1IvpDIXftkbbC/iVjPc
+GU0nLBKEd24S3SzS1tD//VV/+CMQr8bCuSoO3XjvTGIwDtyZPr6P48xVi+lc
+QBOOPN/2kcL+KBzopDjCXN9+9bEIxfy8gXQPIC1Zl7kGMgcWaHk4xTPEp4EX
+73W3MxL2mWM+E254ORwX326+0Qx0P4ODDXx9k1/zO7+mqm5fntqbI10RJmzo
+v7chJC1Ct5dbFeOLff1wHKqRXV+Rkbj55YaLVp+A/DBRJ7FL+gVUy4Ft5FTb
+QTvUMpQ0Qoe2WnZ2boQD7+AvBImBkykAEQEAAcLAXwQYAQgAEwUCW3AzDgkQ
+94Wln0e97S0CGwwAAJRDCACjBzPmGCs/m6ovuuF1BOFq1rH/y8praLqGwGMR
++FSRlTwVToLhcPPxMwh6VaD0T2u92B0vUCboDXpK/oYRfZv2JXBJrZgPi1Ps
+CzqGmrR0HkHkbvdr1dsCjJmwUFcqR9Iyr9iwmDR2u2+5Fnu/51sMFzfp8JAn
+zgEyVMvaeWfyARgMaFe9wfFlGzV/cU0/GC3l5NW8FjfSMWyt4fLC+xTEVF9w
+DT/oFA7EuEW+8M1oRBiAtFbNlvIEXbtPb3Pti+OMykTxjs5qWhb1HSsjmVTw
+aiPOfJqOEKBB8UzxB+rEi+J4VxMDG1FzDERhKXcQ3LLhfFtwtXKqr7w4g4lC
+AzQ7
+=4EUT
+-----END PGP PUBLIC KEY BLOCK-----`,
+  three_users_second_has_self_cert: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: FlowCrypt 5.9.6 Gmail Encryption flowcrypt.com
+Comment: Seamlessly send, receive and search encrypted email
+
+xsBNBFtwTvYBCADYd/20D6FGK9byJPF0VVGp1SCoaCjMhdyyhknz3gxOWfJ0
+JpHrtZzZ8M0RorK2eKXP4geW4RsW/DBtRopxLAXyXGDsQwLq5QVD7FjZovxS
+OTN7IcRLSsse+hV7VOIL46eo/DFEMnhvvsj2N9Q+9JlaTUTSlO19eC3bMmwT
+1rEt3BAHivLNuxE7fiUdk1MNXOI7ImxRJdaTJx9wp59SotCjOVs+AFPJyh/D
+Lh6ICKU7EZONbJrf+T0FXsiMYAWsBslByfZF3vurMZQAAsi4UkWof7FZdIWW
+q1omUawa311XZou4XoIvs+YfCUyOVY7UH8FQ0Qt8zlxEmf8SD0QRZAtVABEB
+AAHNFW5vLnNlbGYuY2VydEB0ZXN0LmNvbc0WaGFzLnNlbGYuY2VydEB0ZXN0
+LmNvbcLAcgQQAQgAJgUCW3BO9gYLCQcIAwIJEAJzbFabeOROBBUICgIDFgIB
+AhsDAh4BAAAspAf/WpDOgiH7LFpb45xjKMrbjVQKG3IlaW072GPSIOxioKOv
+7LZDXvKG++JptKjG3HjkXmLBZwezYHl2mTBfytesuqJHu6kp1tPYfom0rJqQ
+PvP9GCXt0S+z6b/tU1VgbEQwwTr2BDSWSOAmNA4+DktQBAuOPW0T1ja6OeVX
+tFOFL7yRFvNoTVc/Qiy4zuPLWxoM+HZIOAJYmsfut6dVw1fcrDp8FUopYUbI
+tMA4wuaNX4uza1VA/IDRdSlnsxmjgt4nhhPSgOFQUD7/XhYnYuu6OtN8ErWC
+O191qxaTjHWjwaSZkAgVeEQGabTmWJuz6o7WFir0f2BI6RFJjfUe/vG11M0X
+bm8uc2VsZi5jZXJ0LjJAdGVzdC5jb23OwE0EW3BO9gEIAKUd1GW2CvtXyuYv
+JvigWed9BDEyZ3+sYSW32RzqgOh6+biRCE631dsOOJuPfQYUmH3joBJJ9QNJ
+e4SxPpj0N6Xh/ZrGAEnV9gKhZm4YpfKs9oDVcznRmaKoLHLn9BRhSWVqEdJy
+5hA9g7knVcudEHYaKAKVBNfuftVtGeBBI5Mk1WaxnkpZZVDggz3yCGaVKZCC
+JsxOOlbsXpGNoRpR6PAk7Wg6MquC4EQzP67mCVt59w3g8SjGw7JlprGFv8hf
+3BjsVUzghNh2ACD7RPuXUwPL6tyqkIBvyXh0i53+LFpKygO3wF6IdNOCsuMi
+CV6d3HAPZ82/mwkc3z2PNVwRC8UAEQEAAcLAXwQYAQgAEwUCW3BO9gkQAnNs
+Vpt45E4CGwwAAAqFB/9FuO70Dz8JHDLmDTWqh0xmludpCZ0D9DDJMujgJ+lS
+SnDDmXDPn/tK4Yseh7jcipaWE51ouYK+RhkHzZjrcpYxBM3YmJiOHLy5bWDC
+dmmK2/wNJcSLOnjlYAhe1FYu3hurwT8yfv2cJ9QuGNNMIdyIxB+fOIPJbMUJ
+Zcn6eIBr1Blf/NyhQbezLx8sF/HtXJ+TOMy8barQEHVOQPHes9NRRVeB/lVM
+YstPpFvkfg/BokaVNk4kHnH0+9HZ0F1wAa5rL/3W0Ak20/v6riuIht1Dvehb
+BlbE2puGMwHU8ZXiie178WpgnrJah9LpVxGvE0xqIOexmW+wofiPyKCJgiwR
+=uJGO
+-----END PGP PUBLIC KEY BLOCK-----`,
+};
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2750,4 +2844,102 @@ VYGdb3eNlV8CfoEC
       expect(key.users[1].userId).to.be.null;
     });
   });
+
+  it('require_uid_self_cert=true: cannot use pubkey w/o self certs', async function () {
+    const { keys: [k] } = await openpgp.key.readArmored(no_self_cert.one_user_no_self_cert);
+    expect(k.users.length).to.equal(1);
+    expect(k.users[0].selfCertifications.length).to.equal(0);
+    expect(await k.getEncryptionKey()).to.be.null;
+    expect(await k.getSigningKey()).to.be.null;
+    expect(await k.getPrimaryUser()).to.be.null;
+    expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.no_self_cert);
+    await expect(k.verifyPrimaryUser()).to.be.rejectedWith('Could not find primary user');
+  });
+
+  it('require_uid_self_cert=true: will select uid that does have self cert', async function () {
+    const { keys: [k] } = await openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert);
+    expect(k.users.length).to.equal(3);
+    expect(k.users[0].selfCertifications.length).to.equal(0);
+    expect(k.users[1].selfCertifications.length).to.equal(1);
+    expect(k.users[2].selfCertifications.length).to.equal(0);
+    expect(await k.getEncryptionKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicSubkey);
+    expect(await k.getSigningKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicKey);
+    let { user, selfCertification } = await k.getPrimaryUser();
+    expect(user).to.have.property('userId').that.has.property('userid').that.equals(k.users[1].userId.userid);
+    expect(selfCertification).to.exist;
+    expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
+    let [primaryUser] = await k.verifyPrimaryUser();
+    expect(primaryUser).to.have.a.property('valid').that.is.true;
+    await openpgp.encrypt({ message: openpgp.message.fromText('hello'), publicKeys: [k] }); // expect to not throw
+  });
+
+  it('require_uid_self_cert=false: can use pubkey w/ self certs', async function () {
+    openpgp.config.require_uid_self_cert = false;
+    const { keys: [k] } = await openpgp.key.readArmored(no_self_cert.one_user_with_self_cert);
+    expect(k.users.length).to.equal(1);
+    expect(k.users[0].selfCertifications.length).to.equal(1);
+    expect(await k.getEncryptionKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicSubkey);
+    expect(await k.getSigningKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicKey);
+    let { user, selfCertification } = await k.getPrimaryUser();
+    expect(user).to.have.property('userId').that.has.property('userid').that.equals(k.users[0].userId.userid);
+    expect(selfCertification).to.exist;
+    expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
+    let [primaryUser] = await k.verifyPrimaryUser();
+    expect(primaryUser).to.have.a.property('valid').that.is.true;
+    await openpgp.encrypt({ message: openpgp.message.fromText('hello'), publicKeys: [k] }); // expect to not throw
+    openpgp.config.require_uid_self_cert = true; // back to default
+  });
+
+  it('require_uid_self_cert=false: can use pubkey w/o self certs', async function () {
+    openpgp.config.require_uid_self_cert = false;
+    const { keys: [k] } = await openpgp.key.readArmored(no_self_cert.one_user_no_self_cert);
+    expect(k.users.length).to.equal(1);
+    expect(k.users[0].selfCertifications.length).to.equal(0);
+    expect(await k.getEncryptionKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicSubkey);
+    expect(await k.getSigningKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicKey);
+    let { user, selfCertification } = await k.getPrimaryUser();
+    expect(user).to.have.property('userId').that.has.property('userid').that.equals(k.users[0].userId.userid);
+    expect(selfCertification).to.not.exist;
+    expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
+    let [primaryUser] = await k.verifyPrimaryUser();
+    expect(primaryUser).to.have.a.property('valid').that.is.false;
+    await openpgp.encrypt({ message: openpgp.message.fromText('hello'), publicKeys: [k] }); // expect to not throw
+    openpgp.config.require_uid_self_cert = true; // back to default
+  });
+
+  it('require_uid_self_cert=false: will not use uid w/o self cert if uid w/ self-cert available', async function () {
+    openpgp.config.require_uid_self_cert = false;
+    const { keys: [k] } = await openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert);
+    expect(k.users.length).to.equal(3);
+    expect(k.users[0].selfCertifications.length).to.equal(0);
+    expect(k.users[1].selfCertifications.length).to.equal(1);
+    expect(k.users[2].selfCertifications.length).to.equal(0);
+    expect(await k.getEncryptionKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicSubkey);
+    expect(await k.getSigningKey()).to.have.property('keyPacket').that.has.property('tag').that.equals(openpgp.enums.packet.publicKey);
+    let { user, selfCertification } = await k.getPrimaryUser();
+    expect(user).to.have.property('userId').that.has.property('userid').that.equals(k.users[1].userId.userid);
+    expect(selfCertification).to.exist;
+    expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
+    let [primaryUser] = await k.verifyPrimaryUser();
+    expect(primaryUser).to.have.a.property('valid').that.is.true;
+    await openpgp.encrypt({ message: openpgp.message.fromText('hello'), publicKeys: [k] }); // expect to not throw
+    openpgp.config.require_uid_self_cert = true; // back to default
+  });
+
+  it('require_uid_self_cert=false: will fail if pubkey contains one invalid self cert and other uids w/o self certs', async function () {
+    openpgp.config.require_uid_self_cert = false;
+    const { keys: [k] } = await openpgp.key.readArmored(no_self_cert.three_users_second_has_self_cert);
+    expect(k.users.length).to.equal(3);
+    expect(k.users[0].selfCertifications.length).to.equal(0);
+    expect(k.users[1].selfCertifications.length).to.equal(1);
+    expect(k.users[2].selfCertifications.length).to.equal(0);
+    // second user: malform self-cert sig data
+    k.users[1].selfCertifications[0].signatureData[0] = 0;
+    // should fail even if require_uid_self_cert=false, even though other uids don't have self certs
+    expect(await k.getEncryptionKey()).to.be.null;
+    expect(await k.getSigningKey()).to.be.null;
+    expect(await k.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.invalid);
+    openpgp.config.require_uid_self_cert = true; // back to default
+  });
+
 });

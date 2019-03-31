@@ -316,8 +316,9 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
       }
     }
     const primaryUser = await this.getPrimaryUser(date, userId);
+    const noSelfCertOk = !primaryUser.selfCertification && !config.require_uid_self_cert;
     if (primaryUser && (!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification)) {
+      (noSelfCertOk || isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification))) {
       return this;
     }
   }
@@ -475,11 +476,14 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
   // check for at least one self signature. Self signature of user ID not mandatory
   // See {@link https://tools.ietf.org/html/rfc4880#section-11.1}
   if (!this.users.some(user => user.userId && user.selfCertifications.length)) {
-    return enums.keyStatus.no_self_cert;
+    if (!config.require_uid_self_cert && this.users.some(user => user.userId)) {
+      return enums.keyStatus.valid; // self-cert not required, has userId
+    }
+    return enums.keyStatus.no_self_cert; // default: require self-cert
   }
   // check for valid, unrevoked, unexpired self signature
   const { user, selfCertification } = await this.getPrimaryUser(date, userId) || {};
-  if (!user) {
+  if (!user || !selfCertification) {
     return enums.keyStatus.invalid;
   }
   // check for expiration time
@@ -487,6 +491,7 @@ Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
     return enums.keyStatus.expired;
   }
   return enums.keyStatus.valid;
+
 };
 
 /**
@@ -506,8 +511,9 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
     throw new Error('Could not find primary user');
   }
   const selfCert = primaryUser.selfCertification;
-  const keyExpiry = getExpirationTime(this.keyPacket, selfCert);
-  const sigExpiry = selfCert.getExpirationTime();
+  const noSelfCertOk = !config.require_uid_self_cert && !selfCert;
+  const keyExpiry = noSelfCertOk ? Infinity : getExpirationTime(this.keyPacket, selfCert);
+  const sigExpiry = noSelfCertOk ? Infinity : selfCert.getExpirationTime();
   let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
   if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
     const encryptKey =
@@ -534,13 +540,14 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
  * - otherwise, returns the user with the latest self signature
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
- * @returns {Promise<{user: module:key.User,
- *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
+ * @returns {Promise<{user: module:key.User, selfCertification: module:packet.Signature}>} The primary
+ *       user and the self signature
  * @async
  */
 Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
   const primaryKey = this.keyPacket;
-  const users = [];
+  const validUsers = [];
+  const missingSelfCertUsers = [];
   for (let i = 0; i < this.users.length; i++) {
     const user = this.users[i];
     if (!user.userId || !(
@@ -550,21 +557,26 @@ Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
     )) continue;
     const dataToVerify = { userId: user.userId, key: primaryKey };
     const selfCertification = await getLatestValidSignature(user.selfCertifications, primaryKey, enums.signature.cert_generic, dataToVerify, date);
-    if (!selfCertification) continue;
-    users.push({ index: i, user, selfCertification });
+    if (selfCertification) {
+      validUsers.push({ index: i, user, selfCertification });
+    } else if (!user.selfCertifications.length) {
+      missingSelfCertUsers.push({ index: i, user });
+    }
   }
-  if (!users.length) {
-    if (userId.name !== undefined || userId.email !== undefined ||
-        userId.comment !== undefined) {
+  if (!config.require_uid_self_cert && !validUsers.length && missingSelfCertUsers.length) {
+    return missingSelfCertUsers[0]; // self cert not required + no selected user has it + user wihtout it exists
+  }
+  if (!validUsers.length) {
+    if (userId.name !== undefined || userId.email !== undefined || userId.comment !== undefined) {
       throw new Error('Could not find user that matches that user ID');
     }
     return null;
   }
-  await Promise.all(users.map(async function (a) {
+  await Promise.all(validUsers.map(async function (a) {
     return a.user.revoked || a.user.isRevoked(primaryKey, a.selfCertification, null, date);
   }));
   // sort by primary user flag and signature creation time
-  const primaryUser = users.sort(function(a, b) {
+  const primaryUser = validUsers.sort(function (a, b) {
     const A = a.selfCertification;
     const B = b.selfCertification;
     return B.revoked - A.revoked || A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
@@ -1724,7 +1736,8 @@ export async function getPreferredAlgo(type, keys, date=new Date(), userIds=[]) 
   const prioMap = {};
   await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i]);
-    if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
+    const noSelfCertOk = !config.require_uid_self_cert && primaryUser && !primaryUser.selfCertification;
+    if (!primaryUser || noSelfCertOk || !primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
     primaryUser.selfCertification[prefProperty].forEach(function(algo, index) {

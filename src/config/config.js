@@ -123,6 +123,12 @@ export default {
 
   /**
    * @memberof module:config
+   * @property {Boolean} require_uid_self_cert If false, user is valid even without self certification
+   */
+  require_uid_self_cert: true,
+
+  /**
+   * @memberof module:config
    * @property {Boolean} use_native Use native Node.js crypto/zlib and WebCrypto APIs when available
    */
   use_native:               true,
