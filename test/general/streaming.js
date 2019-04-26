@@ -76,7 +76,7 @@ const priv_key =
 
 const passphrase = 'hello world';
 
-let plaintext, data, i, canceled, expectedType, dataArrived;
+let privKey, pubKey, plaintext, data, i, canceled, expectedType, dataArrived;
 
 function tests() {
   it('Encrypt small message', async function() {
@@ -134,9 +134,6 @@ function tests() {
   });
 
   it('Sign: Input stream should be canceled when canceling encrypted stream', async function() {
-    const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-    await privKey.decrypt(passphrase);
-
     const signed = await openpgp.sign({
       message: openpgp.message.fromBinary(data),
       privateKeys: privKey
@@ -202,10 +199,6 @@ function tests() {
     let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
     openpgp.config.allow_unauthenticated_stream = true;
     try {
-      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-      await privKey.decrypt(passphrase);
-
       const encrypted = await openpgp.encrypt({
         message: openpgp.message.fromBinary(data),
         publicKeys: pubKey,
@@ -268,10 +261,6 @@ function tests() {
     let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
     openpgp.config.allow_unauthenticated_stream = true;
     try {
-      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-      await privKey.decrypt(passphrase);
-
       const encrypted = await openpgp.encrypt({
         message: openpgp.message.fromBinary(data),
         publicKeys: pubKey,
@@ -307,10 +296,6 @@ function tests() {
     let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
     openpgp.config.allow_unauthenticated_stream = true;
     try {
-      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-      await privKey.decrypt(passphrase);
-
       const encrypted = await openpgp.encrypt({
         message: openpgp.message.fromBinary(data),
         publicKeys: pubKey,
@@ -342,40 +327,30 @@ function tests() {
     }
   });
 
-  it('Sign/verify: Detect armor checksum error (allow_unauthenticated_stream=true)', async function() {
-    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
-    openpgp.config.allow_unauthenticated_stream = true;
-    try {
-      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-      await privKey.decrypt(passphrase);
+  it('Sign/verify: Detect armor checksum error', async function() {
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: privKey
+    });
 
-      const signed = await openpgp.sign({
-        message: openpgp.message.fromBinary(data),
-        privateKeys: privKey
-      });
-
-      const msgAsciiArmored = signed.data;
-      const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
-        value += '';
-        const newlineIndex = value.indexOf('\r\n', 500);
-        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-        return value;
-      }));
-      const verified = await openpgp.verify({
-        publicKeys: pubKey,
-        message,
-        streaming: expectedType
-      });
-      expect(util.isStream(verified.data)).to.equal(expectedType);
-      const reader = openpgp.stream.getReader(verified.data);
-      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-      dataArrived();
-      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
-      expect(verified.signatures).to.exist.and.have.length(1);
-    } finally {
-      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
-    }
+    const msgAsciiArmored = signed.data;
+    const message = await openpgp.message.readArmored(openpgp.stream.transform(msgAsciiArmored, value => {
+      value += '';
+      const newlineIndex = value.indexOf('\r\n', 500);
+      if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
+      return value;
+    }));
+    const verified = await openpgp.verify({
+      publicKeys: pubKey,
+      message,
+      streaming: expectedType
+    });
+    expect(util.isStream(verified.data)).to.equal(expectedType);
+    const reader = openpgp.stream.getReader(verified.data);
+    expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
+    dataArrived();
+    await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
+    expect(verified.signatures).to.exist.and.have.length(1);
   });
 
   it('Encrypt and decrypt larger message roundtrip (draft04)', async function() {
@@ -505,40 +480,27 @@ function tests() {
     }
   });
 
-  it('Sign/verify: Input stream should be canceled when canceling decrypted stream (draft04)', async function() {
-    let aead_protectValue = openpgp.config.aead_protect;
-    let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
-    openpgp.config.aead_protect = true;
-    openpgp.config.aead_chunk_size_byte = 4;
-    try {
-      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-      await privKey.decrypt(passphrase);
+  it('Sign/verify: Input stream should be canceled when canceling verified stream', async function() {
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: privKey
+    });
 
-      const signed = await openpgp.sign({
-        message: openpgp.message.fromBinary(data),
-        privateKeys: privKey
-      });
-
-      const msgAsciiArmored = signed.data;
-      const message = await openpgp.message.readArmored(msgAsciiArmored);
-      const verified = await openpgp.verify({
-        publicKeys: pubKey,
-        message
-      });
-      expect(util.isStream(verified.data)).to.equal(expectedType);
-      const reader = openpgp.stream.getReader(verified.data);
-      expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
-      dataArrived();
-      reader.releaseLock();
-      await openpgp.stream.cancel(verified.data, new Error('canceled by test'));
-      expect(canceled).to.be.true;
-      expect(verified.signatures).to.exist.and.have.length(1);
-      await expect(verified.signatures[0].verified).to.be.rejectedWith('canceled');
-    } finally {
-      openpgp.config.aead_protect = aead_protectValue;
-      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
-    }
+    const msgAsciiArmored = signed.data;
+    const message = await openpgp.message.readArmored(msgAsciiArmored);
+    const verified = await openpgp.verify({
+      publicKeys: pubKey,
+      message
+    });
+    expect(util.isStream(verified.data)).to.equal(expectedType);
+    const reader = openpgp.stream.getReader(verified.data);
+    expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
+    dataArrived();
+    reader.releaseLock();
+    await openpgp.stream.cancel(verified.data, new Error('canceled by test'));
+    expect(canceled).to.be.true;
+    expect(verified.signatures).to.exist.and.have.length(1);
+    await expect(verified.signatures[0].verified).to.be.rejectedWith('canceled');
   });
 
   it("Don't pull entire input stream when we're not pulling encrypted stream", async function() {
@@ -550,14 +512,10 @@ function tests() {
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
     dataArrived();
     await new Promise(resolve => setTimeout(resolve, 3000));
-    expect(i).to.be.lessThan(50);
+    expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
   });
 
   it("Sign: Don't pull entire input stream when we're not pulling signed stream", async function() {
-    const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-    const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-    await privKey.decrypt(passphrase);
-
     const signed = await openpgp.sign({
       message: openpgp.message.fromBinary(data),
       privateKeys: privKey
@@ -566,7 +524,7 @@ function tests() {
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
     dataArrived();
     await new Promise(resolve => setTimeout(resolve, 3000));
-    expect(i).to.be.lessThan(50);
+    expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
   });
 
   it("Don't pull entire input stream when we're not pulling decrypted stream (draft04)", async function() {
@@ -593,7 +551,7 @@ function tests() {
       expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
       dataArrived();
       await new Promise(resolve => setTimeout(resolve, 3000));
-      expect(i).to.be.lessThan(50);
+      expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
     } finally {
       openpgp.config.aead_protect = aead_protectValue;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
@@ -601,36 +559,103 @@ function tests() {
     }
   });
 
-  it("Sign/verify: Don't pull entire input stream when we're not pulling verified stream (draft04)", async function() {
-    let aead_protectValue = openpgp.config.aead_protect;
-    let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
-    openpgp.config.aead_protect = true;
-    openpgp.config.aead_chunk_size_byte = 4;
-    try {
-      const pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-      const privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
-      await privKey.decrypt(passphrase);
+  it("Sign/verify: Don't pull entire input stream when we're not pulling verified stream", async function() {
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: privKey
+    });
+    const msgAsciiArmored = signed.data;
+    const message = await openpgp.message.readArmored(msgAsciiArmored);
+    const verified = await openpgp.verify({
+      publicKeys: pubKey,
+      message
+    });
+    expect(util.isStream(verified.data)).to.equal(expectedType);
+    const reader = openpgp.stream.getReader(verified.data);
+    expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
+    dataArrived();
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
+  });
 
-      const signed = await openpgp.sign({
-        message: openpgp.message.fromBinary(data),
-        privateKeys: privKey
-      });
-      const msgAsciiArmored = signed.data;
-      const message = await openpgp.message.readArmored(msgAsciiArmored);
-      const verified = await openpgp.verify({
-        publicKeys: pubKey,
-        message
-      });
-      expect(util.isStream(verified.data)).to.equal(expectedType);
-      const reader = openpgp.stream.getReader(verified.data);
-      expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
-      dataArrived();
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      expect(i).to.be.lessThan(50);
-    } finally {
-      openpgp.config.aead_protect = aead_protectValue;
-      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteValue;
-    }
+  it('Detached sign small message', async function() {
+    dataArrived(); // Do not wait until data arrived.
+    const data = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(util.str_to_Uint8Array('hello '));
+        controller.enqueue(util.str_to_Uint8Array('world'));
+        controller.close();
+      }
+    });
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: privKey,
+      detached: true,
+    });
+    const sigArmored = await openpgp.stream.readToEnd(signed.signature);
+    const signature = await openpgp.message.readArmored(sigArmored);
+    const verified = await openpgp.verify({
+      signature,
+      publicKeys: pubKey,
+      message: openpgp.message.fromText('hello world')
+    });
+    expect(openpgp.util.decode_utf8(verified.data)).to.equal('hello world');
+    expect(verified.signatures).to.exist.and.have.length(1);
+    expect(verified.signatures[0].valid).to.be.true;
+  });
+
+  it('Detached sign small message (not streaming)', async function() {
+    dataArrived(); // Do not wait until data arrived.
+    const data = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(util.str_to_Uint8Array('hello '));
+        controller.enqueue(util.str_to_Uint8Array('world'));
+        controller.close();
+      }
+    });
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: privKey,
+      detached: true,
+      streaming: false,
+    });
+    const sigArmored = await openpgp.stream.readToEnd(signed.signature);
+    const signature = await openpgp.message.readArmored(sigArmored);
+    const verified = await openpgp.verify({
+      signature,
+      publicKeys: pubKey,
+      message: openpgp.message.fromText('hello world')
+    });
+    expect(openpgp.util.decode_utf8(verified.data)).to.equal('hello world');
+    expect(verified.signatures).to.exist.and.have.length(1);
+    expect(verified.signatures[0].valid).to.be.true;
+  });
+
+  it("Detached sign is expected to pull entire input stream when we're not pulling signed stream", async function() {
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: privKey,
+      detached: true
+    });
+    const reader = openpgp.stream.getReader(signed.signature);
+    expect((await reader.readBytes(31)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\r\n');
+    dataArrived();
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    expect(i).to.be.greaterThan(100);
+  });
+
+  it('Detached sign: Input stream should be canceled when canceling signed stream', async function() {
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: privKey,
+      detached: true
+    });
+    const reader = openpgp.stream.getReader(signed.signature);
+    expect((await reader.readBytes(31)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\r\n');
+    dataArrived();
+    reader.releaseLock();
+    await openpgp.stream.cancel(signed.signature, new Error('canceled by test'));
+    expect(canceled).to.be.true;
   });
 
   if (openpgp.util.detectNode()) {
@@ -662,6 +687,12 @@ function tests() {
 describe('Streaming', function() {
   let currentTest = 0;
 
+  before(async function() {
+    pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
+    privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
+    await privKey.decrypt(passphrase);
+  });
+
   beforeEach(function() {
     let test = ++currentTest;
 
@@ -674,7 +705,7 @@ describe('Streaming', function() {
     data = new ReadableStream({
       async pull(controller) {
         await new Promise(setTimeout);
-        if (test === currentTest && i++ < 10) {
+        if (test === currentTest && i++ < 100) {
           if (i === 4) await dataArrivedPromise;
           let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
           controller.enqueue(randomBytes);

@@ -437,6 +437,14 @@ export function sign({ message, privateKeys, armor=true, streaming=message&&mess
     if (detached) {
       const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds);
       result.signature = armor ? signature.armor() : signature;
+      if (message.packets) {
+        result.signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
+          await Promise.all([
+            stream.pipe(result.signature, writable),
+            stream.readToEnd(readable).catch(() => {})
+          ]);
+        });
+      }
     } else {
       message = await message.sign(privateKeys, undefined, date, fromUserIds);
       if (armor) {
