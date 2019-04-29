@@ -58,11 +58,10 @@ export default {
       }
       case enums.publicKey.eddsa: {
         const oid = pub_MPIs[0];
-        // TODO refactor elliptic to accept Uint8Array
         // EdDSA signature params are expected in little-endian format
-        const signature = { R: Array.from(msg_MPIs[0].toUint8Array('le', 32)),
-                            S: Array.from(msg_MPIs[1].toUint8Array('le', 32)) };
-        const Q = Array.from(pub_MPIs[1].toUint8Array('be', 33));
+        const signature = { R: msg_MPIs[0].toUint8Array('le', 32),
+                            S: msg_MPIs[1].toUint8Array('le', 32) };
+        const Q = pub_MPIs[1].toUint8Array('be', 33);
         return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q, hashed);
       }
       default:
@@ -120,7 +119,7 @@ export default {
       }
       case enums.publicKey.eddsa: {
         const oid = key_params[0];
-        const d = Array.from(key_params[2].toUint8Array('be', 32));
+        const d = key_params[2].toUint8Array('be', 32);
         const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, d, hashed);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.R),

@@ -7,7 +7,8 @@
     "@mattiasbuelens/web-streams-polyfill": {
       "version": "0.3.1",
       "resolved": "https://registry.npmjs.org/@mattiasbuelens/web-streams-polyfill/-/web-streams-polyfill-0.3.1.tgz",
-      "integrity": "sha512-IW+tCurEH2NL2tA3KKFAMXa90WWmTJMZksnQWMABe3bMijV7hEiOLthy4tKGTnUTV8qVf8WTCApiGmKb75Bxkg=="
+      "integrity": "sha512-IW+tCurEH2NL2tA3KKFAMXa90WWmTJMZksnQWMABe3bMijV7hEiOLthy4tKGTnUTV8qVf8WTCApiGmKb75Bxkg==",
+      "dev": true
     },
     "@sinonjs/formatio": {
       "version": "2.0.0",
@@ -107,6 +108,7 @@
       "version": "2.0.3",
       "resolved": "https://registry.npmjs.org/address-rfc2822/-/address-rfc2822-2.0.3.tgz",
       "integrity": "sha1-LzDSHYEVCGLBSJpHL0lARQIa+IE=",
+      "dev": true,
       "requires": {
         "email-addresses": "^3.0.0"
       }
@@ -152,6 +154,7 @@
       "resolved": "https://registry.npmjs.org/align-text/-/align-text-0.1.4.tgz",
       "integrity": "sha1-DNkKVhCT810KmSVsIrcGlDP60Rc=",
       "dev": true,
+      "optional": true,
       "requires": {
         "kind-of": "^3.0.2",
         "longest": "^1.0.1",
@@ -269,7 +272,8 @@
     },
     "asmcrypto.js": {
       "version": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
-      "from": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83"
+      "from": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
+      "dev": true
     },
     "asn1": {
       "version": "0.2.3",
@@ -1132,7 +1136,8 @@
     "base64-js": {
       "version": "1.2.1",
       "resolved": "https://registry.npmjs.org/base64-js/-/base64-js-1.2.1.tgz",
-      "integrity": "sha512-dwVUVIXsBZXwTuwnXI9RK8sBmgq09NDHzyR9SAph9eqk76gKK2JSQmZARC2zRC81JC2QTtxD0ARU5qTS25gIGw=="
+      "integrity": "sha512-dwVUVIXsBZXwTuwnXI9RK8sBmgq09NDHzyR9SAph9eqk76gKK2JSQmZARC2zRC81JC2QTtxD0ARU5qTS25gIGw==",
+      "dev": true
     },
     "basic-auth": {
       "version": "2.0.0",
@@ -1157,6 +1162,15 @@
       "optional": true,
       "requires": {
         "tweetnacl": "^0.14.3"
+      },
+      "dependencies": {
+        "tweetnacl": {
+          "version": "0.14.5",
+          "resolved": "https://registry.npmjs.org/tweetnacl/-/tweetnacl-0.14.5.tgz",
+          "integrity": "sha1-WuaBd/GS1EViadEIr6k/+HQ/T2Q=",
+          "dev": true,
+          "optional": true
+        }
       }
     },
     "binary-extensions": {
@@ -1212,7 +1226,8 @@
     "brorand": {
       "version": "1.1.0",
       "resolved": "https://registry.npmjs.org/brorand/-/brorand-1.1.0.tgz",
-      "integrity": "sha1-EsJe/kCkXjwyPrhnWgoM5XsiNx8="
+      "integrity": "sha1-EsJe/kCkXjwyPrhnWgoM5XsiNx8=",
+      "dev": true
     },
     "browser-pack": {
       "version": "6.1.0",
@@ -1529,6 +1544,7 @@
       "version": "5.0.8",
       "resolved": "https://registry.npmjs.org/buffer/-/buffer-5.0.8.tgz",
       "integrity": "sha512-xXvjQhVNz50v2nPeoOsNqWCLGfiv4ji/gXZM28jnVwdLJxH4mFyqgqCKfaK9zf1KUbG6zTkjLOy7ou+jSMarGA==",
+      "dev": true,
       "requires": {
         "base64-js": "^1.0.2",
         "ieee754": "^1.1.4"
@@ -2292,6 +2308,7 @@
     "elliptic": {
       "version": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
       "from": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
+      "dev": true,
       "requires": {
         "bn.js": "^4.4.0",
         "brorand": "^1.0.1",
@@ -2305,7 +2322,8 @@
     "email-addresses": {
       "version": "3.0.1",
       "resolved": "https://registry.npmjs.org/email-addresses/-/email-addresses-3.0.1.tgz",
-      "integrity": "sha1-wfwgwYnn+W1AEtN121/qzN0kORw="
+      "integrity": "sha1-wfwgwYnn+W1AEtN121/qzN0kORw=",
+      "dev": true
     },
     "encodeurl": {
       "version": "1.0.1",
@@ -3116,7 +3134,8 @@
         "ansi-regex": {
           "version": "2.1.1",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "aproba": {
           "version": "1.2.0",
@@ -3137,12 +3156,14 @@
         "balanced-match": {
           "version": "1.0.0",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "brace-expansion": {
           "version": "1.1.11",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "balanced-match": "^1.0.0",
             "concat-map": "0.0.1"
@@ -3157,17 +3178,20 @@
         "code-point-at": {
           "version": "1.1.0",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "concat-map": {
           "version": "0.0.1",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "console-control-strings": {
           "version": "1.1.0",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "core-util-is": {
           "version": "1.0.2",
@@ -3284,7 +3308,8 @@
         "inherits": {
           "version": "2.0.3",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "ini": {
           "version": "1.3.5",
@@ -3296,6 +3321,7 @@
           "version": "1.0.0",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "number-is-nan": "^1.0.0"
           }
@@ -3310,6 +3336,7 @@
           "version": "3.0.4",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "brace-expansion": "^1.1.7"
           }
@@ -3317,12 +3344,14 @@
         "minimist": {
           "version": "0.0.8",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "minipass": {
           "version": "2.2.4",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "safe-buffer": "^5.1.1",
             "yallist": "^3.0.0"
@@ -3341,6 +3370,7 @@
           "version": "0.5.1",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "minimist": "0.0.8"
           }
@@ -3421,7 +3451,8 @@
         "number-is-nan": {
           "version": "1.0.1",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "object-assign": {
           "version": "4.1.1",
@@ -3433,6 +3464,7 @@
           "version": "1.4.0",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "wrappy": "1"
           }
@@ -3518,7 +3550,8 @@
         "safe-buffer": {
           "version": "5.1.1",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "safer-buffer": {
           "version": "2.1.2",
@@ -3554,6 +3587,7 @@
           "version": "1.0.2",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "code-point-at": "^1.0.0",
             "is-fullwidth-code-point": "^1.0.0",
@@ -3573,6 +3607,7 @@
           "version": "3.0.1",
           "bundled": true,
           "dev": true,
+          "optional": true,
           "requires": {
             "ansi-regex": "^2.0.0"
           }
@@ -3616,12 +3651,14 @@
         "wrappy": {
           "version": "1.0.2",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         },
         "yallist": {
           "version": "3.0.2",
           "bundled": true,
-          "dev": true
+          "dev": true,
+          "optional": true
         }
       }
     },
@@ -3773,7 +3810,8 @@
     "graceful-readlink": {
       "version": "1.0.1",
       "resolved": "https://registry.npmjs.org/graceful-readlink/-/graceful-readlink-1.0.1.tgz",
-      "integrity": "sha1-TK+tdrxi8C+gObL5Tpo906ORpyU="
+      "integrity": "sha1-TK+tdrxi8C+gObL5Tpo906ORpyU=",
+      "dev": true
     },
     "growl": {
       "version": "1.10.3",
@@ -4308,6 +4346,7 @@
       "version": "1.1.3",
       "resolved": "https://registry.npmjs.org/hash.js/-/hash.js-1.1.3.tgz",
       "integrity": "sha512-/UETyP0W22QILqS+6HowevwhEFJ3MBJnwTf75Qob9Wz9t0DPuisL8kW8YZMK62dHAKE1c1p+gY1TtOLY+USEHA==",
+      "dev": true,
       "requires": {
         "inherits": "^2.0.3",
         "minimalistic-assert": "^1.0.0"
@@ -4323,6 +4362,7 @@
       "version": "1.0.1",
       "resolved": "https://registry.npmjs.org/hmac-drbg/-/hmac-drbg-1.0.1.tgz",
       "integrity": "sha1-0nRXAQJabHdabFRXk+1QL8DGSaE=",
+      "dev": true,
       "requires": {
         "hash.js": "^1.0.3",
         "minimalistic-assert": "^1.0.0",
@@ -4418,7 +4458,8 @@
     "ieee754": {
       "version": "1.1.8",
       "resolved": "https://registry.npmjs.org/ieee754/-/ieee754-1.1.8.tgz",
-      "integrity": "sha1-vjPUCsEO8ZJnAfbwii2G+/0a0+Q="
+      "integrity": "sha1-vjPUCsEO8ZJnAfbwii2G+/0a0+Q=",
+      "dev": true
     },
     "ignore": {
       "version": "3.3.7",
@@ -5139,7 +5180,8 @@
       "version": "1.0.1",
       "resolved": "https://registry.npmjs.org/longest/-/longest-1.0.1.tgz",
       "integrity": "sha1-MKCy2jj3N3DoKUoNIuZiXtd9AJc=",
-      "dev": true
+      "dev": true,
+      "optional": true
     },
     "loose-envify": {
       "version": "1.3.1",
@@ -5289,7 +5331,8 @@
     "minimalistic-crypto-utils": {
       "version": "1.0.1",
       "resolved": "https://registry.npmjs.org/minimalistic-crypto-utils/-/minimalistic-crypto-utils-1.0.1.tgz",
-      "integrity": "sha1-9sAMHAsIIkblxNmd+4x8CDsrWCo="
+      "integrity": "sha1-9sAMHAsIIkblxNmd+4x8CDsrWCo=",
+      "dev": true
     },
     "minimatch": {
       "version": "3.0.4",
@@ -5698,7 +5741,8 @@
     "pako": {
       "version": "1.0.6",
       "resolved": "https://registry.npmjs.org/pako/-/pako-1.0.6.tgz",
-      "integrity": "sha512-lQe48YPsMJAig+yngZ87Lus+NF+3mtu7DVOBu6b/gHO1YpKwIj5AWjZ/TOS7i46HD/UixzWb1zeWDZfGZ3iYcg=="
+      "integrity": "sha512-lQe48YPsMJAig+yngZ87Lus+NF+3mtu7DVOBu6b/gHO1YpKwIj5AWjZ/TOS7i46HD/UixzWb1zeWDZfGZ3iYcg==",
+      "dev": true
     },
     "parents": {
       "version": "1.0.1",
@@ -6454,6 +6498,7 @@
     "seek-bzip": {
       "version": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
       "from": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
+      "dev": true,
       "requires": {
         "commander": "~2.8.1"
       },
@@ -6462,6 +6507,7 @@
           "version": "2.8.1",
           "resolved": "https://registry.npmjs.org/commander/-/commander-2.8.1.tgz",
           "integrity": "sha1-Br42f+v9oMMwqh4qBy09yXYkJdQ=",
+          "dev": true,
           "requires": {
             "graceful-readlink": ">= 1.0.0"
           }
@@ -6731,6 +6777,15 @@
         "jsbn": "~0.1.0",
         "safer-buffer": "^2.0.2",
         "tweetnacl": "~0.14.0"
+      },
+      "dependencies": {
+        "tweetnacl": {
+          "version": "0.14.5",
+          "resolved": "https://registry.npmjs.org/tweetnacl/-/tweetnacl-0.14.5.tgz",
+          "integrity": "sha1-WuaBd/GS1EViadEIr6k/+HQ/T2Q=",
+          "dev": true,
+          "optional": true
+        }
       }
     },
     "statuses": {
@@ -7180,11 +7235,10 @@
       }
     },
     "tweetnacl": {
-      "version": "0.14.5",
-      "resolved": "https://registry.npmjs.org/tweetnacl/-/tweetnacl-0.14.5.tgz",
-      "integrity": "sha1-WuaBd/GS1EViadEIr6k/+HQ/T2Q=",
-      "dev": true,
-      "optional": true
+      "version": "1.0.1",
+      "resolved": "https://registry.npmjs.org/tweetnacl/-/tweetnacl-1.0.1.tgz",
+      "integrity": "sha512-kcoMoKTPYnoeS50tzoqjPY3Uv9axeuuFAZY9M/9zFnhoVvRfxz9K29IMPD7jGmt2c8SW7i3gT9WqDl2+nV7p4A==",
+      "dev": true
     },
     "type-check": {
       "version": "0.3.2",
@@ -7368,7 +7422,8 @@
     },
     "web-stream-tools": {
       "version": "github:openpgpjs/web-stream-tools#84a497715c9df271a673f8616318264ab42ab3cc",
-      "from": "github:openpgpjs/web-stream-tools#84a497715c9df271a673f8616318264ab42ab3cc"
+      "from": "github:openpgpjs/web-stream-tools#84a497715c9df271a673f8616318264ab42ab3cc",
+      "dev": true
     },
     "websocket-driver": {
       "version": "0.7.0",

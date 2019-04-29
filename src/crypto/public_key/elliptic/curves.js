@@ -172,10 +172,6 @@ Curve.prototype.keyFromPrivate = function (priv) { // Not for ed25519
   return new KeyPair(this, { priv: priv });
 };
 
-Curve.prototype.keyFromSecret = function (secret) { // Only for ed25519
-  return new KeyPair(this, { secret: secret });
-};
-
 Curve.prototype.keyFromPublic = function (pub) {
   const keyPair = new KeyPair(this, { pub: pub });
   if (
