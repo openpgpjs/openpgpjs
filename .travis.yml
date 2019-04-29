@@ -13,6 +13,8 @@ matrix:
       env: OPENPGP_NODE_JS='8' OPENPGPJSTEST='unit'
     - node_js: "10"
       env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
+    - node_js: "12"
+      env: OPENPGP_NODE_JS='12' OPENPGPJSTEST='unit'
     - node_js: "9"
       env: BROWSER='Firefox' VERSION='26' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs' COMPAT=1
     - node_js: "10"
