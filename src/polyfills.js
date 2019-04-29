@@ -8,8 +8,6 @@
 
 import util from './util';
 
-/* eslint-disable import/no-extraneous-dependencies */
-
 if (typeof window !== 'undefined') {
   /********************************************************************
    * NOTE: This list is duplicated in Gruntfile.js,                   *

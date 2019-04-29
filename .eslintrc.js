@@ -340,6 +340,7 @@ module.exports = {
     "new-cap": [ 0, { "properties": false, "capIsNewExceptionPattern": "^type_.*" }],
     "no-lonely-if": 0,
     "import/extensions": 0,
+    "import/no-extraneous-dependencies": 0,
     "no-buffer-constructor": 0, // deprecated
   }
 };
