@@ -2306,8 +2306,8 @@
       "dev": true
     },
     "elliptic": {
-      "version": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-      "from": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
+      "version": "github:openpgpjs/elliptic#1beea74833b48bd5698ed079c75fd21f0eb70b1c",
+      "from": "github:openpgpjs/elliptic#1beea74833b48bd5698ed079c75fd21f0eb70b1c",
       "dev": true,
       "requires": {
         "bn.js": "^4.4.0",
@@ -6496,8 +6496,8 @@
       }
     },
     "seek-bzip": {
-      "version": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-      "from": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
+      "version": "github:openpgpjs/seek-bzip#6187fc025851d35c4e104a25ea15a10b9b8d6f7d",
+      "from": "github:openpgpjs/seek-bzip#6187fc025851d35c4e104a25ea15a10b9b8d6f7d",
       "dev": true,
       "requires": {
         "commander": "~2.8.1"
