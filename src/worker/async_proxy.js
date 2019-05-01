@@ -49,6 +49,9 @@ function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = 
   const handleMessage = workerId => event => {
     const msg = event.data;
     switch (msg.event) {
+      case 'loaded':
+        this.workers[workerId].loadedResolve(true);
+        break;
       case 'method-return':
         if (msg.err) {
           // fail
@@ -83,10 +86,15 @@ function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = 
 
   let workerId = 0;
   this.workers.forEach(worker => {
+    worker.loadedPromise = new Promise(resolve => {
+      worker.loadedResolve = resolve;
+    });
     worker.requests = 0;
     worker.onmessage = handleMessage(workerId++);
     worker.onerror = e => {
-      throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+      worker.loadedResolve(false);
+      console.error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+      return false;
     };
 
     if (config) {
@@ -98,6 +106,15 @@ function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = 
   this.tasks = {};
   this.currentID = 0;
 }
+
+/**
+ * Returns a promise that resolves when all workers have finished loading
+ * @returns {Promise<Boolean>} Resolves to true if all workers have loaded succesfully; false otherwise
+*/
+AsyncProxy.prototype.loaded = async function() {
+  const loaded = await Promise.all(this.workers.map(worker => worker.loadedPromise));
+  return loaded.every(Boolean);
+};
 
 /**
  * Get new request ID

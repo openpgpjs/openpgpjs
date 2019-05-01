@@ -119,7 +119,7 @@ Here are some examples of how to use the v2.x+ API. For more elaborate examples 
 ```js
 var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
-openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
+await openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
 ```
 
 #### Encrypt and decrypt *Uint8Array* data with a password
@@ -159,7 +159,7 @@ Encryption will use the algorithm preferred by the public key (defaults to aes25
 ```js
 const openpgp = require('openpgp') // use as CommonJS, AMD, ES6 module or via window.openpgp
 
-openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
+await openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
 
 // put keys in backtick (``) to avoid errors caused by spaces or tabs
 const pubkey = `-----BEGIN PGP PUBLIC KEY BLOCK-----

@@ -444,13 +444,16 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       openpgp.destroyWorker(); // cleanup worker in case of failure
     });
 
-    it('should work', function() {
+    it('should work', async function() {
       const workerStub = {
         postMessage: function() {}
       };
-      openpgp.initWorker({
-        workers: [workerStub]
-      });
+      await Promise.all([
+        openpgp.initWorker({
+          workers: [workerStub]
+        }),
+        workerStub.onmessage({ data: { event: 'loaded' } })
+      ]);
       expect(openpgp.getWorker()).to.exist;
       openpgp.destroyWorker();
       expect(openpgp.getWorker()).to.not.exist;
@@ -595,13 +598,16 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       });
     });
 
-    it('should delegate to async proxy', function() {
+    it('should delegate to async proxy', async function() {
       const workerStub = {
         postMessage: function() {}
       };
-      openpgp.initWorker({
-        workers: [workerStub]
-      });
+      await Promise.all([
+        openpgp.initWorker({
+          workers: [workerStub]
+        }),
+        workerStub.onmessage({ data: { event: 'loaded' } })
+      ]);
       const proxyGenStub = stub(openpgp.getWorker(), 'delegate');
       getWebCryptoAllStub.returns();
 
@@ -643,9 +649,9 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       });
     });
 
-    it('should work in JS (with worker)', function() {
+    it('should work in JS (with worker)', async function() {
       openpgp.config.use_native = false;
-      openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
@@ -727,11 +733,11 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
     });
 
-    it('Configuration', function() {
+    it('Configuration', async function() {
       openpgp.config.show_version = false;
       openpgp.config.commentstring = 'different';
       if (openpgp.getWorker()) { // init again to trigger config event
-        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       }
       return openpgp.encrypt({ publicKeys:publicKey.keys, message:openpgp.message.fromText(plaintext) }).then(function(encrypted) {
         expect(encrypted.data).to.exist;
@@ -749,7 +755,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       const { workers } = openpgp.getWorker();
       try {
         await privateKey.keys[0].decrypt(passphrase)
-        openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 2});
+        await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 2});
 
         const workerTest = (_, index) => {
           const plaintext = input.createSomeMessage() + index;
@@ -770,7 +776,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
         };
         await Promise.all(Array(10).fill(null).map(workerTest));
       } finally {
-        openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 1 });
+        await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 1 });
       }
     });
 
@@ -828,8 +834,8 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
 
     tryTests('CFB mode (asm.js, worker)', tests, {
       if: typeof window !== 'undefined' && window.Worker,
-      before: function() {
-        openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      before: async function() {
+        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
       },
       beforeEach: function() {
         openpgp.config.aead_protect = false;

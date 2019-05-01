@@ -297,8 +297,8 @@ describe('Elliptic Curve Cryptography', function () {
 
   tryTests('ECC Worker Tests', omnibus, {
     if: typeof window !== 'undefined' && window.Worker,
-    before: function() {
-      openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+    before: async function() {
+      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
     },
     beforeEach: function() {
       openpgp.config.use_native = true;
