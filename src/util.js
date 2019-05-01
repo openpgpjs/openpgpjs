@@ -652,11 +652,23 @@ export default {
    * Format user id for internal use.
    */
   formatUserId: function(id) {
-    // name and email address can be empty but must be of the correct type
-    if ((id.name && !util.isString(id.name)) || (id.email && !util.isEmailAddress(id.email))) {
+    // name, email address and comment can be empty but must be of the correct type
+    if ((id.name && !util.isString(id.name)) ||
+        (id.email && !util.isEmailAddress(id.email)) ||
+        (id.comment && !util.isString(id.comment))) {
       throw new Error('Invalid user id format');
     }
-    return new rfc2822.Address(id.name, id.email, id.comment).format();
+    const components = [];
+    if (id.name) {
+      components.push(id.name);
+    }
+    if (id.comment) {
+      components.push(`(${id.comment})`);
+    }
+    if (id.email) {
+      components.push(`<${id.email}>`);
+    }
+    return components.join(' ');
   },
 
   /**

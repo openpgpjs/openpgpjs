@@ -1737,7 +1737,49 @@ function versionSpecificTests() {
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com> (test comment)');
+      expect(key.users[0].userId.userid).to.equal('test (test comment) <a@b.com>');
+      expect(key.users[0].userId.name).to.equal(userId.name);
+      expect(key.users[0].userId.email).to.equal(userId.email);
+      expect(key.users[0].userId.comment).to.equal(userId.comment);
+    });
+  });
+
+  it('Generate key - single userid (all missing)', function() {
+    const userId = { name: '', email: '', comment: '' };
+    const opt = {numBits: 512, userIds: userId, passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal('');
+      expect(key.users[0].userId.name).to.equal(userId.name);
+      expect(key.users[0].userId.email).to.equal(userId.email);
+      expect(key.users[0].userId.comment).to.equal(userId.comment);
+    });
+  });
+
+  it('Generate key - single userid (missing email)', function() {
+    const userId = { name: 'test', email: '', comment: 'test comment' };
+    const opt = {numBits: 512, userIds: userId, passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal('test (test comment)');
+      expect(key.users[0].userId.name).to.equal(userId.name);
+      expect(key.users[0].userId.email).to.equal(userId.email);
+      expect(key.users[0].userId.comment).to.equal(userId.comment);
+    });
+  });
+
+  it('Generate key - single userid (missing comment)', function() {
+    const userId = { name: 'test', email: 'a@b.com', comment: '' };
+    const opt = {numBits: 512, userIds: userId, passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    return openpgp.generateKey(opt).then(function(key) {
+      key = key.key;
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
       expect(key.users[0].userId.name).to.equal(userId.name);
       expect(key.users[0].userId.email).to.equal(userId.email);
       expect(key.users[0].userId.comment).to.equal(userId.comment);
