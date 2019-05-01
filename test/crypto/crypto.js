@@ -364,7 +364,7 @@ describe('API functional testing', function() {
         return crypto.publicKeyDecrypt(
           1, RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData
         ).then(data => {
-          data = data.write();
+          data = new openpgp.MPI(data).write();
           data = util.Uint8Array_to_str(data.subarray(2, data.length));
 
           const result = crypto.pkcs1.eme.decode(data, RSApubMPIs[0].byteLength());
@@ -383,7 +383,7 @@ describe('API functional testing', function() {
         return crypto.publicKeyDecrypt(
           16, ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData
         ).then(data => {
-          data = data.write();
+          data = new openpgp.MPI(data).write();
           data = util.Uint8Array_to_str(data.subarray(2, data.length));
 
           const result = crypto.pkcs1.eme.decode(data, ElgamalpubMPIs[0].byteLength());

@@ -137,8 +137,8 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  const result = await crypto.publicKeyDecrypt(
-    algo, key.params, this.encrypted, key.getFingerprintBytes());
+  const result = new type_mpi(await crypto.publicKeyDecrypt(
+    algo, key.params, this.encrypted, key.getFingerprintBytes()));
 
   let checksum;
   let decoded;

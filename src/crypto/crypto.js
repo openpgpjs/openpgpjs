@@ -69,36 +69,34 @@ export default {
    */
   publicKeyEncrypt: async function(algo, pub_params, data, fingerprint) {
     const types = this.getEncSessionKeyParamTypes(algo);
-    return (async function() {
-      switch (algo) {
-        case enums.publicKey.rsa_encrypt:
-        case enums.publicKey.rsa_encrypt_sign: {
-          const m = data.toBN();
-          const n = pub_params[0].toBN();
-          const e = pub_params[1].toBN();
-          const res = await publicKey.rsa.encrypt(m, n, e);
-          return constructParams(types, [res]);
-        }
-        case enums.publicKey.elgamal: {
-          const m = data.toBN();
-          const p = pub_params[0].toBN();
-          const g = pub_params[1].toBN();
-          const y = pub_params[2].toBN();
-          const res = await publicKey.elgamal.encrypt(m, p, g, y);
-          return constructParams(types, [res.c1, res.c2]);
-        }
-        case enums.publicKey.ecdh: {
-          const oid = pub_params[0];
-          const Q = pub_params[1].toUint8Array();
-          const kdf_params = pub_params[2];
-          const { V, C } = await publicKey.elliptic.ecdh.encrypt(
-            oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
-          return constructParams(types, [new BN(V), C]);
-        }
-        default:
-          return [];
+    switch (algo) {
+      case enums.publicKey.rsa_encrypt:
+      case enums.publicKey.rsa_encrypt_sign: {
+        const m = data.toBN();
+        const n = pub_params[0].toBN();
+        const e = pub_params[1].toBN();
+        const res = await publicKey.rsa.encrypt(m, n, e);
+        return constructParams(types, [res]);
       }
-    }());
+      case enums.publicKey.elgamal: {
+        const m = data.toBN();
+        const p = pub_params[0].toBN();
+        const g = pub_params[1].toBN();
+        const y = pub_params[2].toBN();
+        const res = await publicKey.elgamal.encrypt(m, p, g, y);
+        return constructParams(types, [res.c1, res.c2]);
+      }
+      case enums.publicKey.ecdh: {
+        const oid = pub_params[0];
+        const Q = pub_params[1].toUint8Array();
+        const kdf_params = pub_params[2];
+        const { publicKey: V, wrappedKey: C } = await publicKey.elliptic.ecdh.encrypt(
+          oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
+        return constructParams(types, [new BN(V), C]);
+      }
+      default:
+        return [];
+    }
   },
 
   /**
@@ -112,43 +110,41 @@ export default {
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
    * @param {String}                        fingerprint Recipient fingerprint
-   * @returns {module:type/mpi}                         An MPI containing the decrypted data
+   * @returns {BN}                          A BN containing the decrypted data
    * @async
    */
   publicKeyDecrypt: async function(algo, key_params, data_params, fingerprint) {
-    return new type_mpi(await (async function() {
-      switch (algo) {
-        case enums.publicKey.rsa_encrypt_sign:
-        case enums.publicKey.rsa_encrypt: {
-          const c = data_params[0].toBN();
-          const n = key_params[0].toBN(); // n = pq
-          const e = key_params[1].toBN();
-          const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
-          const p = key_params[3].toBN();
-          const q = key_params[4].toBN();
-          const u = key_params[5].toBN(); // q^-1 mod p
-          return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
-        }
-        case enums.publicKey.elgamal: {
-          const c1 = data_params[0].toBN();
-          const c2 = data_params[1].toBN();
-          const p = key_params[0].toBN();
-          const x = key_params[3].toBN();
-          return publicKey.elgamal.decrypt(c1, c2, p, x);
-        }
-        case enums.publicKey.ecdh: {
-          const oid = key_params[0];
-          const kdf_params = key_params[2];
-          const V = data_params[0].toUint8Array();
-          const C = data_params[1].data;
-          const d = key_params[3].toUint8Array();
-          return publicKey.elliptic.ecdh.decrypt(
-            oid, kdf_params.cipher, kdf_params.hash, V, C, d, fingerprint);
-        }
-        default:
-          throw new Error('Invalid public key encryption algorithm.');
+    switch (algo) {
+      case enums.publicKey.rsa_encrypt_sign:
+      case enums.publicKey.rsa_encrypt: {
+        const c = data_params[0].toBN();
+        const n = key_params[0].toBN(); // n = pq
+        const e = key_params[1].toBN();
+        const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
+        const p = key_params[3].toBN();
+        const q = key_params[4].toBN();
+        const u = key_params[5].toBN(); // q^-1 mod p
+        return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
       }
-    }()));
+      case enums.publicKey.elgamal: {
+        const c1 = data_params[0].toBN();
+        const c2 = data_params[1].toBN();
+        const p = key_params[0].toBN();
+        const x = key_params[3].toBN();
+        return publicKey.elgamal.decrypt(c1, c2, p, x);
+      }
+      case enums.publicKey.ecdh: {
+        const oid = key_params[0];
+        const kdf_params = key_params[2];
+        const V = data_params[0].toUint8Array();
+        const C = data_params[1].data;
+        const d = key_params[3].toUint8Array();
+        return publicKey.elliptic.ecdh.decrypt(
+          oid, kdf_params.cipher, kdf_params.hash, V, C, d, fingerprint);
+      }
+      default:
+        throw new Error('Invalid public key encryption algorithm.');
+    }
   },
 
   /** Returns the types comprising the private key of an algorithm
