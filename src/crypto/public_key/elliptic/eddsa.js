@@ -17,15 +17,18 @@
 
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
+ * @requires hash.js
  * @requires tweetnacl
  * @requires crypto/public_key/elliptic/curve
  * @requires util
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import nacl from 'tweetnacl';
-import Curve from './curves';
+import sha512 from 'hash.js/lib/hash/sha/512';
+import nacl from 'tweetnacl/nacl-fast-light.js';
 import util from '../../../util';
+
+nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 
 /**
  * Sign a message using the provided key
@@ -63,10 +66,6 @@ async function sign(oid, hash_algo, m, d, hashed) {
 async function verify(oid, hash_algo, { R, S }, m, publicKey, hashed) {
   const signature = util.concatUint8Array([R, S]);
   return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
-
-  const curve = new Curve(oid);
-  const key = curve.keyFromPublic(Q);
-  return key.verify(m, signature, hash_algo, hashed);
 }
 
 export default { sign, verify };

@@ -30,7 +30,7 @@
  */
 
 import BN from 'bn.js';
-import nacl from 'tweetnacl';
+import nacl from 'tweetnacl/nacl-fast-light.js';
 import Curve from './curves';
 import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
@@ -133,7 +133,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  */
 async function genPrivateEphemeralKey(curve, V, d) {
   if (curve.name === 'curve25519') {
-    const one = curve.curve.curve.one;
+    const one = new BN(1);
     const mask = one.ushln(255 - 3).sub(one).ushln(3);
     let secretKey = new BN(d);
     secretKey = secretKey.or(one.ushln(255 - 1));
