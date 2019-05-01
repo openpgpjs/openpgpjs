@@ -18,6 +18,7 @@
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
  * @requires bn.js
+ * @requires tweetnacl
  * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
@@ -29,6 +30,7 @@
  */
 
 import BN from 'bn.js';
+import nacl from 'tweetnacl';
 import Curve from './curves';
 import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
@@ -85,6 +87,19 @@ async function kdf(hash_algo, S, length, param, curve, stripLeading=false, strip
  * @async
  */
 async function genPublicEphemeralKey(curve, Q) {
+  if (curve.name === 'curve25519') {
+    const { secretKey } = nacl.box.keyPair();
+    const one = curve.curve.curve.one;
+    const mask = one.ushln(255 - 3).sub(one).ushln(3);
+    let priv = new BN(secretKey);
+    priv = priv.or(one.ushln(255 - 1));
+    priv = priv.and(mask);
+    priv = priv.toArrayLike(Uint8Array, 'le', 32);
+    const S = nacl.scalarMult(priv, Q.subarray(1));
+    const { publicKey } = nacl.box.keyPair.fromSecretKey(priv);
+    const ret = { V: util.concatUint8Array([new Uint8Array([0x40]), publicKey]), S: new BN(S, 'le') };
+    return ret;
+  }
   const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q);
   const V = new Uint8Array(v.getPublic());
@@ -124,6 +139,15 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @async
  */
 async function genPrivateEphemeralKey(curve, V, d) {
+  if (curve.name === 'curve25519') {
+    const one = curve.curve.curve.one;
+    const mask = one.ushln(255 - 3).sub(one).ushln(3);
+    let priv = new BN(d);
+    priv = priv.or(one.ushln(255 - 1));
+    priv = priv.and(mask);
+    const S = nacl.scalarMult(priv.toArrayLike(Uint8Array, 'le', 32), V.subarray(1));
+    return new BN(S, 'le');
+  }
   V = curve.keyFromPublic(V);
   d = curve.keyFromPrivate(d);
   return d.derive(V);
