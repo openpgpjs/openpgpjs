@@ -63,12 +63,19 @@ let asyncProxy; // instance of the asyncproxy
  * @param {String} path            relative path to the worker scripts, default: 'openpgp.worker.js'
  * @param {Number} n               number of workers to initialize
  * @param {Array<Object>} workers  alternative to path parameter: web workers initialized with 'openpgp.worker.js'
+ * @returns {Promise<Boolean>}     returns a promise that resolves to true if all workers have succesfully finished loading
+ * @async
  */
-export function initWorker({ path='openpgp.worker.js', n = 1, workers = [] } = {}) {
+export async function initWorker({ path='openpgp.worker.js', n = 1, workers = [] } = {}) {
   if (workers.length || (typeof window !== 'undefined' && window.Worker && window.MessageChannel)) {
-    asyncProxy = new AsyncProxy({ path, n, workers, config });
-    return true;
+    const proxy = new AsyncProxy({ path, n, workers, config });
+    const loaded = await proxy.loaded();
+    if (loaded) {
+      asyncProxy = proxy;
+      return true;
+    }
   }
+  return false;
 }
 
 /**

@@ -17,11 +17,18 @@
 
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
+ * @requires hash.js
+ * @requires tweetnacl
  * @requires crypto/public_key/elliptic/curve
+ * @requires util
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import Curve from './curves';
+import sha512 from 'hash.js/lib/hash/sha/512';
+import nacl from 'tweetnacl/nacl-fast-light.js';
+import util from '../../../util';
+
+nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 
 /**
  * Sign a message using the provided key
@@ -35,12 +42,13 @@ import Curve from './curves';
  * @async
  */
 async function sign(oid, hash_algo, m, d, hashed) {
-  const curve = new Curve(oid);
-  const key = curve.keyFromSecret(d);
-  const signature = await key.sign(m, hash_algo, hashed);
+  const { secretKey } = nacl.sign.keyPair.fromSeed(d);
+  const signature = nacl.sign.detached(hashed, secretKey);
   // EdDSA signature params are returned in little-endian format
-  return { R: new Uint8Array(signature.Rencoded()),
-           S: new Uint8Array(signature.Sencoded()) };
+  return {
+    R: signature.subarray(0, 32),
+    S: signature.subarray(32)
+  };
 }
 
 /**
@@ -50,15 +58,14 @@ async function sign(oid, hash_algo, m, d, hashed) {
  * @param  {{R: Uint8Array,
              S: Uint8Array}}   signature Signature to verify the message
  * @param  {Uint8Array}        m         Message to verify
- * @param  {Uint8Array}        Q         Public key used to verify the message
+ * @param  {Uint8Array}        publicKey Public key used to verify the message
  * @param  {Uint8Array}        hashed    The hashed message
  * @returns {Boolean}
  * @async
  */
-async function verify(oid, hash_algo, signature, m, Q, hashed) {
-  const curve = new Curve(oid);
-  const key = curve.keyFromPublic(Q);
-  return key.verify(m, signature, hash_algo, hashed);
+async function verify(oid, hash_algo, { R, S }, m, publicKey, hashed) {
+  const signature = util.concatUint8Array([R, S]);
+  return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
 }
 
 export default { sign, verify };

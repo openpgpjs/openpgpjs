@@ -135,3 +135,8 @@ function delegate(id, method, options) {
 function response(event) {
   self.postMessage(event, openpgp.util.getTransferables(event.data, true));
 }
+
+/**
+ * Let the main window know the worker has loaded.
+ */
+postMessage({ event: 'loaded' });

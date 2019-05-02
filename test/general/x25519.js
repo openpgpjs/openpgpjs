@@ -319,8 +319,8 @@ describe('X25519 Cryptography', function () {
 
   tryTests('X25519 Worker Tests', omnibus, {
     if: typeof window !== 'undefined' && window.Worker,
-    before: function() {
-      openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+    before: async function() {
+      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
     },
     beforeEach: function() {
       openpgp.config.use_native = true;
@@ -336,9 +336,8 @@ describe('X25519 Cryptography', function () {
     const util = openpgp.util;
     function testVector(vector) {
       const curve = new elliptic.Curve('ed25519');
-      const S = curve.keyFromSecret(vector.SECRET_KEY);
-      const P = curve.keyFromPublic('40'+vector.PUBLIC_KEY);
-      expect(S.getPublic()).to.deep.equal(P.getPublic());
+      const { publicKey } = openpgp.crypto.publicKey.nacl.sign.keyPair.fromSeed(openpgp.util.hex_to_Uint8Array(vector.SECRET_KEY));
+      expect(publicKey).to.deep.equal(openpgp.util.hex_to_Uint8Array(vector.PUBLIC_KEY));
       const data = util.str_to_Uint8Array(vector.MESSAGE);
       const keyIntegers = [
         openpgp.OID.fromClone(curve),
@@ -350,12 +349,12 @@ describe('X25519 Cryptography', function () {
         new openpgp.MPI(util.Uint8Array_to_str(util.hex_to_Uint8Array(vector.SIGNATURE.S).reverse()))
       ];
       return Promise.all([
-        signature.sign(22, undefined, keyIntegers, data).then(signed => {
+        signature.sign(22, undefined, keyIntegers, undefined, data).then(signed => {
           const len = ((signed[0] << 8| signed[1]) + 7) / 8;
           expect(util.hex_to_Uint8Array(vector.SIGNATURE.R)).to.deep.eq(signed.slice(2, 2 + len));
           expect(util.hex_to_Uint8Array(vector.SIGNATURE.S)).to.deep.eq(signed.slice(4 + len));
         }),
-        signature.verify(22, undefined, msg_MPIs, keyIntegers, data).then(result => {
+        signature.verify(22, undefined, msg_MPIs, keyIntegers, undefined, data).then(result => {
           expect(result).to.be.true;
         })
       ]);

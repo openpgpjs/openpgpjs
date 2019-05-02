@@ -37,7 +37,7 @@ let pubKey;
 tryTests('Async Proxy', tests, {
   if: typeof window !== 'undefined' && window.Worker && window.MessageChannel,
   before: async function() {
-    openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+    await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
     pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
   },
   after: function() {
@@ -48,11 +48,13 @@ tryTests('Async Proxy', tests, {
 function tests() {
 
   describe('Random number pipeline', function() {
-    it('Random number buffer automatically reseeded', function() {
+    it('Random number buffer automatically reseeded', async function() {
       const worker = new Worker('../dist/openpgp.worker.js');
       const wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js', workers: [worker] });
-
-      return wProxy.delegate('encrypt', { publicKeys:[pubKey], message:openpgp.message.fromText(plaintext) });
+      const loaded = await wProxy.loaded();
+      if (loaded) {
+        return wProxy.delegate('encrypt', { publicKeys:[pubKey], message:openpgp.message.fromText(plaintext) });
+      }
     });
   });
 

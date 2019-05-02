@@ -18,6 +18,7 @@
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
  * @requires bn.js
+ * @requires tweetnacl
  * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
@@ -29,6 +30,7 @@
  */
 
 import BN from 'bn.js';
+import nacl from 'tweetnacl/nacl-fast-light.js';
 import Curve from './curves';
 import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
@@ -50,13 +52,10 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
 }
 
 // Key Derivation Function (RFC 6637)
-async function kdf(hash_algo, S, length, param, curve, stripLeading=false, stripTrailing=false) {
-  const len = curve.curve.curve.p.byteLength();
-  // Note: this is not ideal, but the RFC's are unclear
+async function kdf(hash_algo, X, length, param, stripLeading=false, stripTrailing=false) {
+  // Note: X is little endian for Curve25519, big-endian for all others.
+  // This is not ideal, but the RFC's are unclear
   // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
-  let X = curve.curve.curve.type === 'mont' ?
-    S.toArrayLike(Uint8Array, 'le', len) :
-    S.toArrayLike(Uint8Array, 'be', len);
   let i;
   if (stripLeading) {
     // Work around old go crypto bug
@@ -85,11 +84,20 @@ async function kdf(hash_algo, S, length, param, curve, stripLeading=false, strip
  * @async
  */
 async function genPublicEphemeralKey(curve, Q) {
+  if (curve.name === 'curve25519') {
+    const { secretKey: d } = nacl.box.keyPair();
+    const { secretKey, sharedKey } = await genPrivateEphemeralKey(curve, Q, d);
+    let { publicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
+    publicKey = util.concatUint8Array([new Uint8Array([0x40]), publicKey]);
+    return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
+  }
   const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q);
-  const V = new Uint8Array(v.getPublic());
+  const publicKey = new Uint8Array(v.getPublic());
   const S = v.derive(Q);
-  return { V, S };
+  const len = curve.curve.curve.p.byteLength();
+  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
+  return { publicKey, sharedKey };
 }
 
 /**
@@ -106,12 +114,12 @@ async function genPublicEphemeralKey(curve, Q) {
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   const curve = new Curve(oid);
-  const { V, S } = await genPublicEphemeralKey(curve, Q);
+  const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
-  const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param, curve);
-  const C = aes_kw.wrap(Z, m.toString());
-  return { V, C };
+  const Z = await kdf(hash_algo, sharedKey, cipher[cipher_algo].keySize, param);
+  const wrappedKey = aes_kw.wrap(Z, m.toString());
+  return { publicKey, wrappedKey };
 }
 
 /**
@@ -124,9 +132,23 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @async
  */
 async function genPrivateEphemeralKey(curve, V, d) {
+  if (curve.name === 'curve25519') {
+    const one = new BN(1);
+    const mask = one.ushln(255 - 3).sub(one).ushln(3);
+    let secretKey = new BN(d);
+    secretKey = secretKey.or(one.ushln(255 - 1));
+    secretKey = secretKey.and(mask);
+    secretKey = secretKey.toArrayLike(Uint8Array, 'le', 32);
+    const sharedKey = nacl.scalarMult(secretKey, V.subarray(1));
+    return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
+  }
   V = curve.keyFromPublic(V);
   d = curve.keyFromPrivate(d);
-  return d.derive(V);
+  const secretKey = new Uint8Array(d.getPrivate());
+  const S = d.derive(V);
+  const len = curve.curve.curve.p.byteLength();
+  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
+  return { secretKey, sharedKey };
 }
 
 /**
@@ -144,14 +166,14 @@ async function genPrivateEphemeralKey(curve, V, d) {
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   const curve = new Curve(oid);
-  const S = await genPrivateEphemeralKey(curve, V, d);
+  const { sharedKey } = await genPrivateEphemeralKey(curve, V, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
   cipher_algo = enums.read(enums.symmetric, cipher_algo);
   let err;
   for (let i = 0; i < 3; i++) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
-      const Z = await kdf(hash_algo, S, cipher[cipher_algo].keySize, param, curve, i === 1, i === 2);
+      const Z = await kdf(hash_algo, sharedKey, cipher[cipher_algo].keySize, param, i === 1, i === 2);
       return new BN(aes_kw.unwrap(Z, C));
     } catch (e) {
       err = e;

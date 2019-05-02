@@ -640,7 +640,7 @@ function tests() {
     const reader = openpgp.stream.getReader(signed.signature);
     expect((await reader.readBytes(31)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\r\n');
     dataArrived();
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 3000));
     expect(i).to.be.greaterThan(100);
   });
 

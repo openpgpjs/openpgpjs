@@ -56,7 +56,7 @@ module.exports = function(grunt) {
                 "transform-runtime"
               ] : [],
               ignore: ['*.min.js'],
-              presets: [["env", {
+              presets: [[require.resolve('babel-preset-env'), {
                 targets: {
                   browsers: compat ? [
                     'IE >= 11',
