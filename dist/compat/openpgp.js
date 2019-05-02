@@ -1612,7 +1612,7 @@ function _extract_name(name) {
     return name;
 }
 
-},{"babel-runtime/helpers/classCallCheck":37,"babel-runtime/helpers/createClass":38,"email-addresses":304}],3:[function(_dereq_,module,exports){
+},{"babel-runtime/helpers/classCallCheck":37,"babel-runtime/helpers/createClass":38,"email-addresses":303}],3:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -5661,7 +5661,7 @@ exports.default = typeof _symbol2.default === "function" && _typeof(_iterator2.d
 },{"../core-js/symbol":33,"../core-js/symbol/iterator":34}],44:[function(_dereq_,module,exports){
 module.exports = _dereq_("regenerator-runtime");
 
-},{"regenerator-runtime":337}],45:[function(_dereq_,module,exports){
+},{"regenerator-runtime":336}],45:[function(_dereq_,module,exports){
 (function (module, exports) {
   'use strict';
 
@@ -12851,7 +12851,6 @@ for (var collections = getKeys(DOMIterables), i = 0; i < collections.length; i++
 
 var elliptic = exports;
 
-elliptic.version = _dereq_('../package.json').version;
 elliptic.utils = _dereq_('./elliptic/utils');
 elliptic.rand = _dereq_('brorand');
 elliptic.curve = _dereq_('./elliptic/curve');
@@ -12861,7 +12860,7 @@ elliptic.curves = _dereq_('./elliptic/curves');
 elliptic.ec = _dereq_('./elliptic/ec');
 elliptic.eddsa = _dereq_('./elliptic/eddsa');
 
-},{"../package.json":303,"./elliptic/curve":291,"./elliptic/curves":294,"./elliptic/ec":295,"./elliptic/eddsa":298,"./elliptic/utils":302,"brorand":46}],289:[function(_dereq_,module,exports){
+},{"./elliptic/curve":291,"./elliptic/curves":294,"./elliptic/ec":295,"./elliptic/eddsa":298,"./elliptic/utils":302,"brorand":46}],289:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -13673,7 +13672,7 @@ Point.prototype.eqXToP = function eqXToP(x) {
 Point.prototype.toP = Point.prototype.normalize;
 Point.prototype.mixedAdd = Point.prototype.add;
 
-},{"../../elliptic":288,"../curve":291,"bn.js":45,"inherits":318}],291:[function(_dereq_,module,exports){
+},{"../../elliptic":288,"../curve":291,"bn.js":45,"inherits":317}],291:[function(_dereq_,module,exports){
 'use strict';
 
 var curve = exports;
@@ -13886,7 +13885,7 @@ Point.prototype.getX = function getX() {
   return this.x.fromRed();
 };
 
-},{"../../elliptic":288,"../curve":291,"bn.js":45,"inherits":318}],293:[function(_dereq_,module,exports){
+},{"../../elliptic":288,"../curve":291,"bn.js":45,"inherits":317}],293:[function(_dereq_,module,exports){
 'use strict';
 
 var curve = _dereq_('../curve');
@@ -14825,7 +14824,7 @@ JPoint.prototype.isInfinity = function isInfinity() {
   return this.z.cmpn(0) === 0;
 };
 
-},{"../../elliptic":288,"../curve":291,"bn.js":45,"inherits":318}],294:[function(_dereq_,module,exports){
+},{"../../elliptic":288,"../curve":291,"bn.js":45,"inherits":317}],294:[function(_dereq_,module,exports){
 'use strict';
 
 var curves = exports;
@@ -15096,7 +15095,7 @@ defineCurve('secp256k1', {
   ]
 });
 
-},{"../elliptic":288,"./precomputed/secp256k1":301,"hash.js":305}],295:[function(_dereq_,module,exports){
+},{"../elliptic":288,"./precomputed/secp256k1":301,"hash.js":304}],295:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -15344,7 +15343,7 @@ EC.prototype.getKeyRecoveryParam = function(e, signature, Q, enc) {
   throw new Error('Unable to find valid recovery factor');
 };
 
-},{"../../elliptic":288,"./key":296,"./signature":297,"bn.js":45,"hmac-drbg":317}],296:[function(_dereq_,module,exports){
+},{"../../elliptic":288,"./key":296,"./signature":297,"bn.js":45,"hmac-drbg":316}],296:[function(_dereq_,module,exports){
 'use strict';
 
 var BN = _dereq_('bn.js');
@@ -15747,7 +15746,7 @@ EDDSA.prototype.isPoint = function isPoint(val) {
   return val instanceof this.pointClass;
 };
 
-},{"../../elliptic":288,"./key":299,"./signature":300,"hash.js":305,"hmac-drbg":317}],299:[function(_dereq_,module,exports){
+},{"../../elliptic":288,"./key":299,"./signature":300,"hash.js":304,"hmac-drbg":316}],299:[function(_dereq_,module,exports){
 'use strict';
 
 var elliptic = _dereq_('../../elliptic');
@@ -16825,96 +16824,7 @@ function intFromLE(bytes) {
 utils.intFromLE = intFromLE;
 
 
-},{"bn.js":45,"minimalistic-assert":319,"minimalistic-crypto-utils":320}],303:[function(_dereq_,module,exports){
-module.exports={
-  "_args": [
-    [
-      "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-      "/Users/sunny/Desktop/Protonmail/openpgpjs"
-    ]
-  ],
-  "_from": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_id": "elliptic@github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_inBundle": false,
-  "_integrity": "",
-  "_location": "/elliptic",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "git",
-    "raw": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-    "rawSpec": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-    "saveSpec": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-    "fetchSpec": null,
-    "gitCommittish": "ad81845f693effa5b4b6d07db2e82112de222f48"
-  },
-  "_requiredBy": [
-    "/"
-  ],
-  "_resolved": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_spec": "github:openpgpjs/elliptic#ad81845f693effa5b4b6d07db2e82112de222f48",
-  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
-  "author": {
-    "name": "Fedor Indutny",
-    "email": "fedor@indutny.com"
-  },
-  "bugs": {
-    "url": "https://github.com/indutny/elliptic/issues"
-  },
-  "dependencies": {
-    "bn.js": "^4.4.0",
-    "brorand": "^1.0.1",
-    "hash.js": "^1.0.0",
-    "hmac-drbg": "^1.0.0",
-    "inherits": "^2.0.1",
-    "minimalistic-assert": "^1.0.0",
-    "minimalistic-crypto-utils": "^1.0.0"
-  },
-  "description": "EC cryptography",
-  "devDependencies": {
-    "brfs": "^1.4.3",
-    "coveralls": "^2.11.3",
-    "grunt": "^0.4.5",
-    "grunt-browserify": "^5.0.0",
-    "grunt-cli": "^1.2.0",
-    "grunt-contrib-connect": "^1.0.0",
-    "grunt-contrib-copy": "^1.0.0",
-    "grunt-contrib-uglify": "^1.0.1",
-    "grunt-mocha-istanbul": "^3.0.1",
-    "grunt-saucelabs": "^8.6.2",
-    "istanbul": "^0.4.2",
-    "jscs": "^2.9.0",
-    "jshint": "^2.6.0",
-    "mocha": "^2.1.0"
-  },
-  "files": [
-    "lib"
-  ],
-  "homepage": "https://github.com/indutny/elliptic",
-  "keywords": [
-    "EC",
-    "Elliptic",
-    "curve",
-    "Cryptography"
-  ],
-  "license": "MIT",
-  "main": "lib/elliptic.js",
-  "name": "elliptic",
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/indutny/elliptic.git"
-  },
-  "scripts": {
-    "jscs": "jscs benchmarks/*.js lib/*.js lib/**/*.js lib/**/**/*.js test/index.js",
-    "jshint": "jscs benchmarks/*.js lib/*.js lib/**/*.js lib/**/**/*.js test/index.js",
-    "lint": "npm run jscs && npm run jshint",
-    "test": "npm run lint && npm run unit",
-    "unit": "istanbul test _mocha --reporter=spec test/index.js",
-    "version": "grunt dist && git add dist/"
-  },
-  "version": "6.4.0"
-}
-
-},{}],304:[function(_dereq_,module,exports){
+},{"bn.js":45,"minimalistic-assert":318,"minimalistic-crypto-utils":319}],303:[function(_dereq_,module,exports){
 
 // email-addresses.js - RFC 5322 email address parser
 // v 3.0.1
@@ -17987,7 +17897,7 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
 
 }(this));
 
-},{}],305:[function(_dereq_,module,exports){
+},{}],304:[function(_dereq_,module,exports){
 var hash = exports;
 
 hash.utils = _dereq_('./hash/utils');
@@ -18004,7 +17914,7 @@ hash.sha384 = hash.sha.sha384;
 hash.sha512 = hash.sha.sha512;
 hash.ripemd160 = hash.ripemd.ripemd160;
 
-},{"./hash/common":306,"./hash/hmac":307,"./hash/ripemd":308,"./hash/sha":309,"./hash/utils":316}],306:[function(_dereq_,module,exports){
+},{"./hash/common":305,"./hash/hmac":306,"./hash/ripemd":307,"./hash/sha":308,"./hash/utils":315}],305:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('./utils');
@@ -18098,7 +18008,7 @@ BlockHash.prototype._pad = function pad() {
   return res;
 };
 
-},{"./utils":316,"minimalistic-assert":319}],307:[function(_dereq_,module,exports){
+},{"./utils":315,"minimalistic-assert":318}],306:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('./utils');
@@ -18147,7 +18057,7 @@ Hmac.prototype.digest = function digest(enc) {
   return this.outer.digest(enc);
 };
 
-},{"./utils":316,"minimalistic-assert":319}],308:[function(_dereq_,module,exports){
+},{"./utils":315,"minimalistic-assert":318}],307:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('./utils');
@@ -18295,7 +18205,7 @@ var sh = [
   8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11
 ];
 
-},{"./common":306,"./utils":316}],309:[function(_dereq_,module,exports){
+},{"./common":305,"./utils":315}],308:[function(_dereq_,module,exports){
 'use strict';
 
 exports.sha1 = _dereq_('./sha/1');
@@ -18304,7 +18214,7 @@ exports.sha256 = _dereq_('./sha/256');
 exports.sha384 = _dereq_('./sha/384');
 exports.sha512 = _dereq_('./sha/512');
 
-},{"./sha/1":310,"./sha/224":311,"./sha/256":312,"./sha/384":313,"./sha/512":314}],310:[function(_dereq_,module,exports){
+},{"./sha/1":309,"./sha/224":310,"./sha/256":311,"./sha/384":312,"./sha/512":313}],309:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -18380,7 +18290,7 @@ SHA1.prototype._digest = function digest(enc) {
     return utils.split32(this.h, 'big');
 };
 
-},{"../common":306,"../utils":316,"./common":315}],311:[function(_dereq_,module,exports){
+},{"../common":305,"../utils":315,"./common":314}],310:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -18412,7 +18322,7 @@ SHA224.prototype._digest = function digest(enc) {
 };
 
 
-},{"../utils":316,"./256":312}],312:[function(_dereq_,module,exports){
+},{"../utils":315,"./256":311}],311:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -18519,7 +18429,7 @@ SHA256.prototype._digest = function digest(enc) {
     return utils.split32(this.h, 'big');
 };
 
-},{"../common":306,"../utils":316,"./common":315,"minimalistic-assert":319}],313:[function(_dereq_,module,exports){
+},{"../common":305,"../utils":315,"./common":314,"minimalistic-assert":318}],312:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -18556,7 +18466,7 @@ SHA384.prototype._digest = function digest(enc) {
     return utils.split32(this.h.slice(0, 12), 'big');
 };
 
-},{"../utils":316,"./512":314}],314:[function(_dereq_,module,exports){
+},{"../utils":315,"./512":313}],313:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -18888,7 +18798,7 @@ function g1_512_lo(xh, xl) {
   return r;
 }
 
-},{"../common":306,"../utils":316,"minimalistic-assert":319}],315:[function(_dereq_,module,exports){
+},{"../common":305,"../utils":315,"minimalistic-assert":318}],314:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = _dereq_('../utils');
@@ -18939,7 +18849,7 @@ function g1_256(x) {
 }
 exports.g1_256 = g1_256;
 
-},{"../utils":316}],316:[function(_dereq_,module,exports){
+},{"../utils":315}],315:[function(_dereq_,module,exports){
 'use strict';
 
 var assert = _dereq_('minimalistic-assert');
@@ -19194,7 +19104,7 @@ function shr64_lo(ah, al, num) {
 }
 exports.shr64_lo = shr64_lo;
 
-},{"inherits":318,"minimalistic-assert":319}],317:[function(_dereq_,module,exports){
+},{"inherits":317,"minimalistic-assert":318}],316:[function(_dereq_,module,exports){
 'use strict';
 
 var hash = _dereq_('hash.js');
@@ -19309,7 +19219,7 @@ HmacDRBG.prototype.generate = function generate(len, enc, add, addEnc) {
   return utils.encode(res, enc);
 };
 
-},{"hash.js":305,"minimalistic-assert":319,"minimalistic-crypto-utils":320}],318:[function(_dereq_,module,exports){
+},{"hash.js":304,"minimalistic-assert":318,"minimalistic-crypto-utils":319}],317:[function(_dereq_,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -19334,7 +19244,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],319:[function(_dereq_,module,exports){
+},{}],318:[function(_dereq_,module,exports){
 module.exports = assert;
 
 function assert(val, msg) {
@@ -19347,7 +19257,7 @@ assert.equal = function assertEqual(l, r, msg) {
     throw new Error(msg || ('Assertion failed: ' + l + ' != ' + r));
 };
 
-},{}],320:[function(_dereq_,module,exports){
+},{}],319:[function(_dereq_,module,exports){
 'use strict';
 
 var utils = exports;
@@ -19407,7 +19317,7 @@ utils.encode = function encode(arr, enc) {
     return arr;
 };
 
-},{}],321:[function(_dereq_,module,exports){
+},{}],320:[function(_dereq_,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -19423,7 +19333,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":322,"./lib/inflate":323,"./lib/utils/common":324,"./lib/zlib/constants":327}],322:[function(_dereq_,module,exports){
+},{"./lib/deflate":321,"./lib/inflate":322,"./lib/utils/common":323,"./lib/zlib/constants":326}],321:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -19825,7 +19735,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":324,"./utils/strings":325,"./zlib/deflate":329,"./zlib/messages":334,"./zlib/zstream":336}],323:[function(_dereq_,module,exports){
+},{"./utils/common":323,"./utils/strings":324,"./zlib/deflate":328,"./zlib/messages":333,"./zlib/zstream":335}],322:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -20245,7 +20155,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":324,"./utils/strings":325,"./zlib/constants":327,"./zlib/gzheader":330,"./zlib/inflate":332,"./zlib/messages":334,"./zlib/zstream":336}],324:[function(_dereq_,module,exports){
+},{"./utils/common":323,"./utils/strings":324,"./zlib/constants":326,"./zlib/gzheader":329,"./zlib/inflate":331,"./zlib/messages":333,"./zlib/zstream":335}],323:[function(_dereq_,module,exports){
 'use strict';
 
 
@@ -20352,7 +20262,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],325:[function(_dereq_,module,exports){
+},{}],324:[function(_dereq_,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -20539,7 +20449,7 @@ exports.utf8border = function (buf, max) {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":324}],326:[function(_dereq_,module,exports){
+},{"./common":323}],325:[function(_dereq_,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -20592,7 +20502,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],327:[function(_dereq_,module,exports){
+},{}],326:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -20662,7 +20572,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],328:[function(_dereq_,module,exports){
+},{}],327:[function(_dereq_,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -20723,7 +20633,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],329:[function(_dereq_,module,exports){
+},{}],328:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -22599,7 +22509,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":324,"./adler32":326,"./crc32":328,"./messages":334,"./trees":335}],330:[function(_dereq_,module,exports){
+},{"../utils/common":323,"./adler32":325,"./crc32":327,"./messages":333,"./trees":334}],329:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -22659,7 +22569,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],331:[function(_dereq_,module,exports){
+},{}],330:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -23006,7 +22916,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],332:[function(_dereq_,module,exports){
+},{}],331:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -24564,7 +24474,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":324,"./adler32":326,"./crc32":328,"./inffast":331,"./inftrees":333}],333:[function(_dereq_,module,exports){
+},{"../utils/common":323,"./adler32":325,"./crc32":327,"./inffast":330,"./inftrees":332}],332:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -24909,7 +24819,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":324}],334:[function(_dereq_,module,exports){
+},{"../utils/common":323}],333:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -24943,7 +24853,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],335:[function(_dereq_,module,exports){
+},{}],334:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -26165,7 +26075,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":324}],336:[function(_dereq_,module,exports){
+},{"../utils/common":323}],335:[function(_dereq_,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -26214,7 +26124,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],337:[function(_dereq_,module,exports){
+},{}],336:[function(_dereq_,module,exports){
 // This method of obtaining a reference to the global object needs to be
 // kept identical to the way it is obtained in runtime.js
 var g = (function() { return this })() || Function("return this")();
@@ -26244,7 +26154,7 @@ if (hadRuntime) {
   }
 }
 
-},{"./runtime":338}],338:[function(_dereq_,module,exports){
+},{"./runtime":337}],337:[function(_dereq_,module,exports){
 /**
  * Copyright (c) 2014, Facebook, Inc.
  * All rights reserved.
@@ -26976,7 +26886,7 @@ if (hadRuntime) {
   (function() { return this })() || Function("return this")()
 );
 
-},{}],339:[function(_dereq_,module,exports){
+},{}],338:[function(_dereq_,module,exports){
 'use strict';
 
 /*
@@ -27076,7 +26986,7 @@ function bufToHex(buf) {
 
 module.exports = BitReader;
 
-},{}],340:[function(_dereq_,module,exports){
+},{}],339:[function(_dereq_,module,exports){
 "use strict";
 
 /* CRC32, used in Bzip2 implementation.
@@ -27151,7 +27061,7 @@ module.exports = function () {
   return CRC32;
 }();
 
-},{}],341:[function(_dereq_,module,exports){
+},{}],340:[function(_dereq_,module,exports){
 'use strict';
 
 /*
@@ -27189,7 +27099,6 @@ Robert Sedgewick, and Jon L. Bentley.
 var BitReader = _dereq_('./bitreader');
 var Stream = _dereq_('./stream');
 var CRC32 = _dereq_('./crc32');
-var pjson = _dereq_('../package.json');
 
 var MAX_HUFCODE_BITS = 20;
 var MAX_SYMBOLS = 258;
@@ -27757,12 +27666,9 @@ Bunzip.table = function (input, callback, multistream) {
 
 Bunzip.Stream = Stream;
 
-Bunzip.version = pjson.version;
-Bunzip.license = pjson.license;
-
 module.exports = Bunzip;
 
-},{"../package.json":343,"./bitreader":339,"./crc32":340,"./stream":342}],342:[function(_dereq_,module,exports){
+},{"./bitreader":338,"./crc32":339,"./stream":341}],341:[function(_dereq_,module,exports){
 "use strict";
 
 /* very simple input/output stream interface */
@@ -27807,85 +27713,7 @@ Stream.prototype.flush = function () {};
 
 module.exports = Stream;
 
-},{}],343:[function(_dereq_,module,exports){
-module.exports={
-  "_args": [
-    [
-      "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-      "/Users/sunny/Desktop/Protonmail/openpgpjs"
-    ]
-  ],
-  "_from": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_id": "seek-bzip@github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_inBundle": false,
-  "_integrity": "",
-  "_location": "/seek-bzip",
-  "_phantomChildren": {
-    "graceful-readlink": "1.0.1"
-  },
-  "_requested": {
-    "type": "git",
-    "raw": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-    "rawSpec": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-    "saveSpec": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-    "fetchSpec": null,
-    "gitCommittish": "3aca608ffedc055a1da1d898ecb244804ef32209"
-  },
-  "_requiredBy": [
-    "/"
-  ],
-  "_resolved": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_spec": "github:openpgpjs/seek-bzip#3aca608ffedc055a1da1d898ecb244804ef32209",
-  "_where": "/Users/sunny/Desktop/Protonmail/openpgpjs",
-  "bin": {
-    "seek-bunzip": "./bin/seek-bunzip",
-    "seek-table": "./bin/seek-bzip-table"
-  },
-  "bugs": {
-    "url": "https://github.com/cscott/seek-bzip/issues"
-  },
-  "contributors": [
-    {
-      "name": "C. Scott Ananian",
-      "url": "http://cscott.net"
-    },
-    {
-      "name": "Eli Skeggs"
-    },
-    {
-      "name": "Kevin Kwok"
-    },
-    {
-      "name": "Rob Landley",
-      "url": "http://landley.net"
-    }
-  ],
-  "dependencies": {
-    "commander": "~2.8.1"
-  },
-  "description": "a pure-JavaScript Node.JS module for random-access decoding bzip2 data",
-  "devDependencies": {
-    "fibers": "~1.0.6",
-    "mocha": "~2.2.5"
-  },
-  "directories": {
-    "test": "test"
-  },
-  "homepage": "https://github.com/cscott/seek-bzip#readme",
-  "license": "MIT",
-  "main": "./lib/index.js",
-  "name": "seek-bzip",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/cscott/seek-bzip.git"
-  },
-  "scripts": {
-    "test": "mocha"
-  },
-  "version": "1.0.5-git"
-}
-
-},{}],344:[function(_dereq_,module,exports){
+},{}],342:[function(_dereq_,module,exports){
 'use strict';
 
 // This is free and unencumbered software released into the public domain.
@@ -28528,7 +28356,945 @@ function UTF8Encoder(options) {
 
 exports.TextEncoder = TextEncoder;
 exports.TextDecoder = TextDecoder;
-},{}],345:[function(_dereq_,module,exports){
+},{}],343:[function(_dereq_,module,exports){
+/*jshint bitwise: false*/
+
+(function(nacl) {
+'use strict';
+
+// Ported in 2014 by Dmitry Chestnykh and Devi Mandiri.
+// Public domain.
+//
+// Implementation derived from TweetNaCl version 20140427.
+// See for details: http://tweetnacl.cr.yp.to/
+
+var gf = function(init) {
+  var i, r = new Float64Array(16);
+  if (init) for (i = 0; i < init.length; i++) r[i] = init[i];
+  return r;
+};
+
+//  Pluggable, initialized in high-level API below.
+var randombytes = function(/* x, n */) { throw new Error('no PRNG'); };
+
+var _9 = new Uint8Array(32); _9[0] = 9;
+
+var gf0 = gf(),
+    gf1 = gf([1]),
+    _121665 = gf([0xdb41, 1]),
+    D = gf([0x78a3, 0x1359, 0x4dca, 0x75eb, 0xd8ab, 0x4141, 0x0a4d, 0x0070, 0xe898, 0x7779, 0x4079, 0x8cc7, 0xfe73, 0x2b6f, 0x6cee, 0x5203]),
+    D2 = gf([0xf159, 0x26b2, 0x9b94, 0xebd6, 0xb156, 0x8283, 0x149a, 0x00e0, 0xd130, 0xeef3, 0x80f2, 0x198e, 0xfce7, 0x56df, 0xd9dc, 0x2406]),
+    X = gf([0xd51a, 0x8f25, 0x2d60, 0xc956, 0xa7b2, 0x9525, 0xc760, 0x692c, 0xdc5c, 0xfdd6, 0xe231, 0xc0a4, 0x53fe, 0xcd6e, 0x36d3, 0x2169]),
+    Y = gf([0x6658, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666, 0x6666]),
+    I = gf([0xa0b0, 0x4a0e, 0x1b27, 0xc4ee, 0xe478, 0xad2f, 0x1806, 0x2f43, 0xd7a7, 0x3dfb, 0x0099, 0x2b4d, 0xdf0b, 0x4fc1, 0x2480, 0x2b83]);
+
+function vn(x, xi, y, yi, n) {
+  var i,d = 0;
+  for (i = 0; i < n; i++) d |= x[xi+i]^y[yi+i];
+  return (1 & ((d - 1) >>> 8)) - 1;
+}
+
+function crypto_verify_32(x, xi, y, yi) {
+  return vn(x,xi,y,yi,32);
+}
+
+function set25519(r, a) {
+  var i;
+  for (i = 0; i < 16; i++) r[i] = a[i]|0;
+}
+
+function car25519(o) {
+  var i, v, c = 1;
+  for (i = 0; i < 16; i++) {
+    v = o[i] + c + 65535;
+    c = Math.floor(v / 65536);
+    o[i] = v - c * 65536;
+  }
+  o[0] += c-1 + 37 * (c-1);
+}
+
+function sel25519(p, q, b) {
+  var t, c = ~(b-1);
+  for (var i = 0; i < 16; i++) {
+    t = c & (p[i] ^ q[i]);
+    p[i] ^= t;
+    q[i] ^= t;
+  }
+}
+
+function pack25519(o, n) {
+  var i, j, b;
+  var m = gf(), t = gf();
+  for (i = 0; i < 16; i++) t[i] = n[i];
+  car25519(t);
+  car25519(t);
+  car25519(t);
+  for (j = 0; j < 2; j++) {
+    m[0] = t[0] - 0xffed;
+    for (i = 1; i < 15; i++) {
+      m[i] = t[i] - 0xffff - ((m[i-1]>>16) & 1);
+      m[i-1] &= 0xffff;
+    }
+    m[15] = t[15] - 0x7fff - ((m[14]>>16) & 1);
+    b = (m[15]>>16) & 1;
+    m[14] &= 0xffff;
+    sel25519(t, m, 1-b);
+  }
+  for (i = 0; i < 16; i++) {
+    o[2*i] = t[i] & 0xff;
+    o[2*i+1] = t[i]>>8;
+  }
+}
+
+function neq25519(a, b) {
+  var c = new Uint8Array(32), d = new Uint8Array(32);
+  pack25519(c, a);
+  pack25519(d, b);
+  return crypto_verify_32(c, 0, d, 0);
+}
+
+function par25519(a) {
+  var d = new Uint8Array(32);
+  pack25519(d, a);
+  return d[0] & 1;
+}
+
+function unpack25519(o, n) {
+  var i;
+  for (i = 0; i < 16; i++) o[i] = n[2*i] + (n[2*i+1] << 8);
+  o[15] &= 0x7fff;
+}
+
+function A(o, a, b) {
+  for (var i = 0; i < 16; i++) o[i] = a[i] + b[i];
+}
+
+function Z(o, a, b) {
+  for (var i = 0; i < 16; i++) o[i] = a[i] - b[i];
+}
+
+function M(o, a, b) {
+  var v, c,
+     t0 = 0,  t1 = 0,  t2 = 0,  t3 = 0,  t4 = 0,  t5 = 0,  t6 = 0,  t7 = 0,
+     t8 = 0,  t9 = 0, t10 = 0, t11 = 0, t12 = 0, t13 = 0, t14 = 0, t15 = 0,
+    t16 = 0, t17 = 0, t18 = 0, t19 = 0, t20 = 0, t21 = 0, t22 = 0, t23 = 0,
+    t24 = 0, t25 = 0, t26 = 0, t27 = 0, t28 = 0, t29 = 0, t30 = 0,
+    b0 = b[0],
+    b1 = b[1],
+    b2 = b[2],
+    b3 = b[3],
+    b4 = b[4],
+    b5 = b[5],
+    b6 = b[6],
+    b7 = b[7],
+    b8 = b[8],
+    b9 = b[9],
+    b10 = b[10],
+    b11 = b[11],
+    b12 = b[12],
+    b13 = b[13],
+    b14 = b[14],
+    b15 = b[15];
+
+  v = a[0];
+  t0 += v * b0;
+  t1 += v * b1;
+  t2 += v * b2;
+  t3 += v * b3;
+  t4 += v * b4;
+  t5 += v * b5;
+  t6 += v * b6;
+  t7 += v * b7;
+  t8 += v * b8;
+  t9 += v * b9;
+  t10 += v * b10;
+  t11 += v * b11;
+  t12 += v * b12;
+  t13 += v * b13;
+  t14 += v * b14;
+  t15 += v * b15;
+  v = a[1];
+  t1 += v * b0;
+  t2 += v * b1;
+  t3 += v * b2;
+  t4 += v * b3;
+  t5 += v * b4;
+  t6 += v * b5;
+  t7 += v * b6;
+  t8 += v * b7;
+  t9 += v * b8;
+  t10 += v * b9;
+  t11 += v * b10;
+  t12 += v * b11;
+  t13 += v * b12;
+  t14 += v * b13;
+  t15 += v * b14;
+  t16 += v * b15;
+  v = a[2];
+  t2 += v * b0;
+  t3 += v * b1;
+  t4 += v * b2;
+  t5 += v * b3;
+  t6 += v * b4;
+  t7 += v * b5;
+  t8 += v * b6;
+  t9 += v * b7;
+  t10 += v * b8;
+  t11 += v * b9;
+  t12 += v * b10;
+  t13 += v * b11;
+  t14 += v * b12;
+  t15 += v * b13;
+  t16 += v * b14;
+  t17 += v * b15;
+  v = a[3];
+  t3 += v * b0;
+  t4 += v * b1;
+  t5 += v * b2;
+  t6 += v * b3;
+  t7 += v * b4;
+  t8 += v * b5;
+  t9 += v * b6;
+  t10 += v * b7;
+  t11 += v * b8;
+  t12 += v * b9;
+  t13 += v * b10;
+  t14 += v * b11;
+  t15 += v * b12;
+  t16 += v * b13;
+  t17 += v * b14;
+  t18 += v * b15;
+  v = a[4];
+  t4 += v * b0;
+  t5 += v * b1;
+  t6 += v * b2;
+  t7 += v * b3;
+  t8 += v * b4;
+  t9 += v * b5;
+  t10 += v * b6;
+  t11 += v * b7;
+  t12 += v * b8;
+  t13 += v * b9;
+  t14 += v * b10;
+  t15 += v * b11;
+  t16 += v * b12;
+  t17 += v * b13;
+  t18 += v * b14;
+  t19 += v * b15;
+  v = a[5];
+  t5 += v * b0;
+  t6 += v * b1;
+  t7 += v * b2;
+  t8 += v * b3;
+  t9 += v * b4;
+  t10 += v * b5;
+  t11 += v * b6;
+  t12 += v * b7;
+  t13 += v * b8;
+  t14 += v * b9;
+  t15 += v * b10;
+  t16 += v * b11;
+  t17 += v * b12;
+  t18 += v * b13;
+  t19 += v * b14;
+  t20 += v * b15;
+  v = a[6];
+  t6 += v * b0;
+  t7 += v * b1;
+  t8 += v * b2;
+  t9 += v * b3;
+  t10 += v * b4;
+  t11 += v * b5;
+  t12 += v * b6;
+  t13 += v * b7;
+  t14 += v * b8;
+  t15 += v * b9;
+  t16 += v * b10;
+  t17 += v * b11;
+  t18 += v * b12;
+  t19 += v * b13;
+  t20 += v * b14;
+  t21 += v * b15;
+  v = a[7];
+  t7 += v * b0;
+  t8 += v * b1;
+  t9 += v * b2;
+  t10 += v * b3;
+  t11 += v * b4;
+  t12 += v * b5;
+  t13 += v * b6;
+  t14 += v * b7;
+  t15 += v * b8;
+  t16 += v * b9;
+  t17 += v * b10;
+  t18 += v * b11;
+  t19 += v * b12;
+  t20 += v * b13;
+  t21 += v * b14;
+  t22 += v * b15;
+  v = a[8];
+  t8 += v * b0;
+  t9 += v * b1;
+  t10 += v * b2;
+  t11 += v * b3;
+  t12 += v * b4;
+  t13 += v * b5;
+  t14 += v * b6;
+  t15 += v * b7;
+  t16 += v * b8;
+  t17 += v * b9;
+  t18 += v * b10;
+  t19 += v * b11;
+  t20 += v * b12;
+  t21 += v * b13;
+  t22 += v * b14;
+  t23 += v * b15;
+  v = a[9];
+  t9 += v * b0;
+  t10 += v * b1;
+  t11 += v * b2;
+  t12 += v * b3;
+  t13 += v * b4;
+  t14 += v * b5;
+  t15 += v * b6;
+  t16 += v * b7;
+  t17 += v * b8;
+  t18 += v * b9;
+  t19 += v * b10;
+  t20 += v * b11;
+  t21 += v * b12;
+  t22 += v * b13;
+  t23 += v * b14;
+  t24 += v * b15;
+  v = a[10];
+  t10 += v * b0;
+  t11 += v * b1;
+  t12 += v * b2;
+  t13 += v * b3;
+  t14 += v * b4;
+  t15 += v * b5;
+  t16 += v * b6;
+  t17 += v * b7;
+  t18 += v * b8;
+  t19 += v * b9;
+  t20 += v * b10;
+  t21 += v * b11;
+  t22 += v * b12;
+  t23 += v * b13;
+  t24 += v * b14;
+  t25 += v * b15;
+  v = a[11];
+  t11 += v * b0;
+  t12 += v * b1;
+  t13 += v * b2;
+  t14 += v * b3;
+  t15 += v * b4;
+  t16 += v * b5;
+  t17 += v * b6;
+  t18 += v * b7;
+  t19 += v * b8;
+  t20 += v * b9;
+  t21 += v * b10;
+  t22 += v * b11;
+  t23 += v * b12;
+  t24 += v * b13;
+  t25 += v * b14;
+  t26 += v * b15;
+  v = a[12];
+  t12 += v * b0;
+  t13 += v * b1;
+  t14 += v * b2;
+  t15 += v * b3;
+  t16 += v * b4;
+  t17 += v * b5;
+  t18 += v * b6;
+  t19 += v * b7;
+  t20 += v * b8;
+  t21 += v * b9;
+  t22 += v * b10;
+  t23 += v * b11;
+  t24 += v * b12;
+  t25 += v * b13;
+  t26 += v * b14;
+  t27 += v * b15;
+  v = a[13];
+  t13 += v * b0;
+  t14 += v * b1;
+  t15 += v * b2;
+  t16 += v * b3;
+  t17 += v * b4;
+  t18 += v * b5;
+  t19 += v * b6;
+  t20 += v * b7;
+  t21 += v * b8;
+  t22 += v * b9;
+  t23 += v * b10;
+  t24 += v * b11;
+  t25 += v * b12;
+  t26 += v * b13;
+  t27 += v * b14;
+  t28 += v * b15;
+  v = a[14];
+  t14 += v * b0;
+  t15 += v * b1;
+  t16 += v * b2;
+  t17 += v * b3;
+  t18 += v * b4;
+  t19 += v * b5;
+  t20 += v * b6;
+  t21 += v * b7;
+  t22 += v * b8;
+  t23 += v * b9;
+  t24 += v * b10;
+  t25 += v * b11;
+  t26 += v * b12;
+  t27 += v * b13;
+  t28 += v * b14;
+  t29 += v * b15;
+  v = a[15];
+  t15 += v * b0;
+  t16 += v * b1;
+  t17 += v * b2;
+  t18 += v * b3;
+  t19 += v * b4;
+  t20 += v * b5;
+  t21 += v * b6;
+  t22 += v * b7;
+  t23 += v * b8;
+  t24 += v * b9;
+  t25 += v * b10;
+  t26 += v * b11;
+  t27 += v * b12;
+  t28 += v * b13;
+  t29 += v * b14;
+  t30 += v * b15;
+
+  t0  += 38 * t16;
+  t1  += 38 * t17;
+  t2  += 38 * t18;
+  t3  += 38 * t19;
+  t4  += 38 * t20;
+  t5  += 38 * t21;
+  t6  += 38 * t22;
+  t7  += 38 * t23;
+  t8  += 38 * t24;
+  t9  += 38 * t25;
+  t10 += 38 * t26;
+  t11 += 38 * t27;
+  t12 += 38 * t28;
+  t13 += 38 * t29;
+  t14 += 38 * t30;
+  // t15 left as is
+
+  // first car
+  c = 1;
+  v =  t0 + c + 65535; c = Math.floor(v / 65536);  t0 = v - c * 65536;
+  v =  t1 + c + 65535; c = Math.floor(v / 65536);  t1 = v - c * 65536;
+  v =  t2 + c + 65535; c = Math.floor(v / 65536);  t2 = v - c * 65536;
+  v =  t3 + c + 65535; c = Math.floor(v / 65536);  t3 = v - c * 65536;
+  v =  t4 + c + 65535; c = Math.floor(v / 65536);  t4 = v - c * 65536;
+  v =  t5 + c + 65535; c = Math.floor(v / 65536);  t5 = v - c * 65536;
+  v =  t6 + c + 65535; c = Math.floor(v / 65536);  t6 = v - c * 65536;
+  v =  t7 + c + 65535; c = Math.floor(v / 65536);  t7 = v - c * 65536;
+  v =  t8 + c + 65535; c = Math.floor(v / 65536);  t8 = v - c * 65536;
+  v =  t9 + c + 65535; c = Math.floor(v / 65536);  t9 = v - c * 65536;
+  v = t10 + c + 65535; c = Math.floor(v / 65536); t10 = v - c * 65536;
+  v = t11 + c + 65535; c = Math.floor(v / 65536); t11 = v - c * 65536;
+  v = t12 + c + 65535; c = Math.floor(v / 65536); t12 = v - c * 65536;
+  v = t13 + c + 65535; c = Math.floor(v / 65536); t13 = v - c * 65536;
+  v = t14 + c + 65535; c = Math.floor(v / 65536); t14 = v - c * 65536;
+  v = t15 + c + 65535; c = Math.floor(v / 65536); t15 = v - c * 65536;
+  t0 += c-1 + 37 * (c-1);
+
+  // second car
+  c = 1;
+  v =  t0 + c + 65535; c = Math.floor(v / 65536);  t0 = v - c * 65536;
+  v =  t1 + c + 65535; c = Math.floor(v / 65536);  t1 = v - c * 65536;
+  v =  t2 + c + 65535; c = Math.floor(v / 65536);  t2 = v - c * 65536;
+  v =  t3 + c + 65535; c = Math.floor(v / 65536);  t3 = v - c * 65536;
+  v =  t4 + c + 65535; c = Math.floor(v / 65536);  t4 = v - c * 65536;
+  v =  t5 + c + 65535; c = Math.floor(v / 65536);  t5 = v - c * 65536;
+  v =  t6 + c + 65535; c = Math.floor(v / 65536);  t6 = v - c * 65536;
+  v =  t7 + c + 65535; c = Math.floor(v / 65536);  t7 = v - c * 65536;
+  v =  t8 + c + 65535; c = Math.floor(v / 65536);  t8 = v - c * 65536;
+  v =  t9 + c + 65535; c = Math.floor(v / 65536);  t9 = v - c * 65536;
+  v = t10 + c + 65535; c = Math.floor(v / 65536); t10 = v - c * 65536;
+  v = t11 + c + 65535; c = Math.floor(v / 65536); t11 = v - c * 65536;
+  v = t12 + c + 65535; c = Math.floor(v / 65536); t12 = v - c * 65536;
+  v = t13 + c + 65535; c = Math.floor(v / 65536); t13 = v - c * 65536;
+  v = t14 + c + 65535; c = Math.floor(v / 65536); t14 = v - c * 65536;
+  v = t15 + c + 65535; c = Math.floor(v / 65536); t15 = v - c * 65536;
+  t0 += c-1 + 37 * (c-1);
+
+  o[ 0] = t0;
+  o[ 1] = t1;
+  o[ 2] = t2;
+  o[ 3] = t3;
+  o[ 4] = t4;
+  o[ 5] = t5;
+  o[ 6] = t6;
+  o[ 7] = t7;
+  o[ 8] = t8;
+  o[ 9] = t9;
+  o[10] = t10;
+  o[11] = t11;
+  o[12] = t12;
+  o[13] = t13;
+  o[14] = t14;
+  o[15] = t15;
+}
+
+function S(o, a) {
+  M(o, a, a);
+}
+
+function inv25519(o, i) {
+  var c = gf();
+  var a;
+  for (a = 0; a < 16; a++) c[a] = i[a];
+  for (a = 253; a >= 0; a--) {
+    S(c, c);
+    if(a !== 2 && a !== 4) M(c, c, i);
+  }
+  for (a = 0; a < 16; a++) o[a] = c[a];
+}
+
+function pow2523(o, i) {
+  var c = gf();
+  var a;
+  for (a = 0; a < 16; a++) c[a] = i[a];
+  for (a = 250; a >= 0; a--) {
+      S(c, c);
+      if(a !== 1) M(c, c, i);
+  }
+  for (a = 0; a < 16; a++) o[a] = c[a];
+}
+
+function crypto_scalarmult(q, n, p) {
+  var z = new Uint8Array(32);
+  var x = new Float64Array(80), r, i;
+  var a = gf(), b = gf(), c = gf(),
+      d = gf(), e = gf(), f = gf();
+  for (i = 0; i < 31; i++) z[i] = n[i];
+  z[31]=(n[31]&127)|64;
+  z[0]&=248;
+  unpack25519(x,p);
+  for (i = 0; i < 16; i++) {
+    b[i]=x[i];
+    d[i]=a[i]=c[i]=0;
+  }
+  a[0]=d[0]=1;
+  for (i=254; i>=0; --i) {
+    r=(z[i>>>3]>>>(i&7))&1;
+    sel25519(a,b,r);
+    sel25519(c,d,r);
+    A(e,a,c);
+    Z(a,a,c);
+    A(c,b,d);
+    Z(b,b,d);
+    S(d,e);
+    S(f,a);
+    M(a,c,a);
+    M(c,b,e);
+    A(e,a,c);
+    Z(a,a,c);
+    S(b,a);
+    Z(c,d,f);
+    M(a,c,_121665);
+    A(a,a,d);
+    M(c,c,a);
+    M(a,d,f);
+    M(d,b,x);
+    S(b,e);
+    sel25519(a,b,r);
+    sel25519(c,d,r);
+  }
+  for (i = 0; i < 16; i++) {
+    x[i+16]=a[i];
+    x[i+32]=c[i];
+    x[i+48]=b[i];
+    x[i+64]=d[i];
+  }
+  var x32 = x.subarray(32);
+  var x16 = x.subarray(16);
+  inv25519(x32,x32);
+  M(x16,x16,x32);
+  pack25519(q,x16);
+  return 0;
+}
+
+function crypto_scalarmult_base(q, n) {
+  return crypto_scalarmult(q, n, _9);
+}
+
+function crypto_box_keypair(y, x) {
+  randombytes(x, 32);
+  return crypto_scalarmult_base(y, x);
+}
+
+function add(p, q) {
+  var a = gf(), b = gf(), c = gf(),
+      d = gf(), e = gf(), f = gf(),
+      g = gf(), h = gf(), t = gf();
+
+  Z(a, p[1], p[0]);
+  Z(t, q[1], q[0]);
+  M(a, a, t);
+  A(b, p[0], p[1]);
+  A(t, q[0], q[1]);
+  M(b, b, t);
+  M(c, p[3], q[3]);
+  M(c, c, D2);
+  M(d, p[2], q[2]);
+  A(d, d, d);
+  Z(e, b, a);
+  Z(f, d, c);
+  A(g, d, c);
+  A(h, b, a);
+
+  M(p[0], e, f);
+  M(p[1], h, g);
+  M(p[2], g, f);
+  M(p[3], e, h);
+}
+
+function cswap(p, q, b) {
+  var i;
+  for (i = 0; i < 4; i++) {
+    sel25519(p[i], q[i], b);
+  }
+}
+
+function pack(r, p) {
+  var tx = gf(), ty = gf(), zi = gf();
+  inv25519(zi, p[2]);
+  M(tx, p[0], zi);
+  M(ty, p[1], zi);
+  pack25519(r, ty);
+  r[31] ^= par25519(tx) << 7;
+}
+
+function scalarmult(p, q, s) {
+  var b, i;
+  set25519(p[0], gf0);
+  set25519(p[1], gf1);
+  set25519(p[2], gf1);
+  set25519(p[3], gf0);
+  for (i = 255; i >= 0; --i) {
+    b = (s[(i/8)|0] >> (i&7)) & 1;
+    cswap(p, q, b);
+    add(q, p);
+    add(p, p);
+    cswap(p, q, b);
+  }
+}
+
+function scalarbase(p, s) {
+  var q = [gf(), gf(), gf(), gf()];
+  set25519(q[0], X);
+  set25519(q[1], Y);
+  set25519(q[2], gf1);
+  M(q[3], X, Y);
+  scalarmult(p, q, s);
+}
+
+function crypto_sign_keypair(pk, sk, seeded) {
+  var d;
+  var p = [gf(), gf(), gf(), gf()];
+  var i;
+
+  if (!seeded) randombytes(sk, 32);
+  d = nacl.hash(sk.subarray(0, 32));
+  d[0] &= 248;
+  d[31] &= 127;
+  d[31] |= 64;
+
+  scalarbase(p, d);
+  pack(pk, p);
+
+  for (i = 0; i < 32; i++) sk[i+32] = pk[i];
+  return 0;
+}
+
+var L = new Float64Array([0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x10]);
+
+function modL(r, x) {
+  var carry, i, j, k;
+  for (i = 63; i >= 32; --i) {
+    carry = 0;
+    for (j = i - 32, k = i - 12; j < k; ++j) {
+      x[j] += carry - 16 * x[i] * L[j - (i - 32)];
+      carry = (x[j] + 128) >> 8;
+      x[j] -= carry * 256;
+    }
+    x[j] += carry;
+    x[i] = 0;
+  }
+  carry = 0;
+  for (j = 0; j < 32; j++) {
+    x[j] += carry - (x[31] >> 4) * L[j];
+    carry = x[j] >> 8;
+    x[j] &= 255;
+  }
+  for (j = 0; j < 32; j++) x[j] -= carry * L[j];
+  for (i = 0; i < 32; i++) {
+    x[i+1] += x[i] >> 8;
+    r[i] = x[i] & 255;
+  }
+}
+
+function reduce(r) {
+  var x = new Float64Array(64), i;
+  for (i = 0; i < 64; i++) x[i] = r[i];
+  for (i = 0; i < 64; i++) r[i] = 0;
+  modL(r, x);
+}
+
+// Note: difference from C - smlen returned, not passed as argument.
+function crypto_sign(sm, m, n, sk) {
+  var d, h, r;
+  var i, j, x = new Float64Array(64);
+  var p = [gf(), gf(), gf(), gf()];
+
+  d = nacl.hash(sk.subarray(0, 32));
+  d[0] &= 248;
+  d[31] &= 127;
+  d[31] |= 64;
+
+  var smlen = n + 64;
+  for (i = 0; i < n; i++) sm[64 + i] = m[i];
+  for (i = 0; i < 32; i++) sm[32 + i] = d[32 + i];
+
+  r = nacl.hash(sm.subarray(32, smlen));
+  reduce(r);
+  scalarbase(p, r);
+  pack(sm, p);
+
+  for (i = 32; i < 64; i++) sm[i] = sk[i];
+  h = nacl.hash(sm.subarray(0, smlen));
+  reduce(h);
+
+  for (i = 0; i < 64; i++) x[i] = 0;
+  for (i = 0; i < 32; i++) x[i] = r[i];
+  for (i = 0; i < 32; i++) {
+    for (j = 0; j < 32; j++) {
+      x[i+j] += h[i] * d[j];
+    }
+  }
+
+  modL(sm.subarray(32), x);
+  return smlen;
+}
+
+function unpackneg(r, p) {
+  var t = gf(), chk = gf(), num = gf(),
+      den = gf(), den2 = gf(), den4 = gf(),
+      den6 = gf();
+
+  set25519(r[2], gf1);
+  unpack25519(r[1], p);
+  S(num, r[1]);
+  M(den, num, D);
+  Z(num, num, r[2]);
+  A(den, r[2], den);
+
+  S(den2, den);
+  S(den4, den2);
+  M(den6, den4, den2);
+  M(t, den6, num);
+  M(t, t, den);
+
+  pow2523(t, t);
+  M(t, t, num);
+  M(t, t, den);
+  M(t, t, den);
+  M(r[0], t, den);
+
+  S(chk, r[0]);
+  M(chk, chk, den);
+  if (neq25519(chk, num)) M(r[0], r[0], I);
+
+  S(chk, r[0]);
+  M(chk, chk, den);
+  if (neq25519(chk, num)) return -1;
+
+  if (par25519(r[0]) === (p[31]>>7)) Z(r[0], gf0, r[0]);
+
+  M(r[3], r[0], r[1]);
+  return 0;
+}
+
+function crypto_sign_open(m, sm, n, pk) {
+  var i, mlen;
+  var t = new Uint8Array(32), h;
+  var p = [gf(), gf(), gf(), gf()],
+      q = [gf(), gf(), gf(), gf()];
+
+  mlen = -1;
+  if (n < 64) return -1;
+
+  if (unpackneg(q, pk)) return -1;
+
+  for (i = 0; i < n; i++) m[i] = sm[i];
+  for (i = 0; i < 32; i++) m[i+32] = pk[i];
+  h = nacl.hash(m.subarray(0, n));
+  reduce(h);
+  scalarmult(p, q, h);
+
+  scalarbase(q, sm.subarray(32));
+  add(p, q);
+  pack(t, p);
+
+  n -= 64;
+  if (crypto_verify_32(sm, 0, t, 0)) {
+    for (i = 0; i < n; i++) m[i] = 0;
+    return -1;
+  }
+
+  for (i = 0; i < n; i++) m[i] = sm[i + 64];
+  mlen = n;
+  return mlen;
+}
+
+var crypto_scalarmult_BYTES = 32,
+    crypto_scalarmult_SCALARBYTES = 32,
+    crypto_box_PUBLICKEYBYTES = 32,
+    crypto_box_SECRETKEYBYTES = 32,
+    crypto_sign_BYTES = 64,
+    crypto_sign_PUBLICKEYBYTES = 32,
+    crypto_sign_SECRETKEYBYTES = 64,
+    crypto_sign_SEEDBYTES = 32;
+
+function checkArrayTypes() {
+  for (var i = 0; i < arguments.length; i++) {
+    if (!(arguments[i] instanceof Uint8Array))
+      throw new TypeError('unexpected type, use Uint8Array');
+  }
+}
+
+function cleanup(arr) {
+  for (var i = 0; i < arr.length; i++) arr[i] = 0;
+}
+
+nacl.scalarMult = function(n, p) {
+  checkArrayTypes(n, p);
+  if (n.length !== crypto_scalarmult_SCALARBYTES) throw new Error('bad n size');
+  if (p.length !== crypto_scalarmult_BYTES) throw new Error('bad p size');
+  var q = new Uint8Array(crypto_scalarmult_BYTES);
+  crypto_scalarmult(q, n, p);
+  return q;
+};
+
+nacl.box = {};
+
+nacl.box.keyPair = function() {
+  var pk = new Uint8Array(crypto_box_PUBLICKEYBYTES);
+  var sk = new Uint8Array(crypto_box_SECRETKEYBYTES);
+  crypto_box_keypair(pk, sk);
+  return {publicKey: pk, secretKey: sk};
+};
+
+nacl.box.keyPair.fromSecretKey = function(secretKey) {
+  checkArrayTypes(secretKey);
+  if (secretKey.length !== crypto_box_SECRETKEYBYTES)
+    throw new Error('bad secret key size');
+  var pk = new Uint8Array(crypto_box_PUBLICKEYBYTES);
+  crypto_scalarmult_base(pk, secretKey);
+  return {publicKey: pk, secretKey: new Uint8Array(secretKey)};
+};
+
+nacl.sign = function(msg, secretKey) {
+  checkArrayTypes(msg, secretKey);
+  if (secretKey.length !== crypto_sign_SECRETKEYBYTES)
+    throw new Error('bad secret key size');
+  var signedMsg = new Uint8Array(crypto_sign_BYTES+msg.length);
+  crypto_sign(signedMsg, msg, msg.length, secretKey);
+  return signedMsg;
+};
+
+nacl.sign.detached = function(msg, secretKey) {
+  var signedMsg = nacl.sign(msg, secretKey);
+  var sig = new Uint8Array(crypto_sign_BYTES);
+  for (var i = 0; i < sig.length; i++) sig[i] = signedMsg[i];
+  return sig;
+};
+
+nacl.sign.detached.verify = function(msg, sig, publicKey) {
+  checkArrayTypes(msg, sig, publicKey);
+  if (sig.length !== crypto_sign_BYTES)
+    throw new Error('bad signature size');
+  if (publicKey.length !== crypto_sign_PUBLICKEYBYTES)
+    throw new Error('bad public key size');
+  var sm = new Uint8Array(crypto_sign_BYTES + msg.length);
+  var m = new Uint8Array(crypto_sign_BYTES + msg.length);
+  var i;
+  for (i = 0; i < crypto_sign_BYTES; i++) sm[i] = sig[i];
+  for (i = 0; i < msg.length; i++) sm[i+crypto_sign_BYTES] = msg[i];
+  return (crypto_sign_open(m, sm, sm.length, publicKey) >= 0);
+};
+
+nacl.sign.keyPair = function() {
+  var pk = new Uint8Array(crypto_sign_PUBLICKEYBYTES);
+  var sk = new Uint8Array(crypto_sign_SECRETKEYBYTES);
+  crypto_sign_keypair(pk, sk);
+  return {publicKey: pk, secretKey: sk};
+};
+
+nacl.sign.keyPair.fromSecretKey = function(secretKey) {
+  checkArrayTypes(secretKey);
+  if (secretKey.length !== crypto_sign_SECRETKEYBYTES)
+    throw new Error('bad secret key size');
+  var pk = new Uint8Array(crypto_sign_PUBLICKEYBYTES);
+  for (var i = 0; i < pk.length; i++) pk[i] = secretKey[32+i];
+  return {publicKey: pk, secretKey: new Uint8Array(secretKey)};
+};
+
+nacl.sign.keyPair.fromSeed = function(seed) {
+  checkArrayTypes(seed);
+  if (seed.length !== crypto_sign_SEEDBYTES)
+    throw new Error('bad seed size');
+  var pk = new Uint8Array(crypto_sign_PUBLICKEYBYTES);
+  var sk = new Uint8Array(crypto_sign_SECRETKEYBYTES);
+  for (var i = 0; i < 32; i++) sk[i] = seed[i];
+  crypto_sign_keypair(pk, sk, true);
+  return {publicKey: pk, secretKey: sk};
+};
+
+nacl.setPRNG = function(fn) {
+  randombytes = fn;
+};
+
+(function() {
+  // Initialize PRNG if environment provides CSPRNG.
+  // If not, methods calling randombytes will throw.
+  var crypto = typeof self !== 'undefined' ? (self.crypto || self.msCrypto) : null;
+  if (crypto && crypto.getRandomValues) {
+    // Browsers.
+    var QUOTA = 65536;
+    nacl.setPRNG(function(x, n) {
+      var i, v = new Uint8Array(n);
+      for (i = 0; i < n; i += QUOTA) {
+        crypto.getRandomValues(v.subarray(i, i + Math.min(n - i, QUOTA)));
+      }
+      for (i = 0; i < n; i++) x[i] = v[i];
+      cleanup(v);
+    });
+  } else if (typeof _dereq_ !== 'undefined') {
+    // Node.js.
+    crypto = _dereq_('crypto');
+    if (crypto && crypto.randomBytes) {
+      nacl.setPRNG(function(x, n) {
+        var i, v = crypto.randomBytes(n);
+        for (i = 0; i < n; i++) x[i] = v[i];
+        cleanup(v);
+      });
+    }
+  }
+})();
+
+})(typeof module !== 'undefined' && module.exports ? module.exports : (self.nacl = self.nacl || {}));
+
+},{"crypto":"crypto"}],344:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28761,7 +29527,7 @@ if (NodeReadableStream) {
 exports.nodeToWeb = nodeToWeb;
 exports.webToNode = webToNode;
 
-},{"./streams":347,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/classCallCheck":37,"babel-runtime/helpers/createClass":38,"babel-runtime/helpers/inherits":39,"babel-runtime/helpers/possibleConstructorReturn":40,"babel-runtime/regenerator":44,"stream":"stream"}],346:[function(_dereq_,module,exports){
+},{"./streams":346,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/classCallCheck":37,"babel-runtime/helpers/createClass":38,"babel-runtime/helpers/inherits":39,"babel-runtime/helpers/possibleConstructorReturn":40,"babel-runtime/regenerator":44,"stream":"stream"}],345:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29203,7 +29969,7 @@ Reader.prototype.readToEnd = function () {
 exports.Reader = Reader;
 exports.externalBuffer = externalBuffer;
 
-},{"./streams":347,"babel-runtime/core-js/symbol":33,"babel-runtime/core-js/weak-set":35,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/toConsumableArray":42,"babel-runtime/regenerator":44}],347:[function(_dereq_,module,exports){
+},{"./streams":346,"babel-runtime/core-js/symbol":33,"babel-runtime/core-js/weak-set":35,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/toConsumableArray":42,"babel-runtime/regenerator":44}],346:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30029,7 +30795,7 @@ function slice(input) {
 
 exports.default = { isStream: _util.isStream, isUint8Array: _util.isUint8Array, toStream: toStream, concatUint8Array: _util.concatUint8Array, concatStream: concatStream, concat: concat, getReader: getReader, getWriter: getWriter, pipe: pipe, transformRaw: transformRaw, transform: transform, transformPair: transformPair, parse: parse, clone: clone, passiveClone: passiveClone, slice: slice, readToEnd: readToEnd, cancel: cancel, fromAsync: fromAsync, nodeToWeb: _nodeConversions.nodeToWeb, webToNode: _nodeConversions.webToNode };
 
-},{"./node-conversions":345,"./reader":346,"./util":348,"babel-runtime/core-js/object/define-property":25,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/object/get-own-property-descriptors":28,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"buffer":"buffer"}],348:[function(_dereq_,module,exports){
+},{"./node-conversions":344,"./reader":345,"./util":347,"babel-runtime/core-js/object/define-property":25,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/object/get-own-property-descriptors":28,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"buffer":"buffer"}],347:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30092,7 +30858,7 @@ exports.isStream = isStream;
 exports.isUint8Array = isUint8Array;
 exports.concatUint8Array = concatUint8Array;
 
-},{"stream":"stream"}],349:[function(_dereq_,module,exports){
+},{"stream":"stream"}],348:[function(_dereq_,module,exports){
 (function(self) {
   'use strict';
 
@@ -30555,7 +31321,7 @@ exports.concatUint8Array = concatUint8Array;
   self.fetch.polyfill = true
 })(typeof self !== 'undefined' ? self : this);
 
-},{}],350:[function(_dereq_,module,exports){
+},{}],349:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30905,7 +31671,7 @@ function fromText(text) {
   return new CleartextMessage(text);
 }
 
-},{"./encoding/armor":384,"./enums":386,"./message":393,"./packet":398,"./signature":418,"./util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],351:[function(_dereq_,module,exports){
+},{"./encoding/armor":383,"./enums":385,"./message":392,"./packet":397,"./signature":417,"./util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],350:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -31057,7 +31823,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.4.10",
+  versionstring: "OpenPGP.js v4.5.0",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -31102,7 +31868,7 @@ exports.default = {
  * @requires enums
  */
 
-},{"../enums":386}],352:[function(_dereq_,module,exports){
+},{"../enums":385}],351:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31120,7 +31886,7 @@ Object.defineProperty(exports, 'default', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./config.js":351}],353:[function(_dereq_,module,exports){
+},{"./config.js":350}],352:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31290,7 +32056,7 @@ exports.default = {
   unwrap: unwrap
 };
 
-},{"../util":425,"./cipher":359}],354:[function(_dereq_,module,exports){
+},{"../util":424,"./cipher":358}],353:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31541,7 +32307,7 @@ function nodeDecrypt(algo, key, ct, iv) {
   });
 }
 
-},{"../config":352,"../util":425,"./cipher":359,"asmcrypto.js/dist_es5/aes/cfb":6,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":347}],355:[function(_dereq_,module,exports){
+},{"../config":351,"../util":424,"./cipher":358,"asmcrypto.js/dist_es5/aes/cfb":6,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":346}],354:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31574,7 +32340,7 @@ function aes(length) {
 
 exports.default = aes;
 
-},{"asmcrypto.js/dist_es5/aes/ecb":8}],356:[function(_dereq_,module,exports){
+},{"asmcrypto.js/dist_es5/aes/ecb":8}],355:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -31794,7 +32560,7 @@ BF.blockSize = BF.prototype.blockSize = 16;
 
 exports.default = BF;
 
-},{}],357:[function(_dereq_,module,exports){
+},{}],356:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32144,7 +32910,7 @@ Cast5.keySize = Cast5.prototype.keySize = 16;
 
 exports.default = Cast5;
 
-},{}],358:[function(_dereq_,module,exports){
+},{}],357:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -32524,7 +33290,7 @@ function DES(key) {
 
 exports.default = { DES: DES, TripleDES: TripleDES };
 
-},{}],359:[function(_dereq_,module,exports){
+},{}],358:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32637,7 +33403,7 @@ exports.default = {
     * @module crypto/cipher
     */
 
-},{"./aes":355,"./blowfish":356,"./cast5":357,"./des.js":358,"./twofish":360}],360:[function(_dereq_,module,exports){
+},{"./aes":354,"./blowfish":355,"./cast5":356,"./des.js":357,"./twofish":359}],359:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -32960,7 +33726,7 @@ TF.blockSize = TF.prototype.blockSize = 16;
 
 exports.default = TF;
 
-},{"babel-runtime/core-js/array/from":17}],361:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/array/from":17}],360:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33213,7 +33979,7 @@ exports.default = function () {
   return CMAC;
 }();
 
-},{"../util":425,"asmcrypto.js/dist_es5/aes/cbc":5,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],362:[function(_dereq_,module,exports){
+},{"../util":424,"asmcrypto.js/dist_es5/aes/cbc":5,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],361:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33329,77 +34095,63 @@ exports.default = {
    * @async
    */
   publicKeyEncrypt: function () {
-    var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(algo, pub_params, data, fingerprint) {
-      var types;
-      return _regenerator2.default.wrap(function _callee2$(_context2) {
+    var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(algo, pub_params, data, fingerprint) {
+      var types, m, n, e, res, _m, p, g, y, _res, oid, Q, kdf_params, _ref2, V, C;
+
+      return _regenerator2.default.wrap(function _callee$(_context) {
         while (1) {
-          switch (_context2.prev = _context2.next) {
+          switch (_context.prev = _context.next) {
             case 0:
               types = this.getEncSessionKeyParamTypes(algo);
-              return _context2.abrupt('return', (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
-                var m, n, e, res, _m, p, g, y, _res, oid, Q, kdf_params, _ref3, V, C;
+              _context.t0 = algo;
+              _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 4 : _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 4 : _context.t0 === _enums2.default.publicKey.elgamal ? 11 : _context.t0 === _enums2.default.publicKey.ecdh ? 19 : 28;
+              break;
 
-                return _regenerator2.default.wrap(function _callee$(_context) {
-                  while (1) {
-                    switch (_context.prev = _context.next) {
-                      case 0:
-                        _context.t0 = algo;
-                        _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context.t0 === _enums2.default.publicKey.elgamal ? 10 : _context.t0 === _enums2.default.publicKey.ecdh ? 18 : 27;
-                        break;
+            case 4:
+              m = data.toBN();
+              n = pub_params[0].toBN();
+              e = pub_params[1].toBN();
+              _context.next = 9;
+              return _public_key2.default.rsa.encrypt(m, n, e);
 
-                      case 3:
-                        m = data.toBN();
-                        n = pub_params[0].toBN();
-                        e = pub_params[1].toBN();
-                        _context.next = 8;
-                        return _public_key2.default.rsa.encrypt(m, n, e);
+            case 9:
+              res = _context.sent;
+              return _context.abrupt('return', constructParams(types, [res]));
 
-                      case 8:
-                        res = _context.sent;
-                        return _context.abrupt('return', constructParams(types, [res]));
+            case 11:
+              _m = data.toBN();
+              p = pub_params[0].toBN();
+              g = pub_params[1].toBN();
+              y = pub_params[2].toBN();
+              _context.next = 17;
+              return _public_key2.default.elgamal.encrypt(_m, p, g, y);
 
-                      case 10:
-                        _m = data.toBN();
-                        p = pub_params[0].toBN();
-                        g = pub_params[1].toBN();
-                        y = pub_params[2].toBN();
-                        _context.next = 16;
-                        return _public_key2.default.elgamal.encrypt(_m, p, g, y);
+            case 17:
+              _res = _context.sent;
+              return _context.abrupt('return', constructParams(types, [_res.c1, _res.c2]));
 
-                      case 16:
-                        _res = _context.sent;
-                        return _context.abrupt('return', constructParams(types, [_res.c1, _res.c2]));
+            case 19:
+              oid = pub_params[0];
+              Q = pub_params[1].toUint8Array();
+              kdf_params = pub_params[2];
+              _context.next = 24;
+              return _public_key2.default.elliptic.ecdh.encrypt(oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
 
-                      case 18:
-                        oid = pub_params[0];
-                        Q = pub_params[1].toUint8Array();
-                        kdf_params = pub_params[2];
-                        _context.next = 23;
-                        return _public_key2.default.elliptic.ecdh.encrypt(oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
+            case 24:
+              _ref2 = _context.sent;
+              V = _ref2.publicKey;
+              C = _ref2.wrappedKey;
+              return _context.abrupt('return', constructParams(types, [new _bn2.default(V), C]));
 
-                      case 23:
-                        _ref3 = _context.sent;
-                        V = _ref3.V;
-                        C = _ref3.C;
-                        return _context.abrupt('return', constructParams(types, [new _bn2.default(V), C]));
+            case 28:
+              return _context.abrupt('return', []);
 
-                      case 27:
-                        return _context.abrupt('return', []);
-
-                      case 28:
-                      case 'end':
-                        return _context.stop();
-                    }
-                  }
-                }, _callee, this);
-              }))());
-
-            case 2:
+            case 29:
             case 'end':
-              return _context2.stop();
+              return _context.stop();
           }
         }
-      }, _callee2, this);
+      }, _callee, this);
     }));
 
     function publicKeyEncrypt(_x, _x2, _x3, _x4) {
@@ -33420,81 +34172,62 @@ exports.default = {
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
    * @param {String}                        fingerprint Recipient fingerprint
-   * @returns {module:type/mpi}                         An MPI containing the decrypted data
+   * @returns {BN}                          A BN containing the decrypted data
    * @async
    */
   publicKeyDecrypt: function () {
-    var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(algo, key_params, data_params, fingerprint) {
-      return _regenerator2.default.wrap(function _callee4$(_context4) {
+    var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(algo, key_params, data_params, fingerprint) {
+      var c, n, e, d, p, q, u, c1, c2, _p, x, oid, kdf_params, V, C, _d;
+
+      return _regenerator2.default.wrap(function _callee2$(_context2) {
         while (1) {
-          switch (_context4.prev = _context4.next) {
+          switch (_context2.prev = _context2.next) {
             case 0:
-              _context4.t0 = _mpi2.default;
-              _context4.next = 3;
-              return (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3() {
-                var c, n, e, d, p, q, u, c1, c2, _p, x, oid, kdf_params, V, C, _d;
-
-                return _regenerator2.default.wrap(function _callee3$(_context3) {
-                  while (1) {
-                    switch (_context3.prev = _context3.next) {
-                      case 0:
-                        _context3.t0 = algo;
-                        _context3.next = _context3.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context3.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context3.t0 === _enums2.default.publicKey.elgamal ? 11 : _context3.t0 === _enums2.default.publicKey.ecdh ? 16 : 22;
-                        break;
-
-                      case 3:
-                        c = data_params[0].toBN();
-                        n = key_params[0].toBN(); // n = pq
-
-                        e = key_params[1].toBN();
-                        d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
-
-                        p = key_params[3].toBN();
-                        q = key_params[4].toBN();
-                        u = key_params[5].toBN(); // q^-1 mod p
-
-                        return _context3.abrupt('return', _public_key2.default.rsa.decrypt(c, n, e, d, p, q, u));
-
-                      case 11:
-                        c1 = data_params[0].toBN();
-                        c2 = data_params[1].toBN();
-                        _p = key_params[0].toBN();
-                        x = key_params[3].toBN();
-                        return _context3.abrupt('return', _public_key2.default.elgamal.decrypt(c1, c2, _p, x));
-
-                      case 16:
-                        oid = key_params[0];
-                        kdf_params = key_params[2];
-                        V = data_params[0].toUint8Array();
-                        C = data_params[1].data;
-                        _d = key_params[3].toUint8Array();
-                        return _context3.abrupt('return', _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, _d, fingerprint));
-
-                      case 22:
-                        throw new Error('Invalid public key encryption algorithm.');
-
-                      case 23:
-                      case 'end':
-                        return _context3.stop();
-                    }
-                  }
-                }, _callee3, this);
-              }))();
+              _context2.t0 = algo;
+              _context2.next = _context2.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context2.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context2.t0 === _enums2.default.publicKey.elgamal ? 11 : _context2.t0 === _enums2.default.publicKey.ecdh ? 16 : 22;
+              break;
 
             case 3:
-              _context4.t1 = _context4.sent;
-              return _context4.abrupt('return', new _context4.t0(_context4.t1));
+              c = data_params[0].toBN();
+              n = key_params[0].toBN(); // n = pq
 
-            case 5:
+              e = key_params[1].toBN();
+              d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
+
+              p = key_params[3].toBN();
+              q = key_params[4].toBN();
+              u = key_params[5].toBN(); // q^-1 mod p
+
+              return _context2.abrupt('return', _public_key2.default.rsa.decrypt(c, n, e, d, p, q, u));
+
+            case 11:
+              c1 = data_params[0].toBN();
+              c2 = data_params[1].toBN();
+              _p = key_params[0].toBN();
+              x = key_params[3].toBN();
+              return _context2.abrupt('return', _public_key2.default.elgamal.decrypt(c1, c2, _p, x));
+
+            case 16:
+              oid = key_params[0];
+              kdf_params = key_params[2];
+              V = data_params[0].toUint8Array();
+              C = data_params[1].data;
+              _d = key_params[3].toUint8Array();
+              return _context2.abrupt('return', _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, _d, fingerprint));
+
+            case 22:
+              throw new Error('Invalid public key encryption algorithm.');
+
+            case 23:
             case 'end':
-              return _context4.stop();
+              return _context2.stop();
           }
         }
-      }, _callee4, this);
+      }, _callee2, this);
     }));
 
     function publicKeyDecrypt(_x5, _x6, _x7, _x8) {
-      return _ref4.apply(this, arguments);
+      return _ref3.apply(this, arguments);
     }
 
     return publicKeyDecrypt;
@@ -33647,30 +34380,30 @@ exports.default = {
    * @async
    */
   getPrefixRandom: function () {
-    var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(algo) {
+    var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(algo) {
       var prefixrandom, repeat;
-      return _regenerator2.default.wrap(function _callee5$(_context5) {
+      return _regenerator2.default.wrap(function _callee3$(_context3) {
         while (1) {
-          switch (_context5.prev = _context5.next) {
+          switch (_context3.prev = _context3.next) {
             case 0:
-              _context5.next = 2;
+              _context3.next = 2;
               return _random2.default.getRandomBytes(_cipher2.default[algo].blockSize);
 
             case 2:
-              prefixrandom = _context5.sent;
+              prefixrandom = _context3.sent;
               repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-              return _context5.abrupt('return', _util2.default.concat([prefixrandom, repeat]));
+              return _context3.abrupt('return', _util2.default.concat([prefixrandom, repeat]));
 
             case 5:
             case 'end':
-              return _context5.stop();
+              return _context3.stop();
           }
         }
-      }, _callee5, this);
+      }, _callee3, this);
     }));
 
     function getPrefixRandom(_x9) {
-      return _ref6.apply(this, arguments);
+      return _ref4.apply(this, arguments);
     }
 
     return getPrefixRandom;
@@ -33690,7 +34423,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":386,"../type/ecdh_symkey":419,"../type/kdf_params":420,"../type/mpi":422,"../type/oid":423,"../util":425,"./cipher":359,"./public_key":379,"./random":382,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],363:[function(_dereq_,module,exports){
+},{"../enums":385,"../type/ecdh_symkey":418,"../type/kdf_params":419,"../type/mpi":421,"../type/oid":422,"../util":424,"./cipher":358,"./public_key":378,"./random":381,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],362:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34096,7 +34829,7 @@ EAX.tagLength = tagLength;
 
 exports.default = EAX;
 
-},{"../util":425,"./cmac":361,"asmcrypto.js/dist_es5/aes/ctr":7,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],364:[function(_dereq_,module,exports){
+},{"../util":424,"./cmac":360,"asmcrypto.js/dist_es5/aes/ctr":7,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],363:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34433,7 +35166,7 @@ GCM.tagLength = tagLength;
 
 exports.default = GCM;
 
-},{"../util":425,"asmcrypto.js/dist_es5/aes/gcm":9,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],365:[function(_dereq_,module,exports){
+},{"../util":424,"asmcrypto.js/dist_es5/aes/gcm":9,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],364:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34732,7 +35465,7 @@ exports.default = {
   }
 };
 
-},{"../../config":352,"../../util":425,"./md5":366,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"hash.js/lib/hash/ripemd":308,"hash.js/lib/hash/sha/224":311,"hash.js/lib/hash/sha/384":313,"hash.js/lib/hash/sha/512":314,"web-stream-tools":347}],366:[function(_dereq_,module,exports){
+},{"../../config":351,"../../util":424,"./md5":365,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"hash.js/lib/hash/ripemd":307,"hash.js/lib/hash/sha/224":310,"hash.js/lib/hash/sha/384":312,"hash.js/lib/hash/sha/512":313,"web-stream-tools":346}],365:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34973,7 +35706,7 @@ function add32(a, b) {
 
 exports.default = md5;
 
-},{"../../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],367:[function(_dereq_,module,exports){
+},{"../../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],366:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35080,7 +35813,7 @@ var mod = {
 
 exports.default = mod;
 
-},{"./aes_kw":353,"./cfb":354,"./cipher":359,"./crypto":362,"./eax":363,"./gcm":364,"./hash":365,"./ocb":368,"./pkcs1":369,"./pkcs5":370,"./public_key":379,"./random":382,"./signature":383,"babel-runtime/core-js/object/assign":23}],368:[function(_dereq_,module,exports){
+},{"./aes_kw":352,"./cfb":353,"./cipher":358,"./crypto":361,"./eax":362,"./gcm":363,"./hash":364,"./ocb":367,"./pkcs1":368,"./pkcs5":369,"./public_key":378,"./random":381,"./signature":382,"babel-runtime/core-js/object/assign":23}],367:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35442,7 +36175,7 @@ OCB.tagLength = tagLength;
 
 exports.default = OCB;
 
-},{"../util":425,"./cipher":359,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],369:[function(_dereq_,module,exports){
+},{"../util":424,"./cipher":358,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],368:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35713,7 +36446,7 @@ emsa.encode = function () {
 
 exports.default = { eme: eme, emsa: emsa };
 
-},{"../util":425,"./hash":365,"./random":382,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],370:[function(_dereq_,module,exports){
+},{"../util":424,"./hash":364,"./random":381,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],369:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35775,7 +36508,7 @@ function decode(msg) {
 
 exports.default = { encode: encode, decode: decode };
 
-},{}],371:[function(_dereq_,module,exports){
+},{}],370:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36002,7 +36735,7 @@ exports.default = {
   }()
 };
 
-},{"../../util":425,"../random":382,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],372:[function(_dereq_,module,exports){
+},{"../../util":424,"../random":381,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],371:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36138,7 +36871,7 @@ exports.default = {
   }()
 };
 
-},{"../random":382,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],373:[function(_dereq_,module,exports){
+},{"../random":381,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],372:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36462,11 +37195,6 @@ Curve.prototype.keyFromPrivate = function (priv) {
   return new _key2.default(this, { priv: priv });
 };
 
-Curve.prototype.keyFromSecret = function (secret) {
-  // Only for ed25519
-  return new _key2.default(this, { secret: secret });
-};
-
 Curve.prototype.keyFromPublic = function (pub) {
   var keyPair = new _key2.default(this, { pub: pub });
   if (this.keyType === _enums2.default.publicKey.ecdsa && keyPair.keyPair.validate().result !== true) {
@@ -36571,7 +37299,7 @@ exports.nodeCurves = nodeCurves;
 exports.generate = generate;
 exports.getPreferredHashAlgo = getPreferredHashAlgo;
 
-},{"../../../enums":386,"../../../type/oid":423,"../../../util":425,"../../random":382,"./key":378,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45,"elliptic":288}],374:[function(_dereq_,module,exports){
+},{"../../../enums":385,"../../../type/oid":422,"../../../util":424,"../../random":381,"./key":377,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45,"elliptic":288}],373:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36588,19 +37316,17 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 // Key Derivation Function (RFC 6637)
 var kdf = function () {
-  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(hash_algo, S, length, param, curve) {
-    var stripLeading = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
-    var stripTrailing = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : false;
-    var len, X, i, digest;
+  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(hash_algo, X, length, param) {
+    var stripLeading = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+    var stripTrailing = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : false;
+    var i, digest;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            len = curve.curve.curve.p.byteLength();
-            // Note: this is not ideal, but the RFC's are unclear
+            // Note: X is little endian for Curve25519, big-endian for all others.
+            // This is not ideal, but the RFC's are unclear
             // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
-
-            X = curve.curve.curve.type === 'mont' ? S.toArrayLike(Uint8Array, 'le', len) : S.toArrayLike(Uint8Array, 'be', len);
             i = void 0;
 
             if (stripLeading) {
@@ -36613,14 +37339,14 @@ var kdf = function () {
               for (i = X.length - 1; i >= 0 && X[i] === 0; i--) {}
               X = X.subarray(0, i + 1);
             }
-            _context.next = 7;
+            _context.next = 5;
             return _hash2.default.digest(hash_algo, _util2.default.concatUint8Array([new Uint8Array([0, 0, 0, 1]), X, param]));
 
-          case 7:
+          case 5:
             digest = _context.sent;
             return _context.abrupt('return', digest.subarray(0, length));
 
-          case 9:
+          case 7:
           case 'end':
             return _context.stop();
         }
@@ -36628,7 +37354,7 @@ var kdf = function () {
     }, _callee, this);
   }));
 
-  return function kdf(_x, _x2, _x3, _x4, _x5) {
+  return function kdf(_x, _x2, _x3, _x4) {
     return _ref.apply(this, arguments);
   };
 }();
@@ -36645,23 +37371,45 @@ var kdf = function () {
 
 var genPublicEphemeralKey = function () {
   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(curve, Q) {
-    var v, V, S;
+    var _nacl$box$keyPair, d, _ref3, secretKey, _sharedKey, _nacl$box$keyPair$fro, _publicKey, v, publicKey, S, len, sharedKey;
+
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
-            _context2.next = 2;
+            if (!(curve.name === 'curve25519')) {
+              _context2.next = 10;
+              break;
+            }
+
+            _nacl$box$keyPair = _naclFastLight2.default.box.keyPair(), d = _nacl$box$keyPair.secretKey;
+            _context2.next = 4;
+            return genPrivateEphemeralKey(curve, Q, d);
+
+          case 4:
+            _ref3 = _context2.sent;
+            secretKey = _ref3.secretKey;
+            _sharedKey = _ref3.sharedKey;
+            _nacl$box$keyPair$fro = _naclFastLight2.default.box.keyPair.fromSecretKey(secretKey), _publicKey = _nacl$box$keyPair$fro.publicKey;
+
+            _publicKey = _util2.default.concatUint8Array([new Uint8Array([0x40]), _publicKey]);
+            return _context2.abrupt('return', { publicKey: _publicKey, sharedKey: _sharedKey });
+
+          case 10:
+            _context2.next = 12;
             return curve.genKeyPair();
 
-          case 2:
+          case 12:
             v = _context2.sent;
 
             Q = curve.keyFromPublic(Q);
-            V = new Uint8Array(v.getPublic());
+            publicKey = new Uint8Array(v.getPublic());
             S = v.derive(Q);
-            return _context2.abrupt('return', { V: V, S: S });
+            len = curve.curve.curve.p.byteLength();
+            sharedKey = S.toArrayLike(Uint8Array, 'be', len);
+            return _context2.abrupt('return', { publicKey: publicKey, sharedKey: sharedKey });
 
-          case 7:
+          case 19:
           case 'end':
             return _context2.stop();
         }
@@ -36669,7 +37417,7 @@ var genPublicEphemeralKey = function () {
     }, _callee2, this);
   }));
 
-  return function genPublicEphemeralKey(_x8, _x9) {
+  return function genPublicEphemeralKey(_x7, _x8) {
     return _ref2.apply(this, arguments);
   };
 }();
@@ -36689,8 +37437,8 @@ var genPublicEphemeralKey = function () {
 
 
 var encrypt = function () {
-  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
-    var curve, _ref4, V, S, param, Z, C;
+  var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
+    var curve, _ref5, publicKey, sharedKey, param, Z, wrappedKey;
 
     return _regenerator2.default.wrap(function _callee3$(_context3) {
       while (1) {
@@ -36701,19 +37449,19 @@ var encrypt = function () {
             return genPublicEphemeralKey(curve, Q);
 
           case 3:
-            _ref4 = _context3.sent;
-            V = _ref4.V;
-            S = _ref4.S;
+            _ref5 = _context3.sent;
+            publicKey = _ref5.publicKey;
+            sharedKey = _ref5.sharedKey;
             param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
 
             cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
             _context3.next = 10;
-            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve);
+            return kdf(hash_algo, sharedKey, _cipher2.default[cipher_algo].keySize, param);
 
           case 10:
             Z = _context3.sent;
-            C = _aes_kw2.default.wrap(Z, m.toString());
-            return _context3.abrupt('return', { V: V, C: C });
+            wrappedKey = _aes_kw2.default.wrap(Z, m.toString());
+            return _context3.abrupt('return', { publicKey: publicKey, wrappedKey: wrappedKey });
 
           case 13:
           case 'end':
@@ -36723,8 +37471,8 @@ var encrypt = function () {
     }, _callee3, this);
   }));
 
-  return function encrypt(_x10, _x11, _x12, _x13, _x14, _x15) {
-    return _ref3.apply(this, arguments);
+  return function encrypt(_x9, _x10, _x11, _x12, _x13, _x14) {
+    return _ref4.apply(this, arguments);
   };
 }();
 
@@ -36740,16 +37488,38 @@ var encrypt = function () {
 
 
 var genPrivateEphemeralKey = function () {
-  var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(curve, V, d) {
+  var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(curve, V, d) {
+    var one, mask, _secretKey, _sharedKey2, secretKey, S, len, sharedKey;
+
     return _regenerator2.default.wrap(function _callee4$(_context4) {
       while (1) {
         switch (_context4.prev = _context4.next) {
           case 0:
+            if (!(curve.name === 'curve25519')) {
+              _context4.next = 9;
+              break;
+            }
+
+            one = new _bn2.default(1);
+            mask = one.ushln(255 - 3).sub(one).ushln(3);
+            _secretKey = new _bn2.default(d);
+
+            _secretKey = _secretKey.or(one.ushln(255 - 1));
+            _secretKey = _secretKey.and(mask);
+            _secretKey = _secretKey.toArrayLike(Uint8Array, 'le', 32);
+            _sharedKey2 = _naclFastLight2.default.scalarMult(_secretKey, V.subarray(1));
+            return _context4.abrupt('return', { secretKey: _secretKey, sharedKey: _sharedKey2 });
+
+          case 9:
             V = curve.keyFromPublic(V);
             d = curve.keyFromPrivate(d);
-            return _context4.abrupt('return', d.derive(V));
+            secretKey = new Uint8Array(d.getPrivate());
+            S = d.derive(V);
+            len = curve.curve.curve.p.byteLength();
+            sharedKey = S.toArrayLike(Uint8Array, 'be', len);
+            return _context4.abrupt('return', { secretKey: secretKey, sharedKey: sharedKey });
 
-          case 3:
+          case 16:
           case 'end':
             return _context4.stop();
         }
@@ -36757,8 +37527,8 @@ var genPrivateEphemeralKey = function () {
     }, _callee4, this);
   }));
 
-  return function genPrivateEphemeralKey(_x16, _x17, _x18) {
-    return _ref5.apply(this, arguments);
+  return function genPrivateEphemeralKey(_x15, _x16, _x17) {
+    return _ref6.apply(this, arguments);
   };
 }();
 
@@ -36778,8 +37548,9 @@ var genPrivateEphemeralKey = function () {
 
 
 var decrypt = function () {
-  var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
-    var curve, S, param, err, i, Z;
+  var _ref7 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
+    var curve, _ref8, sharedKey, param, err, i, Z;
+
     return _regenerator2.default.wrap(function _callee5$(_context5) {
       while (1) {
         switch (_context5.prev = _context5.next) {
@@ -36789,57 +37560,62 @@ var decrypt = function () {
             return genPrivateEphemeralKey(curve, V, d);
 
           case 3:
-            S = _context5.sent;
+            _ref8 = _context5.sent;
+            sharedKey = _ref8.sharedKey;
             param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
 
             cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
             err = void 0;
             i = 0;
 
-          case 8:
+          case 9:
             if (!(i < 3)) {
-              _context5.next = 22;
+              _context5.next = 23;
               break;
             }
 
-            _context5.prev = 9;
-            _context5.next = 12;
-            return kdf(hash_algo, S, _cipher2.default[cipher_algo].keySize, param, curve, i === 1, i === 2);
+            _context5.prev = 10;
+            _context5.next = 13;
+            return kdf(hash_algo, sharedKey, _cipher2.default[cipher_algo].keySize, param, i === 1, i === 2);
 
-          case 12:
+          case 13:
             Z = _context5.sent;
             return _context5.abrupt('return', new _bn2.default(_aes_kw2.default.unwrap(Z, C)));
 
-          case 16:
-            _context5.prev = 16;
-            _context5.t0 = _context5['catch'](9);
+          case 17:
+            _context5.prev = 17;
+            _context5.t0 = _context5['catch'](10);
 
             err = _context5.t0;
 
-          case 19:
+          case 20:
             i++;
-            _context5.next = 8;
+            _context5.next = 9;
             break;
 
-          case 22:
+          case 23:
             throw err;
 
-          case 23:
+          case 24:
           case 'end':
             return _context5.stop();
         }
       }
-    }, _callee5, this, [[9, 16]]);
+    }, _callee5, this, [[10, 17]]);
   }));
 
-  return function decrypt(_x19, _x20, _x21, _x22, _x23, _x24, _x25) {
-    return _ref6.apply(this, arguments);
+  return function decrypt(_x18, _x19, _x20, _x21, _x22, _x23, _x24) {
+    return _ref7.apply(this, arguments);
   };
 }();
 
 var _bn = _dereq_('bn.js');
 
 var _bn2 = _interopRequireDefault(_bn);
+
+var _naclFastLight = _dereq_('tweetnacl/nacl-fast-light.js');
+
+var _naclFastLight2 = _interopRequireDefault(_naclFastLight);
 
 var _curves = _dereq_('./curves');
 
@@ -36872,7 +37648,10 @@ var _util2 = _interopRequireDefault(_util);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Build Param for ECDH algorithm (RFC 6637)
-// OpenPGP.js - An OpenPGP implementation in javascript
+function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
+  var kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
+  return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdf_params.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
+} // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015-2016 Decentral
 //
 // This library is free software; you can redistribute it and/or
@@ -36892,6 +37671,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
  * @requires bn.js
+ * @requires tweetnacl
  * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
@@ -36902,12 +37682,9 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @module crypto/public_key/elliptic/ecdh
  */
 
-function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
-  var kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
-  return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdf_params.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
-}exports.default = { encrypt: encrypt, decrypt: decrypt, genPublicEphemeralKey: genPublicEphemeralKey, genPrivateEphemeralKey: genPrivateEphemeralKey, buildEcdhParam: buildEcdhParam, kdf: kdf };
+exports.default = { encrypt: encrypt, decrypt: decrypt, genPublicEphemeralKey: genPublicEphemeralKey, genPrivateEphemeralKey: genPrivateEphemeralKey, buildEcdhParam: buildEcdhParam, kdf: kdf };
 
-},{"../../../enums":386,"../../../type/kdf_params":420,"../../../util":425,"../../aes_kw":353,"../../cipher":359,"../../hash":365,"./curves":373,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],375:[function(_dereq_,module,exports){
+},{"../../../enums":385,"../../../type/kdf_params":419,"../../../util":424,"../../aes_kw":352,"../../cipher":358,"../../hash":364,"./curves":372,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45,"tweetnacl/nacl-fast-light.js":343}],374:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37030,7 +37807,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 exports.default = { sign: sign, verify: verify };
 
-},{"./curves":373,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],376:[function(_dereq_,module,exports){
+},{"./curves":372,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],375:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37058,22 +37835,22 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
  */
 var sign = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(oid, hash_algo, m, d, hashed) {
-    var curve, key, signature;
+    var _nacl$sign$keyPair$fr, secretKey, signature;
+
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            curve = new _curves2.default(oid);
-            key = curve.keyFromSecret(d);
-            _context.next = 4;
-            return key.sign(m, hash_algo, hashed);
+            _nacl$sign$keyPair$fr = _naclFastLight2.default.sign.keyPair.fromSeed(d), secretKey = _nacl$sign$keyPair$fr.secretKey;
+            signature = _naclFastLight2.default.sign.detached(hashed, secretKey);
+            // EdDSA signature params are returned in little-endian format
 
-          case 4:
-            signature = _context.sent;
-            return _context.abrupt('return', { R: new Uint8Array(signature.Rencoded()),
-              S: new Uint8Array(signature.Sencoded()) });
+            return _context.abrupt('return', {
+              R: signature.subarray(0, 32),
+              S: signature.subarray(32)
+            });
 
-          case 6:
+          case 3:
           case 'end':
             return _context.stop();
         }
@@ -37093,12 +37870,55 @@ var sign = function () {
  * @param  {{R: Uint8Array,
              S: Uint8Array}}   signature Signature to verify the message
  * @param  {Uint8Array}        m         Message to verify
- * @param  {Uint8Array}        Q         Public key used to verify the message
+ * @param  {Uint8Array}        publicKey Public key used to verify the message
  * @param  {Uint8Array}        hashed    The hashed message
  * @returns {Boolean}
  * @async
  */
-// OpenPGP.js - An OpenPGP implementation in javascript
+
+
+var verify = function () {
+  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(oid, hash_algo, _ref3, m, publicKey, hashed) {
+    var R = _ref3.R,
+        S = _ref3.S;
+    var signature;
+    return _regenerator2.default.wrap(function _callee2$(_context2) {
+      while (1) {
+        switch (_context2.prev = _context2.next) {
+          case 0:
+            signature = _util2.default.concatUint8Array([R, S]);
+            return _context2.abrupt('return', _naclFastLight2.default.sign.detached.verify(hashed, signature, publicKey.subarray(1)));
+
+          case 2:
+          case 'end':
+            return _context2.stop();
+        }
+      }
+    }, _callee2, this);
+  }));
+
+  return function verify(_x6, _x7, _x8, _x9, _x10, _x11) {
+    return _ref2.apply(this, arguments);
+  };
+}();
+
+var _ = _dereq_('hash.js/lib/hash/sha/512');
+
+var _2 = _interopRequireDefault(_);
+
+var _naclFastLight = _dereq_('tweetnacl/nacl-fast-light.js');
+
+var _naclFastLight2 = _interopRequireDefault(_naclFastLight);
+
+var _util = _dereq_('../../../util');
+
+var _util2 = _interopRequireDefault(_util);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+_naclFastLight2.default.hash = function (bytes) {
+  return new Uint8Array((0, _2.default)().update(bytes).digest());
+}; // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2018 Proton Technologies AG
 //
 // This library is free software; you can redistribute it and/or
@@ -37117,43 +37937,16 @@ var sign = function () {
 
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
+ * @requires hash.js
+ * @requires tweetnacl
  * @requires crypto/public_key/elliptic/curve
+ * @requires util
  * @module crypto/public_key/elliptic/eddsa
  */
 
-var verify = function () {
-  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(oid, hash_algo, signature, m, Q, hashed) {
-    var curve, key;
-    return _regenerator2.default.wrap(function _callee2$(_context2) {
-      while (1) {
-        switch (_context2.prev = _context2.next) {
-          case 0:
-            curve = new _curves2.default(oid);
-            key = curve.keyFromPublic(Q);
-            return _context2.abrupt('return', key.verify(m, signature, hash_algo, hashed));
-
-          case 3:
-          case 'end':
-            return _context2.stop();
-        }
-      }
-    }, _callee2, this);
-  }));
-
-  return function verify(_x6, _x7, _x8, _x9, _x10, _x11) {
-    return _ref2.apply(this, arguments);
-  };
-}();
-
-var _curves = _dereq_('./curves');
-
-var _curves2 = _interopRequireDefault(_curves);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 exports.default = { sign: sign, verify: verify };
 
-},{"./curves":373,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],377:[function(_dereq_,module,exports){
+},{"../../../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"hash.js/lib/hash/sha/512":313,"tweetnacl/nacl-fast-light.js":343}],376:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37208,7 +38001,7 @@ exports.default = {
   Curve: _curves2.default, ecdh: _ecdh2.default, ecdsa: _ecdsa2.default, eddsa: _eddsa2.default, generate: _curves.generate, getPreferredHashAlgo: _curves.getPreferredHashAlgo
 };
 
-},{"./curves":373,"./ecdh":374,"./ecdsa":375,"./eddsa":376}],378:[function(_dereq_,module,exports){
+},{"./curves":372,"./ecdh":373,"./ecdsa":374,"./eddsa":375}],377:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37646,12 +38439,16 @@ var SubjectPublicKeyInfo = nodeCrypto ? asn1.define('SubjectPublicKeyInfo', func
   this.seq().obj(this.key('algorithm').use(AlgorithmIdentifier), this.key('subjectPublicKey').bitstr());
 }) : undefined;
 
-},{"../../../enums":386,"../../../util":425,"./curves":373,"asn1.js":"asn1.js","babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45,"web-stream-tools":347}],379:[function(_dereq_,module,exports){
+},{"../../../enums":385,"../../../util":424,"./curves":372,"asn1.js":"asn1.js","babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45,"web-stream-tools":346}],378:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _naclFastLight = _dereq_('tweetnacl/nacl-fast-light.js');
+
+var _naclFastLight2 = _interopRequireDefault(_naclFastLight);
 
 var _rsa = _dereq_('./rsa');
 
@@ -37671,15 +38468,6 @@ var _dsa2 = _interopRequireDefault(_dsa);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-/**
- * @fileoverview Asymmetric cryptography functions
- * @requires crypto/public_key/dsa
- * @requires crypto/public_key/elgamal
- * @requires crypto/public_key/elliptic
- * @requires crypto/public_key/rsa
- * @module crypto/public_key
- */
-
 exports.default = {
   /** @see module:crypto/public_key/rsa */
   rsa: _rsa2.default,
@@ -37688,10 +38476,20 @@ exports.default = {
   /** @see module:crypto/public_key/elliptic */
   elliptic: _elliptic2.default,
   /** @see module:crypto/public_key/dsa */
-  dsa: _dsa2.default
-};
+  dsa: _dsa2.default,
+  /** @see tweetnacl */
+  nacl: _naclFastLight2.default
+}; /**
+    * @fileoverview Asymmetric cryptography functions
+    * @requires tweetnacl
+    * @requires crypto/public_key/dsa
+    * @requires crypto/public_key/elgamal
+    * @requires crypto/public_key/elliptic
+    * @requires crypto/public_key/rsa
+    * @module crypto/public_key
+    */
 
-},{"./dsa":371,"./elgamal":372,"./elliptic":377,"./rsa":381}],380:[function(_dereq_,module,exports){
+},{"./dsa":370,"./elgamal":371,"./elliptic":376,"./rsa":380,"tweetnacl/nacl-fast-light.js":343}],379:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38060,7 +38858,7 @@ function divisionTest(n) {
 // https://github.com/gpg/libgcrypt/blob/master/cipher/primegen.c
 var small_primes = [7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181, 191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307, 311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433, 439, 443, 449, 457, 461, 463, 467, 479, 487, 491, 499, 503, 509, 521, 523, 541, 547, 557, 563, 569, 571, 577, 587, 593, 599, 601, 607, 613, 617, 619, 631, 641, 643, 647, 653, 659, 661, 673, 677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761, 769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857, 859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947, 953, 967, 971, 977, 983, 991, 997, 1009, 1013, 1019, 1021, 1031, 1033, 1039, 1049, 1051, 1061, 1063, 1069, 1087, 1091, 1093, 1097, 1103, 1109, 1117, 1123, 1129, 1151, 1153, 1163, 1171, 1181, 1187, 1193, 1201, 1213, 1217, 1223, 1229, 1231, 1237, 1249, 1259, 1277, 1279, 1283, 1289, 1291, 1297, 1301, 1303, 1307, 1319, 1321, 1327, 1361, 1367, 1373, 1381, 1399, 1409, 1423, 1427, 1429, 1433, 1439, 1447, 1451, 1453, 1459, 1471, 1481, 1483, 1487, 1489, 1493, 1499, 1511, 1523, 1531, 1543, 1549, 1553, 1559, 1567, 1571, 1579, 1583, 1597, 1601, 1607, 1609, 1613, 1619, 1621, 1627, 1637, 1657, 1663, 1667, 1669, 1693, 1697, 1699, 1709, 1721, 1723, 1733, 1741, 1747, 1753, 1759, 1777, 1783, 1787, 1789, 1801, 1811, 1823, 1831, 1847, 1861, 1867, 1871, 1873, 1877, 1879, 1889, 1901, 1907, 1913, 1931, 1933, 1949, 1951, 1973, 1979, 1987, 1993, 1997, 1999, 2003, 2011, 2017, 2027, 2029, 2039, 2053, 2063, 2069, 2081, 2083, 2087, 2089, 2099, 2111, 2113, 2129, 2131, 2137, 2141, 2143, 2153, 2161, 2179, 2203, 2207, 2213, 2221, 2237, 2239, 2243, 2251, 2267, 2269, 2273, 2281, 2287, 2293, 2297, 2309, 2311, 2333, 2339, 2341, 2347, 2351, 2357, 2371, 2377, 2381, 2383, 2389, 2393, 2399, 2411, 2417, 2423, 2437, 2441, 2447, 2459, 2467, 2473, 2477, 2503, 2521, 2531, 2539, 2543, 2549, 2551, 2557, 2579, 2591, 2593, 2609, 2617, 2621, 2633, 2647, 2657, 2659, 2663, 2671, 2677, 2683, 2687, 2689, 2693, 2699, 2707, 2711, 2713, 2719, 2729, 2731, 2741, 2749, 2753, 2767, 2777, 2789, 2791, 2797, 2801, 2803, 2819, 2833, 2837, 2843, 2851, 2857, 2861, 2879, 2887, 2897, 2903, 2909, 2917, 2927, 2939, 2953, 2957, 2963, 2969, 2971, 2999, 3001, 3011, 3019, 3023, 3037, 3041, 3049, 3061, 3067, 3079, 3083, 3089, 3109, 3119, 3121, 3137, 3163, 3167, 3169, 3181, 3187, 3191, 3203, 3209, 3217, 3221, 3229, 3251, 3253, 3257, 3259, 3271, 3299, 3301, 3307, 3313, 3319, 3323, 3329, 3331, 3343, 3347, 3359, 3361, 3371, 3373, 3389, 3391, 3407, 3413, 3433, 3449, 3457, 3461, 3463, 3467, 3469, 3491, 3499, 3511, 3517, 3527, 3529, 3533, 3539, 3541, 3547, 3557, 3559, 3571, 3581, 3583, 3593, 3607, 3613, 3617, 3623, 3631, 3637, 3643, 3659, 3671, 3673, 3677, 3691, 3697, 3701, 3709, 3719, 3727, 3733, 3739, 3761, 3767, 3769, 3779, 3793, 3797, 3803, 3821, 3823, 3833, 3847, 3851, 3853, 3863, 3877, 3881, 3889, 3907, 3911, 3917, 3919, 3923, 3929, 3931, 3943, 3947, 3967, 3989, 4001, 4003, 4007, 4013, 4019, 4021, 4027, 4049, 4051, 4057, 4073, 4079, 4091, 4093, 4099, 4111, 4127, 4129, 4133, 4139, 4153, 4157, 4159, 4177, 4201, 4211, 4217, 4219, 4229, 4231, 4241, 4243, 4253, 4259, 4261, 4271, 4273, 4283, 4289, 4297, 4327, 4337, 4339, 4349, 4357, 4363, 4373, 4391, 4397, 4409, 4421, 4423, 4441, 4447, 4451, 4457, 4463, 4481, 4483, 4493, 4507, 4513, 4517, 4519, 4523, 4547, 4549, 4561, 4567, 4583, 4591, 4597, 4603, 4621, 4637, 4639, 4643, 4649, 4651, 4657, 4663, 4673, 4679, 4691, 4703, 4721, 4723, 4729, 4733, 4751, 4759, 4783, 4787, 4789, 4793, 4799, 4801, 4813, 4817, 4831, 4861, 4871, 4877, 4889, 4903, 4909, 4919, 4931, 4933, 4937, 4943, 4951, 4957, 4967, 4969, 4973, 4987, 4993, 4999];
 
-},{"../random":382,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],381:[function(_dereq_,module,exports){
+},{"../random":381,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],380:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38508,7 +39306,7 @@ exports.default = {
   prime: _prime2.default
 };
 
-},{"../../config":352,"../../util":425,"../random":382,"./prime":380,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],382:[function(_dereq_,module,exports){
+},{"../../config":351,"../../util":424,"../random":381,"./prime":379,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],381:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38809,7 +39607,7 @@ RandomBuffer.prototype.get = function () {
   };
 }();
 
-},{"../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/typeof":43,"babel-runtime/regenerator":44,"bn.js":45,"crypto":"crypto"}],383:[function(_dereq_,module,exports){
+},{"../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/typeof":43,"babel-runtime/regenerator":44,"bn.js":45,"crypto":"crypto"}],382:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38819,10 +39617,6 @@ Object.defineProperty(exports, "__esModule", {
 var _regenerator = _dereq_('babel-runtime/regenerator');
 
 var _regenerator2 = _interopRequireDefault(_regenerator);
-
-var _from = _dereq_('babel-runtime/core-js/array/from');
-
-var _from2 = _interopRequireDefault(_from);
 
 var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
@@ -38910,12 +39704,11 @@ exports.default = {
 
             case 24:
               _oid = pub_MPIs[0];
-              // TODO refactor elliptic to accept Uint8Array
               // EdDSA signature params are expected in little-endian format
 
-              _signature = { R: (0, _from2.default)(msg_MPIs[0].toUint8Array('le', 32)),
-                S: (0, _from2.default)(msg_MPIs[1].toUint8Array('le', 32)) };
-              _Q = (0, _from2.default)(pub_MPIs[1].toUint8Array('be', 33));
+              _signature = { R: msg_MPIs[0].toUint8Array('le', 32),
+                S: msg_MPIs[1].toUint8Array('le', 32) };
+              _Q = pub_MPIs[1].toUint8Array('be', 33);
               return _context.abrupt('return', _public_key2.default.elliptic.eddsa.verify(_oid, hash_algo, _signature, data, _Q, hashed));
 
             case 28:
@@ -39006,7 +39799,7 @@ exports.default = {
 
             case 30:
               _oid2 = key_params[0];
-              _d2 = (0, _from2.default)(key_params[2].toUint8Array('be', 32));
+              _d2 = key_params[2].toUint8Array('be', 32);
               _context2.next = 34;
               return _public_key2.default.elliptic.eddsa.sign(_oid2, hash_algo, data, _d2, hashed);
 
@@ -39041,7 +39834,7 @@ exports.default = {
     * @module crypto/signature
    */
 
-},{"../enums":386,"../util":425,"./pkcs1":369,"./public_key":379,"babel-runtime/core-js/array/from":17,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],384:[function(_dereq_,module,exports){
+},{"../enums":385,"../util":424,"./pkcs1":368,"./public_key":378,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],383:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39665,7 +40458,7 @@ exports.default = {
   decode: dearmor
 };
 
-},{"../config":352,"../enums.js":386,"../util":425,"./base64.js":385,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":347}],385:[function(_dereq_,module,exports){
+},{"../config":351,"../enums.js":385,"../util":424,"./base64.js":384,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":346}],384:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39813,7 +40606,7 @@ exports.default = {
   decode: r2s
 };
 
-},{"web-stream-tools":347}],386:[function(_dereq_,module,exports){
+},{"web-stream-tools":346}],385:[function(_dereq_,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -40331,7 +41124,7 @@ exports.default = {
 
 };
 
-},{"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/symbol":33,"babel-runtime/helpers/slicedToArray":41}],387:[function(_dereq_,module,exports){
+},{"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/symbol":33,"babel-runtime/helpers/slicedToArray":41}],386:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40432,7 +41225,7 @@ HKP.prototype.upload = function (publicKeyArmored) {
 
 exports.default = HKP;
 
-},{"./config":352,"node-fetch":"node-fetch"}],388:[function(_dereq_,module,exports){
+},{"./config":351,"node-fetch":"node-fetch"}],387:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40746,7 +41539,7 @@ var cleartext = exports.cleartext = cleartextMod;
  * @name module:openpgp.util
  */
 
-},{"./cleartext":350,"./config/config":351,"./crypto":367,"./encoding/armor":384,"./enums":386,"./hkp":387,"./key":389,"./keyring":390,"./message":393,"./openpgp":394,"./packet":398,"./signature":418,"./type/ecdh_symkey":419,"./type/kdf_params":420,"./type/keyid":421,"./type/mpi":422,"./type/oid":423,"./type/s2k":424,"./util":425,"./wkd":426,"./worker/async_proxy":427,"web-stream-tools":347}],389:[function(_dereq_,module,exports){
+},{"./cleartext":349,"./config/config":350,"./crypto":366,"./encoding/armor":383,"./enums":385,"./hkp":386,"./key":388,"./keyring":389,"./message":392,"./openpgp":393,"./packet":397,"./signature":417,"./type/ecdh_symkey":418,"./type/kdf_params":419,"./type/keyid":420,"./type/mpi":421,"./type/oid":422,"./type/s2k":423,"./util":424,"./wkd":425,"./worker/async_proxy":426,"web-stream-tools":346}],388:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41122,7 +41915,7 @@ var read = exports.read = function () {
     }, _callee47, this, [[3, 13]]);
   }));
 
-  return function read(_x95) {
+  return function read(_x97) {
     return _ref52.apply(this, arguments);
   };
 }();
@@ -41177,7 +41970,7 @@ var readArmored = exports.readArmored = function () {
     }, _callee48, this, [[0, 9]]);
   }));
 
-  return function readArmored(_x96) {
+  return function readArmored(_x98) {
     return _ref53.apply(this, arguments);
   };
 }();
@@ -41232,7 +42025,7 @@ var generate = exports.generate = function () {
         }, _callee49, this);
       }));
 
-      return function generateSecretKey(_x99) {
+      return function generateSecretKey(_x101) {
         return _ref55.apply(this, arguments);
       };
     }();
@@ -41262,7 +42055,7 @@ var generate = exports.generate = function () {
         }, _callee50, this);
       }));
 
-      return function generateSecretSubkey(_x100) {
+      return function generateSecretSubkey(_x102) {
         return _ref56.apply(this, arguments);
       };
     }();
@@ -41333,7 +42126,7 @@ var generate = exports.generate = function () {
     }, _callee51, this);
   }));
 
-  return function generate(_x97) {
+  return function generate(_x99) {
     return _ref54.apply(this, arguments);
   };
 }();
@@ -41449,7 +42242,7 @@ var reformat = exports.reformat = function () {
     }, _callee52, this, [[2, 9]]);
   }));
 
-  return function reformat(_x101) {
+  return function reformat(_x103) {
     return _ref57.apply(this, arguments);
   };
 }();
@@ -41496,7 +42289,7 @@ var wrapKeyObject = function () {
                 }, _callee53, this);
               }));
 
-              return function (_x106, _x107) {
+              return function (_x108, _x109) {
                 return _ref59.apply(this, arguments);
               };
             }()));
@@ -41590,7 +42383,7 @@ var wrapKeyObject = function () {
                 }, _callee54, this);
               }));
 
-              return function (_x108, _x109) {
+              return function (_x110, _x111) {
                 return _ref60.apply(this, arguments);
               };
             }())).then(function (list) {
@@ -41665,7 +42458,7 @@ var wrapKeyObject = function () {
                 }, _callee55, this);
               }));
 
-              return function (_x110, _x111) {
+              return function (_x112, _x113) {
                 return _ref62.apply(this, arguments);
               };
             }())).then(function (packets) {
@@ -41723,7 +42516,7 @@ var wrapKeyObject = function () {
                 }, _callee56, this);
               }));
 
-              return function (_x112, _x113) {
+              return function (_x114, _x115) {
                 return _ref64.apply(this, arguments);
               };
             }()));
@@ -41739,7 +42532,7 @@ var wrapKeyObject = function () {
     }, _callee57, this);
   }));
 
-  return function wrapKeyObject(_x103, _x104, _x105) {
+  return function wrapKeyObject(_x105, _x106, _x107) {
     return _ref58.apply(this, arguments);
   };
 }();
@@ -41823,7 +42616,7 @@ var isDataRevoked = function () {
                 }, _callee58, this);
               }));
 
-              return function (_x121) {
+              return function (_x123) {
                 return _ref66.apply(this, arguments);
               };
             }()));
@@ -41850,7 +42643,7 @@ var isDataRevoked = function () {
     }, _callee59, this);
   }));
 
-  return function isDataRevoked(_x114, _x115, _x116, _x117, _x118, _x119) {
+  return function isDataRevoked(_x116, _x117, _x118, _x119, _x120, _x121) {
     return _ref65.apply(this, arguments);
   };
 }();
@@ -41919,7 +42712,7 @@ var getPreferredHashAlgo = exports.getPreferredHashAlgo = function () {
     }, _callee60, this);
   }));
 
-  return function getPreferredHashAlgo(_x123, _x124) {
+  return function getPreferredHashAlgo(_x125, _x126) {
     return _ref67.apply(this, arguments);
   };
 }();
@@ -41983,7 +42776,7 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
                 }, _callee61, this);
               }));
 
-              return function (_x131, _x132) {
+              return function (_x133, _x134) {
                 return _ref69.apply(this, arguments);
               };
             }()));
@@ -42015,7 +42808,7 @@ var getPreferredAlgo = exports.getPreferredAlgo = function () {
     }, _callee62, this);
   }));
 
-  return function getPreferredAlgo(_x127, _x128) {
+  return function getPreferredAlgo(_x129, _x130) {
     return _ref68.apply(this, arguments);
   };
 }();
@@ -42068,7 +42861,7 @@ var isAeadSupported = exports.isAeadSupported = function () {
                 }, _callee63, this);
               }));
 
-              return function (_x136, _x137) {
+              return function (_x138, _x139) {
                 return _ref72.apply(this, arguments);
               };
             }()));
@@ -42084,7 +42877,7 @@ var isAeadSupported = exports.isAeadSupported = function () {
     }, _callee64, this);
   }));
 
-  return function isAeadSupported(_x133) {
+  return function isAeadSupported(_x135) {
     return _ref71.apply(this, arguments);
   };
 }();
@@ -44094,7 +44887,7 @@ User.prototype.isRevoked = function () {
                         }
 
                         _context33.next = 9;
-                        return that.isRevoked(primaryKey, certificate, signingKey.keyPacket);
+                        return that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date);
 
                       case 9:
                         _context33.t0 = _context33.sent;
@@ -44130,7 +44923,7 @@ User.prototype.isRevoked = function () {
                         return _context33.abrupt('return', _enums2.default.keyStatus.invalid);
 
                       case 19:
-                        if (!certificate.isExpired()) {
+                        if (!certificate.isExpired(date)) {
                           _context33.next = 21;
                           break;
                         }
@@ -44177,12 +44970,14 @@ User.prototype.isRevoked = function () {
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey The primary key packet
  * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
+ * @param  {Date}                     date        Use the given date instead of the current time
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
  * @async
  */
 User.prototype.verifyAllCertifications = function () {
   var _ref39 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee36(primaryKey, keys) {
+    var date = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : new Date();
     var that, certifications;
     return _regenerator2.default.wrap(function _callee36$(_context36) {
       while (1) {
@@ -44198,7 +44993,7 @@ User.prototype.verifyAllCertifications = function () {
                     switch (_context35.prev = _context35.next) {
                       case 0:
                         _context35.next = 2;
-                        return that.verifyCertificate(primaryKey, certification, keys);
+                        return that.verifyCertificate(primaryKey, certification, keys, date);
 
                       case 2:
                         status = _context35.sent;
@@ -44215,7 +45010,7 @@ User.prototype.verifyAllCertifications = function () {
                 }, _callee35, this);
               }));
 
-              return function (_x75) {
+              return function (_x76) {
                 return _ref40.apply(this, arguments);
               };
             }())));
@@ -44238,11 +45033,13 @@ User.prototype.verifyAllCertifications = function () {
  * and validity of self signature
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {Date}                    date       Use the given date instead of the current time
  * @returns {Promise<module:enums.keyStatus>}    Status of user
  * @async
  */
 User.prototype.verify = function () {
   var _ref41 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee38(primaryKey) {
+    var date = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Date();
     var that, dataToVerify, results;
     return _regenerator2.default.wrap(function _callee38$(_context38) {
       while (1) {
@@ -44280,7 +45077,7 @@ User.prototype.verify = function () {
                         }
 
                         _context37.next = 4;
-                        return that.isRevoked(primaryKey, selfCertification);
+                        return that.isRevoked(primaryKey, selfCertification, undefined, date);
 
                       case 4:
                         _context37.t0 = _context37.sent;
@@ -44316,7 +45113,7 @@ User.prototype.verify = function () {
                         return _context37.abrupt('return', _enums2.default.keyStatus.invalid);
 
                       case 14:
-                        if (!selfCertification.isExpired()) {
+                        if (!selfCertification.isExpired(date)) {
                           _context37.next = 16;
                           break;
                         }
@@ -44334,7 +45131,7 @@ User.prototype.verify = function () {
                 }, _callee37, this);
               }));
 
-              return function (_x77) {
+              return function (_x79) {
                 return _ref42.apply(this, arguments);
               };
             }()));
@@ -44354,7 +45151,7 @@ User.prototype.verify = function () {
     }, _callee38, this);
   }));
 
-  return function (_x76) {
+  return function (_x77) {
     return _ref41.apply(this, arguments);
   };
 }();
@@ -44398,7 +45195,7 @@ User.prototype.update = function () {
                 }, _callee39, this);
               }));
 
-              return function (_x80) {
+              return function (_x82) {
                 return _ref44.apply(this, arguments);
               };
             }());
@@ -44421,7 +45218,7 @@ User.prototype.update = function () {
     }, _callee40, this);
   }));
 
-  return function (_x78, _x79) {
+  return function (_x80, _x81) {
     return _ref43.apply(this, arguments);
   };
 }();
@@ -44490,7 +45287,7 @@ SubKey.prototype.isRevoked = function () {
     }, _callee41, this);
   }));
 
-  return function (_x81, _x82, _x83) {
+  return function (_x83, _x84, _x85) {
     return _ref45.apply(this, arguments);
   };
 }();
@@ -44570,7 +45367,7 @@ SubKey.prototype.verify = function () {
     }, _callee42, this);
   }));
 
-  return function (_x85) {
+  return function (_x87) {
     return _ref46.apply(this, arguments);
   };
 }();
@@ -44619,7 +45416,7 @@ SubKey.prototype.getExpirationTime = function () {
     }, _callee43, this);
   }));
 
-  return function (_x87) {
+  return function (_x89) {
     return _ref47.apply(this, arguments);
   };
 }();
@@ -44733,7 +45530,7 @@ SubKey.prototype.update = function () {
                 }, _callee44, this);
               }));
 
-              return function (_x91) {
+              return function (_x93) {
                 return _ref49.apply(this, arguments);
               };
             }());
@@ -44752,7 +45549,7 @@ SubKey.prototype.update = function () {
     }, _callee45, this);
   }));
 
-  return function (_x89, _x90) {
+  return function (_x91, _x92) {
     return _ref48.apply(this, arguments);
   };
 }();
@@ -44810,7 +45607,7 @@ SubKey.prototype.revoke = function () {
     }, _callee46, this);
   }));
 
-  return function (_x92) {
+  return function (_x94) {
     return _ref50.apply(this, arguments);
   };
 }();
@@ -44857,7 +45654,7 @@ function checkRevocationKey(signature, keyId) {
   }
 }
 
-},{"./config":352,"./crypto":367,"./encoding/armor":384,"./enums":386,"./packet":398,"./util":425,"babel-runtime/core-js/object/assign":23,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/core-js/object/values":31,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],390:[function(_dereq_,module,exports){
+},{"./config":351,"./crypto":366,"./encoding/armor":383,"./enums":385,"./packet":397,"./util":424,"babel-runtime/core-js/object/assign":23,"babel-runtime/core-js/object/get-prototype-of":29,"babel-runtime/core-js/object/values":31,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44}],389:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -44884,7 +45681,7 @@ _keyring2.default.localstore = _localstore2.default;
 
 exports.default = _keyring2.default;
 
-},{"./keyring.js":391,"./localstore.js":392}],391:[function(_dereq_,module,exports){
+},{"./keyring.js":390,"./localstore.js":391}],390:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45216,7 +46013,7 @@ KeyArray.prototype.removeForId = function (keyId) {
 
 exports.default = Keyring;
 
-},{"../key":389,"./localstore":392,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],392:[function(_dereq_,module,exports){
+},{"../key":388,"./localstore":391,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],391:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -45501,7 +46298,7 @@ LocalStore.prototype.storePrivate = function () {
 
 exports.default = LocalStore;
 
-},{"../config":352,"../key":389,"../util":425,"babel-runtime/core-js/json/stringify":20,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"node-localstorage":"node-localstorage","web-stream-tools":347}],393:[function(_dereq_,module,exports){
+},{"../config":351,"../key":388,"../util":424,"babel-runtime/core-js/json/stringify":20,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"node-localstorage":"node-localstorage","web-stream-tools":346}],392:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -47423,12 +48220,13 @@ function fromBinary(bytes, filename) {
   return message;
 }
 
-},{"./config":352,"./crypto":367,"./encoding/armor":384,"./enums":386,"./key":389,"./packet":398,"./signature":418,"./type/keyid":421,"./util":425,"babel-runtime/core-js/array/from":17,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":347}],394:[function(_dereq_,module,exports){
+},{"./config":351,"./crypto":366,"./encoding/armor":383,"./enums":385,"./key":388,"./packet":397,"./signature":417,"./type/keyid":420,"./util":424,"babel-runtime/core-js/array/from":17,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":346}],393:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.initWorker = undefined;
 
 var _slicedToArray2 = _dereq_('babel-runtime/helpers/slicedToArray');
 
@@ -47450,6 +48248,73 @@ var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
+// instance of the asyncproxy
+
+/**
+ * Set the path for the web worker script and create an instance of the async proxy
+ * @param {String} path            relative path to the worker scripts, default: 'openpgp.worker.js'
+ * @param {Number} n               number of workers to initialize
+ * @param {Array<Object>} workers  alternative to path parameter: web workers initialized with 'openpgp.worker.js'
+ * @returns {Promise<Boolean>}     returns a promise that resolves to true if all workers have succesfully finished loading
+ * @async
+ */
+var initWorker = exports.initWorker = function () {
+  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
+    var _ref2 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+        _ref2$path = _ref2.path,
+        path = _ref2$path === undefined ? 'openpgp.worker.js' : _ref2$path,
+        _ref2$n = _ref2.n,
+        n = _ref2$n === undefined ? 1 : _ref2$n,
+        _ref2$workers = _ref2.workers,
+        workers = _ref2$workers === undefined ? [] : _ref2$workers;
+
+    var proxy, loaded;
+    return _regenerator2.default.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            if (!(workers.length || typeof window !== 'undefined' && window.Worker && window.MessageChannel)) {
+              _context.next = 8;
+              break;
+            }
+
+            proxy = new _async_proxy2.default({ path: path, n: n, workers: workers, config: _config2.default });
+            _context.next = 4;
+            return proxy.loaded();
+
+          case 4:
+            loaded = _context.sent;
+
+            if (!loaded) {
+              _context.next = 8;
+              break;
+            }
+
+            asyncProxy = proxy;
+            return _context.abrupt('return', true);
+
+          case 8:
+            return _context.abrupt('return', false);
+
+          case 9:
+          case 'end':
+            return _context.stop();
+        }
+      }
+    }, _callee, this);
+  }));
+
+  return function initWorker() {
+    return _ref.apply(this, arguments);
+  };
+}();
+
+/**
+ * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
+ * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
+ */
+
+
 /**
  * Convert data to or from Stream
  * @param  {Object} data                   the data to convert
@@ -47457,17 +48322,17 @@ var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
  * @returns {Object}                       the data in the respective format
  */
 var convertStream = function () {
-  var _ref25 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(data, streaming) {
-    return _regenerator2.default.wrap(function _callee13$(_context13) {
+  var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(data, streaming) {
+    return _regenerator2.default.wrap(function _callee15$(_context15) {
       while (1) {
-        switch (_context13.prev = _context13.next) {
+        switch (_context15.prev = _context15.next) {
           case 0:
             if (!(!streaming && _util2.default.isStream(data))) {
-              _context13.next = 2;
+              _context15.next = 2;
               break;
             }
 
-            return _context13.abrupt('return', _webStreamTools2.default.readToEnd(data));
+            return _context15.abrupt('return', _webStreamTools2.default.readToEnd(data));
 
           case 2:
             if (streaming && !_util2.default.isStream(data)) {
@@ -47481,18 +48346,18 @@ var convertStream = function () {
             if (streaming === 'node') {
               data = _webStreamTools2.default.webToNode(data);
             }
-            return _context13.abrupt('return', data);
+            return _context15.abrupt('return', data);
 
           case 5:
           case 'end':
-            return _context13.stop();
+            return _context15.stop();
         }
       }
-    }, _callee13, this);
+    }, _callee15, this);
   }));
 
-  return function convertStream(_x8, _x9) {
-    return _ref25.apply(this, arguments);
+  return function convertStream(_x10, _x11) {
+    return _ref27.apply(this, arguments);
   };
 }();
 
@@ -47506,73 +48371,73 @@ var convertStream = function () {
 
 
 var convertStreams = function () {
-  var _ref26 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee15(obj, streaming) {
-    var _this5 = this;
+  var _ref28 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(obj, streaming) {
+    var _this6 = this;
 
     var keys = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-    return _regenerator2.default.wrap(function _callee15$(_context15) {
+    return _regenerator2.default.wrap(function _callee17$(_context17) {
       while (1) {
-        switch (_context15.prev = _context15.next) {
+        switch (_context17.prev = _context17.next) {
           case 0:
             if (!(Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj))) {
-              _context15.next = 3;
+              _context17.next = 3;
               break;
             }
 
-            _context15.next = 3;
+            _context17.next = 3;
             return _promise2.default.all((0, _entries2.default)(obj).map(function () {
-              var _ref27 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(_ref28) {
-                var _ref29 = (0, _slicedToArray3.default)(_ref28, 2),
-                    key = _ref29[0],
-                    value = _ref29[1];
+              var _ref29 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(_ref30) {
+                var _ref31 = (0, _slicedToArray3.default)(_ref30, 2),
+                    key = _ref31[0],
+                    value = _ref31[1];
 
-                return _regenerator2.default.wrap(function _callee14$(_context14) {
+                return _regenerator2.default.wrap(function _callee16$(_context16) {
                   while (1) {
-                    switch (_context14.prev = _context14.next) {
+                    switch (_context16.prev = _context16.next) {
                       case 0:
                         if (!(_util2.default.isStream(value) || keys.includes(key))) {
-                          _context14.next = 6;
+                          _context16.next = 6;
                           break;
                         }
 
-                        _context14.next = 3;
+                        _context16.next = 3;
                         return convertStream(value, streaming);
 
                       case 3:
-                        obj[key] = _context14.sent;
-                        _context14.next = 8;
+                        obj[key] = _context16.sent;
+                        _context16.next = 8;
                         break;
 
                       case 6:
-                        _context14.next = 8;
+                        _context16.next = 8;
                         return convertStreams(obj[key], streaming);
 
                       case 8:
                       case 'end':
-                        return _context14.stop();
+                        return _context16.stop();
                     }
                   }
-                }, _callee14, _this5);
+                }, _callee16, _this6);
               }));
 
-              return function (_x13) {
-                return _ref27.apply(this, arguments);
+              return function (_x15) {
+                return _ref29.apply(this, arguments);
               };
             }()));
 
           case 3:
-            return _context15.abrupt('return', obj);
+            return _context17.abrupt('return', obj);
 
           case 4:
           case 'end':
-            return _context15.stop();
+            return _context17.stop();
         }
       }
-    }, _callee15, this);
+    }, _callee17, this);
   }));
 
-  return function convertStreams(_x10, _x11) {
-    return _ref26.apply(this, arguments);
+  return function convertStreams(_x12, _x13) {
+    return _ref28.apply(this, arguments);
   };
 }();
 
@@ -47591,65 +48456,65 @@ var convertStreams = function () {
  * @param  {Object} signatures              list of signatures
  */
 var prepareSignatures = function () {
-  var _ref31 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(signatures) {
-    var _this7 = this;
+  var _ref33 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20(signatures) {
+    var _this8 = this;
 
-    return _regenerator2.default.wrap(function _callee18$(_context18) {
+    return _regenerator2.default.wrap(function _callee20$(_context20) {
       while (1) {
-        switch (_context18.prev = _context18.next) {
+        switch (_context20.prev = _context20.next) {
           case 0:
-            _context18.next = 2;
+            _context20.next = 2;
             return _promise2.default.all(signatures.map(function () {
-              var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee17(signature) {
-                return _regenerator2.default.wrap(function _callee17$(_context17) {
+              var _ref34 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee19(signature) {
+                return _regenerator2.default.wrap(function _callee19$(_context19) {
                   while (1) {
-                    switch (_context17.prev = _context17.next) {
+                    switch (_context19.prev = _context19.next) {
                       case 0:
-                        _context17.next = 2;
+                        _context19.next = 2;
                         return signature.signature;
 
                       case 2:
-                        signature.signature = _context17.sent;
-                        _context17.prev = 3;
-                        _context17.next = 6;
+                        signature.signature = _context19.sent;
+                        _context19.prev = 3;
+                        _context19.next = 6;
                         return signature.verified;
 
                       case 6:
-                        signature.valid = _context17.sent;
-                        _context17.next = 14;
+                        signature.valid = _context19.sent;
+                        _context19.next = 14;
                         break;
 
                       case 9:
-                        _context17.prev = 9;
-                        _context17.t0 = _context17['catch'](3);
+                        _context19.prev = 9;
+                        _context19.t0 = _context19['catch'](3);
 
                         signature.valid = null;
-                        signature.error = _context17.t0;
-                        _util2.default.print_debug_error(_context17.t0);
+                        signature.error = _context19.t0;
+                        _util2.default.print_debug_error(_context19.t0);
 
                       case 14:
                       case 'end':
-                        return _context17.stop();
+                        return _context19.stop();
                     }
                   }
-                }, _callee17, _this7, [[3, 9]]);
+                }, _callee19, _this8, [[3, 9]]);
               }));
 
-              return function (_x17) {
-                return _ref32.apply(this, arguments);
+              return function (_x19) {
+                return _ref34.apply(this, arguments);
               };
             }()));
 
           case 2:
           case 'end':
-            return _context18.stop();
+            return _context20.stop();
         }
       }
-    }, _callee18, this);
+    }, _callee20, this);
   }));
 
-  return function prepareSignatures(_x16) {
-    return _ref31.apply(this, arguments);
+  return function prepareSignatures(_x18) {
+    return _ref33.apply(this, arguments);
   };
 }();
 
@@ -47660,7 +48525,6 @@ var prepareSignatures = function () {
  */
 
 
-exports.initWorker = initWorker;
 exports.getWorker = getWorker;
 exports.destroyWorker = destroyWorker;
 exports.generateKey = generateKey;
@@ -47716,15 +48580,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 //////////////////////////
 
 
-var asyncProxy = void 0; // instance of the asyncproxy
-
-/**
- * Set the path for the web worker script and create an instance of the async proxy
- * @param {String} path            relative path to the worker scripts, default: 'openpgp.worker.js'
- * @param {Number} n               number of workers to initialize
- * @param {Array<Object>} workers  alternative to path parameter: web workers initialized with 'openpgp.worker.js'
- */
-// OpenPGP.js - An OpenPGP implementation in javascript
+var asyncProxy = void 0; // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2016 Tankred Hase
 //
 // This library is free software; you can redistribute it and/or
@@ -47765,25 +48621,6 @@ var asyncProxy = void 0; // instance of the asyncproxy
  * {@link module:openpgp}
  */
 
-function initWorker() {
-  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-      _ref$path = _ref.path,
-      path = _ref$path === undefined ? 'openpgp.worker.js' : _ref$path,
-      _ref$n = _ref.n,
-      n = _ref$n === undefined ? 1 : _ref$n,
-      _ref$workers = _ref.workers,
-      workers = _ref$workers === undefined ? [] : _ref$workers;
-
-  if (workers.length || typeof window !== 'undefined' && window.Worker && window.MessageChannel) {
-    asyncProxy = new _async_proxy2.default({ path: path, n: n, workers: workers, config: _config2.default });
-    return true;
-  }
-}
-
-/**
- * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
- * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
- */
 function getWorker() {
   return asyncProxy;
 }
@@ -47820,23 +48657,23 @@ function destroyWorker() {
  * @static
  */
 
-function generateKey(_ref2) {
+function generateKey(_ref3) {
   var _this = this;
 
-  var _ref2$userIds = _ref2.userIds,
-      userIds = _ref2$userIds === undefined ? [] : _ref2$userIds,
-      _ref2$passphrase = _ref2.passphrase,
-      passphrase = _ref2$passphrase === undefined ? "" : _ref2$passphrase,
-      _ref2$numBits = _ref2.numBits,
-      numBits = _ref2$numBits === undefined ? 2048 : _ref2$numBits,
-      _ref2$keyExpirationTi = _ref2.keyExpirationTime,
-      keyExpirationTime = _ref2$keyExpirationTi === undefined ? 0 : _ref2$keyExpirationTi,
-      _ref2$curve = _ref2.curve,
-      curve = _ref2$curve === undefined ? "" : _ref2$curve,
-      _ref2$date = _ref2.date,
-      date = _ref2$date === undefined ? new Date() : _ref2$date,
-      _ref2$subkeys = _ref2.subkeys,
-      subkeys = _ref2$subkeys === undefined ? [{}] : _ref2$subkeys;
+  var _ref3$userIds = _ref3.userIds,
+      userIds = _ref3$userIds === undefined ? [] : _ref3$userIds,
+      _ref3$passphrase = _ref3.passphrase,
+      passphrase = _ref3$passphrase === undefined ? "" : _ref3$passphrase,
+      _ref3$numBits = _ref3.numBits,
+      numBits = _ref3$numBits === undefined ? 2048 : _ref3$numBits,
+      _ref3$keyExpirationTi = _ref3.keyExpirationTime,
+      keyExpirationTime = _ref3$keyExpirationTi === undefined ? 0 : _ref3$keyExpirationTi,
+      _ref3$curve = _ref3.curve,
+      curve = _ref3$curve === undefined ? "" : _ref3$curve,
+      _ref3$date = _ref3.date,
+      date = _ref3$date === undefined ? new Date() : _ref3$date,
+      _ref3$subkeys = _ref3.subkeys,
+      subkeys = _ref3$subkeys === undefined ? [{}] : _ref3$subkeys;
 
   userIds = toArray(userIds);
   var options = { userIds: userIds, passphrase: passphrase, numBits: numBits, keyExpirationTime: keyExpirationTime, curve: curve, date: date, subkeys: subkeys };
@@ -47850,79 +48687,7 @@ function generateKey(_ref2) {
   }
 
   return (0, _key.generate)(options).then(function () {
-    var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(key) {
-      var revocationCertificate;
-      return _regenerator2.default.wrap(function _callee$(_context) {
-        while (1) {
-          switch (_context.prev = _context.next) {
-            case 0:
-              _context.next = 2;
-              return key.getRevocationCertificate();
-
-            case 2:
-              revocationCertificate = _context.sent;
-
-              key.revocationSignatures = [];
-
-              return _context.abrupt('return', convertStreams({
-
-                key: key,
-                privateKeyArmored: key.armor(),
-                publicKeyArmored: key.toPublic().armor(),
-                revocationCertificate: revocationCertificate
-
-              }));
-
-            case 5:
-            case 'end':
-              return _context.stop();
-          }
-        }
-      }, _callee, _this);
-    }));
-
-    return function (_x2) {
-      return _ref3.apply(this, arguments);
-    };
-  }()).catch(onError.bind(null, 'Error generating keypair'));
-}
-
-/**
- * Reformats signature packets for a key and rewraps key object.
- * @param  {Key} privateKey          private key to reformat
- * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
- * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @param  {Boolean} revocationCertificate (optional) Whether the returned object should include a revocation certificate to revoke the public key
- * @returns {Promise<Object>}         The generated key object in the form:
- *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
- * @async
- * @static
- */
-function reformatKey(_ref4) {
-  var _this2 = this;
-
-  var privateKey = _ref4.privateKey,
-      _ref4$userIds = _ref4.userIds,
-      userIds = _ref4$userIds === undefined ? [] : _ref4$userIds,
-      _ref4$passphrase = _ref4.passphrase,
-      passphrase = _ref4$passphrase === undefined ? "" : _ref4$passphrase,
-      _ref4$keyExpirationTi = _ref4.keyExpirationTime,
-      keyExpirationTime = _ref4$keyExpirationTi === undefined ? 0 : _ref4$keyExpirationTi,
-      date = _ref4.date,
-      _ref4$revocationCerti = _ref4.revocationCertificate,
-      revocationCertificate = _ref4$revocationCerti === undefined ? true : _ref4$revocationCerti;
-
-  userIds = toArray(userIds);
-  var options = { privateKey: privateKey, userIds: userIds, passphrase: passphrase, keyExpirationTime: keyExpirationTime, date: date, revocationCertificate: revocationCertificate };
-  if (asyncProxy) {
-    return asyncProxy.delegate('reformatKey', options);
-  }
-
-  options.revoked = options.revocationCertificate;
-
-  return (0, _key.reformat)(options).then(function () {
-    var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(key) {
+    var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(key) {
       var revocationCertificate;
       return _regenerator2.default.wrap(function _callee2$(_context2) {
         while (1) {
@@ -47950,11 +48715,83 @@ function reformatKey(_ref4) {
               return _context2.stop();
           }
         }
-      }, _callee2, _this2);
+      }, _callee2, _this);
+    }));
+
+    return function (_x2) {
+      return _ref4.apply(this, arguments);
+    };
+  }()).catch(onError.bind(null, 'Error generating keypair'));
+}
+
+/**
+ * Reformats signature packets for a key and rewraps key object.
+ * @param  {Key} privateKey          private key to reformat
+ * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
+ * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
+ * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
+ * @param  {Boolean} revocationCertificate (optional) Whether the returned object should include a revocation certificate to revoke the public key
+ * @returns {Promise<Object>}         The generated key object in the form:
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
+ * @async
+ * @static
+ */
+function reformatKey(_ref5) {
+  var _this2 = this;
+
+  var privateKey = _ref5.privateKey,
+      _ref5$userIds = _ref5.userIds,
+      userIds = _ref5$userIds === undefined ? [] : _ref5$userIds,
+      _ref5$passphrase = _ref5.passphrase,
+      passphrase = _ref5$passphrase === undefined ? "" : _ref5$passphrase,
+      _ref5$keyExpirationTi = _ref5.keyExpirationTime,
+      keyExpirationTime = _ref5$keyExpirationTi === undefined ? 0 : _ref5$keyExpirationTi,
+      date = _ref5.date,
+      _ref5$revocationCerti = _ref5.revocationCertificate,
+      revocationCertificate = _ref5$revocationCerti === undefined ? true : _ref5$revocationCerti;
+
+  userIds = toArray(userIds);
+  var options = { privateKey: privateKey, userIds: userIds, passphrase: passphrase, keyExpirationTime: keyExpirationTime, date: date, revocationCertificate: revocationCertificate };
+  if (asyncProxy) {
+    return asyncProxy.delegate('reformatKey', options);
+  }
+
+  options.revoked = options.revocationCertificate;
+
+  return (0, _key.reformat)(options).then(function () {
+    var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(key) {
+      var revocationCertificate;
+      return _regenerator2.default.wrap(function _callee3$(_context3) {
+        while (1) {
+          switch (_context3.prev = _context3.next) {
+            case 0:
+              _context3.next = 2;
+              return key.getRevocationCertificate();
+
+            case 2:
+              revocationCertificate = _context3.sent;
+
+              key.revocationSignatures = [];
+
+              return _context3.abrupt('return', convertStreams({
+
+                key: key,
+                privateKeyArmored: key.armor(),
+                publicKeyArmored: key.toPublic().armor(),
+                revocationCertificate: revocationCertificate
+
+              }));
+
+            case 5:
+            case 'end':
+              return _context3.stop();
+          }
+        }
+      }, _callee3, _this2);
     }));
 
     return function (_x3) {
-      return _ref5.apply(this, arguments);
+      return _ref6.apply(this, arguments);
     };
   }()).catch(onError.bind(null, 'Error reformatting keypair'));
 }
@@ -47975,10 +48812,10 @@ function reformatKey(_ref4) {
 function revokeKey() {
   var _this3 = this;
 
-  var _ref6 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
-      key = _ref6.key,
-      revocationCertificate = _ref6.revocationCertificate,
-      reasonForRevocation = _ref6.reasonForRevocation;
+  var _ref7 = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      key = _ref7.key,
+      revocationCertificate = _ref7.revocationCertificate,
+      reasonForRevocation = _ref7.reasonForRevocation;
 
   var options = {
     key: key, revocationCertificate: revocationCertificate, reasonForRevocation: reasonForRevocation
@@ -47996,23 +48833,23 @@ function revokeKey() {
       return key.revoke(reasonForRevocation);
     }
   }).then(function () {
-    var _ref7 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(key) {
+    var _ref8 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(key) {
       var publicKey;
-      return _regenerator2.default.wrap(function _callee3$(_context3) {
+      return _regenerator2.default.wrap(function _callee4$(_context4) {
         while (1) {
-          switch (_context3.prev = _context3.next) {
+          switch (_context4.prev = _context4.next) {
             case 0:
-              _context3.next = 2;
+              _context4.next = 2;
               return convertStreams(key);
 
             case 2:
               if (!key.isPrivate()) {
-                _context3.next = 5;
+                _context4.next = 5;
                 break;
               }
 
               publicKey = key.toPublic();
-              return _context3.abrupt('return', {
+              return _context4.abrupt('return', {
                 privateKey: key,
                 privateKeyArmored: key.armor(),
                 publicKey: publicKey,
@@ -48020,21 +48857,21 @@ function revokeKey() {
               });
 
             case 5:
-              return _context3.abrupt('return', {
+              return _context4.abrupt('return', {
                 publicKey: key,
                 publicKeyArmored: key.armor()
               });
 
             case 6:
             case 'end':
-              return _context3.stop();
+              return _context4.stop();
           }
         }
-      }, _callee3, _this3);
+      }, _callee4, _this3);
     }));
 
     return function (_x5) {
-      return _ref7.apply(this, arguments);
+      return _ref8.apply(this, arguments);
     };
   }()).catch(onError.bind(null, 'Error revoking key'));
 }
@@ -48046,51 +48883,13 @@ function revokeKey() {
  * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
  * @async
  */
-function decryptKey(_ref8) {
-  var privateKey = _ref8.privateKey,
-      passphrase = _ref8.passphrase;
+function decryptKey(_ref9) {
+  var privateKey = _ref9.privateKey,
+      passphrase = _ref9.passphrase;
 
   if (asyncProxy) {
     // use web worker if available
     return asyncProxy.delegate('decryptKey', { privateKey: privateKey, passphrase: passphrase });
-  }
-
-  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4() {
-    return _regenerator2.default.wrap(function _callee4$(_context4) {
-      while (1) {
-        switch (_context4.prev = _context4.next) {
-          case 0:
-            _context4.next = 2;
-            return privateKey.decrypt(passphrase);
-
-          case 2:
-            return _context4.abrupt('return', {
-              key: privateKey
-            });
-
-          case 3:
-          case 'end':
-            return _context4.stop();
-        }
-      }
-    }, _callee4, this);
-  }))).catch(onError.bind(null, 'Error decrypting private key'));
-}
-
-/**
- * Lock a private key with your passphrase.
- * @param  {Key} privateKey                      the private key that is to be decrypted
- * @param  {String|Array<String>} passphrase     the user's passphrase(s) chosen during key generation
- * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
- * @async
- */
-function encryptKey(_ref10) {
-  var privateKey = _ref10.privateKey,
-      passphrase = _ref10.passphrase;
-
-  if (asyncProxy) {
-    // use web worker if available
-    return asyncProxy.delegate('encryptKey', { privateKey: privateKey, passphrase: passphrase });
   }
 
   return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5() {
@@ -48099,7 +48898,7 @@ function encryptKey(_ref10) {
         switch (_context5.prev = _context5.next) {
           case 0:
             _context5.next = 2;
-            return privateKey.encrypt(passphrase);
+            return privateKey.decrypt(passphrase);
 
           case 2:
             return _context5.abrupt('return', {
@@ -48112,6 +48911,44 @@ function encryptKey(_ref10) {
         }
       }
     }, _callee5, this);
+  }))).catch(onError.bind(null, 'Error decrypting private key'));
+}
+
+/**
+ * Lock a private key with your passphrase.
+ * @param  {Key} privateKey                      the private key that is to be decrypted
+ * @param  {String|Array<String>} passphrase     the user's passphrase(s) chosen during key generation
+ * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
+ * @async
+ */
+function encryptKey(_ref11) {
+  var privateKey = _ref11.privateKey,
+      passphrase = _ref11.passphrase;
+
+  if (asyncProxy) {
+    // use web worker if available
+    return asyncProxy.delegate('encryptKey', { privateKey: privateKey, passphrase: passphrase });
+  }
+
+  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee6() {
+    return _regenerator2.default.wrap(function _callee6$(_context6) {
+      while (1) {
+        switch (_context6.prev = _context6.next) {
+          case 0:
+            _context6.next = 2;
+            return privateKey.encrypt(passphrase);
+
+          case 2:
+            return _context6.abrupt('return', {
+              key: privateKey
+            });
+
+          case 3:
+          case 'end':
+            return _context6.stop();
+        }
+      }
+    }, _callee6, this);
   }))).catch(onError.bind(null, 'Error decrypting private key'));
 }
 
@@ -48152,34 +48989,34 @@ function encryptKey(_ref10) {
  * @async
  * @static
  */
-function encrypt(_ref12) {
+function encrypt(_ref13) {
   var _this4 = this;
 
-  var message = _ref12.message,
-      publicKeys = _ref12.publicKeys,
-      privateKeys = _ref12.privateKeys,
-      passwords = _ref12.passwords,
-      sessionKey = _ref12.sessionKey,
-      _ref12$compression = _ref12.compression,
-      compression = _ref12$compression === undefined ? _config2.default.compression : _ref12$compression,
-      _ref12$armor = _ref12.armor,
-      armor = _ref12$armor === undefined ? true : _ref12$armor,
-      _ref12$streaming = _ref12.streaming,
-      streaming = _ref12$streaming === undefined ? message && message.fromStream : _ref12$streaming,
-      _ref12$detached = _ref12.detached,
-      detached = _ref12$detached === undefined ? false : _ref12$detached,
-      _ref12$signature = _ref12.signature,
-      signature = _ref12$signature === undefined ? null : _ref12$signature,
-      _ref12$returnSessionK = _ref12.returnSessionKey,
-      returnSessionKey = _ref12$returnSessionK === undefined ? false : _ref12$returnSessionK,
-      _ref12$wildcard = _ref12.wildcard,
-      wildcard = _ref12$wildcard === undefined ? false : _ref12$wildcard,
-      _ref12$date = _ref12.date,
-      date = _ref12$date === undefined ? new Date() : _ref12$date,
-      _ref12$fromUserIds = _ref12.fromUserIds,
-      fromUserIds = _ref12$fromUserIds === undefined ? [] : _ref12$fromUserIds,
-      _ref12$toUserIds = _ref12.toUserIds,
-      toUserIds = _ref12$toUserIds === undefined ? [] : _ref12$toUserIds;
+  var message = _ref13.message,
+      publicKeys = _ref13.publicKeys,
+      privateKeys = _ref13.privateKeys,
+      passwords = _ref13.passwords,
+      sessionKey = _ref13.sessionKey,
+      _ref13$compression = _ref13.compression,
+      compression = _ref13$compression === undefined ? _config2.default.compression : _ref13$compression,
+      _ref13$armor = _ref13.armor,
+      armor = _ref13$armor === undefined ? true : _ref13$armor,
+      _ref13$streaming = _ref13.streaming,
+      streaming = _ref13$streaming === undefined ? message && message.fromStream : _ref13$streaming,
+      _ref13$detached = _ref13.detached,
+      detached = _ref13$detached === undefined ? false : _ref13$detached,
+      _ref13$signature = _ref13.signature,
+      signature = _ref13$signature === undefined ? null : _ref13$signature,
+      _ref13$returnSessionK = _ref13.returnSessionKey,
+      returnSessionKey = _ref13$returnSessionK === undefined ? false : _ref13$returnSessionK,
+      _ref13$wildcard = _ref13.wildcard,
+      wildcard = _ref13$wildcard === undefined ? false : _ref13$wildcard,
+      _ref13$date = _ref13.date,
+      date = _ref13$date === undefined ? new Date() : _ref13$date,
+      _ref13$fromUserIds = _ref13.fromUserIds,
+      fromUserIds = _ref13$fromUserIds === undefined ? [] : _ref13$fromUserIds,
+      _ref13$toUserIds = _ref13.toUserIds,
+      toUserIds = _ref13$toUserIds === undefined ? [] : _ref13$toUserIds;
 
   checkMessage(message);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);fromUserIds = toArray(fromUserIds);toUserIds = toArray(toUserIds);
 
@@ -48188,58 +49025,58 @@ function encrypt(_ref12) {
     return asyncProxy.delegate('encrypt', { message: message, publicKeys: publicKeys, privateKeys: privateKeys, passwords: passwords, sessionKey: sessionKey, compression: compression, armor: armor, streaming: streaming, detached: detached, signature: signature, returnSessionKey: returnSessionKey, wildcard: wildcard, date: date, fromUserIds: fromUserIds, toUserIds: toUserIds });
   }
   var result = {};
-  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee6() {
+  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee7() {
     var detachedSignature;
-    return _regenerator2.default.wrap(function _callee6$(_context6) {
+    return _regenerator2.default.wrap(function _callee7$(_context7) {
       while (1) {
-        switch (_context6.prev = _context6.next) {
+        switch (_context7.prev = _context7.next) {
           case 0:
             if (!privateKeys) {
               privateKeys = [];
             }
 
             if (!(privateKeys.length || signature)) {
-              _context6.next = 12;
+              _context7.next = 12;
               break;
             }
 
             if (!detached) {
-              _context6.next = 9;
+              _context7.next = 9;
               break;
             }
 
-            _context6.next = 5;
+            _context7.next = 5;
             return message.signDetached(privateKeys, signature, date, fromUserIds);
 
           case 5:
-            detachedSignature = _context6.sent;
+            detachedSignature = _context7.sent;
 
             result.signature = armor ? detachedSignature.armor() : detachedSignature;
-            _context6.next = 12;
+            _context7.next = 12;
             break;
 
           case 9:
-            _context6.next = 11;
+            _context7.next = 11;
             return message.sign(privateKeys, signature, date, fromUserIds);
 
           case 11:
-            message = _context6.sent;
+            message = _context7.sent;
 
           case 12:
             message = message.compress(compression);
-            return _context6.abrupt('return', message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserIds, streaming));
+            return _context7.abrupt('return', message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserIds, streaming));
 
           case 14:
           case 'end':
-            return _context6.stop();
+            return _context7.stop();
         }
       }
-    }, _callee6, this);
+    }, _callee7, this);
   }))).then(function () {
-    var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee7(encrypted) {
-      return _regenerator2.default.wrap(function _callee7$(_context7) {
+    var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee8(encrypted) {
+      return _regenerator2.default.wrap(function _callee8$(_context8) {
         while (1) {
-          switch (_context7.prev = _context7.next) {
+          switch (_context8.prev = _context8.next) {
             case 0:
               if (armor) {
                 result.data = encrypted.message.armor();
@@ -48249,18 +49086,18 @@ function encrypt(_ref12) {
               if (returnSessionKey) {
                 result.sessionKey = encrypted.sessionKey;
               }
-              return _context7.abrupt('return', convertStreams(result, streaming, armor ? ['signature', 'data'] : []));
+              return _context8.abrupt('return', convertStreams(result, streaming, armor ? ['signature', 'data'] : []));
 
             case 3:
             case 'end':
-              return _context7.stop();
+              return _context8.stop();
           }
         }
-      }, _callee7, _this4);
+      }, _callee8, _this4);
     }));
 
     return function (_x6) {
-      return _ref14.apply(this, arguments);
+      return _ref15.apply(this, arguments);
     };
   }()).catch(onError.bind(null, 'Error encrypting message'));
 }
@@ -48294,20 +49131,20 @@ function encrypt(_ref12) {
  * @async
  * @static
  */
-function decrypt(_ref15) {
-  var message = _ref15.message,
-      privateKeys = _ref15.privateKeys,
-      passwords = _ref15.passwords,
-      sessionKeys = _ref15.sessionKeys,
-      publicKeys = _ref15.publicKeys,
-      _ref15$format = _ref15.format,
-      format = _ref15$format === undefined ? 'utf8' : _ref15$format,
-      _ref15$streaming = _ref15.streaming,
-      streaming = _ref15$streaming === undefined ? message && message.fromStream : _ref15$streaming,
-      _ref15$signature = _ref15.signature,
-      signature = _ref15$signature === undefined ? null : _ref15$signature,
-      _ref15$date = _ref15.date,
-      date = _ref15$date === undefined ? new Date() : _ref15$date;
+function decrypt(_ref16) {
+  var message = _ref16.message,
+      privateKeys = _ref16.privateKeys,
+      passwords = _ref16.passwords,
+      sessionKeys = _ref16.sessionKeys,
+      publicKeys = _ref16.publicKeys,
+      _ref16$format = _ref16.format,
+      format = _ref16$format === undefined ? 'utf8' : _ref16$format,
+      _ref16$streaming = _ref16.streaming,
+      streaming = _ref16$streaming === undefined ? message && message.fromStream : _ref16$streaming,
+      _ref16$signature = _ref16.signature,
+      signature = _ref16$signature === undefined ? null : _ref16$signature,
+      _ref16$date = _ref16.date,
+      date = _ref16$date === undefined ? new Date() : _ref16$date;
 
   checkMessage(message);publicKeys = toArray(publicKeys);privateKeys = toArray(privateKeys);passwords = toArray(passwords);sessionKeys = toArray(sessionKeys);
 
@@ -48317,11 +49154,11 @@ function decrypt(_ref15) {
   }
 
   return message.decrypt(privateKeys, passwords, sessionKeys, streaming).then(function () {
-    var _ref16 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee8(decrypted) {
+    var _ref17 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee9(decrypted) {
       var result;
-      return _regenerator2.default.wrap(function _callee8$(_context8) {
+      return _regenerator2.default.wrap(function _callee9$(_context9) {
         while (1) {
-          switch (_context8.prev = _context8.next) {
+          switch (_context9.prev = _context9.next) {
             case 0:
               if (!publicKeys) {
                 publicKeys = [];
@@ -48330,58 +49167,58 @@ function decrypt(_ref15) {
               result = {};
 
               if (!signature) {
-                _context8.next = 8;
+                _context9.next = 8;
                 break;
               }
 
-              _context8.next = 5;
+              _context9.next = 5;
               return decrypted.verifyDetached(signature, publicKeys, date, streaming);
 
             case 5:
-              _context8.t0 = _context8.sent;
-              _context8.next = 11;
+              _context9.t0 = _context9.sent;
+              _context9.next = 11;
               break;
 
             case 8:
-              _context8.next = 10;
+              _context9.next = 10;
               return decrypted.verify(publicKeys, date, streaming);
 
             case 10:
-              _context8.t0 = _context8.sent;
+              _context9.t0 = _context9.sent;
 
             case 11:
-              result.signatures = _context8.t0;
+              result.signatures = _context9.t0;
 
               result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
               result.filename = decrypted.getFilename();
               if (streaming) linkStreams(result, message, decrypted.packets.stream);
-              _context8.next = 17;
+              _context9.next = 17;
               return convertStream(result.data, streaming);
 
             case 17:
-              result.data = _context8.sent;
+              result.data = _context9.sent;
 
               if (streaming) {
-                _context8.next = 21;
+                _context9.next = 21;
                 break;
               }
 
-              _context8.next = 21;
+              _context9.next = 21;
               return prepareSignatures(result.signatures);
 
             case 21:
-              return _context8.abrupt('return', result);
+              return _context9.abrupt('return', result);
 
             case 22:
             case 'end':
-              return _context8.stop();
+              return _context9.stop();
           }
         }
-      }, _callee8, this);
+      }, _callee9, this);
     }));
 
     return function (_x7) {
-      return _ref16.apply(this, arguments);
+      return _ref17.apply(this, arguments);
     };
   }()).catch(onError.bind(null, 'Error decrypting message'));
 }
@@ -48418,19 +49255,19 @@ function decrypt(_ref15) {
  * @async
  * @static
  */
-function sign(_ref17) {
-  var message = _ref17.message,
-      privateKeys = _ref17.privateKeys,
-      _ref17$armor = _ref17.armor,
-      armor = _ref17$armor === undefined ? true : _ref17$armor,
-      _ref17$streaming = _ref17.streaming,
-      streaming = _ref17$streaming === undefined ? message && message.fromStream : _ref17$streaming,
-      _ref17$detached = _ref17.detached,
-      detached = _ref17$detached === undefined ? false : _ref17$detached,
-      _ref17$date = _ref17.date,
-      date = _ref17$date === undefined ? new Date() : _ref17$date,
-      _ref17$fromUserIds = _ref17.fromUserIds,
-      fromUserIds = _ref17$fromUserIds === undefined ? [] : _ref17$fromUserIds;
+function sign(_ref18) {
+  var message = _ref18.message,
+      privateKeys = _ref18.privateKeys,
+      _ref18$armor = _ref18.armor,
+      armor = _ref18$armor === undefined ? true : _ref18$armor,
+      _ref18$streaming = _ref18.streaming,
+      streaming = _ref18$streaming === undefined ? message && message.fromStream : _ref18$streaming,
+      _ref18$detached = _ref18.detached,
+      detached = _ref18$detached === undefined ? false : _ref18$detached,
+      _ref18$date = _ref18.date,
+      date = _ref18$date === undefined ? new Date() : _ref18$date,
+      _ref18$fromUserIds = _ref18.fromUserIds,
+      fromUserIds = _ref18$fromUserIds === undefined ? [] : _ref18$fromUserIds;
 
   checkCleartextOrMessage(message);
   privateKeys = toArray(privateKeys);fromUserIds = toArray(fromUserIds);
@@ -48443,33 +49280,58 @@ function sign(_ref17) {
   }
 
   var result = {};
-  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee9() {
+  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11() {
+    var _this5 = this;
+
     var signature;
-    return _regenerator2.default.wrap(function _callee9$(_context9) {
+    return _regenerator2.default.wrap(function _callee11$(_context11) {
       while (1) {
-        switch (_context9.prev = _context9.next) {
+        switch (_context11.prev = _context11.next) {
           case 0:
             if (!detached) {
-              _context9.next = 7;
+              _context11.next = 8;
               break;
             }
 
-            _context9.next = 3;
+            _context11.next = 3;
             return message.signDetached(privateKeys, undefined, date, fromUserIds);
 
           case 3:
-            signature = _context9.sent;
+            signature = _context11.sent;
 
             result.signature = armor ? signature.armor() : signature;
-            _context9.next = 11;
+            if (message.packets) {
+              result.signature = _webStreamTools2.default.transformPair(message.packets.write(), function () {
+                var _ref20 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10(readable, writable) {
+                  return _regenerator2.default.wrap(function _callee10$(_context10) {
+                    while (1) {
+                      switch (_context10.prev = _context10.next) {
+                        case 0:
+                          _context10.next = 2;
+                          return _promise2.default.all([_webStreamTools2.default.pipe(result.signature, writable), _webStreamTools2.default.readToEnd(readable).catch(function () {})]);
+
+                        case 2:
+                        case 'end':
+                          return _context10.stop();
+                      }
+                    }
+                  }, _callee10, _this5);
+                }));
+
+                return function (_x8, _x9) {
+                  return _ref20.apply(this, arguments);
+                };
+              }());
+            }
+            _context11.next = 12;
             break;
 
-          case 7:
-            _context9.next = 9;
+          case 8:
+            _context11.next = 10;
             return message.sign(privateKeys, undefined, date, fromUserIds);
 
-          case 9:
-            message = _context9.sent;
+          case 10:
+            message = _context11.sent;
 
             if (armor) {
               result.data = message.armor();
@@ -48477,15 +49339,15 @@ function sign(_ref17) {
               result.message = message;
             }
 
-          case 11:
-            return _context9.abrupt('return', convertStreams(result, streaming, armor ? ['signature', 'data'] : []));
-
           case 12:
+            return _context11.abrupt('return', convertStreams(result, streaming, armor ? ['signature', 'data'] : []));
+
+          case 13:
           case 'end':
-            return _context9.stop();
+            return _context11.stop();
         }
       }
-    }, _callee9, this);
+    }, _callee11, this);
   }))).catch(onError.bind(null, 'Error signing cleartext message'));
 }
 
@@ -48512,15 +49374,15 @@ function sign(_ref17) {
  * @async
  * @static
  */
-function verify(_ref19) {
-  var message = _ref19.message,
-      publicKeys = _ref19.publicKeys,
-      _ref19$streaming = _ref19.streaming,
-      streaming = _ref19$streaming === undefined ? message && message.fromStream : _ref19$streaming,
-      _ref19$signature = _ref19.signature,
-      signature = _ref19$signature === undefined ? null : _ref19$signature,
-      _ref19$date = _ref19.date,
-      date = _ref19$date === undefined ? new Date() : _ref19$date;
+function verify(_ref21) {
+  var message = _ref21.message,
+      publicKeys = _ref21.publicKeys,
+      _ref21$streaming = _ref21.streaming,
+      streaming = _ref21$streaming === undefined ? message && message.fromStream : _ref21$streaming,
+      _ref21$signature = _ref21.signature,
+      signature = _ref21$signature === undefined ? null : _ref21$signature,
+      _ref21$date = _ref21.date,
+      date = _ref21$date === undefined ? new Date() : _ref21$date;
 
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
@@ -48530,62 +49392,62 @@ function verify(_ref19) {
     return asyncProxy.delegate('verify', { message: message, publicKeys: publicKeys, streaming: streaming, signature: signature, date: date });
   }
 
-  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee10() {
+  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12() {
     var result;
-    return _regenerator2.default.wrap(function _callee10$(_context10) {
+    return _regenerator2.default.wrap(function _callee12$(_context12) {
       while (1) {
-        switch (_context10.prev = _context10.next) {
+        switch (_context12.prev = _context12.next) {
           case 0:
             result = {};
 
             if (!signature) {
-              _context10.next = 7;
+              _context12.next = 7;
               break;
             }
 
-            _context10.next = 4;
+            _context12.next = 4;
             return message.verifyDetached(signature, publicKeys, date, streaming);
 
           case 4:
-            _context10.t0 = _context10.sent;
-            _context10.next = 10;
+            _context12.t0 = _context12.sent;
+            _context12.next = 10;
             break;
 
           case 7:
-            _context10.next = 9;
+            _context12.next = 9;
             return message.verify(publicKeys, date, streaming);
 
           case 9:
-            _context10.t0 = _context10.sent;
+            _context12.t0 = _context12.sent;
 
           case 10:
-            result.signatures = _context10.t0;
+            result.signatures = _context12.t0;
 
             result.data = message instanceof _cleartext.CleartextMessage ? message.getText() : message.getLiteralData();
             if (streaming) linkStreams(result, message);
-            _context10.next = 15;
+            _context12.next = 15;
             return convertStream(result.data, streaming);
 
           case 15:
-            result.data = _context10.sent;
+            result.data = _context12.sent;
 
             if (streaming) {
-              _context10.next = 19;
+              _context12.next = 19;
               break;
             }
 
-            _context10.next = 19;
+            _context12.next = 19;
             return prepareSignatures(result.signatures);
 
           case 19:
-            return _context10.abrupt('return', result);
+            return _context12.abrupt('return', result);
 
           case 20:
           case 'end':
-            return _context10.stop();
+            return _context12.stop();
         }
       }
-    }, _callee10, this);
+    }, _callee12, this);
   }))).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
 
@@ -48611,18 +49473,18 @@ function verify(_ref19) {
  * @async
  * @static
  */
-function encryptSessionKey(_ref21) {
-  var data = _ref21.data,
-      algorithm = _ref21.algorithm,
-      aeadAlgorithm = _ref21.aeadAlgorithm,
-      publicKeys = _ref21.publicKeys,
-      passwords = _ref21.passwords,
-      _ref21$wildcard = _ref21.wildcard,
-      wildcard = _ref21$wildcard === undefined ? false : _ref21$wildcard,
-      _ref21$date = _ref21.date,
-      date = _ref21$date === undefined ? new Date() : _ref21$date,
-      _ref21$toUserIds = _ref21.toUserIds,
-      toUserIds = _ref21$toUserIds === undefined ? [] : _ref21$toUserIds;
+function encryptSessionKey(_ref23) {
+  var data = _ref23.data,
+      algorithm = _ref23.algorithm,
+      aeadAlgorithm = _ref23.aeadAlgorithm,
+      publicKeys = _ref23.publicKeys,
+      passwords = _ref23.passwords,
+      _ref23$wildcard = _ref23.wildcard,
+      wildcard = _ref23$wildcard === undefined ? false : _ref23$wildcard,
+      _ref23$date = _ref23.date,
+      date = _ref23$date === undefined ? new Date() : _ref23$date,
+      _ref23$toUserIds = _ref23.toUserIds,
+      toUserIds = _ref23$toUserIds === undefined ? [] : _ref23$toUserIds;
 
   checkBinary(data);checkString(algorithm, 'algorithm');publicKeys = toArray(publicKeys);passwords = toArray(passwords);toUserIds = toArray(toUserIds);
 
@@ -48631,26 +49493,26 @@ function encryptSessionKey(_ref21) {
     return asyncProxy.delegate('encryptSessionKey', { data: data, algorithm: algorithm, aeadAlgorithm: aeadAlgorithm, publicKeys: publicKeys, passwords: passwords, wildcard: wildcard, date: date, toUserIds: toUserIds });
   }
 
-  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee11() {
-    return _regenerator2.default.wrap(function _callee11$(_context11) {
+  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13() {
+    return _regenerator2.default.wrap(function _callee13$(_context13) {
       while (1) {
-        switch (_context11.prev = _context11.next) {
+        switch (_context13.prev = _context13.next) {
           case 0:
-            _context11.next = 2;
+            _context13.next = 2;
             return messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
 
           case 2:
-            _context11.t0 = _context11.sent;
-            return _context11.abrupt('return', {
-              message: _context11.t0
+            _context13.t0 = _context13.sent;
+            return _context13.abrupt('return', {
+              message: _context13.t0
             });
 
           case 4:
           case 'end':
-            return _context11.stop();
+            return _context13.stop();
         }
       }
-    }, _callee11, this);
+    }, _callee13, this);
   }))).catch(onError.bind(null, 'Error encrypting session key'));
 }
 
@@ -48666,10 +49528,10 @@ function encryptSessionKey(_ref21) {
  * @async
  * @static
  */
-function decryptSessionKeys(_ref23) {
-  var message = _ref23.message,
-      privateKeys = _ref23.privateKeys,
-      passwords = _ref23.passwords;
+function decryptSessionKeys(_ref25) {
+  var message = _ref25.message,
+      privateKeys = _ref25.privateKeys,
+      passwords = _ref25.passwords;
 
   checkMessage(message);privateKeys = toArray(privateKeys);passwords = toArray(passwords);
 
@@ -48678,19 +49540,19 @@ function decryptSessionKeys(_ref23) {
     return asyncProxy.delegate('decryptSessionKeys', { message: message, privateKeys: privateKeys, passwords: passwords });
   }
 
-  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12() {
-    return _regenerator2.default.wrap(function _callee12$(_context12) {
+  return _promise2.default.resolve().then((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14() {
+    return _regenerator2.default.wrap(function _callee14$(_context14) {
       while (1) {
-        switch (_context12.prev = _context12.next) {
+        switch (_context14.prev = _context14.next) {
           case 0:
-            return _context12.abrupt('return', message.decryptSessionKeys(privateKeys, passwords));
+            return _context14.abrupt('return', message.decryptSessionKeys(privateKeys, passwords));
 
           case 1:
           case 'end':
-            return _context12.stop();
+            return _context14.stop();
         }
       }
-    }, _callee12, this);
+    }, _callee14, this);
   }))).catch(onError.bind(null, 'Error decrypting session keys'));
 }
 
@@ -48736,52 +49598,52 @@ function toArray(param) {
   }
   return param;
 }function linkStreams(result, message, erroringStream) {
-  var _this6 = this;
+  var _this7 = this;
 
   result.data = _webStreamTools2.default.transformPair(message.packets.stream, function () {
-    var _ref30 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee16(readable, writable) {
+    var _ref32 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee18(readable, writable) {
       var writer;
-      return _regenerator2.default.wrap(function _callee16$(_context16) {
+      return _regenerator2.default.wrap(function _callee18$(_context18) {
         while (1) {
-          switch (_context16.prev = _context16.next) {
+          switch (_context18.prev = _context18.next) {
             case 0:
-              _context16.next = 2;
+              _context18.next = 2;
               return _webStreamTools2.default.pipe(result.data, writable, {
                 preventClose: true
               });
 
             case 2:
               writer = _webStreamTools2.default.getWriter(writable);
-              _context16.prev = 3;
-              _context16.next = 6;
+              _context18.prev = 3;
+              _context18.next = 6;
               return _webStreamTools2.default.readToEnd(erroringStream || readable, function (arr) {
                 return arr;
               });
 
             case 6:
-              _context16.next = 8;
+              _context18.next = 8;
               return writer.close();
 
             case 8:
-              _context16.next = 14;
+              _context18.next = 14;
               break;
 
             case 10:
-              _context16.prev = 10;
-              _context16.t0 = _context16['catch'](3);
-              _context16.next = 14;
-              return writer.abort(_context16.t0);
+              _context18.prev = 10;
+              _context18.t0 = _context18['catch'](3);
+              _context18.next = 14;
+              return writer.abort(_context18.t0);
 
             case 14:
             case 'end':
-              return _context16.stop();
+              return _context18.stop();
           }
         }
-      }, _callee16, _this6, [[3, 10]]);
+      }, _callee18, _this7, [[3, 10]]);
     }));
 
-    return function (_x14, _x15) {
-      return _ref30.apply(this, arguments);
+    return function (_x16, _x17) {
+      return _ref32.apply(this, arguments);
     };
   }());
 }function onError(message, error) {
@@ -48807,7 +49669,7 @@ function nativeAEAD() {
   return _config2.default.aead_protect && ((_config2.default.aead_protect_version !== 4 || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto() || _config2.default.aead_protect_version === 4 && _config2.default.aead_mode === _enums2.default.aead.eax && _util2.default.getWebCrypto());
 }
 
-},{"./cleartext":350,"./config/config":351,"./enums":386,"./key":389,"./message":393,"./polyfills":417,"./util":425,"./worker/async_proxy":427,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":347}],395:[function(_dereq_,module,exports){
+},{"./cleartext":349,"./config/config":350,"./enums":385,"./key":388,"./message":392,"./polyfills":416,"./util":424,"./worker/async_proxy":426,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":346}],394:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49025,7 +49887,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":386,"./all_packets.js":395,"./compressed.js":397,"./literal.js":399,"./marker.js":400,"./one_pass_signature.js":401,"./public_key.js":404,"./public_key_encrypted_session_key.js":405,"./public_subkey.js":406,"./secret_key.js":407,"./secret_subkey.js":408,"./signature.js":409,"./sym_encrypted_aead_protected.js":410,"./sym_encrypted_integrity_protected.js":411,"./sym_encrypted_session_key.js":412,"./symmetrically_encrypted.js":413,"./trust.js":414,"./user_attribute.js":415,"./userid.js":416,"babel-runtime/core-js/object/assign":23}],396:[function(_dereq_,module,exports){
+},{"../enums.js":385,"./all_packets.js":394,"./compressed.js":396,"./literal.js":398,"./marker.js":399,"./one_pass_signature.js":400,"./public_key.js":403,"./public_key_encrypted_session_key.js":404,"./public_subkey.js":405,"./secret_key.js":406,"./secret_subkey.js":407,"./signature.js":408,"./sym_encrypted_aead_protected.js":409,"./sym_encrypted_integrity_protected.js":410,"./sym_encrypted_session_key.js":411,"./symmetrically_encrypted.js":412,"./trust.js":413,"./user_attribute.js":414,"./userid.js":415,"babel-runtime/core-js/object/assign":23}],395:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49273,7 +50135,7 @@ function packetlistCloneToSignature(clone) {
   return new _signature.Signature(packetlist);
 }
 
-},{"../cleartext":350,"../key":389,"../message":393,"../signature":418,"../type/keyid":421,"../util":425,"./packetlist":403,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":347}],397:[function(_dereq_,module,exports){
+},{"../cleartext":349,"../key":388,"../message":392,"../signature":417,"../type/keyid":420,"../util":424,"./packetlist":402,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":346}],396:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49586,7 +50448,7 @@ if (nodeZlib) {
   };
 }
 
-},{"../config":352,"../enums":386,"../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"pako":321,"seek-bzip":341,"web-stream-tools":347}],398:[function(_dereq_,module,exports){
+},{"../config":351,"../enums":385,"../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"pako":320,"seek-bzip":340,"web-stream-tools":346}],397:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49628,7 +50490,7 @@ var mod = {
 
 exports.default = mod;
 
-},{"./all_packets":395,"./clone":396,"./packetlist":403,"babel-runtime/core-js/object/assign":23}],399:[function(_dereq_,module,exports){
+},{"./all_packets":394,"./clone":395,"./packetlist":402,"babel-runtime/core-js/object/assign":23}],398:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49874,7 +50736,7 @@ Literal.prototype.write = function () {
 
 exports.default = Literal;
 
-},{"../enums":386,"../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":347}],400:[function(_dereq_,module,exports){
+},{"../enums":385,"../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":346}],399:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -49949,7 +50811,7 @@ Marker.prototype.read = function (bytes) {
 
 exports.default = Marker;
 
-},{"../enums":386}],401:[function(_dereq_,module,exports){
+},{"../enums":385}],400:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -50159,7 +51021,7 @@ OnePassSignature.prototype.verify = (0, _asyncToGenerator3.default)( /*#__PURE__
 
 exports.default = OnePassSignature;
 
-},{"../enums":386,"../type/keyid":421,"../util":425,"./signature":409,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],402:[function(_dereq_,module,exports){
+},{"../enums":385,"../type/keyid":420,"../util":424,"./signature":408,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],401:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -50713,7 +51575,7 @@ exports.default = {
  * @module packet/packet
  */
 
-},{"../enums":386,"../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":347}],403:[function(_dereq_,module,exports){
+},{"../enums":385,"../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":346}],402:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51134,7 +51996,7 @@ List.fromStructuredClone = function (packetlistClone) {
 
 exports.default = List;
 
-},{"../config":352,"../enums":386,"../util":425,"./all_packets":395,"./packet":402,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":347}],404:[function(_dereq_,module,exports){
+},{"../config":351,"../enums":385,"../util":424,"./all_packets":394,"./packet":401,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":346}],403:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51446,7 +52308,7 @@ PublicKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKey;
 
-},{"../config":352,"../crypto":367,"../enums":386,"../type/keyid":421,"../type/mpi":422,"../util":425,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14}],405:[function(_dereq_,module,exports){
+},{"../config":351,"../crypto":366,"../enums":385,"../type/keyid":420,"../type/mpi":421,"../util":424,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14}],404:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51658,11 +52520,13 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = function () {
         switch (_context2.prev = _context2.next) {
           case 0:
             algo = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
-            _context2.next = 3;
+            _context2.t0 = _mpi2.default;
+            _context2.next = 4;
             return _crypto2.default.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
 
-          case 3:
-            result = _context2.sent;
+          case 4:
+            _context2.t1 = _context2.sent;
+            result = new _context2.t0(_context2.t1);
             checksum = void 0;
             decoded = void 0;
 
@@ -51677,20 +52541,20 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = function () {
             key = _util2.default.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
             if (_util2.default.equalsUint8Array(checksum, _util2.default.write_checksum(key))) {
-              _context2.next = 12;
+              _context2.next = 14;
               break;
             }
 
             throw new Error('Decryption error');
 
-          case 12:
+          case 14:
             this.sessionKey = key;
             this.sessionKeyAlgorithm = _enums2.default.read(_enums2.default.symmetric, decoded.charCodeAt(0));
 
-          case 14:
+          case 16:
             return _context2.abrupt('return', true);
 
-          case 15:
+          case 17:
           case 'end':
             return _context2.stop();
         }
@@ -51717,7 +52581,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":367,"../enums":386,"../type/keyid":421,"../type/mpi":422,"../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],406:[function(_dereq_,module,exports){
+},{"../crypto":366,"../enums":385,"../type/keyid":420,"../type/mpi":421,"../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],405:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -51776,7 +52640,7 @@ PublicSubkey.prototype.constructor = PublicSubkey;
 
 exports.default = PublicSubkey;
 
-},{"../enums":386,"./public_key":404}],407:[function(_dereq_,module,exports){
+},{"../enums":385,"./public_key":403}],406:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -52359,7 +53223,7 @@ SecretKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SecretKey;
 
-},{"../crypto":367,"../enums":386,"../type/keyid.js":421,"../type/s2k":424,"../util":425,"./public_key":404,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],408:[function(_dereq_,module,exports){
+},{"../crypto":366,"../enums":385,"../type/keyid.js":420,"../type/s2k":423,"../util":424,"./public_key":403,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],407:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -52417,7 +53281,7 @@ SecretSubkey.prototype.constructor = SecretSubkey;
 
 exports.default = SecretSubkey;
 
-},{"../enums":386,"./secret_key":407}],409:[function(_dereq_,module,exports){
+},{"../enums":385,"./secret_key":406}],408:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -53369,7 +54233,7 @@ Signature.prototype.postCloneTypeFix = function () {
 
 exports.default = Signature;
 
-},{"../crypto":367,"../enums":386,"../type/keyid.js":421,"../type/mpi.js":422,"../util":425,"./packet":402,"babel-runtime/core-js/object/entries":26,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":347}],410:[function(_dereq_,module,exports){
+},{"../crypto":366,"../enums":385,"../type/keyid.js":420,"../type/mpi.js":421,"../util":424,"./packet":401,"babel-runtime/core-js/object/entries":26,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":346}],409:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -53897,7 +54761,7 @@ SymEncryptedAEADProtected.prototype.crypt = function () {
   };
 }();
 
-},{"../config":352,"../crypto":367,"../enums":386,"../util":425,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":347}],411:[function(_dereq_,module,exports){
+},{"../config":351,"../crypto":366,"../enums":385,"../util":424,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":346}],410:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -54229,7 +55093,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = function () {
 
 exports.default = SymEncryptedIntegrityProtected;
 
-},{"../config":352,"../crypto":367,"../enums":386,"../util":425,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":347}],412:[function(_dereq_,module,exports){
+},{"../config":351,"../crypto":366,"../enums":385,"../util":424,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":346}],411:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -54566,7 +55430,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SymEncryptedSessionKey;
 
-},{"../config":352,"../crypto":367,"../enums":386,"../type/s2k":424,"../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],413:[function(_dereq_,module,exports){
+},{"../config":351,"../crypto":366,"../enums":385,"../type/s2k":423,"../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],412:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -54771,7 +55635,7 @@ SymmetricallyEncrypted.prototype.encrypt = function () {
 
 exports.default = SymmetricallyEncrypted;
 
-},{"../config":352,"../crypto":367,"../enums":386,"../util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":347}],414:[function(_dereq_,module,exports){
+},{"../config":351,"../crypto":366,"../enums":385,"../util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"web-stream-tools":346}],413:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -54818,7 +55682,7 @@ Trust.prototype.read = function () {}; // TODO
 
 exports.default = Trust;
 
-},{"../enums":386}],415:[function(_dereq_,module,exports){
+},{"../enums":385}],414:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -54930,7 +55794,7 @@ UserAttribute.prototype.equals = function (usrAttr) {
 
 exports.default = UserAttribute;
 
-},{"../enums":386,"../util":425,"./packet":402}],416:[function(_dereq_,module,exports){
+},{"../enums":385,"../util":424,"./packet":401}],415:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55036,7 +55900,7 @@ Userid.prototype.format = function (userid) {
 
 exports.default = Userid;
 
-},{"../enums":386,"../util":425,"babel-runtime/core-js/object/assign":23}],417:[function(_dereq_,module,exports){
+},{"../enums":385,"../util":424,"babel-runtime/core-js/object/assign":23}],416:[function(_dereq_,module,exports){
 (function (global){
 'use strict';
 
@@ -55057,8 +55921,6 @@ var _util = _dereq_('./util');
 var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/* eslint-disable import/no-extraneous-dependencies */
 
 if (typeof window !== 'undefined') {
   /********************************************************************
@@ -55122,7 +55984,7 @@ if (typeof TextEncoder === 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./util":425,"@mattiasbuelens/web-streams-polyfill/es6":1,"babel-runtime/core-js/array/from":17,"babel-runtime/core-js/object/assign":23,"babel-runtime/core-js/symbol":33,"core-js/fn/array/fill":47,"core-js/fn/array/find":48,"core-js/fn/array/from":49,"core-js/fn/array/includes":50,"core-js/fn/object/assign":51,"core-js/fn/promise":52,"core-js/fn/string/repeat":53,"core-js/fn/symbol":54,"core-js/fn/typed/uint8-array":55,"text-encoding-utf-8":344,"whatwg-fetch":349}],418:[function(_dereq_,module,exports){
+},{"./util":424,"@mattiasbuelens/web-streams-polyfill/es6":1,"babel-runtime/core-js/array/from":17,"babel-runtime/core-js/object/assign":23,"babel-runtime/core-js/symbol":33,"core-js/fn/array/fill":47,"core-js/fn/array/find":48,"core-js/fn/array/from":49,"core-js/fn/array/includes":50,"core-js/fn/object/assign":51,"core-js/fn/promise":52,"core-js/fn/string/repeat":53,"core-js/fn/symbol":54,"core-js/fn/typed/uint8-array":55,"text-encoding-utf-8":342,"whatwg-fetch":348}],417:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55268,7 +56130,7 @@ Signature.prototype.armor = function () {
   return _armor2.default.encode(_enums2.default.armor.signature, this.packets.write());
 };
 
-},{"./encoding/armor":384,"./enums":386,"./packet":398,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],419:[function(_dereq_,module,exports){
+},{"./encoding/armor":383,"./enums":385,"./packet":397,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],418:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55349,7 +56211,7 @@ ECDHSymmetricKey.fromClone = function (clone) {
 
 exports.default = ECDHSymmetricKey;
 
-},{"../util":425}],420:[function(_dereq_,module,exports){
+},{"../util":424}],419:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55434,7 +56296,7 @@ KDFParams.fromClone = function (clone) {
 
 exports.default = KDFParams;
 
-},{"../enums.js":386}],421:[function(_dereq_,module,exports){
+},{"../enums.js":385}],420:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55543,7 +56405,7 @@ Keyid.wildcard = function () {
 
 exports.default = Keyid;
 
-},{"../util.js":425}],422:[function(_dereq_,module,exports){
+},{"../util.js":424}],421:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55707,7 +56569,7 @@ MPI.fromClone = function (clone) {
 
 exports.default = MPI;
 
-},{"../util":425,"bn.js":45}],423:[function(_dereq_,module,exports){
+},{"../util":424,"bn.js":45}],422:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -55832,7 +56694,7 @@ OID.fromClone = function (clone) {
 
 exports.default = OID;
 
-},{"../enums":386,"../util":425}],424:[function(_dereq_,module,exports){
+},{"../enums":385,"../util":424}],423:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56118,7 +56980,7 @@ S2K.fromClone = function (clone) {
 
 exports.default = S2K;
 
-},{"../config":352,"../crypto":367,"../enums.js":386,"../util.js":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],425:[function(_dereq_,module,exports){
+},{"../config":351,"../crypto":366,"../enums.js":385,"../util.js":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],424:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -56873,11 +57735,21 @@ exports.default = {
    * Format user id for internal use.
    */
   formatUserId: function formatUserId(id) {
-    // name and email address can be empty but must be of the correct type
-    if (id.name && !_util2.default.isString(id.name) || id.email && !_util2.default.isEmailAddress(id.email)) {
+    // name, email address and comment can be empty but must be of the correct type
+    if (id.name && !_util2.default.isString(id.name) || id.email && !_util2.default.isEmailAddress(id.email) || id.comment && !_util2.default.isString(id.comment)) {
       throw new Error('Invalid user id format');
     }
-    return new _addressRfc2.default.Address(id.name, id.email, id.comment).format();
+    var components = [];
+    if (id.name) {
+      components.push(id.name);
+    }
+    if (id.comment) {
+      components.push('(' + id.comment + ')');
+    }
+    if (id.email) {
+      components.push('<' + id.email + '>');
+    }
+    return components.join(' ');
   },
 
   /**
@@ -57004,7 +57876,7 @@ exports.default = {
  * @module util
  */
 
-},{"./config":352,"./encoding/base64":385,"./util":425,"address-rfc2822":2,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":347}],426:[function(_dereq_,module,exports){
+},{"./config":351,"./encoding/base64":384,"./util":424,"address-rfc2822":2,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":346}],425:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -57144,16 +58016,12 @@ WKD.prototype.lookup = function () {
 
 exports.default = WKD;
 
-},{"./crypto":367,"./key":389,"./util":425,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"node-fetch":"node-fetch"}],427:[function(_dereq_,module,exports){
+},{"./crypto":366,"./key":388,"./util":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"node-fetch":"node-fetch"}],426:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _promise = _dereq_('babel-runtime/core-js/promise');
-
-var _promise2 = _interopRequireDefault(_promise);
 
 var _toConsumableArray2 = _dereq_('babel-runtime/helpers/toConsumableArray');
 
@@ -57166,6 +58034,10 @@ var _regenerator2 = _interopRequireDefault(_regenerator);
 var _asyncToGenerator2 = _dereq_('babel-runtime/helpers/asyncToGenerator');
 
 var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
+
+var _promise = _dereq_('babel-runtime/core-js/promise');
+
+var _promise2 = _interopRequireDefault(_promise);
 
 var _util = _dereq_('../util.js');
 
@@ -57242,6 +58114,9 @@ function AsyncProxy() {
     return function (event) {
       var msg = event.data;
       switch (msg.event) {
+        case 'loaded':
+          _this.workers[workerId].loadedResolve(true);
+          break;
         case 'method-return':
           if (msg.err) {
             // fail
@@ -57276,10 +58151,15 @@ function AsyncProxy() {
 
   var workerId = 0;
   this.workers.forEach(function (worker) {
+    worker.loadedPromise = new _promise2.default(function (resolve) {
+      worker.loadedResolve = resolve;
+    });
     worker.requests = 0;
     worker.onmessage = handleMessage(workerId++);
     worker.onerror = function (e) {
-      throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+      worker.loadedResolve(false);
+      console.error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+      return false;
     };
 
     if (config) {
@@ -57291,6 +58171,33 @@ function AsyncProxy() {
   this.tasks = {};
   this.currentID = 0;
 }
+
+/**
+ * Returns a promise that resolves when all workers have finished loading
+ * @returns {Promise<Boolean>} Resolves to true if all workers have loaded succesfully; false otherwise
+*/
+AsyncProxy.prototype.loaded = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
+  var loaded;
+  return _regenerator2.default.wrap(function _callee$(_context) {
+    while (1) {
+      switch (_context.prev = _context.next) {
+        case 0:
+          _context.next = 2;
+          return _promise2.default.all(this.workers.map(function (worker) {
+            return worker.loadedPromise;
+          }));
+
+        case 2:
+          loaded = _context.sent;
+          return _context.abrupt('return', loaded.every(Boolean));
+
+        case 4:
+        case 'end':
+          return _context.stop();
+      }
+    }
+  }, _callee, this);
+}));
 
 /**
  * Get new request ID
@@ -57306,30 +58213,30 @@ AsyncProxy.prototype.getID = function () {
  * @async
  */
 AsyncProxy.prototype.seedRandom = function () {
-  var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(workerId, size) {
+  var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(workerId, size) {
     var buf;
-    return _regenerator2.default.wrap(function _callee$(_context) {
+    return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
-        switch (_context.prev = _context.next) {
+        switch (_context2.prev = _context2.next) {
           case 0:
-            _context.next = 2;
+            _context2.next = 2;
             return _crypto2.default.random.getRandomBytes(size);
 
           case 2:
-            buf = _context.sent;
+            buf = _context2.sent;
 
             this.workers[workerId].postMessage({ event: 'seed-random', buf: buf }, _util2.default.getTransferables(buf, true));
 
           case 4:
           case 'end':
-            return _context.stop();
+            return _context2.stop();
         }
       }
-    }, _callee, this);
+    }, _callee2, this);
   }));
 
   return function (_x2, _x3) {
-    return _ref2.apply(this, arguments);
+    return _ref3.apply(this, arguments);
   };
 }();
 
@@ -57378,5 +58285,5 @@ AsyncProxy.prototype.delegate = function (method, options) {
 
 exports.default = AsyncProxy;
 
-},{"../config":352,"../crypto":367,"../packet":398,"../util.js":425,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/toConsumableArray":42,"babel-runtime/regenerator":44}]},{},[388])(388)
+},{"../config":351,"../crypto":366,"../packet":397,"../util.js":424,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/toConsumableArray":42,"babel-runtime/regenerator":44}]},{},[387])(387)
 });
