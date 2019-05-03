@@ -1,6 +1,7 @@
 /**
  * @fileoverview Provides functions for asymmetric signing and signature verification
  * @requires bn.js
+ * @requires crypto/crypto
  * @requires crypto/public_key
  * @requires crypto/pkcs1
  * @requires enums
@@ -9,6 +10,7 @@
 */
 
 import BN from 'bn.js';
+import crypto from './crypto';
 import publicKey from './public_key';
 import pkcs1 from './pkcs1';
 import enums from '../enums';
@@ -30,6 +32,10 @@ export default {
    * @async
    */
   verify: async function(algo, hash_algo, msg_MPIs, pub_MPIs, data, hashed) {
+    const types = crypto.getPubKeyParamTypes(algo);
+    if (pub_MPIs.length < types.length) {
+      throw new Error('Missing public key parameters');
+    }
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
@@ -83,6 +89,10 @@ export default {
    * @async
    */
   sign: async function(algo, hash_algo, key_params, data, hashed) {
+    const types = [].concat(crypto.getPubKeyParamTypes(algo), crypto.getPrivKeyParamTypes(algo));
+    if (key_params.length < types.length) {
+      throw new Error('Missing private key parameters');
+    }
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
