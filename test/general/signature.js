@@ -338,15 +338,20 @@ describe("Signature", function() {
         '=GQsY',
         '-----END PGP PRIVATE KEY BLOCK-----'].join("\n"))).keys[0];
     const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
-    const msg = await openpgp.message.readArmored(msg_arm1);
-
+    const message = await openpgp.message.readArmored(msg_arm1);
+    const primaryKey_packet = priv_key_gnupg_ext.primaryKey.write();
+    expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
     await priv_key_gnupg_ext.decrypt("abcd");
-    return openpgp.decrypt({ message: msg, privateKeys: [priv_key_gnupg_ext], publicKeys: [pub_key] }).then(function(msg) {
-      expect(msg.signatures).to.exist;
-      expect(msg.signatures).to.have.length(1);
-      expect(msg.signatures[0].valid).to.be.true;
-      expect(msg.signatures[0].signature.packets.length).to.equal(1);
-    });
+    expect(priv_key_gnupg_ext.isDecrypted()).to.be.true;
+    const msg = await openpgp.decrypt({ message, privateKeys: [priv_key_gnupg_ext], publicKeys: [pub_key] });
+    expect(msg.signatures).to.exist;
+    expect(msg.signatures).to.have.length(1);
+    expect(msg.signatures[0].valid).to.be.true;
+    expect(msg.signatures[0].signature.packets.length).to.equal(1);
+    await priv_key_gnupg_ext.encrypt("abcd");
+    expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
+    const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();
+    expect(primaryKey_packet).to.deep.equal(primaryKey_packet2);
   });
 
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', async function() {
