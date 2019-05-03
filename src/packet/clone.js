@@ -81,12 +81,17 @@ function verificationObjectToClone(verObject) {
     const signature = verObject.signature;
     verObject.signature = stream.fromAsync(async () => {
       const packets = (await signature).packets;
-      await verified;
-      delete packets[0].signature;
+      try {
+        await verified;
+        delete packets[0].signature;
+      } catch(e) {}
       return packets;
     });
   } else {
     verObject.signature = verObject.signature.packets;
+  }
+  if (verObject.error) {
+    verObject.error = verObject.error.message;
   }
   return verObject;
 }
@@ -151,10 +156,15 @@ function packetlistCloneToSignatures(clone) {
   clone.keyid = type_keyid.fromClone(clone.keyid);
   if (util.isStream(clone.signature)) {
     clone.signature = stream.readToEnd(clone.signature, ([signature]) => new Signature(List.fromStructuredClone(signature)));
+    clone.signature.catch(() => {});
   } else {
     clone.signature = new Signature(List.fromStructuredClone(clone.signature));
   }
   clone.verified = stream.readToEnd(clone.verified, ([verified]) => verified);
+  clone.verified.catch(() => {});
+  if (clone.error) {
+    clone.error = new Error(clone.error);
+  }
   return clone;
 }
 

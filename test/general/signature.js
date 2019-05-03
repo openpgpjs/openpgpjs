@@ -532,9 +532,10 @@ zmuVOdNuWQqxT9Sqa84=
     });
   });
 
-  it('Verify signed message with trailing spaces from GPG', async function() {
-    const msg_armor =
-      `-----BEGIN PGP MESSAGE-----
+  function tests() {
+    it('Verify signed message with trailing spaces from GPG', async function() {
+      const msg_armor =
+        `-----BEGIN PGP MESSAGE-----
 Version: GnuPG v1
 
 owGbwMvMyMT4oOW7S46CznTG01El3MUFicmpxbolqcUlUTev14K5Vgq8XGCGQmJe
@@ -546,26 +547,26 @@ yYDnCgA=
 =15ki
 -----END PGP MESSAGE-----`;
 
-    const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-    const sMsg = await openpgp.message.readArmored(msg_armor);
-    const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+      const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      const sMsg = await openpgp.message.readArmored(msg_armor);
+      const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
 
-    const keyids = sMsg.getSigningKeyIds();
+      const keyids = sMsg.getSigningKeyIds();
 
-    expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
+      expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
 
-    return openpgp.verify({ publicKeys:[pubKey], message:sMsg }).then(function(cleartextSig) {
-      expect(cleartextSig).to.exist;
-      expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(cleartextSig.data))).to.equal(plaintext);
-      expect(cleartextSig.signatures).to.have.length(1);
-      expect(cleartextSig.signatures[0].valid).to.be.true;
-      expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+      return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(function(cleartextSig) {
+        expect(cleartextSig).to.exist;
+        expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(cleartextSig.data))).to.equal(plaintext);
+        expect(cleartextSig.signatures).to.have.length(1);
+        expect(cleartextSig.signatures[0].valid).to.be.true;
+        expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
+      });
     });
-  });
 
-  it('Streaming verify signed message with trailing spaces from GPG', async function() {
-    const msg_armor =
-      `-----BEGIN PGP MESSAGE-----
+    it('Streaming verify signed message with trailing spaces from GPG', async function() {
+      const msg_armor =
+        `-----BEGIN PGP MESSAGE-----
 Version: GnuPG v1
 
 owGbwMvMyMT4oOW7S46CznTG01El3MUFicmpxbolqcUlUTev14K5Vgq8XGCGQmJe
@@ -577,32 +578,62 @@ yYDnCgA=
 =15ki
 -----END PGP MESSAGE-----`.split('');
 
-    const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-    const sMsg = await openpgp.message.readArmored(new ReadableStream({
-      async pull(controller) {
-        await new Promise(setTimeout);
-        controller.enqueue(msg_armor.shift());
-        if (!msg_armor.length) controller.close();
-      }
-    }));
-    const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+      const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      const sMsg = await openpgp.message.readArmored(new ReadableStream({
+        async pull(controller) {
+          await new Promise(setTimeout);
+          controller.enqueue(msg_armor.shift());
+          if (!msg_armor.length) controller.close();
+        }
+      }));
+      const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
 
-    const keyids = sMsg.getSigningKeyIds();
+      const keyids = sMsg.getSigningKeyIds();
 
-    expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
+      expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
 
-    return openpgp.verify({ publicKeys:[pubKey], message:sMsg }).then(async function(cleartextSig) {
-      expect(cleartextSig).to.exist;
-      expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
-      expect(cleartextSig.signatures).to.have.length(1);
-      expect(await cleartextSig.signatures[0].verified).to.be.true;
-      expect((await cleartextSig.signatures[0].signature).packets.length).to.equal(1);
+      return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(async function(cleartextSig) {
+        expect(cleartextSig).to.exist;
+        expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
+        expect(cleartextSig.signatures).to.have.length(1);
+        expect(await cleartextSig.signatures[0].verified).to.be.true;
+        expect((await cleartextSig.signatures[0].signature).packets.length).to.equal(1);
+      });
     });
-  });
 
-  it('Streaming verify signed message with missing signature packet', async function() {
-    const msg_armor =
-      `-----BEGIN PGP MESSAGE-----
+    it('Verify signed message with missing signature packet', async function() {
+      const msg_armor =
+        `-----BEGIN PGP MESSAGE-----
+Version: OpenPGP.js v3.1.3
+Comment: https://openpgpjs.org
+
+yFgBO8LLzMjE+KDlu0uOgs50xtNRJdzFBYnJqcW6JanFJVE3r9eCuVYKvFxg
+hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
+
+=D6TZ
+-----END PGP MESSAGE-----`;
+
+      const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      const sMsg = await openpgp.message.readArmored(msg_armor);
+      const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+
+      const keyids = sMsg.getSigningKeyIds();
+
+      expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
+
+      return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(async function(cleartextSig) {
+        expect(cleartextSig).to.exist;
+        expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
+        expect(cleartextSig.signatures).to.have.length(1);
+        expect(cleartextSig.signatures[0].valid).to.be.null;
+        expect(cleartextSig.signatures[0].error.message).to.equal('Corresponding signature packet missing');
+        expect(cleartextSig.signatures[0].signature.packets.length).to.equal(0);
+      });
+    });
+
+    it('Streaming verify signed message with missing signature packet', async function() {
+      const msg_armor =
+        `-----BEGIN PGP MESSAGE-----
 Version: OpenPGP.js v3.1.3
 Comment: https://openpgpjs.org
 
@@ -612,27 +643,40 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 =D6TZ
 -----END PGP MESSAGE-----`.split('');
 
-    const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-    const sMsg = await openpgp.message.readArmored(new ReadableStream({
-      async pull(controller) {
-        await new Promise(setTimeout);
-        controller.enqueue(msg_armor.shift());
-        if (!msg_armor.length) controller.close();
-      }
-    }));
-    const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+      const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      const sMsg = await openpgp.message.readArmored(new ReadableStream({
+        async pull(controller) {
+          await new Promise(setTimeout);
+          controller.enqueue(msg_armor.shift());
+          if (!msg_armor.length) controller.close();
+        }
+      }));
+      const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
 
-    const keyids = sMsg.getSigningKeyIds();
+      const keyids = sMsg.getSigningKeyIds();
 
-    expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
+      expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
 
-    return openpgp.verify({ publicKeys:[pubKey], message:sMsg }).then(async function(cleartextSig) {
-      expect(cleartextSig).to.exist;
-      expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
-      expect(cleartextSig.signatures).to.have.length(1);
-      await expect(cleartextSig.signatures[0].verified).to.be.rejectedWith('Corresponding signature packet missing');
-      expect((await cleartextSig.signatures[0].signature).packets.length).to.equal(0);
+      return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(async function(cleartextSig) {
+        expect(cleartextSig).to.exist;
+        expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
+        expect(cleartextSig.signatures).to.have.length(1);
+        await expect(cleartextSig.signatures[0].verified).to.be.rejectedWith('Corresponding signature packet missing');
+        expect((await cleartextSig.signatures[0].signature).packets.length).to.equal(0);
+      });
     });
+  }
+
+  tests();
+
+  tryTests('With Worker', tests, {
+    if: typeof window !== 'undefined' && window.Worker,
+    before: async function() {
+      await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+    },
+    after: function() {
+      openpgp.destroyWorker();
+    }
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same string cleartext and valid signatures', async function() {
