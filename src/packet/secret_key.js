@@ -164,6 +164,11 @@ SecretKey.prototype.isDecrypted = function() {
  * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
+  if (this.isDecrypted() && this.encrypted) { // gnu-dummy
+    this.isEncrypted = true;
+    return false;
+  }
+
   if (this.isDecrypted() && !passphrase) {
     this.encrypted = null;
     return false;
@@ -257,6 +262,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
     const s2k = new type_s2k();
     i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
+    if (s2k.type === 'gnu-dummy') {
+      this.isEncrypted = false;
+      return false;
+    }
     key = await produceEncryptionKey(s2k, passphrase, symmetric);
   } else {
     symmetric = s2k_usage;
