@@ -223,6 +223,9 @@ List.fromStructuredClone = function(packetlistClone) {
       packet.packets = new List();
     }
   }
+  if (packetlistClone.stream) {
+    packetlist.stream = stream.transform(packetlistClone.stream, packet => packets.fromStructuredClone(packet));
+  }
   return packetlist;
 };
 

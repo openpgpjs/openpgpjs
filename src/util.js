@@ -83,10 +83,15 @@ export default {
               const { port1, port2 } = new MessageChannel();
               port1.onmessage = async function({ data: { action } }) {
                 if (action === 'read') {
-                  const result = await reader.read();
-                  port1.postMessage(result, util.getTransferables(result, true));
+                  try {
+                    const result = await reader.read();
+                    port1.postMessage(result, util.getTransferables(result));
+                  } catch(e) {
+                    port1.postMessage({ error: e.message });
+                  }
                 } else if (action === 'cancel') {
-                  port1.postMessage(await transformed.cancel());
+                  await transformed.cancel();
+                  port1.postMessage();
                 }
               };
               obj[key] = port2;
@@ -116,8 +121,10 @@ export default {
             pull(controller) {
               return new Promise(resolve => {
                 value.onmessage = evt => {
-                  const { done, value } = evt.data;
-                  if (!done) {
+                  const { done, value, error } = evt.data;
+                  if (error) {
+                    controller.error(new Error(error));
+                  } else if (!done) {
                     controller.enqueue(value);
                   } else {
                     controller.close();
