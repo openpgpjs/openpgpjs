@@ -31823,7 +31823,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.0",
+  versionstring: "OpenPGP.js v4.5.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -39626,6 +39626,10 @@ var _bn = _dereq_('bn.js');
 
 var _bn2 = _interopRequireDefault(_bn);
 
+var _crypto = _dereq_('./crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
 var _public_key = _dereq_('./public_key');
 
 var _public_key2 = _interopRequireDefault(_public_key);
@@ -39644,6 +39648,17 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * @fileoverview Provides functions for asymmetric signing and signature verification
+ * @requires bn.js
+ * @requires crypto/crypto
+ * @requires crypto/public_key
+ * @requires crypto/pkcs1
+ * @requires enums
+ * @requires util
+ * @module crypto/signature
+*/
+
 exports.default = {
   /**
    * Verifies the signature provided for data using specified algorithms and public key parameters.
@@ -39661,33 +39676,43 @@ exports.default = {
    */
   verify: function () {
     var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(algo, hash_algo, msg_MPIs, pub_MPIs, data, hashed) {
-      var m, n, e, EM, EM2, r, s, p, q, g, y, oid, signature, Q, _oid, _signature, _Q;
+      var types, m, n, e, EM, EM2, r, s, p, q, g, y, oid, signature, Q, _oid, _signature, _Q;
 
       return _regenerator2.default.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              _context.t0 = algo;
-              _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context.t0 === _enums2.default.publicKey.rsa_sign ? 3 : _context.t0 === _enums2.default.publicKey.dsa ? 13 : _context.t0 === _enums2.default.publicKey.ecdsa ? 20 : _context.t0 === _enums2.default.publicKey.eddsa ? 24 : 28;
-              break;
+              types = _crypto2.default.getPubKeyParamTypes(algo);
+
+              if (!(pub_MPIs.length < types.length)) {
+                _context.next = 3;
+                break;
+              }
+
+              throw new Error('Missing public key parameters');
 
             case 3:
+              _context.t0 = algo;
+              _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 6 : _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 6 : _context.t0 === _enums2.default.publicKey.rsa_sign ? 6 : _context.t0 === _enums2.default.publicKey.dsa ? 16 : _context.t0 === _enums2.default.publicKey.ecdsa ? 23 : _context.t0 === _enums2.default.publicKey.eddsa ? 27 : 31;
+              break;
+
+            case 6:
               m = msg_MPIs[0].toBN();
               n = pub_MPIs[0].toBN();
               e = pub_MPIs[1].toBN();
-              _context.next = 8;
+              _context.next = 11;
               return _public_key2.default.rsa.verify(m, n, e);
 
-            case 8:
+            case 11:
               EM = _context.sent;
-              _context.next = 11;
+              _context.next = 14;
               return _pkcs2.default.emsa.encode(hash_algo, hashed, n.byteLength());
 
-            case 11:
+            case 14:
               EM2 = _context.sent;
               return _context.abrupt('return', _util2.default.Uint8Array_to_hex(EM) === EM2);
 
-            case 13:
+            case 16:
               r = msg_MPIs[0].toBN();
               s = msg_MPIs[1].toBN();
               p = pub_MPIs[0].toBN();
@@ -39696,13 +39721,13 @@ exports.default = {
               y = pub_MPIs[3].toBN();
               return _context.abrupt('return', _public_key2.default.dsa.verify(hash_algo, r, s, hashed, g, p, q, y));
 
-            case 20:
+            case 23:
               oid = pub_MPIs[0];
               signature = { r: msg_MPIs[0].toUint8Array(), s: msg_MPIs[1].toUint8Array() };
               Q = pub_MPIs[1].toUint8Array();
               return _context.abrupt('return', _public_key2.default.elliptic.ecdsa.verify(oid, hash_algo, signature, data, Q, hashed));
 
-            case 24:
+            case 27:
               _oid = pub_MPIs[0];
               // EdDSA signature params are expected in little-endian format
 
@@ -39711,10 +39736,10 @@ exports.default = {
               _Q = pub_MPIs[1].toUint8Array('be', 33);
               return _context.abrupt('return', _public_key2.default.elliptic.eddsa.verify(_oid, hash_algo, _signature, data, _Q, hashed));
 
-            case 28:
+            case 31:
               throw new Error('Invalid signature algorithm.');
 
-            case 29:
+            case 32:
             case 'end':
               return _context.stop();
           }
@@ -39744,73 +39769,83 @@ exports.default = {
    */
   sign: function () {
     var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(algo, hash_algo, key_params, data, hashed) {
-      var n, e, d, m, signature, p, q, g, x, _signature2, oid, _d, _signature3, _oid2, _d2, _signature4;
+      var types, n, e, d, m, signature, p, q, g, x, _signature2, oid, _d, _signature3, _oid2, _d2, _signature4;
 
       return _regenerator2.default.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
-              _context2.t0 = algo;
-              _context2.next = _context2.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context2.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context2.t0 === _enums2.default.publicKey.rsa_sign ? 3 : _context2.t0 === _enums2.default.publicKey.dsa ? 15 : _context2.t0 === _enums2.default.publicKey.elgamal ? 23 : _context2.t0 === _enums2.default.publicKey.ecdsa ? 24 : _context2.t0 === _enums2.default.publicKey.eddsa ? 30 : 36;
-              break;
+              types = [].concat(_crypto2.default.getPubKeyParamTypes(algo), _crypto2.default.getPrivKeyParamTypes(algo));
+
+              if (!(key_params.length < types.length)) {
+                _context2.next = 3;
+                break;
+              }
+
+              throw new Error('Missing private key parameters');
 
             case 3:
+              _context2.t0 = algo;
+              _context2.next = _context2.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 6 : _context2.t0 === _enums2.default.publicKey.rsa_encrypt ? 6 : _context2.t0 === _enums2.default.publicKey.rsa_sign ? 6 : _context2.t0 === _enums2.default.publicKey.dsa ? 18 : _context2.t0 === _enums2.default.publicKey.elgamal ? 26 : _context2.t0 === _enums2.default.publicKey.ecdsa ? 27 : _context2.t0 === _enums2.default.publicKey.eddsa ? 33 : 39;
+              break;
+
+            case 6:
               n = key_params[0].toBN();
               e = key_params[1].toBN();
               d = key_params[2].toBN();
               _context2.t1 = _bn2.default;
-              _context2.next = 9;
+              _context2.next = 12;
               return _pkcs2.default.emsa.encode(hash_algo, hashed, n.byteLength());
 
-            case 9:
+            case 12:
               _context2.t2 = _context2.sent;
               m = new _context2.t1(_context2.t2, 16);
-              _context2.next = 13;
+              _context2.next = 16;
               return _public_key2.default.rsa.sign(m, n, e, d);
 
-            case 13:
+            case 16:
               signature = _context2.sent;
               return _context2.abrupt('return', _util2.default.Uint8Array_to_MPI(signature));
 
-            case 15:
+            case 18:
               p = key_params[0].toBN();
               q = key_params[1].toBN();
               g = key_params[2].toBN();
               x = key_params[4].toBN();
-              _context2.next = 21;
+              _context2.next = 24;
               return _public_key2.default.dsa.sign(hash_algo, hashed, g, p, q, x);
 
-            case 21:
+            case 24:
               _signature2 = _context2.sent;
               return _context2.abrupt('return', _util2.default.concatUint8Array([_util2.default.Uint8Array_to_MPI(_signature2.r), _util2.default.Uint8Array_to_MPI(_signature2.s)]));
 
-            case 23:
+            case 26:
               throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
 
-            case 24:
+            case 27:
               oid = key_params[0];
               _d = key_params[2].toUint8Array();
-              _context2.next = 28;
+              _context2.next = 31;
               return _public_key2.default.elliptic.ecdsa.sign(oid, hash_algo, data, _d, hashed);
 
-            case 28:
+            case 31:
               _signature3 = _context2.sent;
               return _context2.abrupt('return', _util2.default.concatUint8Array([_util2.default.Uint8Array_to_MPI(_signature3.r), _util2.default.Uint8Array_to_MPI(_signature3.s)]));
 
-            case 30:
+            case 33:
               _oid2 = key_params[0];
               _d2 = key_params[2].toUint8Array('be', 32);
-              _context2.next = 34;
+              _context2.next = 37;
               return _public_key2.default.elliptic.eddsa.sign(_oid2, hash_algo, data, _d2, hashed);
 
-            case 34:
+            case 37:
               _signature4 = _context2.sent;
               return _context2.abrupt('return', _util2.default.concatUint8Array([_util2.default.Uint8Array_to_MPI(_signature4.R), _util2.default.Uint8Array_to_MPI(_signature4.S)]));
 
-            case 36:
+            case 39:
               throw new Error('Invalid signature algorithm.');
 
-            case 37:
+            case 40:
             case 'end':
               return _context2.stop();
           }
@@ -39824,17 +39859,9 @@ exports.default = {
 
     return sign;
   }()
-}; /**
-    * @fileoverview Provides functions for asymmetric signing and signature verification
-    * @requires bn.js
-    * @requires crypto/public_key
-    * @requires crypto/pkcs1
-    * @requires enums
-    * @requires util
-    * @module crypto/signature
-   */
+};
 
-},{"../enums":385,"../util":424,"./pkcs1":368,"./public_key":378,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],383:[function(_dereq_,module,exports){
+},{"../enums":385,"../util":424,"./crypto":361,"./pkcs1":368,"./public_key":378,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44,"bn.js":45}],383:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -50029,22 +50056,34 @@ function verificationObjectToClone(verObject) {
 
             case 2:
               packets = _context.sent.packets;
-              _context.next = 5;
+              _context.prev = 3;
+              _context.next = 6;
               return verified;
 
-            case 5:
+            case 6:
               delete packets[0].signature;
+              _context.next = 11;
+              break;
+
+            case 9:
+              _context.prev = 9;
+              _context.t0 = _context['catch'](3);
+
+            case 11:
               return _context.abrupt('return', packets);
 
-            case 7:
+            case 12:
             case 'end':
               return _context.stop();
           }
         }
-      }, _callee, _this);
+      }, _callee, _this, [[3, 9]]);
     })));
   } else {
     verObject.signature = verObject.signature.packets;
+  }
+  if (verObject.error) {
+    verObject.error = verObject.error.message;
   }
   return verObject;
 }
@@ -50114,6 +50153,7 @@ function packetlistCloneToSignatures(clone) {
 
       return new _signature.Signature(_packetlist2.default.fromStructuredClone(signature));
     });
+    clone.signature.catch(function () {});
   } else {
     clone.signature = new _signature.Signature(_packetlist2.default.fromStructuredClone(clone.signature));
   }
@@ -50123,6 +50163,10 @@ function packetlistCloneToSignatures(clone) {
 
     return verified;
   });
+  clone.verified.catch(function () {});
+  if (clone.error) {
+    clone.error = new Error(clone.error);
+  }
   return clone;
 }
 
@@ -51991,6 +52035,11 @@ List.fromStructuredClone = function (packetlistClone) {
       packet.packets = new List();
     }
   }
+  if (packetlistClone.stream) {
+    packetlist.stream = _webStreamTools2.default.transform(packetlistClone.stream, function (packet) {
+      return packets.fromStructuredClone(packet);
+    });
+  }
   return packetlist;
 };
 
@@ -52877,46 +52926,56 @@ SecretKey.prototype.encrypt = function () {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
+            if (!(this.isDecrypted() && this.encrypted)) {
+              _context.next = 3;
+              break;
+            }
+
+            // gnu-dummy
+            this.isEncrypted = true;
+            return _context.abrupt('return', false);
+
+          case 3:
             if (!(this.isDecrypted() && !passphrase)) {
-              _context.next = 5;
+              _context.next = 8;
               break;
             }
 
             this.encrypted = null;
             return _context.abrupt('return', false);
 
-          case 5:
+          case 8:
             if (passphrase) {
-              _context.next = 7;
+              _context.next = 10;
               break;
             }
 
             throw new Error('The key must be decrypted before removing passphrase protection.');
 
-          case 7:
+          case 10:
             s2k = new _s2k2.default();
-            _context.next = 10;
+            _context.next = 13;
             return _crypto2.default.random.getRandomBytes(8);
 
-          case 10:
+          case 13:
             s2k.salt = _context.sent;
             symmetric = 'aes256';
             cleartext = write_cleartext_params(this.params, this.algorithm);
-            _context.next = 15;
+            _context.next = 18;
             return produceEncryptionKey(s2k, passphrase, symmetric);
 
-          case 15:
+          case 18:
             key = _context.sent;
             blockLen = _crypto2.default.cipher[symmetric].blockSize;
-            _context.next = 19;
+            _context.next = 22;
             return _crypto2.default.random.getRandomBytes(blockLen);
 
-          case 19:
+          case 22:
             iv = _context.sent;
             arr = void 0;
 
             if (!(this.version === 5)) {
-              _context.next = 37;
+              _context.next = 40;
               break;
             }
 
@@ -52926,23 +52985,23 @@ SecretKey.prototype.encrypt = function () {
             arr = [new Uint8Array([253, optionalFields.length])];
             arr.push(optionalFields);
             mode = _crypto2.default[aead];
-            _context.next = 29;
+            _context.next = 32;
             return mode(symmetric, key);
 
-          case 29:
+          case 32:
             modeInstance = _context.sent;
-            _context.next = 32;
+            _context.next = 35;
             return modeInstance.encrypt(cleartext, iv.subarray(0, mode.ivLength), new Uint8Array());
 
-          case 32:
+          case 35:
             encrypted = _context.sent;
 
             arr.push(_util2.default.writeNumber(encrypted.length, 4));
             arr.push(encrypted);
-            _context.next = 54;
+            _context.next = 57;
             break;
 
-          case 37:
+          case 40:
             arr = [new Uint8Array([254, _enums2.default.write(_enums2.default.symmetric, symmetric)])];
             arr.push(s2k.write());
             arr.push(iv);
@@ -52952,10 +53011,10 @@ SecretKey.prototype.encrypt = function () {
             _context.t3 = key;
             _context.t4 = _util2.default;
             _context.t5 = cleartext;
-            _context.next = 48;
+            _context.next = 51;
             return _crypto2.default.hash.sha1(cleartext);
 
-          case 48:
+          case 51:
             _context.t6 = _context.sent;
             _context.t7 = [_context.t5, _context.t6];
             _context.t8 = _context.t4.concatUint8Array.call(_context.t4, _context.t7);
@@ -52964,12 +53023,12 @@ SecretKey.prototype.encrypt = function () {
 
             _context.t0.push.call(_context.t0, _context.t10);
 
-          case 54:
+          case 57:
 
             this.encrypted = _util2.default.concatUint8Array(arr);
             return _context.abrupt('return', true);
 
-          case 56:
+          case 59:
           case 'end':
             return _context.stop();
         }
@@ -53014,7 +53073,7 @@ SecretKey.prototype.decrypt = function () {
             //   one-octet symmetric encryption algorithm.
 
             if (!(s2k_usage === 255 || s2k_usage === 254 || s2k_usage === 253)) {
-              _context3.next = 19;
+              _context3.next = 22;
               break;
             }
 
@@ -53035,24 +53094,33 @@ SecretKey.prototype.decrypt = function () {
 
             i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
-            _context3.next = 16;
+            if (!(s2k.type === 'gnu-dummy')) {
+              _context3.next = 17;
+              break;
+            }
+
+            this.isEncrypted = false;
+            return _context3.abrupt('return', false);
+
+          case 17:
+            _context3.next = 19;
             return produceEncryptionKey(s2k, passphrase, symmetric);
 
-          case 16:
+          case 19:
             key = _context3.sent;
-            _context3.next = 24;
+            _context3.next = 27;
             break;
 
-          case 19:
+          case 22:
             symmetric = s2k_usage;
             symmetric = _enums2.default.read(_enums2.default.symmetric, symmetric);
-            _context3.next = 23;
+            _context3.next = 26;
             return _crypto2.default.hash.md5(passphrase);
 
-          case 23:
+          case 26:
             key = _context3.sent;
 
-          case 24:
+          case 27:
 
             // - [Optional] If secret data is encrypted (string-to-key usage octet
             //   not zero), an Initial Vector (IV) of the same length as the
@@ -53072,78 +53140,78 @@ SecretKey.prototype.decrypt = function () {
             cleartext = void 0;
 
             if (!aead) {
-              _context3.next = 46;
+              _context3.next = 49;
               break;
             }
 
             mode = _crypto2.default[aead];
-            _context3.prev = 31;
-            _context3.next = 34;
+            _context3.prev = 34;
+            _context3.next = 37;
             return mode(symmetric, key);
 
-          case 34:
+          case 37:
             modeInstance = _context3.sent;
-            _context3.next = 37;
+            _context3.next = 40;
             return modeInstance.decrypt(ciphertext, iv.subarray(0, mode.ivLength), new Uint8Array());
 
-          case 37:
+          case 40:
             cleartext = _context3.sent;
-            _context3.next = 44;
+            _context3.next = 47;
             break;
 
-          case 40:
-            _context3.prev = 40;
-            _context3.t0 = _context3['catch'](31);
+          case 43:
+            _context3.prev = 43;
+            _context3.t0 = _context3['catch'](34);
 
             if (!(_context3.t0.message === 'Authentication tag mismatch')) {
-              _context3.next = 44;
+              _context3.next = 47;
               break;
             }
 
             throw new Error('Incorrect key passphrase: ' + _context3.t0.message);
 
-          case 44:
-            _context3.next = 64;
+          case 47:
+            _context3.next = 67;
             break;
 
-          case 46:
-            _context3.next = 48;
+          case 49:
+            _context3.next = 51;
             return _crypto2.default.cfb.decrypt(symmetric, key, ciphertext, iv);
 
-          case 48:
+          case 51:
             cleartextWithHash = _context3.sent;
             hash = void 0;
             hashlen = void 0;
 
             if (!(s2k_usage === 255)) {
-              _context3.next = 57;
+              _context3.next = 60;
               break;
             }
 
             hashlen = 2;
             cleartext = cleartextWithHash.subarray(0, -hashlen);
             hash = _util2.default.write_checksum(cleartext);
-            _context3.next = 62;
+            _context3.next = 65;
             break;
 
-          case 57:
+          case 60:
             hashlen = 20;
             cleartext = cleartextWithHash.subarray(0, -hashlen);
-            _context3.next = 61;
+            _context3.next = 64;
             return _crypto2.default.hash.sha1(cleartext);
 
-          case 61:
+          case 64:
             hash = _context3.sent;
 
-          case 62:
+          case 65:
             if (_util2.default.equalsUint8Array(hash, cleartextWithHash.subarray(-hashlen))) {
-              _context3.next = 64;
+              _context3.next = 67;
               break;
             }
 
             throw new Error('Incorrect key passphrase');
 
-          case 64:
+          case 67:
             privParams = parse_cleartext_params(cleartext, this.algorithm);
 
             this.params = this.params.concat(privParams);
@@ -53152,12 +53220,12 @@ SecretKey.prototype.decrypt = function () {
 
             return _context3.abrupt('return', true);
 
-          case 69:
+          case 72:
           case 'end':
             return _context3.stop();
         }
       }
-    }, _callee3, this, [[31, 40]]);
+    }, _callee3, this, [[34, 43]]);
   }));
 
   return function (_x6) {
@@ -56791,7 +56859,10 @@ S2K.prototype.get_count = function () {
 S2K.prototype.read = function (bytes) {
   var i = 0;
   this.type = _enums2.default.read(_enums2.default.s2k, bytes[i++]);
-  this.algorithm = _enums2.default.read(_enums2.default.hash, bytes[i++]);
+  this.algorithm = bytes[i++];
+  if (this.type !== 'gnu') {
+    this.algorithm = _enums2.default.read(_enums2.default.hash, this.algorithm);
+  }
 
   switch (this.type) {
     case 'simple':
@@ -56811,11 +56882,11 @@ S2K.prototype.read = function (bytes) {
       break;
 
     case 'gnu':
-      if (_util2.default.Uint8Array_to_str(bytes.subarray(i, 3)) === "GNU") {
+      if (_util2.default.Uint8Array_to_str(bytes.subarray(i, i + 3)) === "GNU") {
         i += 3; // GNU
         var gnuExtType = 1000 + bytes[i++];
         if (gnuExtType === 1001) {
-          this.type = gnuExtType;
+          this.type = 'gnu-dummy';
           // GnuPG extension mode 1001 -- don't write secret key at all
         } else {
           throw new Error("Unknown s2k gnu protection mode.");
@@ -57101,41 +57172,49 @@ exports.default = {
                                 switch (_context.prev = _context.next) {
                                   case 0:
                                     if (!(action === 'read')) {
-                                      _context.next = 7;
-                                      break;
-                                    }
-
-                                    _context.next = 3;
-                                    return reader.read();
-
-                                  case 3:
-                                    result = _context.sent;
-
-                                    port1.postMessage(result, _util2.default.getTransferables(result, true));
-                                    _context.next = 13;
-                                    break;
-
-                                  case 7:
-                                    if (!(action === 'cancel')) {
                                       _context.next = 13;
                                       break;
                                     }
 
-                                    _context.t0 = port1;
+                                    _context.prev = 1;
+                                    _context.next = 4;
+                                    return reader.read();
+
+                                  case 4:
+                                    result = _context.sent;
+
+                                    port1.postMessage(result, _util2.default.getTransferables(result));
                                     _context.next = 11;
-                                    return transformed.cancel();
+                                    break;
+
+                                  case 8:
+                                    _context.prev = 8;
+                                    _context.t0 = _context['catch'](1);
+
+                                    port1.postMessage({ error: _context.t0.message });
 
                                   case 11:
-                                    _context.t1 = _context.sent;
-
-                                    _context.t0.postMessage.call(_context.t0, _context.t1);
+                                    _context.next = 17;
+                                    break;
 
                                   case 13:
+                                    if (!(action === 'cancel')) {
+                                      _context.next = 17;
+                                      break;
+                                    }
+
+                                    _context.next = 16;
+                                    return transformed.cancel();
+
+                                  case 16:
+                                    port1.postMessage();
+
+                                  case 17:
                                   case 'end':
                                     return _context.stop();
                                 }
                               }
-                            }, _callee, this);
+                            }, _callee, this, [[1, 8]]);
                           }));
 
                           return function (_x2) {
@@ -57188,9 +57267,12 @@ exports.default = {
                 value.onmessage = function (evt) {
                   var _evt$data = evt.data,
                       done = _evt$data.done,
-                      value = _evt$data.value;
+                      value = _evt$data.value,
+                      error = _evt$data.error;
 
-                  if (!done) {
+                  if (error) {
+                    controller.error(new Error(error));
+                  } else if (!done) {
                     controller.enqueue(value);
                   } else {
                     controller.close();

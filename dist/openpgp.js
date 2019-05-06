@@ -21728,6 +21728,822 @@ process.umask = function() { return 0; };
 },{}],68:[function(require,module,exports){
 'use strict';
 
+/*
+node-bzip - a pure-javascript Node.JS module for decoding bzip2 data
+
+Copyright (C) 2012 Eli Skeggs
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, see
+http://www.gnu.org/licenses/lgpl-2.1.html
+
+Adapted from bzip2.js, copyright 2011 antimatter15 (antimatter15@gmail.com).
+
+Based on micro-bunzip by Rob Landley (rob@landley.net).
+
+Based on bzip2 decompression code by Julian R Seward (jseward@acm.org),
+which also acknowledges contributions by Mike Burrows, David Wheeler,
+Peter Fenwick, Alistair Moffat, Radford Neal, Ian H. Witten,
+Robert Sedgewick, and Jon L. Bentley.
+*/
+
+var BITMASK = [0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF];
+
+// offset in bytes
+var BitReader = function BitReader(stream) {
+  this.stream = stream;
+  this.bitOffset = 0;
+  this.curByte = 0;
+  this.hasByte = false;
+};
+
+BitReader.prototype._ensureByte = function () {
+  if (!this.hasByte) {
+    this.curByte = this.stream.readByte();
+    this.hasByte = true;
+  }
+};
+
+// reads bits from the buffer
+BitReader.prototype.read = function (bits) {
+  var result = 0;
+  while (bits > 0) {
+    this._ensureByte();
+    var remaining = 8 - this.bitOffset;
+    // if we're in a byte
+    if (bits >= remaining) {
+      result <<= remaining;
+      result |= BITMASK[remaining] & this.curByte;
+      this.hasByte = false;
+      this.bitOffset = 0;
+      bits -= remaining;
+    } else {
+      result <<= bits;
+      var shift = remaining - bits;
+      result |= (this.curByte & BITMASK[bits] << shift) >> shift;
+      this.bitOffset += bits;
+      bits = 0;
+    }
+  }
+  return result;
+};
+
+// seek to an arbitrary point in the buffer (expressed in bits)
+BitReader.prototype.seek = function (pos) {
+  var n_bit = pos % 8;
+  var n_byte = (pos - n_bit) / 8;
+  this.bitOffset = n_bit;
+  this.stream.seek(n_byte);
+  this.hasByte = false;
+};
+
+// reads 6 bytes worth of data using the read method
+BitReader.prototype.pi = function () {
+  var buf = new Uint8Array(6),
+      i;
+  for (i = 0; i < buf.length; i++) {
+    buf[i] = this.read(8);
+  }
+  return bufToHex(buf);
+};
+
+function bufToHex(buf) {
+  return Array.prototype.map.call(buf, x => ('00' + x.toString(16)).slice(-2)).join('');
+}
+
+module.exports = BitReader;
+
+},{}],69:[function(require,module,exports){
+"use strict";
+
+/* CRC32, used in Bzip2 implementation.
+ * This is a port of CRC32.java from the jbzip2 implementation at
+ *   https://code.google.com/p/jbzip2
+ * which is:
+ *   Copyright (c) 2011 Matthew Francis
+ *
+ *   Permission is hereby granted, free of charge, to any person
+ *   obtaining a copy of this software and associated documentation
+ *   files (the "Software"), to deal in the Software without
+ *   restriction, including without limitation the rights to use,
+ *   copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *   copies of the Software, and to permit persons to whom the
+ *   Software is furnished to do so, subject to the following
+ *   conditions:
+ *
+ *   The above copyright notice and this permission notice shall be
+ *   included in all copies or substantial portions of the Software.
+ *
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ *   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ *   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ *   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ *   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ *   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ *   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *   OTHER DEALINGS IN THE SOFTWARE.
+ * This JavaScript implementation is:
+ *   Copyright (c) 2013 C. Scott Ananian
+ * with the same licensing terms as Matthew Francis' original implementation.
+ */
+module.exports = function () {
+
+  /**
+   * A static CRC lookup table
+   */
+  var crc32Lookup = new Uint32Array([0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b, 0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61, 0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd, 0x4c11db70, 0x48d0c6c7, 0x4593e01e, 0x4152fda9, 0x5f15adac, 0x5bd4b01b, 0x569796c2, 0x52568b75, 0x6a1936c8, 0x6ed82b7f, 0x639b0da6, 0x675a1011, 0x791d4014, 0x7ddc5da3, 0x709f7b7a, 0x745e66cd, 0x9823b6e0, 0x9ce2ab57, 0x91a18d8e, 0x95609039, 0x8b27c03c, 0x8fe6dd8b, 0x82a5fb52, 0x8664e6e5, 0xbe2b5b58, 0xbaea46ef, 0xb7a96036, 0xb3687d81, 0xad2f2d84, 0xa9ee3033, 0xa4ad16ea, 0xa06c0b5d, 0xd4326d90, 0xd0f37027, 0xddb056fe, 0xd9714b49, 0xc7361b4c, 0xc3f706fb, 0xceb42022, 0xca753d95, 0xf23a8028, 0xf6fb9d9f, 0xfbb8bb46, 0xff79a6f1, 0xe13ef6f4, 0xe5ffeb43, 0xe8bccd9a, 0xec7dd02d, 0x34867077, 0x30476dc0, 0x3d044b19, 0x39c556ae, 0x278206ab, 0x23431b1c, 0x2e003dc5, 0x2ac12072, 0x128e9dcf, 0x164f8078, 0x1b0ca6a1, 0x1fcdbb16, 0x018aeb13, 0x054bf6a4, 0x0808d07d, 0x0cc9cdca, 0x7897ab07, 0x7c56b6b0, 0x71159069, 0x75d48dde, 0x6b93dddb, 0x6f52c06c, 0x6211e6b5, 0x66d0fb02, 0x5e9f46bf, 0x5a5e5b08, 0x571d7dd1, 0x53dc6066, 0x4d9b3063, 0x495a2dd4, 0x44190b0d, 0x40d816ba, 0xaca5c697, 0xa864db20, 0xa527fdf9, 0xa1e6e04e, 0xbfa1b04b, 0xbb60adfc, 0xb6238b25, 0xb2e29692, 0x8aad2b2f, 0x8e6c3698, 0x832f1041, 0x87ee0df6, 0x99a95df3, 0x9d684044, 0x902b669d, 0x94ea7b2a, 0xe0b41de7, 0xe4750050, 0xe9362689, 0xedf73b3e, 0xf3b06b3b, 0xf771768c, 0xfa325055, 0xfef34de2, 0xc6bcf05f, 0xc27dede8, 0xcf3ecb31, 0xcbffd686, 0xd5b88683, 0xd1799b34, 0xdc3abded, 0xd8fba05a, 0x690ce0ee, 0x6dcdfd59, 0x608edb80, 0x644fc637, 0x7a089632, 0x7ec98b85, 0x738aad5c, 0x774bb0eb, 0x4f040d56, 0x4bc510e1, 0x46863638, 0x42472b8f, 0x5c007b8a, 0x58c1663d, 0x558240e4, 0x51435d53, 0x251d3b9e, 0x21dc2629, 0x2c9f00f0, 0x285e1d47, 0x36194d42, 0x32d850f5, 0x3f9b762c, 0x3b5a6b9b, 0x0315d626, 0x07d4cb91, 0x0a97ed48, 0x0e56f0ff, 0x1011a0fa, 0x14d0bd4d, 0x19939b94, 0x1d528623, 0xf12f560e, 0xf5ee4bb9, 0xf8ad6d60, 0xfc6c70d7, 0xe22b20d2, 0xe6ea3d65, 0xeba91bbc, 0xef68060b, 0xd727bbb6, 0xd3e6a601, 0xdea580d8, 0xda649d6f, 0xc423cd6a, 0xc0e2d0dd, 0xcda1f604, 0xc960ebb3, 0xbd3e8d7e, 0xb9ff90c9, 0xb4bcb610, 0xb07daba7, 0xae3afba2, 0xaafbe615, 0xa7b8c0cc, 0xa379dd7b, 0x9b3660c6, 0x9ff77d71, 0x92b45ba8, 0x9675461f, 0x8832161a, 0x8cf30bad, 0x81b02d74, 0x857130c3, 0x5d8a9099, 0x594b8d2e, 0x5408abf7, 0x50c9b640, 0x4e8ee645, 0x4a4ffbf2, 0x470cdd2b, 0x43cdc09c, 0x7b827d21, 0x7f436096, 0x7200464f, 0x76c15bf8, 0x68860bfd, 0x6c47164a, 0x61043093, 0x65c52d24, 0x119b4be9, 0x155a565e, 0x18197087, 0x1cd86d30, 0x029f3d35, 0x065e2082, 0x0b1d065b, 0x0fdc1bec, 0x3793a651, 0x3352bbe6, 0x3e119d3f, 0x3ad08088, 0x2497d08d, 0x2056cd3a, 0x2d15ebe3, 0x29d4f654, 0xc5a92679, 0xc1683bce, 0xcc2b1d17, 0xc8ea00a0, 0xd6ad50a5, 0xd26c4d12, 0xdf2f6bcb, 0xdbee767c, 0xe3a1cbc1, 0xe760d676, 0xea23f0af, 0xeee2ed18, 0xf0a5bd1d, 0xf464a0aa, 0xf9278673, 0xfde69bc4, 0x89b8fd09, 0x8d79e0be, 0x803ac667, 0x84fbdbd0, 0x9abc8bd5, 0x9e7d9662, 0x933eb0bb, 0x97ffad0c, 0xafb010b1, 0xab710d06, 0xa6322bdf, 0xa2f33668, 0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4]);
+
+  var CRC32 = function CRC32() {
+    /**
+     * The current CRC
+     */
+    var crc = 0xffffffff;
+
+    /**
+     * @return The current CRC
+     */
+    this.getCRC = function () {
+      return ~crc >>> 0; // return an unsigned value
+    };
+
+    /**
+     * Update the CRC with a single byte
+     * @param value The value to update the CRC with
+     */
+    this.updateCRC = function (value) {
+      crc = crc << 8 ^ crc32Lookup[(crc >>> 24 ^ value) & 0xff];
+    };
+
+    /**
+     * Update the CRC with a sequence of identical bytes
+     * @param value The value to update the CRC with
+     * @param count The number of bytes
+     */
+    this.updateCRCRun = function (value, count) {
+      while (count-- > 0) {
+        crc = crc << 8 ^ crc32Lookup[(crc >>> 24 ^ value) & 0xff];
+      }
+    };
+  };
+  return CRC32;
+}();
+
+},{}],70:[function(require,module,exports){
+'use strict';
+
+/*
+seek-bzip - a pure-javascript module for seeking within bzip2 data
+
+Copyright (C) 2013 C. Scott Ananian
+Copyright (C) 2012 Eli Skeggs
+Copyright (C) 2011 Kevin Kwok
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, see
+http://www.gnu.org/licenses/lgpl-2.1.html
+
+Adapted from node-bzip, copyright 2012 Eli Skeggs.
+Adapted from bzip2.js, copyright 2011 Kevin Kwok (antimatter15@gmail.com).
+
+Based on micro-bunzip by Rob Landley (rob@landley.net).
+
+Based on bzip2 decompression code by Julian R Seward (jseward@acm.org),
+which also acknowledges contributions by Mike Burrows, David Wheeler,
+Peter Fenwick, Alistair Moffat, Radford Neal, Ian H. Witten,
+Robert Sedgewick, and Jon L. Bentley.
+*/
+
+var BitReader = require('./bitreader');
+var Stream = require('./stream');
+var CRC32 = require('./crc32');
+
+var MAX_HUFCODE_BITS = 20;
+var MAX_SYMBOLS = 258;
+var SYMBOL_RUNA = 0;
+var SYMBOL_RUNB = 1;
+var MIN_GROUPS = 2;
+var MAX_GROUPS = 6;
+var GROUP_SIZE = 50;
+
+var WHOLEPI = "314159265359";
+var SQRTPI = "177245385090";
+
+var mtf = function mtf(array, index) {
+  var src = array[index],
+      i;
+  for (i = index; i > 0; i--) {
+    array[i] = array[i - 1];
+  }
+  array[0] = src;
+  return src;
+};
+
+var Err = {
+  OK: 0,
+  LAST_BLOCK: -1,
+  NOT_BZIP_DATA: -2,
+  UNEXPECTED_INPUT_EOF: -3,
+  UNEXPECTED_OUTPUT_EOF: -4,
+  DATA_ERROR: -5,
+  OUT_OF_MEMORY: -6,
+  OBSOLETE_INPUT: -7,
+  END_OF_BLOCK: -8
+};
+var ErrorMessages = {};
+ErrorMessages[Err.LAST_BLOCK] = "Bad file checksum";
+ErrorMessages[Err.NOT_BZIP_DATA] = "Not bzip data";
+ErrorMessages[Err.UNEXPECTED_INPUT_EOF] = "Unexpected input EOF";
+ErrorMessages[Err.UNEXPECTED_OUTPUT_EOF] = "Unexpected output EOF";
+ErrorMessages[Err.DATA_ERROR] = "Data error";
+ErrorMessages[Err.OUT_OF_MEMORY] = "Out of memory";
+ErrorMessages[Err.OBSOLETE_INPUT] = "Obsolete (pre 0.9.5) bzip format not supported.";
+
+var _throw = function _throw(status, optDetail) {
+  var msg = ErrorMessages[status] || 'unknown error';
+  if (optDetail) {
+    msg += ': ' + optDetail;
+  }
+  var e = new TypeError(msg);
+  e.errorCode = status;
+  throw e;
+};
+
+var Bunzip = function Bunzip(inputStream, outputStream) {
+  this.writePos = this.writeCurrent = this.writeCount = 0;
+
+  this._start_bunzip(inputStream, outputStream);
+};
+Bunzip.prototype._init_block = function () {
+  var moreBlocks = this._get_next_block();
+  if (!moreBlocks) {
+    this.writeCount = -1;
+    return false; /* no more blocks */
+  }
+  this.blockCRC = new CRC32();
+  return true;
+};
+/* XXX micro-bunzip uses (inputStream, inputBuffer, len) as arguments */
+Bunzip.prototype._start_bunzip = function (inputStream, outputStream) {
+  /* Ensure that file starts with "BZh['1'-'9']." */
+  var buf = new Uint8Array(4);
+  if (inputStream.read(buf, 0, 4) !== 4 || String.fromCharCode(buf[0], buf[1], buf[2]) !== 'BZh') _throw(Err.NOT_BZIP_DATA, 'bad magic');
+
+  var level = buf[3] - 0x30;
+  if (level < 1 || level > 9) _throw(Err.NOT_BZIP_DATA, 'level out of range');
+
+  this.reader = new BitReader(inputStream);
+
+  /* Fourth byte (ascii '1'-'9'), indicates block size in units of 100k of
+     uncompressed data.  Allocate intermediate buffer for block. */
+  this.dbufSize = 100000 * level;
+  this.nextoutput = 0;
+  this.outputStream = outputStream;
+  this.streamCRC = 0;
+};
+Bunzip.prototype._get_next_block = function () {
+  var i, j, k;
+  var reader = this.reader;
+  // this is get_next_block() function from micro-bunzip:
+  /* Read in header signature and CRC, then validate signature.
+     (last block signature means CRC is for whole file, return now) */
+  var h = reader.pi();
+  if (h === SQRTPI) {
+    // last block
+    return false; /* no more blocks */
+  }
+  if (h !== WHOLEPI) _throw(Err.NOT_BZIP_DATA);
+  this.targetBlockCRC = reader.read(32) >>> 0; // (convert to unsigned)
+  this.streamCRC = (this.targetBlockCRC ^ (this.streamCRC << 1 | this.streamCRC >>> 31)) >>> 0;
+  /* We can add support for blockRandomised if anybody complains.  There was
+     some code for this in busybox 1.0.0-pre3, but nobody ever noticed that
+     it didn't actually work. */
+  if (reader.read(1)) _throw(Err.OBSOLETE_INPUT);
+  var origPointer = reader.read(24);
+  if (origPointer > this.dbufSize) _throw(Err.DATA_ERROR, 'initial position out of bounds');
+  /* mapping table: if some byte values are never used (encoding things
+     like ascii text), the compression code removes the gaps to have fewer
+     symbols to deal with, and writes a sparse bitfield indicating which
+     values were present.  We make a translation table to convert the symbols
+     back to the corresponding bytes. */
+  var t = reader.read(16);
+  var symToByte = new Uint8Array(256),
+      symTotal = 0;
+  for (i = 0; i < 16; i++) {
+    if (t & 1 << 0xF - i) {
+      var o = i * 16;
+      k = reader.read(16);
+      for (j = 0; j < 16; j++) if (k & 1 << 0xF - j) symToByte[symTotal++] = o + j;
+    }
+  }
+
+  /* How many different huffman coding groups does this block use? */
+  var groupCount = reader.read(3);
+  if (groupCount < MIN_GROUPS || groupCount > MAX_GROUPS) _throw(Err.DATA_ERROR);
+  /* nSelectors: Every GROUP_SIZE many symbols we select a new huffman coding
+     group.  Read in the group selector list, which is stored as MTF encoded
+     bit runs.  (MTF=Move To Front, as each value is used it's moved to the
+     start of the list.) */
+  var nSelectors = reader.read(15);
+  if (nSelectors === 0) _throw(Err.DATA_ERROR);
+
+  var mtfSymbol = new Uint8Array(256);
+  for (i = 0; i < groupCount; i++) mtfSymbol[i] = i;
+
+  var selectors = new Uint8Array(nSelectors); // was 32768...
+
+  for (i = 0; i < nSelectors; i++) {
+    /* Get next value */
+    for (j = 0; reader.read(1); j++) if (j >= groupCount) _throw(Err.DATA_ERROR);
+    /* Decode MTF to get the next selector */
+    selectors[i] = mtf(mtfSymbol, j);
+  }
+
+  /* Read the huffman coding tables for each group, which code for symTotal
+     literal symbols, plus two run symbols (RUNA, RUNB) */
+  var symCount = symTotal + 2;
+  var groups = [],
+      hufGroup;
+  for (j = 0; j < groupCount; j++) {
+    var length = new Uint8Array(symCount),
+        temp = new Uint16Array(MAX_HUFCODE_BITS + 1);
+    /* Read huffman code lengths for each symbol.  They're stored in
+       a way similar to mtf; record a starting value for the first symbol,
+       and an offset from the previous value for everys symbol after that. */
+    t = reader.read(5); // lengths
+    for (i = 0; i < symCount; i++) {
+      for (;;) {
+        if (t < 1 || t > MAX_HUFCODE_BITS) _throw(Err.DATA_ERROR);
+        /* If first bit is 0, stop.  Else second bit indicates whether
+           to increment or decrement the value. */
+        if (!reader.read(1)) break;
+        if (!reader.read(1)) t++;else t--;
+      }
+      length[i] = t;
+    }
+
+    /* Find largest and smallest lengths in this group */
+    var minLen, maxLen;
+    minLen = maxLen = length[0];
+    for (i = 1; i < symCount; i++) {
+      if (length[i] > maxLen) maxLen = length[i];else if (length[i] < minLen) minLen = length[i];
+    }
+
+    /* Calculate permute[], base[], and limit[] tables from length[].
+     *
+     * permute[] is the lookup table for converting huffman coded symbols
+     * into decoded symbols.  base[] is the amount to subtract from the
+     * value of a huffman symbol of a given length when using permute[].
+     *
+     * limit[] indicates the largest numerical value a symbol with a given
+     * number of bits can have.  This is how the huffman codes can vary in
+     * length: each code with a value>limit[length] needs another bit.
+     */
+    hufGroup = {};
+    groups.push(hufGroup);
+    hufGroup.permute = new Uint16Array(MAX_SYMBOLS);
+    hufGroup.limit = new Uint32Array(MAX_HUFCODE_BITS + 2);
+    hufGroup.base = new Uint32Array(MAX_HUFCODE_BITS + 1);
+    hufGroup.minLen = minLen;
+    hufGroup.maxLen = maxLen;
+    /* Calculate permute[].  Concurently, initialize temp[] and limit[]. */
+    var pp = 0;
+    for (i = minLen; i <= maxLen; i++) {
+      temp[i] = hufGroup.limit[i] = 0;
+      for (t = 0; t < symCount; t++) if (length[t] === i) hufGroup.permute[pp++] = t;
+    }
+    /* Count symbols coded for at each bit length */
+    for (i = 0; i < symCount; i++) temp[length[i]]++;
+    /* Calculate limit[] (the largest symbol-coding value at each bit
+     * length, which is (previous limit<<1)+symbols at this level), and
+     * base[] (number of symbols to ignore at each bit length, which is
+     * limit minus the cumulative count of symbols coded for already). */
+    pp = t = 0;
+    for (i = minLen; i < maxLen; i++) {
+      pp += temp[i];
+      /* We read the largest possible symbol size and then unget bits
+         after determining how many we need, and those extra bits could
+         be set to anything.  (They're noise from future symbols.)  At
+         each level we're really only interested in the first few bits,
+         so here we set all the trailing to-be-ignored bits to 1 so they
+         don't affect the value>limit[length] comparison. */
+      hufGroup.limit[i] = pp - 1;
+      pp <<= 1;
+      t += temp[i];
+      hufGroup.base[i + 1] = pp - t;
+    }
+    hufGroup.limit[maxLen + 1] = Number.MAX_VALUE; /* Sentinal value for reading next sym. */
+    hufGroup.limit[maxLen] = pp + temp[maxLen] - 1;
+    hufGroup.base[minLen] = 0;
+  }
+  /* We've finished reading and digesting the block header.  Now read this
+     block's huffman coded symbols from the file and undo the huffman coding
+     and run length encoding, saving the result into dbuf[dbufCount++]=uc */
+
+  /* Initialize symbol occurrence counters and symbol Move To Front table */
+  var byteCount = new Uint32Array(256);
+  for (i = 0; i < 256; i++) mtfSymbol[i] = i;
+  /* Loop through compressed symbols. */
+  var runPos = 0,
+      dbufCount = 0,
+      selector = 0,
+      uc;
+  var dbuf = this.dbuf = new Uint32Array(this.dbufSize);
+  symCount = 0;
+  for (;;) {
+    /* Determine which huffman coding group to use. */
+    if (!symCount--) {
+      symCount = GROUP_SIZE - 1;
+      if (selector >= nSelectors) {
+        _throw(Err.DATA_ERROR);
+      }
+      hufGroup = groups[selectors[selector++]];
+    }
+    /* Read next huffman-coded symbol. */
+    i = hufGroup.minLen;
+    j = reader.read(i);
+    for (;; i++) {
+      if (i > hufGroup.maxLen) {
+        _throw(Err.DATA_ERROR);
+      }
+      if (j <= hufGroup.limit[i]) break;
+      j = j << 1 | reader.read(1);
+    }
+    /* Huffman decode value to get nextSym (with bounds checking) */
+    j -= hufGroup.base[i];
+    if (j < 0 || j >= MAX_SYMBOLS) {
+      _throw(Err.DATA_ERROR);
+    }
+    var nextSym = hufGroup.permute[j];
+    /* We have now decoded the symbol, which indicates either a new literal
+       byte, or a repeated run of the most recent literal byte.  First,
+       check if nextSym indicates a repeated run, and if so loop collecting
+       how many times to repeat the last literal. */
+    if (nextSym === SYMBOL_RUNA || nextSym === SYMBOL_RUNB) {
+      /* If this is the start of a new run, zero out counter */
+      if (!runPos) {
+        runPos = 1;
+        t = 0;
+      }
+      /* Neat trick that saves 1 symbol: instead of or-ing 0 or 1 at
+         each bit position, add 1 or 2 instead.  For example,
+         1011 is 1<<0 + 1<<1 + 2<<2.  1010 is 2<<0 + 2<<1 + 1<<2.
+         You can make any bit pattern that way using 1 less symbol than
+         the basic or 0/1 method (except all bits 0, which would use no
+         symbols, but a run of length 0 doesn't mean anything in this
+         context).  Thus space is saved. */
+      if (nextSym === SYMBOL_RUNA) t += runPos;else t += 2 * runPos;
+      runPos <<= 1;
+      continue;
+    }
+    /* When we hit the first non-run symbol after a run, we now know
+       how many times to repeat the last literal, so append that many
+       copies to our buffer of decoded symbols (dbuf) now.  (The last
+       literal used is the one at the head of the mtfSymbol array.) */
+    if (runPos) {
+      runPos = 0;
+      if (dbufCount + t > this.dbufSize) {
+        _throw(Err.DATA_ERROR);
+      }
+      uc = symToByte[mtfSymbol[0]];
+      byteCount[uc] += t;
+      while (t--) dbuf[dbufCount++] = uc;
+    }
+    /* Is this the terminating symbol? */
+    if (nextSym > symTotal) break;
+    /* At this point, nextSym indicates a new literal character.  Subtract
+       one to get the position in the MTF array at which this literal is
+       currently to be found.  (Note that the result can't be -1 or 0,
+       because 0 and 1 are RUNA and RUNB.  But another instance of the
+       first symbol in the mtf array, position 0, would have been handled
+       as part of a run above.  Therefore 1 unused mtf position minus
+       2 non-literal nextSym values equals -1.) */
+    if (dbufCount >= this.dbufSize) {
+      _throw(Err.DATA_ERROR);
+    }
+    i = nextSym - 1;
+    uc = mtf(mtfSymbol, i);
+    uc = symToByte[uc];
+    /* We have our literal byte.  Save it into dbuf. */
+    byteCount[uc]++;
+    dbuf[dbufCount++] = uc;
+  }
+  /* At this point, we've read all the huffman-coded symbols (and repeated
+     runs) for this block from the input stream, and decoded them into the
+     intermediate buffer.  There are dbufCount many decoded bytes in dbuf[].
+     Now undo the Burrows-Wheeler transform on dbuf.
+     See http://dogma.net/markn/articles/bwt/bwt.htm
+  */
+  if (origPointer < 0 || origPointer >= dbufCount) {
+    _throw(Err.DATA_ERROR);
+  }
+  /* Turn byteCount into cumulative occurrence counts of 0 to n-1. */
+  j = 0;
+  for (i = 0; i < 256; i++) {
+    k = j + byteCount[i];
+    byteCount[i] = j;
+    j = k;
+  }
+  /* Figure out what order dbuf would be in if we sorted it. */
+  for (i = 0; i < dbufCount; i++) {
+    uc = dbuf[i] & 0xff;
+    dbuf[byteCount[uc]] |= i << 8;
+    byteCount[uc]++;
+  }
+  /* Decode first byte by hand to initialize "previous" byte.  Note that it
+     doesn't get output, and if the first three characters are identical
+     it doesn't qualify as a run (hence writeRunCountdown=5). */
+  var pos = 0,
+      current = 0,
+      run = 0;
+  if (dbufCount) {
+    pos = dbuf[origPointer];
+    current = pos & 0xff;
+    pos >>= 8;
+    run = -1;
+  }
+  this.writePos = pos;
+  this.writeCurrent = current;
+  this.writeCount = dbufCount;
+  this.writeRun = run;
+
+  return true; /* more blocks to come */
+};
+/* Undo burrows-wheeler transform on intermediate buffer to produce output.
+   If start_bunzip was initialized with out_fd=-1, then up to len bytes of
+   data are written to outbuf.  Return value is number of bytes written or
+   error (all errors are negative numbers).  If out_fd!=-1, outbuf and len
+   are ignored, data is written to out_fd and return is RETVAL_OK or error.
+*/
+Bunzip.prototype._read_bunzip = function (outputBuffer, len) {
+  var copies, previous, outbyte;
+  /* james@jamestaylor.org: writeCount goes to -1 when the buffer is fully
+     decoded, which results in this returning RETVAL_LAST_BLOCK, also
+     equal to -1... Confusing, I'm returning 0 here to indicate no
+     bytes written into the buffer */
+  if (this.writeCount < 0) {
+    return 0;
+  }
+
+  var gotcount = 0;
+  var dbuf = this.dbuf,
+      pos = this.writePos,
+      current = this.writeCurrent;
+  var dbufCount = this.writeCount,
+      outputsize = this.outputsize;
+  var run = this.writeRun;
+
+  while (dbufCount) {
+    dbufCount--;
+    previous = current;
+    pos = dbuf[pos];
+    current = pos & 0xff;
+    pos >>= 8;
+    if (run++ === 3) {
+      copies = current;
+      outbyte = previous;
+      current = -1;
+    } else {
+      copies = 1;
+      outbyte = current;
+    }
+    this.blockCRC.updateCRCRun(outbyte, copies);
+    while (copies--) {
+      this.outputStream.writeByte(outbyte);
+      this.nextoutput++;
+    }
+    if (current != previous) run = 0;
+  }
+  this.writeCount = dbufCount;
+  // check CRC
+  if (this.blockCRC.getCRC() !== this.targetBlockCRC) {
+    _throw(Err.DATA_ERROR, "Bad block CRC " + "(got " + this.blockCRC.getCRC().toString(16) + " expected " + this.targetBlockCRC.toString(16) + ")");
+  }
+  return this.nextoutput;
+};
+
+var coerceInputStream = function coerceInputStream(input) {
+  if ('readByte' in input) {
+    return input;
+  }
+  var inputStream = new Stream();
+  inputStream.pos = 0;
+  inputStream.readByte = function () {
+    return input[this.pos++];
+  };
+  inputStream.seek = function (pos) {
+    this.pos = pos;
+  };
+  inputStream.eof = function () {
+    return this.pos >= input.length;
+  };
+  return inputStream;
+};
+var coerceOutputStream = function coerceOutputStream(output) {
+  var outputStream = new Stream();
+  var resizeOk = true;
+  if (output) {
+    if (typeof output === 'number') {
+      outputStream.buffer = new Uint8Array(output);
+      resizeOk = false;
+    } else if ('writeByte' in output) {
+      return output;
+    } else {
+      outputStream.buffer = output;
+      resizeOk = false;
+    }
+  } else {
+    outputStream.buffer = new Uint8Array(16384);
+  }
+  outputStream.pos = 0;
+  outputStream.writeByte = function (_byte) {
+    if (resizeOk && this.pos >= this.buffer.length) {
+      var newBuffer = new Uint8Array(this.buffer.length * 2);
+      newBuffer.set(this.buffer);
+      this.buffer = newBuffer;
+    }
+    this.buffer[this.pos++] = _byte;
+  };
+  outputStream.getBuffer = function () {
+    // trim buffer
+    if (this.pos !== this.buffer.length) {
+      if (!resizeOk) throw new TypeError('outputsize does not match decoded input');
+      var newBuffer = new Uint8Array(this.pos);
+      newBuffer.set(this.buffer.subarray(0, this.pos));
+      this.buffer = newBuffer;
+    }
+    return this.buffer;
+  };
+  outputStream._coerced = true;
+  return outputStream;
+};
+
+/* Static helper functions */
+Bunzip.Err = Err;
+// 'input' can be a stream or a buffer
+// 'output' can be a stream or a buffer or a number (buffer size)
+Bunzip.decode = function (input, output, multistream) {
+  // make a stream from a buffer, if necessary
+  var inputStream = coerceInputStream(input);
+  var outputStream = coerceOutputStream(output);
+
+  var bz = new Bunzip(inputStream, outputStream);
+  while (true) {
+    if ('eof' in inputStream && inputStream.eof()) break;
+    if (bz._init_block()) {
+      bz._read_bunzip();
+    } else {
+      var targetStreamCRC = bz.reader.read(32) >>> 0; // (convert to unsigned)
+      if (targetStreamCRC !== bz.streamCRC) {
+        _throw(Err.DATA_ERROR, "Bad stream CRC " + "(got " + bz.streamCRC.toString(16) + " expected " + targetStreamCRC.toString(16) + ")");
+      }
+      if (multistream && 'eof' in inputStream && !inputStream.eof()) {
+        // note that start_bunzip will also resync the bit reader to next byte
+        bz._start_bunzip(inputStream, outputStream);
+      } else break;
+    }
+  }
+  if ('getBuffer' in outputStream) return outputStream.getBuffer();
+};
+Bunzip.decodeBlock = function (input, pos, output) {
+  // make a stream from a buffer, if necessary
+  var inputStream = coerceInputStream(input);
+  var outputStream = coerceOutputStream(output);
+  var bz = new Bunzip(inputStream, outputStream);
+  bz.reader.seek(pos);
+  /* Fill the decode buffer for the block */
+  var moreBlocks = bz._get_next_block();
+  if (moreBlocks) {
+    /* Init the CRC for writing */
+    bz.blockCRC = new CRC32();
+
+    /* Zero this so the current byte from before the seek is not written */
+    bz.writeCopies = 0;
+
+    /* Decompress the block and write to stdout */
+    bz._read_bunzip();
+    // XXX keep writing?
+  }
+  if ('getBuffer' in outputStream) return outputStream.getBuffer();
+};
+/* Reads bzip2 file from stream or buffer `input`, and invoke
+ * `callback(position, size)` once for each bzip2 block,
+ * where position gives the starting position (in *bits*)
+ * and size gives uncompressed size of the block (in *bytes*). */
+Bunzip.table = function (input, callback, multistream) {
+  // make a stream from a buffer, if necessary
+  var inputStream = new Stream();
+  inputStream.delegate = coerceInputStream(input);
+  inputStream.pos = 0;
+  inputStream.readByte = function () {
+    this.pos++;
+    return this.delegate.readByte();
+  };
+  if (inputStream.delegate.eof) {
+    inputStream.eof = inputStream.delegate.eof.bind(inputStream.delegate);
+  }
+  var outputStream = new Stream();
+  outputStream.pos = 0;
+  outputStream.writeByte = function () {
+    this.pos++;
+  };
+
+  var bz = new Bunzip(inputStream, outputStream);
+  var blockSize = bz.dbufSize;
+  while (true) {
+    if ('eof' in inputStream && inputStream.eof()) break;
+
+    var position = inputStream.pos * 8 + bz.reader.bitOffset;
+    if (bz.reader.hasByte) {
+      position -= 8;
+    }
+
+    if (bz._init_block()) {
+      var start = outputStream.pos;
+      bz._read_bunzip();
+      callback(position, outputStream.pos - start);
+    } else {
+      var crc = bz.reader.read(32); // (but we ignore the crc)
+      if (multistream && 'eof' in inputStream && !inputStream.eof()) {
+        // note that start_bunzip will also resync the bit reader to next byte
+        bz._start_bunzip(inputStream, outputStream);
+        console.assert(bz.dbufSize === blockSize, "shouldn't change block size within multistream file");
+      } else break;
+    }
+  }
+};
+
+Bunzip.Stream = Stream;
+
+module.exports = Bunzip;
+
+},{"./bitreader":68,"./crc32":69,"./stream":71}],71:[function(require,module,exports){
+"use strict";
+
+/* very simple input/output stream interface */
+var Stream = function Stream() {};
+
+// input streams //////////////
+/** Returns the next byte, or -1 for EOF. */
+Stream.prototype.readByte = function () {
+  throw new Error("abstract method readByte() not implemented");
+};
+/** Attempts to fill the buffer; returns number of bytes read, or
+ *  -1 for EOF. */
+Stream.prototype.read = function (buffer, bufOffset, length) {
+  var bytesRead = 0;
+  while (bytesRead < length) {
+    var c = this.readByte();
+    if (c < 0) {
+      // EOF
+      return bytesRead === 0 ? -1 : bytesRead;
+    }
+    buffer[bufOffset++] = c;
+    bytesRead++;
+  }
+  return bytesRead;
+};
+Stream.prototype.seek = function (new_pos) {
+  throw new Error("abstract method seek() not implemented");
+};
+
+// output streams ///////////
+Stream.prototype.writeByte = function (_byte) {
+  throw new Error("abstract method readByte() not implemented");
+};
+Stream.prototype.write = function (buffer, bufOffset, length) {
+  var i;
+  for (i = 0; i < length; i++) {
+    this.writeByte(buffer[bufOffset++]);
+  }
+  return length;
+};
+Stream.prototype.flush = function () {};
+
+module.exports = Stream;
+
+},{}],72:[function(require,module,exports){
+'use strict';
+
 // This is free and unencumbered software released into the public domain.
 // See LICENSE.md for more information.
 
@@ -22368,7 +23184,7 @@ function UTF8Encoder(options) {
 
 exports.TextEncoder = TextEncoder;
 exports.TextDecoder = TextDecoder;
-},{}],69:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 /*jshint bitwise: false*/
 
 (function(nacl) {
@@ -23306,7 +24122,7 @@ nacl.setPRNG = function(fn) {
 
 })(typeof module !== 'undefined' && module.exports ? module.exports : (self.nacl = self.nacl || {}));
 
-},{"crypto":"crypto"}],70:[function(require,module,exports){
+},{"crypto":"crypto"}],74:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -23420,7 +24236,7 @@ if (NodeReadableStream) {
 exports.nodeToWeb = nodeToWeb;
 exports.webToNode = webToNode;
 
-},{"./streams":72,"stream":"stream"}],71:[function(require,module,exports){
+},{"./streams":76,"stream":"stream"}],75:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -23624,7 +24440,7 @@ Reader.prototype.readToEnd = async function (join = _streams2.default.concat) {
 exports.Reader = Reader;
 exports.externalBuffer = externalBuffer;
 
-},{"./streams":72}],72:[function(require,module,exports){
+},{"./streams":76}],76:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -24086,7 +24902,7 @@ function fromAsync(fn) {
 exports.default = { isStream: _util.isStream, isUint8Array: _util.isUint8Array, toStream, concatUint8Array: _util.concatUint8Array, concatStream, concat, getReader, getWriter, pipe, transformRaw, transform, transformPair, parse, clone, passiveClone, slice, readToEnd, cancel, fromAsync, nodeToWeb: _nodeConversions.nodeToWeb, webToNode: _nodeConversions.webToNode };
 
 }).call(this,require('_process'))
-},{"./node-conversions":70,"./reader":71,"./util":73,"_process":67,"buffer":"buffer"}],73:[function(require,module,exports){
+},{"./node-conversions":74,"./reader":75,"./util":77,"_process":67,"buffer":"buffer"}],77:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24149,7 +24965,7 @@ exports.isStream = isStream;
 exports.isUint8Array = isUint8Array;
 exports.concatUint8Array = concatUint8Array;
 
-},{"stream":"stream"}],74:[function(require,module,exports){
+},{"stream":"stream"}],78:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24396,7 +25212,7 @@ function fromText(text) {
   return new CleartextMessage(text);
 }
 
-},{"./encoding/armor":108,"./enums":110,"./message":117,"./packet":122,"./signature":142,"./util":149}],75:[function(require,module,exports){
+},{"./encoding/armor":112,"./enums":114,"./message":121,"./packet":126,"./signature":146,"./util":153}],79:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -24548,7 +25364,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.0",
+  versionstring: "OpenPGP.js v4.5.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -24593,7 +25409,7 @@ exports.default = {
  * @requires enums
  */
 
-},{"../enums":110}],76:[function(require,module,exports){
+},{"../enums":114}],80:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24611,7 +25427,7 @@ Object.defineProperty(exports, 'default', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./config.js":75}],77:[function(require,module,exports){
+},{"./config.js":79}],81:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24781,7 +25597,7 @@ exports.default = {
   unwrap
 };
 
-},{"../util":149,"./cipher":83}],78:[function(require,module,exports){
+},{"../util":153,"./cipher":87}],82:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24954,7 +25770,7 @@ function nodeDecrypt(algo, key, ct, iv) {
   return _webStreamTools2.default.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
 }
 
-},{"../config":76,"../util":149,"./cipher":83,"asmcrypto.js/dist_es5/aes/cfb":6,"web-stream-tools":72}],79:[function(require,module,exports){
+},{"../config":80,"../util":153,"./cipher":87,"asmcrypto.js/dist_es5/aes/cfb":6,"web-stream-tools":76}],83:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24987,7 +25803,7 @@ function aes(length) {
 
 exports.default = aes;
 
-},{"asmcrypto.js/dist_es5/aes/ecb":8}],80:[function(require,module,exports){
+},{"asmcrypto.js/dist_es5/aes/ecb":8}],84:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -25207,7 +26023,7 @@ BF.blockSize = BF.prototype.blockSize = 16;
 
 exports.default = BF;
 
-},{}],81:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25557,7 +26373,7 @@ Cast5.keySize = Cast5.prototype.keySize = 16;
 
 exports.default = Cast5;
 
-},{}],82:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -25937,7 +26753,7 @@ function DES(key) {
 
 exports.default = { DES, TripleDES };
 
-},{}],83:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26050,7 +26866,7 @@ exports.default = {
     * @module crypto/cipher
     */
 
-},{"./aes":79,"./blowfish":80,"./cast5":81,"./des.js":82,"./twofish":84}],84:[function(require,module,exports){
+},{"./aes":83,"./blowfish":84,"./cast5":85,"./des.js":86,"./twofish":88}],88:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -26366,7 +27182,7 @@ TF.blockSize = TF.prototype.blockSize = 16;
 
 exports.default = TF;
 
-},{}],85:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26477,7 +27293,7 @@ async function CBC(key) {
   };
 }
 
-},{"../util":149,"asmcrypto.js/dist_es5/aes/cbc":5}],86:[function(require,module,exports){
+},{"../util":153,"asmcrypto.js/dist_es5/aes/cbc":5}],90:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26839,7 +27655,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":110,"../type/ecdh_symkey":143,"../type/kdf_params":144,"../type/mpi":146,"../type/oid":147,"../util":149,"./cipher":83,"./public_key":103,"./random":106,"bn.js":17}],87:[function(require,module,exports){
+},{"../enums":114,"../type/ecdh_symkey":147,"../type/kdf_params":148,"../type/mpi":150,"../type/oid":151,"../util":153,"./cipher":87,"./public_key":107,"./random":110,"bn.js":17}],91:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27019,7 +27835,7 @@ EAX.tagLength = tagLength;
 
 exports.default = EAX;
 
-},{"../util":149,"./cmac":85,"asmcrypto.js/dist_es5/aes/ctr":7}],88:[function(require,module,exports){
+},{"../util":153,"./cmac":89,"asmcrypto.js/dist_es5/aes/ctr":7}],92:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27172,7 +27988,7 @@ GCM.tagLength = tagLength;
 
 exports.default = GCM;
 
-},{"../util":149,"asmcrypto.js/dist_es5/aes/gcm":9}],89:[function(require,module,exports){
+},{"../util":153,"asmcrypto.js/dist_es5/aes/gcm":9}],93:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27376,7 +28192,7 @@ exports.default = {
   }
 };
 
-},{"../../config":76,"../../util":149,"./md5":90,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14,"hash.js/lib/hash/ripemd":38,"hash.js/lib/hash/sha/224":41,"hash.js/lib/hash/sha/384":43,"hash.js/lib/hash/sha/512":44,"web-stream-tools":72}],90:[function(require,module,exports){
+},{"../../config":80,"../../util":153,"./md5":94,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14,"hash.js/lib/hash/ripemd":38,"hash.js/lib/hash/sha/224":41,"hash.js/lib/hash/sha/384":43,"hash.js/lib/hash/sha/512":44,"web-stream-tools":76}],94:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27591,7 +28407,7 @@ function add32(a, b) {
 
 exports.default = md5;
 
-},{"../../util":149}],91:[function(require,module,exports){
+},{"../../util":153}],95:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27694,7 +28510,7 @@ Object.assign(mod, _crypto2.default);
 
 exports.default = mod;
 
-},{"./aes_kw":77,"./cfb":78,"./cipher":83,"./crypto":86,"./eax":87,"./gcm":88,"./hash":89,"./ocb":92,"./pkcs1":93,"./pkcs5":94,"./public_key":103,"./random":106,"./signature":107}],92:[function(require,module,exports){
+},{"./aes_kw":81,"./cfb":82,"./cipher":87,"./crypto":90,"./eax":91,"./gcm":92,"./hash":93,"./ocb":96,"./pkcs1":97,"./pkcs5":98,"./public_key":107,"./random":110,"./signature":111}],96:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27978,7 +28794,7 @@ OCB.tagLength = tagLength;
 
 exports.default = OCB;
 
-},{"../util":149,"./cipher":83}],93:[function(require,module,exports){
+},{"../util":153,"./cipher":87}],97:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28153,7 +28969,7 @@ emsa.encode = async function (algo, hashed, emLen) {
 
 exports.default = { eme, emsa };
 
-},{"../util":149,"./hash":89,"./random":106}],94:[function(require,module,exports){
+},{"../util":153,"./hash":93,"./random":110}],98:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28215,7 +29031,7 @@ function decode(msg) {
 
 exports.default = { encode, decode };
 
-},{}],95:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28354,7 +29170,7 @@ exports.default = {
   }
 };
 
-},{"../../util":149,"../random":106,"bn.js":17}],96:[function(require,module,exports){
+},{"../../util":153,"../random":110,"bn.js":17}],100:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28437,7 +29253,7 @@ exports.default = {
   }
 };
 
-},{"../random":106,"bn.js":17}],97:[function(require,module,exports){
+},{"../random":110,"bn.js":17}],101:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28731,7 +29547,7 @@ async function nodeGenKeyPair(name) {
   };
 }
 
-},{"../../../enums":110,"../../../type/oid":147,"../../../util":149,"../../random":106,"./key":102,"bn.js":17,"elliptic":19}],98:[function(require,module,exports){
+},{"../../../enums":114,"../../../type/oid":151,"../../../util":153,"../../random":110,"./key":106,"bn.js":17,"elliptic":19}],102:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28961,7 +29777,7 @@ async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
 
 exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf };
 
-},{"../../../enums":110,"../../../type/kdf_params":144,"../../../util":149,"../../aes_kw":77,"../../cipher":83,"../../hash":89,"./curves":97,"bn.js":17,"tweetnacl/nacl-fast-light.js":69}],99:[function(require,module,exports){
+},{"../../../enums":114,"../../../type/kdf_params":148,"../../../util":153,"../../aes_kw":81,"../../cipher":87,"../../hash":93,"./curves":101,"bn.js":17,"tweetnacl/nacl-fast-light.js":73}],103:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29036,7 +29852,7 @@ async function verify(oid, hash_algo, signature, m, Q, hashed) {
 
 exports.default = { sign, verify };
 
-},{"./curves":97}],100:[function(require,module,exports){
+},{"./curves":101}],104:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29128,7 +29944,7 @@ async function verify(oid, hash_algo, { R, S }, m, publicKey, hashed) {
 
 exports.default = { sign, verify };
 
-},{"../../../util":149,"hash.js/lib/hash/sha/512":44,"tweetnacl/nacl-fast-light.js":69}],101:[function(require,module,exports){
+},{"../../../util":153,"hash.js/lib/hash/sha/512":44,"tweetnacl/nacl-fast-light.js":73}],105:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29183,7 +29999,7 @@ exports.default = {
   Curve: _curves2.default, ecdh: _ecdh2.default, ecdsa: _ecdsa2.default, eddsa: _eddsa2.default, generate: _curves.generate, getPreferredHashAlgo: _curves.getPreferredHashAlgo
 };
 
-},{"./curves":97,"./ecdh":98,"./ecdsa":99,"./eddsa":100}],102:[function(require,module,exports){
+},{"./curves":101,"./ecdh":102,"./ecdsa":103,"./eddsa":104}],106:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29435,7 +30251,7 @@ const SubjectPublicKeyInfo = nodeCrypto ? asn1.define('SubjectPublicKeyInfo', fu
   this.seq().obj(this.key('algorithm').use(AlgorithmIdentifier), this.key('subjectPublicKey').bitstr());
 }) : undefined;
 
-},{"../../../enums":110,"../../../util":149,"./curves":97,"asn1.js":"asn1.js","bn.js":17,"web-stream-tools":72}],103:[function(require,module,exports){
+},{"../../../enums":114,"../../../util":153,"./curves":101,"asn1.js":"asn1.js","bn.js":17,"web-stream-tools":76}],107:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29485,7 +30301,7 @@ exports.default = {
     * @module crypto/public_key
     */
 
-},{"./dsa":95,"./elgamal":96,"./elliptic":101,"./rsa":105,"tweetnacl/nacl-fast-light.js":69}],104:[function(require,module,exports){
+},{"./dsa":99,"./elgamal":100,"./elliptic":105,"./rsa":109,"tweetnacl/nacl-fast-light.js":73}],108:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29697,7 +30513,7 @@ async function millerRabin(n, k, rand) {
   return true;
 }
 
-},{"../random":106,"bn.js":17}],105:[function(require,module,exports){
+},{"../random":110,"bn.js":17}],109:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29958,7 +30774,7 @@ exports.default = {
   prime: _prime2.default
 };
 
-},{"../../config":76,"../../util":149,"../random":106,"./prime":104,"bn.js":17}],106:[function(require,module,exports){
+},{"../../config":80,"../../util":153,"../random":110,"./prime":108,"bn.js":17}],110:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30119,7 +30935,7 @@ RandomBuffer.prototype.get = async function (buf) {
   }
 };
 
-},{"../util":149,"bn.js":17,"crypto":"crypto"}],107:[function(require,module,exports){
+},{"../util":153,"bn.js":17,"crypto":"crypto"}],111:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30129,6 +30945,10 @@ Object.defineProperty(exports, "__esModule", {
 var _bn = require('bn.js');
 
 var _bn2 = _interopRequireDefault(_bn);
+
+var _crypto = require('./crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
 
 var _public_key = require('./public_key');
 
@@ -30148,6 +30968,17 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+/**
+ * @fileoverview Provides functions for asymmetric signing and signature verification
+ * @requires bn.js
+ * @requires crypto/crypto
+ * @requires crypto/public_key
+ * @requires crypto/pkcs1
+ * @requires enums
+ * @requires util
+ * @module crypto/signature
+*/
+
 exports.default = {
   /**
    * Verifies the signature provided for data using specified algorithms and public key parameters.
@@ -30164,6 +30995,10 @@ exports.default = {
    * @async
    */
   verify: async function verify(algo, hash_algo, msg_MPIs, pub_MPIs, data, hashed) {
+    const types = _crypto2.default.getPubKeyParamTypes(algo);
+    if (pub_MPIs.length < types.length) {
+      throw new Error('Missing public key parameters');
+    }
     switch (algo) {
       case _enums2.default.publicKey.rsa_encrypt_sign:
       case _enums2.default.publicKey.rsa_encrypt:
@@ -30221,6 +31056,10 @@ exports.default = {
    * @async
    */
   sign: async function sign(algo, hash_algo, key_params, data, hashed) {
+    const types = [].concat(_crypto2.default.getPubKeyParamTypes(algo), _crypto2.default.getPrivKeyParamTypes(algo));
+    if (key_params.length < types.length) {
+      throw new Error('Missing private key parameters');
+    }
     switch (algo) {
       case _enums2.default.publicKey.rsa_encrypt_sign:
       case _enums2.default.publicKey.rsa_encrypt:
@@ -30264,17 +31103,9 @@ exports.default = {
         throw new Error('Invalid signature algorithm.');
     }
   }
-}; /**
-    * @fileoverview Provides functions for asymmetric signing and signature verification
-    * @requires bn.js
-    * @requires crypto/public_key
-    * @requires crypto/pkcs1
-    * @requires enums
-    * @requires util
-    * @module crypto/signature
-   */
+};
 
-},{"../enums":110,"../util":149,"./pkcs1":93,"./public_key":103,"bn.js":17}],108:[function(require,module,exports){
+},{"../enums":114,"../util":153,"./crypto":90,"./pkcs1":97,"./public_key":107,"bn.js":17}],112:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30688,7 +31519,7 @@ exports.default = {
   decode: dearmor
 };
 
-},{"../config":76,"../enums.js":110,"../util":149,"./base64.js":109,"web-stream-tools":72}],109:[function(require,module,exports){
+},{"../config":80,"../enums.js":114,"../util":153,"./base64.js":113,"web-stream-tools":76}],113:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30834,7 +31665,7 @@ exports.default = {
   decode: r2s
 };
 
-},{"web-stream-tools":72}],110:[function(require,module,exports){
+},{"web-stream-tools":76}],114:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -31333,7 +32164,7 @@ exports.default = {
 
 };
 
-},{}],111:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31434,7 +32265,7 @@ HKP.prototype.upload = function (publicKeyArmored) {
 
 exports.default = HKP;
 
-},{"./config":76,"node-fetch":"node-fetch"}],112:[function(require,module,exports){
+},{"./config":80,"node-fetch":"node-fetch"}],116:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31748,7 +32579,7 @@ const cleartext = exports.cleartext = cleartextMod;
  * @name module:openpgp.util
  */
 
-},{"./cleartext":74,"./config/config":75,"./crypto":91,"./encoding/armor":108,"./enums":110,"./hkp":111,"./key":113,"./keyring":114,"./message":117,"./openpgp":118,"./packet":122,"./signature":142,"./type/ecdh_symkey":143,"./type/kdf_params":144,"./type/keyid":145,"./type/mpi":146,"./type/oid":147,"./type/s2k":148,"./util":149,"./wkd":150,"./worker/async_proxy":151,"web-stream-tools":72}],113:[function(require,module,exports){
+},{"./cleartext":78,"./config/config":79,"./crypto":95,"./encoding/armor":112,"./enums":114,"./hkp":115,"./key":117,"./keyring":118,"./message":121,"./openpgp":122,"./packet":126,"./signature":146,"./type/ecdh_symkey":147,"./type/kdf_params":148,"./type/keyid":149,"./type/mpi":150,"./type/oid":151,"./type/s2k":152,"./util":153,"./wkd":154,"./worker/async_proxy":155,"web-stream-tools":76}],117:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33513,7 +34344,7 @@ async function isAeadSupported(keys, date = new Date(), userIds = []) {
   return supported;
 }
 
-},{"./config":76,"./crypto":91,"./encoding/armor":108,"./enums":110,"./packet":122,"./util":149}],114:[function(require,module,exports){
+},{"./config":80,"./crypto":95,"./encoding/armor":112,"./enums":114,"./packet":126,"./util":153}],118:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33540,7 +34371,7 @@ _keyring2.default.localstore = _localstore2.default;
 
 exports.default = _keyring2.default;
 
-},{"./keyring.js":115,"./localstore.js":116}],115:[function(require,module,exports){
+},{"./keyring.js":119,"./localstore.js":120}],119:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33779,7 +34610,7 @@ KeyArray.prototype.removeForId = function (keyId) {
 
 exports.default = Keyring;
 
-},{"../key":113,"./localstore":116}],116:[function(require,module,exports){
+},{"../key":117,"./localstore":120}],120:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33917,7 +34748,7 @@ async function storeKeys(storage, itemname, keys) {
 
 exports.default = LocalStore;
 
-},{"../config":76,"../key":113,"../util":149,"node-localstorage":"node-localstorage","web-stream-tools":72}],117:[function(require,module,exports){
+},{"../config":80,"../key":117,"../util":153,"node-localstorage":"node-localstorage","web-stream-tools":76}],121:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34771,7 +35602,7 @@ function fromBinary(bytes, filename, date = new Date(), type = 'binary') {
   return message;
 }
 
-},{"./config":76,"./crypto":91,"./encoding/armor":108,"./enums":110,"./key":113,"./packet":122,"./signature":142,"./type/keyid":145,"./util":149,"web-stream-tools":72}],118:[function(require,module,exports){
+},{"./config":80,"./crypto":95,"./encoding/armor":112,"./enums":114,"./key":117,"./packet":126,"./signature":146,"./type/keyid":149,"./util":153,"web-stream-tools":76}],122:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35545,7 +36376,7 @@ function nativeAEAD() {
   return _config2.default.aead_protect && ((_config2.default.aead_protect_version !== 4 || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto() || _config2.default.aead_protect_version === 4 && _config2.default.aead_mode === _enums2.default.aead.eax && _util2.default.getWebCrypto());
 }
 
-},{"./cleartext":74,"./config/config":75,"./enums":110,"./key":113,"./message":117,"./polyfills":141,"./util":149,"./worker/async_proxy":151,"web-stream-tools":72}],119:[function(require,module,exports){
+},{"./cleartext":78,"./config/config":79,"./enums":114,"./key":117,"./message":121,"./polyfills":145,"./util":153,"./worker/async_proxy":155,"web-stream-tools":76}],123:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35759,7 +36590,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":110,"./all_packets.js":119,"./compressed.js":121,"./literal.js":123,"./marker.js":124,"./one_pass_signature.js":125,"./public_key.js":128,"./public_key_encrypted_session_key.js":129,"./public_subkey.js":130,"./secret_key.js":131,"./secret_subkey.js":132,"./signature.js":133,"./sym_encrypted_aead_protected.js":134,"./sym_encrypted_integrity_protected.js":135,"./sym_encrypted_session_key.js":136,"./symmetrically_encrypted.js":137,"./trust.js":138,"./user_attribute.js":139,"./userid.js":140}],120:[function(require,module,exports){
+},{"../enums.js":114,"./all_packets.js":123,"./compressed.js":125,"./literal.js":127,"./marker.js":128,"./one_pass_signature.js":129,"./public_key.js":132,"./public_key_encrypted_session_key.js":133,"./public_subkey.js":134,"./secret_key.js":135,"./secret_subkey.js":136,"./signature.js":137,"./sym_encrypted_aead_protected.js":138,"./sym_encrypted_integrity_protected.js":139,"./sym_encrypted_session_key.js":140,"./symmetrically_encrypted.js":141,"./trust.js":142,"./user_attribute.js":143,"./userid.js":144}],124:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -35867,12 +36698,17 @@ function verificationObjectToClone(verObject) {
     const signature = verObject.signature;
     verObject.signature = _webStreamTools2.default.fromAsync(async () => {
       const packets = (await signature).packets;
-      await verified;
-      delete packets[0].signature;
+      try {
+        await verified;
+        delete packets[0].signature;
+      } catch (e) {}
       return packets;
     });
   } else {
     verObject.signature = verObject.signature.packets;
+  }
+  if (verObject.error) {
+    verObject.error = verObject.error.message;
   }
   return verObject;
 }
@@ -35937,10 +36773,15 @@ function packetlistCloneToSignatures(clone) {
   clone.keyid = _keyid2.default.fromClone(clone.keyid);
   if (_util2.default.isStream(clone.signature)) {
     clone.signature = _webStreamTools2.default.readToEnd(clone.signature, ([signature]) => new _signature.Signature(_packetlist2.default.fromStructuredClone(signature)));
+    clone.signature.catch(() => {});
   } else {
     clone.signature = new _signature.Signature(_packetlist2.default.fromStructuredClone(clone.signature));
   }
   clone.verified = _webStreamTools2.default.readToEnd(clone.verified, ([verified]) => verified);
+  clone.verified.catch(() => {});
+  if (clone.error) {
+    clone.error = new Error(clone.error);
+  }
   return clone;
 }
 
@@ -35953,7 +36794,7 @@ function packetlistCloneToSignature(clone) {
   return new _signature.Signature(packetlist);
 }
 
-},{"../cleartext":74,"../key":113,"../message":117,"../signature":142,"../type/keyid":145,"../util":149,"./packetlist":127,"web-stream-tools":72}],121:[function(require,module,exports){
+},{"../cleartext":78,"../key":117,"../message":121,"../signature":146,"../type/keyid":149,"../util":153,"./packetlist":131,"web-stream-tools":76}],125:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36168,7 +37009,7 @@ if (nodeZlib) {
   };
 }
 
-},{"../config":76,"../enums":110,"../util":149,"pako":51,"seek-bzip":154,"web-stream-tools":72}],122:[function(require,module,exports){
+},{"../config":80,"../enums":114,"../util":153,"pako":51,"seek-bzip":70,"web-stream-tools":76}],126:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36206,7 +37047,7 @@ Object.assign(mod, packets);
 
 exports.default = mod;
 
-},{"./all_packets":119,"./clone":120,"./packetlist":127}],123:[function(require,module,exports){
+},{"./all_packets":123,"./clone":124,"./packetlist":131}],127:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36378,7 +37219,7 @@ Literal.prototype.write = function () {
 
 exports.default = Literal;
 
-},{"../enums":110,"../util":149,"web-stream-tools":72}],124:[function(require,module,exports){
+},{"../enums":114,"../util":153,"web-stream-tools":76}],128:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36453,7 +37294,7 @@ Marker.prototype.read = function (bytes) {
 
 exports.default = Marker;
 
-},{"../enums":110}],125:[function(require,module,exports){
+},{"../enums":114}],129:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36627,7 +37468,7 @@ OnePassSignature.prototype.verify = async function () {
 
 exports.default = OnePassSignature;
 
-},{"../enums":110,"../type/keyid":145,"../util":149,"./signature":133}],126:[function(require,module,exports){
+},{"../enums":114,"../type/keyid":149,"../util":153,"./signature":137}],130:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36925,7 +37766,7 @@ exports.default = {
   }
 };
 
-},{"../enums":110,"../util":149,"web-stream-tools":72}],127:[function(require,module,exports){
+},{"../enums":114,"../util":153,"web-stream-tools":76}],131:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37182,12 +38023,15 @@ List.fromStructuredClone = function (packetlistClone) {
       packet.packets = new List();
     }
   }
+  if (packetlistClone.stream) {
+    packetlist.stream = _webStreamTools2.default.transform(packetlistClone.stream, packet => packets.fromStructuredClone(packet));
+  }
   return packetlist;
 };
 
 exports.default = List;
 
-},{"../config":76,"../enums":110,"../util":149,"./all_packets":119,"./packet":126,"web-stream-tools":72}],128:[function(require,module,exports){
+},{"../config":80,"../enums":114,"../util":153,"./all_packets":123,"./packet":130,"web-stream-tools":76}],132:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37495,7 +38339,7 @@ PublicKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKey;
 
-},{"../config":76,"../crypto":91,"../enums":110,"../type/keyid":145,"../type/mpi":146,"../util":149,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14}],129:[function(require,module,exports){
+},{"../config":80,"../crypto":95,"../enums":114,"../type/keyid":149,"../type/mpi":150,"../util":153,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14}],133:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37693,7 +38537,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":91,"../enums":110,"../type/keyid":145,"../type/mpi":146,"../util":149}],130:[function(require,module,exports){
+},{"../crypto":95,"../enums":114,"../type/keyid":149,"../type/mpi":150,"../util":153}],134:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37752,7 +38596,7 @@ PublicSubkey.prototype.constructor = PublicSubkey;
 
 exports.default = PublicSubkey;
 
-},{"../enums":110,"./public_key":128}],131:[function(require,module,exports){
+},{"../enums":114,"./public_key":132}],135:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37942,6 +38786,12 @@ SecretKey.prototype.isDecrypted = function () {
  * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
+  if (this.isDecrypted() && this.encrypted) {
+    // gnu-dummy
+    this.isEncrypted = true;
+    return false;
+  }
+
   if (this.isDecrypted() && !passphrase) {
     this.encrypted = null;
     return false;
@@ -38029,6 +38879,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
     const s2k = new _s2k2.default();
     i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
 
+    if (s2k.type === 'gnu-dummy') {
+      this.isEncrypted = false;
+      return false;
+    }
     key = await produceEncryptionKey(s2k, passphrase, symmetric);
   } else {
     symmetric = s2k_usage;
@@ -38124,7 +38978,7 @@ SecretKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SecretKey;
 
-},{"../crypto":91,"../enums":110,"../type/keyid.js":145,"../type/s2k":148,"../util":149,"./public_key":128}],132:[function(require,module,exports){
+},{"../crypto":95,"../enums":114,"../type/keyid.js":149,"../type/s2k":152,"../util":153,"./public_key":132}],136:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38180,7 +39034,7 @@ SecretSubkey.prototype.constructor = SecretSubkey;
 
 exports.default = SecretSubkey;
 
-},{"../enums":110,"./secret_key":131}],133:[function(require,module,exports){
+},{"../enums":114,"./secret_key":135}],137:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38947,7 +39801,7 @@ Signature.prototype.postCloneTypeFix = function () {
 
 exports.default = Signature;
 
-},{"../crypto":91,"../enums":110,"../type/keyid.js":145,"../type/mpi.js":146,"../util":149,"./packet":126,"web-stream-tools":72}],134:[function(require,module,exports){
+},{"../crypto":95,"../enums":114,"../type/keyid.js":149,"../type/mpi.js":150,"../util":153,"./packet":130,"web-stream-tools":76}],138:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39174,7 +40028,7 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, strea
   }
 };
 
-},{"../config":76,"../crypto":91,"../enums":110,"../util":149,"web-stream-tools":72}],135:[function(require,module,exports){
+},{"../config":80,"../crypto":95,"../enums":114,"../util":153,"web-stream-tools":76}],139:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39334,7 +40188,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
 
 exports.default = SymEncryptedIntegrityProtected;
 
-},{"../config":76,"../crypto":91,"../enums":110,"../util":149,"web-stream-tools":72}],136:[function(require,module,exports){
+},{"../config":80,"../crypto":95,"../enums":114,"../util":153,"web-stream-tools":76}],140:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39556,7 +40410,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SymEncryptedSessionKey;
 
-},{"../config":76,"../crypto":91,"../enums":110,"../type/s2k":148,"../util":149}],137:[function(require,module,exports){
+},{"../config":80,"../crypto":95,"../enums":114,"../type/s2k":152,"../util":153}],141:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39693,7 +40547,7 @@ SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
 
 exports.default = SymmetricallyEncrypted;
 
-},{"../config":76,"../crypto":91,"../enums":110,"../util":149,"web-stream-tools":72}],138:[function(require,module,exports){
+},{"../config":80,"../crypto":95,"../enums":114,"../util":153,"web-stream-tools":76}],142:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39740,7 +40594,7 @@ Trust.prototype.read = function () {}; // TODO
 
 exports.default = Trust;
 
-},{"../enums":110}],139:[function(require,module,exports){
+},{"../enums":114}],143:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39852,7 +40706,7 @@ UserAttribute.prototype.equals = function (usrAttr) {
 
 exports.default = UserAttribute;
 
-},{"../enums":110,"../util":149,"./packet":126}],140:[function(require,module,exports){
+},{"../enums":114,"../util":153,"./packet":130}],144:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39954,7 +40808,7 @@ Userid.prototype.format = function (userid) {
 
 exports.default = Userid;
 
-},{"../enums":110,"../util":149}],141:[function(require,module,exports){
+},{"../enums":114,"../util":153}],145:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -40026,7 +40880,7 @@ if (typeof TextEncoder === 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./util":149,"@mattiasbuelens/web-streams-polyfill/es6":1,"core-js/fn/array/fill":"core-js/fn/array/fill","core-js/fn/array/find":"core-js/fn/array/find","core-js/fn/array/from":"core-js/fn/array/from","core-js/fn/array/includes":"core-js/fn/array/includes","core-js/fn/object/assign":"core-js/fn/object/assign","core-js/fn/promise":"core-js/fn/promise","core-js/fn/string/repeat":"core-js/fn/string/repeat","core-js/fn/symbol":"core-js/fn/symbol","core-js/fn/typed/uint8-array":"core-js/fn/typed/uint8-array","text-encoding-utf-8":68,"whatwg-fetch":"whatwg-fetch"}],142:[function(require,module,exports){
+},{"./util":153,"@mattiasbuelens/web-streams-polyfill/es6":1,"core-js/fn/array/fill":"core-js/fn/array/fill","core-js/fn/array/find":"core-js/fn/array/find","core-js/fn/array/from":"core-js/fn/array/from","core-js/fn/array/includes":"core-js/fn/array/includes","core-js/fn/object/assign":"core-js/fn/object/assign","core-js/fn/promise":"core-js/fn/promise","core-js/fn/string/repeat":"core-js/fn/string/repeat","core-js/fn/symbol":"core-js/fn/symbol","core-js/fn/typed/uint8-array":"core-js/fn/typed/uint8-array","text-encoding-utf-8":72,"whatwg-fetch":"whatwg-fetch"}],146:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40119,7 +40973,7 @@ async function read(input) {
   return new Signature(packetlist);
 }
 
-},{"./encoding/armor":108,"./enums":110,"./packet":122}],143:[function(require,module,exports){
+},{"./encoding/armor":112,"./enums":114,"./packet":126}],147:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40200,7 +41054,7 @@ ECDHSymmetricKey.fromClone = function (clone) {
 
 exports.default = ECDHSymmetricKey;
 
-},{"../util":149}],144:[function(require,module,exports){
+},{"../util":153}],148:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40285,7 +41139,7 @@ KDFParams.fromClone = function (clone) {
 
 exports.default = KDFParams;
 
-},{"../enums.js":110}],145:[function(require,module,exports){
+},{"../enums.js":114}],149:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40392,7 +41246,7 @@ Keyid.wildcard = function () {
 
 exports.default = Keyid;
 
-},{"../util.js":149}],146:[function(require,module,exports){
+},{"../util.js":153}],150:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40550,7 +41404,7 @@ MPI.fromClone = function (clone) {
 
 exports.default = MPI;
 
-},{"../util":149,"bn.js":17}],147:[function(require,module,exports){
+},{"../util":153,"bn.js":17}],151:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40675,7 +41529,7 @@ OID.fromClone = function (clone) {
 
 exports.default = OID;
 
-},{"../enums":110,"../util":149}],148:[function(require,module,exports){
+},{"../enums":114,"../util":153}],152:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40764,7 +41618,10 @@ S2K.prototype.get_count = function () {
 S2K.prototype.read = function (bytes) {
   let i = 0;
   this.type = _enums2.default.read(_enums2.default.s2k, bytes[i++]);
-  this.algorithm = _enums2.default.read(_enums2.default.hash, bytes[i++]);
+  this.algorithm = bytes[i++];
+  if (this.type !== 'gnu') {
+    this.algorithm = _enums2.default.read(_enums2.default.hash, this.algorithm);
+  }
 
   switch (this.type) {
     case 'simple':
@@ -40784,11 +41641,11 @@ S2K.prototype.read = function (bytes) {
       break;
 
     case 'gnu':
-      if (_util2.default.Uint8Array_to_str(bytes.subarray(i, 3)) === "GNU") {
+      if (_util2.default.Uint8Array_to_str(bytes.subarray(i, i + 3)) === "GNU") {
         i += 3; // GNU
         const gnuExtType = 1000 + bytes[i++];
         if (gnuExtType === 1001) {
-          this.type = gnuExtType;
+          this.type = 'gnu-dummy';
           // GnuPG extension mode 1001 -- don't write secret key at all
         } else {
           throw new Error("Unknown s2k gnu protection mode.");
@@ -40901,7 +41758,7 @@ S2K.fromClone = function (clone) {
 
 exports.default = S2K;
 
-},{"../config":76,"../crypto":91,"../enums.js":110,"../util.js":149}],149:[function(require,module,exports){
+},{"../config":80,"../crypto":95,"../enums.js":114,"../util.js":153}],153:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41017,10 +41874,15 @@ exports.default = {
 
               port1.onmessage = async function ({ data: { action } }) {
                 if (action === 'read') {
-                  const result = await reader.read();
-                  port1.postMessage(result, _util2.default.getTransferables(result, true));
+                  try {
+                    const result = await reader.read();
+                    port1.postMessage(result, _util2.default.getTransferables(result));
+                  } catch (e) {
+                    port1.postMessage({ error: e.message });
+                  }
                 } else if (action === 'cancel') {
-                  port1.postMessage((await transformed.cancel()));
+                  await transformed.cancel();
+                  port1.postMessage();
                 }
               };
               obj[key] = port2;
@@ -41053,9 +41915,12 @@ exports.default = {
                 value.onmessage = evt => {
                   var _evt$data = evt.data;
                   const done = _evt$data.done,
-                        value = _evt$data.value;
+                        value = _evt$data.value,
+                        error = _evt$data.error;
 
-                  if (!done) {
+                  if (error) {
+                    controller.error(new Error(error));
+                  } else if (!done) {
                     controller.enqueue(value);
                   } else {
                     controller.close();
@@ -41701,7 +42566,7 @@ exports.default = {
   }
 };
 
-},{"./config":76,"./encoding/base64":109,"./util":149,"address-rfc2822":2,"web-stream-tools":72}],150:[function(require,module,exports){
+},{"./config":80,"./encoding/base64":113,"./util":153,"address-rfc2822":2,"web-stream-tools":76}],154:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41803,7 +42668,7 @@ WKD.prototype.lookup = async function (options) {
 
 exports.default = WKD;
 
-},{"./crypto":91,"./key":113,"./util":149,"node-fetch":"node-fetch"}],151:[function(require,module,exports){
+},{"./crypto":95,"./key":117,"./util":153,"node-fetch":"node-fetch"}],155:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41997,821 +42862,5 @@ AsyncProxy.prototype.delegate = function (method, options) {
 
 exports.default = AsyncProxy;
 
-},{"../config":76,"../crypto":91,"../packet":122,"../util.js":149}],152:[function(require,module,exports){
-'use strict';
-
-/*
-node-bzip - a pure-javascript Node.JS module for decoding bzip2 data
-
-Copyright (C) 2012 Eli Skeggs
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, see
-http://www.gnu.org/licenses/lgpl-2.1.html
-
-Adapted from bzip2.js, copyright 2011 antimatter15 (antimatter15@gmail.com).
-
-Based on micro-bunzip by Rob Landley (rob@landley.net).
-
-Based on bzip2 decompression code by Julian R Seward (jseward@acm.org),
-which also acknowledges contributions by Mike Burrows, David Wheeler,
-Peter Fenwick, Alistair Moffat, Radford Neal, Ian H. Witten,
-Robert Sedgewick, and Jon L. Bentley.
-*/
-
-var BITMASK = [0x00, 0x01, 0x03, 0x07, 0x0F, 0x1F, 0x3F, 0x7F, 0xFF];
-
-// offset in bytes
-var BitReader = function BitReader(stream) {
-  this.stream = stream;
-  this.bitOffset = 0;
-  this.curByte = 0;
-  this.hasByte = false;
-};
-
-BitReader.prototype._ensureByte = function () {
-  if (!this.hasByte) {
-    this.curByte = this.stream.readByte();
-    this.hasByte = true;
-  }
-};
-
-// reads bits from the buffer
-BitReader.prototype.read = function (bits) {
-  var result = 0;
-  while (bits > 0) {
-    this._ensureByte();
-    var remaining = 8 - this.bitOffset;
-    // if we're in a byte
-    if (bits >= remaining) {
-      result <<= remaining;
-      result |= BITMASK[remaining] & this.curByte;
-      this.hasByte = false;
-      this.bitOffset = 0;
-      bits -= remaining;
-    } else {
-      result <<= bits;
-      var shift = remaining - bits;
-      result |= (this.curByte & BITMASK[bits] << shift) >> shift;
-      this.bitOffset += bits;
-      bits = 0;
-    }
-  }
-  return result;
-};
-
-// seek to an arbitrary point in the buffer (expressed in bits)
-BitReader.prototype.seek = function (pos) {
-  var n_bit = pos % 8;
-  var n_byte = (pos - n_bit) / 8;
-  this.bitOffset = n_bit;
-  this.stream.seek(n_byte);
-  this.hasByte = false;
-};
-
-// reads 6 bytes worth of data using the read method
-BitReader.prototype.pi = function () {
-  var buf = new Uint8Array(6),
-      i;
-  for (i = 0; i < buf.length; i++) {
-    buf[i] = this.read(8);
-  }
-  return bufToHex(buf);
-};
-
-function bufToHex(buf) {
-  return Array.prototype.map.call(buf, x => ('00' + x.toString(16)).slice(-2)).join('');
-}
-
-module.exports = BitReader;
-
-},{}],153:[function(require,module,exports){
-"use strict";
-
-/* CRC32, used in Bzip2 implementation.
- * This is a port of CRC32.java from the jbzip2 implementation at
- *   https://code.google.com/p/jbzip2
- * which is:
- *   Copyright (c) 2011 Matthew Francis
- *
- *   Permission is hereby granted, free of charge, to any person
- *   obtaining a copy of this software and associated documentation
- *   files (the "Software"), to deal in the Software without
- *   restriction, including without limitation the rights to use,
- *   copy, modify, merge, publish, distribute, sublicense, and/or sell
- *   copies of the Software, and to permit persons to whom the
- *   Software is furnished to do so, subject to the following
- *   conditions:
- *
- *   The above copyright notice and this permission notice shall be
- *   included in all copies or substantial portions of the Software.
- *
- *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- *   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- *   OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- *   NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- *   HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- *   WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- *   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- *   OTHER DEALINGS IN THE SOFTWARE.
- * This JavaScript implementation is:
- *   Copyright (c) 2013 C. Scott Ananian
- * with the same licensing terms as Matthew Francis' original implementation.
- */
-module.exports = function () {
-
-  /**
-   * A static CRC lookup table
-   */
-  var crc32Lookup = new Uint32Array([0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b, 0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61, 0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd, 0x4c11db70, 0x48d0c6c7, 0x4593e01e, 0x4152fda9, 0x5f15adac, 0x5bd4b01b, 0x569796c2, 0x52568b75, 0x6a1936c8, 0x6ed82b7f, 0x639b0da6, 0x675a1011, 0x791d4014, 0x7ddc5da3, 0x709f7b7a, 0x745e66cd, 0x9823b6e0, 0x9ce2ab57, 0x91a18d8e, 0x95609039, 0x8b27c03c, 0x8fe6dd8b, 0x82a5fb52, 0x8664e6e5, 0xbe2b5b58, 0xbaea46ef, 0xb7a96036, 0xb3687d81, 0xad2f2d84, 0xa9ee3033, 0xa4ad16ea, 0xa06c0b5d, 0xd4326d90, 0xd0f37027, 0xddb056fe, 0xd9714b49, 0xc7361b4c, 0xc3f706fb, 0xceb42022, 0xca753d95, 0xf23a8028, 0xf6fb9d9f, 0xfbb8bb46, 0xff79a6f1, 0xe13ef6f4, 0xe5ffeb43, 0xe8bccd9a, 0xec7dd02d, 0x34867077, 0x30476dc0, 0x3d044b19, 0x39c556ae, 0x278206ab, 0x23431b1c, 0x2e003dc5, 0x2ac12072, 0x128e9dcf, 0x164f8078, 0x1b0ca6a1, 0x1fcdbb16, 0x018aeb13, 0x054bf6a4, 0x0808d07d, 0x0cc9cdca, 0x7897ab07, 0x7c56b6b0, 0x71159069, 0x75d48dde, 0x6b93dddb, 0x6f52c06c, 0x6211e6b5, 0x66d0fb02, 0x5e9f46bf, 0x5a5e5b08, 0x571d7dd1, 0x53dc6066, 0x4d9b3063, 0x495a2dd4, 0x44190b0d, 0x40d816ba, 0xaca5c697, 0xa864db20, 0xa527fdf9, 0xa1e6e04e, 0xbfa1b04b, 0xbb60adfc, 0xb6238b25, 0xb2e29692, 0x8aad2b2f, 0x8e6c3698, 0x832f1041, 0x87ee0df6, 0x99a95df3, 0x9d684044, 0x902b669d, 0x94ea7b2a, 0xe0b41de7, 0xe4750050, 0xe9362689, 0xedf73b3e, 0xf3b06b3b, 0xf771768c, 0xfa325055, 0xfef34de2, 0xc6bcf05f, 0xc27dede8, 0xcf3ecb31, 0xcbffd686, 0xd5b88683, 0xd1799b34, 0xdc3abded, 0xd8fba05a, 0x690ce0ee, 0x6dcdfd59, 0x608edb80, 0x644fc637, 0x7a089632, 0x7ec98b85, 0x738aad5c, 0x774bb0eb, 0x4f040d56, 0x4bc510e1, 0x46863638, 0x42472b8f, 0x5c007b8a, 0x58c1663d, 0x558240e4, 0x51435d53, 0x251d3b9e, 0x21dc2629, 0x2c9f00f0, 0x285e1d47, 0x36194d42, 0x32d850f5, 0x3f9b762c, 0x3b5a6b9b, 0x0315d626, 0x07d4cb91, 0x0a97ed48, 0x0e56f0ff, 0x1011a0fa, 0x14d0bd4d, 0x19939b94, 0x1d528623, 0xf12f560e, 0xf5ee4bb9, 0xf8ad6d60, 0xfc6c70d7, 0xe22b20d2, 0xe6ea3d65, 0xeba91bbc, 0xef68060b, 0xd727bbb6, 0xd3e6a601, 0xdea580d8, 0xda649d6f, 0xc423cd6a, 0xc0e2d0dd, 0xcda1f604, 0xc960ebb3, 0xbd3e8d7e, 0xb9ff90c9, 0xb4bcb610, 0xb07daba7, 0xae3afba2, 0xaafbe615, 0xa7b8c0cc, 0xa379dd7b, 0x9b3660c6, 0x9ff77d71, 0x92b45ba8, 0x9675461f, 0x8832161a, 0x8cf30bad, 0x81b02d74, 0x857130c3, 0x5d8a9099, 0x594b8d2e, 0x5408abf7, 0x50c9b640, 0x4e8ee645, 0x4a4ffbf2, 0x470cdd2b, 0x43cdc09c, 0x7b827d21, 0x7f436096, 0x7200464f, 0x76c15bf8, 0x68860bfd, 0x6c47164a, 0x61043093, 0x65c52d24, 0x119b4be9, 0x155a565e, 0x18197087, 0x1cd86d30, 0x029f3d35, 0x065e2082, 0x0b1d065b, 0x0fdc1bec, 0x3793a651, 0x3352bbe6, 0x3e119d3f, 0x3ad08088, 0x2497d08d, 0x2056cd3a, 0x2d15ebe3, 0x29d4f654, 0xc5a92679, 0xc1683bce, 0xcc2b1d17, 0xc8ea00a0, 0xd6ad50a5, 0xd26c4d12, 0xdf2f6bcb, 0xdbee767c, 0xe3a1cbc1, 0xe760d676, 0xea23f0af, 0xeee2ed18, 0xf0a5bd1d, 0xf464a0aa, 0xf9278673, 0xfde69bc4, 0x89b8fd09, 0x8d79e0be, 0x803ac667, 0x84fbdbd0, 0x9abc8bd5, 0x9e7d9662, 0x933eb0bb, 0x97ffad0c, 0xafb010b1, 0xab710d06, 0xa6322bdf, 0xa2f33668, 0xbcb4666d, 0xb8757bda, 0xb5365d03, 0xb1f740b4]);
-
-  var CRC32 = function CRC32() {
-    /**
-     * The current CRC
-     */
-    var crc = 0xffffffff;
-
-    /**
-     * @return The current CRC
-     */
-    this.getCRC = function () {
-      return ~crc >>> 0; // return an unsigned value
-    };
-
-    /**
-     * Update the CRC with a single byte
-     * @param value The value to update the CRC with
-     */
-    this.updateCRC = function (value) {
-      crc = crc << 8 ^ crc32Lookup[(crc >>> 24 ^ value) & 0xff];
-    };
-
-    /**
-     * Update the CRC with a sequence of identical bytes
-     * @param value The value to update the CRC with
-     * @param count The number of bytes
-     */
-    this.updateCRCRun = function (value, count) {
-      while (count-- > 0) {
-        crc = crc << 8 ^ crc32Lookup[(crc >>> 24 ^ value) & 0xff];
-      }
-    };
-  };
-  return CRC32;
-}();
-
-},{}],154:[function(require,module,exports){
-'use strict';
-
-/*
-seek-bzip - a pure-javascript module for seeking within bzip2 data
-
-Copyright (C) 2013 C. Scott Ananian
-Copyright (C) 2012 Eli Skeggs
-Copyright (C) 2011 Kevin Kwok
-
-This library is free software; you can redistribute it and/or
-modify it under the terms of the GNU Lesser General Public
-License as published by the Free Software Foundation; either
-version 2.1 of the License, or (at your option) any later version.
-
-This library is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public
-License along with this library; if not, see
-http://www.gnu.org/licenses/lgpl-2.1.html
-
-Adapted from node-bzip, copyright 2012 Eli Skeggs.
-Adapted from bzip2.js, copyright 2011 Kevin Kwok (antimatter15@gmail.com).
-
-Based on micro-bunzip by Rob Landley (rob@landley.net).
-
-Based on bzip2 decompression code by Julian R Seward (jseward@acm.org),
-which also acknowledges contributions by Mike Burrows, David Wheeler,
-Peter Fenwick, Alistair Moffat, Radford Neal, Ian H. Witten,
-Robert Sedgewick, and Jon L. Bentley.
-*/
-
-var BitReader = require('./bitreader');
-var Stream = require('./stream');
-var CRC32 = require('./crc32');
-
-var MAX_HUFCODE_BITS = 20;
-var MAX_SYMBOLS = 258;
-var SYMBOL_RUNA = 0;
-var SYMBOL_RUNB = 1;
-var MIN_GROUPS = 2;
-var MAX_GROUPS = 6;
-var GROUP_SIZE = 50;
-
-var WHOLEPI = "314159265359";
-var SQRTPI = "177245385090";
-
-var mtf = function mtf(array, index) {
-  var src = array[index],
-      i;
-  for (i = index; i > 0; i--) {
-    array[i] = array[i - 1];
-  }
-  array[0] = src;
-  return src;
-};
-
-var Err = {
-  OK: 0,
-  LAST_BLOCK: -1,
-  NOT_BZIP_DATA: -2,
-  UNEXPECTED_INPUT_EOF: -3,
-  UNEXPECTED_OUTPUT_EOF: -4,
-  DATA_ERROR: -5,
-  OUT_OF_MEMORY: -6,
-  OBSOLETE_INPUT: -7,
-  END_OF_BLOCK: -8
-};
-var ErrorMessages = {};
-ErrorMessages[Err.LAST_BLOCK] = "Bad file checksum";
-ErrorMessages[Err.NOT_BZIP_DATA] = "Not bzip data";
-ErrorMessages[Err.UNEXPECTED_INPUT_EOF] = "Unexpected input EOF";
-ErrorMessages[Err.UNEXPECTED_OUTPUT_EOF] = "Unexpected output EOF";
-ErrorMessages[Err.DATA_ERROR] = "Data error";
-ErrorMessages[Err.OUT_OF_MEMORY] = "Out of memory";
-ErrorMessages[Err.OBSOLETE_INPUT] = "Obsolete (pre 0.9.5) bzip format not supported.";
-
-var _throw = function _throw(status, optDetail) {
-  var msg = ErrorMessages[status] || 'unknown error';
-  if (optDetail) {
-    msg += ': ' + optDetail;
-  }
-  var e = new TypeError(msg);
-  e.errorCode = status;
-  throw e;
-};
-
-var Bunzip = function Bunzip(inputStream, outputStream) {
-  this.writePos = this.writeCurrent = this.writeCount = 0;
-
-  this._start_bunzip(inputStream, outputStream);
-};
-Bunzip.prototype._init_block = function () {
-  var moreBlocks = this._get_next_block();
-  if (!moreBlocks) {
-    this.writeCount = -1;
-    return false; /* no more blocks */
-  }
-  this.blockCRC = new CRC32();
-  return true;
-};
-/* XXX micro-bunzip uses (inputStream, inputBuffer, len) as arguments */
-Bunzip.prototype._start_bunzip = function (inputStream, outputStream) {
-  /* Ensure that file starts with "BZh['1'-'9']." */
-  var buf = new Uint8Array(4);
-  if (inputStream.read(buf, 0, 4) !== 4 || String.fromCharCode(buf[0], buf[1], buf[2]) !== 'BZh') _throw(Err.NOT_BZIP_DATA, 'bad magic');
-
-  var level = buf[3] - 0x30;
-  if (level < 1 || level > 9) _throw(Err.NOT_BZIP_DATA, 'level out of range');
-
-  this.reader = new BitReader(inputStream);
-
-  /* Fourth byte (ascii '1'-'9'), indicates block size in units of 100k of
-     uncompressed data.  Allocate intermediate buffer for block. */
-  this.dbufSize = 100000 * level;
-  this.nextoutput = 0;
-  this.outputStream = outputStream;
-  this.streamCRC = 0;
-};
-Bunzip.prototype._get_next_block = function () {
-  var i, j, k;
-  var reader = this.reader;
-  // this is get_next_block() function from micro-bunzip:
-  /* Read in header signature and CRC, then validate signature.
-     (last block signature means CRC is for whole file, return now) */
-  var h = reader.pi();
-  if (h === SQRTPI) {
-    // last block
-    return false; /* no more blocks */
-  }
-  if (h !== WHOLEPI) _throw(Err.NOT_BZIP_DATA);
-  this.targetBlockCRC = reader.read(32) >>> 0; // (convert to unsigned)
-  this.streamCRC = (this.targetBlockCRC ^ (this.streamCRC << 1 | this.streamCRC >>> 31)) >>> 0;
-  /* We can add support for blockRandomised if anybody complains.  There was
-     some code for this in busybox 1.0.0-pre3, but nobody ever noticed that
-     it didn't actually work. */
-  if (reader.read(1)) _throw(Err.OBSOLETE_INPUT);
-  var origPointer = reader.read(24);
-  if (origPointer > this.dbufSize) _throw(Err.DATA_ERROR, 'initial position out of bounds');
-  /* mapping table: if some byte values are never used (encoding things
-     like ascii text), the compression code removes the gaps to have fewer
-     symbols to deal with, and writes a sparse bitfield indicating which
-     values were present.  We make a translation table to convert the symbols
-     back to the corresponding bytes. */
-  var t = reader.read(16);
-  var symToByte = new Uint8Array(256),
-      symTotal = 0;
-  for (i = 0; i < 16; i++) {
-    if (t & 1 << 0xF - i) {
-      var o = i * 16;
-      k = reader.read(16);
-      for (j = 0; j < 16; j++) if (k & 1 << 0xF - j) symToByte[symTotal++] = o + j;
-    }
-  }
-
-  /* How many different huffman coding groups does this block use? */
-  var groupCount = reader.read(3);
-  if (groupCount < MIN_GROUPS || groupCount > MAX_GROUPS) _throw(Err.DATA_ERROR);
-  /* nSelectors: Every GROUP_SIZE many symbols we select a new huffman coding
-     group.  Read in the group selector list, which is stored as MTF encoded
-     bit runs.  (MTF=Move To Front, as each value is used it's moved to the
-     start of the list.) */
-  var nSelectors = reader.read(15);
-  if (nSelectors === 0) _throw(Err.DATA_ERROR);
-
-  var mtfSymbol = new Uint8Array(256);
-  for (i = 0; i < groupCount; i++) mtfSymbol[i] = i;
-
-  var selectors = new Uint8Array(nSelectors); // was 32768...
-
-  for (i = 0; i < nSelectors; i++) {
-    /* Get next value */
-    for (j = 0; reader.read(1); j++) if (j >= groupCount) _throw(Err.DATA_ERROR);
-    /* Decode MTF to get the next selector */
-    selectors[i] = mtf(mtfSymbol, j);
-  }
-
-  /* Read the huffman coding tables for each group, which code for symTotal
-     literal symbols, plus two run symbols (RUNA, RUNB) */
-  var symCount = symTotal + 2;
-  var groups = [],
-      hufGroup;
-  for (j = 0; j < groupCount; j++) {
-    var length = new Uint8Array(symCount),
-        temp = new Uint16Array(MAX_HUFCODE_BITS + 1);
-    /* Read huffman code lengths for each symbol.  They're stored in
-       a way similar to mtf; record a starting value for the first symbol,
-       and an offset from the previous value for everys symbol after that. */
-    t = reader.read(5); // lengths
-    for (i = 0; i < symCount; i++) {
-      for (;;) {
-        if (t < 1 || t > MAX_HUFCODE_BITS) _throw(Err.DATA_ERROR);
-        /* If first bit is 0, stop.  Else second bit indicates whether
-           to increment or decrement the value. */
-        if (!reader.read(1)) break;
-        if (!reader.read(1)) t++;else t--;
-      }
-      length[i] = t;
-    }
-
-    /* Find largest and smallest lengths in this group */
-    var minLen, maxLen;
-    minLen = maxLen = length[0];
-    for (i = 1; i < symCount; i++) {
-      if (length[i] > maxLen) maxLen = length[i];else if (length[i] < minLen) minLen = length[i];
-    }
-
-    /* Calculate permute[], base[], and limit[] tables from length[].
-     *
-     * permute[] is the lookup table for converting huffman coded symbols
-     * into decoded symbols.  base[] is the amount to subtract from the
-     * value of a huffman symbol of a given length when using permute[].
-     *
-     * limit[] indicates the largest numerical value a symbol with a given
-     * number of bits can have.  This is how the huffman codes can vary in
-     * length: each code with a value>limit[length] needs another bit.
-     */
-    hufGroup = {};
-    groups.push(hufGroup);
-    hufGroup.permute = new Uint16Array(MAX_SYMBOLS);
-    hufGroup.limit = new Uint32Array(MAX_HUFCODE_BITS + 2);
-    hufGroup.base = new Uint32Array(MAX_HUFCODE_BITS + 1);
-    hufGroup.minLen = minLen;
-    hufGroup.maxLen = maxLen;
-    /* Calculate permute[].  Concurently, initialize temp[] and limit[]. */
-    var pp = 0;
-    for (i = minLen; i <= maxLen; i++) {
-      temp[i] = hufGroup.limit[i] = 0;
-      for (t = 0; t < symCount; t++) if (length[t] === i) hufGroup.permute[pp++] = t;
-    }
-    /* Count symbols coded for at each bit length */
-    for (i = 0; i < symCount; i++) temp[length[i]]++;
-    /* Calculate limit[] (the largest symbol-coding value at each bit
-     * length, which is (previous limit<<1)+symbols at this level), and
-     * base[] (number of symbols to ignore at each bit length, which is
-     * limit minus the cumulative count of symbols coded for already). */
-    pp = t = 0;
-    for (i = minLen; i < maxLen; i++) {
-      pp += temp[i];
-      /* We read the largest possible symbol size and then unget bits
-         after determining how many we need, and those extra bits could
-         be set to anything.  (They're noise from future symbols.)  At
-         each level we're really only interested in the first few bits,
-         so here we set all the trailing to-be-ignored bits to 1 so they
-         don't affect the value>limit[length] comparison. */
-      hufGroup.limit[i] = pp - 1;
-      pp <<= 1;
-      t += temp[i];
-      hufGroup.base[i + 1] = pp - t;
-    }
-    hufGroup.limit[maxLen + 1] = Number.MAX_VALUE; /* Sentinal value for reading next sym. */
-    hufGroup.limit[maxLen] = pp + temp[maxLen] - 1;
-    hufGroup.base[minLen] = 0;
-  }
-  /* We've finished reading and digesting the block header.  Now read this
-     block's huffman coded symbols from the file and undo the huffman coding
-     and run length encoding, saving the result into dbuf[dbufCount++]=uc */
-
-  /* Initialize symbol occurrence counters and symbol Move To Front table */
-  var byteCount = new Uint32Array(256);
-  for (i = 0; i < 256; i++) mtfSymbol[i] = i;
-  /* Loop through compressed symbols. */
-  var runPos = 0,
-      dbufCount = 0,
-      selector = 0,
-      uc;
-  var dbuf = this.dbuf = new Uint32Array(this.dbufSize);
-  symCount = 0;
-  for (;;) {
-    /* Determine which huffman coding group to use. */
-    if (!symCount--) {
-      symCount = GROUP_SIZE - 1;
-      if (selector >= nSelectors) {
-        _throw(Err.DATA_ERROR);
-      }
-      hufGroup = groups[selectors[selector++]];
-    }
-    /* Read next huffman-coded symbol. */
-    i = hufGroup.minLen;
-    j = reader.read(i);
-    for (;; i++) {
-      if (i > hufGroup.maxLen) {
-        _throw(Err.DATA_ERROR);
-      }
-      if (j <= hufGroup.limit[i]) break;
-      j = j << 1 | reader.read(1);
-    }
-    /* Huffman decode value to get nextSym (with bounds checking) */
-    j -= hufGroup.base[i];
-    if (j < 0 || j >= MAX_SYMBOLS) {
-      _throw(Err.DATA_ERROR);
-    }
-    var nextSym = hufGroup.permute[j];
-    /* We have now decoded the symbol, which indicates either a new literal
-       byte, or a repeated run of the most recent literal byte.  First,
-       check if nextSym indicates a repeated run, and if so loop collecting
-       how many times to repeat the last literal. */
-    if (nextSym === SYMBOL_RUNA || nextSym === SYMBOL_RUNB) {
-      /* If this is the start of a new run, zero out counter */
-      if (!runPos) {
-        runPos = 1;
-        t = 0;
-      }
-      /* Neat trick that saves 1 symbol: instead of or-ing 0 or 1 at
-         each bit position, add 1 or 2 instead.  For example,
-         1011 is 1<<0 + 1<<1 + 2<<2.  1010 is 2<<0 + 2<<1 + 1<<2.
-         You can make any bit pattern that way using 1 less symbol than
-         the basic or 0/1 method (except all bits 0, which would use no
-         symbols, but a run of length 0 doesn't mean anything in this
-         context).  Thus space is saved. */
-      if (nextSym === SYMBOL_RUNA) t += runPos;else t += 2 * runPos;
-      runPos <<= 1;
-      continue;
-    }
-    /* When we hit the first non-run symbol after a run, we now know
-       how many times to repeat the last literal, so append that many
-       copies to our buffer of decoded symbols (dbuf) now.  (The last
-       literal used is the one at the head of the mtfSymbol array.) */
-    if (runPos) {
-      runPos = 0;
-      if (dbufCount + t > this.dbufSize) {
-        _throw(Err.DATA_ERROR);
-      }
-      uc = symToByte[mtfSymbol[0]];
-      byteCount[uc] += t;
-      while (t--) dbuf[dbufCount++] = uc;
-    }
-    /* Is this the terminating symbol? */
-    if (nextSym > symTotal) break;
-    /* At this point, nextSym indicates a new literal character.  Subtract
-       one to get the position in the MTF array at which this literal is
-       currently to be found.  (Note that the result can't be -1 or 0,
-       because 0 and 1 are RUNA and RUNB.  But another instance of the
-       first symbol in the mtf array, position 0, would have been handled
-       as part of a run above.  Therefore 1 unused mtf position minus
-       2 non-literal nextSym values equals -1.) */
-    if (dbufCount >= this.dbufSize) {
-      _throw(Err.DATA_ERROR);
-    }
-    i = nextSym - 1;
-    uc = mtf(mtfSymbol, i);
-    uc = symToByte[uc];
-    /* We have our literal byte.  Save it into dbuf. */
-    byteCount[uc]++;
-    dbuf[dbufCount++] = uc;
-  }
-  /* At this point, we've read all the huffman-coded symbols (and repeated
-     runs) for this block from the input stream, and decoded them into the
-     intermediate buffer.  There are dbufCount many decoded bytes in dbuf[].
-     Now undo the Burrows-Wheeler transform on dbuf.
-     See http://dogma.net/markn/articles/bwt/bwt.htm
-  */
-  if (origPointer < 0 || origPointer >= dbufCount) {
-    _throw(Err.DATA_ERROR);
-  }
-  /* Turn byteCount into cumulative occurrence counts of 0 to n-1. */
-  j = 0;
-  for (i = 0; i < 256; i++) {
-    k = j + byteCount[i];
-    byteCount[i] = j;
-    j = k;
-  }
-  /* Figure out what order dbuf would be in if we sorted it. */
-  for (i = 0; i < dbufCount; i++) {
-    uc = dbuf[i] & 0xff;
-    dbuf[byteCount[uc]] |= i << 8;
-    byteCount[uc]++;
-  }
-  /* Decode first byte by hand to initialize "previous" byte.  Note that it
-     doesn't get output, and if the first three characters are identical
-     it doesn't qualify as a run (hence writeRunCountdown=5). */
-  var pos = 0,
-      current = 0,
-      run = 0;
-  if (dbufCount) {
-    pos = dbuf[origPointer];
-    current = pos & 0xff;
-    pos >>= 8;
-    run = -1;
-  }
-  this.writePos = pos;
-  this.writeCurrent = current;
-  this.writeCount = dbufCount;
-  this.writeRun = run;
-
-  return true; /* more blocks to come */
-};
-/* Undo burrows-wheeler transform on intermediate buffer to produce output.
-   If start_bunzip was initialized with out_fd=-1, then up to len bytes of
-   data are written to outbuf.  Return value is number of bytes written or
-   error (all errors are negative numbers).  If out_fd!=-1, outbuf and len
-   are ignored, data is written to out_fd and return is RETVAL_OK or error.
-*/
-Bunzip.prototype._read_bunzip = function (outputBuffer, len) {
-  var copies, previous, outbyte;
-  /* james@jamestaylor.org: writeCount goes to -1 when the buffer is fully
-     decoded, which results in this returning RETVAL_LAST_BLOCK, also
-     equal to -1... Confusing, I'm returning 0 here to indicate no
-     bytes written into the buffer */
-  if (this.writeCount < 0) {
-    return 0;
-  }
-
-  var gotcount = 0;
-  var dbuf = this.dbuf,
-      pos = this.writePos,
-      current = this.writeCurrent;
-  var dbufCount = this.writeCount,
-      outputsize = this.outputsize;
-  var run = this.writeRun;
-
-  while (dbufCount) {
-    dbufCount--;
-    previous = current;
-    pos = dbuf[pos];
-    current = pos & 0xff;
-    pos >>= 8;
-    if (run++ === 3) {
-      copies = current;
-      outbyte = previous;
-      current = -1;
-    } else {
-      copies = 1;
-      outbyte = current;
-    }
-    this.blockCRC.updateCRCRun(outbyte, copies);
-    while (copies--) {
-      this.outputStream.writeByte(outbyte);
-      this.nextoutput++;
-    }
-    if (current != previous) run = 0;
-  }
-  this.writeCount = dbufCount;
-  // check CRC
-  if (this.blockCRC.getCRC() !== this.targetBlockCRC) {
-    _throw(Err.DATA_ERROR, "Bad block CRC " + "(got " + this.blockCRC.getCRC().toString(16) + " expected " + this.targetBlockCRC.toString(16) + ")");
-  }
-  return this.nextoutput;
-};
-
-var coerceInputStream = function coerceInputStream(input) {
-  if ('readByte' in input) {
-    return input;
-  }
-  var inputStream = new Stream();
-  inputStream.pos = 0;
-  inputStream.readByte = function () {
-    return input[this.pos++];
-  };
-  inputStream.seek = function (pos) {
-    this.pos = pos;
-  };
-  inputStream.eof = function () {
-    return this.pos >= input.length;
-  };
-  return inputStream;
-};
-var coerceOutputStream = function coerceOutputStream(output) {
-  var outputStream = new Stream();
-  var resizeOk = true;
-  if (output) {
-    if (typeof output === 'number') {
-      outputStream.buffer = new Uint8Array(output);
-      resizeOk = false;
-    } else if ('writeByte' in output) {
-      return output;
-    } else {
-      outputStream.buffer = output;
-      resizeOk = false;
-    }
-  } else {
-    outputStream.buffer = new Uint8Array(16384);
-  }
-  outputStream.pos = 0;
-  outputStream.writeByte = function (_byte) {
-    if (resizeOk && this.pos >= this.buffer.length) {
-      var newBuffer = new Uint8Array(this.buffer.length * 2);
-      newBuffer.set(this.buffer);
-      this.buffer = newBuffer;
-    }
-    this.buffer[this.pos++] = _byte;
-  };
-  outputStream.getBuffer = function () {
-    // trim buffer
-    if (this.pos !== this.buffer.length) {
-      if (!resizeOk) throw new TypeError('outputsize does not match decoded input');
-      var newBuffer = new Uint8Array(this.pos);
-      newBuffer.set(this.buffer.subarray(0, this.pos));
-      this.buffer = newBuffer;
-    }
-    return this.buffer;
-  };
-  outputStream._coerced = true;
-  return outputStream;
-};
-
-/* Static helper functions */
-Bunzip.Err = Err;
-// 'input' can be a stream or a buffer
-// 'output' can be a stream or a buffer or a number (buffer size)
-Bunzip.decode = function (input, output, multistream) {
-  // make a stream from a buffer, if necessary
-  var inputStream = coerceInputStream(input);
-  var outputStream = coerceOutputStream(output);
-
-  var bz = new Bunzip(inputStream, outputStream);
-  while (true) {
-    if ('eof' in inputStream && inputStream.eof()) break;
-    if (bz._init_block()) {
-      bz._read_bunzip();
-    } else {
-      var targetStreamCRC = bz.reader.read(32) >>> 0; // (convert to unsigned)
-      if (targetStreamCRC !== bz.streamCRC) {
-        _throw(Err.DATA_ERROR, "Bad stream CRC " + "(got " + bz.streamCRC.toString(16) + " expected " + targetStreamCRC.toString(16) + ")");
-      }
-      if (multistream && 'eof' in inputStream && !inputStream.eof()) {
-        // note that start_bunzip will also resync the bit reader to next byte
-        bz._start_bunzip(inputStream, outputStream);
-      } else break;
-    }
-  }
-  if ('getBuffer' in outputStream) return outputStream.getBuffer();
-};
-Bunzip.decodeBlock = function (input, pos, output) {
-  // make a stream from a buffer, if necessary
-  var inputStream = coerceInputStream(input);
-  var outputStream = coerceOutputStream(output);
-  var bz = new Bunzip(inputStream, outputStream);
-  bz.reader.seek(pos);
-  /* Fill the decode buffer for the block */
-  var moreBlocks = bz._get_next_block();
-  if (moreBlocks) {
-    /* Init the CRC for writing */
-    bz.blockCRC = new CRC32();
-
-    /* Zero this so the current byte from before the seek is not written */
-    bz.writeCopies = 0;
-
-    /* Decompress the block and write to stdout */
-    bz._read_bunzip();
-    // XXX keep writing?
-  }
-  if ('getBuffer' in outputStream) return outputStream.getBuffer();
-};
-/* Reads bzip2 file from stream or buffer `input`, and invoke
- * `callback(position, size)` once for each bzip2 block,
- * where position gives the starting position (in *bits*)
- * and size gives uncompressed size of the block (in *bytes*). */
-Bunzip.table = function (input, callback, multistream) {
-  // make a stream from a buffer, if necessary
-  var inputStream = new Stream();
-  inputStream.delegate = coerceInputStream(input);
-  inputStream.pos = 0;
-  inputStream.readByte = function () {
-    this.pos++;
-    return this.delegate.readByte();
-  };
-  if (inputStream.delegate.eof) {
-    inputStream.eof = inputStream.delegate.eof.bind(inputStream.delegate);
-  }
-  var outputStream = new Stream();
-  outputStream.pos = 0;
-  outputStream.writeByte = function () {
-    this.pos++;
-  };
-
-  var bz = new Bunzip(inputStream, outputStream);
-  var blockSize = bz.dbufSize;
-  while (true) {
-    if ('eof' in inputStream && inputStream.eof()) break;
-
-    var position = inputStream.pos * 8 + bz.reader.bitOffset;
-    if (bz.reader.hasByte) {
-      position -= 8;
-    }
-
-    if (bz._init_block()) {
-      var start = outputStream.pos;
-      bz._read_bunzip();
-      callback(position, outputStream.pos - start);
-    } else {
-      var crc = bz.reader.read(32); // (but we ignore the crc)
-      if (multistream && 'eof' in inputStream && !inputStream.eof()) {
-        // note that start_bunzip will also resync the bit reader to next byte
-        bz._start_bunzip(inputStream, outputStream);
-        console.assert(bz.dbufSize === blockSize, "shouldn't change block size within multistream file");
-      } else break;
-    }
-  }
-};
-
-Bunzip.Stream = Stream;
-
-module.exports = Bunzip;
-
-},{"./bitreader":152,"./crc32":153,"./stream":155}],155:[function(require,module,exports){
-"use strict";
-
-/* very simple input/output stream interface */
-var Stream = function Stream() {};
-
-// input streams //////////////
-/** Returns the next byte, or -1 for EOF. */
-Stream.prototype.readByte = function () {
-  throw new Error("abstract method readByte() not implemented");
-};
-/** Attempts to fill the buffer; returns number of bytes read, or
- *  -1 for EOF. */
-Stream.prototype.read = function (buffer, bufOffset, length) {
-  var bytesRead = 0;
-  while (bytesRead < length) {
-    var c = this.readByte();
-    if (c < 0) {
-      // EOF
-      return bytesRead === 0 ? -1 : bytesRead;
-    }
-    buffer[bufOffset++] = c;
-    bytesRead++;
-  }
-  return bytesRead;
-};
-Stream.prototype.seek = function (new_pos) {
-  throw new Error("abstract method seek() not implemented");
-};
-
-// output streams ///////////
-Stream.prototype.writeByte = function (_byte) {
-  throw new Error("abstract method readByte() not implemented");
-};
-Stream.prototype.write = function (buffer, bufOffset, length) {
-  var i;
-  for (i = 0; i < length; i++) {
-    this.writeByte(buffer[bufOffset++]);
-  }
-  return length;
-};
-Stream.prototype.flush = function () {};
-
-module.exports = Stream;
-
-},{}]},{},[112])(112)
+},{"../config":80,"../crypto":95,"../packet":126,"../util.js":153}]},{},[116])(116)
 });
