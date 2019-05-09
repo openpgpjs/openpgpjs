@@ -70,7 +70,7 @@ function Signature(date=new Date()) {
   this.revocationKeyAlgorithm = null;
   this.revocationKeyFingerprint = null;
   this.issuerKeyId = new type_keyid();
-  this.notation = null;
+  this.notations = [];
   this.preferredHashAlgorithms = null;
   this.preferredCompressionAlgorithms = null;
   this.keyServerPreferences = null;
@@ -228,18 +228,16 @@ Signature.prototype.write_hashed_sub_packets = function () {
     bytes = util.concat([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
   }
-  if (this.notation !== null) {
-    Object.entries(this.notation).forEach(([name, value]) => {
-      bytes = [new Uint8Array([0x80, 0, 0, 0])];
-      // 2 octets of name length
-      bytes.push(util.writeNumber(name.length, 2));
-      // 2 octets of value length
-      bytes.push(util.writeNumber(value.length, 2));
-      bytes.push(util.str_to_Uint8Array(name + value));
-      bytes = util.concat(bytes);
-      arr.push(write_sub_packet(sub.notation_data, bytes));
-    });
-  }
+  this.notations.forEach(([name, value]) => {
+    bytes = [new Uint8Array([0x80, 0, 0, 0])];
+    // 2 octets of name length
+    bytes.push(util.writeNumber(name.length, 2));
+    // 2 octets of value length
+    bytes.push(util.writeNumber(value.length, 2));
+    bytes.push(util.str_to_Uint8Array(name + value));
+    bytes = util.concat(bytes);
+    arr.push(write_sub_packet(sub.notation_data, bytes));
+  });
   if (this.preferredHashAlgorithms !== null) {
     bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredHashAlgorithms));
     arr.push(write_sub_packet(sub.preferred_hash_algorithms, bytes));
@@ -447,8 +445,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
         const name = util.Uint8Array_to_str(bytes.subarray(mypos, mypos + m));
         const value = util.Uint8Array_to_str(bytes.subarray(mypos + m, mypos + m + n));
 
-        this.notation = this.notation || {};
-        this.notation[name] = value;
+        this.notations.push([name, value]);
       } else {
         util.print_debug("Unsupported notation flag "+bytes[mypos]);
       }

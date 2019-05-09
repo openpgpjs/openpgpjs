@@ -801,6 +801,51 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
     expect(signature.packets[0].signersUserId).to.equal('test-wkd@metacode.biz');
   });
 
+  it('Reading notations from armored key', async function() {
+    const pubkey =
+`-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBFzQOToBCADd0Pwh8edZ6gR3x49L1PaBPtiAQUr1QDUDWeNes8co5MTFl5hG
+lHzptt+VD0JGucuIkvi34f5z2ZbInAV/xYDX3kSYefy6LB8XJD527I/o9bqY1P7T
+PjtTZ4emcqNGkGhV2hNGV+hFcTevUS9Ty4vGg6P7X6RjfjeTrClHelJT8+9IiH+4
+0h4X/Y1hwoijRWanYnZjuAUIrOXnG76iknXQRGc8th8iI0oIZfKQomfF0K5lXFhH
+SU8Yvmik3vCTLHC6Ce0GVRCTIcU0/Xi2MK/Yrg9bGzSblHxomLU0NT6pee+2UjqR
+BZXOAPLY66Lsh1oqxQ6ihVnOmbraU9glAGm1ABEBAAG0EFRlc3R0IDx0ZXN0QGV4
+YT6JAYoEEwEIAHQCGwMFCQPCZwAFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AWIQQZ
+jHIqS6wzbp2qrkRXnQGzq+FUDgUCXNA5VBoUgAAAAAAQAAF0ZXN0QGV4YW1wbGUu
+Y29tMhoUgAAAAAAQAAF0ZXN0QGV4YW1wbGUuY29tMwAKCRBXnQGzq+FUDoLiCACn
+ls1iy0hT59Xt3o3tmmxe1jLzkbQEprR6MMfZamtex5/BHViu2HPAu5i13mXyBRnJ
+4Zvd/HUxJukP3tdQyJIlZFe8XwloMoRAA37KOZ5QGyKH8Jxq3LcAcQOOkFtWgr+Z
+JbjUKF1IuqCsK6SYB8f7SVKgpZk/kqG3HE3gk72ONnqdvwOa9cIhAuZScdgZ+PLC
+6W/0+IrnQIasvKeEWeK4u6/NYT35HUsUE/9Z6WKF+qxJnp5Pi2Q5cio6bFlGDNQb
++MiuiEb3Mzb3ev2PVg7WELBRXOg8QlCxrghqfi1SH791mmiyGK+GIQgnjRwMejTh
+dNsnHYag/KAewag55AQvuQENBFzQOToBCADJD+auK+Opo1q3ZLxODMyw5//XHJH4
+0vQPNawyBiOdBuneWHF3jfDwGa+lOftUx1abSwsq+Qs955THgLVSiJvivHWVy8pN
+tPv0XLa9rMj2wh/OmckbcgzSMeJJIz09bTj095ONPGYW2D4AcpkOc+b5bkqV6r+N
+yk9nopPJNCNqYYJtecTClDT5haRKBP5XjXRVsIXva/nHZGXKQLX8iWG2D5DOJNDP
+ZkAEoIPg+7J85Q3u2iSFPnLPzKHlMAoQW8d9RAEYyJ6WqiILUIDShhvXg+RIkzri
+wY/WkvhB/Kpj0r1SRbNhWRpmOWCR+0a2uHaLz9X0KTP7WMqQbmIdpRgZABEBAAGJ
+ATwEGAEIACYWIQQZjHIqS6wzbp2qrkRXnQGzq+FUDgUCXNA5OgIbDAUJA8JnAAAK
+CRBXnQGzq+FUDgI6B/9Far0CUR6rWvUiviBY4P5oe44I9P9P7ilWmum1cIQWxMyF
+0sc5tRcVLpMomURlrDz0TR5GNs+nuGAHTRBfN7VO0Y+R/LyEd1Rf80ONObXOqzMp
+vF9CdW3a7W4WicZwnGgUOImTICazR2VmR+RREdZshqrOCaOnuKmN3QwGH1zzFwJA
+sTbLoNMdBv8SEARaRVOWPM1HwJ701mMYF48FqhHd5uinH/ZCeBhqrBfhmXa68FWx
+xuyJz6ttl5Fp4nsB3waQdgPGZJ9NUrGfopLUZ44xDuJjBONd7rbYOh71TWbHd8wG
+V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
+=et/d
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+    const key = (await openpgp.key.readArmored(pubkey)).keys[0];
+
+    const notations = key.users[0].selfCertifications[0].notations;
+
+    expect(notations.length).to.equal(2);
+    expect(notations[0][0]).to.equal('test@example.com');
+    expect(notations[0][1]).to.equal('2');
+    expect(notations[1][0]).to.equal('test@example.com');
+    expect(notations[1][1]).to.equal('3');
+  });
+
   it('Writing and encryption of a secret key packet.', function() {
     const key = new openpgp.packet.List();
     key.push(new openpgp.packet.SecretKey());
