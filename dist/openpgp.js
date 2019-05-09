@@ -32193,6 +32193,7 @@ function HKP(keyServerBaseUrl) {
  * Search for a public key on the key server either by key ID or part of the user ID.
  * @param  {String}   options.keyID   The long public key ID.
  * @param  {String}   options.query   This can be any part of the key user ID such as name
+ * @param  {Object}   options.fetchOpts  These are passed to the fetch() call, as documented at https://github.com/bitinn/node-fetch#fetch-options
  *   or email address.
  * @returns {Promise<String>}          The ascii armored public key.
  * @async
@@ -32232,7 +32233,8 @@ HKP.prototype.lookup = function (options) {
     throw new Error('You must provide a query parameter!');
   }
 
-  return fetch(uri).then(function (response) {
+  const tmp = options.fetchOpts ? fetch(uri, options.fetchOpts) : fetch(uri);
+  return tmp.then(function (response) {
     if (response.status === 200) {
       return response.text();
     }
