@@ -32,6 +32,7 @@ import type_mpi from '../type/mpi.js';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import config from '../config';
 
 /**
  * Implementation of the Signature Packet (Tag 2)
@@ -446,6 +447,10 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
         const value = util.Uint8Array_to_str(bytes.subarray(mypos + m, mypos + m + n));
 
         this.notations.push([name, value]);
+
+        if (critical && (config.known_notations.indexOf(name) === -1)) {
+          throw new Error("Unknown critical notation: " + name);
+        }
       } else {
         util.print_debug("Unsupported notation flag "+bytes[mypos]);
       }
