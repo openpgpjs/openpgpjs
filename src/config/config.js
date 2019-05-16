@@ -183,5 +183,12 @@ export default {
    * @memberof module:config
    * @property {Integer} max_userid_length
    */
-  max_userid_length: 1024 * 5
+  max_userid_length: 1024 * 5,
+  /**
+   * Contains notatations that are considered "known". Known notations do not trigger
+   * validation error when the notation is marked as critical.
+   * @memberof module:config
+   * @property {Array} known_notations
+   */
+  known_notations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"]
 };

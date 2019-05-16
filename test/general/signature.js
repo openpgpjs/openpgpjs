@@ -467,6 +467,16 @@ describe("Signature", function() {
         '=NbaL',
         '-----END PGP PRIVATE KEY BLOCK-----'].join("\n");
 
+  const signature_with_critical_notation = `-----BEGIN PGP MESSAGE-----
+
+owGbwMvMwMH4oOW7S46CznTG09xJDDE3Wl1KUotLuDousDAwcjBYiSmyXL+48d6x
+U1PSGUxcj8IUszKBVMpMaWAAAgEGZpAeh9SKxNyCnFS95PzcytRiBi5OAZjyXXzM
+f8WYLqv7TXP61Sa4rqT12CI3xaN73YS2pt089f96odCKaEPnWJ3iSGmzJaW/ug10
+2Zo8Wj2k4s7t8wt4H3HtTu+y5UZfV3VOO+l//sdE/o+Lsub8FZH7/eOq7OnbNp4n
+vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
+=fRXs
+-----END PGP MESSAGE-----`;
+
   it('Testing signature checking on CAST5-enciphered message', async function() {
     const priv_key = (await openpgp.key.readArmored(priv_key_arm1)).keys[0];
     const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
@@ -604,6 +614,39 @@ describe("Signature", function() {
       expect((await verifiedSig[0].signature).packets.length).to.equal(1);
       expect((await verifiedSig[1].signature).packets.length).to.equal(1);
     });
+  });
+
+  it('Verify fails with signed message with critical notations', async function() {
+    let testFailed = true;
+    try {
+      openpgp.config.tolerant = false;
+      const sMsg = await openpgp.message.readArmored(signature_with_critical_notation);
+      const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+      const verified = await sMsg.verify([pub_key]);
+      await verified[0].verified;
+      testFailed = false;
+    } catch (e) {
+      expect(e.message).to.equal('Unknown critical notation: test@example.com');
+    } finally {
+      openpgp.config.tolerant = true;
+    }
+    // fail the test if execution does not throw an exception
+    expect(testFailed).to.be.true;
+  });
+
+  it('Verify succeeds with known signed message with critical notations', async function() {
+    openpgp.config.tolerant = false;
+    openpgp.config.known_notations.push('test@example.com');
+    try {
+      const sMsg = await openpgp.message.readArmored(signature_with_critical_notation);
+      const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+      const verified = await sMsg.verify([pub_key]);
+      openpgp.stream.pipe(sMsg.getLiteralData(), new WritableStream());
+      expect(await verified[0].verified).to.be.true;
+    } finally {
+      openpgp.config.known_notations.pop();
+      openpgp.config.tolerant = true;
+    }
   });
 
   it('Verify cleartext signed message with two signatures with openpgp.verify', async function() {
