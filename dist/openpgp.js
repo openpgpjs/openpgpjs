@@ -25364,7 +25364,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.1",
+  versionstring: "OpenPGP.js v4.5.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -25386,7 +25386,14 @@ exports.default = {
    * @memberof module:config
    * @property {Integer} max_userid_length
    */
-  max_userid_length: 1024 * 5
+  max_userid_length: 1024 * 5,
+  /**
+   * Contains notatations that are considered "known". Known notations do not trigger
+   * validation error when the notation is marked as critical.
+   * @memberof module:config
+   * @property {Array} known_notations
+   */
+  known_notations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"]
 }; // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -39069,6 +39076,10 @@ var _util = require('../util');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _config = require('../config');
+
+var _config2 = _interopRequireDefault(_config);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -39082,6 +39093,33 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @constructor
  * @param {Date} date the creation date of the signature
  */
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @requires web-stream-tools
+ * @requires packet/packet
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ */
+
 function Signature(date = new Date()) {
   this.tag = _enums2.default.packet.signature;
   this.version = 4;
@@ -39108,7 +39146,7 @@ function Signature(date = new Date()) {
   this.revocationKeyAlgorithm = null;
   this.revocationKeyFingerprint = null;
   this.issuerKeyId = new _keyid2.default();
-  this.notation = null;
+  this.notations = [];
   this.preferredHashAlgorithms = null;
   this.preferredCompressionAlgorithms = null;
   this.keyServerPreferences = null;
@@ -39139,33 +39177,6 @@ function Signature(date = new Date()) {
  * @param {Integer} len length of the packet or the remaining length of bytes at position
  * @returns {module:packet.Signature} object representation
  */
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @requires web-stream-tools
- * @requires packet/packet
- * @requires type/keyid
- * @requires type/mpi
- * @requires crypto
- * @requires enums
- * @requires util
- */
-
 Signature.prototype.read = function (bytes) {
   let i = 0;
   this.version = bytes[i++];
@@ -39291,18 +39302,16 @@ Signature.prototype.write_hashed_sub_packets = function () {
     bytes = _util2.default.concat([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
   }
-  if (this.notation !== null) {
-    Object.entries(this.notation).forEach(([name, value]) => {
-      bytes = [new Uint8Array([0x80, 0, 0, 0])];
-      // 2 octets of name length
-      bytes.push(_util2.default.writeNumber(name.length, 2));
-      // 2 octets of value length
-      bytes.push(_util2.default.writeNumber(value.length, 2));
-      bytes.push(_util2.default.str_to_Uint8Array(name + value));
-      bytes = _util2.default.concat(bytes);
-      arr.push(write_sub_packet(sub.notation_data, bytes));
-    });
-  }
+  this.notations.forEach(([name, value]) => {
+    bytes = [new Uint8Array([0x80, 0, 0, 0])];
+    // 2 octets of name length
+    bytes.push(_util2.default.writeNumber(name.length, 2));
+    // 2 octets of value length
+    bytes.push(_util2.default.writeNumber(value.length, 2));
+    bytes.push(_util2.default.str_to_Uint8Array(name + value));
+    bytes = _util2.default.concat(bytes);
+    arr.push(write_sub_packet(sub.notation_data, bytes));
+  });
   if (this.preferredHashAlgorithms !== null) {
     bytes = _util2.default.str_to_Uint8Array(_util2.default.Uint8Array_to_str(this.preferredHashAlgorithms));
     arr.push(write_sub_packet(sub.preferred_hash_algorithms, bytes));
@@ -39508,8 +39517,11 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
         const name = _util2.default.Uint8Array_to_str(bytes.subarray(mypos, mypos + m));
         const value = _util2.default.Uint8Array_to_str(bytes.subarray(mypos + m, mypos + m + n));
 
-        this.notation = this.notation || {};
-        this.notation[name] = value;
+        this.notations.push([name, value]);
+
+        if (critical && _config2.default.known_notations.indexOf(name) === -1) {
+          throw new Error("Unknown critical notation: " + name);
+        }
       } else {
         _util2.default.print_debug("Unsupported notation flag " + bytes[mypos]);
       }
@@ -39801,7 +39813,7 @@ Signature.prototype.postCloneTypeFix = function () {
 
 exports.default = Signature;
 
-},{"../crypto":95,"../enums":114,"../type/keyid.js":149,"../type/mpi.js":150,"../util":153,"./packet":130,"web-stream-tools":76}],138:[function(require,module,exports){
+},{"../config":80,"../crypto":95,"../enums":114,"../type/keyid.js":149,"../type/mpi.js":150,"../util":153,"./packet":130,"web-stream-tools":76}],138:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
