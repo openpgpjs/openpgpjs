@@ -1827,7 +1827,7 @@ function versionSpecificTests() {
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
-      expect(key.subKeys).to.have.lengthOf(2);
+      expect(key.subKeys).to.have.length(2);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
       expect(key.subKeys[1].getAlgorithmInfo().algorithm).to.equal('ecdh');
     });
@@ -1836,14 +1836,33 @@ function versionSpecificTests() {
   it('Generate key - one signing subkey', function() {
     const userId = 'test <a@b.com>';
     const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{}, {sign: true}]};
-    return openpgp.generateKey(opt).then(function(key) {
-      key = key.key;
+    return openpgp.generateKey(opt).then(async function({ key }) {
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
-      expect(key.subKeys).to.have.lengthOf(2);
+      expect(key.subKeys).to.have.length(2);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(await key.getEncryptionKey()).to.equal(key.subKeys[0]);
       expect(key.subKeys[1].getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(await key.getSigningKey()).to.equal(key.subKeys[1]);
+    });
+  });
+
+  it('Reformat key - one signing subkey', function() {
+    const userId = 'test <a@b.com>';
+    const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{}, {sign: true}]};
+    return openpgp.generateKey(opt).then(async function({ key }) {
+      await key.decrypt('123');
+      return openpgp.reformatKey({ privateKey: key, userIds: [userId] });
+    }).then(async function({ key }) {
+      expect(key.users.length).to.equal(1);
+      expect(key.users[0].userId.userid).to.equal(userId);
+      expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+      expect(key.subKeys).to.have.length(2);
+      expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(await key.getEncryptionKey()).to.equal(key.subKeys[0]);
+      expect(key.subKeys[1].getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(await key.getSigningKey()).to.equal(key.subKeys[1]);
     });
   });
 

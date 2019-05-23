@@ -32,7 +32,7 @@ describe('WKD unit tests', function() {
       }).then(function(key) {
         expect(key).to.exist;
         expect(key).to.have.property('keys');
-        expect(key.keys).to.have.lengthOf(1);
+        expect(key.keys).to.have.length(1);
       });
     });
 
