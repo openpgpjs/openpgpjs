@@ -139,19 +139,30 @@ Literal.prototype.read = async function(bytes) {
 };
 
 /**
- * Creates a string representation of the packet
+ * Creates a Uint8Array representation of the packet, excluding the data
  *
- * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
+ * @returns {Uint8Array} Uint8Array representation of the packet
  */
-Literal.prototype.write = function() {
+Literal.prototype.writeHeader = function() {
   const filename = util.encode_utf8(this.filename);
   const filename_length = new Uint8Array([filename.length]);
 
   const format = new Uint8Array([enums.write(enums.literal, this.format)]);
   const date = util.writeDate(this.date);
+
+  return util.concatUint8Array([format, filename_length, filename, date]);
+};
+
+/**
+ * Creates a Uint8Array representation of the packet
+ *
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
+ */
+Literal.prototype.write = function() {
+  const header = this.writeHeader();
   const data = this.getBytes();
 
-  return util.concat([format, filename_length, filename, date, data]);
+  return util.concat([header, data]);
 };
 
 export default Literal;

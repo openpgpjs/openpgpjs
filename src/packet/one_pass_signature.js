@@ -16,12 +16,14 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @requires web-stream-tools
  * @requires packet/signature
  * @requires type/keyid
  * @requires enums
  * @requires util
  */
 
+import stream from 'web-stream-tools';
 import Signature from './signature';
 import type_keyid from '../type/keyid';
 import enums from '../enums';
@@ -127,18 +129,12 @@ OnePassSignature.prototype.postCloneTypeFix = function() {
   this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
 };
 
-OnePassSignature.prototype.hash = function() {
-  const version = this.version;
-  this.version = 4;
-  try {
-    return Signature.prototype.hash.apply(this, arguments);
-  } finally {
-    this.version = version;
-  }
-};
+OnePassSignature.prototype.hash = Signature.prototype.hash;
 OnePassSignature.prototype.toHash = Signature.prototype.toHash;
 OnePassSignature.prototype.toSign = Signature.prototype.toSign;
-OnePassSignature.prototype.calculateTrailer = Signature.prototype.calculateTrailer;
+OnePassSignature.prototype.calculateTrailer = function(...args) {
+  return stream.fromAsync(async () => (await this.correspondingSig).calculateTrailer(...args));
+};
 
 OnePassSignature.prototype.verify = async function() {
   const correspondingSig = await this.correspondingSig;

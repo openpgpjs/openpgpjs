@@ -1305,6 +1305,42 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should encrypt/sign and decrypt/verify with generated key and detached signatures', function () {
+          const genOpt = {
+            userIds: [{ name: 'Test User', email: 'text@example.com' }],
+            numBits: 512
+          };
+          if (openpgp.util.getWebCryptoAll()) { genOpt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
+          return openpgp.generateKey(genOpt).then(async function(newKey) {
+            const newPublicKey = await openpgp.key.readArmored(newKey.publicKeyArmored);
+            const newPrivateKey = await openpgp.key.readArmored(newKey.privateKeyArmored);
+
+            const encOpt = {
+              message: openpgp.message.fromText(plaintext),
+              publicKeys: newPublicKey.keys,
+              privateKeys: newPrivateKey.keys,
+              detached: true
+            };
+            const decOpt = {
+              privateKeys: newPrivateKey.keys[0],
+              publicKeys: newPublicKey.keys
+            };
+            return openpgp.encrypt(encOpt).then(async function (encrypted) {
+              decOpt.message = await openpgp.message.readArmored(encrypted.data);
+              decOpt.signature = await openpgp.signature.readArmored(encrypted.signature);
+              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect);
+              return openpgp.decrypt(decOpt);
+            }).then(async function (decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              expect(decrypted.signatures[0].valid).to.be.true;
+              const signingKey = await newPrivateKey.keys[0].getSigningKey();
+              expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            });
+          });
+        });
+
         it('should encrypt/sign and decrypt/verify with null string input', function () {
           const encOpt = {
             message: openpgp.message.fromText(''),
