@@ -165,7 +165,6 @@ SecretKey.prototype.isDecrypted = function() {
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
   if (this.isDecrypted() && this.encrypted) { // gnu-dummy
-    this.isEncrypted = true;
     return false;
   }
 

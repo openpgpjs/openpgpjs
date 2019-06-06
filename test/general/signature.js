@@ -493,11 +493,13 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
     // exercises the GnuPG s2k type 1001 extension:
     // the secrets on the primary key have been stripped.
     const priv_key_gnupg_ext = (await openpgp.key.readArmored(priv_key_arm1_stripped)).keys[0];
+    const priv_key_gnupg_ext_2 = (await openpgp.key.readArmored(priv_key_arm1_stripped)).keys[0];
     const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
     const message = await openpgp.message.readArmored(msg_arm1);
     const primaryKey_packet = priv_key_gnupg_ext.primaryKey.write();
     expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
     await priv_key_gnupg_ext.decrypt("abcd");
+    await priv_key_gnupg_ext_2.decrypt("abcd");
     expect(priv_key_gnupg_ext.isDecrypted()).to.be.true;
     const msg = await openpgp.decrypt({ message, privateKeys: [priv_key_gnupg_ext], publicKeys: [pub_key] });
     expect(msg.signatures).to.exist;
@@ -506,6 +508,7 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
     expect(msg.signatures[0].signature.packets.length).to.equal(1);
     await expect(openpgp.sign({ message: openpgp.message.fromText('test'), privateKeys: [priv_key_gnupg_ext] })).to.eventually.be.rejectedWith('Missing private key parameters');
     await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith('Missing private key parameters');
+    await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith('Missing private key parameters');
     await priv_key_gnupg_ext.encrypt("abcd");
     expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
     const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();
