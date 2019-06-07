@@ -169,11 +169,14 @@ PublicKey.prototype.write = function () {
 PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
 
 /**
- * Write an old version packet - it's used by some of the internal routines.
+ * Write packet in order to be hashed; either for a signature or a fingerprint.
  */
-PublicKey.prototype.writeOld = function () {
+PublicKey.prototype.writeForHash = function (version) {
   const bytes = this.writePublicKey();
 
+  if (version === 5) {
+    return util.concatUint8Array([new Uint8Array([0x9A]), util.writeNumber(bytes.length, 4), bytes]);
+  }
   return util.concatUint8Array([new Uint8Array([0x99]), util.writeNumber(bytes.length, 2), bytes]);
 };
 
@@ -218,13 +221,10 @@ PublicKey.prototype.getFingerprintBytes = function () {
   if (this.fingerprint) {
     return this.fingerprint;
   }
-  let toHash;
+  const toHash = this.writeForHash(this.version);
   if (this.version === 5) {
-    const bytes = this.writePublicKey();
-    toHash = util.concatUint8Array([new Uint8Array([0x9A]), util.writeNumber(bytes.length, 4), bytes]);
     this.fingerprint = Sha256.bytes(toHash);
   } else if (this.version === 4) {
-    toHash = this.writeOld();
     this.fingerprint = Sha1.bytes(toHash);
   }
   return this.fingerprint;

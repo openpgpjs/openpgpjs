@@ -618,7 +618,7 @@ Signature.prototype.toSign = function (type, data) {
       if (data.key === undefined) {
         throw new Error('Key packet is required for this signature.');
       }
-      return data.key.writeOld();
+      return data.key.writeForHash(this.version);
 
     case t.key_revocation:
       return this.toSign(t.key, data);

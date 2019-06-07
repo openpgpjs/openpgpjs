@@ -1644,6 +1644,23 @@ iCzXvu4VCEMxMYOkOV4857v958DC7Z7W6BYEYpa9DP0O2zAwDmhu/kRFfKVQ
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
+const v5_sample_key = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+lGEFXJH05BYAAAAtCSsGAQQB2kcPAQEHQFhZlVcVVtwf+21xNQPX+ecMJJBL0MPd
+fj75iux+my8QAAAAAAAiAQCHZ1SnSUmWqxEsoI6facIVZQu6mph3cBFzzTvcm5lA
+Ng5ctBhlbW1hLmdvbGRtYW5AZXhhbXBsZS5uZXSIlgUTFggASCIhBRk0e8mHJGQC
+X5nfPsLgAA7ZiEiS4fez6kyUAJFZVptUBQJckfTkAhsDBQsJCAcCAyICAQYVCgkI
+CwIEFgIDAQIeBwIXgAAA9cAA/jiR3yMsZMeEQ40u6uzEoXa6UXeV/S3wwJAXRJy9
+M8s0AP9vuL/7AyTfFXwwzSjDnYmzS0qAhbLDQ643N+MXGBJ2BZxmBVyR9OQSAAAA
+MgorBgEEAZdVAQUBAQdA+nysrzml2UCweAqtpDuncSPlvrcBWKU0yfU0YvYWWAoD
+AQgHAAAAAAAiAP9OdAPppjU1WwpqjIItkxr+VPQRT8Zm/Riw7U3F6v3OiBFHiHoF
+GBYIACwiIQUZNHvJhyRkAl+Z3z7C4AAO2YhIkuH3s+pMlACRWVabVAUCXJH05AIb
+DAAAOSQBAP4BOOIR/sGLNMOfeb5fPs/02QMieoiSjIBnijhob2U5AQC+RtOHCHx7
+TcIYl5/Uyoi+FOvPLcNw4hOv2nwUzSSVAw==
+=IiS2
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2161,6 +2178,18 @@ function versionSpecificTests() {
         });
       });
     });
+  });
+
+  it('Parses V5 sample key', async function() {
+    // sec   ed25519 2019-03-20 [SC]
+    //       19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54
+    // uid                      emma.goldman@example.net
+    // ssb   cv25519 2019-03-20 [E]
+    //       E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965
+    const { keys: [key] } = await openpgp.key.readArmored(v5_sample_key);
+    expect(key.primaryKey.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
+    expect(key.subKeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
+    expect(await key.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
   });
 }
 
