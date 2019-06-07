@@ -224,7 +224,7 @@ SecretKey.prototype.write = function () {
   // - [Optional] If secret data is encrypted (string-to-key usage octet
   //   not zero), an Initial Vector (IV) of the same length as the
   //   cipher's block size.
-  if (this.s2k_usage) {
+  if (this.s2k_usage && this.s2k.type !== 'gnu-dummy') {
     optionalFieldsArr.push(...this.iv);
   }
 
@@ -385,6 +385,11 @@ SecretKey.prototype.generate = async function (bits, curve) {
  * Clear private params, return to initial state
  */
 SecretKey.prototype.clearPrivateParams = function () {
+  if (this.s2k && this.s2k.type === 'gnu-dummy') {
+    this.isEncrypted = true;
+    return;
+  }
+
   if (!this.keyMaterial) {
     throw new Error('If secret key is not encrypted, clearing private params is irreversible.');
   }
