@@ -64,7 +64,8 @@ const curves = {
     cipher: enums.symmetric.aes128,
     node: nodeCurves.p256,
     web: webCurves.p256,
-    payloadSize: 32
+    payloadSize: 32,
+    sharedSize: 256
   },
   p384: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
@@ -73,7 +74,8 @@ const curves = {
     cipher: enums.symmetric.aes192,
     node: nodeCurves.p384,
     web: webCurves.p384,
-    payloadSize: 48
+    payloadSize: 48,
+    sharedSize: 384
   },
   p521: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23],
@@ -82,7 +84,8 @@ const curves = {
     cipher: enums.symmetric.aes256,
     node: nodeCurves.p521,
     web: webCurves.p521,
-    payloadSize: 66
+    payloadSize: 66,
+    sharedSize: 528
   },
   secp256k1: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x0A],
