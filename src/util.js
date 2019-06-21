@@ -585,7 +585,8 @@ export default {
    * Detect Node.js runtime.
    */
   detectNode: function() {
-    return typeof window === 'undefined';
+    return typeof global.process === 'object' &&
+      typeof global.process.versions === 'object';
   },
 
   /**
