@@ -25364,7 +25364,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.3",
+  versionstring: "OpenPGP.js v4.5.4",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -41772,6 +41772,7 @@ S2K.fromClone = function (clone) {
 exports.default = S2K;
 
 },{"../config":80,"../crypto":95,"../enums.js":114,"../util.js":153}],153:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42394,7 +42395,7 @@ exports.default = {
    * Detect Node.js runtime.
    */
   detectNode: function detectNode() {
-    return typeof window === 'undefined';
+    return typeof global.process === 'object' && typeof global.process.versions === 'object';
   },
 
   /**
@@ -42579,6 +42580,7 @@ exports.default = {
   }
 };
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./config":80,"./encoding/base64":113,"./util":153,"address-rfc2822":2,"web-stream-tools":76}],154:[function(require,module,exports){
 'use strict';
 

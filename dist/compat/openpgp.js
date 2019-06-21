@@ -31823,7 +31823,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.3",
+  versionstring: "OpenPGP.js v4.5.4",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -57105,11 +57105,16 @@ S2K.fromClone = function (clone) {
 exports.default = S2K;
 
 },{"../config":351,"../crypto":366,"../enums.js":385,"../util.js":424,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/regenerator":44}],424:[function(_dereq_,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _typeof2 = _dereq_('babel-runtime/helpers/typeof');
+
+var _typeof3 = _interopRequireDefault(_typeof2);
 
 var _promise = _dereq_('babel-runtime/core-js/promise');
 
@@ -57796,7 +57801,7 @@ exports.default = {
    * Detect Node.js runtime.
    */
   detectNode: function detectNode() {
-    return typeof window === 'undefined';
+    return (0, _typeof3.default)(global.process) === 'object' && (0, _typeof3.default)(global.process.versions) === 'object';
   },
 
   /**
@@ -58011,7 +58016,8 @@ exports.default = {
  * @module util
  */
 
-},{"./config":351,"./encoding/base64":384,"./util":424,"address-rfc2822":2,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/regenerator":44,"web-stream-tools":346}],425:[function(_dereq_,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./config":351,"./encoding/base64":384,"./util":424,"address-rfc2822":2,"babel-runtime/core-js/object/entries":26,"babel-runtime/core-js/promise":32,"babel-runtime/helpers/asyncToGenerator":36,"babel-runtime/helpers/slicedToArray":41,"babel-runtime/helpers/typeof":43,"babel-runtime/regenerator":44,"web-stream-tools":346}],425:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
