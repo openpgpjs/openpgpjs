@@ -31823,7 +31823,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.4",
+  versionstring: "OpenPGP.js v4.5.5",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages

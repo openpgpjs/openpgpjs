@@ -24130,13 +24130,15 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.webToNode = exports.nodeToWeb = undefined;
 
+var _util = require('./util');
+
 var _streams = require('./streams');
 
 var _streams2 = _interopRequireDefault(_streams);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const NodeReadableStream = typeof window === 'undefined' && require('stream').Readable;
+const NodeReadableStream = _util.isNode && require('stream').Readable;
 
 /**
  * Web / node stream conversion functions
@@ -24236,7 +24238,7 @@ if (NodeReadableStream) {
 exports.nodeToWeb = nodeToWeb;
 exports.webToNode = webToNode;
 
-},{"./streams":76,"stream":"stream"}],75:[function(require,module,exports){
+},{"./streams":76,"./util":77,"stream":"stream"}],75:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24454,7 +24456,7 @@ var _nodeConversions = require('./node-conversions');
 
 var _reader = require('./reader');
 
-const NodeBuffer = typeof window === 'undefined' && require('buffer').Buffer;
+const NodeBuffer = _util.isNode && require('buffer').Buffer;
 
 /**
  * Convert data to Stream
@@ -24903,12 +24905,15 @@ exports.default = { isStream: _util.isStream, isUint8Array: _util.isUint8Array, 
 
 }).call(this,require('_process'))
 },{"./node-conversions":74,"./reader":75,"./util":77,"_process":67,"buffer":"buffer"}],77:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-const NodeReadableStream = typeof window === 'undefined' && require('stream').Readable;
+const isNode = typeof global.process === 'object' && typeof global.process.versions === 'object';
+
+const NodeReadableStream = isNode && require('stream').Readable;
 
 /**
  * Check whether data is a Stream, and if so of which type
@@ -24961,10 +24966,12 @@ function concatUint8Array(arrays) {
   return result;
 }
 
+exports.isNode = isNode;
 exports.isStream = isStream;
 exports.isUint8Array = isUint8Array;
 exports.concatUint8Array = concatUint8Array;
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"stream":"stream"}],78:[function(require,module,exports){
 'use strict';
 
@@ -25364,7 +25371,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.4",
+  versionstring: "OpenPGP.js v4.5.5",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
