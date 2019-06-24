@@ -40,8 +40,10 @@ const nodeCrypto = util.getNodeCrypto();
  */
 function KeyPair(curve, options) {
   this.curve = curve;
-  this.keyType = curve.curve.type === 'edwards' ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
-  this.keyPair = this.curve.curve.keyPair(options);
+  if (this.curve.name !== 'ed25519') {
+    this.keyType = curve.curve.type === 'edwards' ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
+    this.keyPair = this.curve.curve.keyPair(options);
+  }
 }
 
 KeyPair.prototype.sign = async function (message, hash_algo, hashed) {

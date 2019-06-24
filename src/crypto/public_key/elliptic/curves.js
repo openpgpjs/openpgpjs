@@ -19,6 +19,7 @@
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @requires bn.js
  * @requires elliptic
+ * @requires tweetnacl
  * @requires crypto/public_key/elliptic/key
  * @requires crypto/random
  * @requires enums
@@ -29,6 +30,7 @@
 
 import BN from 'bn.js';
 import { ec as EC, eddsa as EdDSA } from 'elliptic';
+import nacl from 'tweetnacl/nacl-fast-light.js';
 import KeyPair from './key';
 import random from '../../random';
 import enums from '../../../enums';
@@ -152,15 +154,17 @@ function Curve(oid_or_name, params) {
   params = params || curves[this.name];
 
   this.keyType = params.keyType;
-  switch (this.keyType) {
-    case enums.publicKey.ecdsa:
-      this.curve = new EC(this.name);
-      break;
-    case enums.publicKey.eddsa:
-      this.curve = new EdDSA(this.name);
-      break;
-    default:
-      throw new Error('Unknown elliptic key type;');
+  if (this.name !== 'curve25519' && this.name !== 'ed25519') {
+    switch (this.keyType) {
+      case enums.publicKey.ecdsa:
+        this.curve = new EC(this.name);
+        break;
+      case enums.publicKey.eddsa:
+        this.curve = new EdDSA(this.name);
+        break;
+      default:
+        throw new Error('Unknown elliptic key type;');
+    }
   }
 
   this.oid = params.oid;
@@ -200,15 +204,41 @@ Curve.prototype.genKeyPair = async function () {
   }
 
   if (!keyPair || !keyPair.priv) {
-    // elliptic fallback
-    const r = await this.curve.genKeyPair({
-      entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))
-    });
-    const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
-    if (this.keyType === enums.publicKey.eddsa) {
-      keyPair = { secret: r.getSecret() };
+    if (this.name === 'curve25519') {
+      const privateKey = await random.getRandomBytes(32);
+
+      const one = new BN(1);
+      const mask = one.ushln(255 - 3).sub(one).ushln(3);
+      let secretKey = new BN(privateKey);
+      secretKey = secretKey.or(one.ushln(255 - 1));
+      secretKey = secretKey.and(mask);
+      secretKey = secretKey.toArrayLike(Uint8Array, 'le', 32);
+
+      const keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
+      const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+      return {
+        getPublic: () => publicKey,
+        getPrivate: () => privateKey
+      };
+    } else if (this.name === 'ed25519') {
+      const privateKey = await random.getRandomBytes(32);
+      const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
+      const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+      return {
+        getPublic: () => publicKey,
+        getPrivate: () => privateKey
+      };
     } else {
-      keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
+      // elliptic fallback
+      const r = await this.curve.genKeyPair({
+        entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))
+      });
+      const compact = this.curve.curve.type === 'edwards' || this.curve.curve.type === 'mont';
+      if (this.keyType === enums.publicKey.eddsa) {
+        keyPair = { secret: r.getSecret() };
+      } else {
+        keyPair = { pub: r.getPublic('array', compact), priv: r.getPrivate().toArray() };
+      }
     }
   }
   return new KeyPair(this, keyPair);

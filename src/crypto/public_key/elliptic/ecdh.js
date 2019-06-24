@@ -22,6 +22,7 @@
  * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
  * @requires crypto/cipher
+ * @requires crypto/random
  * @requires crypto/hash
  * @requires type/kdf_params
  * @requires enums
@@ -34,6 +35,7 @@ import nacl from 'tweetnacl/nacl-fast-light.js';
 import Curve from './curves';
 import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
+import random from '../../random';
 import hash from '../../hash';
 import type_kdf_params from '../../../type/kdf_params';
 import enums from '../../../enums';
@@ -88,7 +90,7 @@ async function kdf(hash_algo, X, length, param, stripLeading=false, stripTrailin
 async function genPublicEphemeralKey(curve, Q) {
   switch (curve.name) {
     case 'curve25519': {
-      const { secretKey: d } = nacl.box.keyPair();
+      const d = await random.getRandomBytes(32);
       const { secretKey, sharedKey } = await genPrivateEphemeralKey(curve, Q, null, d);
       let { publicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
       publicKey = util.concatUint8Array([new Uint8Array([0x40]), publicKey]);
