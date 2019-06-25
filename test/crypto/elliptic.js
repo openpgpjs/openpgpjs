@@ -175,27 +175,19 @@ describe('Elliptic Curve Cryptography', function () {
       done();
     });
     it('Signature verification', function (done) {
-      const curve = new elliptic_curves.Curve('p256');
-      const key = curve.keyFromPublic(signature_data.pub);
       expect(
-        key.verify(signature_data.message, signature_data.signature, 8, signature_data.hashed)
+        elliptic_curves.ecdsa.verify('p256', 8, signature_data.signature, signature_data.message, signature_data.pub, signature_data.hashed)
       ).to.eventually.be.true.notify(done);
     });
     it('Invalid signature', function (done) {
-      const curve = new elliptic_curves.Curve('p256');
-      const key = curve.keyFromPublic(key_data.p256.pub);
       expect(
-        key.verify(signature_data.message, signature_data.signature, 8, signature_data.hashed)
+        elliptic_curves.ecdsa.verify('p256', 8, signature_data.signature, signature_data.message, key_data.p256.pub, signature_data.hashed)
       ).to.eventually.be.false.notify(done);
     });
     it('Signature generation', function () {
-      const curve = new elliptic_curves.Curve('p256');
-      let key = curve.keyFromPrivate(key_data.p256.priv);
-      return key.sign(signature_data.message, 8, signature_data.hashed).then(async ({ r, s }) => {
-        const signature = { r: new Uint8Array(r.toArray()), s: new Uint8Array(s.toArray()) };
-        key = curve.keyFromPublic(key_data.p256.pub);
+      return elliptic_curves.ecdsa.sign('p256', 8, signature_data.message, key_data.p256.priv, signature_data.hashed).then(async signature => {
         await expect(
-          key.verify(signature_data.message, signature, 8, signature_data.hashed)
+          elliptic_curves.ecdsa.verify('p256', 8, signature, signature_data.message, key_data.p256.pub, signature_data.hashed)
         ).to.eventually.be.true;
       });
     });
