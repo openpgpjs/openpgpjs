@@ -35,13 +35,6 @@ function KeyPair(curve, options) {
   }
 }
 
-KeyPair.prototype.derive = function (pub) {
-  if (this.keyType === enums.publicKey.eddsa) {
-    throw new Error('Key can only be used for EdDSA');
-  }
-  return this.keyPair.derive(pub.keyPair.getPublic());
-};
-
 KeyPair.prototype.getPublic = function () {
   const compact = this.curve.curve.curve.type === 'edwards' ||
         this.curve.curve.curve.type === 'mont';

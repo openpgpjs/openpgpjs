@@ -191,16 +191,11 @@ describe('Elliptic Curve Cryptography', function () {
         ).to.eventually.be.true;
       });
     });
-    it('Shared secret generation', function (done) {
+    it('Shared secret generation', async function () {
       const curve = new elliptic_curves.Curve('p256');
-      let key1 = curve.keyFromPrivate(key_data.p256.priv);
-      let key2 = curve.keyFromPublic(signature_data.pub);
-      const shared1 = openpgp.util.Uint8Array_to_hex(key1.derive(key2).toArrayLike(Uint8Array));
-      key1 = curve.keyFromPublic(key_data.p256.pub);
-      key2 = curve.keyFromPrivate(signature_data.priv);
-      const shared2 = openpgp.util.Uint8Array_to_hex(key2.derive(key1).toArrayLike(Uint8Array));
-      expect(shared1).to.equal(shared2);
-      done();
+      const { sharedKey: shared1 } = await elliptic_curves.ecdh.genPrivateEphemeralKey(curve, signature_data.pub, key_data.p256.priv);
+      const { sharedKey: shared2 } = await elliptic_curves.ecdh.genPrivateEphemeralKey(curve, key_data.p256.pub, signature_data.priv);
+      expect(shared1).to.deep.equal(shared2);
     });
   });
   describe('ECDSA signature', function () {

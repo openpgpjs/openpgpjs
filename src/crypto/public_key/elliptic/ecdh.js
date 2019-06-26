@@ -318,7 +318,7 @@ async function ellipticPrivateEphemeralKey(curve, V, d) {
   V = curve.keyFromPublic(V);
   d = curve.keyFromPrivate(d);
   const secretKey = new Uint8Array(d.getPrivate());
-  const S = d.derive(V);
+  const S = d.keyPair.derive(V.keyPair.getPublic());
   const len = curve.curve.curve.p.byteLength();
   const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
   return { secretKey, sharedKey };
@@ -336,7 +336,7 @@ async function ellipticPublicEphemeralKey(curve, Q) {
   const v = await curve.genKeyPair();
   Q = curve.keyFromPublic(Q);
   const publicKey = new Uint8Array(v.getPublic());
-  const S = v.derive(Q);
+  const S = v.keyPair.derive(Q.keyPair.getPublic());
   const len = curve.curve.curve.p.byteLength();
   const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
   return { publicKey, sharedKey };
