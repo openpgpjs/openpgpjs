@@ -486,7 +486,7 @@ describe('Elliptic Curve Cryptography', function () {
     const curveObj = new openpgp.crypto.publicKey.elliptic.Curve(curve);
     const oid = new openpgp.OID(curveObj.oid);
     const { sharedKey } = await openpgp.crypto.publicKey.elliptic.ecdh.ellipticPrivateEphemeralKey(
-      curveObj, V, Q, d
+      curveObj, V, d
     );
     let cipher_algo = curveObj.cipher;
     const hash_algo = curveObj.hash;
@@ -541,25 +541,29 @@ describe('Elliptic Curve Cryptography', function () {
       const ECDHE_Z1 = await genPrivateEphemeralKey("p521", ECDHE_VZ1.V, key_data.p521.pub, key_data.p521.priv, fingerprint1);
       expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
     });
-    it('Comparing key derived using different algorithms', async function () {
+    it('Comparing keys derived using different algorithms', async function () {
       const names = ["p256", "p384", "p521"];
       if (openpgp.util.detectNode()) {
-          this.skip();
+        this.skip();
       }
       return Promise.all(names.map(async function (name) {
         const curve = new elliptic_curves.Curve(name);
-        const key = window.crypto.subtle.generateKey({
-          name: "ECDSA",
-          namedCurve: curve.web.web
-        }, false, ["sign", "verify"]);
-        key.then(async () => {
-          const ECDHE_VZ1 = await genPublicEphemeralKey(name,  key_data[name].pub, fingerprint1);
-          const ECDHE_Z1 = await genEllipticPrivateEphemeralKey(name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
-          const ECDHE_Z2 = await genWebPrivateEphemeralKey(name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv,  fingerprint1);
-          expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
-          expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_Z2).join(' ')).to.be.true;
-        });
-      }));
-    });
+        try {
+          await window.crypto.subtle.generateKey({
+            name: "ECDSA",
+            namedCurve: curve.web.web
+          }, false, ["sign", "verify"]);
+        } catch(err) {
+          openpgp.util.print_debug_error(err);
+          return;
+        }
+        const ECDHE_VZ1 = await genPublicEphemeralKey(name, key_data[name].pub, fingerprint1);
+        const ECDHE_Z1 = await genEllipticPrivateEphemeralKey(name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
+        const ECDHE_Z2 = await genWebPrivateEphemeralKey(name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
+        expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
+        expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_Z2).join(' ')).to.be.true;    
+      })
+    );
   });
+  }); 
 });
