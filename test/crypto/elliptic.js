@@ -543,7 +543,7 @@ describe('Elliptic Curve Cryptography', function () {
     });
     it('Comparing keys derived using different algorithms', async function () {
       const names = ["p256", "p384", "p521"];
-      if (openpgp.util.detectNode()) {
+      if (!openpgp.util.getWebCrypto()) {
         this.skip();
       }
       return Promise.all(names.map(async function (name) {
@@ -562,8 +562,7 @@ describe('Elliptic Curve Cryptography', function () {
         const ECDHE_Z2 = await genWebPrivateEphemeralKey(name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
         expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
         expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_Z2).join(' ')).to.be.true;    
-      })
-    );
-  });
+      }));
+    });
   }); 
 });
