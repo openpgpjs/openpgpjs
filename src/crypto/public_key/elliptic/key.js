@@ -240,35 +240,35 @@ async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
 const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 
 const ECDSASignature = nodeCrypto ?
-      asn1.define('ECDSASignature', function() {
-        this.seq().obj(
-          this.key('r').int(),
-          this.key('s').int()
-        );
-      }) : undefined;
+  asn1.define('ECDSASignature', function() {
+    this.seq().obj(
+      this.key('r').int(),
+      this.key('s').int()
+    );
+  }) : undefined;
 
 const ECPrivateKey = nodeCrypto ?
-      asn1.define('ECPrivateKey', function() {
-        this.seq().obj(
-          this.key('version').int(),
-          this.key('privateKey').octstr(),
-          this.key('parameters').explicit(0).optional().any(),
-          this.key('publicKey').explicit(1).optional().bitstr()
-        );
-      }) : undefined;
+  asn1.define('ECPrivateKey', function() {
+    this.seq().obj(
+      this.key('version').int(),
+      this.key('privateKey').octstr(),
+      this.key('parameters').explicit(0).optional().any(),
+      this.key('publicKey').explicit(1).optional().bitstr()
+    );
+  }) : undefined;
 
 const AlgorithmIdentifier = nodeCrypto ?
-      asn1.define('AlgorithmIdentifier', function() {
-        this.seq().obj(
-          this.key('algorithm').objid(),
-          this.key('parameters').optional().any()
-        );
-      }) : undefined;
+  asn1.define('AlgorithmIdentifier', function() {
+    this.seq().obj(
+      this.key('algorithm').objid(),
+      this.key('parameters').optional().any()
+    );
+  }) : undefined;
 
 const SubjectPublicKeyInfo = nodeCrypto ?
-      asn1.define('SubjectPublicKeyInfo', function() {
-        this.seq().obj(
-          this.key('algorithm').use(AlgorithmIdentifier),
-          this.key('subjectPublicKey').bitstr()
-        );
-      }) : undefined;
+  asn1.define('SubjectPublicKeyInfo', function() {
+    this.seq().obj(
+      this.key('algorithm').use(AlgorithmIdentifier),
+      this.key('subjectPublicKey').bitstr()
+    );
+  }) : undefined;

@@ -541,9 +541,9 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
     const signingKey = await privateKey.getSigningKey(undefined, date, userId);
     if (!signingKey) {
       throw new Error(`Could not find valid signing key packet in key ${
-          privateKey.getKeyId().toHex()}`);
+        privateKey.getKeyId().toHex()}`);
     }
-    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, {signatureType}, date, userId);
+    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });

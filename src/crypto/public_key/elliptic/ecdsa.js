@@ -38,8 +38,10 @@ async function sign(oid, hash_algo, m, d, hashed) {
   const curve = new Curve(oid);
   const key = curve.keyFromPrivate(d);
   const signature = await key.sign(m, hash_algo, hashed);
-  return { r: signature.r.toArrayLike(Uint8Array),
-           s: signature.s.toArrayLike(Uint8Array) };
+  return {
+    r: signature.r.toArrayLike(Uint8Array),
+    s: signature.s.toArrayLike(Uint8Array)
+  };
 }
 
 /**
