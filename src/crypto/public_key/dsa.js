@@ -85,7 +85,7 @@ export default {
       break;
     }
     return { r: r.toArrayLike(Uint8Array),
-             s: s.toArrayLike(Uint8Array) };
+      s: s.toArrayLike(Uint8Array) };
   },
 
   /**

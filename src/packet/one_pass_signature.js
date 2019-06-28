@@ -65,7 +65,7 @@ function OnePassSignature() {
   this.publicKeyAlgorithm = null;
   /** An eight-octet number holding the Key ID of the signing key. */
   this.issuerKeyId = null;
-   /**
+  /**
     * A one-octet number holding a flag showing whether the signature is nested.
     * A zero value indicates that the next packet is another One-Pass Signature packet
     * that describes another signature to be applied to the same message data.

@@ -140,7 +140,7 @@ export default {
                 value.postMessage({ action: 'cancel' });
               });
             }
-          }, {highWaterMark: 0});
+          }, { highWaterMark: 0 });
           return;
         }
         util.restoreStreams(value);

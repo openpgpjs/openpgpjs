@@ -52,13 +52,13 @@ async function randomProbablePrime(bits, e, k) {
   let i = n.mod(thirty).toNumber();
 
   do {
-      n.iaddn(adds[i]);
-      i = (i + adds[i]) % adds.length;
-      // If reached the maximum, go back to the minimum.
-      if (n.bitLength() > bits) {
-          n = n.mod(min.shln(1)).iadd(min);
-          i = n.mod(thirty).toNumber();
-      }
+    n.iaddn(adds[i]);
+    i = (i + adds[i]) % adds.length;
+    // If reached the maximum, go back to the minimum.
+    if (n.bitLength() > bits) {
+      n = n.mod(min.shln(1)).iadd(min);
+      i = n.mod(thirty).toNumber();
+    }
   } while (!await isProbablePrime(n, e, k));
   return n;
 }

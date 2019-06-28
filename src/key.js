@@ -1564,7 +1564,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     }
     await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
 
-    return { secretSubkeyPacket, subkeySignaturePacket};
+    return { secretSubkeyPacket, subkeySignaturePacket };
   })).then(packets => {
     packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
       packetlist.push(secretSubkeyPacket);

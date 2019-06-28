@@ -66,7 +66,7 @@ export default {
         const oid = pub_MPIs[0];
         // EdDSA signature params are expected in little-endian format
         const signature = { R: msg_MPIs[0].toUint8Array('le', 32),
-                            S: msg_MPIs[1].toUint8Array('le', 32) };
+          S: msg_MPIs[1].toUint8Array('le', 32) };
         const Q = pub_MPIs[1].toUint8Array('be', 33);
         return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q, hashed);
       }

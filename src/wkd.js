@@ -51,7 +51,7 @@ WKD.prototype.lookup = async function(options) {
   }
 
   if (!util.isEmailAddress(options.email)) {
-      throw new Error('Invalid e-mail address.');
+    throw new Error('Invalid e-mail address.');
   }
 
   const [, localPart, domain] = /(.*)@(.*)/.exec(options.email);
@@ -65,11 +65,11 @@ WKD.prototype.lookup = async function(options) {
     }
   }).then(function(publicKey) {
     if (publicKey) {
-        const rawBytes = new Uint8Array(publicKey);
-        if (options.rawBytes) {
-          return rawBytes;
-        }
-        return keyMod.read(rawBytes);
+      const rawBytes = new Uint8Array(publicKey);
+      if (options.rawBytes) {
+        return rawBytes;
+      }
+      return keyMod.read(rawBytes);
     }
   });
 };

@@ -157,7 +157,7 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
  * @async
  * @static
  */
-export function reformatKey({privateKey, userIds=[], passphrase="", keyExpirationTime=0, date, revocationCertificate=true}) {
+export function reformatKey({ privateKey, userIds=[], passphrase="", keyExpirationTime=0, date, revocationCertificate=true }) {
   userIds = toArray(userIds);
   const options = { privateKey, userIds, passphrase, keyExpirationTime, date, revocationCertificate };
   if (asyncProxy) {
