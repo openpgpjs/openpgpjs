@@ -244,7 +244,7 @@ module.exports = {
     "no-with": "error",
     "nonblock-statement-body-position": "error",
     "object-curly-newline": "off",
-    "object-curly-spacing": "warn",
+    "object-curly-spacing": "error",
     "object-property-newline": [
       "error",
       {
@@ -314,6 +314,7 @@ module.exports = {
       "error",
       "never"
     ],
+    "indent": [ "error", 2, { "SwitchCase": 1 } ],
 
     // Custom silencers:
     "camelcase": 0,
@@ -335,7 +336,6 @@ module.exports = {
     "no-unused-vars": 1,
 
     // TODO Consider fixing these:
-    "indent": [ "warn", 2, { "SwitchCase": 1 } ],
     "valid-jsdoc": 0,
     "new-cap": [ 0, { "properties": false, "capIsNewExceptionPattern": "^type_.*" }],
     "no-lonely-if": 0,
