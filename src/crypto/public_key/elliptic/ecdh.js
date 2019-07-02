@@ -366,8 +366,8 @@ async function ellipticPublicEphemeralKey(curve, Q) {
 async function nodePrivateEphemeralKey(curve, V, d)
 {
   const recipient = nodeCrypto.createECDH(curve.node.node);
-  recipient.setPrivateKey(Buffer.from(d));
-  const sharedKey = new Uint8Array(recipient.computeSecret(Buffer.from(V)));
+  recipient.setPrivateKey(d);
+  const sharedKey = new Uint8Array(recipient.computeSecret(V));
   const secretKey = new Uint8Array(recipient.getPrivateKey());
   return { secretKey, sharedKey };
 }
@@ -386,7 +386,7 @@ async function nodePublicEphemeralKey(curve, Q)
   const sender = nodeCrypto.createECDH(curve.node.node);
   sender.generateKeys();
   //below would throw different errors depending on version of node
-  const sharedKey = new Uint8Array(sender.computeSecret(Buffer.from(Q)));
+  const sharedKey = new Uint8Array(sender.computeSecret(Q));
   const publicKey = new Uint8Array(sender.getPublicKey());
   return { publicKey, sharedKey };
 }

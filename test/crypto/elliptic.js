@@ -383,12 +383,12 @@ describe('Elliptic Curve Cryptography', function () {
     it('Invalid ephemeral key', function (done) {
       expect(decrypt_message(
         'secp256k1', 2, 7, [], [], [], [], []
-      )).to.be.rejectedWith(Error, /Private key is not valid for specified curve/).notify(done);
+      )).to.be.rejectedWith(Error, /Private key is not valid for specified curve|Unknown point format/).notify(done);
     });
     it('Invalid elliptic public key', function (done) {
       expect(decrypt_message(
         'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_invalid_point, secp256k1_data, []
-      )).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT/).notify(done);
+      )).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Invalid elliptic public key/).notify(done);
     });
     it('Invalid key data integrity', function (done) {
       expect(decrypt_message(
@@ -520,7 +520,7 @@ describe('Elliptic Curve Cryptography', function () {
   describe('ECDHE key generation', function () {
     it('Invalid curve', function (done) {
       expect(genPublicEphemeralKey("secp256k1", Q1, fingerprint1)
-      ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT/).notify(done);
+      ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/).notify(done);
     });
     it('Invalid public part of ephemeral key and private key', async function () {
       const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
