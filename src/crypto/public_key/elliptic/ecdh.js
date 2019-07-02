@@ -108,7 +108,7 @@ async function genPublicEphemeralKey(curve, Q) {
       }
     }
   }
-  if (curve.node && util.getNodeCrypto()) {
+  if (curve.node && nodeCrypto) {
     return nodePublicEphemeralKey(curve, Q);
   }
   return ellipticPublicEphemeralKey(curve, Q);
@@ -172,7 +172,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
       }
     }
   }
-  if (curve.node && util.getNodeCrypto()) {
+  if (curve.node && nodeCrypto) {
     return nodePrivateEphemeralKey(curve, V, d);
   }
   return ellipticPrivateEphemeralKey(curve, V, d);
@@ -385,6 +385,7 @@ async function nodePublicEphemeralKey(curve, Q)
 {
   const sender = nodeCrypto.createECDH(curve.node.node);
   sender.generateKeys();
+  //below would throw different errors depending on version of node
   const sharedKey = new Uint8Array(sender.computeSecret(Buffer.from(Q)));
   const publicKey = new Uint8Array(sender.getPublicKey());
   return { publicKey, sharedKey };
