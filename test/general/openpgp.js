@@ -583,15 +583,18 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
         subkeys: []
       };
       return openpgp.generateKey(opt).then(function(newKey) {
-        expect(keyGenStub.withArgs({
-          userIds: [{ name: 'Test User', email: 'text@example.com' }],
-          passphrase: 'secret',
-          numBits: 2048,
-          keyExpirationTime: 0,
-          curve: "",
-          date: now,
-          subkeys: []
-        }).calledOnce).to.be.true;
+        expect(keyGenStub.getCalls().map(c => c.args)).to.deep.eql([
+          [{
+            userIds: [{ name: 'Test User', email: 'text@example.com' }],
+            passphrase: 'secret',
+            numBits: 2048,
+            keyExpirationTime: 0,
+            curve: '',
+            date: now,
+            subkeys: [],
+            primaryKeyPacket: null
+          }]
+        ]);
         expect(newKey.key).to.exist;
         expect(newKey.privateKeyArmored).to.exist;
         expect(newKey.publicKeyArmored).to.exist;

@@ -104,6 +104,7 @@ export function destroyWorker() {
 /**
  * Generates a new OpenPGP key pair. Supports RSA and ECC keys. Primary and subkey will be of same type.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
+ * @param  {String} primaryKeyPacket (optional) An decrypted SecretKey packet to be used as primary key of the new generated key
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} numBits          (optional) number of bits for RSA keys: 2048 or 4096.
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
@@ -119,9 +120,9 @@ export function destroyWorker() {
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}] }) {
+export function generateKey({ primaryKeyPacket=null, userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}] }) {
   userIds = toArray(userIds);
-  const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys };
+  const options = { primaryKeyPacket, userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys };
   if (util.getWebCryptoAll() && numBits < 2048) {
     throw new Error('numBits should be 2048 or 4096, found: ' + numBits);
   }

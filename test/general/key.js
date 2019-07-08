@@ -1,4 +1,4 @@
-/* globals tryTests: true */
+/* globals tryTests: true, assert: true */
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
@@ -1784,6 +1784,67 @@ function versionSpecificTests() {
       expect(key.users[0].userId.email).to.equal(userId.email);
       expect(key.users[0].userId.comment).to.equal(userId.comment);
     });
+  });
+
+  it('Generate key - with primary key of another key', function() {
+    const opt = { numBits: 512, userIds: 'test <test@example.com>' };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; }
+
+    return openpgp.generateKey(opt).then(async function(firstKey) {
+      const secondKey = await openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.primaryKey });
+      expect(secondKey.key).to.exist;
+      expect(
+        [secondKey.key.primaryKey.keyid.toHex(), secondKey.key.getFingerprint()]
+      ).to.deep.eql(
+        [firstKey.key.primaryKey.keyid.toHex(), firstKey.key.getFingerprint()]
+      );
+    });
+  });
+
+  it('Generate and Merge key - with primary key of another key', function() {
+    const opt = { curve: 'curve25519', userIds: 'test <test@example.com>' };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; }
+
+    return openpgp.generateKey(opt).then(async function(firstKey) {
+      const secondKey = await openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.primaryKey, keyExpirationTime: 3600, subkeys:[{ sign: true }] });
+      return firstKey.key.update(secondKey.key).then(mergedKey => {
+        expect(mergedKey.subKeys.map(sk => sk.getAlgorithmInfo())).to.deep.eql([
+          { algorithm: 'ecdh', curve: 'curve25519' },
+          { algorithm: 'eddsa', curve: 'ed25519' } // DSA is sign only
+        ]);
+        expect(mergedKey.users.map(u => u.userId.userid)).to.deep.eql([
+          'test <test@example.com>'
+        ]);
+        expect(mergedKey.users.map(u => u.selfCertifications.map(sc => sc.keyExpirationTime))).to.deep.eql([
+          [null, 3600]
+        ]);
+      });
+    });
+  });
+
+  it('Generate key - fails with encrypted primary key packet', function() {
+    const opt = { numBits: 512, userIds: 'test <test@example.com>', passphrase: 'smth' };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; }
+
+    return openpgp.generateKey(opt).then(function(firstKey) {
+      firstKey.key.primaryKey.clearPrivateParams();
+      return openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.primaryKey });
+    }).then(
+      () => { assert.fail('Expected to fail'); },
+      err => { expect(err.message).to.equal('Error generating keypair: Private key is not decrypted.'); }
+    );
+  });
+
+  it('Generate key - fails with public primary key packet', function() {
+    const opt = { numBits: 512, userIds: 'test <test@example.com>' };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; }
+
+    return openpgp.generateKey(opt).then(function(firstKey) {
+      return openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.toPublic().primaryKey });
+    }).then(
+      () => { assert.fail('Expected to fail'); },
+      err => { expect(err.message).to.equal('Error generating keypair: primaryKeyPacket.tag must be enums.packet.secretKey, was publicKey.'); }
+    );
   });
 
   it('Generate key - setting date to the past', function() {

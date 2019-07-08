@@ -643,6 +643,7 @@ Key.prototype.update = async function(key) {
       this.subKeys.push(srcSubKey);
     }
   }));
+  return this;
 };
 
 /**
@@ -1366,6 +1367,14 @@ export async function generate(options) {
   }
 
   async function generateSecretKey(options) {
+    if (options.primaryKeyPacket) {
+      if (options.primaryKeyPacket.tag !== enums.packet.secretKey) {
+        throw new Error(
+          'primaryKeyPacket.tag must be enums.packet.secretKey, was ' + enums.read(enums.packet, options.primaryKeyPacket.tag) + '.'
+        );
+      }
+      return options.primaryKeyPacket;
+    }
     const secretKeyPacket = new packet.SecretKey(options.date);
     secretKeyPacket.packets = null;
     secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
