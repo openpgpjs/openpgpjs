@@ -1791,7 +1791,8 @@ function versionSpecificTests() {
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; }
 
     return openpgp.generateKey(opt).then(async function(firstKey) {
-      const secondKey = await openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.primaryKey });
+      Object.assign(opt, { primaryKeyPacket: firstKey.key.primaryKey });
+      const secondKey = await openpgp.generateKey(opt);
       expect(secondKey.key).to.exist;
       expect(
         [secondKey.key.primaryKey.keyid.toHex(), secondKey.key.getFingerprint()]
@@ -1806,7 +1807,8 @@ function versionSpecificTests() {
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; }
 
     return openpgp.generateKey(opt).then(async function(firstKey) {
-      const secondKey = await openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.primaryKey, keyExpirationTime: 3600, subkeys:[{ sign: true }] });
+      Object.assign(opt, { primaryKeyPacket: firstKey.key.primaryKey, keyExpirationTime: 3600, subkeys:[{ sign: true }] });
+      const secondKey = await openpgp.generateKey(opt);
       return firstKey.key.update(secondKey.key).then(mergedKey => {
         expect(mergedKey.subKeys.map(sk => sk.getAlgorithmInfo())).to.deep.eql([
           { algorithm: 'ecdh', curve: 'curve25519' },
@@ -1828,7 +1830,8 @@ function versionSpecificTests() {
 
     return openpgp.generateKey(opt).then(function(firstKey) {
       firstKey.key.primaryKey.clearPrivateParams();
-      return openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.primaryKey });
+      Object.assign(opt, { primaryKeyPacket: firstKey.key.primaryKey });
+      return openpgp.generateKey(opt);
     }).then(
       () => { assert.fail('Expected to fail'); },
       err => { expect(err.message).to.equal('Error generating keypair: Private key is not decrypted.'); }
@@ -1840,7 +1843,8 @@ function versionSpecificTests() {
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; }
 
     return openpgp.generateKey(opt).then(function(firstKey) {
-      return openpgp.generateKey({ ...opt, primaryKeyPacket: firstKey.key.toPublic().primaryKey });
+      Object.assign(opt, { primaryKeyPacket: firstKey.key.toPublic().primaryKey });
+      return openpgp.generateKey(opt);
     }).then(
       () => { assert.fail('Expected to fail'); },
       err => { expect(err.message).to.equal('Error generating keypair: primaryKeyPacket.tag must be enums.packet.secretKey, was publicKey.'); }
