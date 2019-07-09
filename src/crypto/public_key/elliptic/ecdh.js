@@ -40,6 +40,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 
 const webCrypto = util.getWebCrypto();
+const nodeCrypto = util.getNodeCrypto();
 
 // Build Param for ECDH algorithm (RFC 6637)
 function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
@@ -81,8 +82,8 @@ async function kdf(hash_algo, X, length, param, stripLeading=false, stripTrailin
  * Generate ECDHE ephemeral key and secret from public key
  *
  * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             Q                   Recipient public key
- * @returns {Promise<{V: Uint8Array, S: BN}>}   Returns public part of ephemeral key and generated ephemeral secret
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function genPublicEphemeralKey(curve, Q) {
@@ -99,13 +100,15 @@ async function genPublicEphemeralKey(curve, Q) {
     case 'p521': {
       if (curve.web && util.getWebCrypto()) {
         try {
-          const result = await webPublicEphemeralKey(curve, Q);
-          return result;
+          return await webPublicEphemeralKey(curve, Q);
         } catch (err) {
           util.print_debug_error(err);
         }
       }
     }
+  }
+  if (curve.node && nodeCrypto) {
+    return nodePublicEphemeralKey(curve, Q);
   }
   return ellipticPublicEphemeralKey(curve, Q);
 }
@@ -119,7 +122,7 @@ async function genPublicEphemeralKey(curve, Q) {
  * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<{V: BN, C: BN}>}            Returns public part of ephemeral key and encoded session key
+ * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
@@ -139,7 +142,7 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
- * @returns {Promise<BN>}                        Generated ephemeral secret
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function genPrivateEphemeralKey(curve, V, Q, d) {
@@ -159,13 +162,15 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
     case 'p521': {
       if (curve.web && util.getWebCrypto()) {
         try {
-          const result = await webPrivateEphemeralKey(curve, V, Q, d);
-          return result;
+          return await webPrivateEphemeralKey(curve, V, Q, d);
         } catch (err) {
           util.print_debug_error(err);
         }
       }
     }
+  }
+  if (curve.node && nodeCrypto) {
+    return nodePrivateEphemeralKey(curve, V, d);
   }
   return ellipticPrivateEphemeralKey(curve, V, d);
 }
@@ -181,7 +186,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<BN>}                        Value derived from session
+ * @returns {Promise<BN>}                        Value derived from session key
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, Q, d, fingerprint) {
@@ -205,11 +210,11 @@ async function decrypt(oid, cipher_algo, hash_algo, V, C, Q, d, fingerprint) {
 /**
  * Generate ECDHE secret from private key and public part of ephemeral key using webCrypto
  *
- * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             V            Public part of ephemeral key
- * @param  {Uint8Array}             Q            Recipient public key
- * @param  {Uint8Array}             d            Recipient private key
- * @returns {Promise<BN>}                        Generated ephemeral secret
+ * @param  {Curve}                  curve         Elliptic curve object
+ * @param  {Uint8Array}             V             Public part of ephemeral key
+ * @param  {Uint8Array}             Q             Recipient public key
+ * @param  {Uint8Array}             d             Recipient private key
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function webPrivateEphemeralKey(curve, V, Q, d) {
@@ -259,8 +264,8 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
  * Generate ECDHE ephemeral key and secret from public key using webCrypto
  *
  * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             Q                   Recipient public key
- * @returns {Promise<{V: Uint8Array, S: BN}>}   Returns public part of ephemeral key and generated ephemeral secret
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function webPublicEphemeralKey(curve, Q) {
@@ -304,12 +309,12 @@ async function webPublicEphemeralKey(curve, Q) {
 }
 
 /**
- * Generate ECDHE secret from private key and public part of ephemeral key using webCrypto
+ * Generate ECDHE secret from private key and public part of ephemeral key using indutny/elliptic
  *
  * @param  {Curve}                  curve        Elliptic curve object
  * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             d            Recipient private key
- * @returns {Promise<BN>}                        Generated ephemeral secret
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function ellipticPrivateEphemeralKey(curve, V, d) {
@@ -323,11 +328,11 @@ async function ellipticPrivateEphemeralKey(curve, V, d) {
 }
 
 /**
- * Generate ECDHE ephemeral key and secret from public key using indutny/elliptic library
+ * Generate ECDHE ephemeral key and secret from public key using indutny/elliptic
  *
  * @param  {Curve}                  curve        Elliptic curve object
  * @param  {Uint8Array}             Q            Recipient public key
- * @returns {Promise<{V: Uint8Array, S: BN}>}   Returns public part of ephemeral key and generated ephemeral secret
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function ellipticPublicEphemeralKey(curve, Q) {
@@ -341,9 +346,43 @@ async function ellipticPublicEphemeralKey(curve, Q) {
 }
 
 /**
+ * Generate ECDHE secret from private key and public part of ephemeral key using nodeCrypto
+ *
+ * @param  {Curve}                  curve          Elliptic curve object
+ * @param  {Uint8Array}             V              Public part of ephemeral key
+ * @param  {Uint8Array}             d              Recipient private key
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function nodePrivateEphemeralKey(curve, V, d) {
+  const recipient = nodeCrypto.createECDH(curve.node.node);
+  recipient.setPrivateKey(d);
+  const sharedKey = new Uint8Array(recipient.computeSecret(V));
+  const secretKey = new Uint8Array(recipient.getPrivateKey());
+  return { secretKey, sharedKey };
+}
+
+/**
+ * Generate ECDHE ephemeral key and secret from public key using nodeCrypto
+ *
+ * @param  {Curve}                  curve        Elliptic curve object
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function nodePublicEphemeralKey(curve, Q) {
+  const sender = nodeCrypto.createECDH(curve.node.node);
+  sender.generateKeys();
+  const sharedKey = new Uint8Array(sender.computeSecret(Q));
+  const publicKey = new Uint8Array(sender.getPublicKey());
+  return { publicKey, sharedKey };
+}
+
+/**
  * @param  {Integer}                payloadSize  ec payload size
  * @param  {String}                 name         curve name
  * @param  {Uint8Array}             publicKey    public key
+ * @returns {JsonWebKey}                         public key in jwk format
  */
 function rawPublicToJwk(payloadSize, name, publicKey) {
   const len = payloadSize;
@@ -364,7 +403,8 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
  * @param  {Integer}                payloadSize  ec payload size
  * @param  {String}                 name         curve name
  * @param  {Uint8Array}             publicKey    public key
- * @param  {Uint8Array}             privateKey    private key
+ * @param  {Uint8Array}             privateKey   private key
+ * @returns {JsonWebKey}                         private key in jwk format
  */
 function privateToJwk(payloadSize, name, privateKey, publicKey) {
   const jwk = rawPublicToJwk(payloadSize, name, publicKey);
@@ -374,6 +414,7 @@ function privateToJwk(payloadSize, name, privateKey, publicKey) {
 
 /**
  * @param  {JsonWebKey}                jwk  key for conversion
+ * @returns {Uint8Array}                    raw public key
  */
 function jwkToRawPublic(jwk) {
   const bufX = util.b64_to_Uint8Array(jwk.x);
@@ -385,4 +426,4 @@ function jwkToRawPublic(jwk) {
   return publicKey;
 }
 
-export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, webPrivateEphemeralKey };
+export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey };
