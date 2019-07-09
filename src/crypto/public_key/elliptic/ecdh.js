@@ -100,7 +100,7 @@ async function genPublicEphemeralKey(curve, Q) {
     case 'p521': {
       if (curve.web && util.getWebCrypto()) {
         try {
-          return webPublicEphemeralKey(curve, Q);
+          return await webPublicEphemeralKey(curve, Q);
         } catch (err) {
           util.print_debug_error(err);
         }
@@ -162,7 +162,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
     case 'p521': {
       if (curve.web && util.getWebCrypto()) {
         try {
-          return webPrivateEphemeralKey(curve, V, Q, d);
+          return await webPrivateEphemeralKey(curve, V, Q, d);
         } catch (err) {
           util.print_debug_error(err);
         }
@@ -186,7 +186,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise{BN}}                        Value derived from session key
+ * @returns {Promise<BN>}                        Value derived from session key
  * @async
  */
 async function decrypt(oid, cipher_algo, hash_algo, V, C, Q, d, fingerprint) {

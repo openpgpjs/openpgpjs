@@ -476,7 +476,7 @@ describe('Elliptic Curve Cryptography', function () {
       }
       case 'nodePrivateEphemeralKey':
       case 'ellipticPrivateEphemeralKey': {
-        result= await openpgp.crypto.publicKey.elliptic.ecdh[fun](
+        result = await openpgp.crypto.publicKey.elliptic.ecdh[fun](
           curveObj, V, d
         );
         break;
