@@ -104,15 +104,6 @@
         }
       }
     },
-    "address-rfc2822": {
-      "version": "2.0.3",
-      "resolved": "https://registry.npmjs.org/address-rfc2822/-/address-rfc2822-2.0.3.tgz",
-      "integrity": "sha1-LzDSHYEVCGLBSJpHL0lARQIa+IE=",
-      "dev": true,
-      "requires": {
-        "email-addresses": "^3.0.0"
-      }
-    },
     "agent-base": {
       "version": "4.3.0",
       "resolved": "https://registry.npmjs.org/agent-base/-/agent-base-4.3.0.tgz",
@@ -2312,9 +2303,8 @@
       }
     },
     "email-addresses": {
-      "version": "3.0.1",
-      "resolved": "https://registry.npmjs.org/email-addresses/-/email-addresses-3.0.1.tgz",
-      "integrity": "sha1-wfwgwYnn+W1AEtN121/qzN0kORw=",
+      "version": "github:chesnokovilya/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
+      "from": "github:chesnokovilya/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
       "dev": true
     },
     "encodeurl": {
