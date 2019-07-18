@@ -80,7 +80,7 @@
     "seek-bzip": "github:openpgpjs/seek-bzip#6187fc025851d35c4e104a25ea15a10b9b8d6f7d",
     "tweetnacl": "github:openpgpjs/tweetnacl-js#1ef755f2b252a3e328ac739848d00e0dad76be2d",
     "web-stream-tools": "github:openpgpjs/web-stream-tools#dc4b05e8a272b45819233f3df735423432beacfc",
-    "email-addresses": "github:chesnokovilya/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118"
+    "email-addresses": "github:openpgpjs/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118"
   },
   "dependencies": {
     "asn1.js": "^5.0.0",

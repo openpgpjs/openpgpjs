@@ -2303,8 +2303,8 @@
       }
     },
     "email-addresses": {
-      "version": "github:chesnokovilya/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
-      "from": "github:chesnokovilya/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
+      "version": "github:openpgpjs/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
+      "from": "github:openpgpjs/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
       "dev": true
     },
     "encodeurl": {
