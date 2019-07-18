@@ -256,15 +256,49 @@ export default {
         }
       } while(wasPartialLength);
 
-      if (!writer) {
-        packet = util.concatUint8Array(packet);
-        await callback({ tag, packet });
-      }
-      const nextPacket = await reader.peekBytes(2);
+      // If this was not a packet that "supports streaming", we peek to check
+      // whether it is the last packet in the message. We peek 2 bytes instead
+      // of 1 because the beginning of this function also peeks 2 bytes, and we
+      // want to cut a `subarray` of the correct length into `web-stream-tools`'
+      // `externalBuffer` as a tiny optimization here.
+      //
+      // If it *was* a streaming packet (i.e. the data packets), we peek at the
+      // entire remainder of the stream, in order to forward errors in the
+      // remainder of the stream to the packet data. (Note that this means we
+      // read/peek at all signature packets before closing the literal data
+      // packet, for example.) This forwards armor checksum errors to the
+      // encrypted data stream, for example, so that they don't get lost /
+      // forgotten on encryptedMessage.packets.stream, which we never look at.
+      //
+      // Note that subsequent packet parsing errors could still end up there if
+      // `config.tolerant` is set to false, or on malformed messages with
+      // multiple data packets, but usually it shouldn't happen.
+      //
+      // An example of what we do when stream-parsing a message containing
+      // [ one-pass signature packet, literal data packet, signature packet ]:
+      // 1. Read the one-pass signature packet
+      // 2. Peek 2 bytes of the literal data packet
+      // 3. Parse the one-pass signature packet
+      //
+      // 4. Read the literal data packet, simultaneously stream-parsing it
+      // 5. Peek until the end of the message
+      // 6. Finish parsing the literal data packet
+      //
+      // 7. Read the signature packet again (we already peeked at it in step 5)
+      // 8. Peek at the end of the stream again (`peekBytes` returns undefined)
+      // 9. Parse the signature packet
+      //
+      // Note that this means that if there's an error in the very end of the
+      // stream, such as an MDC error, we throw in step 5 instead of in step 8
+      // (or never), which is the point of this exercise.
+      const nextPacket = await reader.peekBytes(supportsStreaming ? Infinity : 2);
       if (writer) {
         await writer.ready;
         await writer.close();
         await callbackReturned;
+      } else {
+        packet = util.concatUint8Array(packet);
+        await callback({ tag, packet });
       }
       return !nextPacket || !nextPacket.length;
     } catch(e) {
