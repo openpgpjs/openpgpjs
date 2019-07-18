@@ -116,6 +116,22 @@ describe('Util unit tests', function() {
     });
   });
 
+  describe('parseUserID', function() {
+    it('should parse email address', function() {
+      const email = "TestName Test  <test@example.com>";
+      const result = openpgp.util.parseUserId(email);
+      expect(result.name).to.equal('TestName Test');
+      expect(result.email).to.equal('test@example.com');
+    });
+    it('should parse email address with @ in display name and comment', function() {
+      const email = "Test@Name Test (a comment) <test@example.com>";
+      const result = openpgp.util.parseUserId(email);
+      expect(result.name).to.equal('Test@Name Test');
+      expect(result.email).to.equal('test@example.com');
+      expect(result.comment).to.equal('a comment');
+    });
+  });
+
   describe('getTransferables', function() {
     const buf1 = new Uint8Array(1);
     const buf2 = new Uint8Array(1);

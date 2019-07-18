@@ -19,14 +19,14 @@
 
 /**
  * This object contains utility functions
- * @requires address-rfc2822
+ * @requires email-addresses
  * @requires web-stream-tools
  * @requires config
  * @requires encoding/base64
  * @module util
  */
 
-import rfc2822 from 'address-rfc2822';
+import emailAddresses from 'email-addresses';
 import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
@@ -687,8 +687,8 @@ export default {
       throw new Error('User id string is too long');
     }
     try {
-      const [{ phrase: name, address: email, comment }] = rfc2822.parse(userid);
-      return { name, email, comment: comment.replace(/^\(|\)$/g, '') };
+      const { name, address: email, comments } = emailAddresses.parseOneAddress(userid);
+      return { name, email, comment: comments.replace(/^\(|\)$/g, '') };
     } catch(e) {
       throw new Error('Invalid user id format');
     }
