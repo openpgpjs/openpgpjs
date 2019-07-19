@@ -15,6 +15,28 @@ module.exports = function(grunt) {
   // Project configuration.
   const dev = !!grunt.option('dev');
   const compat = !!grunt.option('compat');
+  const plugins = compat ? [
+    "transform-async-to-generator",
+    "syntax-async-functions",
+    "transform-regenerator",
+    "transform-runtime"
+  ] : [];
+  const presets = [[require.resolve('babel-preset-env'), {
+    targets: {
+      browsers: compat ? [
+        'IE >= 11',
+        'Safari >= 9',
+        'Last 2 Chrome versions',
+        'Last 2 Firefox versions',
+        'Last 2 Edge versions'
+      ] : [
+        'Last 2 Chrome versions',
+        'Last 2 Firefox versions',
+        'Last 2 Safari versions',
+        'Last 2 Edge versions'
+      ]
+    }
+  }]];
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
@@ -49,29 +71,9 @@ module.exports = function(grunt) {
               global: true,
               // Only babelify web-streams-polyfill, web-stream-tools, asmcrypto, email-addresses and seek-bzip in node_modules
               only: /^(?:.*\/node_modules\/@mattiasbuelens\/web-streams-polyfill\/|.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/email-addresses\/|.*\/node_modules\/seek-bzip\/|(?!.*\/node_modules\/)).*$/,
-              plugins: compat ? [
-                "transform-async-to-generator",
-                "syntax-async-functions",
-                "transform-regenerator",
-                "transform-runtime"
-              ] : [],
               ignore: ['*.min.js'],
-              presets: [[require.resolve('babel-preset-env'), {
-                targets: {
-                  browsers: compat ? [
-                    'IE >= 11',
-                    'Safari >= 9',
-                    'Last 2 Chrome versions',
-                    'Last 2 Firefox versions',
-                    'Last 2 Edge versions'
-                  ] : [
-                    'Last 2 Chrome versions',
-                    'Last 2 Firefox versions',
-                    'Last 2 Safari versions',
-                    'Last 2 Edge versions'
-                  ]
-                }
-              }]]
+              plugins,
+              presets
             }]
           ],
           plugin: ['browserify-derequire']
@@ -97,13 +99,9 @@ module.exports = function(grunt) {
               global: true,
               // Only babelify chai-as-promised in node_modules
               only: /^(?:.*\/node_modules\/chai-as-promised\/|(?!.*\/node_modules\/)).*$/,
-              plugins: ["transform-async-to-generator",
-                        "syntax-async-functions",
-                        "transform-regenerator",
-                        "transform-runtime",
-                        "transform-remove-strict-mode"],
               ignore: ['*.min.js'],
-              presets: ["env"]
+              plugins,
+              presets
             }]
           ]
         }

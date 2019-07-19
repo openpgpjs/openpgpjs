@@ -115,22 +115,22 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, 
 
   const symEncryptedPacket = symEncryptedPacketlist[0];
   let exception = null;
-  for (let i = 0; i < keyObjs.length; i++) {
-    if (!keyObjs[i] || !util.isUint8Array(keyObjs[i].data) || !util.isString(keyObjs[i].algorithm)) {
+  const decryptedPromise = Promise.all(keyObjs.map(async keyObj => {
+    if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
       throw new Error('Invalid session key for decryption.');
     }
 
     try {
-      await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data, streaming);
-      break;
+      await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, streaming);
     } catch (e) {
       util.print_debug_error(e);
       exception = e;
     }
-  }
+  }));
   // We don't await stream.cancel here because it only returns when the other copy is canceled too.
   stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
   symEncryptedPacket.encrypted = null;
+  await decryptedPromise;
 
   if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
     throw exception || new Error('Decryption failed.');

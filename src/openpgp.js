@@ -389,7 +389,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date, streaming) : await decrypted.verify(publicKeys, date, streaming);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.filename = decrypted.getFilename();
-    if (streaming) linkStreams(result, message, decrypted.packets.stream);
+    if (streaming) linkStreams(result, message);
     result.data = await convertStream(result.data, streaming);
     if (!streaming) await prepareSignatures(result.signatures);
     return result;
@@ -659,25 +659,13 @@ async function convertStreams(obj, streaming, keys=[]) {
 
 /**
  * Link result.data to the message stream for cancellation.
- * Also, forward errors in the message to result.data.
  * @param  {Object} result                  the data to convert
  * @param  {Message} message                message object
- * @param  {ReadableStream} erroringStream  (optional) stream which either errors or gets closed without data
  * @returns {Object}
  */
-function linkStreams(result, message, erroringStream) {
+function linkStreams(result, message) {
   result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
-    await stream.pipe(result.data, writable, {
-      preventClose: true
-    });
-    const writer = stream.getWriter(writable);
-    try {
-      // Forward errors in erroringStream (defaulting to the message stream) to result.data.
-      await stream.readToEnd(erroringStream || readable, arr => arr);
-      await writer.close();
-    } catch(e) {
-      await writer.abort(e);
-    }
+    await stream.pipe(result.data, writable);
   });
 }
 
