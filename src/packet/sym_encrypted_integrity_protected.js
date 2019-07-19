@@ -109,8 +109,8 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * @async
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
-  if (!streaming) this.encrypted = await stream.readToEnd(this.encrypted);
-  const encrypted = stream.clone(this.encrypted);
+  let encrypted = stream.clone(this.encrypted);
+  if (!streaming) encrypted = await stream.readToEnd(encrypted);
   const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
 
   // there must be a modification detection code packet as the
