@@ -140,6 +140,7 @@ export default {
   read: async function(input, streaming, callback) {
     const reader = stream.getReader(input);
     let writer;
+    let callbackReturned;
     try {
       const peekedBytes = await reader.peekBytes(2);
       // some sanity checks
@@ -168,7 +169,6 @@ export default {
 
       const supportsStreaming = this.supportsStreaming(tag);
       let packet = null;
-      let callbackReturned;
       if (streaming && supportsStreaming) {
         const transform = new TransformStream();
         writer = stream.getWriter(transform.writable);
@@ -295,7 +295,6 @@ export default {
       if (writer) {
         await writer.ready;
         await writer.close();
-        await callbackReturned;
       } else {
         packet = util.concatUint8Array(packet);
         await callback({ tag, packet });
@@ -309,6 +308,9 @@ export default {
         throw e;
       }
     } finally {
+      if (writer) {
+        await callbackReturned;
+      }
       reader.releaseLock();
     }
   }
