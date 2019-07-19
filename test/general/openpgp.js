@@ -1617,6 +1617,65 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
             expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
           });
         });
+
+        it('should fail to decrypt modified message', async function() {
+          const { privateKeyArmored } = await openpgp.generateKey({ curve: 'curve25519', userIds: [{ email: 'test@email.com' }] });
+          const { keys: [key] } = await openpgp.key.readArmored(privateKeyArmored);
+          const { data } = await openpgp.encrypt({ message: openpgp.message.fromBinary(new Uint8Array(500)), publicKeys: [key.toPublic()] });
+          let badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=aaaa');
+          if (badSumEncrypted === data) { // checksum was already =aaaa
+            badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=bbbb');
+          }
+          if (badSumEncrypted === data) {
+            throw new Error("Was not able to successfully modify checksum");
+          }
+          const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
+          for (let allow_streaming = 1; allow_streaming >= 0; allow_streaming--) {
+            openpgp.config.allow_unauthenticated_stream = !!allow_streaming;
+            if (openpgp.getWorker()) {
+              openpgp.getWorker().workers.forEach(worker => {
+                worker.postMessage({ event: 'configure', config: openpgp.config });
+              });
+            }
+            await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
+              await Promise.all([
+                encrypted,
+                openpgp.stream.toStream(encrypted),
+                new ReadableStream({
+                  start() {
+                    this.remaining = encrypted.split('\n');
+                  },
+                  async pull(controller) {
+                    if (this.remaining.length) {
+                      await new Promise(res => setTimeout(res));
+                      controller.enqueue(this.remaining.shift() + '\n');
+                    } else {
+                      controller.close();
+                    }
+                  }
+                })
+              ].map(async (encrypted, j) => {
+                let stepReached = 0;
+                try {
+                  const message = await openpgp.message.readArmored(encrypted);
+                  stepReached = 1;
+                  const { data: decrypted } = await openpgp.decrypt({ message: message, privateKeys: [key] });
+                  stepReached = 2;
+                  await openpgp.stream.readToEnd(decrypted);
+                } catch (e) {
+                  expect(e.message).to.match(/Ascii armor integrity check on message failed/);
+                  expect(stepReached).to.equal(
+                    j === 0 ? 0 :
+                      openpgp.config.aead_chunk_size_byte === 0 || (!openpgp.config.aead_protect && openpgp.config.allow_unauthenticated_stream) ? 2 :
+                      1
+                  );
+                  return;
+                }
+                throw new Error(`Expected "Ascii armor integrity check on message failed" error in subtest ${i}.${j}`);
+              }));
+            }));
+          }
+        });
       });
 
       describe('ELG / DSA encrypt, decrypt, sign, verify', function() {
