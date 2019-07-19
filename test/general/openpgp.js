@@ -689,6 +689,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
     let publicKey_1337;
     let privateKey;
     let publicKey;
+    let publicKeyNoAEAD;
     let zero_copyVal;
     let use_nativeVal;
     let aead_protectVal;
