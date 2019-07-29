@@ -74,7 +74,6 @@ export default {
       // See Appendix B here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
       k = await random.getRandomBN(one, q); // returns in [1, q-1]
       r = gred.redPow(k).fromRed().toRed(redq); // (g**k mod p) mod q
-
       if (zero.cmp(r) === 0) {
         continue;
       }
