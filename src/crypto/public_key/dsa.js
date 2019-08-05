@@ -62,9 +62,7 @@ export default {
     // of leftmost bits equal to the number of bits of q.  This (possibly
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
-    const h = new BN(
-      util.getLeftNBits(hashed, q.bitLength()))
-      .toRed(redq);
+    const h = new BN(hashed.subarray(0, q.byteLength())).toRed(redq);
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
     // If either r = 0 or s = 0, a new value of k shall be generated, and the
@@ -85,8 +83,8 @@ export default {
       break;
     }
     return {
-      r: r.toArrayLike(Uint8Array, 'be', 32),
-      s: s.toArrayLike(Uint8Array, 'be', 32)
+      r: r.toArrayLike(Uint8Array, 'be', q.byteLength()),
+      s: s.toArrayLike(Uint8Array, 'be', q.byteLength())
     };
   },
 
@@ -111,8 +109,7 @@ export default {
     }
     const redp = new BN.red(p);
     const redq = new BN.red(q);
-    const h = new BN(
-      util.getLeftNBits(hashed, q.bitLength()));
+    const h = new BN(hashed.subarray(0, q.byteLength()));
     const w = s.toRed(redq).redInvm(); // s**-1 mod q
     if (zero.cmp(w) === 0) {
       util.print_debug("invalid DSA Signature");
