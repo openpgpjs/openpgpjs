@@ -101,7 +101,7 @@ export default {
 
   /**
    * Decrypts data using specified algorithm and private key parameters.
-   * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1} for public key algorithms.
+   * See {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 5.5.3}
    * @param {module:enums.publicKey}        algo        Public key algorithm
    * @param {Array<module:type/mpi|
                    module:type/oid|
@@ -123,7 +123,7 @@ export default {
         const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
         const p = key_params[3].toBN();
         const q = key_params[4].toBN();
-        const u = key_params[5].toBN(); // q^-1 mod p
+        const u = key_params[5].toBN(); // p^-1 mod q
         return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
       }
       case enums.publicKey.elgamal: {
