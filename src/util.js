@@ -466,16 +466,6 @@ export default {
     });
   },
 
-  getLeftNBits: function (array, bitcount) {
-    const rest = bitcount % 8;
-    if (rest === 0) {
-      return array.subarray(0, bitcount / 8);
-    }
-    const bytes = (bitcount - rest) / 8 + 1;
-    const result = array.subarray(0, bytes);
-    return util.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
-  },
-
   // returns bit length of the integer x
   nbits: function (x) {
     let r = 1;
