@@ -4,7 +4,7 @@ const chai = require('chai');
 
 const { expect } = chai;
 
-describe('HKP unit tests', function() {
+describe.skip('HKP unit tests', function() {
   this.timeout(60000);
 
   let hkp;
