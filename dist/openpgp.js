@@ -851,242 +851,6 @@
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],2:[function(require,module,exports){
-'use strict';
-
-const ea_lib = require('email-addresses');
-
-exports.parse = function parse(line, startAt) {
-    if (!line) throw 'Nothing to parse';
-
-    line = line.trim();
-
-    const addr = ea_lib({
-        input: line,
-        rfc6532: true, // unicode
-        partial: false, // return failed parses
-        simple: false, // simple AST
-        strict: false, // turn off obs- features in the rfc
-        rejectTLD: false, // domains require a "."
-        startAt: startAt || null
-    });
-
-    if (!addr) throw 'No results';
-
-    // console.log("Parsed to: ", require('util').inspect(addr, {depth: 10, colors: true}));
-
-    return addr.addresses.map(map_addresses);
-};
-
-function map_addresses(adr) {
-    if (adr.type === 'group') {
-        return new Group(adr.name, adr.addresses.map(map_addresses));
-    }
-    let comments;
-    if (adr.parts.comments) {
-        comments = adr.parts.comments.map(function (c) {
-            return c.tokens.trim();
-        }).join(' ').trim();
-        // if (comments.length) {
-        //     comments = '(' + comments + ')';
-        // }
-    }
-    let l = adr.local;
-    if (!adr.name && /:/.test(l)) l = '"' + l + '"';
-    return new Address(adr.name, l + '@' + adr.domain, comments);
-}
-
-exports.parseFrom = function (line) {
-    return exports.parse(line, 'from');
-};
-
-exports.parseSender = function (line) {
-    return exports.parse(line, 'sender');
-};
-
-exports.parseReplyTo = function (line) {
-    return exports.parse(line, 'reply-to');
-};
-
-class Group {
-    constructor(display_name, addresses) {
-        this.phrase = display_name;
-        this.addresses = addresses;
-    }
-
-    format() {
-        return this.phrase + ":" + this.addresses.map(function (a) {
-            return a.format();
-        }).join(',');
-    }
-
-    name() {
-        let phrase = this.phrase;
-
-        if (!(phrase && phrase.length)) {
-            phrase = this.comment;
-        }
-
-        const name = _extract_name(phrase);
-        return name;
-    }
-}
-
-class Address {
-    constructor(phrase, address, comment) {
-        this.phrase = phrase || '';
-        this.address = address || '';
-        this.comment = comment || '';
-    }
-
-    host() {
-        const match = /.*@(.*)$/.exec(this.address);
-        if (!match) return null;
-        return match[1];
-    }
-
-    user() {
-        const match = /^(.*)@/.exec(this.address);
-        if (!match) return null;
-        return match[1];
-    }
-
-    format() {
-        const phrase = this.phrase;
-        const email = this.address;
-        let comment = this.comment;
-
-        const addr = [];
-        const atext = new RegExp('^[\\-\\w !#$%&\'*+/=?^`{|}~]+$');
-
-        if (phrase && phrase.length) {
-            addr.push(atext.test(phrase.trim()) ? phrase : _quote_no_esc(phrase) ? phrase : '"' + phrase + '"');
-
-            if (email && email.length) {
-                addr.push("<" + email + ">");
-            }
-        } else if (email && email.length) {
-            addr.push(email);
-        }
-
-        if (comment && /\S/.test(comment)) {
-            comment = comment.replace(/^\s*\(?/, '(').replace(/\)?\s*$/, ')');
-        }
-
-        if (comment && comment.length) {
-            addr.push(comment);
-        }
-
-        return addr.join(' ');
-    }
-
-    name() {
-        let phrase = this.phrase;
-        const addr = this.address;
-
-        if (!(phrase && phrase.length)) {
-            phrase = this.comment;
-        }
-
-        let name = _extract_name(phrase);
-
-        // first.last@domain address
-        if (name === '') {
-            const match = /([^%.@_]+([._][^%.@_]+)+)[@%]/.exec(addr);
-            if (match) {
-                name = match[1].replace(/[._]+/g, ' ');
-                name = _extract_name(name);
-            }
-        }
-
-        if (name === '' && /\/g=/i.test(addr)) {
-            // X400 style address
-            let match = /\/g=([^/]*)/i.exec(addr);
-            const f = match[1];
-            match = /\/s=([^/]*)/i.exec(addr);
-            const l = match[1];
-            name = _extract_name(f + " " + l);
-        }
-
-        return name;
-    }
-}
-
-exports.Address = Address;
-
-// This is because JS regexps have no equivalent of
-// zero-width negative look-behind assertion for: /(?<!\\)"/
-function _quote_no_esc(str) {
-    if (/^"/.test(str)) return true;
-    let match;
-    while (match = /^[\s\S]*?([\s\S])"/.exec(str)) {
-        if (match[1] !== '\\') {
-            return true;
-        }
-        str = str.substr(match[0].length);
-    }
-    return false;
-}
-
-exports.isAllLower = function (string) {
-    return string === string.toLowerCase();
-};
-
-exports.isAllUpper = function (string) {
-    return string === string.toUpperCase();
-};
-
-exports.nameCase = function (string) {
-
-    return string.toLowerCase().replace(/\b(\w+)/g, function (_, d1) {
-        // Set the case of the name to first char upper rest lower
-        return d1.charAt(0).toUpperCase() + d1.slice(1);
-    }).replace(/\bMc(\w)/gi, function (_, d1) {
-        // Scottish names such as 'McLeod'
-        return 'Mc' + d1.toUpperCase();
-    }).replace(/\bo'(\w)/gi, function (_, d1) {
-        // Irish names such as 'O'Malley, O'Reilly'
-        return 'O\'' + d1.toUpperCase();
-    }).replace(/\b(x*(ix)?v*(iv)?i*)\b/ig, function (_, d1) {
-        // Roman numerals, eg 'Level III Support'
-        return d1.toUpperCase();
-    });
-};
-
-// given a comment, attempt to extract a person's name
-function _extract_name(name) {
-    // Using encodings, too hard. See Mail::Message::Field::Full.
-    if (/=?.*?\?=/.test(name)) return '';
-
-    // trim whitespace
-    name = name.trim();
-    name = name.replace(/\s+/, ' ');
-
-    // Disregard numeric names (e.g. 123456.1234@compuserve.com)
-    if (/^[\d ]+$/.test(name)) return '';
-
-    name = name.replace(/^\((.*)\)$/, '$1') // remove outermost parenthesis
-    .replace(/^"(.*)"$/, '$1') // remove outer quotation marks
-    .replace(/\(.*?\)/g, '') // remove minimal embedded comments
-    .replace(/\\/g, '') // remove all escapes
-    .replace(/^"(.*)"$/, '$1') // remove internal quotation marks
-    .replace(/^([^\s]+) ?, ?(.*)$/, '$2 $1') // reverse "Last, First M." if applicable
-    .replace(/,.*/, '');
-
-    // Change casing only when the name contains only upper or only
-    // lower cased characters.
-    if (exports.isAllUpper(name) || exports.isAllLower(name)) {
-        // console.log("Changing case of: " + name);
-        name = exports.nameCase(name);
-        // console.log("Now: " + name);
-    }
-
-    // some cleanup
-    name = name.replace(/\[[^\]]*\]/g, '').replace(/(^[\s'"]+|[\s'"]+$)/g, '').replace(/\s{2,}/g, ' ');
-
-    return name;
-}
-
-},{"email-addresses":34}],3:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1875,7 +1639,7 @@ var AES_asm = exports.AES_asm = function () {
   return wrapper;
 }();
 
-},{}],4:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2083,7 +1847,7 @@ var AES = /** @class */function () {
 }();
 exports.AES = AES;
 
-},{"../other/errors":15,"../other/utils":16,"./aes.asm":3}],5:[function(require,module,exports){
+},{"../other/errors":14,"../other/utils":15,"./aes.asm":2}],4:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2144,7 +1908,7 @@ var AES_CBC = /** @class */function (_super) {
 }(_aes.AES);
 exports.AES_CBC = AES_CBC;
 
-},{"../other/utils":16,"./aes":4}],6:[function(require,module,exports){
+},{"../other/utils":15,"./aes":3}],5:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2198,7 +1962,7 @@ var AES_CFB = /** @class */function (_super) {
 }(_aes.AES);
 exports.AES_CFB = AES_CFB;
 
-},{"../other/utils":16,"./aes":4}],7:[function(require,module,exports){
+},{"../other/utils":15,"./aes":3}],6:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2278,7 +2042,7 @@ var AES_CTR = /** @class */function (_super) {
 }(_aes.AES);
 exports.AES_CTR = AES_CTR;
 
-},{"../other/errors":15,"../other/utils":16,"./aes":4}],8:[function(require,module,exports){
+},{"../other/errors":14,"../other/utils":15,"./aes":3}],7:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2339,7 +2103,7 @@ var AES_ECB = /** @class */function (_super) {
 }(_aes.AES);
 exports.AES_ECB = AES_ECB;
 
-},{"../other/utils":16,"./aes":4}],9:[function(require,module,exports){
+},{"../other/utils":15,"./aes":3}],8:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2638,7 +2402,7 @@ var AES_GCM = /** @class */function (_super) {
 }(_aes.AES);
 exports.AES_GCM = AES_GCM;
 
-},{"../other/errors":15,"../other/utils":16,"./aes":4,"./aes.asm":3}],10:[function(require,module,exports){
+},{"../other/errors":14,"../other/utils":15,"./aes":3,"./aes.asm":2}],9:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -2717,7 +2481,7 @@ var Hash = /** @class */function () {
 }();
 exports.Hash = Hash;
 
-},{"../other/errors":15,"../other/utils":16}],11:[function(require,module,exports){
+},{"../other/errors":14,"../other/utils":15}],10:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -3613,7 +3377,7 @@ function sha1_asm(stdlib, foreign, buffer) {
     };
 }
 
-},{}],12:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -3661,7 +3425,7 @@ var Sha1 = /** @class */function (_super) {
 }(_hash.Hash);
 exports.Sha1 = Sha1;
 
-},{"../hash":10,"./sha1.asm":11}],13:[function(require,module,exports){
+},{"../hash":9,"./sha1.asm":10}],12:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -4478,7 +4242,7 @@ function sha256_asm(stdlib, foreign, buffer) {
     };
 }
 
-},{}],14:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4526,7 +4290,7 @@ var Sha256 = /** @class */function (_super) {
 }(_hash.Hash);
 exports.Sha256 = Sha256;
 
-},{"../hash":10,"./sha256.asm":13}],15:[function(require,module,exports){
+},{"../hash":9,"./sha256.asm":12}],14:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4591,7 +4355,7 @@ var SecurityError = /** @class */function (_super) {
 }(Error);
 exports.SecurityError = SecurityError;
 
-},{}],16:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -4765,7 +4529,7 @@ function joinBytes() {
     return ret;
 }
 
-},{"buffer":"buffer"}],17:[function(require,module,exports){
+},{"buffer":"buffer"}],16:[function(require,module,exports){
 (function (module, exports) {
   'use strict';
 
@@ -8194,7 +7958,7 @@ function joinBytes() {
   };
 })(typeof module === 'undefined' || module, this);
 
-},{"buffer":"buffer"}],18:[function(require,module,exports){
+},{"buffer":"buffer"}],17:[function(require,module,exports){
 var r;
 
 module.exports = function rand(len) {
@@ -8261,7 +8025,7 @@ if (typeof self === 'object') {
   }
 }
 
-},{"crypto":"crypto"}],19:[function(require,module,exports){
+},{"crypto":"crypto"}],18:[function(require,module,exports){
 'use strict';
 
 var elliptic = exports;
@@ -8275,7 +8039,7 @@ elliptic.curves = require('./elliptic/curves');
 elliptic.ec = require('./elliptic/ec');
 elliptic.eddsa = require('./elliptic/eddsa');
 
-},{"./elliptic/curve":22,"./elliptic/curves":25,"./elliptic/ec":26,"./elliptic/eddsa":29,"./elliptic/utils":33,"brorand":18}],20:[function(require,module,exports){
+},{"./elliptic/curve":21,"./elliptic/curves":24,"./elliptic/ec":25,"./elliptic/eddsa":28,"./elliptic/utils":32,"brorand":17}],19:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -8652,7 +8416,7 @@ BasePoint.prototype.dblp = function dblp(k) {
   return r;
 };
 
-},{"../../elliptic":19,"bn.js":17}],21:[function(require,module,exports){
+},{"../../elliptic":18,"bn.js":16}],20:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -9087,7 +8851,7 @@ Point.prototype.eqXToP = function eqXToP(x) {
 Point.prototype.toP = Point.prototype.normalize;
 Point.prototype.mixedAdd = Point.prototype.add;
 
-},{"../../elliptic":19,"../curve":22,"bn.js":17,"inherits":48}],22:[function(require,module,exports){
+},{"../../elliptic":18,"../curve":21,"bn.js":16,"inherits":47}],21:[function(require,module,exports){
 'use strict';
 
 var curve = exports;
@@ -9097,7 +8861,7 @@ curve.short = require('./short');
 curve.mont = require('./mont');
 curve.edwards = require('./edwards');
 
-},{"./base":20,"./edwards":21,"./mont":23,"./short":24}],23:[function(require,module,exports){
+},{"./base":19,"./edwards":20,"./mont":22,"./short":23}],22:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -9300,7 +9064,7 @@ Point.prototype.getX = function getX() {
   return this.x.fromRed();
 };
 
-},{"../../elliptic":19,"../curve":22,"bn.js":17,"inherits":48}],24:[function(require,module,exports){
+},{"../../elliptic":18,"../curve":21,"bn.js":16,"inherits":47}],23:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -10239,7 +10003,7 @@ JPoint.prototype.isInfinity = function isInfinity() {
   return this.z.cmpn(0) === 0;
 };
 
-},{"../../elliptic":19,"../curve":22,"bn.js":17,"inherits":48}],25:[function(require,module,exports){
+},{"../../elliptic":18,"../curve":21,"bn.js":16,"inherits":47}],24:[function(require,module,exports){
 'use strict';
 
 var curves = exports;
@@ -10510,7 +10274,7 @@ defineCurve('secp256k1', {
   ]
 });
 
-},{"../elliptic":19,"./precomputed/secp256k1":32,"hash.js":35}],26:[function(require,module,exports){
+},{"../elliptic":18,"./precomputed/secp256k1":31,"hash.js":34}],25:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -10758,7 +10522,7 @@ EC.prototype.getKeyRecoveryParam = function(e, signature, Q, enc) {
   throw new Error('Unable to find valid recovery factor');
 };
 
-},{"../../elliptic":19,"./key":27,"./signature":28,"bn.js":17,"hmac-drbg":47}],27:[function(require,module,exports){
+},{"../../elliptic":18,"./key":26,"./signature":27,"bn.js":16,"hmac-drbg":46}],26:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -10882,7 +10646,7 @@ KeyPair.prototype.inspect = function inspect() {
          ' pub: ' + (this.pub && this.pub.inspect()) + ' >';
 };
 
-},{"../../elliptic":19,"bn.js":17}],28:[function(require,module,exports){
+},{"../../elliptic":18,"bn.js":16}],27:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -11019,7 +10783,7 @@ Signature.prototype.toDER = function toDER(enc) {
   return utils.encode(res, enc);
 };
 
-},{"../../elliptic":19,"bn.js":17}],29:[function(require,module,exports){
+},{"../../elliptic":18,"bn.js":16}],28:[function(require,module,exports){
 'use strict';
 
 var hash = require('hash.js');
@@ -11161,7 +10925,7 @@ EDDSA.prototype.isPoint = function isPoint(val) {
   return val instanceof this.pointClass;
 };
 
-},{"../../elliptic":19,"./key":30,"./signature":31,"hash.js":35,"hmac-drbg":47}],30:[function(require,module,exports){
+},{"../../elliptic":18,"./key":29,"./signature":30,"hash.js":34,"hmac-drbg":46}],29:[function(require,module,exports){
 'use strict';
 
 var elliptic = require('../../elliptic');
@@ -11267,7 +11031,7 @@ KeyPair.prototype.getPublic = function getPublic(enc, compact) {
 
 module.exports = KeyPair;
 
-},{"../../elliptic":19}],31:[function(require,module,exports){
+},{"../../elliptic":18}],30:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -11335,7 +11099,7 @@ Signature.prototype.toHex = function toHex() {
 
 module.exports = Signature;
 
-},{"../../elliptic":19,"bn.js":17}],32:[function(require,module,exports){
+},{"../../elliptic":18,"bn.js":16}],31:[function(require,module,exports){
 module.exports = {
   doubles: {
     step: 4,
@@ -12117,7 +11881,7 @@ module.exports = {
   }
 };
 
-},{}],33:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 'use strict';
 
 var utils = exports;
@@ -12239,10 +12003,11 @@ function intFromLE(bytes) {
 utils.intFromLE = intFromLE;
 
 
-},{"bn.js":17,"minimalistic-assert":49,"minimalistic-crypto-utils":50}],34:[function(require,module,exports){
+},{"bn.js":16,"minimalistic-assert":48,"minimalistic-crypto-utils":49}],33:[function(require,module,exports){
+"use strict";
 
 // email-addresses.js - RFC 5322 email address parser
-// v 3.0.1
+// v 3.0.3
 //
 // http://tools.ietf.org/html/rfc5322
 //
@@ -12268,1051 +12033,948 @@ utils.intFromLE = intFromLE;
 // http://code.google.com/p/isemail/ , which helped greatly in writing this parser.
 
 (function (global) {
-"use strict";
+    "use strict";
 
-function parse5322(opts) {
+    function parse5322(opts) {
 
-    // tokenizing functions
+        // tokenizing functions
 
-    function inStr() { return pos < len; }
-    function curTok() { return parseString[pos]; }
-    function getPos() { return pos; }
-    function setPos(i) { pos = i; }
-    function nextTok() { pos += 1; }
-    function initialize() {
-        pos = 0;
-        len = parseString.length;
-    }
-
-    // parser helper functions
-
-    function o(name, value) {
-        return {
-            name: name,
-            tokens: value || "",
-            semantic: value || "",
-            children: []
-        };
-    }
-
-    function wrap(name, ast) {
-        var n;
-        if (ast === null) { return null; }
-        n = o(name);
-        n.tokens = ast.tokens;
-        n.semantic = ast.semantic;
-        n.children.push(ast);
-        return n;
-    }
-
-    function add(parent, child) {
-        if (child !== null) {
-            parent.tokens += child.tokens;
-            parent.semantic += child.semantic;
+        function inStr() {
+            return pos < len;
         }
-        parent.children.push(child);
-        return parent;
-    }
-
-    function compareToken(fxnCompare) {
-        var tok;
-        if (!inStr()) { return null; }
-        tok = curTok();
-        if (fxnCompare(tok)) {
-            nextTok();
-            return o('token', tok);
+        function curTok() {
+            return parseString[pos];
         }
-        return null;
-    }
+        function getPos() {
+            return pos;
+        }
+        function setPos(i) {
+            pos = i;
+        }
+        function nextTok() {
+            pos += 1;
+        }
+        function initialize() {
+            pos = 0;
+            len = parseString.length;
+        }
 
-    function literal(lit) {
-        return function literalFunc() {
-            return wrap('literal', compareToken(function (tok) {
-                return tok === lit;
-            }));
-        };
-    }
+        // parser helper functions
 
-    function and() {
-        var args = arguments;
-        return function andFunc() {
-            var i, s, result, start;
-            start = getPos();
-            s = o('and');
-            for (i = 0; i < args.length; i += 1) {
-                result = args[i]();
-                if (result === null) {
+        function o(name, value) {
+            return {
+                name: name,
+                tokens: value || "",
+                semantic: value || "",
+                children: []
+            };
+        }
+
+        function wrap(name, ast) {
+            var n;
+            if (ast === null) {
+                return null;
+            }
+            n = o(name);
+            n.tokens = ast.tokens;
+            n.semantic = ast.semantic;
+            n.children.push(ast);
+            return n;
+        }
+
+        function add(parent, child) {
+            if (child !== null) {
+                parent.tokens += child.tokens;
+                parent.semantic += child.semantic;
+            }
+            parent.children.push(child);
+            return parent;
+        }
+
+        function compareToken(fxnCompare) {
+            var tok;
+            if (!inStr()) {
+                return null;
+            }
+            tok = curTok();
+            if (fxnCompare(tok)) {
+                nextTok();
+                return o('token', tok);
+            }
+            return null;
+        }
+
+        function literal(lit) {
+            return function literalFunc() {
+                return wrap('literal', compareToken(function (tok) {
+                    return tok === lit;
+                }));
+            };
+        }
+
+        function and() {
+            var args = arguments;
+            return function andFunc() {
+                var i, s, result, start;
+                start = getPos();
+                s = o('and');
+                for (i = 0; i < args.length; i += 1) {
+                    result = args[i]();
+                    if (result === null) {
+                        setPos(start);
+                        return null;
+                    }
+                    add(s, result);
+                }
+                return s;
+            };
+        }
+
+        function or() {
+            var args = arguments;
+            return function orFunc() {
+                var i, result, start;
+                start = getPos();
+                for (i = 0; i < args.length; i += 1) {
+                    result = args[i]();
+                    if (result !== null) {
+                        return result;
+                    }
+                    setPos(start);
+                }
+                return null;
+            };
+        }
+
+        function opt(prod) {
+            return function optFunc() {
+                var result, start;
+                start = getPos();
+                result = prod();
+                if (result !== null) {
+                    return result;
+                } else {
+                    setPos(start);
+                    return o('opt');
+                }
+            };
+        }
+
+        function invis(prod) {
+            return function invisFunc() {
+                var result = prod();
+                if (result !== null) {
+                    result.semantic = "";
+                }
+                return result;
+            };
+        }
+
+        function colwsp(prod) {
+            return function collapseSemanticWhitespace() {
+                var result = prod();
+                if (result !== null && result.semantic.length > 0) {
+                    result.semantic = " ";
+                }
+                return result;
+            };
+        }
+
+        function star(prod, minimum) {
+            return function starFunc() {
+                var s, result, count, start, min;
+                start = getPos();
+                s = o('star');
+                count = 0;
+                min = minimum === undefined ? 0 : minimum;
+                while ((result = prod()) !== null) {
+                    count = count + 1;
+                    add(s, result);
+                }
+                if (count >= min) {
+                    return s;
+                } else {
                     setPos(start);
                     return null;
                 }
-                add(s, result);
-            }
-            return s;
-        };
-    }
+            };
+        }
 
-    function or() {
-        var args = arguments;
-        return function orFunc() {
-            var i, result, start;
-            start = getPos();
-            for (i = 0; i < args.length; i += 1) {
-                result = args[i]();
-                if (result !== null) {
-                    return result;
+        // One expects names to get normalized like this:
+        // "  First  Last " -> "First Last"
+        // "First Last" -> "First Last"
+        // "First   Last" -> "First Last"
+        function collapseWhitespace(s) {
+            return s.replace(/([ \t]|\r\n)+/g, ' ').replace(/^\s*/, '').replace(/\s*$/, '');
+        }
+
+        // UTF-8 pseudo-production (RFC 6532)
+        // RFC 6532 extends RFC 5322 productions to include UTF-8
+        // using the following productions:
+        // UTF8-non-ascii  =   UTF8-2 / UTF8-3 / UTF8-4
+        // UTF8-2          =   <Defined in Section 4 of RFC3629>
+        // UTF8-3          =   <Defined in Section 4 of RFC3629>
+        // UTF8-4          =   <Defined in Section 4 of RFC3629>
+        //
+        // For reference, the extended RFC 5322 productions are:
+        // VCHAR   =/  UTF8-non-ascii
+        // ctext   =/  UTF8-non-ascii
+        // atext   =/  UTF8-non-ascii
+        // qtext   =/  UTF8-non-ascii
+        // dtext   =/  UTF8-non-ascii
+        function isUTF8NonAscii(tok) {
+            // In JavaScript, we just deal directly with Unicode code points,
+            // so we aren't checking individual bytes for UTF-8 encoding.
+            // Just check that the character is non-ascii.
+            return tok.charCodeAt(0) >= 128;
+        }
+
+        // common productions (RFC 5234)
+        // http://tools.ietf.org/html/rfc5234
+        // B.1. Core Rules
+
+        // CR             =  %x0D
+        //                         ; carriage return
+        function cr() {
+            return wrap('cr', literal('\r')());
+        }
+
+        // CRLF           =  CR LF
+        //                         ; Internet standard newline
+        function crlf() {
+            return wrap('crlf', and(cr, lf)());
+        }
+
+        // DQUOTE         =  %x22
+        //                         ; " (Double Quote)
+        function dquote() {
+            return wrap('dquote', literal('"')());
+        }
+
+        // HTAB           =  %x09
+        //                         ; horizontal tab
+        function htab() {
+            return wrap('htab', literal('\t')());
+        }
+
+        // LF             =  %x0A
+        //                         ; linefeed
+        function lf() {
+            return wrap('lf', literal('\n')());
+        }
+
+        // SP             =  %x20
+        function sp() {
+            return wrap('sp', literal(' ')());
+        }
+
+        // VCHAR          =  %x21-7E
+        //                         ; visible (printing) characters
+        function vchar() {
+            return wrap('vchar', compareToken(function vcharFunc(tok) {
+                var code = tok.charCodeAt(0);
+                var accept = 0x21 <= code && code <= 0x7E;
+                if (opts.rfc6532) {
+                    accept = accept || isUTF8NonAscii(tok);
                 }
-                setPos(start);
-            }
-            return null;
-        };
-    }
+                return accept;
+            }));
+        }
 
-    function opt(prod) {
-        return function optFunc() {
-            var result, start;
-            start = getPos();
-            result = prod();
-            if (result !== null) {
-                return result;
-            }
-            else {
-                setPos(start);
-                return o('opt');
-            }
-        };
-    }
+        // WSP            =  SP / HTAB
+        //                         ; white space
+        function wsp() {
+            return wrap('wsp', or(sp, htab)());
+        }
 
-    function invis(prod) {
-        return function invisFunc() {
-            var result = prod();
-            if (result !== null) {
-                result.semantic = "";
-            }
-            return result;
-        };
-    }
+        // email productions (RFC 5322)
+        // http://tools.ietf.org/html/rfc5322
+        // 3.2.1. Quoted characters
 
-    function colwsp(prod) {
-        return function collapseSemanticWhitespace() {
-            var result = prod();
-            if (result !== null && result.semantic.length > 0) {
-                result.semantic = " ";
-            }
-            return result;
-        };
-    }
-
-    function star(prod, minimum) {
-        return function starFunc() {
-            var s, result, count, start, min;
-            start = getPos();
-            s = o('star');
-            count = 0;
-            min = minimum === undefined ? 0 : minimum;
-            while ((result = prod()) !== null) {
-                count = count + 1;
-                add(s, result);
-            }
-            if (count >= min) {
-                return s;
-            }
-            else {
-                setPos(start);
+        // quoted-pair     =   ("\" (VCHAR / WSP)) / obs-qp
+        function quotedPair() {
+            var qp = wrap('quoted-pair', or(and(literal('\\'), or(vchar, wsp)), obsQP)());
+            if (qp === null) {
                 return null;
             }
-        };
-    }
+            // a quoted pair will be two characters, and the "\" character
+            // should be semantically "invisible" (RFC 5322 3.2.1)
+            qp.semantic = qp.semantic[1];
+            return qp;
+        }
 
-    // One expects names to get normalized like this:
-    // "  First  Last " -> "First Last"
-    // "First Last" -> "First Last"
-    // "First   Last" -> "First Last"
-    function collapseWhitespace(s) {
-        return s.replace(/([ \t]|\r\n)+/g, ' ').replace(/^\s*/, '').replace(/\s*$/, '');
-    }
+        // 3.2.2. Folding White Space and Comments
 
-    // UTF-8 pseudo-production (RFC 6532)
-    // RFC 6532 extends RFC 5322 productions to include UTF-8
-    // using the following productions:
-    // UTF8-non-ascii  =   UTF8-2 / UTF8-3 / UTF8-4
-    // UTF8-2          =   <Defined in Section 4 of RFC3629>
-    // UTF8-3          =   <Defined in Section 4 of RFC3629>
-    // UTF8-4          =   <Defined in Section 4 of RFC3629>
-    //
-    // For reference, the extended RFC 5322 productions are:
-    // VCHAR   =/  UTF8-non-ascii
-    // ctext   =/  UTF8-non-ascii
-    // atext   =/  UTF8-non-ascii
-    // qtext   =/  UTF8-non-ascii
-    // dtext   =/  UTF8-non-ascii
-    function isUTF8NonAscii(tok) {
-        // In JavaScript, we just deal directly with Unicode code points,
-        // so we aren't checking individual bytes for UTF-8 encoding.
-        // Just check that the character is non-ascii.
-        return tok.charCodeAt(0) >= 128;
-    }
+        // FWS             =   ([*WSP CRLF] 1*WSP) /  obs-FWS
+        function fws() {
+            return wrap('fws', or(obsFws, and(opt(and(star(wsp), invis(crlf))), star(wsp, 1)))());
+        }
 
-
-    // common productions (RFC 5234)
-    // http://tools.ietf.org/html/rfc5234
-    // B.1. Core Rules
-
-    // CR             =  %x0D
-    //                         ; carriage return
-    function cr() { return wrap('cr', literal('\r')()); }
-
-    // CRLF           =  CR LF
-    //                         ; Internet standard newline
-    function crlf() { return wrap('crlf', and(cr, lf)()); }
-
-    // DQUOTE         =  %x22
-    //                         ; " (Double Quote)
-    function dquote() { return wrap('dquote', literal('"')()); }
-
-    // HTAB           =  %x09
-    //                         ; horizontal tab
-    function htab() { return wrap('htab', literal('\t')()); }
-
-    // LF             =  %x0A
-    //                         ; linefeed
-    function lf() { return wrap('lf', literal('\n')()); }
-
-    // SP             =  %x20
-    function sp() { return wrap('sp', literal(' ')()); }
-
-    // VCHAR          =  %x21-7E
-    //                         ; visible (printing) characters
-    function vchar() {
-        return wrap('vchar', compareToken(function vcharFunc(tok) {
-            var code = tok.charCodeAt(0);
-            var accept = (0x21 <= code && code <= 0x7E);
-            if (opts.rfc6532) {
-                accept = accept || isUTF8NonAscii(tok);
-            }
-            return accept;
-        }));
-    }
-
-    // WSP            =  SP / HTAB
-    //                         ; white space
-    function wsp() { return wrap('wsp', or(sp, htab)()); }
-
-
-    // email productions (RFC 5322)
-    // http://tools.ietf.org/html/rfc5322
-    // 3.2.1. Quoted characters
-
-    // quoted-pair     =   ("\" (VCHAR / WSP)) / obs-qp
-    function quotedPair() {
-        var qp = wrap('quoted-pair',
-        or(
-            and(literal('\\'), or(vchar, wsp)),
-            obsQP
-        )());
-        if (qp === null) { return null; }
-        // a quoted pair will be two characters, and the "\" character
-        // should be semantically "invisible" (RFC 5322 3.2.1)
-        qp.semantic = qp.semantic[1];
-        return qp;
-    }
-
-    // 3.2.2. Folding White Space and Comments
-
-    // FWS             =   ([*WSP CRLF] 1*WSP) /  obs-FWS
-    function fws() {
-        return wrap('fws', or(
-            obsFws,
-            and(
-                opt(and(
-                    star(wsp),
-                    invis(crlf)
-                   )),
-                star(wsp, 1)
-            )
-        )());
-    }
-
-    // ctext           =   %d33-39 /          ; Printable US-ASCII
-    //                     %d42-91 /          ;  characters not including
-    //                     %d93-126 /         ;  "(", ")", or "\"
-    //                     obs-ctext
-    function ctext() {
-        return wrap('ctext', or(
-            function ctextFunc1() {
+        // ctext           =   %d33-39 /          ; Printable US-ASCII
+        //                     %d42-91 /          ;  characters not including
+        //                     %d93-126 /         ;  "(", ")", or "\"
+        //                     obs-ctext
+        function ctext() {
+            return wrap('ctext', or(function ctextFunc1() {
                 return compareToken(function ctextFunc2(tok) {
                     var code = tok.charCodeAt(0);
-                    var accept =
-                        (33 <= code && code <= 39) ||
-                        (42 <= code && code <= 91) ||
-                        (93 <= code && code <= 126);
+                    var accept = 33 <= code && code <= 39 || 42 <= code && code <= 91 || 93 <= code && code <= 126;
                     if (opts.rfc6532) {
                         accept = accept || isUTF8NonAscii(tok);
                     }
                     return accept;
                 });
-            },
-            obsCtext
-        )());
-    }
-
-    // ccontent        =   ctext / quoted-pair / comment
-    function ccontent() {
-        return wrap('ccontent', or(ctext, quotedPair, comment)());
-    }
-
-    // comment         =   "(" *([FWS] ccontent) [FWS] ")"
-    function comment() {
-        return wrap('comment', and(
-            literal('('),
-            star(and(opt(fws), ccontent)),
-            opt(fws),
-            literal(')')
-        )());
-    }
-
-    // CFWS            =   (1*([FWS] comment) [FWS]) / FWS
-    function cfws() {
-        return wrap('cfws', or(
-            and(
-                star(
-                    and(opt(fws), comment),
-                    1
-                ),
-                opt(fws)
-            ),
-            fws
-        )());
-    }
-
-    // 3.2.3. Atom
-
-    //atext           =   ALPHA / DIGIT /    ; Printable US-ASCII
-    //                       "!" / "#" /        ;  characters not including
-    //                       "$" / "%" /        ;  specials.  Used for atoms.
-    //                       "&" / "'" /
-    //                       "*" / "+" /
-    //                       "-" / "/" /
-    //                       "=" / "?" /
-    //                       "^" / "_" /
-    //                       "`" / "{" /
-    //                       "|" / "}" /
-    //                       "~"
-    function atext() {
-        return wrap('atext', compareToken(function atextFunc(tok) {
-            var accept =
-                ('a' <= tok && tok <= 'z') ||
-                ('A' <= tok && tok <= 'Z') ||
-                ('0' <= tok && tok <= '9') ||
-                (['!', '#', '$', '%', '&', '\'', '*', '+', '-', '/',
-                  '=', '?', '^', '_', '`', '{', '|', '}', '~'].indexOf(tok) >= 0);
-            if (opts.rfc6532) {
-                accept = accept || isUTF8NonAscii(tok);
-            }
-            return accept;
-        }));
-    }
-
-    // atom            =   [CFWS] 1*atext [CFWS]
-    function atom() {
-        return wrap('atom', and(colwsp(opt(cfws)), star(atext, 1), colwsp(opt(cfws)))());
-    }
-
-    // dot-atom-text   =   1*atext *("." 1*atext)
-    function dotAtomText() {
-        var s, maybeText;
-        s = wrap('dot-atom-text', star(atext, 1)());
-        if (s === null) { return s; }
-        maybeText = star(and(literal('.'), star(atext, 1)))();
-        if (maybeText !== null) {
-            add(s, maybeText);
+            }, obsCtext)());
         }
-        return s;
-    }
 
-    // dot-atom        =   [CFWS] dot-atom-text [CFWS]
-    function dotAtom() {
-        return wrap('dot-atom', and(invis(opt(cfws)), dotAtomText, invis(opt(cfws)))());
-    }
+        // ccontent        =   ctext / quoted-pair / comment
+        function ccontent() {
+            return wrap('ccontent', or(ctext, quotedPair, comment)());
+        }
 
-    // 3.2.4. Quoted Strings
+        // comment         =   "(" *([FWS] ccontent) [FWS] ")"
+        function comment() {
+            return wrap('comment', and(literal('('), star(and(opt(fws), ccontent)), opt(fws), literal(')'))());
+        }
 
-    //  qtext           =   %d33 /             ; Printable US-ASCII
-    //                      %d35-91 /          ;  characters not including
-    //                      %d93-126 /         ;  "\" or the quote character
-    //                      obs-qtext
-    function qtext() {
-        return wrap('qtext', or(
-            function qtextFunc1() {
+        // CFWS            =   (1*([FWS] comment) [FWS]) / FWS
+        function cfws() {
+            return wrap('cfws', or(and(star(and(opt(fws), comment), 1), opt(fws)), fws)());
+        }
+
+        // 3.2.3. Atom
+
+        //atext           =   ALPHA / DIGIT /    ; Printable US-ASCII
+        //                       "!" / "#" /        ;  characters not including
+        //                       "$" / "%" /        ;  specials.  Used for atoms.
+        //                       "&" / "'" /
+        //                       "*" / "+" /
+        //                       "-" / "/" /
+        //                       "=" / "?" /
+        //                       "^" / "_" /
+        //                       "`" / "{" /
+        //                       "|" / "}" /
+        //                       "~"
+        function atext() {
+            return wrap('atext', compareToken(function atextFunc(tok) {
+                var accept = 'a' <= tok && tok <= 'z' || 'A' <= tok && tok <= 'Z' || '0' <= tok && tok <= '9' || ['!', '#', '$', '%', '&', '\'', '*', '+', '-', '/', '=', '?', '^', '_', '`', '{', '|', '}', '~'].indexOf(tok) >= 0;
+                if (opts.rfc6532) {
+                    accept = accept || isUTF8NonAscii(tok);
+                }
+                return accept;
+            }));
+        }
+
+        // atom            =   [CFWS] 1*atext [CFWS]
+        function atom() {
+            return wrap('atom', and(colwsp(opt(cfws)), star(atext, 1), colwsp(opt(cfws)))());
+        }
+
+        // dot-atom-text   =   1*atext *("." 1*atext)
+        function dotAtomText() {
+            var s, maybeText;
+            s = wrap('dot-atom-text', star(atext, 1)());
+            if (s === null) {
+                return s;
+            }
+            maybeText = star(and(literal('.'), star(atext, 1)))();
+            if (maybeText !== null) {
+                add(s, maybeText);
+            }
+            return s;
+        }
+
+        // dot-atom        =   [CFWS] dot-atom-text [CFWS]
+        function dotAtom() {
+            return wrap('dot-atom', and(invis(opt(cfws)), dotAtomText, invis(opt(cfws)))());
+        }
+
+        // 3.2.4. Quoted Strings
+
+        //  qtext           =   %d33 /             ; Printable US-ASCII
+        //                      %d35-91 /          ;  characters not including
+        //                      %d93-126 /         ;  "\" or the quote character
+        //                      obs-qtext
+        function qtext() {
+            return wrap('qtext', or(function qtextFunc1() {
                 return compareToken(function qtextFunc2(tok) {
                     var code = tok.charCodeAt(0);
-                    var accept =
-                        (33 === code) ||
-                        (35 <= code && code <= 91) ||
-                        (93 <= code && code <= 126);
+                    var accept = 33 === code || 35 <= code && code <= 91 || 93 <= code && code <= 126;
                     if (opts.rfc6532) {
                         accept = accept || isUTF8NonAscii(tok);
                     }
                     return accept;
                 });
-            },
-            obsQtext
-        )());
-    }
+            }, obsQtext)());
+        }
 
-    // qcontent        =   qtext / quoted-pair
-    function qcontent() {
-        return wrap('qcontent', or(qtext, quotedPair)());
-    }
+        // qcontent        =   qtext / quoted-pair
+        function qcontent() {
+            return wrap('qcontent', or(qtext, quotedPair)());
+        }
 
-    //  quoted-string   =   [CFWS]
-    //                      DQUOTE *([FWS] qcontent) [FWS] DQUOTE
-    //                      [CFWS]
-    function quotedString() {
-        return wrap('quoted-string', and(
-            invis(opt(cfws)),
-            invis(dquote), star(and(opt(colwsp(fws)), qcontent)), opt(invis(fws)), invis(dquote),
-            invis(opt(cfws))
-        )());
-    }
+        //  quoted-string   =   [CFWS]
+        //                      DQUOTE *([FWS] qcontent) [FWS] DQUOTE
+        //                      [CFWS]
+        function quotedString() {
+            return wrap('quoted-string', and(invis(opt(cfws)), invis(dquote), star(and(opt(colwsp(fws)), qcontent)), opt(invis(fws)), invis(dquote), invis(opt(cfws)))());
+        }
 
-    // 3.2.5 Miscellaneous Tokens
+        // 3.2.5 Miscellaneous Tokens
 
-    // word            =   atom / quoted-string
-    function word() {
-        return wrap('word', or(atom, quotedString)());
-    }
+        // word            =   atom / quoted-string
+        function word() {
+            return wrap('word', or(atom, quotedString)());
+        }
 
-    // phrase          =   1*word / obs-phrase
-    function phrase() {
-        return wrap('phrase', or(obsPhrase, star(word, 1))());
-    }
+        // phrase          =   1*word / obs-phrase
+        function phrase() {
+            return wrap('phrase', or(obsPhrase, star(word, 1))());
+        }
 
-    // 3.4. Address Specification
-    //   address         =   mailbox / group
-    function address() {
-        return wrap('address', or(mailbox, group)());
-    }
+        // 3.4. Address Specification
+        //   address         =   mailbox / group
+        function address() {
+            return wrap('address', or(mailbox, group)());
+        }
 
-    //   mailbox         =   name-addr / addr-spec
-    function mailbox() {
-        return wrap('mailbox', or(nameAddr, addrSpec)());
-    }
+        //   mailbox         =   name-addr / addr-spec
+        function mailbox() {
+            return wrap('mailbox', or(nameAddr, addrSpec)());
+        }
 
-    //   name-addr       =   [display-name] angle-addr
-    function nameAddr() {
-        return wrap('name-addr', and(opt(displayName), angleAddr)());
-    }
+        //   name-addr       =   [display-name] angle-addr
+        function nameAddr() {
+            return wrap('name-addr', and(opt(displayName), angleAddr)());
+        }
 
-    //   angle-addr      =   [CFWS] "<" addr-spec ">" [CFWS] /
-    //                       obs-angle-addr
-    function angleAddr() {
-        return wrap('angle-addr', or(
-            and(
-                invis(opt(cfws)),
-                literal('<'),
-                addrSpec,
-                literal('>'),
-                invis(opt(cfws))
-            ),
-            obsAngleAddr
-        )());
-    }
+        //   angle-addr      =   [CFWS] "<" addr-spec ">" [CFWS] /
+        //                       obs-angle-addr
+        function angleAddr() {
+            return wrap('angle-addr', or(and(invis(opt(cfws)), literal('<'), addrSpec, literal('>'), invis(opt(cfws))), obsAngleAddr)());
+        }
 
-    //   group           =   display-name ":" [group-list] ";" [CFWS]
-    function group() {
-        return wrap('group', and(
-            displayName,
-            literal(':'),
-            opt(groupList),
-            literal(';'),
-            invis(opt(cfws))
-        )());
-    }
+        //   group           =   display-name ":" [group-list] ";" [CFWS]
+        function group() {
+            return wrap('group', and(displayName, literal(':'), opt(groupList), literal(';'), invis(opt(cfws)))());
+        }
 
-    //   display-name    =   phrase
-    function displayName() {
-        return wrap('display-name', function phraseFixedSemantic() {
-            var result = phrase();
-            if (result !== null) {
-                result.semantic = collapseWhitespace(result.semantic);
-            }
-            return result;
-        }());
-    }
+        //   display-name    =   phrase
+        function displayName() {
+            return wrap('display-name', function phraseFixedSemantic() {
+                var result = phrase();
+                if (result !== null) {
+                    result.semantic = collapseWhitespace(result.semantic);
+                }
+                return result;
+            }());
+        }
 
-    //   mailbox-list    =   (mailbox *("," mailbox)) / obs-mbox-list
-    function mailboxList() {
-        return wrap('mailbox-list', or(
-            and(
-                mailbox,
-                star(and(literal(','), mailbox))
-            ),
-            obsMboxList
-        )());
-    }
+        //   mailbox-list    =   (mailbox *("," mailbox)) / obs-mbox-list
+        function mailboxList() {
+            return wrap('mailbox-list', or(and(mailbox, star(and(literal(','), mailbox))), obsMboxList)());
+        }
 
-    //   address-list    =   (address *("," address)) / obs-addr-list
-    function addressList() {
-        return wrap('address-list', or(
-            and(
-                address,
-                star(and(literal(','), address))
-            ),
-            obsAddrList
-        )());
-    }
+        //   address-list    =   (address *("," address)) / obs-addr-list
+        function addressList() {
+            return wrap('address-list', or(and(address, star(and(literal(','), address))), obsAddrList)());
+        }
 
-    //   group-list      =   mailbox-list / CFWS / obs-group-list
-    function groupList() {
-        return wrap('group-list', or(
-            mailboxList,
-            invis(cfws),
-            obsGroupList
-        )());
-    }
+        //   group-list      =   mailbox-list / CFWS / obs-group-list
+        function groupList() {
+            return wrap('group-list', or(mailboxList, invis(cfws), obsGroupList)());
+        }
 
-    // 3.4.1 Addr-Spec Specification
+        // 3.4.1 Addr-Spec Specification
 
-    // local-part      =   dot-atom / quoted-string / obs-local-part
-    function localPart() {
-        // note: quoted-string, dotAtom are proper subsets of obs-local-part
-        // so we really just have to look for obsLocalPart, if we don't care about the exact parse tree
-        return wrap('local-part', or(obsLocalPart, dotAtom, quotedString)());
-    }
+        // local-part      =   dot-atom / quoted-string / obs-local-part
+        function localPart() {
+            // note: quoted-string, dotAtom are proper subsets of obs-local-part
+            // so we really just have to look for obsLocalPart, if we don't care about the exact parse tree
+            return wrap('local-part', or(obsLocalPart, dotAtom, quotedString)());
+        }
 
-    //  dtext           =   %d33-90 /          ; Printable US-ASCII
-    //                      %d94-126 /         ;  characters not including
-    //                      obs-dtext          ;  "[", "]", or "\"
-    function dtext() {
-        return wrap('dtext', or(
-            function dtextFunc1() {
+        //  dtext           =   %d33-90 /          ; Printable US-ASCII
+        //                      %d94-126 /         ;  characters not including
+        //                      obs-dtext          ;  "[", "]", or "\"
+        function dtext() {
+            return wrap('dtext', or(function dtextFunc1() {
                 return compareToken(function dtextFunc2(tok) {
                     var code = tok.charCodeAt(0);
-                    var accept =
-                        (33 <= code && code <= 90) ||
-                        (94 <= code && code <= 126);
+                    var accept = 33 <= code && code <= 90 || 94 <= code && code <= 126;
                     if (opts.rfc6532) {
                         accept = accept || isUTF8NonAscii(tok);
                     }
                     return accept;
                 });
-            },
-            obsDtext
-            )()
-        );
-    }
+            }, obsDtext)());
+        }
 
-    // domain-literal  =   [CFWS] "[" *([FWS] dtext) [FWS] "]" [CFWS]
-    function domainLiteral() {
-        return wrap('domain-literal', and(
-            invis(opt(cfws)),
-            literal('['),
-            star(and(opt(fws), dtext)),
-            opt(fws),
-            literal(']'),
-            invis(opt(cfws))
-        )());
-    }
+        // domain-literal  =   [CFWS] "[" *([FWS] dtext) [FWS] "]" [CFWS]
+        function domainLiteral() {
+            return wrap('domain-literal', and(invis(opt(cfws)), literal('['), star(and(opt(fws), dtext)), opt(fws), literal(']'), invis(opt(cfws)))());
+        }
 
-    // domain          =   dot-atom / domain-literal / obs-domain
-    function domain() {
-        return wrap('domain', function domainCheckTLD() {
-            var result = or(obsDomain, dotAtom, domainLiteral)();
-            if (opts.rejectTLD) {
-                if (result.semantic.indexOf('.') < 0) {
-                    return null;
+        // domain          =   dot-atom / domain-literal / obs-domain
+        function domain() {
+            return wrap('domain', function domainCheckTLD() {
+                var result = or(obsDomain, dotAtom, domainLiteral)();
+                if (opts.rejectTLD) {
+                    if (result && result.semantic && result.semantic.indexOf('.') < 0) {
+                        return null;
+                    }
                 }
-            }
-            // strip all whitespace from domains
-            if (result) {
-                result.semantic = result.semantic.replace(/\s+/g, '');
-            }
-            return result;
-        }());
-    }
-
-    // addr-spec       =   local-part "@" domain
-    function addrSpec() {
-        return wrap('addr-spec', and(
-            localPart, literal('@'), domain
-        )());
-    }
-
-    // 3.6.2 Originator Fields
-    // Below we only parse the field body, not the name of the field
-    // like "From:", "Sender:", or "Reply-To:". Other libraries that
-    // parse email headers can parse those and defer to these productions
-    // for the "RFC 5322" part.
-
-    // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
-    // from = "From:" (mailbox-list / address-list) CRLF
-    function fromSpec() {
-        return wrap('from', or(
-            mailboxList,
-            addressList
-        )());
-    }
-
-    // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
-    // sender = "Sender:" (mailbox / address) CRLF
-    function senderSpec() {
-        return wrap('sender', or(
-            mailbox,
-            address
-        )());
-    }
-
-    // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
-    // reply-to = "Reply-To:" address-list CRLF
-    function replyToSpec() {
-        return wrap('reply-to', addressList());
-    }
-
-    // 4.1. Miscellaneous Obsolete Tokens
-
-    //  obs-NO-WS-CTL   =   %d1-8 /            ; US-ASCII control
-    //                      %d11 /             ;  characters that do not
-    //                      %d12 /             ;  include the carriage
-    //                      %d14-31 /          ;  return, line feed, and
-    //                      %d127              ;  white space characters
-    function obsNoWsCtl() {
-        return opts.strict ? null : wrap('obs-NO-WS-CTL', compareToken(function (tok) {
-            var code = tok.charCodeAt(0);
-            return ((1 <= code && code <= 8) ||
-                    (11 === code || 12 === code) ||
-                    (14 <= code && code <= 31) ||
-                    (127 === code));
-        }));
-    }
-
-    // obs-ctext       =   obs-NO-WS-CTL
-    function obsCtext() { return opts.strict ? null : wrap('obs-ctext', obsNoWsCtl()); }
-
-    // obs-qtext       =   obs-NO-WS-CTL
-    function obsQtext() { return opts.strict ? null : wrap('obs-qtext', obsNoWsCtl()); }
-
-    // obs-qp          =   "\" (%d0 / obs-NO-WS-CTL / LF / CR)
-    function obsQP() {
-        return opts.strict ? null : wrap('obs-qp', and(
-            literal('\\'),
-            or(literal('\0'), obsNoWsCtl, lf, cr)
-        )());
-    }
-
-    // obs-phrase      =   word *(word / "." / CFWS)
-    function obsPhrase() {
-        return opts.strict ? null : wrap('obs-phrase', and(
-            word,
-            star(or(word, literal('.'), colwsp(cfws)))
-        )());
-    }
-
-    // 4.2. Obsolete Folding White Space
-
-    // NOTE: read the errata http://www.rfc-editor.org/errata_search.php?rfc=5322&eid=1908
-    // obs-FWS         =   1*([CRLF] WSP)
-    function obsFws() {
-        return opts.strict ? null : wrap('obs-FWS', star(
-            and(invis(opt(crlf)), wsp),
-            1
-        )());
-    }
-
-    // 4.4. Obsolete Addressing
-
-    // obs-angle-addr  =   [CFWS] "<" obs-route addr-spec ">" [CFWS]
-    function obsAngleAddr() {
-        return opts.strict ? null : wrap('obs-angle-addr', and(
-            invis(opt(cfws)),
-            literal('<'),
-            obsRoute,
-            addrSpec,
-            literal('>'),
-            invis(opt(cfws))
-        )());
-    }
-
-    // obs-route       =   obs-domain-list ":"
-    function obsRoute() {
-        return opts.strict ? null : wrap('obs-route', and(
-            obsDomainList,
-            literal(':')
-        )());
-    }
-
-    //   obs-domain-list =   *(CFWS / ",") "@" domain
-    //                       *("," [CFWS] ["@" domain])
-    function obsDomainList() {
-        return opts.strict ? null : wrap('obs-domain-list', and(
-            star(or(invis(cfws), literal(','))),
-            literal('@'),
-            domain,
-            star(and(
-                literal(','),
-                invis(opt(cfws)),
-                opt(and(literal('@'), domain))
-            ))
-        )());
-    }
-
-    // obs-mbox-list   =   *([CFWS] ",") mailbox *("," [mailbox / CFWS])
-    function obsMboxList() {
-        return opts.strict ? null : wrap('obs-mbox-list', and(
-            star(and(
-                invis(opt(cfws)),
-                literal(',')
-            )),
-            mailbox,
-            star(and(
-                literal(','),
-                opt(and(
-                    mailbox,
-                    invis(cfws)
-                ))
-            ))
-        )());
-    }
-
-    // obs-addr-list   =   *([CFWS] ",") address *("," [address / CFWS])
-    function obsAddrList() {
-        return opts.strict ? null : wrap('obs-addr-list', and(
-            star(and(
-                invis(opt(cfws)),
-                literal(',')
-            )),
-            address,
-            star(and(
-                literal(','),
-                opt(and(
-                    address,
-                    invis(cfws)
-                ))
-            ))
-        )());
-    }
-
-    // obs-group-list  =   1*([CFWS] ",") [CFWS]
-    function obsGroupList() {
-        return opts.strict ? null : wrap('obs-group-list', and(
-            star(and(
-                invis(opt(cfws)),
-                literal(',')
-            ), 1),
-            invis(opt(cfws))
-        )());
-    }
-
-    // obs-local-part = word *("." word)
-    function obsLocalPart() {
-        return opts.strict ? null : wrap('obs-local-part', and(word, star(and(literal('.'), word)))());
-    }
-
-    // obs-domain       = atom *("." atom)
-    function obsDomain() {
-        return opts.strict ? null : wrap('obs-domain', and(atom, star(and(literal('.'), atom)))());
-    }
-
-    // obs-dtext       =   obs-NO-WS-CTL / quoted-pair
-    function obsDtext() {
-        return opts.strict ? null : wrap('obs-dtext', or(obsNoWsCtl, quotedPair)());
-    }
-
-    /////////////////////////////////////////////////////
-
-    // ast analysis
-
-    function findNode(name, root) {
-        var i, stack, node;
-        if (root === null || root === undefined) { return null; }
-        stack = [root];
-        while (stack.length > 0) {
-            node = stack.pop();
-            if (node.name === name) {
-                return node;
-            }
-            for (i = node.children.length - 1; i >= 0; i -= 1) {
-                stack.push(node.children[i]);
-            }
-        }
-        return null;
-    }
-
-    function findAllNodes(name, root) {
-        var i, stack, node, result;
-        if (root === null || root === undefined) { return null; }
-        stack = [root];
-        result = [];
-        while (stack.length > 0) {
-            node = stack.pop();
-            if (node.name === name) {
-                result.push(node);
-            }
-            for (i = node.children.length - 1; i >= 0; i -= 1) {
-                stack.push(node.children[i]);
-            }
-        }
-        return result;
-    }
-
-    function findAllNodesNoChildren(names, root) {
-        var i, stack, node, result, namesLookup;
-        if (root === null || root === undefined) { return null; }
-        stack = [root];
-        result = [];
-        namesLookup = {};
-        for (i = 0; i < names.length; i += 1) {
-            namesLookup[names[i]] = true;
+                // strip all whitespace from domains
+                if (result) {
+                    result.semantic = result.semantic.replace(/\s+/g, '');
+                }
+                return result;
+            }());
         }
 
-        while (stack.length > 0) {
-            node = stack.pop();
-            if (node.name in namesLookup) {
-                result.push(node);
-                // don't look at children (hence findAllNodesNoChildren)
-            } else {
+        // addr-spec       =   local-part "@" domain
+        function addrSpec() {
+            return wrap('addr-spec', and(localPart, literal('@'), domain)());
+        }
+
+        // 3.6.2 Originator Fields
+        // Below we only parse the field body, not the name of the field
+        // like "From:", "Sender:", or "Reply-To:". Other libraries that
+        // parse email headers can parse those and defer to these productions
+        // for the "RFC 5322" part.
+
+        // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
+        // from = "From:" (mailbox-list / address-list) CRLF
+        function fromSpec() {
+            return wrap('from', or(mailboxList, addressList)());
+        }
+
+        // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
+        // sender = "Sender:" (mailbox / address) CRLF
+        function senderSpec() {
+            return wrap('sender', or(mailbox, address)());
+        }
+
+        // RFC 6854 2.1. Replacement of RFC 5322, Section 3.6.2. Originator Fields
+        // reply-to = "Reply-To:" address-list CRLF
+        function replyToSpec() {
+            return wrap('reply-to', addressList());
+        }
+
+        // 4.1. Miscellaneous Obsolete Tokens
+
+        //  obs-NO-WS-CTL   =   %d1-8 /            ; US-ASCII control
+        //                      %d11 /             ;  characters that do not
+        //                      %d12 /             ;  include the carriage
+        //                      %d14-31 /          ;  return, line feed, and
+        //                      %d127              ;  white space characters
+        function obsNoWsCtl() {
+            return opts.strict ? null : wrap('obs-NO-WS-CTL', compareToken(function (tok) {
+                var code = tok.charCodeAt(0);
+                return 1 <= code && code <= 8 || 11 === code || 12 === code || 14 <= code && code <= 31 || 127 === code;
+            }));
+        }
+
+        // obs-ctext       =   obs-NO-WS-CTL
+        function obsCtext() {
+            return opts.strict ? null : wrap('obs-ctext', obsNoWsCtl());
+        }
+
+        // obs-qtext       =   obs-NO-WS-CTL
+        function obsQtext() {
+            return opts.strict ? null : wrap('obs-qtext', obsNoWsCtl());
+        }
+
+        // obs-qp          =   "\" (%d0 / obs-NO-WS-CTL / LF / CR)
+        function obsQP() {
+            return opts.strict ? null : wrap('obs-qp', and(literal('\\'), or(literal('\0'), obsNoWsCtl, lf, cr))());
+        }
+
+        // obs-phrase      =   word *(word / "." / CFWS)
+        function obsPhrase() {
+            return opts.strict ? null : wrap('obs-phrase', and(word, star(or(word, literal('.'), literal('@'), colwsp(cfws))))());
+        }
+
+        // 4.2. Obsolete Folding White Space
+
+        // NOTE: read the errata http://www.rfc-editor.org/errata_search.php?rfc=5322&eid=1908
+        // obs-FWS         =   1*([CRLF] WSP)
+        function obsFws() {
+            return opts.strict ? null : wrap('obs-FWS', star(and(invis(opt(crlf)), wsp), 1)());
+        }
+
+        // 4.4. Obsolete Addressing
+
+        // obs-angle-addr  =   [CFWS] "<" obs-route addr-spec ">" [CFWS]
+        function obsAngleAddr() {
+            return opts.strict ? null : wrap('obs-angle-addr', and(invis(opt(cfws)), literal('<'), obsRoute, addrSpec, literal('>'), invis(opt(cfws)))());
+        }
+
+        // obs-route       =   obs-domain-list ":"
+        function obsRoute() {
+            return opts.strict ? null : wrap('obs-route', and(obsDomainList, literal(':'))());
+        }
+
+        //   obs-domain-list =   *(CFWS / ",") "@" domain
+        //                       *("," [CFWS] ["@" domain])
+        function obsDomainList() {
+            return opts.strict ? null : wrap('obs-domain-list', and(star(or(invis(cfws), literal(','))), literal('@'), domain, star(and(literal(','), invis(opt(cfws)), opt(and(literal('@'), domain)))))());
+        }
+
+        // obs-mbox-list   =   *([CFWS] ",") mailbox *("," [mailbox / CFWS])
+        function obsMboxList() {
+            return opts.strict ? null : wrap('obs-mbox-list', and(star(and(invis(opt(cfws)), literal(','))), mailbox, star(and(literal(','), opt(and(mailbox, invis(cfws))))))());
+        }
+
+        // obs-addr-list   =   *([CFWS] ",") address *("," [address / CFWS])
+        function obsAddrList() {
+            return opts.strict ? null : wrap('obs-addr-list', and(star(and(invis(opt(cfws)), literal(','))), address, star(and(literal(','), opt(and(address, invis(cfws))))))());
+        }
+
+        // obs-group-list  =   1*([CFWS] ",") [CFWS]
+        function obsGroupList() {
+            return opts.strict ? null : wrap('obs-group-list', and(star(and(invis(opt(cfws)), literal(',')), 1), invis(opt(cfws)))());
+        }
+
+        // obs-local-part = word *("." word)
+        function obsLocalPart() {
+            return opts.strict ? null : wrap('obs-local-part', and(word, star(and(literal('.'), word)))());
+        }
+
+        // obs-domain       = atom *("." atom)
+        function obsDomain() {
+            return opts.strict ? null : wrap('obs-domain', and(atom, star(and(literal('.'), atom)))());
+        }
+
+        // obs-dtext       =   obs-NO-WS-CTL / quoted-pair
+        function obsDtext() {
+            return opts.strict ? null : wrap('obs-dtext', or(obsNoWsCtl, quotedPair)());
+        }
+
+        /////////////////////////////////////////////////////
+
+        // ast analysis
+
+        function findNode(name, root) {
+            var i, stack, node;
+            if (root === null || root === undefined) {
+                return null;
+            }
+            stack = [root];
+            while (stack.length > 0) {
+                node = stack.pop();
+                if (node.name === name) {
+                    return node;
+                }
                 for (i = node.children.length - 1; i >= 0; i -= 1) {
                     stack.push(node.children[i]);
                 }
             }
-        }
-        return result;
-    }
-
-    function giveResult(ast) {
-        var addresses, groupsAndMailboxes, i, groupOrMailbox, result;
-        if (ast === null) {
             return null;
         }
-        addresses = [];
 
-        // An address is a 'group' (i.e. a list of mailboxes) or a 'mailbox'.
-        groupsAndMailboxes = findAllNodesNoChildren(['group', 'mailbox'], ast);
-        for (i = 0; i <  groupsAndMailboxes.length; i += 1) {
-            groupOrMailbox = groupsAndMailboxes[i];
-            if (groupOrMailbox.name === 'group') {
-                addresses.push(giveResultGroup(groupOrMailbox));
-            } else if (groupOrMailbox.name === 'mailbox') {
-                addresses.push(giveResultMailbox(groupOrMailbox));
+        function findAllNodes(name, root) {
+            var i, stack, node, result;
+            if (root === null || root === undefined) {
+                return null;
             }
-        }
-
-        result = {
-            ast: ast,
-            addresses: addresses,
-        };
-        if (opts.simple) {
-            result = simplifyResult(result);
-        }
-        if (opts.oneResult) {
-            return oneResult(result);
-        }
-        if (opts.simple) {
-            return result && result.addresses;
-        } else {
+            stack = [root];
+            result = [];
+            while (stack.length > 0) {
+                node = stack.pop();
+                if (node.name === name) {
+                    result.push(node);
+                }
+                for (i = node.children.length - 1; i >= 0; i -= 1) {
+                    stack.push(node.children[i]);
+                }
+            }
             return result;
         }
-    }
 
-    function giveResultGroup(group) {
-        var i;
-        var groupName = findNode('display-name', group);
-        var groupResultMailboxes = [];
-        var mailboxes = findAllNodesNoChildren(['mailbox'], group);
-        for (i = 0; i < mailboxes.length; i += 1) {
-            groupResultMailboxes.push(giveResultMailbox(mailboxes[i]));
+        function findAllNodesNoChildren(names, root) {
+            var i, stack, node, result, namesLookup;
+            if (root === null || root === undefined) {
+                return null;
+            }
+            stack = [root];
+            result = [];
+            namesLookup = {};
+            for (i = 0; i < names.length; i += 1) {
+                namesLookup[names[i]] = true;
+            }
+
+            while (stack.length > 0) {
+                node = stack.pop();
+                if (node.name in namesLookup) {
+                    result.push(node);
+                    // don't look at children (hence findAllNodesNoChildren)
+                } else {
+                    for (i = node.children.length - 1; i >= 0; i -= 1) {
+                        stack.push(node.children[i]);
+                    }
+                }
+            }
+            return result;
         }
-        return {
-            node: group,
-            parts: {
-                name: groupName,
-            },
-            type: group.name, // 'group'
-            name: grabSemantic(groupName),
-            addresses: groupResultMailboxes,
-        };
-    }
 
-    function giveResultMailbox(mailbox) {
-        var name = findNode('display-name', mailbox);
-        var aspec = findNode('addr-spec', mailbox);
-        var comments = findAllNodes('cfws', mailbox);
+        function giveResult(ast) {
+            var addresses, groupsAndMailboxes, i, groupOrMailbox, result;
+            if (ast === null) {
+                return null;
+            }
+            addresses = [];
 
-        var local = findNode('local-part', aspec);
-        var domain = findNode('domain', aspec);
-        return {
-            node: mailbox,
-            parts: {
-                name: name,
-                address: aspec,
-                local: local,
-                domain: domain,
-                comments: comments
-            },
-            type: mailbox.name, // 'mailbox'
-            name: grabSemantic(name),
-            address: grabSemantic(aspec),
-            local: grabSemantic(local),
-            domain: grabSemantic(domain),
-            groupName: grabSemantic(mailbox.groupName),
-        };
-    }
+            // An address is a 'group' (i.e. a list of mailboxes) or a 'mailbox'.
+            groupsAndMailboxes = findAllNodesNoChildren(['group', 'mailbox'], ast);
+            for (i = 0; i < groupsAndMailboxes.length; i += 1) {
+                groupOrMailbox = groupsAndMailboxes[i];
+                if (groupOrMailbox.name === 'group') {
+                    addresses.push(giveResultGroup(groupOrMailbox));
+                } else if (groupOrMailbox.name === 'mailbox') {
+                    addresses.push(giveResultMailbox(groupOrMailbox));
+                }
+            }
 
-    function grabSemantic(n) {
-        return n !== null && n !== undefined ? n.semantic : null;
-    }
-
-    function simplifyResult(result) {
-        var i;
-        if (result && result.addresses) {
-            for (i = 0; i < result.addresses.length; i += 1) {
-                delete result.addresses[i].node;
+            result = {
+                ast: ast,
+                addresses: addresses
+            };
+            if (opts.simple) {
+                result = simplifyResult(result);
+            }
+            if (opts.oneResult) {
+                return oneResult(result);
+            }
+            if (opts.simple) {
+                return result && result.addresses;
+            } else {
+                return result;
             }
         }
-        return result;
-    }
 
-    function oneResult(result) {
-        if (!result) { return null; }
-        if (!opts.partial && result.addresses.length > 1) { return null; }
-        return result.addresses && result.addresses[0];
-    }
+        function giveResultGroup(group) {
+            var i;
+            var groupName = findNode('display-name', group);
+            var groupResultMailboxes = [];
+            var mailboxes = findAllNodesNoChildren(['mailbox'], group);
+            for (i = 0; i < mailboxes.length; i += 1) {
+                groupResultMailboxes.push(giveResultMailbox(mailboxes[i]));
+            }
+            return {
+                node: group,
+                parts: {
+                    name: groupName
+                },
+                type: group.name, // 'group'
+                name: grabSemantic(groupName),
+                addresses: groupResultMailboxes
+            };
+        }
 
-    /////////////////////////////////////////////////////
+        function giveResultMailbox(mailbox) {
+            var name = findNode('display-name', mailbox);
+            var aspec = findNode('addr-spec', mailbox);
+            var comments = findAllNodesNoChildren(['comment'], mailbox);
 
-    var parseString, pos, len, parsed, startProduction;
+            var local = findNode('local-part', aspec);
+            var domain = findNode('domain', aspec);
+            return {
+                node: mailbox,
+                parts: {
+                    name: name,
+                    address: aspec,
+                    local: local,
+                    domain: domain,
+                    comments: comments
+                },
+                type: mailbox.name, // 'mailbox'
+                name: grabSemantic(name),
+                address: grabSemantic(aspec),
+                local: grabSemantic(local),
+                domain: grabSemantic(domain),
+                comments: concatComments(comments),
+                groupName: grabSemantic(mailbox.groupName)
+            };
+        }
 
-    opts = handleOpts(opts, {});
-    if (opts === null) { return null; }
+        function grabSemantic(n) {
+            return n !== null && n !== undefined ? n.semantic : null;
+        }
 
-    parseString = opts.input;
+        function simplifyResult(result) {
+            var i;
+            if (result && result.addresses) {
+                for (i = 0; i < result.addresses.length; i += 1) {
+                    delete result.addresses[i].node;
+                }
+            }
+            return result;
+        }
 
-    startProduction = {
-        'address': address,
-        'address-list': addressList,
-        'angle-addr': angleAddr,
-        'from': fromSpec,
-        'group': group,
-        'mailbox': mailbox,
-        'mailbox-list': mailboxList,
-        'reply-to': replyToSpec,
-        'sender': senderSpec,
-    }[opts.startAt] || addressList;
+        function concatComments(comments) {
+            let result = '';
+            if (comments) {
+                for (let i = 0; i < comments.length; i += 1) {
+                    result += grabSemantic(comments[i]);
+                }
+            }
+            return result;
+        }
 
-    if (!opts.strict) {
+        function oneResult(result) {
+            if (!result) {
+                return null;
+            }
+            if (!opts.partial && result.addresses.length > 1) {
+                return null;
+            }
+            return result.addresses && result.addresses[0];
+        }
+
+        /////////////////////////////////////////////////////
+
+        var parseString, pos, len, parsed, startProduction;
+
+        opts = handleOpts(opts, {});
+        if (opts === null) {
+            return null;
+        }
+
+        parseString = opts.input;
+
+        startProduction = {
+            'address': address,
+            'address-list': addressList,
+            'angle-addr': angleAddr,
+            'from': fromSpec,
+            'group': group,
+            'mailbox': mailbox,
+            'mailbox-list': mailboxList,
+            'reply-to': replyToSpec,
+            'sender': senderSpec
+        }[opts.startAt] || addressList;
+
+        if (!opts.strict) {
+            initialize();
+            opts.strict = true;
+            parsed = startProduction(parseString);
+            if (opts.partial || !inStr()) {
+                return giveResult(parsed);
+            }
+            opts.strict = false;
+        }
+
         initialize();
-        opts.strict = true;
         parsed = startProduction(parseString);
-        if (opts.partial || !inStr()) {
-            return giveResult(parsed);
+        if (!opts.partial && inStr()) {
+            return null;
         }
-        opts.strict = false;
+        return giveResult(parsed);
     }
 
-    initialize();
-    parsed = startProduction(parseString);
-    if (!opts.partial && inStr()) { return null; }
-    return giveResult(parsed);
-}
-
-function parseOneAddressSimple(opts) {
-    return parse5322(handleOpts(opts, {
-        oneResult: true,
-        rfc6532: true,
-        simple: true,
-        startAt: 'address-list',
-    }));
-}
-
-function parseAddressListSimple(opts) {
-    return parse5322(handleOpts(opts, {
-        rfc6532: true,
-        simple: true,
-        startAt: 'address-list',
-    }));
-}
-
-function parseFromSimple(opts) {
-    return parse5322(handleOpts(opts, {
-        rfc6532: true,
-        simple: true,
-        startAt: 'from',
-    }));
-}
-
-function parseSenderSimple(opts) {
-    return parse5322(handleOpts(opts, {
-        oneResult: true,
-        rfc6532: true,
-        simple: true,
-        startAt: 'sender',
-    }));
-}
-
-function parseReplyToSimple(opts) {
-    return parse5322(handleOpts(opts, {
-        rfc6532: true,
-        simple: true,
-        startAt: 'reply-to',
-    }));
-}
-
-function handleOpts(opts, defs) {
-    function isString(str) {
-        return Object.prototype.toString.call(str) === '[object String]';
+    function parseOneAddressSimple(opts) {
+        return parse5322(handleOpts(opts, {
+            oneResult: true,
+            rfc6532: true,
+            simple: true,
+            startAt: 'address-list'
+        }));
     }
 
-    function isObject(o) {
-        return o === Object(o);
+    function parseAddressListSimple(opts) {
+        return parse5322(handleOpts(opts, {
+            rfc6532: true,
+            simple: true,
+            startAt: 'address-list'
+        }));
     }
 
-    function isNullUndef(o) {
-        return o === null || o === undefined;
+    function parseFromSimple(opts) {
+        return parse5322(handleOpts(opts, {
+            rfc6532: true,
+            simple: true,
+            startAt: 'from'
+        }));
     }
 
-    var defaults, o;
-
-    if (isString(opts)) {
-        opts = { input: opts };
-    } else if (!isObject(opts)) {
-        return null;
+    function parseSenderSimple(opts) {
+        return parse5322(handleOpts(opts, {
+            oneResult: true,
+            rfc6532: true,
+            simple: true,
+            startAt: 'sender'
+        }));
     }
 
-    if (!isString(opts.input)) { return null; }
-    if (!defs) { return null; }
+    function parseReplyToSimple(opts) {
+        return parse5322(handleOpts(opts, {
+            rfc6532: true,
+            simple: true,
+            startAt: 'reply-to'
+        }));
+    }
 
-    defaults = {
-        oneResult: false,
-        partial: false,
-        rejectTLD: false,
-        rfc6532: false,
-        simple: false,
-        startAt: 'address-list',
-        strict: false,
-    };
-
-    for (o in defaults) {
-        if (isNullUndef(opts[o])) {
-            opts[o] = !isNullUndef(defs[o]) ? defs[o] : defaults[o];
+    function handleOpts(opts, defs) {
+        function isString(str) {
+            return Object.prototype.toString.call(str) === '[object String]';
         }
+
+        function isObject(o) {
+            return o === Object(o);
+        }
+
+        function isNullUndef(o) {
+            return o === null || o === undefined;
+        }
+
+        var defaults, o;
+
+        if (isString(opts)) {
+            opts = { input: opts };
+        } else if (!isObject(opts)) {
+            return null;
+        }
+
+        if (!isString(opts.input)) {
+            return null;
+        }
+        if (!defs) {
+            return null;
+        }
+
+        defaults = {
+            oneResult: false,
+            partial: false,
+            rejectTLD: false,
+            rfc6532: false,
+            simple: false,
+            startAt: 'address-list',
+            strict: false
+        };
+
+        for (o in defaults) {
+            if (isNullUndef(opts[o])) {
+                opts[o] = !isNullUndef(defs[o]) ? defs[o] : defaults[o];
+            }
+        }
+        return opts;
     }
-    return opts;
-}
 
-parse5322.parseOneAddress = parseOneAddressSimple;
-parse5322.parseAddressList = parseAddressListSimple;
-parse5322.parseFrom = parseFromSimple;
-parse5322.parseSender = parseSenderSimple;
-parse5322.parseReplyTo = parseReplyToSimple;
+    parse5322.parseOneAddress = parseOneAddressSimple;
+    parse5322.parseAddressList = parseAddressListSimple;
+    parse5322.parseFrom = parseFromSimple;
+    parse5322.parseSender = parseSenderSimple;
+    parse5322.parseReplyTo = parseReplyToSimple;
 
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
-    module.exports = parse5322;
-} else {
-    global.emailAddresses = parse5322;
-}
+    if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+        module.exports = parse5322;
+    } else {
+        global.emailAddresses = parse5322;
+    }
+})(undefined);
 
-}(this));
-
-},{}],35:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 var hash = exports;
 
 hash.utils = require('./hash/utils');
@@ -13329,7 +12991,7 @@ hash.sha384 = hash.sha.sha384;
 hash.sha512 = hash.sha.sha512;
 hash.ripemd160 = hash.ripemd.ripemd160;
 
-},{"./hash/common":36,"./hash/hmac":37,"./hash/ripemd":38,"./hash/sha":39,"./hash/utils":46}],36:[function(require,module,exports){
+},{"./hash/common":35,"./hash/hmac":36,"./hash/ripemd":37,"./hash/sha":38,"./hash/utils":45}],35:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -13423,7 +13085,7 @@ BlockHash.prototype._pad = function pad() {
   return res;
 };
 
-},{"./utils":46,"minimalistic-assert":49}],37:[function(require,module,exports){
+},{"./utils":45,"minimalistic-assert":48}],36:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -13472,7 +13134,7 @@ Hmac.prototype.digest = function digest(enc) {
   return this.outer.digest(enc);
 };
 
-},{"./utils":46,"minimalistic-assert":49}],38:[function(require,module,exports){
+},{"./utils":45,"minimalistic-assert":48}],37:[function(require,module,exports){
 'use strict';
 
 var utils = require('./utils');
@@ -13620,7 +13282,7 @@ var sh = [
   8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11
 ];
 
-},{"./common":36,"./utils":46}],39:[function(require,module,exports){
+},{"./common":35,"./utils":45}],38:[function(require,module,exports){
 'use strict';
 
 exports.sha1 = require('./sha/1');
@@ -13629,7 +13291,7 @@ exports.sha256 = require('./sha/256');
 exports.sha384 = require('./sha/384');
 exports.sha512 = require('./sha/512');
 
-},{"./sha/1":40,"./sha/224":41,"./sha/256":42,"./sha/384":43,"./sha/512":44}],40:[function(require,module,exports){
+},{"./sha/1":39,"./sha/224":40,"./sha/256":41,"./sha/384":42,"./sha/512":43}],39:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -13705,7 +13367,7 @@ SHA1.prototype._digest = function digest(enc) {
     return utils.split32(this.h, 'big');
 };
 
-},{"../common":36,"../utils":46,"./common":45}],41:[function(require,module,exports){
+},{"../common":35,"../utils":45,"./common":44}],40:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -13737,7 +13399,7 @@ SHA224.prototype._digest = function digest(enc) {
 };
 
 
-},{"../utils":46,"./256":42}],42:[function(require,module,exports){
+},{"../utils":45,"./256":41}],41:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -13844,7 +13506,7 @@ SHA256.prototype._digest = function digest(enc) {
     return utils.split32(this.h, 'big');
 };
 
-},{"../common":36,"../utils":46,"./common":45,"minimalistic-assert":49}],43:[function(require,module,exports){
+},{"../common":35,"../utils":45,"./common":44,"minimalistic-assert":48}],42:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -13881,7 +13543,7 @@ SHA384.prototype._digest = function digest(enc) {
     return utils.split32(this.h.slice(0, 12), 'big');
 };
 
-},{"../utils":46,"./512":44}],44:[function(require,module,exports){
+},{"../utils":45,"./512":43}],43:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -14213,7 +13875,7 @@ function g1_512_lo(xh, xl) {
   return r;
 }
 
-},{"../common":36,"../utils":46,"minimalistic-assert":49}],45:[function(require,module,exports){
+},{"../common":35,"../utils":45,"minimalistic-assert":48}],44:[function(require,module,exports){
 'use strict';
 
 var utils = require('../utils');
@@ -14264,7 +13926,7 @@ function g1_256(x) {
 }
 exports.g1_256 = g1_256;
 
-},{"../utils":46}],46:[function(require,module,exports){
+},{"../utils":45}],45:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -14519,7 +14181,7 @@ function shr64_lo(ah, al, num) {
 }
 exports.shr64_lo = shr64_lo;
 
-},{"inherits":48,"minimalistic-assert":49}],47:[function(require,module,exports){
+},{"inherits":47,"minimalistic-assert":48}],46:[function(require,module,exports){
 'use strict';
 
 var hash = require('hash.js');
@@ -14634,7 +14296,7 @@ HmacDRBG.prototype.generate = function generate(len, enc, add, addEnc) {
   return utils.encode(res, enc);
 };
 
-},{"hash.js":35,"minimalistic-assert":49,"minimalistic-crypto-utils":50}],48:[function(require,module,exports){
+},{"hash.js":34,"minimalistic-assert":48,"minimalistic-crypto-utils":49}],47:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -14659,7 +14321,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],49:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 module.exports = assert;
 
 function assert(val, msg) {
@@ -14672,7 +14334,7 @@ assert.equal = function assertEqual(l, r, msg) {
     throw new Error(msg || ('Assertion failed: ' + l + ' != ' + r));
 };
 
-},{}],50:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict';
 
 var utils = exports;
@@ -14732,7 +14394,7 @@ utils.encode = function encode(arr, enc) {
     return arr;
 };
 
-},{}],51:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 // Top level file is just a mixin of submodules & constants
 'use strict';
 
@@ -14748,7 +14410,7 @@ assign(pako, deflate, inflate, constants);
 
 module.exports = pako;
 
-},{"./lib/deflate":52,"./lib/inflate":53,"./lib/utils/common":54,"./lib/zlib/constants":57}],52:[function(require,module,exports){
+},{"./lib/deflate":51,"./lib/inflate":52,"./lib/utils/common":53,"./lib/zlib/constants":56}],51:[function(require,module,exports){
 'use strict';
 
 
@@ -15150,7 +14812,7 @@ exports.deflate = deflate;
 exports.deflateRaw = deflateRaw;
 exports.gzip = gzip;
 
-},{"./utils/common":54,"./utils/strings":55,"./zlib/deflate":59,"./zlib/messages":64,"./zlib/zstream":66}],53:[function(require,module,exports){
+},{"./utils/common":53,"./utils/strings":54,"./zlib/deflate":58,"./zlib/messages":63,"./zlib/zstream":65}],52:[function(require,module,exports){
 'use strict';
 
 
@@ -15570,7 +15232,7 @@ exports.inflate = inflate;
 exports.inflateRaw = inflateRaw;
 exports.ungzip  = inflate;
 
-},{"./utils/common":54,"./utils/strings":55,"./zlib/constants":57,"./zlib/gzheader":60,"./zlib/inflate":62,"./zlib/messages":64,"./zlib/zstream":66}],54:[function(require,module,exports){
+},{"./utils/common":53,"./utils/strings":54,"./zlib/constants":56,"./zlib/gzheader":59,"./zlib/inflate":61,"./zlib/messages":63,"./zlib/zstream":65}],53:[function(require,module,exports){
 'use strict';
 
 
@@ -15677,7 +15339,7 @@ exports.setTyped = function (on) {
 
 exports.setTyped(TYPED_OK);
 
-},{}],55:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 // String encode/decode helpers
 'use strict';
 
@@ -15864,7 +15526,7 @@ exports.utf8border = function (buf, max) {
   return (pos + _utf8len[buf[pos]] > max) ? pos : max;
 };
 
-},{"./common":54}],56:[function(require,module,exports){
+},{"./common":53}],55:[function(require,module,exports){
 'use strict';
 
 // Note: adler32 takes 12% for level 0 and 2% for level 6.
@@ -15917,7 +15579,7 @@ function adler32(adler, buf, len, pos) {
 
 module.exports = adler32;
 
-},{}],57:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -15987,7 +15649,7 @@ module.exports = {
   //Z_NULL:                 null // Use -1 or null inline, depending on var type
 };
 
-},{}],58:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 'use strict';
 
 // Note: we can't get significant speed boost here.
@@ -16048,7 +15710,7 @@ function crc32(crc, buf, len, pos) {
 
 module.exports = crc32;
 
-},{}],59:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -17924,7 +17586,7 @@ exports.deflatePrime = deflatePrime;
 exports.deflateTune = deflateTune;
 */
 
-},{"../utils/common":54,"./adler32":56,"./crc32":58,"./messages":64,"./trees":65}],60:[function(require,module,exports){
+},{"../utils/common":53,"./adler32":55,"./crc32":57,"./messages":63,"./trees":64}],59:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -17984,7 +17646,7 @@ function GZheader() {
 
 module.exports = GZheader;
 
-},{}],61:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -18331,7 +17993,7 @@ module.exports = function inflate_fast(strm, start) {
   return;
 };
 
-},{}],62:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -19889,7 +19551,7 @@ exports.inflateSyncPoint = inflateSyncPoint;
 exports.inflateUndermine = inflateUndermine;
 */
 
-},{"../utils/common":54,"./adler32":56,"./crc32":58,"./inffast":61,"./inftrees":63}],63:[function(require,module,exports){
+},{"../utils/common":53,"./adler32":55,"./crc32":57,"./inffast":60,"./inftrees":62}],62:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -20234,7 +19896,7 @@ module.exports = function inflate_table(type, lens, lens_index, codes, table, ta
   return 0;
 };
 
-},{"../utils/common":54}],64:[function(require,module,exports){
+},{"../utils/common":53}],63:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -20268,7 +19930,7 @@ module.exports = {
   '-6':   'incompatible version' /* Z_VERSION_ERROR (-6) */
 };
 
-},{}],65:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -21490,7 +21152,7 @@ exports._tr_flush_block  = _tr_flush_block;
 exports._tr_tally = _tr_tally;
 exports._tr_align = _tr_align;
 
-},{"../utils/common":54}],66:[function(require,module,exports){
+},{"../utils/common":53}],65:[function(require,module,exports){
 'use strict';
 
 // (C) 1995-2013 Jean-loup Gailly and Mark Adler
@@ -21539,7 +21201,7 @@ function ZStream() {
 
 module.exports = ZStream;
 
-},{}],67:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -21725,7 +21387,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],68:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 'use strict';
 
 /*
@@ -21823,7 +21485,7 @@ function bufToHex(buf) {
 
 module.exports = BitReader;
 
-},{}],69:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 "use strict";
 
 /* CRC32, used in Bzip2 implementation.
@@ -21898,7 +21560,7 @@ module.exports = function () {
   return CRC32;
 }();
 
-},{}],70:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 'use strict';
 
 /*
@@ -22496,7 +22158,7 @@ Bunzip.Stream = Stream;
 
 module.exports = Bunzip;
 
-},{"./bitreader":68,"./crc32":69,"./stream":71}],71:[function(require,module,exports){
+},{"./bitreader":67,"./crc32":68,"./stream":70}],70:[function(require,module,exports){
 "use strict";
 
 /* very simple input/output stream interface */
@@ -22541,7 +22203,7 @@ Stream.prototype.flush = function () {};
 
 module.exports = Stream;
 
-},{}],72:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 'use strict';
 
 // This is free and unencumbered software released into the public domain.
@@ -23184,7 +22846,7 @@ function UTF8Encoder(options) {
 
 exports.TextEncoder = TextEncoder;
 exports.TextDecoder = TextDecoder;
-},{}],73:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 /*jshint bitwise: false*/
 
 (function(nacl) {
@@ -24122,7 +23784,7 @@ nacl.setPRNG = function(fn) {
 
 })(typeof module !== 'undefined' && module.exports ? module.exports : (self.nacl = self.nacl || {}));
 
-},{"crypto":"crypto"}],74:[function(require,module,exports){
+},{"crypto":"crypto"}],73:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24238,7 +23900,7 @@ if (NodeReadableStream) {
 exports.nodeToWeb = nodeToWeb;
 exports.webToNode = webToNode;
 
-},{"./streams":76,"./util":77,"stream":"stream"}],75:[function(require,module,exports){
+},{"./streams":75,"./util":76,"stream":"stream"}],74:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24442,7 +24104,7 @@ Reader.prototype.readToEnd = async function (join = _streams2.default.concat) {
 exports.Reader = Reader;
 exports.externalBuffer = externalBuffer;
 
-},{"./streams":76}],76:[function(require,module,exports){
+},{"./streams":75}],75:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -24904,7 +24566,7 @@ function fromAsync(fn) {
 exports.default = { isStream: _util.isStream, isUint8Array: _util.isUint8Array, toStream, concatUint8Array: _util.concatUint8Array, concatStream, concat, getReader, getWriter, pipe, transformRaw, transform, transformPair, parse, clone, passiveClone, slice, readToEnd, cancel, fromAsync, nodeToWeb: _nodeConversions.nodeToWeb, webToNode: _nodeConversions.webToNode };
 
 }).call(this,require('_process'))
-},{"./node-conversions":74,"./reader":75,"./util":77,"_process":67,"buffer":"buffer"}],77:[function(require,module,exports){
+},{"./node-conversions":73,"./reader":74,"./util":76,"_process":66,"buffer":"buffer"}],76:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -24972,7 +24634,7 @@ exports.isUint8Array = isUint8Array;
 exports.concatUint8Array = concatUint8Array;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"stream":"stream"}],78:[function(require,module,exports){
+},{"stream":"stream"}],77:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25088,7 +24750,7 @@ CleartextMessage.prototype.signDetached = async function (privateKeys, signature
   const literalDataPacket = new _packet2.default.Literal();
   literalDataPacket.setText(this.text);
 
-  return new _signature.Signature((await (0, _message.createSignaturePackets)(literalDataPacket, privateKeys, signature, date, userIds)));
+  return new _signature.Signature((await (0, _message.createSignaturePackets)(literalDataPacket, privateKeys, signature, date, userIds, true)));
 };
 
 /**
@@ -25114,7 +24776,7 @@ CleartextMessage.prototype.verifyDetached = function (signature, keys, date = ne
   const literalDataPacket = new _packet2.default.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  return (0, _message.createVerificationObjects)(signatureList, [literalDataPacket], keys, date);
+  return (0, _message.createVerificationObjects)(signatureList, [literalDataPacket], keys, date, true);
 };
 
 /**
@@ -25219,7 +24881,7 @@ function fromText(text) {
   return new CleartextMessage(text);
 }
 
-},{"./encoding/armor":112,"./enums":114,"./message":121,"./packet":126,"./signature":146,"./util":153}],79:[function(require,module,exports){
+},{"./encoding/armor":111,"./enums":113,"./message":120,"./packet":125,"./signature":145,"./util":152}],78:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -25258,19 +24920,11 @@ exports.default = {
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
    * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
    * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
+   * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-07|RFC4880bis-07}
    * @memberof module:config
    * @property {Boolean} aead_protect
    */
   aead_protect: false,
-  /**
-   * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
-   * 0 means we implement a variant of {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00|this IETF draft}.
-   * 4 means we implement {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04|RFC4880bis-04}.
-   * Note that this determines how AEAD packets are parsed even when aead_protect is set to false
-   * @memberof module:config
-   * @property {Integer} aead_protect_version
-   */
-  aead_protect_version: 4,
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aead_protect is set to true.
@@ -25286,6 +24940,14 @@ exports.default = {
    * @property {Integer} aead_chunk_size_byte
    */
   aead_chunk_size_byte: 12,
+  /**
+   * Use V5 keys.
+   * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
+   * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
+   * @memberof module:config
+   * @property {Boolean} v5_keys
+   */
+  v5_keys: false,
   /**
    * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
    * Iteration Count Byte for S2K (String to Key)
@@ -25371,7 +25033,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.5.5",
+  versionstring: "OpenPGP.js v4.6.0",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -25423,7 +25085,7 @@ exports.default = {
  * @requires enums
  */
 
-},{"../enums":114}],80:[function(require,module,exports){
+},{"../enums":113}],79:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25441,7 +25103,7 @@ Object.defineProperty(exports, 'default', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-},{"./config.js":79}],81:[function(require,module,exports){
+},{"./config.js":78}],80:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25611,7 +25273,7 @@ exports.default = {
   unwrap
 };
 
-},{"../util":153,"./cipher":87}],82:[function(require,module,exports){
+},{"../util":152,"./cipher":86}],81:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25784,7 +25446,7 @@ function nodeDecrypt(algo, key, ct, iv) {
   return _webStreamTools2.default.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
 }
 
-},{"../config":80,"../util":153,"./cipher":87,"asmcrypto.js/dist_es5/aes/cfb":6,"web-stream-tools":76}],83:[function(require,module,exports){
+},{"../config":79,"../util":152,"./cipher":86,"asmcrypto.js/dist_es5/aes/cfb":5,"web-stream-tools":75}],82:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25817,7 +25479,7 @@ function aes(length) {
 
 exports.default = aes;
 
-},{"asmcrypto.js/dist_es5/aes/ecb":8}],84:[function(require,module,exports){
+},{"asmcrypto.js/dist_es5/aes/ecb":7}],83:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -26037,7 +25699,7 @@ BF.blockSize = BF.prototype.blockSize = 16;
 
 exports.default = BF;
 
-},{}],85:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26387,7 +26049,7 @@ Cast5.keySize = Cast5.prototype.keySize = 16;
 
 exports.default = Cast5;
 
-},{}],86:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -26767,7 +26429,7 @@ function DES(key) {
 
 exports.default = { DES, TripleDES };
 
-},{}],87:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26880,7 +26542,7 @@ exports.default = {
     * @module crypto/cipher
     */
 
-},{"./aes":83,"./blowfish":84,"./cast5":85,"./des.js":86,"./twofish":88}],88:[function(require,module,exports){
+},{"./aes":82,"./blowfish":83,"./cast5":84,"./des.js":85,"./twofish":87}],87:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -27196,7 +26858,7 @@ TF.blockSize = TF.prototype.blockSize = 16;
 
 exports.default = TF;
 
-},{}],89:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27307,7 +26969,7 @@ async function CBC(key) {
   };
 }
 
-},{"../util":153,"asmcrypto.js/dist_es5/aes/cbc":5}],90:[function(require,module,exports){
+},{"../util":152,"asmcrypto.js/dist_es5/aes/cbc":4}],89:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27455,7 +27117,7 @@ exports.default = {
 
   /**
    * Decrypts data using specified algorithm and private key parameters.
-   * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1} for public key algorithms.
+   * See {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 5.5.3}
    * @param {module:enums.publicKey}        algo        Public key algorithm
    * @param {Array<module:type/mpi|
                    module:type/oid|
@@ -27478,7 +27140,7 @@ exports.default = {
           const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
           const p = key_params[3].toBN();
           const q = key_params[4].toBN();
-          const u = key_params[5].toBN(); // q^-1 mod p
+          const u = key_params[5].toBN(); // p^-1 mod q
           return _public_key2.default.rsa.decrypt(c, n, e, d, p, q, u);
         }
       case _enums2.default.publicKey.elgamal:
@@ -27495,8 +27157,9 @@ exports.default = {
           const kdf_params = key_params[2];
           const V = data_params[0].toUint8Array();
           const C = data_params[1].data;
+          const Q = key_params[1].toUint8Array();
           const d = key_params[3].toUint8Array();
-          return _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, d, fingerprint);
+          return _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint);
         }
       default:
         throw new Error('Invalid public key encryption algorithm.');
@@ -27669,7 +27332,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":114,"../type/ecdh_symkey":147,"../type/kdf_params":148,"../type/mpi":150,"../type/oid":151,"../util":153,"./cipher":87,"./public_key":107,"./random":110,"bn.js":17}],91:[function(require,module,exports){
+},{"../enums":113,"../type/ecdh_symkey":146,"../type/kdf_params":147,"../type/mpi":149,"../type/oid":150,"../util":152,"./cipher":86,"./public_key":106,"./random":109,"bn.js":16}],90:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -27849,7 +27512,7 @@ EAX.tagLength = tagLength;
 
 exports.default = EAX;
 
-},{"../util":153,"./cmac":89,"asmcrypto.js/dist_es5/aes/ctr":7}],92:[function(require,module,exports){
+},{"../util":152,"./cmac":88,"asmcrypto.js/dist_es5/aes/ctr":6}],91:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28002,7 +27665,7 @@ GCM.tagLength = tagLength;
 
 exports.default = GCM;
 
-},{"../util":153,"asmcrypto.js/dist_es5/aes/gcm":9}],93:[function(require,module,exports){
+},{"../util":152,"asmcrypto.js/dist_es5/aes/gcm":8}],92:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28206,7 +27869,7 @@ exports.default = {
   }
 };
 
-},{"../../config":80,"../../util":153,"./md5":94,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14,"hash.js/lib/hash/ripemd":38,"hash.js/lib/hash/sha/224":41,"hash.js/lib/hash/sha/384":43,"hash.js/lib/hash/sha/512":44,"web-stream-tools":76}],94:[function(require,module,exports){
+},{"../../config":79,"../../util":152,"./md5":93,"asmcrypto.js/dist_es5/hash/sha1/sha1":11,"asmcrypto.js/dist_es5/hash/sha256/sha256":13,"hash.js/lib/hash/ripemd":37,"hash.js/lib/hash/sha/224":40,"hash.js/lib/hash/sha/384":42,"hash.js/lib/hash/sha/512":43,"web-stream-tools":75}],93:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28421,7 +28084,7 @@ function add32(a, b) {
 
 exports.default = md5;
 
-},{"../../util":153}],95:[function(require,module,exports){
+},{"../../util":152}],94:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28524,7 +28187,7 @@ Object.assign(mod, _crypto2.default);
 
 exports.default = mod;
 
-},{"./aes_kw":81,"./cfb":82,"./cipher":87,"./crypto":90,"./eax":91,"./gcm":92,"./hash":93,"./ocb":96,"./pkcs1":97,"./pkcs5":98,"./public_key":107,"./random":110,"./signature":111}],96:[function(require,module,exports){
+},{"./aes_kw":80,"./cfb":81,"./cipher":86,"./crypto":89,"./eax":90,"./gcm":91,"./hash":92,"./ocb":95,"./pkcs1":96,"./pkcs5":97,"./public_key":106,"./random":109,"./signature":110}],95:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28808,7 +28471,7 @@ OCB.tagLength = tagLength;
 
 exports.default = OCB;
 
-},{"../util":153,"./cipher":87}],97:[function(require,module,exports){
+},{"../util":152,"./cipher":86}],96:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28983,7 +28646,7 @@ emsa.encode = async function (algo, hashed, emLen) {
 
 exports.default = { eme, emsa };
 
-},{"../util":153,"./hash":93,"./random":110}],98:[function(require,module,exports){
+},{"../util":152,"./hash":92,"./random":109}],97:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29045,7 +28708,7 @@ function decode(msg) {
 
 exports.default = { encode, decode };
 
-},{}],99:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29125,7 +28788,7 @@ exports.default = {
     // of leftmost bits equal to the number of bits of q.  This (possibly
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
-    const h = new _bn2.default(_util2.default.getLeftNBits(hashed, q.bitLength())).toRed(redq);
+    const h = new _bn2.default(hashed.subarray(0, q.byteLength())).toRed(redq);
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
     // If either r = 0 or s = 0, a new value of k shall be generated, and the
@@ -29145,8 +28808,10 @@ exports.default = {
       }
       break;
     }
-    return { r: r.toArrayLike(Uint8Array),
-      s: s.toArrayLike(Uint8Array) };
+    return {
+      r: r.toArrayLike(Uint8Array, 'be', q.byteLength()),
+      s: s.toArrayLike(Uint8Array, 'be', q.byteLength())
+    };
   },
 
   /**
@@ -29169,7 +28834,7 @@ exports.default = {
     }
     const redp = new _bn2.default.red(p);
     const redq = new _bn2.default.red(q);
-    const h = new _bn2.default(_util2.default.getLeftNBits(hashed, q.bitLength()));
+    const h = new _bn2.default(hashed.subarray(0, q.byteLength()));
     const w = s.toRed(redq).redInvm(); // s**-1 mod q
     if (zero.cmp(w) === 0) {
       _util2.default.print_debug("invalid DSA Signature");
@@ -29184,7 +28849,7 @@ exports.default = {
   }
 };
 
-},{"../../util":153,"../random":110,"bn.js":17}],100:[function(require,module,exports){
+},{"../../util":152,"../random":109,"bn.js":16}],99:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29267,7 +28932,7 @@ exports.default = {
   }
 };
 
-},{"../random":110,"bn.js":17}],101:[function(require,module,exports){
+},{"../random":109,"bn.js":16}],100:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29360,7 +29025,8 @@ const curves = {
     cipher: _enums2.default.symmetric.aes128,
     node: nodeCurves.p256,
     web: webCurves.p256,
-    payloadSize: 32
+    payloadSize: 32,
+    sharedSize: 256
   },
   p384: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
@@ -29369,7 +29035,8 @@ const curves = {
     cipher: _enums2.default.symmetric.aes192,
     node: nodeCurves.p384,
     web: webCurves.p384,
-    payloadSize: 48
+    payloadSize: 48,
+    sharedSize: 384
   },
   p521: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23],
@@ -29378,7 +29045,8 @@ const curves = {
     cipher: _enums2.default.symmetric.aes256,
     node: nodeCurves.p521,
     web: webCurves.p521,
-    payloadSize: 66
+    payloadSize: 66,
+    sharedSize: 528
   },
   secp256k1: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x0A],
@@ -29561,12 +29229,43 @@ async function nodeGenKeyPair(name) {
   };
 }
 
-},{"../../../enums":114,"../../../type/oid":151,"../../../util":153,"../../random":110,"./key":106,"bn.js":17,"elliptic":19}],102:[function(require,module,exports){
+},{"../../../enums":113,"../../../type/oid":150,"../../../util":152,"../../random":109,"./key":105,"bn.js":16,"elliptic":18}],101:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); // OpenPGP.js - An OpenPGP implementation in javascript
+// Copyright (C) 2015-2016 Decentral
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @fileoverview Key encryption and decryption for RFC 6637 ECDH
+ * @requires bn.js
+ * @requires tweetnacl
+ * @requires crypto/public_key/elliptic/curve
+ * @requires crypto/aes_kw
+ * @requires crypto/cipher
+ * @requires crypto/hash
+ * @requires type/kdf_params
+ * @requires enums
+ * @requires util
+ * @module crypto/public_key/elliptic/ecdh
+ */
 
 var _bn = require('bn.js');
 
@@ -29606,6 +29305,9 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+const webCrypto = _util2.default.getWebCrypto();
+const nodeCrypto = _util2.default.getNodeCrypto();
+
 // Build Param for ECDH algorithm (RFC 6637)
 function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
   const kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
@@ -29613,37 +29315,6 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
 }
 
 // Key Derivation Function (RFC 6637)
-// OpenPGP.js - An OpenPGP implementation in javascript
-// Copyright (C) 2015-2016 Decentral
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @fileoverview Key encryption and decryption for RFC 6637 ECDH
- * @requires bn.js
- * @requires tweetnacl
- * @requires crypto/public_key/elliptic/curve
- * @requires crypto/aes_kw
- * @requires crypto/cipher
- * @requires crypto/hash
- * @requires type/kdf_params
- * @requires enums
- * @requires util
- * @module crypto/public_key/elliptic/ecdh
- */
-
 async function kdf(hash_algo, X, length, param, stripLeading = false, stripTrailing = false) {
   // Note: X is little endian for Curve25519, big-endian for all others.
   // This is not ideal, but the RFC's are unclear
@@ -29667,35 +29338,47 @@ async function kdf(hash_algo, X, length, param, stripLeading = false, stripTrail
  * Generate ECDHE ephemeral key and secret from public key
  *
  * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             Q                   Recipient public key
- * @returns {Promise<{V: Uint8Array, S: BN}>}   Returns public part of ephemeral key and generated ephemeral secret
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function genPublicEphemeralKey(curve, Q) {
-  if (curve.name === 'curve25519') {
-    var _nacl$box$keyPair = _naclFastLight2.default.box.keyPair();
+  switch (curve.name) {
+    case 'curve25519':
+      {
+        var _nacl$box$keyPair = _naclFastLight2.default.box.keyPair();
 
-    const d = _nacl$box$keyPair.secretKey;
+        const d = _nacl$box$keyPair.secretKey;
 
-    var _ref = await genPrivateEphemeralKey(curve, Q, d);
+        var _ref = await genPrivateEphemeralKey(curve, Q, null, d);
 
-    const secretKey = _ref.secretKey,
-          sharedKey = _ref.sharedKey;
+        const secretKey = _ref.secretKey,
+              sharedKey = _ref.sharedKey;
 
-    var _nacl$box$keyPair$fro = _naclFastLight2.default.box.keyPair.fromSecretKey(secretKey);
+        var _nacl$box$keyPair$fro = _naclFastLight2.default.box.keyPair.fromSecretKey(secretKey);
 
-    let publicKey = _nacl$box$keyPair$fro.publicKey;
+        let publicKey = _nacl$box$keyPair$fro.publicKey;
 
-    publicKey = _util2.default.concatUint8Array([new Uint8Array([0x40]), publicKey]);
-    return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
+        publicKey = _util2.default.concatUint8Array([new Uint8Array([0x40]), publicKey]);
+        return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
+      }
+    case 'p256':
+    case 'p384':
+    case 'p521':
+      {
+        if (curve.web && _util2.default.getWebCrypto()) {
+          try {
+            return await webPublicEphemeralKey(curve, Q);
+          } catch (err) {
+            _util2.default.print_debug_error(err);
+          }
+        }
+      }
   }
-  const v = await curve.genKeyPair();
-  Q = curve.keyFromPublic(Q);
-  const publicKey = new Uint8Array(v.getPublic());
-  const S = v.derive(Q);
-  const len = curve.curve.curve.p.byteLength();
-  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
-  return { publicKey, sharedKey };
+  if (curve.node && nodeCrypto) {
+    return nodePublicEphemeralKey(curve, Q);
+  }
+  return ellipticPublicEphemeralKey(curve, Q);
 }
 
 /**
@@ -29707,7 +29390,7 @@ async function genPublicEphemeralKey(curve, Q) {
  * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<{V: BN, C: BN}>}            Returns public part of ephemeral key and encoded session key
+ * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
 async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
@@ -29730,28 +29413,41 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  *
  * @param  {Curve}                  curve        Elliptic curve object
  * @param  {Uint8Array}             V            Public part of ephemeral key
+ * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
- * @returns {Promise<BN>}                        Generated ephemeral secret
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
-async function genPrivateEphemeralKey(curve, V, d) {
-  if (curve.name === 'curve25519') {
-    const one = new _bn2.default(1);
-    const mask = one.ushln(255 - 3).sub(one).ushln(3);
-    let secretKey = new _bn2.default(d);
-    secretKey = secretKey.or(one.ushln(255 - 1));
-    secretKey = secretKey.and(mask);
-    secretKey = secretKey.toArrayLike(Uint8Array, 'le', 32);
-    const sharedKey = _naclFastLight2.default.scalarMult(secretKey, V.subarray(1));
-    return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
+async function genPrivateEphemeralKey(curve, V, Q, d) {
+  switch (curve.name) {
+    case 'curve25519':
+      {
+        const one = new _bn2.default(1);
+        const mask = one.ushln(255 - 3).sub(one).ushln(3);
+        let secretKey = new _bn2.default(d);
+        secretKey = secretKey.or(one.ushln(255 - 1));
+        secretKey = secretKey.and(mask);
+        secretKey = secretKey.toArrayLike(Uint8Array, 'le', 32);
+        const sharedKey = _naclFastLight2.default.scalarMult(secretKey, V.subarray(1));
+        return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
+      }
+    case 'p256':
+    case 'p384':
+    case 'p521':
+      {
+        if (curve.web && _util2.default.getWebCrypto()) {
+          try {
+            return await webPrivateEphemeralKey(curve, V, Q, d);
+          } catch (err) {
+            _util2.default.print_debug_error(err);
+          }
+        }
+      }
   }
-  V = curve.keyFromPublic(V);
-  d = curve.keyFromPrivate(d);
-  const secretKey = new Uint8Array(d.getPrivate());
-  const S = d.derive(V);
-  const len = curve.curve.curve.p.byteLength();
-  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
-  return { secretKey, sharedKey };
+  if (curve.node && nodeCrypto) {
+    return nodePrivateEphemeralKey(curve, V, d);
+  }
+  return ellipticPrivateEphemeralKey(curve, V, d);
 }
 
 /**
@@ -29762,15 +29458,16 @@ async function genPrivateEphemeralKey(curve, V, d) {
  * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
  * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
+ * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {String}                 fingerprint  Recipient fingerprint
- * @returns {Promise<BN>}                        Value derived from session
+ * @returns {Promise<BN>}                        Value derived from session key
  * @async
  */
-async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
+async function decrypt(oid, cipher_algo, hash_algo, V, C, Q, d, fingerprint) {
   const curve = new _curves2.default(oid);
 
-  var _ref3 = await genPrivateEphemeralKey(curve, V, d);
+  var _ref3 = await genPrivateEphemeralKey(curve, V, Q, d);
 
   const sharedKey = _ref3.sharedKey;
 
@@ -29789,9 +29486,220 @@ async function decrypt(oid, cipher_algo, hash_algo, V, C, d, fingerprint) {
   throw err;
 }
 
-exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf };
+/**
+ * Generate ECDHE secret from private key and public part of ephemeral key using webCrypto
+ *
+ * @param  {Curve}                  curve         Elliptic curve object
+ * @param  {Uint8Array}             V             Public part of ephemeral key
+ * @param  {Uint8Array}             Q             Recipient public key
+ * @param  {Uint8Array}             d             Recipient private key
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function webPrivateEphemeralKey(curve, V, Q, d) {
+  const recipient = privateToJwk(curve.payloadSize, curve.web.web, d, Q);
+  let privateKey = webCrypto.importKey("jwk", recipient, {
+    name: "ECDH",
+    namedCurve: curve.web.web
+  }, true, ["deriveKey", "deriveBits"]);
+  const jwk = rawPublicToJwk(curve.payloadSize, curve.web.web, V);
+  let sender = webCrypto.importKey("jwk", jwk, {
+    name: "ECDH",
+    namedCurve: curve.web.web
+  }, true, []);
 
-},{"../../../enums":114,"../../../type/kdf_params":148,"../../../util":153,"../../aes_kw":81,"../../cipher":87,"../../hash":93,"./curves":101,"bn.js":17,"tweetnacl/nacl-fast-light.js":73}],103:[function(require,module,exports){
+  var _ref4 = await Promise.all([privateKey, sender]);
+
+  var _ref5 = _slicedToArray(_ref4, 2);
+
+  privateKey = _ref5[0];
+  sender = _ref5[1];
+
+  let S = webCrypto.deriveBits({
+    name: "ECDH",
+    namedCurve: curve.web.web,
+    public: sender
+  }, privateKey, curve.web.sharedSize);
+  let secret = webCrypto.exportKey("jwk", privateKey);
+
+  var _ref6 = await Promise.all([S, secret]);
+
+  var _ref7 = _slicedToArray(_ref6, 2);
+
+  S = _ref7[0];
+  secret = _ref7[1];
+
+  const sharedKey = new Uint8Array(S);
+  const secretKey = _util2.default.b64_to_Uint8Array(secret.d, true);
+  return { secretKey, sharedKey };
+}
+
+/**
+ * Generate ECDHE ephemeral key and secret from public key using webCrypto
+ *
+ * @param  {Curve}                  curve        Elliptic curve object
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function webPublicEphemeralKey(curve, Q) {
+  const jwk = rawPublicToJwk(curve.payloadSize, curve.web.web, Q);
+  let keyPair = webCrypto.generateKey({
+    name: "ECDH",
+    namedCurve: curve.web.web
+  }, true, ["deriveKey", "deriveBits"]);
+  let recipient = webCrypto.importKey("jwk", jwk, {
+    name: "ECDH",
+    namedCurve: curve.web.web
+  }, false, []);
+
+  var _ref8 = await Promise.all([keyPair, recipient]);
+
+  var _ref9 = _slicedToArray(_ref8, 2);
+
+  keyPair = _ref9[0];
+  recipient = _ref9[1];
+
+  let s = webCrypto.deriveBits({
+    name: "ECDH",
+    namedCurve: curve.web.web,
+    public: recipient
+  }, keyPair.privateKey, curve.web.sharedSize);
+  let p = webCrypto.exportKey("jwk", keyPair.publicKey);
+
+  var _ref10 = await Promise.all([s, p]);
+
+  var _ref11 = _slicedToArray(_ref10, 2);
+
+  s = _ref11[0];
+  p = _ref11[1];
+
+  const sharedKey = new Uint8Array(s);
+  const publicKey = new Uint8Array(jwkToRawPublic(p));
+  return { publicKey, sharedKey };
+}
+
+/**
+ * Generate ECDHE secret from private key and public part of ephemeral key using indutny/elliptic
+ *
+ * @param  {Curve}                  curve        Elliptic curve object
+ * @param  {Uint8Array}             V            Public part of ephemeral key
+ * @param  {Uint8Array}             d            Recipient private key
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function ellipticPrivateEphemeralKey(curve, V, d) {
+  V = curve.keyFromPublic(V);
+  d = curve.keyFromPrivate(d);
+  const secretKey = new Uint8Array(d.getPrivate());
+  const S = d.derive(V);
+  const len = curve.curve.curve.p.byteLength();
+  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
+  return { secretKey, sharedKey };
+}
+
+/**
+ * Generate ECDHE ephemeral key and secret from public key using indutny/elliptic
+ *
+ * @param  {Curve}                  curve        Elliptic curve object
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function ellipticPublicEphemeralKey(curve, Q) {
+  const v = await curve.genKeyPair();
+  Q = curve.keyFromPublic(Q);
+  const publicKey = new Uint8Array(v.getPublic());
+  const S = v.derive(Q);
+  const len = curve.curve.curve.p.byteLength();
+  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
+  return { publicKey, sharedKey };
+}
+
+/**
+ * Generate ECDHE secret from private key and public part of ephemeral key using nodeCrypto
+ *
+ * @param  {Curve}                  curve          Elliptic curve object
+ * @param  {Uint8Array}             V              Public part of ephemeral key
+ * @param  {Uint8Array}             d              Recipient private key
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function nodePrivateEphemeralKey(curve, V, d) {
+  const recipient = nodeCrypto.createECDH(curve.node.node);
+  recipient.setPrivateKey(d);
+  const sharedKey = new Uint8Array(recipient.computeSecret(V));
+  const secretKey = new Uint8Array(recipient.getPrivateKey());
+  return { secretKey, sharedKey };
+}
+
+/**
+ * Generate ECDHE ephemeral key and secret from public key using nodeCrypto
+ *
+ * @param  {Curve}                  curve        Elliptic curve object
+ * @param  {Uint8Array}             Q            Recipient public key
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
+ * @async
+ */
+async function nodePublicEphemeralKey(curve, Q) {
+  const sender = nodeCrypto.createECDH(curve.node.node);
+  sender.generateKeys();
+  const sharedKey = new Uint8Array(sender.computeSecret(Q));
+  const publicKey = new Uint8Array(sender.getPublicKey());
+  return { publicKey, sharedKey };
+}
+
+/**
+ * @param  {Integer}                payloadSize  ec payload size
+ * @param  {String}                 name         curve name
+ * @param  {Uint8Array}             publicKey    public key
+ * @returns {JsonWebKey}                         public key in jwk format
+ */
+function rawPublicToJwk(payloadSize, name, publicKey) {
+  const len = payloadSize;
+  const bufX = publicKey.slice(1, len + 1);
+  const bufY = publicKey.slice(len + 1, len * 2 + 1);
+  // https://www.rfc-editor.org/rfc/rfc7518.txt
+  const jwKey = {
+    kty: "EC",
+    crv: name,
+    x: _util2.default.Uint8Array_to_b64(bufX, true),
+    y: _util2.default.Uint8Array_to_b64(bufY, true),
+    ext: true
+  };
+  return jwKey;
+}
+
+/**
+ * @param  {Integer}                payloadSize  ec payload size
+ * @param  {String}                 name         curve name
+ * @param  {Uint8Array}             publicKey    public key
+ * @param  {Uint8Array}             privateKey   private key
+ * @returns {JsonWebKey}                         private key in jwk format
+ */
+function privateToJwk(payloadSize, name, privateKey, publicKey) {
+  const jwk = rawPublicToJwk(payloadSize, name, publicKey);
+  jwk.d = _util2.default.Uint8Array_to_b64(privateKey, true);
+  return jwk;
+}
+
+/**
+ * @param  {JsonWebKey}                jwk  key for conversion
+ * @returns {Uint8Array}                    raw public key
+ */
+function jwkToRawPublic(jwk) {
+  const bufX = _util2.default.b64_to_Uint8Array(jwk.x);
+  const bufY = _util2.default.b64_to_Uint8Array(jwk.y);
+  const publicKey = new Uint8Array(bufX.length + bufY.length + 1);
+  publicKey[0] = 0x04;
+  publicKey.set(bufX, 1);
+  publicKey.set(bufY, bufX.length + 1);
+  return publicKey;
+}
+
+exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey };
+
+},{"../../../enums":113,"../../../type/kdf_params":147,"../../../util":152,"../../aes_kw":80,"../../cipher":86,"../../hash":92,"./curves":100,"bn.js":16,"tweetnacl/nacl-fast-light.js":72}],102:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29819,8 +29727,10 @@ async function sign(oid, hash_algo, m, d, hashed) {
   const curve = new _curves2.default(oid);
   const key = curve.keyFromPrivate(d);
   const signature = await key.sign(m, hash_algo, hashed);
-  return { r: signature.r.toArrayLike(Uint8Array),
-    s: signature.s.toArrayLike(Uint8Array) };
+  return {
+    r: signature.r.toArrayLike(Uint8Array),
+    s: signature.s.toArrayLike(Uint8Array)
+  };
 }
 
 /**
@@ -29866,7 +29776,7 @@ async function verify(oid, hash_algo, signature, m, Q, hashed) {
 
 exports.default = { sign, verify };
 
-},{"./curves":101}],104:[function(require,module,exports){
+},{"./curves":100}],103:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -29958,7 +29868,7 @@ async function verify(oid, hash_algo, { R, S }, m, publicKey, hashed) {
 
 exports.default = { sign, verify };
 
-},{"../../../util":153,"hash.js/lib/hash/sha/512":44,"tweetnacl/nacl-fast-light.js":73}],105:[function(require,module,exports){
+},{"../../../util":152,"hash.js/lib/hash/sha/512":43,"tweetnacl/nacl-fast-light.js":72}],104:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30013,7 +29923,7 @@ exports.default = {
   Curve: _curves2.default, ecdh: _ecdh2.default, ecdsa: _ecdsa2.default, eddsa: _eddsa2.default, generate: _curves.generate, getPreferredHashAlgo: _curves.getPreferredHashAlgo
 };
 
-},{"./curves":101,"./ecdh":102,"./ecdsa":103,"./eddsa":104}],106:[function(require,module,exports){
+},{"./curves":100,"./ecdh":101,"./ecdsa":102,"./eddsa":103}],105:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30265,7 +30175,7 @@ const SubjectPublicKeyInfo = nodeCrypto ? asn1.define('SubjectPublicKeyInfo', fu
   this.seq().obj(this.key('algorithm').use(AlgorithmIdentifier), this.key('subjectPublicKey').bitstr());
 }) : undefined;
 
-},{"../../../enums":114,"../../../util":153,"./curves":101,"asn1.js":"asn1.js","bn.js":17,"web-stream-tools":76}],107:[function(require,module,exports){
+},{"../../../enums":113,"../../../util":152,"./curves":100,"asn1.js":"asn1.js","bn.js":16,"web-stream-tools":75}],106:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30315,7 +30225,7 @@ exports.default = {
     * @module crypto/public_key
     */
 
-},{"./dsa":99,"./elgamal":100,"./elliptic":105,"./rsa":109,"tweetnacl/nacl-fast-light.js":73}],108:[function(require,module,exports){
+},{"./dsa":98,"./elgamal":99,"./elliptic":104,"./rsa":108,"tweetnacl/nacl-fast-light.js":72}],107:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30527,7 +30437,7 @@ async function millerRabin(n, k, rand) {
   return true;
 }
 
-},{"../random":110,"bn.js":17}],109:[function(require,module,exports){
+},{"../random":109,"bn.js":16}],108:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30788,7 +30698,7 @@ exports.default = {
   prime: _prime2.default
 };
 
-},{"../../config":80,"../../util":153,"../random":110,"./prime":108,"bn.js":17}],110:[function(require,module,exports){
+},{"../../config":79,"../../util":152,"../random":109,"./prime":107,"bn.js":16}],109:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30949,7 +30859,7 @@ RandomBuffer.prototype.get = async function (buf) {
   }
 };
 
-},{"../util":153,"bn.js":17,"crypto":"crypto"}],111:[function(require,module,exports){
+},{"../util":152,"bn.js":16,"crypto":"crypto"}],110:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31046,8 +30956,10 @@ exports.default = {
         {
           const oid = pub_MPIs[0];
           // EdDSA signature params are expected in little-endian format
-          const signature = { R: msg_MPIs[0].toUint8Array('le', 32),
-            S: msg_MPIs[1].toUint8Array('le', 32) };
+          const signature = {
+            R: msg_MPIs[0].toUint8Array('le', 32),
+            S: msg_MPIs[1].toUint8Array('le', 32)
+          };
           const Q = pub_MPIs[1].toUint8Array('be', 33);
           return _public_key2.default.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q, hashed);
         }
@@ -31119,7 +31031,7 @@ exports.default = {
   }
 };
 
-},{"../enums":114,"../util":153,"./crypto":90,"./pkcs1":97,"./public_key":107,"bn.js":17}],112:[function(require,module,exports){
+},{"../enums":113,"../util":152,"./crypto":89,"./pkcs1":96,"./public_key":106,"bn.js":16}],111:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31533,7 +31445,7 @@ exports.default = {
   decode: dearmor
 };
 
-},{"../config":80,"../enums.js":114,"../util":153,"./base64.js":113,"web-stream-tools":76}],113:[function(require,module,exports){
+},{"../config":79,"../enums.js":113,"../util":152,"./base64.js":112,"web-stream-tools":75}],112:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31679,7 +31591,7 @@ exports.default = {
   decode: r2s
 };
 
-},{"web-stream-tools":76}],114:[function(require,module,exports){
+},{"web-stream-tools":75}],113:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -32178,7 +32090,7 @@ exports.default = {
 
 };
 
-},{}],115:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32279,7 +32191,7 @@ HKP.prototype.upload = function (publicKeyArmored) {
 
 exports.default = HKP;
 
-},{"./config":80,"node-fetch":"node-fetch"}],116:[function(require,module,exports){
+},{"./config":79,"node-fetch":"node-fetch"}],115:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -32593,7 +32505,7 @@ const cleartext = exports.cleartext = cleartextMod;
  * @name module:openpgp.util
  */
 
-},{"./cleartext":78,"./config/config":79,"./crypto":95,"./encoding/armor":112,"./enums":114,"./hkp":115,"./key":117,"./keyring":118,"./message":121,"./openpgp":122,"./packet":126,"./signature":146,"./type/ecdh_symkey":147,"./type/kdf_params":148,"./type/keyid":149,"./type/mpi":150,"./type/oid":151,"./type/s2k":152,"./util":153,"./wkd":154,"./worker/async_proxy":155,"web-stream-tools":76}],117:[function(require,module,exports){
+},{"./cleartext":77,"./config/config":78,"./crypto":94,"./encoding/armor":111,"./enums":113,"./hkp":114,"./key":116,"./keyring":117,"./message":120,"./openpgp":121,"./packet":125,"./signature":145,"./type/ecdh_symkey":146,"./type/kdf_params":147,"./type/keyid":148,"./type/mpi":149,"./type/oid":150,"./type/s2k":151,"./util":152,"./wkd":153,"./worker/async_proxy":154,"web-stream-tools":75}],116:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -33532,9 +33444,10 @@ User.prototype.isRevoked = async function (primaryKey, certificate, key, date = 
  * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
  * @param  {Date} date                       (optional) override the creationtime of the signature
  * @param  {Object} userId                   (optional) user ID
+ * @param  {Object} detached                 (optional) whether to create a detached signature packet
  * @returns {module:packet/signature}         signature packet
  */
-async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId) {
+async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false) {
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
@@ -33542,7 +33455,7 @@ async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, s
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
-  await signaturePacket.sign(signingKeyPacket, dataToSign);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, detached);
   return signaturePacket;
 }
 
@@ -34103,7 +34016,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
     // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
     _enums2.default.symmetric.aes256, _enums2.default.symmetric.aes128, _enums2.default.symmetric.aes192, _enums2.default.symmetric.cast5, _enums2.default.symmetric.tripledes], _config2.default.encryption_cipher);
-    if (_config2.default.aead_protect && _config2.default.aead_protect_version === 4) {
+    if (_config2.default.aead_protect) {
       signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([_enums2.default.aead.eax, _enums2.default.aead.ocb], _config2.default.aead_mode);
     }
     signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
@@ -34117,9 +34030,12 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       signaturePacket.features = [0];
       signaturePacket.features[0] |= _enums2.default.features.modification_detection;
     }
-    if (_config2.default.aead_protect && _config2.default.aead_protect_version === 4) {
+    if (_config2.default.aead_protect) {
       signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= _enums2.default.features.aead;
+    }
+    if (_config2.default.v5_keys) {
+      signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= _enums2.default.features.v5_keys;
     }
     if (options.keyExpirationTime > 0) {
@@ -34360,7 +34276,7 @@ async function isAeadSupported(keys, date = new Date(), userIds = []) {
   return supported;
 }
 
-},{"./config":80,"./crypto":95,"./encoding/armor":112,"./enums":114,"./packet":126,"./util":153}],118:[function(require,module,exports){
+},{"./config":79,"./crypto":94,"./encoding/armor":111,"./enums":113,"./packet":125,"./util":152}],117:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34387,7 +34303,7 @@ _keyring2.default.localstore = _localstore2.default;
 
 exports.default = _keyring2.default;
 
-},{"./keyring.js":119,"./localstore.js":120}],119:[function(require,module,exports){
+},{"./keyring.js":118,"./localstore.js":119}],118:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34626,7 +34542,7 @@ KeyArray.prototype.removeForId = function (keyId) {
 
 exports.default = Keyring;
 
-},{"../key":117,"./localstore":120}],120:[function(require,module,exports){
+},{"../key":116,"./localstore":119}],119:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34764,7 +34680,7 @@ async function storeKeys(storage, itemname, keys) {
 
 exports.default = LocalStore;
 
-},{"../config":80,"../key":117,"../util":153,"node-localstorage":"node-localstorage","web-stream-tools":76}],121:[function(require,module,exports){
+},{"../config":79,"../key":116,"../util":152,"node-localstorage":"node-localstorage","web-stream-tools":75}],120:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -34918,22 +34834,22 @@ Message.prototype.decrypt = async function (privateKeys, passwords, sessionKeys,
 
   const symEncryptedPacket = symEncryptedPacketlist[0];
   let exception = null;
-  for (let i = 0; i < keyObjs.length; i++) {
-    if (!keyObjs[i] || !_util2.default.isUint8Array(keyObjs[i].data) || !_util2.default.isString(keyObjs[i].algorithm)) {
+  const decryptedPromise = Promise.all(keyObjs.map(async keyObj => {
+    if (!keyObj || !_util2.default.isUint8Array(keyObj.data) || !_util2.default.isString(keyObj.algorithm)) {
       throw new Error('Invalid session key for decryption.');
     }
 
     try {
-      await symEncryptedPacket.decrypt(keyObjs[i].algorithm, keyObjs[i].data, streaming);
-      break;
+      await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, streaming);
     } catch (e) {
       _util2.default.print_debug_error(e);
       exception = e;
     }
-  }
+  }));
   // We don't await stream.cancel here because it only returns when the other copy is canceled too.
   _webStreamTools2.default.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
   symEncryptedPacket.encrypted = null;
+  await decryptedPromise;
 
   if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
     throw exception || new Error('Decryption failed.');
@@ -35101,7 +35017,7 @@ Message.prototype.encrypt = async function (keys, passwords, sessionKey, wildcar
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
     symAlgo = _enums2.default.read(_enums2.default.symmetric, (await (0, _key.getPreferredAlgo)('symmetric', keys, date, userIds)));
-    if (_config2.default.aead_protect && _config2.default.aead_protect_version === 4 && (await (0, _key.isAeadSupported)(keys, date, userIds))) {
+    if (_config2.default.aead_protect && (await (0, _key.isAeadSupported)(keys, date, userIds))) {
       aeadAlgo = _enums2.default.read(_enums2.default.aead, (await (0, _key.getPreferredAlgo)('aead', keys, date, userIds)));
     }
   } else if (passwords && passwords.length) {
@@ -35117,7 +35033,7 @@ Message.prototype.encrypt = async function (keys, passwords, sessionKey, wildcar
 
   const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userIds);
 
-  if (_config2.default.aead_protect && (_config2.default.aead_protect_version !== 4 || aeadAlgo)) {
+  if (_config2.default.aead_protect && aeadAlgo) {
     symEncryptedPacket = new _packet2.default.SymEncryptedAEADProtected();
     symEncryptedPacket.aeadAlgorithm = aeadAlgo;
   } else if (_config2.default.integrity_protect) {
@@ -35273,7 +35189,7 @@ Message.prototype.sign = async function (privateKeys = [], signature = null, dat
   });
 
   packetlist.push(literalDataPacket);
-  packetlist.concat((await createSignaturePackets(literalDataPacket, privateKeys, signature, date)));
+  packetlist.concat((await createSignaturePackets(literalDataPacket, privateKeys, signature, date, false)));
 
   return new Message(packetlist);
 };
@@ -35312,7 +35228,7 @@ Message.prototype.signDetached = async function (privateKeys = [], signature = n
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
-  return new _signature.Signature((await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds)));
+  return new _signature.Signature((await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true)));
 };
 
 /**
@@ -35322,10 +35238,11 @@ Message.prototype.signDetached = async function (privateKeys = [], signature = n
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
  * @param  {Array} userIds                     (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Boolean} detached                  (optional) whether to create detached signature packets
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userIds = []) {
+async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userIds = [], detached = false) {
   const packetlist = new _packet2.default.List();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -35340,7 +35257,7 @@ async function createSignaturePackets(literalDataPacket, privateKeys, signature 
     if (!signingKey) {
       throw new Error(`Could not find valid signing key packet in key ${privateKey.getKeyId().toHex()}`);
     }
-    return (0, _key.createSignaturePacket)(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId);
+    return (0, _key.createSignaturePacket)(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId, detached);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
@@ -35375,7 +35292,7 @@ Message.prototype.verify = async function (keys, date = new Date(), streaming) {
         onePassSig.correspondingSigReject = reject;
       });
       onePassSig.signatureData = _webStreamTools2.default.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-      onePassSig.hashed = await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, streaming);
+      onePassSig.hashed = await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming);
     }));
     msg.packets.stream = _webStreamTools2.default.transformPair(msg.packets.stream, async (readable, writable) => {
       const reader = _webStreamTools2.default.getReader(readable);
@@ -35398,9 +35315,9 @@ Message.prototype.verify = async function (keys, date = new Date(), streaming) {
         await writer.abort(e);
       }
     });
-    return createVerificationObjects(onePassSigList, literalDataList, keys, date);
+    return createVerificationObjects(onePassSigList, literalDataList, keys, date, false);
   }
-  return createVerificationObjects(signatureList, literalDataList, keys, date);
+  return createVerificationObjects(signatureList, literalDataList, keys, date, false);
 };
 
 /**
@@ -35418,7 +35335,7 @@ Message.prototype.verifyDetached = function (signature, keys, date = new Date())
     throw new Error('Can only verify message with one literal data packet.');
   }
   const signatureList = signature.packets;
-  return createVerificationObjects(signatureList, literalDataList, keys, date);
+  return createVerificationObjects(signatureList, literalDataList, keys, date, true);
 };
 
 /**
@@ -35428,11 +35345,12 @@ Message.prototype.verifyDetached = function (signature, keys, date = new Date())
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
+ * @param {Boolean} detached (optional) whether to verify detached signature packets
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-async function createVerificationObject(signature, literalDataList, keys, date = new Date()) {
+async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false) {
   let primaryKey = null;
   let signingKey = null;
   await Promise.all(keys.map(async function (key) {
@@ -35451,7 +35369,7 @@ async function createVerificationObject(signature, literalDataList, keys, date =
       if (!signingKey) {
         return null;
       }
-      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0]);
+      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached);
       const sig = await signaturePacket;
       if (sig.isExpired(date) || !(sig.created >= signingKey.getCreationTime() && sig.created < (await (signingKey === primaryKey ? signingKey.getExpirationTime() : signingKey.getExpirationTime(primaryKey, date))))) {
         return null;
@@ -35483,15 +35401,16 @@ async function createVerificationObject(signature, literalDataList, keys, date =
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
+ * @param {Boolean} detached (optional) whether to verify detached signature packets
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date()) {
+async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date(), detached = false) {
   return Promise.all(signatureList.filter(function (signature) {
     return ['text', 'binary'].includes(_enums2.default.read(_enums2.default.signature, signature.signatureType));
   }).map(async function (signature) {
-    return createVerificationObject(signature, literalDataList, keys, date);
+    return createVerificationObject(signature, literalDataList, keys, date, detached);
   }));
 }
 
@@ -35618,7 +35537,7 @@ function fromBinary(bytes, filename, date = new Date(), type = 'binary') {
   return message;
 }
 
-},{"./config":80,"./crypto":95,"./encoding/armor":112,"./enums":114,"./key":117,"./packet":126,"./signature":146,"./type/keyid":149,"./util":153,"web-stream-tools":76}],122:[function(require,module,exports){
+},{"./config":79,"./crypto":94,"./encoding/armor":111,"./enums":113,"./key":116,"./packet":125,"./signature":145,"./type/keyid":148,"./util":152,"web-stream-tools":75}],121:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36058,7 +35977,7 @@ function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, for
     result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date, streaming) : await decrypted.verify(publicKeys, date, streaming);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.filename = decrypted.getFilename();
-    if (streaming) linkStreams(result, message, decrypted.packets.stream);
+    if (streaming) linkStreams(result, message);
     result.data = await convertStream(result.data, streaming);
     if (!streaming) await prepareSignatures(result.signatures);
     return result;
@@ -36325,25 +36244,13 @@ async function convertStreams(obj, streaming, keys = []) {
 
 /**
  * Link result.data to the message stream for cancellation.
- * Also, forward errors in the message to result.data.
  * @param  {Object} result                  the data to convert
  * @param  {Message} message                message object
- * @param  {ReadableStream} erroringStream  (optional) stream which either errors or gets closed without data
  * @returns {Object}
  */
-function linkStreams(result, message, erroringStream) {
+function linkStreams(result, message) {
   result.data = _webStreamTools2.default.transformPair(message.packets.stream, async (readable, writable) => {
-    await _webStreamTools2.default.pipe(result.data, writable, {
-      preventClose: true
-    });
-    const writer = _webStreamTools2.default.getWriter(writable);
-    try {
-      // Forward errors in erroringStream (defaulting to the message stream) to result.data.
-      await _webStreamTools2.default.readToEnd(erroringStream || readable, arr => arr);
-      await writer.close();
-    } catch (e) {
-      await writer.abort(e);
-    }
+    await _webStreamTools2.default.pipe(result.data, writable);
   });
 }
 
@@ -36389,10 +36296,10 @@ function onError(message, error) {
  * @returns {Boolean}   If authenticated encryption should be used
  */
 function nativeAEAD() {
-  return _config2.default.aead_protect && ((_config2.default.aead_protect_version !== 4 || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto() || _config2.default.aead_protect_version === 4 && _config2.default.aead_mode === _enums2.default.aead.eax && _util2.default.getWebCrypto());
+  return _config2.default.aead_protect && (_config2.default.aead_mode === _enums2.default.aead.eax || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto();
 }
 
-},{"./cleartext":78,"./config/config":79,"./enums":114,"./key":117,"./message":121,"./polyfills":145,"./util":153,"./worker/async_proxy":155,"web-stream-tools":76}],123:[function(require,module,exports){
+},{"./cleartext":77,"./config/config":78,"./enums":113,"./key":116,"./message":120,"./polyfills":144,"./util":152,"./worker/async_proxy":154,"web-stream-tools":75}],122:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36606,7 +36513,7 @@ function packetClassFromTagName(tag) {
   return tag.substr(0, 1).toUpperCase() + tag.substr(1);
 }
 
-},{"../enums.js":114,"./all_packets.js":123,"./compressed.js":125,"./literal.js":127,"./marker.js":128,"./one_pass_signature.js":129,"./public_key.js":132,"./public_key_encrypted_session_key.js":133,"./public_subkey.js":134,"./secret_key.js":135,"./secret_subkey.js":136,"./signature.js":137,"./sym_encrypted_aead_protected.js":138,"./sym_encrypted_integrity_protected.js":139,"./sym_encrypted_session_key.js":140,"./symmetrically_encrypted.js":141,"./trust.js":142,"./user_attribute.js":143,"./userid.js":144}],124:[function(require,module,exports){
+},{"../enums.js":113,"./all_packets.js":122,"./compressed.js":124,"./literal.js":126,"./marker.js":127,"./one_pass_signature.js":128,"./public_key.js":131,"./public_key_encrypted_session_key.js":132,"./public_subkey.js":133,"./secret_key.js":134,"./secret_subkey.js":135,"./signature.js":136,"./sym_encrypted_aead_protected.js":137,"./sym_encrypted_integrity_protected.js":138,"./sym_encrypted_session_key.js":139,"./symmetrically_encrypted.js":140,"./trust.js":141,"./user_attribute.js":142,"./userid.js":143}],123:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -36810,7 +36717,7 @@ function packetlistCloneToSignature(clone) {
   return new _signature.Signature(packetlist);
 }
 
-},{"../cleartext":78,"../key":117,"../message":121,"../signature":146,"../type/keyid":149,"../util":153,"./packetlist":131,"web-stream-tools":76}],125:[function(require,module,exports){
+},{"../cleartext":77,"../key":116,"../message":120,"../signature":145,"../type/keyid":148,"../util":152,"./packetlist":130,"web-stream-tools":75}],124:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37025,7 +36932,7 @@ if (nodeZlib) {
   };
 }
 
-},{"../config":80,"../enums":114,"../util":153,"pako":51,"seek-bzip":70,"web-stream-tools":76}],126:[function(require,module,exports){
+},{"../config":79,"../enums":113,"../util":152,"pako":50,"seek-bzip":69,"web-stream-tools":75}],125:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37063,7 +36970,7 @@ Object.assign(mod, packets);
 
 exports.default = mod;
 
-},{"./all_packets":123,"./clone":124,"./packetlist":131}],127:[function(require,module,exports){
+},{"./all_packets":122,"./clone":123,"./packetlist":130}],126:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37218,24 +37125,35 @@ Literal.prototype.read = async function (bytes) {
 };
 
 /**
- * Creates a string representation of the packet
+ * Creates a Uint8Array representation of the packet, excluding the data
  *
- * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
+ * @returns {Uint8Array} Uint8Array representation of the packet
  */
-Literal.prototype.write = function () {
+Literal.prototype.writeHeader = function () {
   const filename = _util2.default.encode_utf8(this.filename);
   const filename_length = new Uint8Array([filename.length]);
 
   const format = new Uint8Array([_enums2.default.write(_enums2.default.literal, this.format)]);
   const date = _util2.default.writeDate(this.date);
+
+  return _util2.default.concatUint8Array([format, filename_length, filename, date]);
+};
+
+/**
+ * Creates a Uint8Array representation of the packet
+ *
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
+ */
+Literal.prototype.write = function () {
+  const header = this.writeHeader();
   const data = this.getBytes();
 
-  return _util2.default.concat([format, filename_length, filename, date, data]);
+  return _util2.default.concat([header, data]);
 };
 
 exports.default = Literal;
 
-},{"../enums":114,"../util":153,"web-stream-tools":76}],128:[function(require,module,exports){
+},{"../enums":113,"../util":152,"web-stream-tools":75}],127:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37310,12 +37228,16 @@ Marker.prototype.read = function (bytes) {
 
 exports.default = Marker;
 
-},{"../enums":114}],129:[function(require,module,exports){
+},{"../enums":113}],128:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _webStreamTools = require('web-stream-tools');
+
+var _webStreamTools2 = _interopRequireDefault(_webStreamTools);
 
 var _signature = require('./signature');
 
@@ -37347,30 +37269,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @memberof module:packet
  * @constructor
  */
-// GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-/**
- * @requires packet/signature
- * @requires type/keyid
- * @requires enums
- * @requires util
- */
-
 function OnePassSignature() {
   /**
    * Packet type
@@ -37410,6 +37308,31 @@ function OnePassSignature() {
  * @param {Uint8Array} bytes payload of a tag 4 packet
  * @returns {module:packet.OnePassSignature} object representation
  */
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/**
+ * @requires web-stream-tools
+ * @requires packet/signature
+ * @requires type/keyid
+ * @requires enums
+ * @requires util
+ */
+
 OnePassSignature.prototype.read = function (bytes) {
   let mypos = 0;
   // A one-octet version number.  The current version is 3.
@@ -37457,18 +37380,12 @@ OnePassSignature.prototype.postCloneTypeFix = function () {
   this.issuerKeyId = _keyid2.default.fromClone(this.issuerKeyId);
 };
 
-OnePassSignature.prototype.hash = function () {
-  const version = this.version;
-  this.version = 4;
-  try {
-    return _signature2.default.prototype.hash.apply(this, arguments);
-  } finally {
-    this.version = version;
-  }
-};
+OnePassSignature.prototype.hash = _signature2.default.prototype.hash;
 OnePassSignature.prototype.toHash = _signature2.default.prototype.toHash;
 OnePassSignature.prototype.toSign = _signature2.default.prototype.toSign;
-OnePassSignature.prototype.calculateTrailer = _signature2.default.prototype.calculateTrailer;
+OnePassSignature.prototype.calculateTrailer = function (...args) {
+  return _webStreamTools2.default.fromAsync(async () => (await this.correspondingSig).calculateTrailer(...args));
+};
 
 OnePassSignature.prototype.verify = async function () {
   const correspondingSig = await this.correspondingSig;
@@ -37484,7 +37401,7 @@ OnePassSignature.prototype.verify = async function () {
 
 exports.default = OnePassSignature;
 
-},{"../enums":114,"../type/keyid":149,"../util":153,"./signature":137}],130:[function(require,module,exports){
+},{"../enums":113,"../type/keyid":148,"../util":152,"./signature":136,"web-stream-tools":75}],129:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37604,23 +37521,6 @@ exports.default = {
   },
 
   /**
-   * Writes a packet header Version 3 with the given tag_type and length to a
-   * string
-   *
-   * @param {Integer} tag_type Tag type
-   * @param {Integer} length Length of the payload
-   * @returns {String} String of the header
-   */
-  writeOldHeader: function writeOldHeader(tag_type, length) {
-    if (length < 256) {
-      return new Uint8Array([0x80 | tag_type << 2, length]);
-    } else if (length < 65536) {
-      return _util2.default.concatUint8Array([new Uint8Array([0x80 | tag_type << 2 | 1]), _util2.default.writeNumber(length, 2)]);
-    }
-    return _util2.default.concatUint8Array([new Uint8Array([0x80 | tag_type << 2 | 2]), _util2.default.writeNumber(length, 4)]);
-  },
-
-  /**
    * Whether the packet type supports partial lengths per RFC4880
    * @param {Integer} tag_type Tag type
    * @returns {Boolean} String of the header
@@ -37639,6 +37539,7 @@ exports.default = {
   read: async function read(input, streaming, callback) {
     const reader = _webStreamTools2.default.getReader(input);
     let writer;
+    let callbackReturned;
     try {
       const peekedBytes = await reader.peekBytes(2);
       // some sanity checks
@@ -37667,7 +37568,6 @@ exports.default = {
 
       const supportsStreaming = this.supportsStreaming(tag);
       let packet = null;
-      let callbackReturned;
       if (streaming && supportsStreaming) {
         const transform = new TransformStream();
         writer = _webStreamTools2.default.getWriter(transform.writable);
@@ -37758,15 +37658,48 @@ exports.default = {
         }
       } while (wasPartialLength);
 
-      if (!writer) {
-        packet = _util2.default.concatUint8Array(packet);
-        await callback({ tag, packet });
-      }
-      const nextPacket = await reader.peekBytes(2);
+      // If this was not a packet that "supports streaming", we peek to check
+      // whether it is the last packet in the message. We peek 2 bytes instead
+      // of 1 because the beginning of this function also peeks 2 bytes, and we
+      // want to cut a `subarray` of the correct length into `web-stream-tools`'
+      // `externalBuffer` as a tiny optimization here.
+      //
+      // If it *was* a streaming packet (i.e. the data packets), we peek at the
+      // entire remainder of the stream, in order to forward errors in the
+      // remainder of the stream to the packet data. (Note that this means we
+      // read/peek at all signature packets before closing the literal data
+      // packet, for example.) This forwards armor checksum errors to the
+      // encrypted data stream, for example, so that they don't get lost /
+      // forgotten on encryptedMessage.packets.stream, which we never look at.
+      //
+      // Note that subsequent packet parsing errors could still end up there if
+      // `config.tolerant` is set to false, or on malformed messages with
+      // multiple data packets, but usually it shouldn't happen.
+      //
+      // An example of what we do when stream-parsing a message containing
+      // [ one-pass signature packet, literal data packet, signature packet ]:
+      // 1. Read the one-pass signature packet
+      // 2. Peek 2 bytes of the literal data packet
+      // 3. Parse the one-pass signature packet
+      //
+      // 4. Read the literal data packet, simultaneously stream-parsing it
+      // 5. Peek until the end of the message
+      // 6. Finish parsing the literal data packet
+      //
+      // 7. Read the signature packet again (we already peeked at it in step 5)
+      // 8. Peek at the end of the stream again (`peekBytes` returns undefined)
+      // 9. Parse the signature packet
+      //
+      // Note that this means that if there's an error in the very end of the
+      // stream, such as an MDC error, we throw in step 5 instead of in step 8
+      // (or never), which is the point of this exercise.
+      const nextPacket = await reader.peekBytes(supportsStreaming ? Infinity : 2);
       if (writer) {
         await writer.ready;
         await writer.close();
-        await callbackReturned;
+      } else {
+        packet = _util2.default.concatUint8Array(packet);
+        await callback({ tag, packet });
       }
       return !nextPacket || !nextPacket.length;
     } catch (e) {
@@ -37777,12 +37710,15 @@ exports.default = {
         throw e;
       }
     } finally {
+      if (writer) {
+        await callbackReturned;
+      }
       reader.releaseLock();
     }
   }
 };
 
-},{"../enums":114,"../util":153,"web-stream-tools":76}],131:[function(require,module,exports){
+},{"../enums":113,"../util":152,"web-stream-tools":75}],130:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38047,7 +37983,7 @@ List.fromStructuredClone = function (packetlistClone) {
 
 exports.default = List;
 
-},{"../config":80,"../enums":114,"../util":153,"./all_packets":123,"./packet":130,"web-stream-tools":76}],132:[function(require,module,exports){
+},{"../config":79,"../enums":113,"../util":152,"./all_packets":122,"./packet":129,"web-stream-tools":75}],131:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38133,7 +38069,7 @@ function PublicKey(date = new Date()) {
    * Packet version
    * @type {Integer}
    */
-  this.version = _config2.default.aead_protect && _config2.default.aead_protect_version === 4 ? 5 : 4;
+  this.version = _config2.default.v5_keys ? 5 : 4;
   /**
    * Key creation date.
    * @type {Date}
@@ -38246,11 +38182,14 @@ PublicKey.prototype.write = function () {
 PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
 
 /**
- * Write an old version packet - it's used by some of the internal routines.
+ * Write packet in order to be hashed; either for a signature or a fingerprint.
  */
-PublicKey.prototype.writeOld = function () {
+PublicKey.prototype.writeForHash = function (version) {
   const bytes = this.writePublicKey();
 
+  if (version === 5) {
+    return _util2.default.concatUint8Array([new Uint8Array([0x9A]), _util2.default.writeNumber(bytes.length, 4), bytes]);
+  }
   return _util2.default.concatUint8Array([new Uint8Array([0x99]), _util2.default.writeNumber(bytes.length, 2), bytes]);
 };
 
@@ -38295,13 +38234,10 @@ PublicKey.prototype.getFingerprintBytes = function () {
   if (this.fingerprint) {
     return this.fingerprint;
   }
-  let toHash;
+  const toHash = this.writeForHash(this.version);
   if (this.version === 5) {
-    const bytes = this.writePublicKey();
-    toHash = _util2.default.concatUint8Array([new Uint8Array([0x9A]), _util2.default.writeNumber(bytes.length, 4), bytes]);
     this.fingerprint = _sha2.Sha256.bytes(toHash);
   } else if (this.version === 4) {
-    toHash = this.writeOld();
     this.fingerprint = _sha.Sha1.bytes(toHash);
   }
   return this.fingerprint;
@@ -38355,7 +38291,7 @@ PublicKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKey;
 
-},{"../config":80,"../crypto":95,"../enums":114,"../type/keyid":149,"../type/mpi":150,"../util":153,"asmcrypto.js/dist_es5/hash/sha1/sha1":12,"asmcrypto.js/dist_es5/hash/sha256/sha256":14}],133:[function(require,module,exports){
+},{"../config":79,"../crypto":94,"../enums":113,"../type/keyid":148,"../type/mpi":149,"../util":152,"asmcrypto.js/dist_es5/hash/sha1/sha1":11,"asmcrypto.js/dist_es5/hash/sha256/sha256":13}],132:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38553,7 +38489,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":95,"../enums":114,"../type/keyid":149,"../type/mpi":150,"../util":153}],134:[function(require,module,exports){
+},{"../crypto":94,"../enums":113,"../type/keyid":148,"../type/mpi":149,"../util":152}],133:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38612,7 +38548,7 @@ PublicSubkey.prototype.constructor = PublicSubkey;
 
 exports.default = PublicSubkey;
 
-},{"../enums":114,"./public_key":132}],135:[function(require,module,exports){
+},{"../enums":113,"./public_key":131}],134:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38687,13 +38623,33 @@ function SecretKey(date = new Date()) {
    */
   this.tag = _enums2.default.packet.secretKey;
   /**
-   * Encrypted secret-key data
+   * Secret-key data
    */
-  this.encrypted = null;
+  this.keyMaterial = null;
   /**
-   * Indicator if secret-key data is encrypted. `this.isEncrypted === false` means data is available in decrypted form.
+   * Indicates whether secret-key data is encrypted. `this.isEncrypted === false` means data is available in decrypted form.
    */
   this.isEncrypted = null;
+  /**
+   * S2K usage
+   * @type {Integer}
+   */
+  this.s2k_usage = 0;
+  /**
+   * S2K object
+   * @type {type/s2k}
+   */
+  this.s2k = null;
+  /**
+   * Symmetric algorithm
+   * @type {String}
+   */
+  this.symmetric = 'aes256';
+  /**
+   * AEAD algorithm
+   * @type {String}
+   */
+  this.aead = 'eax';
 }
 
 SecretKey.prototype = new _public_key2.default();
@@ -38738,30 +38694,75 @@ function write_cleartext_params(params, algorithm) {
  */
 SecretKey.prototype.read = function (bytes) {
   // - A Public-Key or Public-Subkey packet, as described above.
-  const len = this.readPublicKey(bytes);
-
-  bytes = bytes.subarray(len, bytes.length);
+  let i = this.readPublicKey(bytes);
 
   // - One octet indicating string-to-key usage conventions.  Zero
   //   indicates that the secret-key data is not encrypted.  255 or 254
   //   indicates that a string-to-key specifier is being given.  Any
   //   other value is a symmetric-key encryption algorithm identifier.
-  const isEncrypted = bytes[0];
+  this.s2k_usage = bytes[i++];
 
-  if (isEncrypted) {
-    this.encrypted = bytes;
-    this.isEncrypted = true;
-  } else {
-    // - Plain or encrypted multiprecision integers comprising the secret
-    //   key data.  These algorithm-specific fields are as described
-    //   below.
-    const cleartext = bytes.subarray(1, -2);
-    if (!_util2.default.equalsUint8Array(_util2.default.write_checksum(cleartext), bytes.subarray(-2))) {
+  // - Only for a version 5 packet, a one-octet scalar octet count of
+  //   the next 4 optional fields.
+  if (this.version === 5) {
+    i++;
+  }
+
+  // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+  //   one-octet symmetric encryption algorithm.
+  if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
+    this.symmetric = bytes[i++];
+    this.symmetric = _enums2.default.read(_enums2.default.symmetric, this.symmetric);
+
+    // - [Optional] If string-to-key usage octet was 253, a one-octet
+    //   AEAD algorithm.
+    if (this.s2k_usage === 253) {
+      this.aead = bytes[i++];
+      this.aead = _enums2.default.read(_enums2.default.aead, this.aead);
+    }
+
+    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+    //   string-to-key specifier.  The length of the string-to-key
+    //   specifier is implied by its type, as described above.
+    this.s2k = new _s2k2.default();
+    i += this.s2k.read(bytes.subarray(i, bytes.length));
+
+    if (this.s2k.type === 'gnu-dummy') {
+      return;
+    }
+  } else if (this.s2k_usage) {
+    this.symmetric = this.s2k_usage;
+    this.symmetric = _enums2.default.read(_enums2.default.symmetric, this.symmetric);
+  }
+
+  // - [Optional] If secret data is encrypted (string-to-key usage octet
+  //   not zero), an Initial Vector (IV) of the same length as the
+  //   cipher's block size.
+  if (this.s2k_usage) {
+    this.iv = bytes.subarray(i, i + _crypto2.default.cipher[this.symmetric].blockSize);
+
+    i += this.iv.length;
+  }
+
+  // - Only for a version 5 packet, a four-octet scalar octet count for
+  //   the following key material.
+  if (this.version === 5) {
+    i += 4;
+  }
+
+  // - Plain or encrypted multiprecision integers comprising the secret
+  //   key data.  These algorithm-specific fields are as described
+  //   below.
+  this.keyMaterial = bytes.subarray(i);
+  this.isEncrypted = !!this.s2k_usage;
+
+  if (!this.isEncrypted) {
+    const cleartext = this.keyMaterial.subarray(0, -2);
+    if (!_util2.default.equalsUint8Array(_util2.default.write_checksum(cleartext), this.keyMaterial.subarray(-2))) {
       throw new Error('Key checksum mismatch');
     }
     const privParams = parse_cleartext_params(cleartext, this.algorithm);
     this.params = this.params.concat(privParams);
-    this.isEncrypted = false;
   }
 };
 
@@ -38772,13 +38773,48 @@ SecretKey.prototype.read = function (bytes) {
 SecretKey.prototype.write = function () {
   const arr = [this.writePublicKey()];
 
-  if (!this.encrypted) {
-    arr.push(new Uint8Array([0]));
-    const cleartextParams = write_cleartext_params(this.params, this.algorithm);
-    arr.push(cleartextParams);
-    arr.push(_util2.default.write_checksum(cleartextParams));
-  } else {
-    arr.push(this.encrypted);
+  arr.push(new Uint8Array([this.s2k_usage]));
+
+  const optionalFieldsArr = [];
+  // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+  //   one- octet symmetric encryption algorithm.
+  if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
+    optionalFieldsArr.push(_enums2.default.write(_enums2.default.symmetric, this.symmetric));
+
+    // - [Optional] If string-to-key usage octet was 253, a one-octet
+    //   AEAD algorithm.
+    if (this.s2k_usage === 253) {
+      optionalFieldsArr.push(_enums2.default.write(_enums2.default.aead, this.aead));
+    }
+
+    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+    //   string-to-key specifier.  The length of the string-to-key
+    //   specifier is implied by its type, as described above.
+    optionalFieldsArr.push(...this.s2k.write());
+  }
+
+  // - [Optional] If secret data is encrypted (string-to-key usage octet
+  //   not zero), an Initial Vector (IV) of the same length as the
+  //   cipher's block size.
+  if (this.s2k_usage && this.s2k.type !== 'gnu-dummy') {
+    optionalFieldsArr.push(...this.iv);
+  }
+
+  if (this.version === 5) {
+    arr.push(new Uint8Array([optionalFieldsArr.length]));
+  }
+  arr.push(new Uint8Array(optionalFieldsArr));
+
+  if (!this.s2k || this.s2k.type !== 'gnu-dummy') {
+    if (!this.s2k_usage) {
+      const cleartextParams = write_cleartext_params(this.params, this.algorithm);
+      this.keyMaterial = _util2.default.concatUint8Array([cleartextParams, _util2.default.write_checksum(cleartextParams)]);
+    }
+
+    if (this.version === 5) {
+      arr.push(_util2.default.writeNumber(this.keyMaterial.length, 4));
+    }
+    arr.push(this.keyMaterial);
   }
 
   return _util2.default.concatUint8Array(arr);
@@ -38802,46 +38838,33 @@ SecretKey.prototype.isDecrypted = function () {
  * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
-  if (this.isDecrypted() && this.encrypted) {
-    // gnu-dummy
+  if (this.s2k && this.s2k.type === 'gnu-dummy') {
     return false;
   }
 
   if (this.isDecrypted() && !passphrase) {
-    this.encrypted = null;
+    this.s2k_usage = 0;
     return false;
   } else if (!passphrase) {
     throw new Error('The key must be decrypted before removing passphrase protection.');
   }
 
-  const s2k = new _s2k2.default();
-  s2k.salt = await _crypto2.default.random.getRandomBytes(8);
-  const symmetric = 'aes256';
+  this.s2k = new _s2k2.default();
+  this.s2k.salt = await _crypto2.default.random.getRandomBytes(8);
   const cleartext = write_cleartext_params(this.params, this.algorithm);
-  const key = await produceEncryptionKey(s2k, passphrase, symmetric);
-  const blockLen = _crypto2.default.cipher[symmetric].blockSize;
-  const iv = await _crypto2.default.random.getRandomBytes(blockLen);
-
-  let arr;
+  const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
+  const blockLen = _crypto2.default.cipher[this.symmetric].blockSize;
+  this.iv = await _crypto2.default.random.getRandomBytes(blockLen);
 
   if (this.version === 5) {
-    const aead = 'eax';
-    const optionalFields = _util2.default.concatUint8Array([new Uint8Array([_enums2.default.write(_enums2.default.symmetric, symmetric), _enums2.default.write(_enums2.default.aead, aead)]), s2k.write(), iv]);
-    arr = [new Uint8Array([253, optionalFields.length])];
-    arr.push(optionalFields);
-    const mode = _crypto2.default[aead];
-    const modeInstance = await mode(symmetric, key);
-    const encrypted = await modeInstance.encrypt(cleartext, iv.subarray(0, mode.ivLength), new Uint8Array());
-    arr.push(_util2.default.writeNumber(encrypted.length, 4));
-    arr.push(encrypted);
+    this.s2k_usage = 253;
+    const mode = _crypto2.default[this.aead];
+    const modeInstance = await mode(this.symmetric, key);
+    this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
   } else {
-    arr = [new Uint8Array([254, _enums2.default.write(_enums2.default.symmetric, symmetric)])];
-    arr.push(s2k.write());
-    arr.push(iv);
-    arr.push(_crypto2.default.cfb.encrypt(symmetric, key, _util2.default.concatUint8Array([cleartext, await _crypto2.default.hash.sha1(cleartext)]), iv));
+    this.s2k_usage = 254;
+    this.keyMaterial = _crypto2.default.cfb.encrypt(this.symmetric, key, _util2.default.concatUint8Array([cleartext, await _crypto2.default.hash.sha1(cleartext)]), this.iv);
   }
-
-  this.encrypted = _util2.default.concatUint8Array(arr);
   return true;
 };
 
@@ -38858,84 +38881,40 @@ async function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @async
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
+  if (this.s2k.type === 'gnu-dummy') {
+    this.isEncrypted = false;
+    return false;
+  }
+
   if (this.isDecrypted()) {
     throw new Error('Key packet is already decrypted.');
   }
 
-  let i = 0;
-  let symmetric;
-  let aead;
   let key;
-
-  const s2k_usage = this.encrypted[i++];
-
-  // - Only for a version 5 packet, a one-octet scalar octet count of
-  //   the next 4 optional fields.
-  if (this.version === 5) {
-    i++;
-  }
-
-  // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-  //   one-octet symmetric encryption algorithm.
-  if (s2k_usage === 255 || s2k_usage === 254 || s2k_usage === 253) {
-    symmetric = this.encrypted[i++];
-    symmetric = _enums2.default.read(_enums2.default.symmetric, symmetric);
-
-    // - [Optional] If string-to-key usage octet was 253, a one-octet
-    //   AEAD algorithm.
-    if (s2k_usage === 253) {
-      aead = this.encrypted[i++];
-      aead = _enums2.default.read(_enums2.default.aead, aead);
-    }
-
-    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-    //   string-to-key specifier.  The length of the string-to-key
-    //   specifier is implied by its type, as described above.
-    const s2k = new _s2k2.default();
-    i += s2k.read(this.encrypted.subarray(i, this.encrypted.length));
-
-    if (s2k.type === 'gnu-dummy') {
-      this.isEncrypted = false;
-      return false;
-    }
-    key = await produceEncryptionKey(s2k, passphrase, symmetric);
+  if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
+    key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
   } else {
-    symmetric = s2k_usage;
-    symmetric = _enums2.default.read(_enums2.default.symmetric, symmetric);
     key = await _crypto2.default.hash.md5(passphrase);
   }
 
-  // - [Optional] If secret data is encrypted (string-to-key usage octet
-  //   not zero), an Initial Vector (IV) of the same length as the
-  //   cipher's block size.
-  const iv = this.encrypted.subarray(i, i + _crypto2.default.cipher[symmetric].blockSize);
-
-  i += iv.length;
-
-  // - Only for a version 5 packet, a four-octet scalar octet count for
-  //   the following key material.
-  if (this.version === 5) {
-    i += 4;
-  }
-
-  const ciphertext = this.encrypted.subarray(i, this.encrypted.length);
   let cleartext;
-  if (aead) {
-    const mode = _crypto2.default[aead];
+  if (this.s2k_usage === 253) {
+    const mode = _crypto2.default[this.aead];
     try {
-      const modeInstance = await mode(symmetric, key);
-      cleartext = await modeInstance.decrypt(ciphertext, iv.subarray(0, mode.ivLength), new Uint8Array());
+      const modeInstance = await mode(this.symmetric, key);
+      cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
     } catch (err) {
       if (err.message === 'Authentication tag mismatch') {
         throw new Error('Incorrect key passphrase: ' + err.message);
       }
+      throw err;
     }
   } else {
-    const cleartextWithHash = await _crypto2.default.cfb.decrypt(symmetric, key, ciphertext, iv);
+    const cleartextWithHash = await _crypto2.default.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
 
     let hash;
     let hashlen;
-    if (s2k_usage === 255) {
+    if (this.s2k_usage === 255) {
       hashlen = 2;
       cleartext = cleartextWithHash.subarray(0, -hashlen);
       hash = _util2.default.write_checksum(cleartext);
@@ -38953,7 +38932,8 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   const privParams = parse_cleartext_params(cleartext, this.algorithm);
   this.params = this.params.concat(privParams);
   this.isEncrypted = false;
-  this.encrypted = null;
+  this.keyMaterial = null;
+  this.s2k_usage = 0;
 
   return true;
 };
@@ -38968,7 +38948,12 @@ SecretKey.prototype.generate = async function (bits, curve) {
  * Clear private params, return to initial state
  */
 SecretKey.prototype.clearPrivateParams = function () {
-  if (!this.encrypted) {
+  if (this.s2k && this.s2k.type === 'gnu-dummy') {
+    this.isEncrypted = true;
+    return;
+  }
+
+  if (!this.keyMaterial) {
     throw new Error('If secret key is not encrypted, clearing private params is irreversible.');
   }
   const algo = _enums2.default.write(_enums2.default.publicKey, this.algorithm);
@@ -38993,7 +38978,7 @@ SecretKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SecretKey;
 
-},{"../crypto":95,"../enums":114,"../type/keyid.js":149,"../type/s2k":152,"../util":153,"./public_key":132}],136:[function(require,module,exports){
+},{"../crypto":94,"../enums":113,"../type/keyid.js":148,"../type/s2k":151,"../util":152,"./public_key":131}],135:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39049,7 +39034,7 @@ SecretSubkey.prototype.constructor = SecretSubkey;
 
 exports.default = SecretSubkey;
 
-},{"../enums":114,"./secret_key":135}],137:[function(require,module,exports){
+},{"../enums":113,"./secret_key":134}],136:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39130,7 +39115,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function Signature(date = new Date()) {
   this.tag = _enums2.default.packet.signature;
-  this.version = 4;
+  this.version = 4; // This is set to 5 below if we sign with a V5 key.
   this.signatureType = null;
   this.hashAlgorithm = null;
   this.publicKeyAlgorithm = null;
@@ -39189,7 +39174,7 @@ Signature.prototype.read = function (bytes) {
   let i = 0;
   this.version = bytes[i++];
 
-  if (this.version !== 4) {
+  if (this.version !== 4 && this.version !== 5) {
     throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
 
@@ -39231,15 +39216,19 @@ Signature.prototype.write = function () {
  * Signs provided data. This needs to be done prior to serialization.
  * @param {module:packet.SecretKey} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
+ * @param {Boolean} detached (optional) whether to create a detached signature
  * @returns {Promise<Boolean>}
  * @async
  */
-Signature.prototype.sign = async function (key, data) {
+Signature.prototype.sign = async function (key, data, detached = false) {
   const signatureType = _enums2.default.write(_enums2.default.signature, this.signatureType);
   const publicKeyAlgorithm = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = _enums2.default.write(_enums2.default.hash, this.hashAlgorithm);
 
-  const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
+  if (key.version === 5) {
+    this.version = 5;
+  }
+  const arr = [new Uint8Array([this.version, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
   if (key.version === 5) {
     // We could also generate this subpacket for version 4 keys, but for
@@ -39255,8 +39244,8 @@ Signature.prototype.sign = async function (key, data) {
 
   this.signatureData = _util2.default.concat(arr);
 
-  const toHash = this.toHash(signatureType, data);
-  const hash = await this.hash(signatureType, data, toHash);
+  const toHash = this.toHash(signatureType, data, detached);
+  const hash = await this.hash(signatureType, data, toHash, detached);
 
   this.signedHashValue = _webStreamTools2.default.slice(_webStreamTools2.default.clone(hash), 0, 2);
 
@@ -39693,7 +39682,7 @@ Signature.prototype.toSign = function (type, data) {
       if (data.key === undefined) {
         throw new Error('Key packet is required for this signature.');
       }
-      return data.key.writeOld();
+      return data.key.writeForHash(this.version);
 
     case t.key_revocation:
       return this.toSign(t.key, data);
@@ -39706,27 +39695,41 @@ Signature.prototype.toSign = function (type, data) {
   }
 };
 
-Signature.prototype.calculateTrailer = function () {
+Signature.prototype.calculateTrailer = function (data, detached) {
   let length = 0;
   return _webStreamTools2.default.transform(_webStreamTools2.default.clone(this.signatureData), value => {
     length += value.length;
   }, () => {
-    const first = new Uint8Array([4, 0xFF]); //Version, ?
-    return _util2.default.concat([first, _util2.default.writeNumber(length, 4)]);
+    const arr = [];
+    if (this.version === 5 && (this.signatureType === _enums2.default.signature.binary || this.signatureType === _enums2.default.signature.text)) {
+      if (detached) {
+        arr.push(new Uint8Array(6));
+      } else {
+        arr.push(data.writeHeader());
+      }
+    }
+    arr.push(new Uint8Array([this.version, 0xFF]));
+    if (this.version === 5) {
+      arr.push(new Uint8Array(4));
+    }
+    arr.push(_util2.default.writeNumber(length, 4));
+    // For v5, this should really be writeNumber(length, 8) rather than the
+    // hardcoded 4 zero bytes above
+    return _util2.default.concat(arr);
   });
 };
 
-Signature.prototype.toHash = function (signatureType, data) {
+Signature.prototype.toHash = function (signatureType, data, detached = false) {
   const bytes = this.toSign(signatureType, data);
 
-  return _util2.default.concat([bytes, this.signatureData, this.calculateTrailer()]);
+  return _util2.default.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
 };
 
-Signature.prototype.hash = async function (signatureType, data, toHash, streaming = true) {
+Signature.prototype.hash = async function (signatureType, data, toHash, detached = false, streaming = true) {
   const hashAlgorithm = _enums2.default.write(_enums2.default.hash, this.hashAlgorithm);
-  if (!toHash) toHash = this.toHash(signatureType, data);
+  if (!toHash) toHash = this.toHash(signatureType, data, detached);
   if (!streaming && _util2.default.isStream(toHash)) {
-    return _webStreamTools2.default.fromAsync(async () => this.hash(signatureType, data, (await _webStreamTools2.default.readToEnd(toHash))));
+    return _webStreamTools2.default.fromAsync(async () => this.hash(signatureType, data, (await _webStreamTools2.default.readToEnd(toHash)), detached));
   }
   return _crypto2.default.hash.digest(hashAlgorithm, toHash);
 };
@@ -39737,10 +39740,11 @@ Signature.prototype.hash = async function (signatureType, data, toHash, streamin
  *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
  * @param {module:enums.signature} signatureType expected signature type
  * @param {String|Object} data data which on the signature applies
+ * @param {Boolean} detached (optional) whether to verify a detached signature
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
-Signature.prototype.verify = async function (key, signatureType, data) {
+Signature.prototype.verify = async function (key, signatureType, data, detached = false) {
   const publicKeyAlgorithm = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = _enums2.default.write(_enums2.default.hash, this.hashAlgorithm);
 
@@ -39753,7 +39757,7 @@ Signature.prototype.verify = async function (key, signatureType, data) {
   if (this.hashed) {
     hash = this.hashed;
   } else {
-    toHash = this.toHash(signatureType, data);
+    toHash = this.toHash(signatureType, data, detached);
     hash = await this.hash(signatureType, data, toHash);
   }
   hash = await _webStreamTools2.default.readToEnd(hash);
@@ -39821,7 +39825,7 @@ Signature.prototype.postCloneTypeFix = function () {
 
 exports.default = Signature;
 
-},{"../config":80,"../crypto":95,"../enums":114,"../type/keyid.js":149,"../type/mpi.js":150,"../util":153,"./packet":130,"web-stream-tools":76}],138:[function(require,module,exports){
+},{"../config":79,"../crypto":94,"../enums":113,"../type/keyid.js":148,"../type/mpi.js":149,"../util":152,"./packet":129,"web-stream-tools":75}],137:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39911,13 +39915,9 @@ SymEncryptedAEADProtected.prototype.read = async function (bytes) {
       // The only currently defined value is 1.
       throw new Error('Invalid packet version.');
     }
-    if (_config2.default.aead_protect_version === 4) {
-      this.cipherAlgo = await reader.readByte();
-      this.aeadAlgo = await reader.readByte();
-      this.chunkSizeByte = await reader.readByte();
-    } else {
-      this.aeadAlgo = _enums2.default.aead.experimental_gcm;
-    }
+    this.cipherAlgo = await reader.readByte();
+    this.aeadAlgo = await reader.readByte();
+    this.chunkSizeByte = await reader.readByte();
     const mode = _crypto2.default[_enums2.default.read(_enums2.default.aead, this.aeadAlgo)];
     this.iv = await reader.readBytes(mode.ivLength);
     this.encrypted = reader.remainder();
@@ -39929,10 +39929,7 @@ SymEncryptedAEADProtected.prototype.read = async function (bytes) {
  * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload
  */
 SymEncryptedAEADProtected.prototype.write = function () {
-  if (_config2.default.aead_protect_version === 4) {
-    return _util2.default.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
-  }
-  return _util2.default.concat([new Uint8Array([this.version]), this.iv, this.encrypted]);
+  return _util2.default.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
 };
 
 /**
@@ -39944,9 +39941,6 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * @async
  */
 SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
-  if (_config2.default.aead_protect_version !== 4) {
-    this.cipherAlgo = _enums2.default.write(_enums2.default.symmetric, sessionKeyAlgorithm);
-  }
   await this.packets.read((await this.crypt('decrypt', key, _webStreamTools2.default.clone(this.encrypted), streaming)), streaming);
   return true;
 };
@@ -39960,7 +39954,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   this.cipherAlgo = _enums2.default.write(_enums2.default.symmetric, sessionKeyAlgorithm);
-  this.aeadAlgo = _config2.default.aead_protect_version === 4 ? _enums2.default.write(_enums2.default.aead, this.aeadAlgorithm) : _enums2.default.aead.experimental_gcm;
+  this.aeadAlgo = _enums2.default.write(_enums2.default.aead, this.aeadAlgorithm);
   const mode = _crypto2.default[_enums2.default.read(_enums2.default.aead, this.aeadAlgo)];
   this.iv = await _crypto2.default.random.getRandomBytes(mode.ivLength); // generate new random IV
   this.chunkSizeByte = _config2.default.aead_chunk_size_byte;
@@ -39981,74 +39975,70 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, strea
   const cipher = _enums2.default.read(_enums2.default.symmetric, this.cipherAlgo);
   const mode = _crypto2.default[_enums2.default.read(_enums2.default.aead, this.aeadAlgo)];
   const modeInstance = await mode(cipher, key);
-  if (_config2.default.aead_protect_version === 4) {
-    const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
-    const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
-    const adataBuffer = new ArrayBuffer(21);
-    const adataArray = new Uint8Array(adataBuffer, 0, 13);
-    const adataTagArray = new Uint8Array(adataBuffer);
-    const adataView = new DataView(adataBuffer);
-    const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
-    let chunkIndex = 0;
-    let latestPromise = Promise.resolve();
-    let cryptedBytes = 0;
-    let queuedBytes = 0;
-    const iv = this.iv;
-    return _webStreamTools2.default.transformPair(data, async (readable, writable) => {
-      const reader = _webStreamTools2.default.getReader(readable);
-      const buffer = new TransformStream({}, {
-        highWaterMark: streaming ? _util2.default.getHardwareConcurrency() * 2 ** (_config2.default.aead_chunk_size_byte + 6) : Infinity,
-        size: array => array.length
-      });
-      _webStreamTools2.default.pipe(buffer.readable, writable);
-      const writer = _webStreamTools2.default.getWriter(buffer.writable);
-      try {
-        while (true) {
-          let chunk = (await reader.readBytes(chunkSize + tagLengthIfDecrypting)) || new Uint8Array();
-          const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
-          chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
-          let cryptedPromise;
-          let done;
-          if (!chunkIndex || chunk.length) {
-            reader.unshift(finalChunk);
-            cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
-          } else {
-            // After the last chunk, we either encrypt a final, empty
-            // data chunk to get the final authentication tag or
-            // validate that final authentication tag.
-            adataView.setInt32(13 + 4, cryptedBytes); // Should be setInt64(13, ...)
-            cryptedPromise = modeInstance[fn](finalChunk, mode.getNonce(iv, chunkIndexArray), adataTagArray);
-            done = true;
-          }
-          cryptedBytes += chunk.length - tagLengthIfDecrypting;
-          queuedBytes += chunk.length - tagLengthIfDecrypting;
-          // eslint-disable-next-line no-loop-func
-          latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
-            await writer.ready;
-            await writer.write(crypted);
-            queuedBytes -= chunk.length;
-          }).catch(err => writer.abort(err));
-          if (done || queuedBytes > writer.desiredSize) {
-            await latestPromise; // Respect backpressure
-          }
-          if (!done) {
-            adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
-          } else {
-            await writer.close();
-            break;
-          }
-        }
-      } catch (e) {
-        await writer.abort(e);
-      }
+  const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
+  const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
+  const adataBuffer = new ArrayBuffer(21);
+  const adataArray = new Uint8Array(adataBuffer, 0, 13);
+  const adataTagArray = new Uint8Array(adataBuffer);
+  const adataView = new DataView(adataBuffer);
+  const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
+  adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+  let chunkIndex = 0;
+  let latestPromise = Promise.resolve();
+  let cryptedBytes = 0;
+  let queuedBytes = 0;
+  const iv = this.iv;
+  return _webStreamTools2.default.transformPair(data, async (readable, writable) => {
+    const reader = _webStreamTools2.default.getReader(readable);
+    const buffer = new TransformStream({}, {
+      highWaterMark: streaming ? _util2.default.getHardwareConcurrency() * 2 ** (_config2.default.aead_chunk_size_byte + 6) : Infinity,
+      size: array => array.length
     });
-  } else {
-    return modeInstance[fn]((await _webStreamTools2.default.readToEnd(data)), this.iv);
-  }
+    _webStreamTools2.default.pipe(buffer.readable, writable);
+    const writer = _webStreamTools2.default.getWriter(buffer.writable);
+    try {
+      while (true) {
+        let chunk = (await reader.readBytes(chunkSize + tagLengthIfDecrypting)) || new Uint8Array();
+        const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
+        chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
+        let cryptedPromise;
+        let done;
+        if (!chunkIndex || chunk.length) {
+          reader.unshift(finalChunk);
+          cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
+        } else {
+          // After the last chunk, we either encrypt a final, empty
+          // data chunk to get the final authentication tag or
+          // validate that final authentication tag.
+          adataView.setInt32(13 + 4, cryptedBytes); // Should be setInt64(13, ...)
+          cryptedPromise = modeInstance[fn](finalChunk, mode.getNonce(iv, chunkIndexArray), adataTagArray);
+          done = true;
+        }
+        cryptedBytes += chunk.length - tagLengthIfDecrypting;
+        queuedBytes += chunk.length - tagLengthIfDecrypting;
+        // eslint-disable-next-line no-loop-func
+        latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
+          await writer.ready;
+          await writer.write(crypted);
+          queuedBytes -= chunk.length;
+        }).catch(err => writer.abort(err));
+        if (done || queuedBytes > writer.desiredSize) {
+          await latestPromise; // Respect backpressure
+        }
+        if (!done) {
+          adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
+        } else {
+          await writer.close();
+          break;
+        }
+      }
+    } catch (e) {
+      await writer.abort(e);
+    }
+  });
 };
 
-},{"../config":80,"../crypto":95,"../enums":114,"../util":153,"web-stream-tools":76}],139:[function(require,module,exports){
+},{"../config":79,"../crypto":94,"../enums":113,"../util":152,"web-stream-tools":75}],138:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40182,8 +40172,8 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * @async
  */
 SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
-  if (!streaming) this.encrypted = await _webStreamTools2.default.readToEnd(this.encrypted);
-  const encrypted = _webStreamTools2.default.clone(this.encrypted);
+  let encrypted = _webStreamTools2.default.clone(this.encrypted);
+  if (!streaming) encrypted = await _webStreamTools2.default.readToEnd(encrypted);
   const decrypted = await _crypto2.default.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(_crypto2.default.cipher[sessionKeyAlgorithm].blockSize));
 
   // there must be a modification detection code packet as the
@@ -40208,7 +40198,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
 
 exports.default = SymEncryptedIntegrityProtected;
 
-},{"../config":80,"../crypto":95,"../enums":114,"../util":153,"web-stream-tools":76}],140:[function(require,module,exports){
+},{"../config":79,"../crypto":94,"../enums":113,"../util":152,"web-stream-tools":75}],139:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40257,7 +40247,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 function SymEncryptedSessionKey() {
   this.tag = _enums2.default.packet.symEncryptedSessionKey;
-  this.version = _config2.default.aead_protect && _config2.default.aead_protect_version === 4 ? 5 : 4;
+  this.version = _config2.default.aead_protect ? 5 : 4;
   this.sessionKey = null;
   this.sessionKeyEncryptionAlgorithm = null;
   this.sessionKeyAlgorithm = 'aes256';
@@ -40430,7 +40420,7 @@ SymEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = SymEncryptedSessionKey;
 
-},{"../config":80,"../crypto":95,"../enums":114,"../type/s2k":152,"../util":153}],141:[function(require,module,exports){
+},{"../config":79,"../crypto":94,"../enums":113,"../type/s2k":151,"../util":152}],140:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40567,7 +40557,7 @@ SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
 
 exports.default = SymmetricallyEncrypted;
 
-},{"../config":80,"../crypto":95,"../enums":114,"../util":153,"web-stream-tools":76}],142:[function(require,module,exports){
+},{"../config":79,"../crypto":94,"../enums":113,"../util":152,"web-stream-tools":75}],141:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40614,7 +40604,7 @@ Trust.prototype.read = function () {}; // TODO
 
 exports.default = Trust;
 
-},{"../enums":114}],143:[function(require,module,exports){
+},{"../enums":113}],142:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40726,7 +40716,7 @@ UserAttribute.prototype.equals = function (usrAttr) {
 
 exports.default = UserAttribute;
 
-},{"../enums":114,"../util":153,"./packet":130}],144:[function(require,module,exports){
+},{"../enums":113,"../util":152,"./packet":129}],143:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40828,7 +40818,7 @@ Userid.prototype.format = function (userid) {
 
 exports.default = Userid;
 
-},{"../enums":114,"../util":153}],145:[function(require,module,exports){
+},{"../enums":113,"../util":152}],144:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -40900,7 +40890,7 @@ if (typeof TextEncoder === 'undefined') {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./util":153,"@mattiasbuelens/web-streams-polyfill/es6":1,"core-js/fn/array/fill":"core-js/fn/array/fill","core-js/fn/array/find":"core-js/fn/array/find","core-js/fn/array/from":"core-js/fn/array/from","core-js/fn/array/includes":"core-js/fn/array/includes","core-js/fn/object/assign":"core-js/fn/object/assign","core-js/fn/promise":"core-js/fn/promise","core-js/fn/string/repeat":"core-js/fn/string/repeat","core-js/fn/symbol":"core-js/fn/symbol","core-js/fn/typed/uint8-array":"core-js/fn/typed/uint8-array","text-encoding-utf-8":72,"whatwg-fetch":"whatwg-fetch"}],146:[function(require,module,exports){
+},{"./util":152,"@mattiasbuelens/web-streams-polyfill/es6":1,"core-js/fn/array/fill":"core-js/fn/array/fill","core-js/fn/array/find":"core-js/fn/array/find","core-js/fn/array/from":"core-js/fn/array/from","core-js/fn/array/includes":"core-js/fn/array/includes","core-js/fn/object/assign":"core-js/fn/object/assign","core-js/fn/promise":"core-js/fn/promise","core-js/fn/string/repeat":"core-js/fn/string/repeat","core-js/fn/symbol":"core-js/fn/symbol","core-js/fn/typed/uint8-array":"core-js/fn/typed/uint8-array","text-encoding-utf-8":71,"whatwg-fetch":"whatwg-fetch"}],145:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40993,7 +40983,7 @@ async function read(input) {
   return new Signature(packetlist);
 }
 
-},{"./encoding/armor":112,"./enums":114,"./packet":126}],147:[function(require,module,exports){
+},{"./encoding/armor":111,"./enums":113,"./packet":125}],146:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41074,7 +41064,7 @@ ECDHSymmetricKey.fromClone = function (clone) {
 
 exports.default = ECDHSymmetricKey;
 
-},{"../util":153}],148:[function(require,module,exports){
+},{"../util":152}],147:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41159,7 +41149,7 @@ KDFParams.fromClone = function (clone) {
 
 exports.default = KDFParams;
 
-},{"../enums.js":114}],149:[function(require,module,exports){
+},{"../enums.js":113}],148:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41266,7 +41256,7 @@ Keyid.wildcard = function () {
 
 exports.default = Keyid;
 
-},{"../util.js":153}],150:[function(require,module,exports){
+},{"../util.js":152}],149:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41424,7 +41414,7 @@ MPI.fromClone = function (clone) {
 
 exports.default = MPI;
 
-},{"../util":153,"bn.js":17}],151:[function(require,module,exports){
+},{"../util":152,"bn.js":16}],150:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41549,7 +41539,7 @@ OID.fromClone = function (clone) {
 
 exports.default = OID;
 
-},{"../enums":114,"../util":153}],152:[function(require,module,exports){
+},{"../enums":113,"../util":152}],151:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -41687,6 +41677,10 @@ S2K.prototype.read = function (bytes) {
  * @returns {Uint8Array} binary representation of s2k
  */
 S2K.prototype.write = function () {
+  if (this.type === 'gnu-dummy') {
+    return new Uint8Array([101, 0, ..._util2.default.str_to_Uint8Array('GNU'), 1]);
+  }
+
   const arr = [new Uint8Array([_enums2.default.write(_enums2.default.s2k, this.type), _enums2.default.write(_enums2.default.hash, this.algorithm)])];
 
   switch (this.type) {
@@ -41778,7 +41772,7 @@ S2K.fromClone = function (clone) {
 
 exports.default = S2K;
 
-},{"../config":80,"../crypto":95,"../enums.js":114,"../util.js":153}],153:[function(require,module,exports){
+},{"../config":79,"../crypto":94,"../enums.js":113,"../util.js":152}],152:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -41786,40 +41780,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }(); // GPG4Browsers - An OpenPGP implementation in javascript
-// Copyright (C) 2011 Recurity Labs GmbH
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Lesser General Public
-// License as published by the Free Software Foundation; either
-// version 3.0 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+var _emailAddresses = require('email-addresses');
 
-/* eslint-disable no-console */
-
-/**
- * This object contains utility functions
- * @requires address-rfc2822
- * @requires web-stream-tools
- * @requires config
- * @requires encoding/base64
- * @module util
- */
-
-// re-import module to access util functions
-
-
-var _addressRfc = require('address-rfc2822');
-
-var _addressRfc2 = _interopRequireDefault(_addressRfc);
+var _emailAddresses2 = _interopRequireDefault(_emailAddresses);
 
 var _webStreamTools = require('web-stream-tools');
 
@@ -42283,16 +42246,6 @@ exports.default = {
     });
   },
 
-  getLeftNBits: function getLeftNBits(array, bitcount) {
-    const rest = bitcount % 8;
-    if (rest === 0) {
-      return array.subarray(0, bitcount / 8);
-    }
-    const bytes = (bitcount - rest) / 8 + 1;
-    const result = array.subarray(0, bytes);
-    return _util2.default.shiftRight(result, 8 - rest); // +String.fromCharCode(string.charCodeAt(bytes -1) << (8-rest) & 0xFF);
-  },
-
   // returns bit length of the integer x
   nbits: function nbits(x) {
     let r = 1;
@@ -42501,15 +42454,13 @@ exports.default = {
       throw new Error('User id string is too long');
     }
     try {
-      var _rfc2822$parse = _addressRfc2.default.parse(userid),
-          _rfc2822$parse2 = _slicedToArray(_rfc2822$parse, 1),
-          _rfc2822$parse2$ = _rfc2822$parse2[0];
+      var _emailAddresses$parse = _emailAddresses2.default.parseOneAddress(userid);
 
-      const name = _rfc2822$parse2$.phrase,
-            email = _rfc2822$parse2$.address,
-            comment = _rfc2822$parse2$.comment;
+      const name = _emailAddresses$parse.name,
+            email = _emailAddresses$parse.address,
+            comments = _emailAddresses$parse.comments;
 
-      return { name, email, comment: comment.replace(/^\(|\)$/g, '') };
+      return { name, email, comment: comments.replace(/^\(|\)$/g, '') };
     } catch (e) {
       throw new Error('Invalid user id format');
     }
@@ -42585,10 +42536,37 @@ exports.default = {
     }
     return result;
   }
-};
+}; // re-import module to access util functions
+// GPG4Browsers - An OpenPGP implementation in javascript
+// Copyright (C) 2011 Recurity Labs GmbH
+//
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 3.0 of the License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+/* eslint-disable no-console */
+
+/**
+ * This object contains utility functions
+ * @requires email-addresses
+ * @requires web-stream-tools
+ * @requires config
+ * @requires encoding/base64
+ * @module util
+ */
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./config":80,"./encoding/base64":113,"./util":153,"address-rfc2822":2,"web-stream-tools":76}],154:[function(require,module,exports){
+},{"./config":79,"./encoding/base64":112,"./util":152,"email-addresses":33,"web-stream-tools":75}],153:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42690,7 +42668,7 @@ WKD.prototype.lookup = async function (options) {
 
 exports.default = WKD;
 
-},{"./crypto":95,"./key":117,"./util":153,"node-fetch":"node-fetch"}],155:[function(require,module,exports){
+},{"./crypto":94,"./key":116,"./util":152,"node-fetch":"node-fetch"}],154:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -42884,5 +42862,5 @@ AsyncProxy.prototype.delegate = function (method, options) {
 
 exports.default = AsyncProxy;
 
-},{"../config":80,"../crypto":95,"../packet":126,"../util.js":153}]},{},[116])(116)
+},{"../config":79,"../crypto":94,"../packet":125,"../util.js":152}]},{},[115])(115)
 });
