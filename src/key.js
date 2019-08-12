@@ -922,9 +922,10 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
  * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
  * @param  {Date} date                       (optional) override the creationtime of the signature
  * @param  {Object} userId                   (optional) user ID
+ * @param  {Object} detached                 (optional) whether to create a detached signature packet
  * @returns {module:packet/signature}         signature packet
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached=false) {
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
@@ -932,7 +933,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
-  await signaturePacket.sign(signingKeyPacket, dataToSign);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, detached);
   return signaturePacket;
 }
 
@@ -1499,7 +1500,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       enums.symmetric.cast5,
       enums.symmetric.tripledes
     ], config.encryption_cipher);
-    if (config.aead_protect && config.aead_protect_version === 4) {
+    if (config.aead_protect) {
       signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
@@ -1522,9 +1523,12 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       signaturePacket.features = [0];
       signaturePacket.features[0] |= enums.features.modification_detection;
     }
-    if (config.aead_protect && config.aead_protect_version === 4) {
+    if (config.aead_protect) {
       signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.aead;
+    }
+    if (config.v5_keys) {
+      signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.v5_keys;
     }
     if (options.keyExpirationTime > 0) {

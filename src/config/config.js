@@ -48,19 +48,11 @@ export default {
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
    * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
    * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
+   * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-07|RFC4880bis-07}
    * @memberof module:config
    * @property {Boolean} aead_protect
    */
   aead_protect:             false,
-  /**
-   * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
-   * 0 means we implement a variant of {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00|this IETF draft}.
-   * 4 means we implement {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04|RFC4880bis-04}.
-   * Note that this determines how AEAD packets are parsed even when aead_protect is set to false
-   * @memberof module:config
-   * @property {Integer} aead_protect_version
-   */
-  aead_protect_version:     4,
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aead_protect is set to true.
@@ -76,6 +68,14 @@ export default {
    * @property {Integer} aead_chunk_size_byte
    */
   aead_chunk_size_byte:     12,
+  /**
+   * Use V5 keys.
+   * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
+   * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
+   * @memberof module:config
+   * @property {Boolean} v5_keys
+   */
+  v5_keys:                  false,
   /**
    * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
    * Iteration Count Byte for S2K (String to Key)

@@ -299,7 +299,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
     symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
-    if (config.aead_protect && config.aead_protect_version === 4 && await isAeadSupported(keys, date, userIds)) {
+    if (config.aead_protect && await isAeadSupported(keys, date, userIds)) {
       aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds));
     }
   } else if (passwords && passwords.length) {
@@ -315,7 +315,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
 
   const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userIds);
 
-  if (config.aead_protect && (config.aead_protect_version !== 4 || aeadAlgo)) {
+  if (config.aead_protect && aeadAlgo) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
     symEncryptedPacket.aeadAlgorithm = aeadAlgo;
   } else if (config.integrity_protect) {
@@ -474,7 +474,7 @@ Message.prototype.sign = async function(privateKeys=[], signature=null, date=new
   });
 
   packetlist.push(literalDataPacket);
-  packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date));
+  packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, false));
 
   return new Message(packetlist);
 };
@@ -513,7 +513,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true));
 };
 
 /**
@@ -523,10 +523,11 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @param  {Signature} signature               (optional) any existing detached signature to append
  * @param  {Date} date                         (optional) override the creationtime of the signature
  * @param  {Array} userIds                     (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Boolean} detached                  (optional) whether to create detached signature packets
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userIds=[]) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userIds=[], detached=false) {
   const packetlist = new packet.List();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -543,7 +544,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
       throw new Error(`Could not find valid signing key packet in key ${
         privateKey.getKeyId().toHex()}`);
     }
-    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId);
+    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId, detached);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
@@ -578,7 +579,7 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
         onePassSig.correspondingSigReject = reject;
       });
       onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-      onePassSig.hashed = await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, streaming);
+      onePassSig.hashed = await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming);
     }));
     msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
       const reader = stream.getReader(readable);
@@ -598,9 +599,9 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
         await writer.abort(e);
       }
     });
-    return createVerificationObjects(onePassSigList, literalDataList, keys, date);
+    return createVerificationObjects(onePassSigList, literalDataList, keys, date, false);
   }
-  return createVerificationObjects(signatureList, literalDataList, keys, date);
+  return createVerificationObjects(signatureList, literalDataList, keys, date, false);
 };
 
 /**
@@ -618,7 +619,7 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
     throw new Error('Can only verify message with one literal data packet.');
   }
   const signatureList = signature.packets;
-  return createVerificationObjects(signatureList, literalDataList, keys, date);
+  return createVerificationObjects(signatureList, literalDataList, keys, date, true);
 };
 
 /**
@@ -628,11 +629,12 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
+ * @param {Boolean} detached (optional) whether to verify detached signature packets
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-async function createVerificationObject(signature, literalDataList, keys, date=new Date()) {
+async function createVerificationObject(signature, literalDataList, keys, date=new Date(), detached=false) {
   let primaryKey = null;
   let signingKey = null;
   await Promise.all(keys.map(async function(key) {
@@ -651,7 +653,7 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
       if (!signingKey) {
         return null;
       }
-      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0]);
+      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached);
       const sig = await signaturePacket;
       if (sig.isExpired(date) || !(
         sig.created >= signingKey.getCreationTime() &&
@@ -689,15 +691,16 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
  * @param {Array<module:key.Key>} keys array of keys to verify signatures
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
+ * @param {Boolean} detached (optional) whether to verify detached signature packets
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date()) {
+export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date(), detached=false) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, keys, date);
+    return createVerificationObject(signature, literalDataList, keys, date, detached);
   }));
 }
 

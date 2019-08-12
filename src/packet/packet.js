@@ -99,23 +99,6 @@ export default {
   },
 
   /**
-   * Writes a packet header Version 3 with the given tag_type and length to a
-   * string
-   *
-   * @param {Integer} tag_type Tag type
-   * @param {Integer} length Length of the payload
-   * @returns {String} String of the header
-   */
-  writeOldHeader: function(tag_type, length) {
-    if (length < 256) {
-      return new Uint8Array([0x80 | (tag_type << 2), length]);
-    } else if (length < 65536) {
-      return util.concatUint8Array([new Uint8Array([0x80 | (tag_type << 2) | 1]), util.writeNumber(length, 2)]);
-    }
-    return util.concatUint8Array([new Uint8Array([0x80 | (tag_type << 2) | 2]), util.writeNumber(length, 4)]);
-  },
-
-  /**
    * Whether the packet type supports partial lengths per RFC4880
    * @param {Integer} tag_type Tag type
    * @returns {Boolean} String of the header

@@ -693,9 +693,9 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
     let zero_copyVal;
     let use_nativeVal;
     let aead_protectVal;
-    let aead_protect_versionVal;
     let aead_modeVal;
     let aead_chunk_size_byteVal;
+    let v5_keysVal;
 
     beforeEach(async function() {
       publicKey = await openpgp.key.readArmored(pub_key);
@@ -720,18 +720,18 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       zero_copyVal = openpgp.config.zero_copy;
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
-      aead_protect_versionVal = openpgp.config.aead_protect_version;
       aead_modeVal = openpgp.config.aead_mode;
       aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+      v5_keysVal = openpgp.config.v5_keys;
     });
 
     afterEach(function() {
       openpgp.config.zero_copy = zero_copyVal;
       openpgp.config.use_native = use_nativeVal;
       openpgp.config.aead_protect = aead_protectVal;
-      openpgp.config.aead_protect_version = aead_protect_versionVal;
       openpgp.config.aead_mode = aead_modeVal;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      openpgp.config.v5_keys = v5_keysVal;
     });
 
     it('Configuration', async function() {
@@ -846,19 +846,12 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       }
     });
 
-    tryTests('GCM mode', tests, {
-      if: !openpgp.config.saucelabs,
-      beforeEach: function() {
-        openpgp.config.aead_protect = true;
-        openpgp.config.aead_protect_version = 0;
-      }
-    });
-
-    tryTests('GCM mode (draft04)', tests, {
+    tryTests('GCM mode (V5 keys)', tests, {
       if: true,
       beforeEach: function() {
         openpgp.config.aead_protect = true;
         openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
+        openpgp.config.v5_keys = true;
 
         // Monkey-patch AEAD feature flag
         publicKey.keys[0].users[0].selfCertifications[0].features = [7];
@@ -1195,7 +1188,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
             decOpt.message = await openpgp.message.readArmored(encrypted.data);
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect && openpgp.config.aead_protect_version !== 4);
+            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -1218,7 +1211,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             expect(encrypted.data).to.match(/^-----BEGIN PGP MESSAGE/);
             decOpt.message = await openpgp.message.readArmored(encrypted.data);
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect && openpgp.config.aead_protect_version !== 4);
+            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -1260,7 +1253,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.message.readArmored(encrypted.data);
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect && openpgp.config.aead_protect_version !== 4);
+            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -1293,6 +1286,42 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
             };
             return openpgp.encrypt(encOpt).then(async function (encrypted) {
               decOpt.message = await openpgp.message.readArmored(encrypted.data);
+              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect);
+              return openpgp.decrypt(decOpt);
+            }).then(async function (decrypted) {
+              expect(decrypted.data).to.equal(plaintext);
+              expect(decrypted.signatures[0].valid).to.be.true;
+              const signingKey = await newPrivateKey.keys[0].getSigningKey();
+              expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
+            });
+          });
+        });
+
+        it('should encrypt/sign and decrypt/verify with generated key and detached signatures', function () {
+          const genOpt = {
+            userIds: [{ name: 'Test User', email: 'text@example.com' }],
+            numBits: 512
+          };
+          if (openpgp.util.getWebCryptoAll()) { genOpt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
+          return openpgp.generateKey(genOpt).then(async function(newKey) {
+            const newPublicKey = await openpgp.key.readArmored(newKey.publicKeyArmored);
+            const newPrivateKey = await openpgp.key.readArmored(newKey.privateKeyArmored);
+
+            const encOpt = {
+              message: openpgp.message.fromText(plaintext),
+              publicKeys: newPublicKey.keys,
+              privateKeys: newPrivateKey.keys,
+              detached: true
+            };
+            const decOpt = {
+              privateKeys: newPrivateKey.keys[0],
+              publicKeys: newPublicKey.keys
+            };
+            return openpgp.encrypt(encOpt).then(async function (encrypted) {
+              decOpt.message = await openpgp.message.readArmored(encrypted.data);
+              decOpt.signature = await openpgp.signature.readArmored(encrypted.signature);
               expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect);
               return openpgp.decrypt(decOpt);
             }).then(async function (decrypted) {

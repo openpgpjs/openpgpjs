@@ -89,7 +89,7 @@ CleartextMessage.prototype.signDetached = async function(privateKeys, signature=
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
 
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true));
 };
 
 /**
@@ -115,7 +115,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys, date=new D
   const literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
-  return createVerificationObjects(signatureList, [literalDataPacket], keys, date);
+  return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true);
 };
 
 /**

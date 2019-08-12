@@ -47,7 +47,7 @@ import config from '../config';
  */
 function Signature(date=new Date()) {
   this.tag = enums.packet.signature;
-  this.version = 4;
+  this.version = 4; // This is set to 5 below if we sign with a V5 key.
   this.signatureType = null;
   this.hashAlgorithm = null;
   this.publicKeyAlgorithm = null;
@@ -106,7 +106,7 @@ Signature.prototype.read = function (bytes) {
   let i = 0;
   this.version = bytes[i++];
 
-  if (this.version !== 4) {
+  if (this.version !== 4 && this.version !== 5) {
     throw new Error('Version ' + this.version + ' of the signature is unsupported.');
   }
 
@@ -148,15 +148,19 @@ Signature.prototype.write = function () {
  * Signs provided data. This needs to be done prior to serialization.
  * @param {module:packet.SecretKey} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
+ * @param {Boolean} detached (optional) whether to create a detached signature
  * @returns {Promise<Boolean>}
  * @async
  */
-Signature.prototype.sign = async function (key, data) {
+Signature.prototype.sign = async function (key, data, detached=false) {
   const signatureType = enums.write(enums.signature, this.signatureType);
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
-  const arr = [new Uint8Array([4, signatureType, publicKeyAlgorithm, hashAlgorithm])];
+  if (key.version === 5) {
+    this.version = 5;
+  }
+  const arr = [new Uint8Array([this.version, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
   if (key.version === 5) {
     // We could also generate this subpacket for version 4 keys, but for
@@ -172,8 +176,8 @@ Signature.prototype.sign = async function (key, data) {
 
   this.signatureData = util.concat(arr);
 
-  const toHash = this.toHash(signatureType, data);
-  const hash = await this.hash(signatureType, data, toHash);
+  const toHash = this.toHash(signatureType, data, detached);
+  const hash = await this.hash(signatureType, data, toHash, detached);
 
   this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
 
@@ -614,7 +618,7 @@ Signature.prototype.toSign = function (type, data) {
       if (data.key === undefined) {
         throw new Error('Key packet is required for this signature.');
       }
-      return data.key.writeOld();
+      return data.key.writeForHash(this.version);
 
     case t.key_revocation:
       return this.toSign(t.key, data);
@@ -628,28 +632,42 @@ Signature.prototype.toSign = function (type, data) {
 };
 
 
-Signature.prototype.calculateTrailer = function () {
+Signature.prototype.calculateTrailer = function (data, detached) {
   let length = 0;
   return stream.transform(stream.clone(this.signatureData), value => {
     length += value.length;
   }, () => {
-    const first = new Uint8Array([4, 0xFF]); //Version, ?
-    return util.concat([first, util.writeNumber(length, 4)]);
+    const arr = [];
+    if (this.version === 5 && (this.signatureType === enums.signature.binary || this.signatureType === enums.signature.text)) {
+      if (detached) {
+        arr.push(new Uint8Array(6));
+      } else {
+        arr.push(data.writeHeader());
+      }
+    }
+    arr.push(new Uint8Array([this.version, 0xFF]));
+    if (this.version === 5) {
+      arr.push(new Uint8Array(4));
+    }
+    arr.push(util.writeNumber(length, 4));
+    // For v5, this should really be writeNumber(length, 8) rather than the
+    // hardcoded 4 zero bytes above
+    return util.concat(arr);
   });
 };
 
 
-Signature.prototype.toHash = function(signatureType, data) {
+Signature.prototype.toHash = function(signatureType, data, detached=false) {
   const bytes = this.toSign(signatureType, data);
 
-  return util.concat([bytes, this.signatureData, this.calculateTrailer()]);
+  return util.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
 };
 
-Signature.prototype.hash = async function(signatureType, data, toHash, streaming=true) {
+Signature.prototype.hash = async function(signatureType, data, toHash, detached=false, streaming=true) {
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
-  if (!toHash) toHash = this.toHash(signatureType, data);
+  if (!toHash) toHash = this.toHash(signatureType, data, detached);
   if (!streaming && util.isStream(toHash)) {
-    return stream.fromAsync(async () => this.hash(signatureType, data, await stream.readToEnd(toHash)));
+    return stream.fromAsync(async () => this.hash(signatureType, data, await stream.readToEnd(toHash), detached));
   }
   return crypto.hash.digest(hashAlgorithm, toHash);
 };
@@ -661,10 +679,11 @@ Signature.prototype.hash = async function(signatureType, data, toHash, streaming
  *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
  * @param {module:enums.signature} signatureType expected signature type
  * @param {String|Object} data data which on the signature applies
+ * @param {Boolean} detached (optional) whether to verify a detached signature
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
-Signature.prototype.verify = async function (key, signatureType, data) {
+Signature.prototype.verify = async function (key, signatureType, data, detached=false) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
@@ -677,7 +696,7 @@ Signature.prototype.verify = async function (key, signatureType, data) {
   if (this.hashed) {
     hash = this.hashed;
   } else {
-    toHash = this.toHash(signatureType, data);
+    toHash = this.toHash(signatureType, data, detached);
     hash = await this.hash(signatureType, data, toHash);
   }
   hash = await stream.readToEnd(hash);

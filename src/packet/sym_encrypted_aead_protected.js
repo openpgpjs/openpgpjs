@@ -63,13 +63,9 @@ SymEncryptedAEADProtected.prototype.read = async function (bytes) {
     if (await reader.readByte() !== VERSION) { // The only currently defined value is 1.
       throw new Error('Invalid packet version.');
     }
-    if (config.aead_protect_version === 4) {
-      this.cipherAlgo = await reader.readByte();
-      this.aeadAlgo = await reader.readByte();
-      this.chunkSizeByte = await reader.readByte();
-    } else {
-      this.aeadAlgo = enums.aead.experimental_gcm;
-    }
+    this.cipherAlgo = await reader.readByte();
+    this.aeadAlgo = await reader.readByte();
+    this.chunkSizeByte = await reader.readByte();
     const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
     this.iv = await reader.readBytes(mode.ivLength);
     this.encrypted = reader.remainder();
@@ -81,10 +77,7 @@ SymEncryptedAEADProtected.prototype.read = async function (bytes) {
  * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload
  */
 SymEncryptedAEADProtected.prototype.write = function () {
-  if (config.aead_protect_version === 4) {
-    return util.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
-  }
-  return util.concat([new Uint8Array([this.version]), this.iv, this.encrypted]);
+  return util.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
 };
 
 /**
@@ -96,9 +89,6 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * @async
  */
 SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
-  if (config.aead_protect_version !== 4) {
-    this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
-  }
   await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), streaming);
   return true;
 };
@@ -112,7 +102,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  */
 SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
-  this.aeadAlgo = config.aead_protect_version === 4 ? enums.write(enums.aead, this.aeadAlgorithm) : enums.aead.experimental_gcm;
+  this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
   this.chunkSizeByte = config.aead_chunk_size_byte;
@@ -133,69 +123,65 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, strea
   const cipher = enums.read(enums.symmetric, this.cipherAlgo);
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   const modeInstance = await mode(cipher, key);
-  if (config.aead_protect_version === 4) {
-    const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
-    const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
-    const adataBuffer = new ArrayBuffer(21);
-    const adataArray = new Uint8Array(adataBuffer, 0, 13);
-    const adataTagArray = new Uint8Array(adataBuffer);
-    const adataView = new DataView(adataBuffer);
-    const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
-    let chunkIndex = 0;
-    let latestPromise = Promise.resolve();
-    let cryptedBytes = 0;
-    let queuedBytes = 0;
-    const iv = this.iv;
-    return stream.transformPair(data, async (readable, writable) => {
-      const reader = stream.getReader(readable);
-      const buffer = new TransformStream({}, {
-        highWaterMark: streaming ? util.getHardwareConcurrency() * 2 ** (config.aead_chunk_size_byte + 6) : Infinity,
-        size: array => array.length
-      });
-      stream.pipe(buffer.readable, writable);
-      const writer = stream.getWriter(buffer.writable);
-      try {
-        while (true) {
-          let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
-          const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
-          chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
-          let cryptedPromise;
-          let done;
-          if (!chunkIndex || chunk.length) {
-            reader.unshift(finalChunk);
-            cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
-          } else {
-            // After the last chunk, we either encrypt a final, empty
-            // data chunk to get the final authentication tag or
-            // validate that final authentication tag.
-            adataView.setInt32(13 + 4, cryptedBytes); // Should be setInt64(13, ...)
-            cryptedPromise = modeInstance[fn](finalChunk, mode.getNonce(iv, chunkIndexArray), adataTagArray);
-            done = true;
-          }
-          cryptedBytes += chunk.length - tagLengthIfDecrypting;
-          queuedBytes += chunk.length - tagLengthIfDecrypting;
-          // eslint-disable-next-line no-loop-func
-          latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
-            await writer.ready;
-            await writer.write(crypted);
-            queuedBytes -= chunk.length;
-          }).catch(err => writer.abort(err));
-          if (done || queuedBytes > writer.desiredSize) {
-            await latestPromise; // Respect backpressure
-          }
-          if (!done) {
-            adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
-          } else {
-            await writer.close();
-            break;
-          }
-        }
-      } catch(e) {
-        await writer.abort(e);
-      }
+  const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
+  const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
+  const adataBuffer = new ArrayBuffer(21);
+  const adataArray = new Uint8Array(adataBuffer, 0, 13);
+  const adataTagArray = new Uint8Array(adataBuffer);
+  const adataView = new DataView(adataBuffer);
+  const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
+  adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+  let chunkIndex = 0;
+  let latestPromise = Promise.resolve();
+  let cryptedBytes = 0;
+  let queuedBytes = 0;
+  const iv = this.iv;
+  return stream.transformPair(data, async (readable, writable) => {
+    const reader = stream.getReader(readable);
+    const buffer = new TransformStream({}, {
+      highWaterMark: streaming ? util.getHardwareConcurrency() * 2 ** (config.aead_chunk_size_byte + 6) : Infinity,
+      size: array => array.length
     });
-  } else {
-    return modeInstance[fn](await stream.readToEnd(data), this.iv);
-  }
+    stream.pipe(buffer.readable, writable);
+    const writer = stream.getWriter(buffer.writable);
+    try {
+      while (true) {
+        let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();
+        const finalChunk = chunk.subarray(chunk.length - tagLengthIfDecrypting);
+        chunk = chunk.subarray(0, chunk.length - tagLengthIfDecrypting);
+        let cryptedPromise;
+        let done;
+        if (!chunkIndex || chunk.length) {
+          reader.unshift(finalChunk);
+          cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
+        } else {
+          // After the last chunk, we either encrypt a final, empty
+          // data chunk to get the final authentication tag or
+          // validate that final authentication tag.
+          adataView.setInt32(13 + 4, cryptedBytes); // Should be setInt64(13, ...)
+          cryptedPromise = modeInstance[fn](finalChunk, mode.getNonce(iv, chunkIndexArray), adataTagArray);
+          done = true;
+        }
+        cryptedBytes += chunk.length - tagLengthIfDecrypting;
+        queuedBytes += chunk.length - tagLengthIfDecrypting;
+        // eslint-disable-next-line no-loop-func
+        latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
+          await writer.ready;
+          await writer.write(crypted);
+          queuedBytes -= chunk.length;
+        }).catch(err => writer.abort(err));
+        if (done || queuedBytes > writer.desiredSize) {
+          await latestPromise; // Respect backpressure
+        }
+        if (!done) {
+          adataView.setInt32(5 + 4, ++chunkIndex); // Should be setInt64(5, ...)
+        } else {
+          await writer.close();
+          break;
+        }
+      }
+    } catch(e) {
+      await writer.abort(e);
+    }
+  });
 };

@@ -1644,6 +1644,23 @@ iCzXvu4VCEMxMYOkOV4857v958DC7Z7W6BYEYpa9DP0O2zAwDmhu/kRFfKVQ
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
+const v5_sample_key = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+lGEFXJH05BYAAAAtCSsGAQQB2kcPAQEHQFhZlVcVVtwf+21xNQPX+ecMJJBL0MPd
+fj75iux+my8QAAAAAAAiAQCHZ1SnSUmWqxEsoI6facIVZQu6mph3cBFzzTvcm5lA
+Ng5ctBhlbW1hLmdvbGRtYW5AZXhhbXBsZS5uZXSIlgUTFggASCIhBRk0e8mHJGQC
+X5nfPsLgAA7ZiEiS4fez6kyUAJFZVptUBQJckfTkAhsDBQsJCAcCAyICAQYVCgkI
+CwIEFgIDAQIeBwIXgAAA9cAA/jiR3yMsZMeEQ40u6uzEoXa6UXeV/S3wwJAXRJy9
+M8s0AP9vuL/7AyTfFXwwzSjDnYmzS0qAhbLDQ643N+MXGBJ2BZxmBVyR9OQSAAAA
+MgorBgEEAZdVAQUBAQdA+nysrzml2UCweAqtpDuncSPlvrcBWKU0yfU0YvYWWAoD
+AQgHAAAAAAAiAP9OdAPppjU1WwpqjIItkxr+VPQRT8Zm/Riw7U3F6v3OiBFHiHoF
+GBYIACwiIQUZNHvJhyRkAl+Z3z7C4AAO2YhIkuH3s+pMlACRWVabVAUCXJH05AIb
+DAAAOSQBAP4BOOIR/sGLNMOfeb5fPs/02QMieoiSjIBnijhob2U5AQC+RtOHCHx7
+TcIYl5/Uyoi+FOvPLcNw4hOv2nwUzSSVAw==
+=IiS2
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -1655,7 +1672,7 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192, sym.cast5, sym.tripledes]);
-      if (openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4) {
+      if (openpgp.config.aead_protect) {
         const aead = openpgp.enums.aead;
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.eax, aead.ocb]);
       }
@@ -1663,7 +1680,7 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4 ? [7] : [1]);
+      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -1692,7 +1709,7 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128, sym.cast5, sym.tripledes]);
-      if (openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4) {
+      if (openpgp.config.aead_protect) {
         const aead = openpgp.enums.aead;
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.experimental_gcm, aead.eax, aead.ocb]);
       }
@@ -1700,7 +1717,7 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4 ? [7] : [1]);
+      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -2162,6 +2179,18 @@ function versionSpecificTests() {
       });
     });
   });
+
+  it('Parses V5 sample key', async function() {
+    // sec   ed25519 2019-03-20 [SC]
+    //       19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54
+    // uid                      emma.goldman@example.net
+    // ssb   cv25519 2019-03-20 [E]
+    //       E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965
+    const { keys: [key] } = await openpgp.key.readArmored(v5_sample_key);
+    expect(key.primaryKey.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
+    expect(key.subKeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
+    expect(await key.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
+  });
 }
 
 describe('Key', function() {
@@ -2179,19 +2208,19 @@ describe('Key', function() {
 
   describe('V4', versionSpecificTests);
 
+  let v5_keysVal;
   let aead_protectVal;
-  let aead_protect_versionVal;
   tryTests('V5', versionSpecificTests, {
     if: !openpgp.config.saucelabs,
     beforeEach: function() {
+      v5_keysVal = openpgp.config.v5_keys;
       aead_protectVal = openpgp.config.aead_protect;
-      aead_protect_versionVal = openpgp.config.aead_protect_version;
+      openpgp.config.v5_keys = true;
       openpgp.config.aead_protect = true;
-      openpgp.config.aead_protect_version = 4;
     },
     afterEach: function() {
+      openpgp.config.v5_keys = v5_keysVal;
       openpgp.config.aead_protect = aead_protectVal;
-      openpgp.config.aead_protect_version = aead_protect_versionVal;
     }
   });
 

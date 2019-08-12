@@ -117,6 +117,10 @@ S2K.prototype.read = function (bytes) {
  * @returns {Uint8Array} binary representation of s2k
  */
 S2K.prototype.write = function () {
+  if (this.type === 'gnu-dummy') {
+    return new Uint8Array([101, 0, ...util.str_to_Uint8Array('GNU'), 1]);
+  }
+
   const arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
 
   switch (this.type) {
