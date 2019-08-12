@@ -1672,7 +1672,7 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192, sym.cast5, sym.tripledes]);
-      if (openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4) {
+      if (openpgp.config.aead_protect) {
         const aead = openpgp.enums.aead;
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.eax, aead.ocb]);
       }
@@ -1709,7 +1709,7 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128, sym.cast5, sym.tripledes]);
-      if (openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4) {
+      if (openpgp.config.aead_protect) {
         const aead = openpgp.enums.aead;
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.experimental_gcm, aead.eax, aead.ocb]);
       }
@@ -2210,21 +2210,17 @@ describe('Key', function() {
 
   let v5_keysVal;
   let aead_protectVal;
-  let aead_protect_versionVal;
   tryTests('V5', versionSpecificTests, {
     if: !openpgp.config.saucelabs,
     beforeEach: function() {
       v5_keysVal = openpgp.config.v5_keys;
       aead_protectVal = openpgp.config.aead_protect;
-      aead_protect_versionVal = openpgp.config.aead_protect_version;
       openpgp.config.v5_keys = true;
       openpgp.config.aead_protect = true;
-      openpgp.config.aead_protect_version = 4;
     },
     afterEach: function() {
       openpgp.config.v5_keys = v5_keysVal;
       openpgp.config.aead_protect = aead_protectVal;
-      openpgp.config.aead_protect_version = aead_protect_versionVal;
     }
   });
 

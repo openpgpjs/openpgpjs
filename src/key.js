@@ -1500,7 +1500,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       enums.symmetric.cast5,
       enums.symmetric.tripledes
     ], config.encryption_cipher);
-    if (config.aead_protect && config.aead_protect_version === 4) {
+    if (config.aead_protect) {
       signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
@@ -1523,7 +1523,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       signaturePacket.features = [0];
       signaturePacket.features[0] |= enums.features.modification_detection;
     }
-    if (config.aead_protect && config.aead_protect_version === 4) {
+    if (config.aead_protect) {
       signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.aead;
     }

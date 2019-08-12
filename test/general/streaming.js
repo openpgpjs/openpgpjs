@@ -353,7 +353,7 @@ function tests() {
     expect(verified.signatures).to.exist.and.have.length(1);
   });
 
-  it('Encrypt and decrypt larger message roundtrip (draft04)', async function() {
+  it('Encrypt and decrypt larger message roundtrip (AEAD)', async function() {
     let aead_protectValue = openpgp.config.aead_protect;
     let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
     openpgp.config.aead_protect = true;
@@ -382,7 +382,7 @@ function tests() {
     }
   });
 
-  it('Encrypt and decrypt larger text message roundtrip (draft04)', async function() {
+  it('Encrypt and decrypt larger text message roundtrip (AEAD)', async function() {
     let aead_protectValue = openpgp.config.aead_protect;
     let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
     openpgp.config.aead_protect = true;
@@ -449,7 +449,7 @@ function tests() {
     expect(canceled).to.be.true;
   });
 
-  it('Input stream should be canceled when canceling decrypted stream (draft04)', async function() {
+  it('Input stream should be canceled when canceling decrypted stream (AEAD)', async function() {
     let aead_protectValue = openpgp.config.aead_protect;
     let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
     openpgp.config.aead_protect = true;
@@ -527,7 +527,7 @@ function tests() {
     expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
   });
 
-  it("Don't pull entire input stream when we're not pulling decrypted stream (draft04)", async function() {
+  it("Don't pull entire input stream when we're not pulling decrypted stream (AEAD)", async function() {
     let aead_protectValue = openpgp.config.aead_protect;
     let aead_chunk_size_byteValue = openpgp.config.aead_chunk_size_byte;
     openpgp.config.aead_protect = true;

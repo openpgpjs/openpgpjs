@@ -712,8 +712,5 @@ function onError(message, error) {
  * @returns {Boolean}   If authenticated encryption should be used
  */
 function nativeAEAD() {
-  return config.aead_protect && (
-    ((config.aead_protect_version !== 4 || config.aead_mode === enums.aead.experimental_gcm) && util.getWebCrypto()) ||
-    (config.aead_protect_version === 4 && config.aead_mode === enums.aead.eax && util.getWebCrypto())
-  );
+  return config.aead_protect && (config.aead_mode === enums.aead.eax || config.aead_mode === enums.aead.experimental_gcm) && util.getWebCrypto();
 }

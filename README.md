@@ -92,8 +92,6 @@ library to convert back and forth between them.
   openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm // **Non-standard**, fastest
   ```
 
-  We previously also implemented an [earlier version](https://tools.ietf.org/html/draft-ford-openpgp-format-00) of the draft (using GCM), which you could enable by setting `openpgp.config.aead_protect = true`. If you need to stay compatible with that version, you need to set `openpgp.config.aead_protect_version = 0`.
-
 * For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256. We use [Rusha](https://github.com/srijs/rusha) and [asmCrypto Lite](https://github.com/openpgpjs/asmcrypto-lite) (a minimal subset of asmCrypto.js built specifically for OpenPGP.js).
 
 

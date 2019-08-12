@@ -299,7 +299,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
     symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
-    if (config.aead_protect && config.aead_protect_version === 4 && await isAeadSupported(keys, date, userIds)) {
+    if (config.aead_protect && await isAeadSupported(keys, date, userIds)) {
       aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds));
     }
   } else if (passwords && passwords.length) {
@@ -315,7 +315,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
 
   const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userIds);
 
-  if (config.aead_protect && (config.aead_protect_version !== 4 || aeadAlgo)) {
+  if (config.aead_protect && aeadAlgo) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
     symEncryptedPacket.aeadAlgorithm = aeadAlgo;
   } else if (config.integrity_protect) {
