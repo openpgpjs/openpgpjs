@@ -518,7 +518,7 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
   it('Supports signing with GnuPG stripped-key extension', async function() {
     const priv_key_gnupg_ext = (await openpgp.key.readArmored(flowcrypt_stripped_key)).keys[0];
     await priv_key_gnupg_ext.decrypt('FlowCrypt');
-    const sig = await openpgp.sign({ message: openpgp.message.fromText('test'), privateKeys: [priv_key_gnupg_ext] });
+    const sig = await openpgp.sign({ message: openpgp.message.fromText('test'), privateKeys: [priv_key_gnupg_ext], date: new Date('2018-12-17T03:24:00') });
     expect(sig.data).to.match(/-----END PGP MESSAGE-----\r\n$/);
   });
 
