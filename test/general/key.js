@@ -1680,7 +1680,7 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4 ? [7] : [1]);
+      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -1717,7 +1717,7 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.aead_protect && openpgp.config.aead_protect_version === 4 ? [7] : [1]);
+      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -2208,17 +2208,21 @@ describe('Key', function() {
 
   describe('V4', versionSpecificTests);
 
+  let v5_keysVal;
   let aead_protectVal;
   let aead_protect_versionVal;
   tryTests('V5', versionSpecificTests, {
     if: !openpgp.config.saucelabs,
     beforeEach: function() {
+      v5_keysVal = openpgp.config.v5_keys;
       aead_protectVal = openpgp.config.aead_protect;
       aead_protect_versionVal = openpgp.config.aead_protect_version;
+      openpgp.config.v5_keys = true;
       openpgp.config.aead_protect = true;
       openpgp.config.aead_protect_version = 4;
     },
     afterEach: function() {
+      openpgp.config.v5_keys = v5_keysVal;
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_protect_version = aead_protect_versionVal;
     }

@@ -696,6 +696,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
     let aead_protect_versionVal;
     let aead_modeVal;
     let aead_chunk_size_byteVal;
+    let v5_keysVal;
 
     beforeEach(async function() {
       publicKey = await openpgp.key.readArmored(pub_key);
@@ -723,6 +724,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       aead_protect_versionVal = openpgp.config.aead_protect_version;
       aead_modeVal = openpgp.config.aead_mode;
       aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+      v5_keysVal = openpgp.config.v5_keys;
     });
 
     afterEach(function() {
@@ -732,6 +734,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       openpgp.config.aead_protect_version = aead_protect_versionVal;
       openpgp.config.aead_mode = aead_modeVal;
       openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      openpgp.config.v5_keys = v5_keysVal;
     });
 
     it('Configuration', async function() {
@@ -854,11 +857,12 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
       }
     });
 
-    tryTests('GCM mode (draft04)', tests, {
+    tryTests('GCM mode (V5 keys)', tests, {
       if: true,
       beforeEach: function() {
         openpgp.config.aead_protect = true;
         openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
+        openpgp.config.v5_keys = true;
 
         // Monkey-patch AEAD feature flag
         publicKey.keys[0].users[0].selfCertifications[0].features = [7];
