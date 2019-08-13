@@ -122,8 +122,9 @@ export default {
       }
       case enums.publicKey.ecdsa: {
         const oid = key_params[0];
+        const Q = key_params[1].toUint8Array();
         const d = key_params[2].toUint8Array();
-        const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, d, hashed);
+        const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, Q, d, hashed);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.r),
           util.Uint8Array_to_MPI(signature.s)

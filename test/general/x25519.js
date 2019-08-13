@@ -8,7 +8,7 @@ chai.use(require('chai-as-promised'));
 const { expect } = chai;
 const input = require('./testInputs');
 
-describe('X25519 Cryptography', function () {
+describe('X25519 Cryptography @lightweight', function () {
   const data = {
     light: {
       id: '1ecdf026c0245830',

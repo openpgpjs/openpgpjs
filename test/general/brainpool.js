@@ -8,7 +8,14 @@ const input = require('./testInputs.js');
 
 const expect = chai.expect;
 
-describe('Brainpool Cryptography', function () {
+describe('Brainpool Cryptography @lightweight', function () {
+  //only x25519 crypto is fully functional in lightbuild
+  if (!openpgp.util.getFullBuild()) {
+    before(function() {
+      this.skip();
+    });
+  }
+  const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const data = {
     romeo: {
       id: 'fa3d64c9bcf338bc',
@@ -190,7 +197,7 @@ describe('Brainpool Cryptography', function () {
     const juliet = await load_pub_key('juliet');
     const romeo = await load_priv_key('romeo');
     const msg = await openpgp.message.readArmored(data.romeo.message_encrypted);
-    const result = await openpgp.decrypt({privateKeys: romeo, publicKeys: [juliet], message: msg});
+    const result = await openpgp.decrypt({ privateKeys: romeo, publicKeys: [juliet], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
@@ -275,6 +282,9 @@ describe('Brainpool Cryptography', function () {
     if: typeof window !== 'undefined' && window.Worker,
     before: async function() {
       await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      if (!openpgp.util.getNodeCrypto() && !openpgp.util.getFullBuild()) {
+          this.skip();
+      }
     },
     beforeEach: function() {
       openpgp.config.use_native = true;

@@ -30,7 +30,7 @@ function node_hash(type) {
   return async function (data) {
     const shasum = nodeCrypto.createHash(type);
     return stream.transform(data, value => {
-      shasum.update(new Buffer(value));
+      shasum.update(Buffer.from(value));
     }, () => new Uint8Array(shasum.digest()));
   };
 }
