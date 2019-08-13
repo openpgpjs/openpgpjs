@@ -9,14 +9,15 @@ if [ $OPENPGPJSTEST = "coverage" ]; then
 
 elif [ $OPENPGPJSTEST = "unit" ]; then
   echo "Running OpenPGP.js unit tests on node.js."
-  npm test
+  grunt build --lightweight=$LIGHTWEIGHT && grunt test --lightweight=$LIGHTWEIGHT
+ 
 
 elif [ $OPENPGPJSTEST = "saucelabs" ]; then
   echo "Running OpenPGP.js browser unit tests on Saucelabs."
 
   export SELENIUM_BROWSER_CAPABILITIES="{\"browserName\":\"$BROWSER\", \"version\":\"$VERSION\", \"platform\":\"$PLATFORM\", \"extendedDebugging\":true}"
   echo "SELENIUM_BROWSER_CAPABILITIES='$SELENIUM_BROWSER_CAPABILITIES'"
-  grunt saucelabs --compat=$COMPAT &
+  grunt saucelabs --compat=$COMPAT --lightweight=$LIGHTWEIGHT &
   background_process_pid=$!
 
   # https://github.com/travis-ci/travis-ci/issues/4190

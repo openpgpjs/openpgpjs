@@ -226,8 +226,7 @@ module.exports = function(grunt) {
           reporter: 'spec',
           timeout: 120000,
           grep: 'lightweight'
-          } :
-          {
+          } : {
           reporter: 'spec',
           timeout: 120000,
           },
@@ -248,7 +247,7 @@ module.exports = function(grunt) {
         src: ['*.js'],
         dest: 'dist/compat/'
       },
-      lightweight: {
+      openpgp_lightweight: {
         expand: true,
         cwd: 'dist/',
         src: ['*.js'],
@@ -276,7 +275,9 @@ module.exports = function(grunt) {
         options: {
           username: 'openpgpjs',
           key: getSauceKey,
-          urls: [
+          urls: lightweight ? [
+            'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('@lightweight')
+          ] : [
             'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('Sauce Labs Group 1'),
             'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('Sauce Labs Group 2'),
             'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('^(?!.*Sauce Labs Group [1-2])')
