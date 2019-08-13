@@ -226,8 +226,7 @@ module.exports = function(grunt) {
           reporter: 'spec',
           timeout: 120000,
           grep: 'lightweight'
-          } :
-          {
+          } : {
           reporter: 'spec',
           timeout: 120000,
           },
@@ -248,7 +247,7 @@ module.exports = function(grunt) {
         src: ['*.js'],
         dest: 'dist/compat/'
       },
-      lightweight: {
+      openpgp_lightweight: {
         expand: true,
         cwd: 'dist/',
         src: ['*.js'],
