@@ -680,7 +680,7 @@ Signature.prototype.hash = async function(signatureType, data, toHash, detached 
 
 
 /**
- * verifys the signature packet. Note: not signature types are implemented
+ * verifies the signature packet. Note: not all signature types are implemented
  * @param {module:packet.PublicSubkey|module:packet.PublicKey|
  *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
  * @param {module:enums.signature} signatureType expected signature type
@@ -706,7 +706,6 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
     hash = await this.hash(signatureType, data, toHash);
   }
   hash = await stream.readToEnd(hash);
-
   if (this.signedHashValue[0] !== hash[0] ||
       this.signedHashValue[1] !== hash[1]) {
     this.verified = false;
@@ -736,7 +735,6 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
       mpi[j] = new type_mpi();
       i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
     }
-
     this.verified = await crypto.signature.verify(
       publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
       toHash, hash

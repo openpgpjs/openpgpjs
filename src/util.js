@@ -31,6 +31,7 @@ import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
+import build from './build.env';
 
 export default {
   isString: function(data) {
@@ -636,6 +637,10 @@ export default {
     }
 
     return navigator.hardwareConcurrency || 1;
+  },
+
+  getFullBuild: function() {
+    return build;
   },
 
   isEmailAddress: function(data) {
