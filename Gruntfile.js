@@ -37,6 +37,7 @@ module.exports = function(grunt) {
       ]
     }
   }]];
+  const lightweight = !!grunt.option('lightweight');
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
@@ -64,7 +65,10 @@ module.exports = function(grunt) {
               'core-js/fn/string/repeat',
               'core-js/fn/symbol',
               'core-js/fn/object/assign',
-            ]
+            ],
+            lightweight ? [ 
+              'elliptic'
+            ] : []
           ),
           transform: [
             ["babelify", {
@@ -131,6 +135,32 @@ module.exports = function(grunt) {
           from: "openpgp.js",
           to: "openpgp.min.js"
         }]
+      },
+      lightweight_build: {
+        src: [
+          'dist/openpgp.js',
+          'dist/openpgp.js'
+        ],
+        overwrite: true,
+        replacements: lightweight ? [
+          {
+            from: "USE_INDUTNY_ELLIPTIC = true",
+            to: "USE_INDUTNY_ELLIPTIC = false"
+          }
+        ] : []
+      },
+      full_build: {
+        src: [
+          'dist/openpgp.js',
+          'dist/openpgp.js'
+        ],
+        overwrite: true,
+        replacements: [
+          {
+            from: "USE_INDUTNY_ELLIPTIC = false",
+            to: "USE_INDUTNY_ELLIPTIC = true"
+          }
+        ]
       }
     },
     terser: {
@@ -192,10 +222,15 @@ module.exports = function(grunt) {
     },
     mochaTest: {
       unittests: {
-        options: {
+        options: lightweight ? {
           reporter: 'spec',
-          timeout: 120000
-        },
+          timeout: 120000,
+          grep: 'lightweight'
+          } :
+          {
+          reporter: 'spec',
+          timeout: 120000,
+          },
         src: ['test/unittests.js']
       }
     },
@@ -212,6 +247,12 @@ module.exports = function(grunt) {
         cwd: 'dist/',
         src: ['*.js'],
         dest: 'dist/compat/'
+      },
+      lightweight: {
+        expand: true,
+        cwd: 'dist/',
+        src: ['*.js'],
+        dest: 'dist/lightweight/'
       }
     },
     clean: ['dist/'],
@@ -292,7 +333,7 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('build', ['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
+  grunt.registerTask('build', ['browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'version', 'terser', 'header', 'replace_min']);
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks

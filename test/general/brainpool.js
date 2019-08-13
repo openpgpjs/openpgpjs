@@ -222,7 +222,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     const juliet = await load_pub_key('juliet');
     const romeo = await load_priv_key('romeo');
     const msg = await openpgp.message.readArmored(data.romeo.message_encrypted);
-    const result = await openpgp.decrypt({privateKeys: romeo, publicKeys: [juliet], message: msg});
+    const result = await openpgp.decrypt({ privateKeys: romeo, publicKeys: [juliet], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
