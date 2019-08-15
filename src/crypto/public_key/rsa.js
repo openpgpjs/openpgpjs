@@ -228,8 +228,8 @@ export default {
       return key;
     } else if (nodeCrypto && nodeCrypto.generateKeyPair) {
       const opts = {
-        modulusLength: B.toNumber(),
-        publicExponent: E.toNumber(),
+        modulusLength: Number(B.toString(10)),
+        publicExponent: Number(E.toString(10)),
         publicKeyEncoding: { type: 'pkcs1', format: 'der' },
         privateKeyEncoding: { type: 'pkcs1', format: 'der' }
       };
