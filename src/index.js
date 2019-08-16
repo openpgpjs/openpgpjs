@@ -153,6 +153,3 @@ export { default as HKP } from './hkp';
  * @name module:openpgp.WKD
  */
 export { default as WKD } from './wkd';
-
-
-export { default as build } from './build.env';
