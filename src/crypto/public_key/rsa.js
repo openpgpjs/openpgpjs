@@ -31,9 +31,6 @@ import random from '../random';
 import config from '../../config';
 import util from '../../util';
 
-const nodeCrypto = util.getNodeCrypto(); // for native node keygen
-const asn1 = nodeCrypto ? require('asn1.js') : undefined;
-
 // Helper for IE11 KeyOperation objects
 function promisifyIE11Op(keyObj, err) {
   if (typeof keyObj.then !== 'function') { // IE11 KeyOperation
@@ -50,8 +47,8 @@ function promisifyIE11Op(keyObj, err) {
 }
 
 /* eslint-disable no-invalid-this */
-const RSAPrivateKey = nodeCrypto ? asn1.define('RSAPrivateKey', function () {
-  this.seq().obj(
+const RSAPrivateKey = util.detectNode() ? require('asn1.js').define('RSAPrivateKey', function () {
+  this.seq().obj( // used for native NodeJS keygen
     this.key('version').int(), // 0
     this.key('modulus').int(), // n
     this.key('publicExponent').int(), // e
@@ -226,7 +223,7 @@ export default {
       key.q = new BN(util.b64_to_Uint8Array(jwk.q));
       key.u = key.p.invm(key.q);
       return key;
-    } else if (nodeCrypto && nodeCrypto.generateKeyPair) {
+    } else if (nodeCrypto && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
         modulusLength: Number(B.toString(10)),
         publicExponent: Number(E.toString(10)),
