@@ -12,9 +12,6 @@ describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightwe
   //only x25519 crypto is fully functional in lightbuild
   function omnibus() {
     it('Omnibus NIST P-256 Test', function () {
-      if (!openpgp.util.getFullBuild()) {
-        this.skip(); 
-      }
       const options = { userIds: {name: "Hi", email: "hi@hel.lo"}, curve: "p256" };
       const testData = input.createSomeMessage();
       const testData2 = input.createSomeMessage();
