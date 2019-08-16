@@ -570,6 +570,9 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
   if (literalDataList.length !== 1) {
     throw new Error('Can only verify message with one literal data packet.');
   }
+  if (!streaming) {
+    msg.packets.concat(await stream.readToEnd(msg.packets.stream, _ => _));
+  }
   const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
   if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
@@ -599,9 +602,9 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
         await writer.abort(e);
       }
     });
-    return createVerificationObjects(onePassSigList, literalDataList, keys, date, false);
+    return createVerificationObjects(onePassSigList, literalDataList, keys, date, false, streaming);
   }
-  return createVerificationObjects(signatureList, literalDataList, keys, date, false);
+  return createVerificationObjects(signatureList, literalDataList, keys, date, false, streaming);
 };
 
 /**
@@ -634,7 +637,7 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-async function createVerificationObject(signature, literalDataList, keys, date=new Date(), detached=false) {
+async function createVerificationObject(signature, literalDataList, keys, date=new Date(), detached=false, streaming=false) {
   let primaryKey = null;
   let signingKey = null;
   await Promise.all(keys.map(async function(key) {
@@ -653,7 +656,7 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
       if (!signingKey) {
         return null;
       }
-      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached);
+      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, streaming);
       const sig = await signaturePacket;
       if (sig.isExpired(date) || !(
         sig.created >= signingKey.getCreationTime() &&
@@ -696,11 +699,11 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date(), detached=false) {
+export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date(), detached=false, streaming=false) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, keys, date, detached);
+    return createVerificationObject(signature, literalDataList, keys, date, detached, streaming);
   }));
 }
 

@@ -683,7 +683,7 @@ Signature.prototype.hash = async function(signatureType, data, toHash, detached=
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
-Signature.prototype.verify = async function (key, signatureType, data, detached=false) {
+Signature.prototype.verify = async function (key, signatureType, data, detached=false, streaming=false) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
@@ -697,6 +697,7 @@ Signature.prototype.verify = async function (key, signatureType, data, detached=
     hash = this.hashed;
   } else {
     toHash = this.toHash(signatureType, data, detached);
+    if (!streaming) toHash = await stream.readToEnd(toHash);
     hash = await this.hash(signatureType, data, toHash);
   }
   hash = await stream.readToEnd(hash);
