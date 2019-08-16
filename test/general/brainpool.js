@@ -69,7 +69,23 @@ describe('Brainpool Cryptography', function () {
         'tZa9Z9Eq1OfX2n8kR7BnPnWn9qlhg/63sgNT',
         '=lNCW',
         '-----END PGP MESSAGE-----'
-      ].join('\n')
+      ].join('\n'),
+      message_with_leading_zero_in_hash: 'test message\n277',
+      message_encrypted_with_leading_zero_in_hash:
+`-----BEGIN PGP MESSAGE-----
+Version: OpenPGP.js v4.5.5
+Comment: https://openpgpjs.org
+
+wX4DSpmSuiUYN4MSAgMERlxfWMZgb9Xdu9v5mYq1TP2QZO9lLloIIO45tn/W
+3Eg5DbJfGiBvR7QUXbFY1KiILiXXYxEm1x8i0qw793NlizAdHSiZmifeBJXX
+4sV1NDOaIUXVs6Aes7rhV7G3jADlDVu2N50Ti+MdGHz8rWqYt1zSwBgBo4ag
+i7YemCOYIHqpa+R6lId0+BOXKUFZYCTH8J7QSZYYkH06DFvt1LOPXJHuJrX9
+E++ph0fvdrZVm9kpOFv3fnn/EeDOL4chvemC0dawTLhs0rg+bin9xhGjzpl+
+tbIxp3v4WG6xt9fkNwDSVC7yYMj+LeYcF+ZG1Bw5pCdMoBnJtqKLAJbqP3Ph
+TRELeagBcoQblRDF03XxrjpeCbLqZFwpFQqac9T2eqDRtvi2DA+JYCJdJorO
+KnthADE6hYMCSZVS9Q1IGN3TjROB5rrB/N3xItPsXuc=
+=A7qX
+-----END PGP MESSAGE-----`
     },
     juliet: {
       id: '37e16a986b8af99e',
@@ -194,6 +210,17 @@ describe('Brainpool Cryptography', function () {
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
+    expect(result.signatures).to.have.length(1);
+    expect(result.signatures[0].valid).to.be.true;
+  });
+  it('Decrypt and verify message with leading zero in hash', async function () {
+    const juliet = await load_priv_key('juliet');
+    const romeo = await load_pub_key('romeo');
+    const msg = await openpgp.message.readArmored(data.romeo.message_encrypted_with_leading_zero_in_hash);
+    const result = await openpgp.decrypt({privateKeys: juliet, publicKeys: [romeo], message: msg});
+
+    expect(result).to.exist;
+    expect(result.data).to.equal(data.romeo.message_with_leading_zero_in_hash);
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
