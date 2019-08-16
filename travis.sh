@@ -9,8 +9,7 @@ if [ $OPENPGPJSTEST = "coverage" ]; then
 
 elif [ $OPENPGPJSTEST = "unit" ]; then
   echo "Running OpenPGP.js unit tests on node.js."
-  grunt build --lightweight=$LIGHTWEIGHT && grunt test --lightweight=$LIGHTWEIGHT
- 
+  grunt build test --lightweight=$LIGHTWEIGHT
 
 elif [ $OPENPGPJSTEST = "browserstack" ]; then
   echo "Running OpenPGP.js browser unit tests on Browserstack."

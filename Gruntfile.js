@@ -15,6 +15,7 @@ module.exports = function(grunt) {
   // Project configuration.
   const dev = !!grunt.option('dev');
   const compat = !!grunt.option('compat');
+  const lightweight = !!grunt.option('lightweight');
   const plugins = compat ? [
     "transform-async-to-generator",
     "syntax-async-functions",
@@ -37,7 +38,6 @@ module.exports = function(grunt) {
       ]
     }
   }]];
-  const lightweight = !!grunt.option('lightweight');
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     browserify: {
@@ -66,7 +66,7 @@ module.exports = function(grunt) {
               'core-js/fn/symbol',
               'core-js/fn/object/assign',
             ],
-            lightweight ? [ 
+            lightweight ? [
               'elliptic'
             ] : []
           ),
@@ -222,14 +222,11 @@ module.exports = function(grunt) {
     },
     mochaTest: {
       unittests: {
-        options: lightweight ? {
+        options: {
           reporter: 'spec',
           timeout: 120000,
-          grep: 'lightweight'
-          } : {
-          reporter: 'spec',
-          timeout: 120000,
-          },
+          grep: lightweight ? 'lightweight' : undefined
+        },
         src: ['test/unittests.js']
       }
     },

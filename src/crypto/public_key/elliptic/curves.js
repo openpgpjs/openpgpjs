@@ -55,6 +55,7 @@ const nodeCurves = nodeCrypto ? {
   brainpoolP384r1: knownCurves.includes('brainpoolP384r1') ? 'brainpoolP384r1' : undefined,
   brainpoolP512r1: knownCurves.includes('brainpoolP512r1') ? 'brainpoolP512r1' : undefined
 } : {};
+
 const curves = {
   p256: {
     oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
@@ -176,17 +177,15 @@ function Curve(oid_or_name, params) {
 Curve.prototype.genKeyPair = async function () {
   let keyPair;
   switch (this.type) {
-    case 'web': {
+    case 'web':
       try {
         return await webGenKeyPair(this.name);
       } catch (err) {
         util.print_debug("Browser did not support generating ec key " + err.message);
         break;
       }
-    }
-    case 'node': {
+    case 'node':
       return nodeGenKeyPair(this.name);
-    }
     case 'curve25519': {
       const privateKey = await random.getRandomBytes(32);
       const one = new BN(1);
