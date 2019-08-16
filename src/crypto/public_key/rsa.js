@@ -46,6 +46,22 @@ function promisifyIE11Op(keyObj, err) {
   return keyObj;
 }
 
+/* eslint-disable no-invalid-this */
+const RSAPrivateKey = util.detectNode() ? require('asn1.js').define('RSAPrivateKey', function () {
+  this.seq().obj( // used for native NodeJS keygen
+    this.key('version').int(), // 0
+    this.key('modulus').int(), // n
+    this.key('publicExponent').int(), // e
+    this.key('privateExponent').int(), // d
+    this.key('prime1').int(), // p
+    this.key('prime2').int(), // q
+    this.key('exponent1').int(), // dp
+    this.key('exponent2').int(), // dq
+    this.key('coefficient').int() // u
+  );
+}) : undefined;
+/* eslint-enable no-invalid-this */
+
 export default {
   /** Create signature
    * @param {BN} m message
@@ -142,7 +158,7 @@ export default {
   /**
    * Generate a new random private key B bits long with public exponent E.
    *
-   * When possible, webCrypto is used. Otherwise, primes are generated using
+   * When possible, webCrypto or nodeCrypto is used. Otherwise, primes are generated using
    * 40 rounds of the Miller-Rabin probabilistic random prime generation algorithm.
    * @see module:crypto/public_key/prime
    * @param {Integer} B RSA bit length
@@ -156,6 +172,7 @@ export default {
     let key;
     E = new BN(E, 16);
     const webCrypto = util.getWebCryptoAll();
+    const nodeCrypto = util.getNodeCrypto();
 
     // Native RSA keygen using Web Crypto
     if (webCrypto) {
@@ -207,6 +224,31 @@ export default {
       key.q = new BN(util.b64_to_Uint8Array(jwk.q));
       key.u = key.p.invm(key.q);
       return key;
+    } else if (nodeCrypto && nodeCrypto.generateKeyPair && RSAPrivateKey) {
+      const opts = {
+        modulusLength: Number(B.toString(10)),
+        publicExponent: Number(E.toString(10)),
+        publicKeyEncoding: { type: 'pkcs1', format: 'der' },
+        privateKeyEncoding: { type: 'pkcs1', format: 'der' }
+      };
+      const prv = await new Promise((resolve, reject) => nodeCrypto.generateKeyPair('rsa', opts, (err, _, der) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(RSAPrivateKey.decode(der, 'der'));
+        }
+      }));
+      return {
+        n: prv.modulus,
+        e: prv.publicExponent,
+        d: prv.privateExponent,
+        p: prv.prime1,
+        q: prv.prime2,
+        dp: prv.exponent1,
+        dq: prv.exponent2,
+        // re-compute `u` because PGP spec differs from DER spec, DER: `(inverse of q) mod p`, PGP: `(inverse of p) mod q`
+        u: prv.prime1.invm(prv.prime2) // PGP type of u
+      };
     }
 
     // RSA keygen fallback using 40 iterations of the Miller-Rabin test
