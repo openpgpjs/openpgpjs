@@ -98,7 +98,7 @@ async function genPublicEphemeralKey(curve, Q) {
       publicKey = util.concatUint8Array([new Uint8Array([0x40]), publicKey]);
       return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
-    case 'web': {
+    case 'web':
       if (curve.web && util.getWebCrypto()) {
         try {
           return await webPublicEphemeralKey(curve, Q);
@@ -107,10 +107,8 @@ async function genPublicEphemeralKey(curve, Q) {
         }
       }
       break;
-    }
-    case 'node': {
+    case 'node':
       return nodePublicEphemeralKey(curve, Q);
-    }
   }
   if (!util.getFullBuild()) {
     throw new Error('This curve is only supported in the full build of OpenPGP.js');
