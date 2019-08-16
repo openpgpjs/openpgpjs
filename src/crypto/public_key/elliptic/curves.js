@@ -181,7 +181,7 @@ Curve.prototype.genKeyPair = async function () {
       try {
         return await webGenKeyPair(this.name);
       } catch (err) {
-        util.print_debug("Browser did not support generating ec key " + err.message);
+        util.print_debug_error("Browser did not support generating ec key " + err.message);
         break;
       }
     case 'node':
