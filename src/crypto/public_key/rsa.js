@@ -172,6 +172,7 @@ export default {
     let key;
     E = new BN(E, 16);
     const webCrypto = util.getWebCryptoAll();
+    const nodeCrypto = util.getNodeCrypto();
 
     // Native RSA keygen using Web Crypto
     if (webCrypto) {
