@@ -27,7 +27,7 @@
  */
 function KeyPair(curve, options, indutnyCurve = undefined) {
   if (!curve.getIndutnyCurve) {
-    throw(new Error('This curve is supported only in the full build of OpenPGP.js'));
+    throw new Error('This curve is supported only in the full build of OpenPGP.js');
   }
   this.curve = curve;
   this.indutnyCurve = indutnyCurve ? indutnyCurve : curve.getIndutnyCurve(curve.name);

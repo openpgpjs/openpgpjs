@@ -49,7 +49,6 @@ const nodeCrypto = util.getNodeCrypto();
  */
 async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
   const curve = new Curve(oid);
-  let signature;
   if (message && !message.locked) {
     message = await stream.readToEnd(message);
     const keyPair = { publicKey, privateKey };
@@ -58,15 +57,14 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
         // If browser doesn't support a curve, we'll catch it
         try {
           // need to await to make sure browser succeeds
-          signature = await webSign(curve, hash_algo, message, keyPair);
-          return signature;
+          return await webSign(curve, hash_algo, message, keyPair);
         } catch (err) {
           util.print_debug("Browser did not support signing: " + err.message);
         }
         break;
       }
       case 'node': {
-        signature = await nodeSign(curve, hash_algo, message, keyPair);
+        const signature = await nodeSign(curve, hash_algo, message, keyPair);
         return {
           r: signature.r.toArrayLike(Uint8Array),
           s: signature.s.toArrayLike(Uint8Array)
@@ -74,7 +72,7 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
       }
     }
   }
-  if(!signature && !util.getFullBuild()) {
+  if (!util.getFullBuild()) {
     throw new Error('This curve is supported only in the full build of OpenPGP.js');
   }
   return ellipticSign(curve, hashed, privateKey);
