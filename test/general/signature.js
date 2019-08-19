@@ -827,10 +827,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(async function(cleartextSig) {
         expect(cleartextSig).to.exist;
         expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
-        expect(cleartextSig.signatures).to.have.length(1);
-        expect(cleartextSig.signatures[0].valid).to.be.null;
-        expect(cleartextSig.signatures[0].error.message).to.equal('Corresponding signature packet missing');
-        expect(cleartextSig.signatures[0].signature.packets.length).to.equal(0);
+        expect(cleartextSig.signatures).to.have.length(0);
       });
     });
 

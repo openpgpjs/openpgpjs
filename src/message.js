@@ -575,7 +575,7 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
   }
   const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
   const signatureList = msg.packets.filterByTag(enums.packet.signature);
-  if (onePassSigList.length && !signatureList.length && msg.packets.stream) {
+  if (streaming && onePassSigList.length && !signatureList.length && msg.packets.stream) {
     await Promise.all(onePassSigList.map(async onePassSig => {
       onePassSig.correspondingSig = new Promise((resolve, reject) => {
         onePassSig.correspondingSigResolve = resolve;
