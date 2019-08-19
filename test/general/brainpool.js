@@ -10,7 +10,7 @@ const expect = chai.expect;
 
 describe('Brainpool Cryptography @lightweight', function () {
   //only x25519 crypto is fully functional in lightbuild
-  if (!openpgp.util.getFullBuild()) {
+  if (!openpgp.util.getFullBuild() && !openpgp.util.getNodeCrypto()) {
     before(function() {
       this.skip();
     });
