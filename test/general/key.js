@@ -2840,4 +2840,14 @@ VYGdb3eNlV8CfoEC
       expect(key.users[1].userId).to.be.null;
     });
   });
+
+  it("Should throw when trying to encrypt a key that's already encrypted", async function() {
+    await expect((async function() {
+      let { privateKeyArmored } = await openpgp.generateKey({ userIds: [{ email: 'hello@user.com' }], passphrase: 'pass', numBits: openpgp.util.getWebCryptoAll() ? 2048 : 512 });
+      let { keys: [k] } = await openpgp.key.readArmored(privateKeyArmored);
+      await k.decrypt('pass');
+      await k.encrypt('pass');
+      await k.encrypt('pass');
+    })()).to.be.rejectedWith('Key packet is already encrypted');
+  });
 });
