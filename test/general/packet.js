@@ -843,6 +843,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       key[0].params = mpi;
       key[0].algorithm = "rsa_sign";
+      key[0].isEncrypted = false;
       await key[0].encrypt('hello');
 
       const raw = key.write();
@@ -874,6 +875,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       key[0].params = mpi;
       key[0].algorithm = "rsa_sign";
+      key[0].isEncrypted = false;
       await key[0].encrypt('hello');
 
       const raw = key.write();

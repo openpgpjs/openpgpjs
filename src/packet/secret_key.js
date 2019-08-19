@@ -273,6 +273,10 @@ SecretKey.prototype.encrypt = async function (passphrase) {
     return false;
   }
 
+  if (!this.isDecrypted()) {
+    throw new Error('Key packet is already encrypted');
+  }
+
   if (this.isDecrypted() && !passphrase) {
     this.s2k_usage = 0;
     return false;
