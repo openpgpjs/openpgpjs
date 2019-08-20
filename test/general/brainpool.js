@@ -85,7 +85,23 @@ tbIxp3v4WG6xt9fkNwDSVC7yYMj+LeYcF+ZG1Bw5pCdMoBnJtqKLAJbqP3Ph
 TRELeagBcoQblRDF03XxrjpeCbLqZFwpFQqac9T2eqDRtvi2DA+JYCJdJorO
 KnthADE6hYMCSZVS9Q1IGN3TjROB5rrB/N3xItPsXuc=
 =A7qX
------END PGP MESSAGE-----`
+-----END PGP MESSAGE-----`,
+      message_encrypted_with_leading_zero_in_hash_signed_by_elliptic_with_old_implementation:
+`-----BEGIN PGP MESSAGE-----
+Version: OpenPGP.js v4.6.0
+Comment: https://openpgpjs.org
+
+wX4DSpmSuiUYN4MSAgMEdWwp5tYcxcyj3G36EkQ61Xx/gVzYbgh7U54sDsl9
+NKyc9gqjtEn5OQzXJ7Uteb+ojZsRy4b5cWBNQPdXJci0kTC+s98RugN7vEHe
+ulmNfwICTJ7SA4OSb0WEeACG6B1yUZmwWDcPxUfotFL3BCZGxN7SwBgBm2bQ
+wzRBU3SZ8xtqSCwC50PhXXmtqlDmQqJ84oTsyikH8e6zEgI78QXTf1WK530K
+0W/r+OqQufWu5ZKXK9AyeDyLc577P6/CnDcjjoJOsOZm5XMcSXlJWAvsH7KJ
+X/ua3tHArWaOmBYTtbfeZc3NpI5ne/gin3Gsz0llbWKG2KF4Op2/nt+Vhqa9
+tkYrARUF5n9K9+TEasU4z1k898YkS5cIzFyBSGMhGDzdj7t1K93EyOxXPc84
+EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
+=KDoL
+-----END PGP MESSAGE-----`,
+       message_with_leading_zero_in_hash_old_elliptic_implementation: 'test message\n199',
     },
     juliet: {
       id: '37e16a986b8af99e',
@@ -224,6 +240,18 @@ KnthADE6hYMCSZVS9Q1IGN3TjROB5rrB/N3xItPsXuc=
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
+  it('Decrypt and verify message with leading zero in hash signed with old elliptic algorithm', async function () {
+    const juliet = await load_priv_key('juliet');
+    const romeo = await load_pub_key('romeo');
+    const msg = await openpgp.message.readArmored(data.romeo. message_encrypted_with_leading_zero_in_hash_signed_by_elliptic_with_old_implementation);
+    const result = await openpgp.decrypt({privateKeys: juliet, publicKeys: [romeo], message: msg});
+
+    expect(result).to.exist;
+    expect(result.data).to.equal(data.romeo.message_with_leading_zero_in_hash_old_elliptic_implementation);
+    expect(result.signatures).to.have.length(1);
+    expect(result.signatures[0].valid).to.be.true;
+  });
+
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = await load_pub_key('juliet');
