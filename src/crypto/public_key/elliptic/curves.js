@@ -319,6 +319,10 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
  */
 function privateToJwk(payloadSize, name, publicKey, privateKey) {
   const jwk = rawPublicToJwk(payloadSize, name, publicKey);
+  if (privateKey.length !== payloadSize) {
+    const start = payloadSize - privateKey.length;
+    privateKey = (new Uint8Array(payloadSize)).set(privateKey, start);
+  }
   jwk.d = util.Uint8Array_to_b64(privateKey, true);
   return jwk;
 }
