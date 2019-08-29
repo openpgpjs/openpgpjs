@@ -1351,12 +1351,10 @@ export async function generate(options) {
           options.algorithm = enums.publicKey.ecdh;
           options.curve = enums.curve.curve25519;
         }
+      } else if (options.sign) {
+        options.algorithm = enums.publicKey.ecdsa;
       } else {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.ecdsa;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-        }
+        options.algorithm = enums.publicKey.ecdh;
       }
     } else if (options.numBits) {
       options.algorithm = enums.publicKey.rsa_encrypt_sign;

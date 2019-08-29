@@ -137,15 +137,15 @@ async function webEncrypt(algo, key, pt, iv) {
 }
 
 function nodeEncrypt(algo, key, pt, iv) {
-  key = new Buffer(key);
-  iv = new Buffer(iv);
+  key = Buffer.from(key);
+  iv = Buffer.from(iv);
   const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return stream.transform(pt, value => new Uint8Array(cipherObj.update(new Buffer(value))));
+  return stream.transform(pt, value => new Uint8Array(cipherObj.update(Buffer.from(value))));
 }
 
 function nodeDecrypt(algo, key, ct, iv) {
-  key = new Buffer(key);
-  iv = new Buffer(iv);
+  key = Buffer.from(key);
+  iv = Buffer.from(iv);
   const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
-  return stream.transform(ct, value => new Uint8Array(decipherObj.update(new Buffer(value))));
+  return stream.transform(ct, value => new Uint8Array(decipherObj.update(Buffer.from(value))));
 }

@@ -315,6 +315,13 @@ module.exports = {
       "never"
     ],
     "indent": [ "error", 2, { "SwitchCase": 1 } ],
+    "no-buffer-constructor": "error",
+    "no-lonely-if": "error",
+    "no-unused-vars": "error",
+
+    // eslint-plugin-import rules:
+    "import/extensions": "never",
+    "import/no-extraneous-dependencies": ["error", {"devDependencies": true, "optionalDependencies": false, "peerDependencies": false}],
 
     // Custom silencers:
     "camelcase": 0,
@@ -333,14 +340,8 @@ module.exports = {
 
     // Custom warnings:
     "no-console": 1,
-    "no-unused-vars": 1,
 
     // TODO Consider fixing these:
-    "valid-jsdoc": 0,
     "new-cap": [ 0, { "properties": false, "capIsNewExceptionPattern": "^type_.*" }],
-    "no-lonely-if": 0,
-    "import/extensions": 0,
-    "import/no-extraneous-dependencies": 0,
-    "no-buffer-constructor": 0, // deprecated
   }
 };
