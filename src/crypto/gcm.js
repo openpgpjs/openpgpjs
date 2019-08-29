@@ -49,7 +49,7 @@ async function GCM(cipher, key) {
     const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
 
     return {
-      encrypt: async function(pt, iv, adata=new Uint8Array()) {
+      encrypt: async function(pt, iv, adata = new Uint8Array()) {
         if (
           !pt.length ||
           // iOS does not support GCM-en/decrypting empty messages
@@ -63,7 +63,7 @@ async function GCM(cipher, key) {
         return new Uint8Array(ct);
       },
 
-      decrypt: async function(ct, iv, adata=new Uint8Array()) {
+      decrypt: async function(ct, iv, adata = new Uint8Array()) {
         if (
           ct.length === tagLength ||
           // iOS does not support GCM-en/decrypting empty messages
@@ -83,7 +83,7 @@ async function GCM(cipher, key) {
     key = new Buffer(key);
 
     return {
-      encrypt: async function(pt, iv, adata=new Uint8Array()) {
+      encrypt: async function(pt, iv, adata = new Uint8Array()) {
         pt = new Buffer(pt);
         iv = new Buffer(iv);
         adata = new Buffer(adata);
@@ -93,7 +93,7 @@ async function GCM(cipher, key) {
         return new Uint8Array(ct);
       },
 
-      decrypt: async function(ct, iv, adata=new Uint8Array()) {
+      decrypt: async function(ct, iv, adata = new Uint8Array()) {
         ct = new Buffer(ct);
         iv = new Buffer(iv);
         adata = new Buffer(adata);

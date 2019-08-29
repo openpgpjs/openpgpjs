@@ -285,7 +285,7 @@ Message.prototype.getText = function() {
  * @returns {Promise<Message>}                   new message with encrypted content
  * @async
  */
-Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard=false, date=new Date(), userIds=[], streaming) {
+Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard = false, date = new Date(), userIds = [], streaming) {
   let symAlgo;
   let aeadAlgo;
   let symEncryptedPacket;
@@ -352,7 +352,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
  * @returns {Promise<Message>}          new message with encrypted content
  * @async
  */
-export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard=false, date=new Date(), userIds=[]) {
+export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard = false, date = new Date(), userIds = []) {
   const packetlist = new packet.List();
 
   if (publicKeys) {
@@ -421,7 +421,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
-Message.prototype.sign = async function(privateKeys=[], signature=null, date=new Date(), userIds=[]) {
+Message.prototype.sign = async function(privateKeys = [], signature = null, date = new Date(), userIds = []) {
   const packetlist = new packet.List();
 
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -508,7 +508,7 @@ Message.prototype.compress = function(compression) {
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
-Message.prototype.signDetached = async function(privateKeys=[], signature=null, date=new Date(), userIds=[]) {
+Message.prototype.signDetached = async function(privateKeys = [], signature = null, date = new Date(), userIds = []) {
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
@@ -527,7 +527,7 @@ Message.prototype.signDetached = async function(privateKeys=[], signature=null, 
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature=null, date=new Date(), userIds=[], detached=false) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userIds = [], detached = false) {
   const packetlist = new packet.List();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -564,7 +564,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
-Message.prototype.verify = async function(keys, date=new Date(), streaming) {
+Message.prototype.verify = async function(keys, date = new Date(), streaming) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
@@ -612,7 +612,7 @@ Message.prototype.verify = async function(keys, date=new Date(), streaming) {
  * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
  * @async
  */
-Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
+Message.prototype.verifyDetached = function(signature, keys, date = new Date()) {
   const msg = this.unwrapCompressed();
   const literalDataList = msg.packets.filterByTag(enums.packet.literal);
   if (literalDataList.length !== 1) {
@@ -634,7 +634,7 @@ Message.prototype.verifyDetached = function(signature, keys, date=new Date()) {
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-async function createVerificationObject(signature, literalDataList, keys, date=new Date(), detached=false) {
+async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false) {
   let primaryKey = null;
   let signingKey = null;
   await Promise.all(keys.map(async function(key) {
@@ -696,7 +696,7 @@ async function createVerificationObject(signature, literalDataList, keys, date=n
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date=new Date(), detached=false) {
+export async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date(), detached = false) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
@@ -758,7 +758,7 @@ export async function readArmored(armoredText) {
  * @async
  * @static
  */
-export async function read(input, fromStream=util.isStream(input)) {
+export async function read(input, fromStream = util.isStream(input)) {
   const streamType = util.isStream(input);
   if (streamType === 'node') {
     input = stream.nodeToWeb(input);
@@ -779,7 +779,7 @@ export async function read(input, fromStream=util.isStream(input)) {
  * @returns {module:message.Message} new message object
  * @static
  */
-export function fromText(text, filename, date=new Date(), type='utf8') {
+export function fromText(text, filename, date = new Date(), type = 'utf8') {
   const streamType = util.isStream(text);
   if (streamType === 'node') {
     text = stream.nodeToWeb(text);
@@ -806,7 +806,7 @@ export function fromText(text, filename, date=new Date(), type='utf8') {
  * @returns {module:message.Message} new message object
  * @static
  */
-export function fromBinary(bytes, filename, date=new Date(), type='binary') {
+export function fromBinary(bytes, filename, date = new Date(), type = 'binary') {
   const streamType = util.isStream(bytes);
   if (!util.isUint8Array(bytes) && !streamType) {
     throw new Error('Data must be in the form of a Uint8Array or Stream');

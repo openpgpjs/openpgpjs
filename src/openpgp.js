@@ -66,7 +66,7 @@ let asyncProxy; // instance of the asyncproxy
  * @returns {Promise<Boolean>}     returns a promise that resolves to true if all workers have succesfully finished loading
  * @async
  */
-export async function initWorker({ path='openpgp.worker.js', n = 1, workers = [] } = {}) {
+export async function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
   if (workers.length || (typeof window !== 'undefined' && window.Worker && window.MessageChannel)) {
     const proxy = new AsyncProxy({ path, n, workers, config });
     const loaded = await proxy.loaded();
@@ -119,7 +119,7 @@ export function destroyWorker() {
  * @static
  */
 
-export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpirationTime=0, curve="", date=new Date(), subkeys=[{}] }) {
+export function generateKey({ userIds = [], passphrase = "", numBits = 2048, keyExpirationTime = 0, curve = "", date = new Date(), subkeys = [{}] }) {
   userIds = toArray(userIds);
   const options = { userIds, passphrase, numBits, keyExpirationTime, curve, date, subkeys };
   if (util.getWebCryptoAll() && numBits < 2048) {
@@ -157,7 +157,7 @@ export function generateKey({ userIds=[], passphrase="", numBits=2048, keyExpira
  * @async
  * @static
  */
-export function reformatKey({ privateKey, userIds=[], passphrase="", keyExpirationTime=0, date, revocationCertificate=true }) {
+export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpirationTime = 0, date, revocationCertificate = true }) {
   userIds = toArray(userIds);
   const options = { privateKey, userIds, passphrase, keyExpirationTime, date, revocationCertificate };
   if (asyncProxy) {
@@ -309,7 +309,7 @@ export function encryptKey({ privateKey, passphrase }) {
  * @async
  * @static
  */
-export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression=config.compression, armor=true, streaming=message&&message.fromStream, detached=false, signature=null, returnSessionKey=false, wildcard=false, date=new Date(), fromUserIds=[], toUserIds=[] }) {
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, returnSessionKey = false, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [] }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIds = toArray(fromUserIds); toUserIds = toArray(toUserIds);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
@@ -373,7 +373,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @async
  * @static
  */
-export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format='utf8', streaming=message&&message.fromStream, signature=null, date=new Date() }) {
+export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format = 'utf8', streaming = message && message.fromStream, signature = null, date = new Date() }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
@@ -429,7 +429,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @async
  * @static
  */
-export function sign({ message, privateKeys, armor=true, streaming=message&&message.fromStream, detached=false, date=new Date(), fromUserIds=[] }) {
+export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [] }) {
   checkCleartextOrMessage(message);
   privateKeys = toArray(privateKeys); fromUserIds = toArray(fromUserIds);
 
@@ -487,7 +487,7 @@ export function sign({ message, privateKeys, armor=true, streaming=message&&mess
  * @async
  * @static
  */
-export function verify({ message, publicKeys, streaming=message&&message.fromStream, signature=null, date=new Date() }) {
+export function verify({ message, publicKeys, streaming = message && message.fromStream, signature = null, date = new Date() }) {
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
 
@@ -529,7 +529,7 @@ export function verify({ message, publicKeys, streaming=message&&message.fromStr
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard=false, date=new Date(), toUserIds=[] }) {
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), toUserIds = [] }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords); toUserIds = toArray(toUserIds);
 
   if (asyncProxy) { // use web worker if available
@@ -644,7 +644,7 @@ async function convertStream(data, streaming) {
  * @param  {Array<String>} keys            (optional) which keys to return as streams, if possible
  * @returns {Object}                       the data in the respective format
  */
-async function convertStreams(obj, streaming, keys=[]) {
+async function convertStreams(obj, streaming, keys = []) {
   if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
     await Promise.all(Object.entries(obj).map(async ([key, value]) => { // recursively search all children
       if (util.isStream(value) || keys.includes(key)) {

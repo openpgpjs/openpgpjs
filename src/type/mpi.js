@@ -60,7 +60,7 @@ function MPI(data) {
  * @param {String}     endian Endianness of the data; 'be' for big-endian or 'le' for little-endian
  * @returns {Integer}          Length of data read
  */
-MPI.prototype.read = function (bytes, endian='be') {
+MPI.prototype.read = function (bytes, endian = 'be') {
   if (util.isString(bytes)) {
     bytes = util.str_to_Uint8Array(bytes);
   }
@@ -111,7 +111,7 @@ MPI.prototype.toUint8Array = function (endian, length) {
   return payload;
 };
 
-MPI.prototype.fromUint8Array = function (bytes, endian='be') {
+MPI.prototype.fromUint8Array = function (bytes, endian = 'be') {
   this.data = new Uint8Array(bytes.length);
   this.data.set(bytes);
 
@@ -124,7 +124,7 @@ MPI.prototype.toString = function () {
   return util.Uint8Array_to_str(this.toUint8Array());
 };
 
-MPI.prototype.fromString = function (str, endian='be') {
+MPI.prototype.fromString = function (str, endian = 'be') {
   this.fromUint8Array(util.str_to_Uint8Array(str), endian);
 };
 

@@ -27,12 +27,12 @@ import cipher from './cipher';
 import util from '../util';
 
 function wrap(key, data) {
-  const aes = new cipher["aes" + (key.length*8)](key);
+  const aes = new cipher["aes" + (key.length * 8)](key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const P = unpack(data);
   let A = IV;
   const R = P;
-  const n = P.length/2;
+  const n = P.length / 2;
   const t = new Uint32Array([0, 0]);
   let B = new Uint32Array(4);
   for (let j = 0; j <= 5; ++j) {
@@ -42,8 +42,8 @@ function wrap(key, data) {
       B[0] = A[0];
       B[1] = A[1];
       // B = A || R[i]
-      B[2] = R[2*i];
-      B[3] = R[2*i+1];
+      B[2] = R[2 * i];
+      B[3] = R[2 * i + 1];
       // B = AES(K, B)
       B = unpack(aes.encrypt(pack(B)));
       // A = MSB(64, B) ^ t
@@ -51,20 +51,20 @@ function wrap(key, data) {
       A[0] ^= t[0];
       A[1] ^= t[1];
       // R[i] = LSB(64, B)
-      R[2*i] = B[2];
-      R[2*i+1] = B[3];
+      R[2 * i] = B[2];
+      R[2 * i + 1] = B[3];
     }
   }
   return pack(A, R);
 }
 
 function unwrap(key, data) {
-  const aes = new cipher["aes" + (key.length*8)](key);
+  const aes = new cipher["aes" + (key.length * 8)](key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const C = unpack(data);
   let A = C.subarray(0, 2);
   const R = C.subarray(2);
-  const n = C.length/2-1;
+  const n = C.length / 2 - 1;
   const t = new Uint32Array([0, 0]);
   let B = new Uint32Array(4);
   for (let j = 5; j >= 0; --j) {
@@ -74,15 +74,15 @@ function unwrap(key, data) {
       B[0] = A[0] ^ t[0];
       B[1] = A[1] ^ t[1];
       // B = (A ^ t) || R[i]
-      B[2] = R[2*i];
-      B[3] = R[2*i+1];
+      B[2] = R[2 * i];
+      B[3] = R[2 * i + 1];
       // B = AES-1(B)
       B = unpack(aes.decrypt(pack(B)));
       // A = MSB(64, B)
       A = B.subarray(0, 2);
       // R[i] = LSB(64, B)
-      R[2*i] = B[2];
-      R[2*i+1] = B[3];
+      R[2 * i] = B[2];
+      R[2 * i + 1] = B[3];
     }
   }
   if (A[0] === IV[0] && A[1] === IV[1]) {
@@ -108,9 +108,9 @@ function unpack(data) {
   const { length } = data;
   const buffer = createArrayBuffer(data);
   const view = new DataView(buffer);
-  const arr = new Uint32Array(length/4);
-  for (let i=0; i<length/4; ++i) {
-    arr[i] = view.getUint32(4*i);
+  const arr = new Uint32Array(length / 4);
+  for (let i = 0; i < length / 4; ++i) {
+    arr[i] = view.getUint32(4 * i);
   }
   return arr;
 }

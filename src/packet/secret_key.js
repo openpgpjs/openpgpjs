@@ -39,7 +39,7 @@ import util from '../util';
  * @constructor
  * @extends module:packet.PublicKey
  */
-function SecretKey(date=new Date()) {
+function SecretKey(date = new Date()) {
   publicKey.call(this, date);
   /**
    * Packet type

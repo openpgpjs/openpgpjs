@@ -30,7 +30,7 @@ import enums from '../enums';
  * @constructor
  * @extends module:packet.SecretKey
  */
-function SecretSubkey(date=new Date()) {
+function SecretSubkey(date = new Date()) {
   secretKey.call(this, date);
   this.tag = enums.packet.secretSubkey;
 }

@@ -72,7 +72,7 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
  * @async
  */
-CleartextMessage.prototype.sign = async function(privateKeys, signature=null, date=new Date(), userIds=[]) {
+CleartextMessage.prototype.sign = async function(privateKeys, signature = null, date = new Date(), userIds = []) {
   return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userIds));
 };
 
@@ -85,7 +85,7 @@ CleartextMessage.prototype.sign = async function(privateKeys, signature=null, da
  * @returns {Promise<module:signature.Signature>}      new detached signature of message content
  * @async
  */
-CleartextMessage.prototype.signDetached = async function(privateKeys, signature=null, date=new Date(), userIds=[]) {
+CleartextMessage.prototype.signDetached = async function(privateKeys, signature = null, date = new Date(), userIds = []) {
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
 
@@ -99,7 +99,7 @@ CleartextMessage.prototype.signDetached = async function(privateKeys, signature=
  * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-CleartextMessage.prototype.verify = function(keys, date=new Date()) {
+CleartextMessage.prototype.verify = function(keys, date = new Date()) {
   return this.verifyDetached(this.signature, keys, date);
 };
 
@@ -110,7 +110,7 @@ CleartextMessage.prototype.verify = function(keys, date=new Date()) {
  * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-CleartextMessage.prototype.verifyDetached = function(signature, keys, date=new Date()) {
+CleartextMessage.prototype.verifyDetached = function(signature, keys, date = new Date()) {
   const signatureList = signature.packets;
   const literalDataPacket = new packet.Literal();
   // we assume that cleartext signature is generated based on UTF8 cleartext
