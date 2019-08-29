@@ -337,11 +337,9 @@ module.exports = {
     "no-use-before-define": [ 2, { "functions": false, "classes": true, "variables": false }],
     "no-unused-expressions": [ 2, { "allowShortCircuit": true } ],
     "no-constant-condition": [ 2, { "checkLoops": false } ],
+    "new-cap": [ 2, { "properties": false, "capIsNewExceptionPattern": "CMAC|CBC|OMAC|CTR", "newIsCapExceptionPattern": "type|hash*"}],
 
     // Custom warnings:
     "no-console": 1,
-
-    // TODO Consider fixing these:
-    "new-cap": [ 0, { "properties": false, "capIsNewExceptionPattern": "^type_.*" }],
   }
 };
