@@ -1344,15 +1344,10 @@ export async function generate(options) {
         throw new Error('Not valid curve.');
       }
       if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.eddsa;
-          options.curve = enums.curve.ed25519;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-          options.curve = enums.curve.curve25519;
-        }
-      } else if (options.sign) {
-        options.algorithm = enums.publicKey.ecdsa;
+        options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
+      }
+      if (options.sign) {
+        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
       } else {
         options.algorithm = enums.publicKey.ecdh;
       }
