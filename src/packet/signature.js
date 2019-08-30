@@ -45,7 +45,7 @@ import config from '../config';
  * @constructor
  * @param {Date} date the creation date of the signature
  */
-function Signature(date=new Date()) {
+function Signature(date = new Date()) {
   this.tag = enums.packet.signature;
   this.version = 4; // This is set to 5 below if we sign with a V5 key.
   this.signatureType = null;
@@ -152,7 +152,7 @@ Signature.prototype.write = function () {
  * @returns {Promise<Boolean>}
  * @async
  */
-Signature.prototype.sign = async function (key, data, detached=false) {
+Signature.prototype.sign = async function (key, data, detached = false) {
   const signatureType = enums.write(enums.signature, this.signatureType);
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -347,7 +347,7 @@ function write_sub_packet(type, data) {
 
 // V4 signature sub packets
 
-Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
+Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
   let mypos = 0;
 
   const read_array = (prop, bytes) => {
@@ -456,7 +456,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
           throw new Error("Unknown critical notation: " + name);
         }
       } else {
-        util.print_debug("Unsupported notation flag "+bytes[mypos]);
+        util.print_debug("Unsupported notation flag " + bytes[mypos]);
       }
       break;
     case 21:
@@ -541,7 +541,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted=true) {
   }
 };
 
-Signature.prototype.read_sub_packets = function(bytes, trusted=true) {
+Signature.prototype.read_sub_packets = function(bytes, trusted = true) {
   // Two-octet scalar octet count for following subpacket data.
   const subpacket_length = util.readNumber(bytes.subarray(0, 2));
 
@@ -657,13 +657,13 @@ Signature.prototype.calculateTrailer = function (data, detached) {
 };
 
 
-Signature.prototype.toHash = function(signatureType, data, detached=false) {
+Signature.prototype.toHash = function(signatureType, data, detached = false) {
   const bytes = this.toSign(signatureType, data);
 
   return util.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
 };
 
-Signature.prototype.hash = async function(signatureType, data, toHash, detached=false, streaming=true) {
+Signature.prototype.hash = async function(signatureType, data, toHash, detached = false, streaming = true) {
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
   if (!toHash) toHash = this.toHash(signatureType, data, detached);
   if (!streaming && util.isStream(toHash)) {
@@ -683,7 +683,7 @@ Signature.prototype.hash = async function(signatureType, data, toHash, detached=
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
-Signature.prototype.verify = async function (key, signatureType, data, detached=false) {
+Signature.prototype.verify = async function (key, signatureType, data, detached = false) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
@@ -744,7 +744,7 @@ Signature.prototype.verify = async function (key, signatureType, data, detached=
  * @param {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Boolean} true if expired
  */
-Signature.prototype.isExpired = function (date=new Date()) {
+Signature.prototype.isExpired = function (date = new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
@@ -758,7 +758,7 @@ Signature.prototype.isExpired = function (date=new Date()) {
  * @returns {Date} expiration time
  */
 Signature.prototype.getExpirationTime = function () {
-  return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime*1000) : Infinity;
+  return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime * 1000) : Infinity;
 };
 
 /**

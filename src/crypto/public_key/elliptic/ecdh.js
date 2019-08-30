@@ -55,7 +55,7 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
 }
 
 // Key Derivation Function (RFC 6637)
-async function kdf(hash_algo, X, length, param, stripLeading=false, stripTrailing=false) {
+async function kdf(hash_algo, X, length, param, stripLeading = false, stripTrailing = false) {
   // Note: X is little endian for Curve25519, big-endian for all others.
   // This is not ideal, but the RFC's are unclear
   // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
@@ -386,8 +386,8 @@ async function nodePublicEphemeralKey(curve, Q) {
  */
 function rawPublicToJwk(payloadSize, name, publicKey) {
   const len = payloadSize;
-  const bufX = publicKey.slice(1, len+1);
-  const bufY = publicKey.slice(len+1, len*2+1);
+  const bufX = publicKey.slice(1, len + 1);
+  const bufY = publicKey.slice(len + 1, len * 2 + 1);
   // https://www.rfc-editor.org/rfc/rfc7518.txt
   const jwKey = {
     kty: "EC",
@@ -422,7 +422,7 @@ function jwkToRawPublic(jwk) {
   const publicKey = new Uint8Array(bufX.length + bufY.length + 1);
   publicKey[0] = 0x04;
   publicKey.set(bufX, 1);
-  publicKey.set(bufY, bufX.length+1);
+  publicKey.set(bufY, bufX.length + 1);
   return publicKey;
 }
 

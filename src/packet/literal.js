@@ -35,7 +35,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function Literal(date=new Date()) {
+function Literal(date = new Date()) {
   this.tag = enums.packet.literal;
   this.format = 'utf8'; // default format for literal data packets
   this.date = util.normalizeDate(date);
@@ -50,7 +50,7 @@ function Literal(date=new Date()) {
  * @param {String | ReadableStream<String>} text Any native javascript string
  * @param {utf8|binary|text|mime} format (optional) The format of the string of bytes
  */
-Literal.prototype.setText = function(text, format='utf8') {
+Literal.prototype.setText = function(text, format = 'utf8') {
   this.format = format;
   this.text = text;
   this.data = null;
@@ -62,7 +62,7 @@ Literal.prototype.setText = function(text, format='utf8') {
  * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
  * @returns {String | ReadableStream<String>} literal data as text
  */
-Literal.prototype.getText = function(clone=false) {
+Literal.prototype.getText = function(clone = false) {
   if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
     this.text = util.nativeEOL(util.decode_utf8(this.getBytes(clone)));
   }
@@ -86,7 +86,7 @@ Literal.prototype.setBytes = function(bytes, format) {
  * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
  * @returns {Uint8Array | ReadableStream<Uint8Array>} A sequence of bytes
  */
-Literal.prototype.getBytes = function(clone=false) {
+Literal.prototype.getBytes = function(clone = false) {
   if (this.data === null) {
     // normalize EOL to \r\n and encode UTF8
     this.data = util.encode_utf8(util.canonicalizeEOL(this.text));

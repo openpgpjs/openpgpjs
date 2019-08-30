@@ -49,7 +49,7 @@ async function GCM(cipher, key) {
     const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
 
     return {
-      encrypt: async function(pt, iv, adata=new Uint8Array()) {
+      encrypt: async function(pt, iv, adata = new Uint8Array()) {
         if (
           !pt.length ||
           // iOS does not support GCM-en/decrypting empty messages
@@ -63,7 +63,7 @@ async function GCM(cipher, key) {
         return new Uint8Array(ct);
       },
 
-      decrypt: async function(ct, iv, adata=new Uint8Array()) {
+      decrypt: async function(ct, iv, adata = new Uint8Array()) {
         if (
           ct.length === tagLength ||
           // iOS does not support GCM-en/decrypting empty messages
@@ -80,23 +80,23 @@ async function GCM(cipher, key) {
   }
 
   if (util.getNodeCrypto()) { // Node crypto library
-    key = new Buffer(key);
+    key = Buffer.from(key);
 
     return {
-      encrypt: async function(pt, iv, adata=new Uint8Array()) {
-        pt = new Buffer(pt);
-        iv = new Buffer(iv);
-        adata = new Buffer(adata);
+      encrypt: async function(pt, iv, adata = new Uint8Array()) {
+        pt = Buffer.from(pt);
+        iv = Buffer.from(iv);
+        adata = Buffer.from(adata);
         const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
         en.setAAD(adata);
         const ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
         return new Uint8Array(ct);
       },
 
-      decrypt: async function(ct, iv, adata=new Uint8Array()) {
-        ct = new Buffer(ct);
-        iv = new Buffer(iv);
-        adata = new Buffer(adata);
+      decrypt: async function(ct, iv, adata = new Uint8Array()) {
+        ct = Buffer.from(ct);
+        iv = Buffer.from(iv);
+        adata = Buffer.from(adata);
         const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
         de.setAAD(adata);
         de.setAuthTag(ct.slice(ct.length - tagLength, ct.length)); // read auth tag at end of ciphertext

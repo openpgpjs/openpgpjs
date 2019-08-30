@@ -57,7 +57,7 @@ Keyid.prototype.toHex = function() {
  * @param {Keyid} keyid
  * @param {Boolean} matchWildcard Indicates whether to check if either keyid is a wildcard
  */
-Keyid.prototype.equals = function(keyid, matchWildcard=false) {
+Keyid.prototype.equals = function(keyid, matchWildcard = false) {
   return (matchWildcard && (keyid.isWildcard() || this.isWildcard())) || this.bytes === keyid.bytes;
 };
 

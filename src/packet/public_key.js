@@ -46,7 +46,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function PublicKey(date=new Date()) {
+function PublicKey(date = new Date()) {
   /**
    * Packet type
    * @type {module:enums.packet}

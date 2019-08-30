@@ -46,9 +46,9 @@ function ECDHSymmetricKey(data) {
 ECDHSymmetricKey.prototype.read = function (input) {
   if (input.length >= 1) {
     const length = input[0];
-    if (input.length >= 1+length) {
-      this.data = input.subarray(1, 1+length);
-      return 1+this.data.length;
+    if (input.length >= 1 + length) {
+      this.data = input.subarray(1, 1 + length);
+      return 1 + this.data.length;
     }
   }
   throw new Error('Invalid symmetric key');

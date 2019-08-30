@@ -66,9 +66,9 @@ function OID(oid) {
 OID.prototype.read = function (input) {
   if (input.length >= 1) {
     const length = input[0];
-    if (input.length >= 1+length) {
-      this.oid = input.subarray(1, 1+length);
-      return 1+this.oid.length;
+    if (input.length >= 1 + length) {
+      this.oid = input.subarray(1, 1 + length);
+      return 1 + this.oid.length;
     }
   }
   throw new Error('Invalid oid');

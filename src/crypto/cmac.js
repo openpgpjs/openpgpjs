@@ -83,9 +83,9 @@ async function CBC(key) {
     };
   }
   if (util.getNodeCrypto()) { // Node crypto library
-    key = new Buffer(key);
+    key = Buffer.from(key);
     return async function(pt) {
-      pt = new Buffer(pt);
+      pt = Buffer.from(pt);
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-cbc', key, zeroBlock);
       const ct = en.update(pt);
       return new Uint8Array(ct);

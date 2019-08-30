@@ -99,11 +99,10 @@ function s2r(t, u = false) {
 /**
  * Convert radix-64 to binary array
  * @param {String | ReadableStream<String>} t radix-64 string to convert
- * @param {bool} u if true, input is interpreted as URL-safe
  * @returns {Uint8Array | ReadableStream<Uint8Array>} binary array version of input string
  * @static
  */
-function r2s(t, u) {
+function r2s(t) {
   // TODO check atob alternative
   let c;
 

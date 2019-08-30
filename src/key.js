@@ -166,7 +166,7 @@ Key.prototype.toPacketlist = function() {
  * @param  {type/keyid} keyId
  * @returns {Array<module:key~SubKey>}
  */
-Key.prototype.getSubkeys = function(keyId=null) {
+Key.prototype.getSubkeys = function(keyId = null) {
   const subKeys = [];
   this.subKeys.forEach(subKey => {
     if (!keyId || subKey.getKeyId().equals(keyId, true)) {
@@ -182,7 +182,7 @@ Key.prototype.getSubkeys = function(keyId=null) {
  * @param  {type/keyid} keyId
  * @returns {Array<module:key.Key|module:key~SubKey>}
  */
-Key.prototype.getKeys = function(keyId=null) {
+Key.prototype.getKeys = function(keyId = null) {
   const keys = [];
   if (!keyId || this.getKeyId().equals(keyId, true)) {
     keys.push(this);
@@ -271,7 +271,7 @@ Key.prototype.armor = function() {
  * @returns {Promise<module:packet.Signature>} The latest valid signature
  * @async
  */
-async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date=new Date()) {
+async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date()) {
   let signature;
   for (let i = signatures.length - 1; i >= 0; i--) {
     if (
@@ -295,7 +295,7 @@ async function getLatestValidSignature(signatures, primaryKey, signatureType, da
  * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no signing key has been found
  * @async
  */
-Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userId={}) {
+Key.prototype.getSigningKey = async function (keyId = null, date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
@@ -343,7 +343,7 @@ Key.prototype.getSigningKey = async function (keyId=null, date=new Date(), userI
  * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no encryption key has been found
  * @async
  */
-Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={}) {
+Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
     // V4: by convention subkeys are preferred for encryption service
@@ -389,7 +389,7 @@ Key.prototype.getEncryptionKey = async function(keyId, date=new Date(), userId={
  * @returns {Promise<Array<module:packet.SecretKey|module:packet.SecretSubkey>>}
  * @async
  */
-Key.prototype.encrypt = async function(passphrases, keyId=null) {
+Key.prototype.encrypt = async function(passphrases, keyId = null) {
   if (!this.isPrivate()) {
     throw new Error("Nothing to encrypt in a public key");
   }
@@ -415,7 +415,7 @@ Key.prototype.encrypt = async function(passphrases, keyId=null) {
  * @returns {Promise<Boolean>} true if all matching key and subkey packets decrypted successfully
  * @async
  */
-Key.prototype.decrypt = async function(passphrases, keyId=null) {
+Key.prototype.decrypt = async function(passphrases, keyId = null) {
   if (!this.isPrivate()) {
     throw new Error("Nothing to decrypt in a public key");
   }
@@ -452,7 +452,7 @@ Key.prototype.decrypt = async function(passphrases, keyId=null) {
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
  */
-Key.prototype.isRevoked = async function(signature, key, date=new Date()) {
+Key.prototype.isRevoked = async function(signature, key, date = new Date()) {
   return isDataRevoked(
     this.keyPacket, enums.signature.key_revocation, { key: this.keyPacket }, this.revocationSignatures, signature, key, date
   );
@@ -466,7 +466,7 @@ Key.prototype.isRevoked = async function(signature, key, date=new Date()) {
  * @returns {Promise<module:enums.keyStatus>} The status of the primary key
  * @async
  */
-Key.prototype.verifyPrimaryKey = async function(date=new Date(), userId={}) {
+Key.prototype.verifyPrimaryKey = async function(date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   // check for key revocation signatures
   if (await this.isRevoked(null, null, date)) {
@@ -538,7 +538,7 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
  *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
  * @async
  */
-Key.prototype.getPrimaryUser = async function(date=new Date(), userId={}) {
+Key.prototype.getPrimaryUser = async function(date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   const users = [];
   for (let i = 0; i < this.users.length; i++) {
@@ -681,9 +681,9 @@ async function mergeSignatures(source, dest, attr, checkFn) {
  * @async
  */
 Key.prototype.revoke = async function({
-  flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
-  string: reasonForRevocationString=''
-} = {}, date=new Date()) {
+  flag: reasonForRevocationFlag = enums.reasonForRevocation.no_reason,
+  string: reasonForRevocationString = ''
+} = {}, date = new Date()) {
   if (this.isPublic()) {
     throw new Error('Need private key for revoking');
   }
@@ -904,7 +904,7 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
  */
-User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new Date()) {
+User.prototype.isRevoked = async function(primaryKey, certificate, key, date = new Date()) {
   return isDataRevoked(
     primaryKey, enums.signature.cert_revocation, {
       key: primaryKey,
@@ -925,7 +925,7 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date=new
  * @param  {Object} detached                 (optional) whether to create a detached signature packet
  * @returns {module:packet/signature}         signature packet
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached=false) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false) {
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
@@ -947,7 +947,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
  * @returns {Promise<module:enums.keyStatus>}     status of the certificate
  * @async
  */
-User.prototype.verifyCertificate = async function(primaryKey, certificate, keys, date=new Date()) {
+User.prototype.verifyCertificate = async function(primaryKey, certificate, keys, date = new Date()) {
   const that = this;
   const keyid = certificate.issuerKeyId;
   const dataToVerify = {
@@ -982,7 +982,7 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
  *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
  * @async
  */
-User.prototype.verifyAllCertifications = async function(primaryKey, keys, date=new Date()) {
+User.prototype.verifyAllCertifications = async function(primaryKey, keys, date = new Date()) {
   const that = this;
   const certifications = this.selfCertifications.concat(this.otherCertifications);
   return Promise.all(certifications.map(async function(certification) {
@@ -1003,7 +1003,7 @@ User.prototype.verifyAllCertifications = async function(primaryKey, keys, date=n
  * @returns {Promise<module:enums.keyStatus>}    Status of user
  * @async
  */
-User.prototype.verify = async function(primaryKey, date=new Date()) {
+User.prototype.verify = async function(primaryKey, date = new Date()) {
   if (!this.selfCertifications.length) {
     return enums.keyStatus.no_self_cert;
   }
@@ -1101,7 +1101,7 @@ SubKey.prototype.toPacketlist = function() {
  * @returns {Promise<Boolean>}                      True if the binding signature is revoked
  * @async
  */
-SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new Date()) {
+SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date = new Date()) {
   return isDataRevoked(
     primaryKey, enums.signature.subkey_revocation, {
       key: primaryKey,
@@ -1119,7 +1119,7 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date=new
  * @returns {Promise<module:enums.keyStatus>}    The status of the subkey
  * @async
  */
-SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
+SubKey.prototype.verify = async function(primaryKey, date = new Date()) {
   const that = this;
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
   // check subkey binding signatures
@@ -1148,7 +1148,7 @@ SubKey.prototype.verify = async function(primaryKey, date=new Date()) {
  * @returns {Promise<Date | Infinity | null>}
  * @async
  */
-SubKey.prototype.getExpirationTime = async function(primaryKey, date=new Date()) {
+SubKey.prototype.getExpirationTime = async function(primaryKey, date = new Date()) {
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
   const bindingSignature = await getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
   if (!bindingSignature) return null;
@@ -1211,9 +1211,9 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
  * @async
  */
 SubKey.prototype.revoke = async function(primaryKey, {
-  flag: reasonForRevocationFlag=enums.reasonForRevocation.no_reason,
-  string: reasonForRevocationString=''
-} = {}, date=new Date()) {
+  flag: reasonForRevocationFlag = enums.reasonForRevocation.no_reason,
+  string: reasonForRevocationString = ''
+} = {}, date = new Date()) {
   const dataToSign = { key: primaryKey, bind: this.keyPacket };
   const subKey = new SubKey(this.keyPacket);
   subKey.revocationSignatures.push(await createSignaturePacket(dataToSign, null, primaryKey, {
@@ -1328,7 +1328,7 @@ export async function generate(options) {
   promises = promises.concat(options.subkeys.map(generateSecretSubkey));
   return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
 
-  function sanitizeKeyOptions(options, subkeyDefaults={}) {
+  function sanitizeKeyOptions(options, subkeyDefaults = {}) {
     options.curve = options.curve || subkeyDefaults.curve;
     options.numBits = options.numBits || subkeyDefaults.numBits;
     options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
@@ -1344,19 +1344,12 @@ export async function generate(options) {
         throw new Error('Not valid curve.');
       }
       if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.eddsa;
-          options.curve = enums.curve.ed25519;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-          options.curve = enums.curve.curve25519;
-        }
+        options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
+      }
+      if (options.sign) {
+        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
       } else {
-        if (options.sign) {
-          options.algorithm = enums.publicKey.ecdsa;
-        } else {
-          options.algorithm = enums.publicKey.ecdh;
-        }
+        options.algorithm = enums.publicKey.ecdh;
       }
     } else if (options.numBits) {
       options.algorithm = enums.publicKey.rsa_encrypt_sign;
@@ -1441,7 +1434,7 @@ export async function reformat(options) {
 
   return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options);
 
-  function sanitizeKeyOptions(options, subkeyDefaults={}) {
+  function sanitizeKeyOptions(options, subkeyDefaults = {}) {
     options.keyExpirationTime = options.keyExpirationTime || subkeyDefaults.keyExpirationTime;
     options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
     options.date = options.date || subkeyDefaults.date;
@@ -1615,7 +1608,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
  * @returns {Promise<Boolean>}                      True if the signature revokes the data
  * @async
  */
-async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date=new Date()) {
+async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date()) {
   key = key || primaryKey;
   const normDate = util.normalizeDate(date);
   const revocationKeyIds = [];
@@ -1648,7 +1641,7 @@ async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocation
   return revocationKeyIds.length > 0;
 }
 
-function isDataExpired(keyPacket, signature, date=new Date()) {
+function isDataExpired(keyPacket, signature, date = new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getExpirationTime(keyPacket, signature);
@@ -1662,7 +1655,7 @@ function getExpirationTime(keyPacket, signature) {
   let expirationTime;
   // check V4 expiration time
   if (signature.keyNeverExpires === false) {
-    expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime*1000;
+    expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime * 1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;
 }
@@ -1689,7 +1682,7 @@ function checkRevocationKey(signature, keyId) {
  * @returns {Promise<String>}
  * @async
  */
-export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), userId={}) {
+export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = {}) {
   let hash_algo = config.prefer_hash_algorithm;
   let pref_algo = hash_algo;
   if (key instanceof Key) {
@@ -1725,7 +1718,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date=new Date(), user
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys, date=new Date(), userIds=[]) {
+export async function getPreferredAlgo(type, keys, date = new Date(), userIds = []) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
   const defaultAlgo = type === 'symmetric' ? enums.symmetric.aes128 : enums.aead.eax;
   const prioMap = {};
@@ -1763,7 +1756,7 @@ export async function getPreferredAlgo(type, keys, date=new Date(), userIds=[]) 
  * @returns {Promise<Boolean>}
  * @async
  */
-export async function isAeadSupported(keys, date=new Date(), userIds=[]) {
+export async function isAeadSupported(keys, date = new Date(), userIds = []) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key, i) {

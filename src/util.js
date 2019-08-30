@@ -317,7 +317,7 @@ export default {
     const j = bytes.length;
 
     for (let i = 0; i < j; i += bs) {
-      result.push(String.fromCharCode.apply(String, bytes.subarray(i, i+bs < j ? i+bs : j)));
+      result.push(String.fromCharCode.apply(String, bytes.subarray(i, i + bs < j ? i + bs : j)));
     }
     return result.join('');
   },
@@ -330,7 +330,7 @@ export default {
   encode_utf8: function (str) {
     const encoder = new TextEncoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
-    function process(value, lastChunk=false) {
+    function process(value, lastChunk = false) {
       return encoder.encode(value, { stream: !lastChunk });
     }
     return stream.transform(str, process, () => process('', true));
@@ -344,7 +344,7 @@ export default {
   decode_utf8: function (utf8) {
     const decoder = new TextDecoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
-    function process(value, lastChunk=false) {
+    function process(value, lastChunk = false) {
       return decoder.decode(value, { stream: !lastChunk });
     }
     return stream.transform(utf8, process, () => process(new Uint8Array(), true));

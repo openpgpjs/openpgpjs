@@ -42,7 +42,7 @@ import packet from '../packet';
  * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  * @constructor
  */
-function AsyncProxy({ path='openpgp.worker.js', n = 1, workers = [], config } = {}) {
+function AsyncProxy({ path = 'openpgp.worker.js', n = 1, workers = [], config } = {}) {
   /**
    * Message handling
    */

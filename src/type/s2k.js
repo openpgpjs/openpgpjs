@@ -188,7 +188,7 @@ S2K.prototype.produce_key = async function (passphrase, numBytes) {
   let rlength = 0;
   const prefix = new Uint8Array(numBytes);
 
-  for (let i = 0; i<numBytes; i++) {
+  for (let i = 0; i < numBytes; i++) {
     prefix[i] = 0;
   }
 

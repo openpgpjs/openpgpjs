@@ -24,7 +24,7 @@
  * @requires util
  */
 
-import publicKey from './public_key';
+import PublicKey from './public_key';
 import type_keyid from '../type/keyid.js';
 import type_s2k from '../type/s2k';
 import crypto from '../crypto';
@@ -39,8 +39,8 @@ import util from '../util';
  * @constructor
  * @extends module:packet.PublicKey
  */
-function SecretKey(date=new Date()) {
-  publicKey.call(this, date);
+function SecretKey(date = new Date()) {
+  PublicKey.call(this, date);
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -76,7 +76,7 @@ function SecretKey(date=new Date()) {
   this.aead = 'eax';
 }
 
-SecretKey.prototype = new publicKey();
+SecretKey.prototype = new PublicKey();
 SecretKey.prototype.constructor = SecretKey;
 
 // Helper function

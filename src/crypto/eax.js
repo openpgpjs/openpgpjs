@@ -61,10 +61,10 @@ async function CTR(key) {
     };
   }
   if (util.getNodeCrypto()) { // Node crypto library
-    key = new Buffer(key);
+    key = Buffer.from(key);
     return async function(pt, iv) {
-      pt = new Buffer(pt);
-      iv = new Buffer(iv);
+      pt = Buffer.from(pt);
+      iv = Buffer.from(iv);
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-ctr', key, iv);
       const ct = Buffer.concat([en.update(pt), en.final()]);
       return new Uint8Array(ct);
