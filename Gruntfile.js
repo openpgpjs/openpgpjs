@@ -16,6 +16,7 @@ module.exports = function(grunt) {
   const dev = !!grunt.option('dev');
   const compat = !!grunt.option('compat');
   const lightweight = !!grunt.option('lightweight');
+  const exclude_elliptic = !!grunt.option('exclude-elliptic');
   const plugins = compat ? [
     "transform-async-to-generator",
     "syntax-async-functions",
@@ -49,7 +50,8 @@ module.exports = function(grunt) {
           browserifyOptions: {
             fullPaths: dev,
             debug: dev,
-            standalone: 'openpgp'
+            standalone: 'openpgp',
+            paths: ['./node_modules', './dist/lightweight']
           },
           cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + '.json',
           // Don't bundle these packages with openpgp.js
@@ -66,8 +68,9 @@ module.exports = function(grunt) {
               'core-js/fn/symbol',
               'core-js/fn/object/assign',
             ],
-            lightweight ? [
-              'elliptic'
+            ( lightweight || exclude_elliptic ) ? [
+              'elliptic',
+              'elliptic.min.js'
             ] : []
           ),
           transform: [
@@ -142,14 +145,14 @@ module.exports = function(grunt) {
           'dist/openpgp.js'
         ],
         overwrite: true,
-        replacements: lightweight ? [
+        replacements: [
           {
-            from: "USE_INDUTNY_ELLIPTIC = true",
-            to: "USE_INDUTNY_ELLIPTIC = false"
+            from: "external_indutny_elliptic: false",
+            to: "external_indutny_elliptic: true"
           }
-        ] : []
+        ]
       },
-      full_build: {
+      exclude_elliptic_build: {
         src: [
           'dist/openpgp.js',
           'dist/openpgp.js'
@@ -157,8 +160,21 @@ module.exports = function(grunt) {
         overwrite: true,
         replacements: [
           {
-            from: "USE_INDUTNY_ELLIPTIC = false",
-            to: "USE_INDUTNY_ELLIPTIC = true"
+            from: "use_indutny_elliptic: true",
+            to: "use_indutny_elliptic: false"
+          }
+        ]
+      },
+      indutny_global: {
+        src: [
+          'dist/elliptic.min.js',
+          'dist/elliptic.min.js'
+        ],
+        overwrite: true,
+        replacements: [
+          {
+            from: 'b.elliptic=a()',
+            to: 'b.openpgp.elliptic=a()'
           }
         ]
       }
@@ -199,7 +215,10 @@ module.exports = function(grunt) {
     },
     eslint: {
       target: ['src/**/*.js'],
-      options: { configFile: '.eslintrc.js' }
+      options: { 
+        configFile: '.eslintrc.js',
+        fix: !!grunt.option('fix'),
+      }
     },
     jsdoc: {
       dist: {
@@ -249,6 +268,12 @@ module.exports = function(grunt) {
         cwd: 'dist/',
         src: ['*.js'],
         dest: 'dist/lightweight/'
+      },
+      indutny_elliptic: {
+        expand: true,
+        flatten: true,
+        src: ['./node_modules/elliptic/dist/elliptic.min.js'],
+        dest: 'dist/'
       }
     },
     clean: ['dist/'],
@@ -270,7 +295,7 @@ module.exports = function(grunt) {
     watch: {
       src: {
         files: ['src/**/*.js'],
-        tasks: ['browserify:openpgp', 'browserify:worker']
+        tasks: lightweight ? ['browserify:openpgp', 'browserify:worker',  'replace:lightweight_build'] : ['browserify:openpgp', 'browserify:worker']
       },
       test: {
         files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
@@ -329,12 +354,21 @@ module.exports = function(grunt) {
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('build', ['browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'version', 'terser', 'header', 'replace_min']);
+  grunt.registerTask('build', function() {
+      if (lightweight) {
+        grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'terser', 'header', 'replace_min']);
+        return;
+      } else if (exclude_elliptic) {
+        grunt.task.run(['browserify:openpgp', 'browserify:worker', 'replace:exclude_elliptic_build', 'version', 'terser', 'header', 'replace_min']);
+        return;
+      }
+      grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
+    }
+  );
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('browsertest', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'watch']);
-
 };

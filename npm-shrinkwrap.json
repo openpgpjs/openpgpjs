@@ -2190,8 +2190,8 @@
       "dev": true
     },
     "elliptic": {
-      "version": "github:openpgpjs/elliptic#6b7801573b8940a49e7b8253176ece2725841efd",
-      "from": "github:openpgpjs/elliptic#6b7801573b8940a49e7b8253176ece2725841efd",
+      "version": "github:chesnokovilya/elliptic#058743d79fce142bfa90e71b9c8bbc105a77bae5",
+      "from": "github:chesnokovilya/elliptic#058743d79fce142bfa90e71b9c8bbc105a77bae5",
       "dev": true,
       "requires": {
         "bn.js": "^4.4.0",

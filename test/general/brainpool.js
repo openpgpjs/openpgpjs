@@ -247,6 +247,8 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result.signatures[0].valid).to.be.true;
   });
   it('Decrypt and verify message with leading zero in hash signed with old elliptic algorithm', async function () {
+    //this test would not work with nodeCrypto, since message is signed with leading zero stripped from the hash 
+    openpgp.config.use_native = false;
     const juliet = await load_priv_key('juliet');
     const romeo = await load_pub_key('romeo');
     const msg = await openpgp.message.readArmored(data.romeo. message_encrypted_with_leading_zero_in_hash_signed_by_elliptic_with_old_implementation);

@@ -25,13 +25,8 @@
 /**
  * @constructor
  */
-function KeyPair(curve, options, indutnyCurve = undefined) {
-  if (!curve.getIndutnyCurve) {
-    throw new Error('This curve is supported only in the full build of OpenPGP.js');
-  }
-  this.curve = curve;
-  this.indutnyCurve = indutnyCurve ? indutnyCurve : curve.getIndutnyCurve(curve.name);
-  this.keyPair = this.indutnyCurve.keyPair(options);
+function KeyPair(indutnyCurve, options) {
+  this.keyPair = indutnyCurve.keyPair(options);
   if (this.keyPair.validate().result !== true) {
     throw new Error('Invalid elliptic public key');
   }
