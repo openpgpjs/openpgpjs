@@ -760,6 +760,10 @@ export default {
     return result;
   },
 
+  /**
+   * download script from filepath
+   * @param {Object} params download parameters
+   */
   dl: async function({ filepath, integrity }) {
     const options = {
       integrity,
