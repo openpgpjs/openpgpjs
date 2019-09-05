@@ -34,6 +34,8 @@ import random from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
+import build from '../../../build.env';
+import { loadElliptic, getElliptic } from '../../../openpgp';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -168,9 +170,9 @@ function Curve(oid_or_name, params) {
   } else if (this.name === 'ed25519') {
     this.type = 'ed25519';
   }
-  this.getIndutnyCurve = util.getFullBuild() ? name => {
-    const indutnyEc = require('elliptic');
-    return new indutnyEc.ec(name);
+  this.getIndutnyCurve = util.getUseElliptic() ? async name => {
+    const elliptic = getElliptic() || await loadElliptic(build.external_indutny_elliptic_path);
+    return new elliptic.ec(name);
   } : undefined;
 }
 
@@ -205,10 +207,11 @@ Curve.prototype.genKeyPair = async function () {
       return { publicKey, privateKey };
     }
   }
-  if (!util.getFullBuild()) {
+  if (!util.getUseElliptic()) {
     throw new Error('This curve is only supported in the full build of OpenPGP.js');
   }
-  keyPair = await this.getIndutnyCurve(this.name).genKeyPair({
+  const indutnyCurve = await this.getIndutnyCurve(this.name);
+  keyPair = await indutnyCurve.genKeyPair({
     entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))
   });
   return { publicKey: keyPair.getPublic('array', false), privateKey: keyPair.getPrivate().toArray() };
@@ -283,7 +286,7 @@ function jwkToRawPublic(jwk) {
   const publicKey = new Uint8Array(bufX.length + bufY.length + 1);
   publicKey[0] = 0x04;
   publicKey.set(bufX, 1);
-  publicKey.set(bufY, bufX.length+1);
+  publicKey.set(bufY, bufX.length + 1);
   return publicKey;
 }
 
@@ -296,8 +299,8 @@ function jwkToRawPublic(jwk) {
  */
 function rawPublicToJwk(payloadSize, name, publicKey) {
   const len = payloadSize;
-  const bufX = publicKey.slice(1, len+1);
-  const bufY = publicKey.slice(len+1, len*2+1);
+  const bufX = publicKey.slice(1, len + 1);
+  const bufY = publicKey.slice(len + 1, len * 2 + 1);
   // https://www.rfc-editor.org/rfc/rfc7518.txt
   const jwk = {
     kty: "EC",
@@ -319,6 +322,10 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
  */
 function privateToJwk(payloadSize, name, publicKey, privateKey) {
   const jwk = rawPublicToJwk(payloadSize, name, publicKey);
+  if (privateKey.length !== payloadSize) {
+    const start = payloadSize - privateKey.length;
+    privateKey = (new Uint8Array(payloadSize)).set(privateKey, start);
+  }
   jwk.d = util.Uint8Array_to_b64(privateKey, true);
   return jwk;
 }

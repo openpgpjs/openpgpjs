@@ -639,8 +639,8 @@ export default {
     return navigator.hardwareConcurrency || 1;
   },
 
-  getFullBuild: function() {
-    return build;
+  getUseElliptic: function() {
+    return build.use_indutny_elliptic;
   },
 
   isEmailAddress: function(data) {
@@ -758,5 +758,14 @@ export default {
       result += ALPHABET[MASK & (buffer >> bitsLeft)];
     }
     return result;
+  },
+
+  dl: async function({ filepath, integrity }) {
+    const options = {
+      integrity,
+      credentials: 'include'
+    };
+    const response = await fetch(filepath, options);
+    return response.text();
   }
 };

@@ -110,7 +110,7 @@ async function genPublicEphemeralKey(curve, Q) {
     case 'node':
       return nodePublicEphemeralKey(curve, Q);
   }
-  if (!util.getFullBuild()) {
+  if (!util.getUseElliptic()) {
     throw new Error('This curve is only supported in the full build of OpenPGP.js');
   }
   return ellipticPublicEphemeralKey(curve, Q);
@@ -172,7 +172,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
     case 'node':
       return nodePrivateEphemeralKey(curve, V, d);
   }
-  if (!util.getFullBuild()) {
+  if (!util.getUseElliptic()) {
     throw new Error('This curve is only supported in the full build of OpenPGP.js');
   }
   return ellipticPrivateEphemeralKey(curve, V, d);
@@ -321,9 +321,9 @@ async function webPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function ellipticPrivateEphemeralKey(curve, V, d) {
-  const indutnyCurve = curve.getIndutnyCurve(curve.name);
-  V = new KeyPair(curve, { pub: V }, indutnyCurve);
-  d = new KeyPair(curve, { priv: d }, indutnyCurve);
+  const indutnyCurve = await curve.getIndutnyCurve(curve.name);
+  V = new KeyPair(indutnyCurve, { pub: V });
+  d = new KeyPair(indutnyCurve, { priv: d });
   const secretKey = new Uint8Array(d.keyPair.getPrivate());
   const S = d.keyPair.derive(V.keyPair.getPublic());
   const len = indutnyCurve.curve.p.byteLength();
@@ -340,10 +340,10 @@ async function ellipticPrivateEphemeralKey(curve, V, d) {
  * @async
  */
 async function ellipticPublicEphemeralKey(curve, Q) {
-  const indutnyCurve = curve.getIndutnyCurve(curve.name);
+  const indutnyCurve = await curve.getIndutnyCurve(curve.name);
   const v = await curve.genKeyPair();
-  Q = new KeyPair(curve, { pub: Q }, indutnyCurve);
-  const V = new KeyPair(curve, { priv: v.privateKey }, indutnyCurve);
+  Q = new KeyPair(indutnyCurve, { pub: Q });
+  const V = new KeyPair(indutnyCurve, { priv: v.privateKey });
   const publicKey = v.publicKey;
   const S = V.keyPair.derive(Q.keyPair.getPublic());
   const len = indutnyCurve.curve.p.byteLength();
