@@ -746,6 +746,11 @@ function nativeAEAD() {
   return config.aead_protect && (config.aead_mode === enums.aead.eax || config.aead_mode === enums.aead.experimental_gcm) && util.getWebCrypto();
 }
 
+
+/**
+ * @param {Object} params loading parameters
+ * @param {*} cb callback
+ */
 const loadScriptHelper = ({ path, integrity }, cb) => {
   const script = document.createElement('script');
 
@@ -759,6 +764,10 @@ const loadScriptHelper = ({ path, integrity }, cb) => {
   document.head.appendChild(script);
 };
 
+/**
+ * @param {*} path
+ * @param {*} integrity
+ */
 const loadScript = (path, integrity) => {
   // eslint-disable-next-line
   if(self.importScripts) {
