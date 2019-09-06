@@ -276,7 +276,10 @@ module.exports = function(grunt) {
         dest: 'dist/'
       }
     },
-    clean: ['dist/'],
+    clean: {
+      dist: ['dist/'],
+      js: ['dist/*.js']
+    },
     connect: {
       dev: {
         options: {
