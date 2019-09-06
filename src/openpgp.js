@@ -79,11 +79,32 @@ export async function initWorker({ path = 'openpgp.worker.js', n = 1, workers = 
   return false;
 }
 
+/**
+ * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
+ * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
+ */
+export function getWorker() {
+  return asyncProxy;
+}
+
+/**
+ * Cleanup the current instance of the web worker.
+ */
+export function destroyWorker() {
+  asyncProxy = undefined;
+}
+
+//////////////////////////
+//                      //
+//   indutny/elliptic   //
+//                      //
+//////////////////////////
+
 
 let elliptic;  // instance of the indutny/elliptic
 
 /**
- *  Load elliptic by path or from node_modules
+ * Load elliptic by path or from node_modules
  * @param {String} path relative path to elliptic browserified package
  */
 export async function loadElliptic(path) {
@@ -108,22 +129,6 @@ export async function loadElliptic(path) {
 export function getElliptic() {
   return elliptic;
 }
-
-/**
- * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
- * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
- */
-export function getWorker() {
-  return asyncProxy;
-}
-
-/**
- * Cleanup the current instance of the web worker.
- */
-export function destroyWorker() {
-  asyncProxy = undefined;
-}
-
 
 //////////////////////
 //                  //
@@ -749,7 +754,7 @@ function nativeAEAD() {
 
 /**
  * @param {Object} params loading parameters
- * @param {*} cb callback
+ * @param {Callback} cb callback
  */
 const loadScriptHelper = ({ path, integrity }, cb) => {
   const script = document.createElement('script');
@@ -765,8 +770,8 @@ const loadScriptHelper = ({ path, integrity }, cb) => {
 };
 
 /**
- * @param {*} path
- * @param {*} integrity
+ * @param {String} path
+ * @param {String} integrity
  */
 const loadScript = (path, integrity) => {
   // eslint-disable-next-line
