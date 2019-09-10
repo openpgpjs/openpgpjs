@@ -2222,18 +2222,18 @@ describe('Key', function() {
 
   let v5_keysVal;
   let aead_protectVal;
-  tryTests('V5', versionSpecificTests, {
-    if: !openpgp.config.saucelabs,
-    beforeEach: function() {
+  describe('V5', function() {
+    beforeEach(function() {
       v5_keysVal = openpgp.config.v5_keys;
       aead_protectVal = openpgp.config.aead_protect;
       openpgp.config.v5_keys = true;
       openpgp.config.aead_protect = true;
-    },
-    afterEach: function() {
+    });
+    afterEach(function() {
       openpgp.config.v5_keys = v5_keysVal;
       openpgp.config.aead_protect = aead_protectVal;
-    }
+    });
+    versionSpecificTests();
   });
 
   it('Parsing armored text with RSA key and ECC subkey', async function() {

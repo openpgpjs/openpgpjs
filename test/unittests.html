@@ -5,10 +5,6 @@
     <title>OpenPGPJS Unit Tests</title>
     <link rel="stylesheet" href="lib/mocha.css" />
 
-  </head>
-  <body>
-    <div id="mocha"></div>
-
     <!-- libs -->
     <script src="../dist/openpgp.js"></script>
     <script src="lib/mocha.js"></script>
@@ -16,6 +12,10 @@
         mocha.setup('bdd');
         mocha.timeout(240000);
     </script>
+  </head>
+  <body>
+    <div id="mocha"></div>
+
     <script src="lib/unittests-bundle.js"></script>
     <script>
       var runner = mocha.run();

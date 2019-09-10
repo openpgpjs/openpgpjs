@@ -230,28 +230,6 @@ module.exports = function(grunt) {
         }
       }
     },
-    'saucelabs-mocha': {
-      all: {
-        options: {
-          username: 'openpgpjs',
-          key: getSauceKey,
-          urls: [
-            'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('Sauce Labs Group 1'),
-            'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('Sauce Labs Group 2'),
-            'http://localhost:3000/test/unittests.html?saucelabs=true&grep=' + encodeURIComponent('^(?!.*Sauce Labs Group [1-2])')
-          ],
-          build: process.env.TRAVIS_BUILD_ID,
-          testname: 'Sauce Unit Test for openpgpjs',
-          browsers: [browser_capabilities],
-          public: "public",
-          maxRetries: 3,
-          throttled: 3,
-          pollInterval: 10000,
-          sauceConfig: {maxDuration: 1800, commandTimeout: 600, idleTimeout: 1000},
-          statusCheckAttempts: 200
-        }
-      }
-    },
     watch: {
       src: {
         files: ['src/**/*.js'],
@@ -277,7 +255,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
-  grunt.loadNpmTasks('grunt-saucelabs');
   grunt.loadNpmTasks('grunt-contrib-watch');
 
   grunt.registerTask('set_version', function() {
@@ -321,7 +298,6 @@ module.exports = function(grunt) {
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
-  grunt.registerTask('saucelabs', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'saucelabs-mocha']);
   grunt.registerTask('browsertest', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'watch']);
 
 };
