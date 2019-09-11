@@ -415,6 +415,9 @@ SecretKey.prototype.postCloneTypeFix = function() {
   if (this.keyid) {
     this.keyid = type_keyid.fromClone(this.keyid);
   }
+  if (this.s2k) {
+    this.s2k = type_s2k.fromClone(this.s2k);
+  }
 };
 
 export default SecretKey;

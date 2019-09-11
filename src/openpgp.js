@@ -322,10 +322,10 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        const detachedSignature = await message.signDetached(privateKeys, signature, date, fromUserIds);
+        const detachedSignature = await message.signDetached(privateKeys, signature, date, fromUserIds, message.fromStream);
         result.signature = armor ? detachedSignature.armor() : detachedSignature;
       } else {
-        message = await message.sign(privateKeys, signature, date, fromUserIds);
+        message = await message.sign(privateKeys, signature, date, fromUserIds, message.fromStream);
       }
     }
     message = message.compress(compression);
@@ -442,7 +442,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
   const result = {};
   return Promise.resolve().then(async function() {
     if (detached) {
-      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds);
+      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, message.fromStream);
       result.signature = armor ? signature.armor() : signature;
       if (message.packets) {
         result.signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
@@ -453,7 +453,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
         });
       }
     } else {
-      message = await message.sign(privateKeys, undefined, date, fromUserIds);
+      message = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream);
       if (armor) {
         result.data = message.armor();
       } else {

@@ -1853,7 +1853,8 @@ function versionSpecificTests() {
   it('Generate key - one signing subkey', function() {
     const userId = 'test <a@b.com>';
     const opt = {curve: 'curve25519', userIds: [userId], passphrase: '123', subkeys:[{}, {sign: true}]};
-    return openpgp.generateKey(opt).then(async function({ key }) {
+    return openpgp.generateKey(opt).then(async function({ privateKeyArmored }) {
+      const { keys: [key] } = await openpgp.key.readArmored(privateKeyArmored);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
@@ -1871,7 +1872,8 @@ function versionSpecificTests() {
     return openpgp.generateKey(opt).then(async function({ key }) {
       await key.decrypt('123');
       return openpgp.reformatKey({ privateKey: key, userIds: [userId] });
-    }).then(async function({ key }) {
+    }).then(async function({ privateKeyArmored }) {
+      const { keys: [key] } = await openpgp.key.readArmored(privateKeyArmored);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
@@ -2207,6 +2209,16 @@ describe('Key', function() {
   });
 
   describe('V4', versionSpecificTests);
+
+  tryTests('V4 - With Worker', versionSpecificTests, {
+    if: typeof window !== 'undefined' && window.Worker,
+    before: async function() {
+      await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+    },
+    after: function() {
+      openpgp.destroyWorker();
+    }
+  });
 
   let v5_keysVal;
   let aead_protectVal;
