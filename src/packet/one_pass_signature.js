@@ -133,7 +133,7 @@ OnePassSignature.prototype.hash = Signature.prototype.hash;
 OnePassSignature.prototype.toHash = Signature.prototype.toHash;
 OnePassSignature.prototype.toSign = Signature.prototype.toSign;
 OnePassSignature.prototype.calculateTrailer = function(...args) {
-  return stream.fromAsync(async () => (await this.correspondingSig).calculateTrailer(...args));
+  return stream.fromAsync(async () => Signature.prototype.calculateTrailer.apply(await this.correspondingSig, args));
 };
 
 OnePassSignature.prototype.verify = async function() {
