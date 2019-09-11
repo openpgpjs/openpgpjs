@@ -843,10 +843,6 @@ Key.prototype.addSubkey = async function(options = {}) {
   }
   options = sanitizeKeyOptions(options, defaultOptions);
   const keyPacket = await generateSecretSubkey(options);
-
-  if (options.passphrase) {
-    await keyPacket.encrypt(options.passphrase);
-  }
   const bindingSignature = await bindSignature(keyPacket, secretKeyPacket, options);
   if (options.passphrase) {
     await keyPacket.clearPrivateParams();
