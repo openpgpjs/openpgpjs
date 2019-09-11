@@ -2210,6 +2210,16 @@ describe('Key', function() {
 
   describe('V4', versionSpecificTests);
 
+  tryTests('V4 - With Worker', versionSpecificTests, {
+    if: typeof window !== 'undefined' && window.Worker,
+    before: async function() {
+      await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+    },
+    after: function() {
+      openpgp.destroyWorker();
+    }
+  });
+
   let v5_keysVal;
   let aead_protectVal;
   tryTests('V5', versionSpecificTests, {
