@@ -826,6 +826,37 @@ Key.prototype.verifyAllUsers = async function(keys) {
   return results;
 };
 
+Key.prototype.addSubkey = async function(options = {}) {
+  if (!this.isPrivate()) {
+    throw new Error("Cannot add a subkey to a public key");
+  }
+  const defaultOptions = {};
+  const defaultAlgo = this.primaryKey.algorithm;
+  if (defaultAlgo.indexOf('rsa') === 0) {
+    defaultOptions.numBits = this.primaryKey.getAlgorithmInfo().bits;
+  } else if (defaultAlgo === 'ecdh' || defaultAlgo === 'ecdsa' || defaultAlgo === 'eddsa') {
+    defaultOptions.curve = this.primaryKey.getAlgorithmInfo().curve;
+  }
+  const secretKeyPacket = this.primaryKey;
+  if (!secretKeyPacket.isDecrypted()) {
+    throw new Error("Key is not decrypted");
+  }
+  options = sanitizeKeyOptions(options, defaultOptions);
+  const keyPacket = await generateSecretSubkey(options);
+
+  if (options.passphrase) {
+    await keyPacket.encrypt(options.passphrase);
+  }
+  const bindingSignature = await bindSignature(keyPacket, secretKeyPacket, options);
+  if (options.passphrase) {
+    await keyPacket.clearPrivateParams();
+  }
+  const packetList = this.toPacketlist();
+  packetList.push(keyPacket);
+  packetList.push(bindingSignature);
+  return new Key(packetList);
+};
+
 /**
  * @class
  * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
@@ -1329,37 +1360,6 @@ export async function generate(options) {
   promises = promises.concat(options.subkeys.map(generateSecretSubkey));
   return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
 
-  function sanitizeKeyOptions(options, subkeyDefaults = {}) {
-    options.curve = options.curve || subkeyDefaults.curve;
-    options.numBits = options.numBits || subkeyDefaults.numBits;
-    options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
-    options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
-    options.date = options.date || subkeyDefaults.date;
-
-    options.sign = options.sign || false;
-
-    if (options.curve) {
-      try {
-        options.curve = enums.write(enums.curve, options.curve);
-      } catch (e) {
-        throw new Error('Not valid curve.');
-      }
-      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
-      }
-      if (options.sign) {
-        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
-      } else {
-        options.algorithm = enums.publicKey.ecdh;
-      }
-    } else if (options.numBits) {
-      options.algorithm = enums.publicKey.rsa_encrypt_sign;
-    } else {
-      throw new Error('Unrecognized key type');
-    }
-    return options;
-  }
-
   async function generateSecretKey(options) {
     const secretKeyPacket = new packet.SecretKey(options.date);
     secretKeyPacket.packets = null;
@@ -1367,14 +1367,45 @@ export async function generate(options) {
     await secretKeyPacket.generate(options.numBits, options.curve);
     return secretKeyPacket;
   }
+}
 
-  async function generateSecretSubkey(options) {
-    const secretSubkeyPacket = new packet.SecretSubkey(options.date);
-    secretSubkeyPacket.packets = null;
-    secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-    await secretSubkeyPacket.generate(options.numBits, options.curve);
-    return secretSubkeyPacket;
+function sanitizeKeyOptions(options, subkeyDefaults = {}) {
+  options.curve = options.curve || subkeyDefaults.curve;
+  options.numBits = options.numBits || subkeyDefaults.numBits;
+  options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
+  options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
+  options.date = options.date || subkeyDefaults.date;
+
+  options.sign = options.sign || false;
+
+  if (options.curve) {
+    try {
+      options.curve = enums.write(enums.curve, options.curve);
+    } catch (e) {
+      throw new Error('Not valid curve.');
+    }
+    if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
+      options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
+    }
+    if (options.sign) {
+      options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
+    } else {
+      options.algorithm = enums.publicKey.ecdh;
+    }
+  } else if (options.numBits) {
+    options.algorithm = enums.publicKey.rsa_encrypt_sign;
+  } else {
+    throw new Error('Unrecognized key type');
   }
+  return options;
+}
+
+async function generateSecretSubkey(options) {
+  const secretSubkeyPacket = new packet.SecretSubkey(options.date);
+  secretSubkeyPacket.packets = null;
+  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+  await secretSubkeyPacket.generate(options.numBits, options.curve);
+  return secretSubkeyPacket;
 }
 
 /**
@@ -1541,27 +1572,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];
-    const dataToSign = {};
-    dataToSign.key = secretKeyPacket;
-    dataToSign.bind = secretSubkeyPacket;
-    const subkeySignaturePacket = new packet.Signature(subkeyOptions.date);
-    subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-    subkeySignaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, secretSubkeyPacket);
-    if (subkeyOptions.sign) {
-      subkeySignaturePacket.keyFlags = [enums.keyFlags.sign_data];
-      subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, secretSubkeyPacket, {
-        signatureType: enums.signature.key_binding
-      }, subkeyOptions.date);
-    } else {
-      subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-    }
-    if (subkeyOptions.keyExpirationTime > 0) {
-      subkeySignaturePacket.keyExpirationTime = subkeyOptions.keyExpirationTime;
-      subkeySignaturePacket.keyNeverExpires = false;
-    }
-    await subkeySignaturePacket.sign(secretKeyPacket, dataToSign);
-
+    const subkeySignaturePacket = await bindSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions);
     return { secretSubkeyPacket, subkeySignaturePacket };
   })).then(packets => {
     packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
@@ -1768,4 +1779,28 @@ export async function isAeadSupported(keys, date = new Date(), userIds = []) {
     }
   }));
   return supported;
+}
+
+async function bindSignature(subkey, primaryKey, options) {
+  const dataToSign = {};
+  dataToSign.key = primaryKey;
+  dataToSign.bind = subkey;
+  const subkeySignaturePacket = new packet.Signature(options.date);
+  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+  subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
+  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey);
+  if (options.sign) {
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.sign_data];
+    subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
+      signatureType: enums.signature.key_binding
+    }, options.date);
+  } else {
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  }
+  if (options.keyExpirationTime > 0) {
+    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+    subkeySignaturePacket.keyNeverExpires = false;
+  }
+  await subkeySignaturePacket.sign(primaryKey, dataToSign);
+  return subkeySignaturePacket;
 }
