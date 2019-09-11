@@ -923,9 +923,10 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date = n
  * @param  {Date} date                       (optional) override the creationtime of the signature
  * @param  {Object} userId                   (optional) user ID
  * @param  {Object} detached                 (optional) whether to create a detached signature packet
+ * @param  {Boolean} streaming               (optional) whether to process data as a stream
  * @returns {module:packet/signature}         signature packet
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false) {
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
@@ -933,7 +934,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
-  await signaturePacket.sign(signingKeyPacket, dataToSign, detached);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, detached, streaming);
   return signaturePacket;
 }
 

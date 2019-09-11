@@ -149,10 +149,11 @@ Signature.prototype.write = function () {
  * @param {module:packet.SecretKey} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  * @param {Boolean} detached (optional) whether to create a detached signature
+ * @param {Boolean} streaming (optional) whether to process data as a stream
  * @returns {Promise<Boolean>}
  * @async
  */
-Signature.prototype.sign = async function (key, data, detached = false) {
+Signature.prototype.sign = async function (key, data, detached = false, streaming = false) {
   const signatureType = enums.write(enums.signature, this.signatureType);
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -182,9 +183,14 @@ Signature.prototype.sign = async function (key, data, detached = false) {
   this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
 
   const params = key.params;
-  this.signature = stream.fromAsync(async () => crypto.signature.sign(
+  const signed = async () => crypto.signature.sign(
     publicKeyAlgorithm, hashAlgorithm, params, toHash, await stream.readToEnd(hash)
-  ));
+  );
+  if (streaming) {
+    this.signature = stream.fromAsync(signed);
+  } else {
+    this.signature = await signed();
+  }
 
   // Store the fact that this signature is valid, e.g. for when we call `await
   // getLatestValidSignature(this.revocationSignatures, key, data)` later. Note
