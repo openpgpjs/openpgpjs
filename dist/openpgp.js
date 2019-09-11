@@ -25048,7 +25048,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.6.1",
+  versionstring: "OpenPGP.js v4.6.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -37439,7 +37439,7 @@ OnePassSignature.prototype.hash = _signature2.default.prototype.hash;
 OnePassSignature.prototype.toHash = _signature2.default.prototype.toHash;
 OnePassSignature.prototype.toSign = _signature2.default.prototype.toSign;
 OnePassSignature.prototype.calculateTrailer = function (...args) {
-  return _webStreamTools2.default.fromAsync(async () => (await this.correspondingSig).calculateTrailer(...args));
+  return _webStreamTools2.default.fromAsync(async () => _signature2.default.prototype.calculateTrailer.apply((await this.correspondingSig), args));
 };
 
 OnePassSignature.prototype.verify = async function () {

@@ -31489,7 +31489,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.6.1",
+  versionstring: "OpenPGP.js v4.6.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -51208,21 +51208,20 @@ OnePassSignature.prototype.calculateTrailer = function () {
   }
 
   return _webStreamTools2.default.fromAsync((0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
-    var _ref2;
-
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
           case 0:
-            _context.next = 2;
+            _context.t0 = _signature2.default.prototype.calculateTrailer;
+            _context.next = 3;
             return _this.correspondingSig;
 
-          case 2:
-            _context.t0 = _ref2;
-            _context.t1 = args;
-            return _context.abrupt('return', (_ref2 = _context.sent).calculateTrailer.apply(_context.t0, _context.t1));
+          case 3:
+            _context.t1 = _context.sent;
+            _context.t2 = args;
+            return _context.abrupt('return', _context.t0.apply.call(_context.t0, _context.t1, _context.t2));
 
-          case 5:
+          case 6:
           case 'end':
             return _context.stop();
         }
