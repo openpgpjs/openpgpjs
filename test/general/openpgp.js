@@ -874,7 +874,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('OCB mode', tests, {
-      if: true,
+      if: !openpgp.config.ci,
       beforeEach: function() {
         openpgp.config.aead_protect = true;
         openpgp.config.aead_mode = openpgp.enums.aead.ocb;

@@ -16,7 +16,7 @@ elif [ $OPENPGPJSTEST = "browserstack" ]; then
 
   grunt build browserify:unittests copy:browsertest --compat=$COMPAT
   echo -n "Using config: "
-  echo "{\"browsers\": [$BROWSER], \"test_framework\": \"mocha\", \"test_path\": [\"test/unittests.html?ci=true\"], \"timeout\": 900, \"exit_with_fail\": true, \"project\": \"openpgpjs/openpgpjs/${TRAVIS_EVENT_TYPE:-local}\"}" > browserstack.json
+  echo "{\"browsers\": [$BROWSER], \"test_framework\": \"mocha\", \"test_path\": [\"test/unittests.html?ci=true\"], \"timeout\": 1800, \"exit_with_fail\": true, \"project\": \"openpgpjs/${TRAVIS_EVENT_TYPE:-push}${COMPAT:+/compat}\"}" > browserstack.json
   cat browserstack.json
 
   result=0
@@ -31,7 +31,7 @@ elif [ $OPENPGPJSTEST = "browserstack" ]; then
 
     # https://github.com/travis-ci/travis-ci/issues/4190
     seconds=0
-    limit=1000
+    limit=2000
     while kill -0 $background_process_pid >/dev/null 2>&1; do
       echo -n -e " \b" # never leave evidences!
 

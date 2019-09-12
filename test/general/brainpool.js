@@ -8,7 +8,7 @@ const input = require('./testInputs.js');
 
 const expect = chai.expect;
 
-describe('Brainpool Cryptography', function () {
+(openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography', function () {
   const data = {
     romeo: {
       id: 'fa3d64c9bcf338bc',
@@ -267,77 +267,85 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
+});
 
-  function omnibus() {
-    it('Omnibus BrainpoolP256r1 Test', function () {
-      const options = { userIds: {name: "Hi", email: "hi@hel.lo"}, curve: "brainpoolP256r1" };
-      return openpgp.generateKey(options).then(function (firstKey) {
-        const hi = firstKey.key;
-        const pubHi = hi.toPublic();
+function omnibus() {
+  it('Omnibus BrainpoolP256r1 Test', function() {
+    const options = { userIds: { name: "Hi", email: "hi@hel.lo" }, curve: "brainpoolP256r1" };
+    return openpgp.generateKey(options).then(function(firstKey) {
+      const hi = firstKey.key;
+      const pubHi = hi.toPublic();
 
-        const options = { userIds: { name: "Bye", email: "bye@good.bye" }, curve: "brainpoolP256r1" };
-        return openpgp.generateKey(options).then(function (secondKey) {
-          const bye = secondKey.key;
-          const pubBye = bye.toPublic();
+      const options = { userIds: { name: "Bye", email: "bye@good.bye" }, curve: "brainpoolP256r1" };
+      return openpgp.generateKey(options).then(function(secondKey) {
+        const bye = secondKey.key;
+        const pubBye = bye.toPublic();
 
-          const testData = input.createSomeMessage();
-          const testData2 = input.createSomeMessage();
-          return Promise.all([
-            // Signing message
-            openpgp.sign(
-              { message: openpgp.cleartext.fromText(testData), privateKeys: hi }
-            ).then(async signed => {
-              const msg = await openpgp.cleartext.readArmored(signed.data);
-              // Verifying signed message
-              return Promise.all([
-                openpgp.verify(
-                  { message: msg, publicKeys: pubHi }
-                ).then(output => expect(output.signatures[0].valid).to.be.true),
-                // Verifying detached signature
-                openpgp.verify(
-                  { message: openpgp.cleartext.fromText(testData),
-                    publicKeys: pubHi,
-                    signature: await openpgp.signature.readArmored(signed.data) }
-                ).then(output => expect(output.signatures[0].valid).to.be.true)
-              ]);
-            }),
-            // Encrypting and signing
-            openpgp.encrypt(
-              { message: openpgp.message.fromText(testData2),
-                publicKeys: [pubBye],
-                privateKeys: [hi] }
-            ).then(async encrypted => {
-              const msg = await openpgp.message.readArmored(encrypted.data);
-              // Decrypting and verifying
-              return openpgp.decrypt(
-                { message: msg,
-                  privateKeys: bye,
-                  publicKeys: [pubHi] }
-              ).then(output => {
-                expect(output.data).to.equal(testData2);
-                expect(output.signatures[0].valid).to.be.true;
-              });
-            })
-          ]);
-        });
+        const testData = input.createSomeMessage();
+        const testData2 = input.createSomeMessage();
+        return Promise.all([
+          // Signing message
+          openpgp.sign(
+            { message: openpgp.cleartext.fromText(testData), privateKeys: hi }
+          ).then(async signed => {
+            const msg = await openpgp.cleartext.readArmored(signed.data);
+            // Verifying signed message
+            return Promise.all([
+              openpgp.verify(
+                { message: msg, publicKeys: pubHi }
+              ).then(output => expect(output.signatures[0].valid).to.be.true),
+              // Verifying detached signature
+              openpgp.verify(
+                {
+                  message: openpgp.cleartext.fromText(testData),
+                  publicKeys: pubHi,
+                  signature: await openpgp.signature.readArmored(signed.data)
+                }
+              ).then(output => expect(output.signatures[0].valid).to.be.true)
+            ]);
+          }),
+          // Encrypting and signing
+          openpgp.encrypt(
+            {
+              message: openpgp.message.fromText(testData2),
+              publicKeys: [pubBye],
+              privateKeys: [hi]
+            }
+          ).then(async encrypted => {
+            const msg = await openpgp.message.readArmored(encrypted.data);
+            // Decrypting and verifying
+            return openpgp.decrypt(
+              {
+                message: msg,
+                privateKeys: bye,
+                publicKeys: [pubHi]
+              }
+            ).then(output => {
+              expect(output.data).to.equal(testData2);
+              expect(output.signatures[0].valid).to.be.true;
+            });
+          })
+        ]);
       });
     });
-  }
-
-  omnibus();
-
-  tryTests('Brainpool Worker Tests', omnibus, {
-    if: typeof window !== 'undefined' && window.Worker,
-    before: async function() {
-      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    },
-    beforeEach: function() {
-      openpgp.config.use_native = true;
-    },
-    after: function() {
-      openpgp.destroyWorker();
-    }
   });
+}
 
-  // TODO find test vectors
+tryTests('Brainpool Omnibus Tests', omnibus, {
+  if: !openpgp.config.ci
 });
+
+tryTests('Brainpool Omnibus Tests - Worker', omnibus, {
+  if: typeof window !== 'undefined' && window.Worker,
+  before: async function() {
+    await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+  },
+  beforeEach: function() {
+    openpgp.config.use_native = true;
+  },
+  after: function() {
+    openpgp.destroyWorker();
+  }
+});
+
+// TODO find test vectors

@@ -2208,7 +2208,9 @@ describe('Key', function() {
     rsaGenStub.restore();
   });
 
-  describe('V4', versionSpecificTests);
+  tryTests('V4', versionSpecificTests, {
+    if: !openpgp.config.ci
+  });
 
   tryTests('V4 - With Worker', versionSpecificTests, {
     if: typeof window !== 'undefined' && window.Worker,
@@ -2222,18 +2224,18 @@ describe('Key', function() {
 
   let v5_keysVal;
   let aead_protectVal;
-  describe('V5', function() {
-    beforeEach(function() {
+  tryTests('V5', versionSpecificTests, {
+    if: !openpgp.config.ci,
+    beforeEach: function() {
       v5_keysVal = openpgp.config.v5_keys;
       aead_protectVal = openpgp.config.aead_protect;
       openpgp.config.v5_keys = true;
       openpgp.config.aead_protect = true;
-    });
-    afterEach(function() {
+    },
+    afterEach: function() {
       openpgp.config.v5_keys = v5_keysVal;
       openpgp.config.aead_protect = aead_protectVal;
-    });
-    versionSpecificTests();
+    }
   });
 
   it('Parsing armored text with RSA key and ECC subkey', async function() {

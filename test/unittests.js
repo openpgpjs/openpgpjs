@@ -48,11 +48,10 @@ describe('Unit Tests', function () {
     window.location.search.substr(1).split('&').forEach(param => {
       const [key, value] = param.split('=');
       if (key && key !== 'grep') {
+        openpgp.config[key] = decodeURIComponent(value);
         try {
-          openpgp.config[key] = JSON.parse(value);
-        } catch(e) {
-          openpgp.config[key] = value;
-        }
+          openpgp.config[key] = JSON.parse(openpgp.config[key]);
+        } catch(e) {}
       }
     });
   }

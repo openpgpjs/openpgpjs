@@ -34,8 +34,6 @@ matrix:
     - node_js: "9"
       env: BROWSER='"safari_11_1"' OPENPGPJSTEST='browserstack'
     - node_js: "9"
-      env: BROWSER='{"os":"android", "os_version":"6.0", "device":"Google Nexus 6", "real_mobile":true}' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
       env: BROWSER='{"os":"ios", "os_version":"10.3", "device":"iPhone 7 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
       env: BROWSER='{"os":"ios", "os_version":"11.3", "device":"iPhone 8 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack'
