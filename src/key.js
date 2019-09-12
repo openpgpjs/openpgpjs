@@ -844,9 +844,6 @@ Key.prototype.addSubkey = async function(options = {}) {
   options = sanitizeKeyOptions(options, defaultOptions);
   const keyPacket = await generateSecretSubkey(options);
   const bindingSignature = await bindSignature(keyPacket, secretKeyPacket, options);
-  if (options.passphrase) {
-    await keyPacket.clearPrivateParams();
-  }
   const packetList = this.toPacketlist();
   packetList.push(keyPacket);
   packetList.push(bindingSignature);

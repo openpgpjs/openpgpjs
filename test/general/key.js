@@ -2195,7 +2195,7 @@ function versionSpecificTests() {
   });
 }
 
-describe('Key @subkey', function() {
+describe('Key', function() {
   let rsaGenStub;
   let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
 
@@ -2864,7 +2864,7 @@ VYGdb3eNlV8CfoEC
   });
 });
 
-describe('addSubkey functionality testing @subkey', function(){
+describe('addSubkey functionality testing', function(){
   it('create and add a new rsa subkey to a rsa key', async function() {
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
@@ -2950,31 +2950,7 @@ describe('addSubkey functionality testing @subkey', function(){
     const pkSessionKeys = encrypted.message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
     expect(pkSessionKeys).to.exist;
     expect(pkSessionKeys.length).to.be.equal(1);
-    expect(pkSessionKeys[0].publicKeyId).to.be.equals(publicKey.subKeys[0].keyPacket.getKeyId());
-    const decrypted = await openpgp.decrypt({message: encrypted.message, privateKeys: newPrivateKey})
-    expect(decrypted).to.exist;
-    expect(decrypted.data).to.be.equal(vData);
-  });
-
-
-  it('encrypt/decrypt data with the new subkey correctly using rsa', async function() {
-    const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
-    await privateKey.decrypt('hello world');
-    const total = privateKey.subKeys.length;
-    const newPrivateKey = await privateKey.addSubkey();
-    const subKey = newPrivateKey.subKeys[total];
-    const publicKey = newPrivateKey.toPublic();
-    const vData = 'the data to encrypted!';
-    expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subKey);
-    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText(vData), publicKeys: publicKey, armor:false});
-    expect(encrypted.message).to.be.exist;
-    const pkSessionKeys = encrypted.message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
-    expect(pkSessionKeys).to.exist;
-    expect(pkSessionKeys.length).to.be.equal(1);
-    // console.log(publicKey.subKeys[0].keyPacket.getKeyId());
-    // console.log(pkSessionKeys[0]);
-    // todo fix below
-    // expect(pkSessionKeys[0].publicKeyId).to.be.equals(publicKey.subKeys[0].keyPacket.getKeyId());
+    expect(pkSessionKeys[0].publicKeyId.toHex()).to.be.equals(subKey.keyPacket.getKeyId().toHex());
     const decrypted = await openpgp.decrypt({message: encrypted.message, privateKeys: newPrivateKey})
     expect(decrypted).to.exist;
     expect(decrypted.data).to.be.equal(vData);
@@ -2996,5 +2972,25 @@ describe('addSubkey functionality testing @subkey', function(){
     expect(verified.length).to.be.equal(1);
     expect(await verified[0].keyid).to.be.equal(subKey.getKeyId());
     expect(await verified[0].verified).to.be.true;
+  });
+
+  it('encrypt/decrypt data with the new subkey correctly using rsa', async function() {
+    const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
+    await privateKey.decrypt('hello world');
+    const total = privateKey.subKeys.length;
+    const newPrivateKey = await privateKey.addSubkey();
+    const subKey = newPrivateKey.subKeys[total];
+    const publicKey = newPrivateKey.toPublic();
+    const vData = 'the data to encrypted!';
+    expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subKey);
+    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText(vData), publicKeys: publicKey, armor:false});
+    expect(encrypted.message).to.be.exist;
+    const pkSessionKeys = encrypted.message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
+    expect(pkSessionKeys).to.exist;
+    expect(pkSessionKeys.length).to.be.equal(1);
+    expect(pkSessionKeys[0].publicKeyId.toHex()).to.be.equals(subKey.keyPacket.getKeyId().toHex());
+    const decrypted = await openpgp.decrypt({message: encrypted.message, privateKeys: newPrivateKey})
+    expect(decrypted).to.exist;
+    expect(decrypted.data).to.be.equal(vData);
   });
 });
