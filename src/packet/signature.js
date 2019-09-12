@@ -190,13 +190,13 @@ Signature.prototype.sign = async function (key, data, detached = false, streamin
     this.signature = stream.fromAsync(signed);
   } else {
     this.signature = await signed();
-  }
 
-  // Store the fact that this signature is valid, e.g. for when we call `await
-  // getLatestValidSignature(this.revocationSignatures, key, data)` later. Note
-  // that this only holds up if the key and data passed to verify are the same
-  // as the ones passed to sign.
-  this.verified = true;
+    // Store the fact that this signature is valid, e.g. for when we call `await
+    // getLatestValidSignature(this.revocationSignatures, key, data)` later.
+    // Note that this only holds up if the key and data passed to verify are the
+    // same as the ones passed to sign.
+    this.verified = true;
+  }
   return true;
 };
 
