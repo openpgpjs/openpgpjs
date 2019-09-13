@@ -35,7 +35,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
 import build from '../../../build.env';
-import { loadElliptic, getElliptic } from '../../../openpgp';
+import { loadElliptic, getElliptic } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();

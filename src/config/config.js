@@ -190,5 +190,13 @@ export default {
    * @memberof module:config
    * @property {Array} known_notations
    */
-  known_notations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"]
+  known_notations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"],
+  /**
+   * Path to load elliptic from external file
+   */
+  external_indutny_elliptic_path: 'elliptic.min.js',
+  /*
+   * use indutny/elliptic library
+   */
+  use_indutny_elliptic: true
 };

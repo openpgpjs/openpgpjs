@@ -16,7 +16,5 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 export default {
-  use_indutny_elliptic: true,
-  external_indutny_elliptic: false,
-  external_indutny_elliptic_path: 'elliptic.min.js'
+  external_indutny_elliptic: false
 };
