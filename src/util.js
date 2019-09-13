@@ -31,7 +31,6 @@ import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
-import build from './build.env';
 
 export default {
   isString: function(data) {
@@ -640,7 +639,7 @@ export default {
   },
 
   getUseElliptic: function() {
-    return build.use_indutny_elliptic;
+    return config.use_indutny_elliptic;
   },
 
   isEmailAddress: function(data) {
@@ -758,18 +757,5 @@ export default {
       result += ALPHABET[MASK & (buffer >> bitsLeft)];
     }
     return result;
-  },
-
-  /**
-   * download script from filepath
-   * @param {Object} params download parameters
-   */
-  dl: async function({ filepath, integrity }) {
-    const options = {
-      integrity,
-      credentials: 'include'
-    };
-    const response = await fetch(filepath, options);
-    return response.text();
   }
 };
