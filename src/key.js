@@ -1594,6 +1594,36 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 }
 
 /**
+ * Create binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
+ * @param {module:packet.SecretSubkey} subkey Subkey key packet
+ * @param {module:packet.SecretKey} primaryKey Primary key packet
+ * @param {Object} options
+ */
+async function createBindingSignature(subkey, primaryKey, options) {
+  const dataToSign = {};
+  dataToSign.key = primaryKey;
+  dataToSign.bind = subkey;
+  const subkeySignaturePacket = new packet.Signature(options.date);
+  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+  subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
+  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey);
+  if (options.sign) {
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.sign_data];
+    subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
+      signatureType: enums.signature.key_binding
+    }, options.date);
+  } else {
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+  }
+  if (options.keyExpirationTime > 0) {
+    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
+    subkeySignaturePacket.keyNeverExpires = false;
+  }
+  await subkeySignaturePacket.sign(primaryKey, dataToSign);
+  return subkeySignaturePacket;
+}
+
+/**
  * Checks if a given certificate or binding signature is revoked
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey}       primaryKey   The primary key packet
@@ -1767,34 +1797,4 @@ export async function isAeadSupported(keys, date = new Date(), userIds = []) {
     }
   }));
   return supported;
-}
-
-/**
- * Create Binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
- * @param {module:packet.SecretSubkey|} subkey Subkey key packet
- * @param {module:packet.SecretKey} primaryKey Primary key packet
- * @param {Object} options
- */
-async function createBindingSignature(subkey, primaryKey, options) {
-  const dataToSign = {};
-  dataToSign.key = primaryKey;
-  dataToSign.bind = subkey;
-  const subkeySignaturePacket = new packet.Signature(options.date);
-  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
-  subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
-  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey);
-  if (options.sign) {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.sign_data];
-    subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
-      signatureType: enums.signature.key_binding
-    }, options.date);
-  } else {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
-  }
-  if (options.keyExpirationTime > 0) {
-    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
-    subkeySignaturePacket.keyNeverExpires = false;
-  }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign);
-  return subkeySignaturePacket;
 }
