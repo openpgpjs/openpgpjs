@@ -1594,7 +1594,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 }
 
 /**
- * Create binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
+ * Create subkey binding signature
+ * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}
  * @param {module:packet.SecretSubkey} subkey Subkey key packet
  * @param {module:packet.SecretKey} primaryKey Primary key packet
  * @param {Object} options
