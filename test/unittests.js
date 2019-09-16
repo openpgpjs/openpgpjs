@@ -40,7 +40,7 @@ describe('Unit Tests', function () {
 
     afterEach(function () {
       if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100
-        || openpgp.config.saucelabs) {
+        || openpgp.config.ci) {
         window.scrollTo(0, document.body.scrollHeight);
       }
     });
@@ -48,7 +48,10 @@ describe('Unit Tests', function () {
     window.location.search.substr(1).split('&').forEach(param => {
       const [key, value] = param.split('=');
       if (key && key !== 'grep') {
-        openpgp.config[key] = JSON.parse(value);
+        openpgp.config[key] = decodeURIComponent(value);
+        try {
+          openpgp.config[key] = JSON.parse(openpgp.config[key]);
+        } catch(e) {}
       }
     });
   }

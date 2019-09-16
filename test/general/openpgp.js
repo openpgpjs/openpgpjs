@@ -425,7 +425,7 @@ function withCompression(tests) {
   });
 }
 
-describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
+describe('OpenPGP.js public api tests', function() {
 
   let rsaGenStub;
   let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
@@ -874,7 +874,7 @@ describe('[Sauce Labs Group 2] OpenPGP.js public api tests', function() {
     });
 
     tryTests('OCB mode', tests, {
-      if: !openpgp.config.saucelabs,
+      if: !openpgp.config.ci,
       beforeEach: function() {
         openpgp.config.aead_protect = true;
         openpgp.config.aead_mode = openpgp.enums.aead.ocb;

@@ -16,34 +16,36 @@ matrix:
     - node_js: "12"
       env: OPENPGP_NODE_JS='12' OPENPGPJSTEST='unit'
     - node_js: "9"
-      env: BROWSER='Firefox' VERSION='26' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs' COMPAT=1
+      env: BROWSER='"firefox_26"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
-      env: BROWSER='Firefox' VERSION='61' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
+      env: BROWSER='"firefox_61"' OPENPGPJSTEST='browserstack'
     - node_js: "9"
-      env: BROWSER='Chrome' VERSION='49' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs' COMPAT=1
+      env: BROWSER='"chrome_49"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "10"
-      env: BROWSER='Chrome' VERSION='68' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
+      env: BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack'
     - node_js: "9"
-      env: BROWSER='Internet Explorer' VERSION='11.103' PLATFORM='Windows 10' OPENPGPJSTEST='saucelabs' COMPAT=1
+      env: BROWSER='"ie_11"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
-      env: BROWSER='MicrosoftEdge' VERSION='17.17134' PLATFORM='Windows 10' OPENPGPJSTEST='saucelabs'
+      env: BROWSER='"edge_17"' OPENPGPJSTEST='browserstack'
     - node_js: "9"
-      env: BROWSER='Safari' VERSION='9' PLATFORM='OS X 10.11' OPENPGPJSTEST='saucelabs' COMPAT=1
+      env: BROWSER='"safari_9_1"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
-      env: BROWSER='Safari' VERSION='10' PLATFORM='macOS 10.12' OPENPGPJSTEST='saucelabs' COMPAT=1
+      env: BROWSER='"safari_10_1"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
-      env: BROWSER='Safari' VERSION='11' PLATFORM='macOS 10.13' OPENPGPJSTEST='saucelabs'
+      env: BROWSER='"safari_11_1"' OPENPGPJSTEST='browserstack'
     - node_js: "9"
-      env: BROWSER='Android' VERSION='6.0' OPENPGPJSTEST='saucelabs'
+      env: BROWSER='{"os":"ios", "os_version":"10.3", "device":"iPhone 7 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
-      env: BROWSER='iPad' VERSION='10.0' OPENPGPJSTEST='saucelabs' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='iPad' VERSION='11.0' OPENPGPJSTEST='saucelabs'
+      env: BROWSER='{"os":"ios", "os_version":"11.3", "device":"iPhone 8 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack'
   allow_failures:
     - node_js: "9"
 
 before_script:
-  - npm install -g grunt-cli codeclimate-test-reporter
+  - npm install -g grunt-cli codeclimate-test-reporter browserstack-runner
 script:
   - $TRAVIS_BUILD_DIR/travis.sh
 install: npm install
+env:
+  global:
+    - BROWSERSTACK_USERNAME=danielhuigens2
+    - BROWSERSTACK_KEY=aW2q1ms393QRorwBnfmW

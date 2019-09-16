@@ -61,7 +61,6 @@
     "grunt-jsdoc": "^2.2.1",
     "grunt-mocha-istanbul": "^5.0.2",
     "grunt-mocha-test": "^0.13.3",
-    "grunt-saucelabs": "github:mar10/grunt-saucelabs#dfc0bb6f34d1c1b2bb9cda26ce8e50ad9d8c1463",
     "grunt-terser": "^0.1.0",
     "grunt-text-replace": "~0.4.0",
     "gruntify-eslint": "^4.0.0",

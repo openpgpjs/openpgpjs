@@ -2208,7 +2208,9 @@ describe('Key', function() {
     rsaGenStub.restore();
   });
 
-  describe('V4', versionSpecificTests);
+  tryTests('V4', versionSpecificTests, {
+    if: !openpgp.config.ci
+  });
 
   tryTests('V4 - With Worker', versionSpecificTests, {
     if: typeof window !== 'undefined' && window.Worker,
@@ -2223,7 +2225,7 @@ describe('Key', function() {
   let v5_keysVal;
   let aead_protectVal;
   tryTests('V5', versionSpecificTests, {
-    if: !openpgp.config.saucelabs,
+    if: !openpgp.config.ci,
     beforeEach: function() {
       v5_keysVal = openpgp.config.v5_keys;
       aead_protectVal = openpgp.config.aead_protect;
