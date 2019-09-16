@@ -826,6 +826,18 @@ Key.prototype.verifyAllUsers = async function(keys) {
   return results;
 };
 
+/**
+ * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
+ * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key.
+ * @param {Integer} options.numBits    number of bits for the key creation.
+ * @param {Number} [options.keyExpirationTime=0]
+ *                             The number of seconds after the key creation time that the key expires
+ * @param {String} curve       (optional) Elliptic curve for ECC keys
+ * @param {Date} date          (optional) Override the creation date of the key and the key signatures
+ * @param {Boolean} subkeys    (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
+ * @returns {Promise<module:key.Key>}
+ * @async
+ */
 Key.prototype.addSubkey = async function(options = {}) {
   if (!this.isPrivate()) {
     throw new Error("Cannot add a subkey to a public key");
