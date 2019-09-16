@@ -2886,7 +2886,7 @@ describe('addSubkey functionality testing', function(){
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
     const total = privateKey.subKeys.length;
-    let newPrivateKey = await privateKey.addSubkey({passphrase: 'hello world'});
+    let newPrivateKey = await privateKey.addSubkey();
     newPrivateKey = (await openpgp.key.readArmored(newPrivateKey.armor())).keys[0];
     await newPrivateKey.encrypt('12345678');
     const armoredKey = newPrivateKey.armor();
