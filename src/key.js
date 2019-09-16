@@ -830,20 +830,15 @@ Key.prototype.addSubkey = async function(options = {}) {
   if (!this.isPrivate()) {
     throw new Error("Cannot add a subkey to a public key");
   }
-  const defaultOptions = {};
-  const defaultAlgo = this.primaryKey.algorithm;
-  if (defaultAlgo.indexOf('rsa') === 0) {
-    defaultOptions.numBits = this.primaryKey.getAlgorithmInfo().bits;
-  } else if (defaultAlgo === 'ecdh' || defaultAlgo === 'ecdsa' || defaultAlgo === 'eddsa') {
-    defaultOptions.curve = this.primaryKey.getAlgorithmInfo().curve;
-  }
+  const defaultOptions = this.primaryKey.getAlgorithmInfo();
+  defaultOptions.numBits = defaultOptions.bits;
   const secretKeyPacket = this.primaryKey;
   if (!secretKeyPacket.isDecrypted()) {
     throw new Error("Key is not decrypted");
   }
   options = sanitizeKeyOptions(options, defaultOptions);
   const keyPacket = await generateSecretSubkey(options);
-  const bindingSignature = await bindSignature(keyPacket, secretKeyPacket, options);
+  const bindingSignature = await createBindingSignature(keyPacket, secretKeyPacket, options);
   const packetList = this.toPacketlist();
   packetList.push(keyPacket);
   packetList.push(bindingSignature);
@@ -1352,14 +1347,6 @@ export async function generate(options) {
   let promises = [generateSecretKey(options)];
   promises = promises.concat(options.subkeys.map(generateSecretSubkey));
   return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
-
-  async function generateSecretKey(options) {
-    const secretKeyPacket = new packet.SecretKey(options.date);
-    secretKeyPacket.packets = null;
-    secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-    await secretKeyPacket.generate(options.numBits, options.curve);
-    return secretKeyPacket;
-  }
 }
 
 function sanitizeKeyOptions(options, subkeyDefaults = {}) {
@@ -1391,6 +1378,14 @@ function sanitizeKeyOptions(options, subkeyDefaults = {}) {
     throw new Error('Unrecognized key type');
   }
   return options;
+}
+
+async function generateSecretKey(options) {
+  const secretKeyPacket = new packet.SecretKey(options.date);
+  secretKeyPacket.packets = null;
+  secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+  await secretKeyPacket.generate(options.numBits, options.curve);
+  return secretKeyPacket;
 }
 
 async function generateSecretSubkey(options) {
@@ -1565,7 +1560,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];
-    const subkeySignaturePacket = await bindSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions);
+    const subkeySignaturePacket = await createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions);
     return { secretSubkeyPacket, subkeySignaturePacket };
   })).then(packets => {
     packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
@@ -1774,7 +1769,13 @@ export async function isAeadSupported(keys, date = new Date(), userIds = []) {
   return supported;
 }
 
-async function bindSignature(subkey, primaryKey, options) {
+/**
+ * Create Binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
+ * @param {module:packet.SecretSubkey|} subkey Subkey key packet
+ * @param {module:packet.SecretKey} primaryKey Primary key packet
+ * @param {Object} options
+ */
+async function createBindingSignature(subkey, primaryKey, options) {
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
