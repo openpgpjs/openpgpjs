@@ -829,7 +829,7 @@ Key.prototype.verifyAllUsers = async function(keys) {
 /**
  * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
  * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key.
- * @param {Integer} options.numBits    number of bits for the key creation.
+ * @param {Integer} options.rsaBits    number of bits for the key creation.
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
  * @param {String} curve       (optional) Elliptic curve for ECC keys
@@ -842,12 +842,11 @@ Key.prototype.addSubkey = async function(options = {}) {
   if (!this.isPrivate()) {
     throw new Error("Cannot add a subkey to a public key");
   }
-  const defaultOptions = this.primaryKey.getAlgorithmInfo();
-  defaultOptions.numBits = defaultOptions.bits;
   const secretKeyPacket = this.primaryKey;
   if (!secretKeyPacket.isDecrypted()) {
     throw new Error("Key is not decrypted");
   }
+  const defaultOptions = secretKeyPacket.getAlgorithmInfo();
   options = sanitizeKeyOptions(options, defaultOptions);
   const keyPacket = await generateSecretSubkey(options);
   const bindingSignature = await createBindingSignature(keyPacket, secretKeyPacket, options);
@@ -1336,7 +1335,7 @@ export async function readArmored(armoredText) {
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
  *                             To indicate what type of key to make.
  *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
- * @param {Integer} options.numBits    number of bits for the key creation.
+ * @param {Integer} options.rsaBits    number of bits for the key creation.
  * @param {String|Array<String>}  options.userIds
  *                             Assumes already in form of "User Name <username@email.com>"
  *                             If array is used, the first userId is set as primary user Id
@@ -1363,7 +1362,7 @@ export async function generate(options) {
 
 function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.curve = options.curve || subkeyDefaults.curve;
-  options.numBits = options.numBits || subkeyDefaults.numBits;
+  options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
   options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
   options.date = options.date || subkeyDefaults.date;
@@ -1384,7 +1383,7 @@ function sanitizeKeyOptions(options, subkeyDefaults = {}) {
     } else {
       options.algorithm = enums.publicKey.ecdh;
     }
-  } else if (options.numBits) {
+  } else if (options.rsaBits) {
     options.algorithm = enums.publicKey.rsa_encrypt_sign;
   } else {
     throw new Error('Unrecognized key type');
@@ -1396,7 +1395,7 @@ async function generateSecretKey(options) {
   const secretKeyPacket = new packet.SecretKey(options.date);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.numBits, options.curve);
+  await secretKeyPacket.generate(options.rsaBits, options.curve);
   return secretKeyPacket;
 }
 
@@ -1404,7 +1403,7 @@ async function generateSecretSubkey(options) {
   const secretSubkeyPacket = new packet.SecretSubkey(options.date);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.numBits, options.curve);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve);
   return secretSubkeyPacket;
 }
 

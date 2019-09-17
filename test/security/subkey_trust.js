@@ -10,7 +10,7 @@ const expect = chai.expect;
 async function generateTestData() {
   const victimPrivKey = await key.generate({
     userIds: ['Victim <victim@example.com>'],
-    numBits: openpgp.util.getWebCryptoAll() ? 2048 : 1024,
+    rsaBits: openpgp.util.getWebCryptoAll() ? 2048 : 1024,
     subkeys: [{
       sign: true
     }]
@@ -19,7 +19,7 @@ async function generateTestData() {
 
   const attackerPrivKey = await key.generate({
     userIds: ['Attacker <attacker@example.com>'],
-    numBits: openpgp.util.getWebCryptoAll() ? 2048 : 1024,
+    rsaBits: openpgp.util.getWebCryptoAll() ? 2048 : 1024,
     subkeys: [],
     sign: false
   });
