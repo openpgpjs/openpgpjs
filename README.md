@@ -350,7 +350,7 @@ RSA keys:
 ```js
 var options = {
     userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
-    numBits: 4096,                                            // RSA key size
+    rsaBits: 4096,                                            // RSA key size
     passphrase: 'super long and hard to guess secret'         // protects the private key
 };
 ```

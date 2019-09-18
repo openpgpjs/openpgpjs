@@ -248,13 +248,14 @@ PublicKey.prototype.hasSameFingerprintAs = function(other) {
 
 /**
  * Returns algorithm information
- * @returns {Object} An object of the form {algorithm: String, bits:int, curve:String}
+ * @returns {Object} An object of the form {algorithm: String, rsaBits:int, curve:String}
  */
 PublicKey.prototype.getAlgorithmInfo = function () {
   const result = {};
   result.algorithm = this.algorithm;
   if (this.params[0] instanceof type_mpi) {
-    result.bits = this.params[0].byteLength() * 8;
+    result.rsaBits = this.params[0].byteLength() * 8;
+    result.bits = result.rsaBits; // Deprecated.
   } else {
     result.curve = this.params[0].getName();
   }

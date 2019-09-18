@@ -1895,6 +1895,7 @@ function versionSpecificTests() {
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.getAlgorithmInfo().algorithm).to.equal('rsa_encrypt_sign');
+      expect(key.getAlgorithmInfo().bits).to.equal(opt.numBits);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
     });
   });
@@ -2881,6 +2882,7 @@ describe('addSubkey functionality testing', function(){
     const pkN = privateKey.primaryKey.params[0];
     expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
+    expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(1024);
     expect(await subKey.verify(newPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
   });
 
@@ -2901,6 +2903,7 @@ describe('addSubkey functionality testing', function(){
     const pkN = privateKey.primaryKey.params[0];
     expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
+    expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(1024);
     expect(await subKey.verify(importedPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
   });
 
