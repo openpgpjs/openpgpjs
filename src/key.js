@@ -842,6 +842,9 @@ Key.prototype.addSubkey = async function(options = {}) {
   if (!this.isPrivate()) {
     throw new Error("Cannot add a subkey to a public key");
   }
+  if (options.passphrase) {
+    throw new Error("Subkey could not be encrypted here, please encrypt whole key");
+  }
   const secretKeyPacket = this.primaryKey;
   if (!secretKeyPacket.isDecrypted()) {
     throw new Error("Key is not decrypted");

@@ -1896,6 +1896,7 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.getAlgorithmInfo().algorithm).to.equal('rsa_encrypt_sign');
       expect(key.getAlgorithmInfo().bits).to.equal(opt.numBits);
+      expect(key.getAlgorithmInfo().rsaBits).to.equal(key.getAlgorithmInfo().bits);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
     });
   });
@@ -2868,11 +2869,15 @@ VYGdb3eNlV8CfoEC
 });
 
 describe('addSubkey functionality testing', function(){
-  it('create and add a new rsa subkey to a rsa key', async function() {
+  rsaBits = 1024;
+  if (openpgp.util.getWebCryptoAll()) { rsaBits = 2048; } 
+
+  it('create and add a new rsa subkey to stored rsa key', async function() {
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
     const total = privateKey.subKeys.length;
-    let newPrivateKey = await privateKey.addSubkey();
+    const opt = { rsaBits: rsaBits };
+    let newPrivateKey = await privateKey.addSubkey(opt);
     const armoredKey = newPrivateKey.armor();
     newPrivateKey = (await openpgp.key.readArmored(armoredKey)).keys[0];
     const subKey = newPrivateKey.subKeys[total];
@@ -2882,15 +2887,23 @@ describe('addSubkey functionality testing', function(){
     const pkN = privateKey.primaryKey.params[0];
     expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
-    expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(1024);
+    expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(opt.rsaBits);
     expect(await subKey.verify(newPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+  });
+
+  it('should throw when trying to encrypt a subkey separately from key', async function() {
+    const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
+    await privateKey.decrypt('hello world');
+    const opt = { rsaBits: rsaBits, passphrase: 'subkey passphrase'};
+    await expect(privateKey.addSubkey(opt)).to.be.rejectedWith('Subkey could not be encrypted here, please encrypt whole key');
   });
 
   it('encrypt and decrypt key with added subkey', async function() {
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
     const total = privateKey.subKeys.length;
-    let newPrivateKey = await privateKey.addSubkey();
+    const opt = { rsaBits: rsaBits };
+    let newPrivateKey = await privateKey.addSubkey(opt);
     newPrivateKey = (await openpgp.key.readArmored(newPrivateKey.armor())).keys[0];
     await newPrivateKey.encrypt('12345678');
     const armoredKey = newPrivateKey.armor();
@@ -2903,7 +2916,7 @@ describe('addSubkey functionality testing', function(){
     const pkN = privateKey.primaryKey.params[0];
     expect(subkeyN.byteLength()).to.be.equal(pkN.byteLength());
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
-    expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(1024);
+    expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(privateKey.getAlgorithmInfo().rsaBits);
     expect(await subKey.verify(importedPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
   });
 
@@ -2933,7 +2946,6 @@ describe('addSubkey functionality testing', function(){
 
   it('create and add a new ec subkey to a rsa key', async function() {
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
-    privateKey.subKeys = [];
     await privateKey.decrypt('hello world');
     const total = privateKey.subKeys.length;
     const opt2 = {curve: 'curve25519'};
@@ -3000,7 +3012,7 @@ describe('addSubkey functionality testing', function(){
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
     const total = privateKey.subKeys.length;
-    const opt2 = {sign: true};
+    const opt2 = { sign: true, rsaBits: rsaBits };
     let newPrivateKey = await privateKey.addSubkey(opt2);
     const armoredKey = newPrivateKey.armor();
     newPrivateKey = (await openpgp.key.readArmored(armoredKey)).keys[0];
@@ -3020,7 +3032,8 @@ describe('addSubkey functionality testing', function(){
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
     const total = privateKey.subKeys.length;
-    let newPrivateKey = await privateKey.addSubkey();
+    const opt = { rsaBits: rsaBits };
+    let newPrivateKey = await privateKey.addSubkey(opt);
     const armoredKey = newPrivateKey.armor();
     newPrivateKey = (await openpgp.key.readArmored(armoredKey)).keys[0];
     const subKey = newPrivateKey.subKeys[total];
