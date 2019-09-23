@@ -341,5 +341,6 @@ module.exports = {
 
     // Custom warnings:
     "no-console": 1,
+    "max-lines": [1, { "max": 500, "skipBlankLines": true, "skipComments": true }],
   }
 };
