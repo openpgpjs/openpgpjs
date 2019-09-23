@@ -38,7 +38,7 @@ import enums from './enums';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported, createSignaturePacket } from './key';
+import keyMod from './key';
 
 
 /**
@@ -298,9 +298,9 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
     aeadAlgo = sessionKey.aeadAlgorithm;
     sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
-    if (config.aead_protect && await isAeadSupported(keys, date, userIds)) {
-      aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds));
+    symAlgo = enums.read(enums.symmetric, await keyMod.getPreferredAlgo('symmetric', keys, date, userIds));
+    if (config.aead_protect && await keyMod.isAeadSupported(keys, date, userIds)) {
+      aeadAlgo = enums.read(enums.aead, await keyMod.getPreferredAlgo('aead', keys, date, userIds));
     }
   } else if (passwords && passwords.length) {
     symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
@@ -463,7 +463,7 @@ Message.prototype.sign = async function(privateKeys = [], signature = null, date
     }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.signatureType = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userIds);
+    onePassSig.hashAlgorithm = await keyMod.getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userIds);
     onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
     onePassSig.issuerKeyId = signingKey.getKeyId();
     if (i === privateKeys.length - 1) {
@@ -547,7 +547,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
       throw new Error(`Could not find valid signing key packet in key ${
         privateKey.getKeyId().toHex()}`);
     }
-    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId, detached, streaming);
+    return keyMod.createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId, detached, streaming);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
