@@ -28,8 +28,7 @@ export {
  * @see module:key
  * @name module:openpgp.key
  */
-import * as keyMod from './key';
-export const key = keyMod;
+export { default as key } from './key';
 
 /**
  * @see module:signature
