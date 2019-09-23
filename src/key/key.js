@@ -43,7 +43,7 @@ import * as helper from './helper';
  * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
  */
 // eslint-disable-next-line
-function Key(packetlist) {
+export default function Key(packetlist) {
   if (!(this instanceof Key)) {
     return new Key(packetlist);
   }
@@ -756,7 +756,7 @@ Key.prototype.verifyAllUsers = async function(keys) {
 /**
  * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
  * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key.
- * @param {Integer} options.numBits    number of bits for the key creation.
+ * @param {Integer} options.rsaBits    number of bits for the key creation.
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
  * @param {String} curve       (optional) Elliptic curve for ECC keys
@@ -796,7 +796,3 @@ SubKey.prototype.hasSameFingerprintAs;
   Key.prototype[name] =
   SubKey.prototype[name];
 });
-
-module.exports = {
-  Key: Key
-};

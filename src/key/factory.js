@@ -28,7 +28,7 @@
  */
 
 import packet from '../packet';
-import key from './key';
+import Key from './key';
 import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
@@ -120,7 +120,7 @@ export async function reformat(options) {
     throw new Error('Number of subkey options does not match number of subkeys');
   }
 
-  options.subkeys = options.subkeys.map(function(subkey, index) { return helper.sanitizeKeyOptions(options.subkeys[index], options); });
+  options.subkeys = options.subkeys.map(function(subkey, index) { return sanitizeKeyOptions(options.subkeys[index], options); });
 
   return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options);
 
@@ -261,7 +261,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     }
   }));
 
-  return new key.Key(packetlist);
+  return new Key(packetlist);
 }
 
 /**
@@ -286,7 +286,7 @@ export async function read(data) {
     for (let i = 0; i < keyIndex.length; i++) {
       const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
       try {
-        const newKey = new key.Key(oneKeyList);
+        const newKey = new Key(oneKeyList);
         result.keys.push(newKey);
       } catch (e) {
         err.push(e);
