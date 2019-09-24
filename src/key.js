@@ -842,6 +842,12 @@ Key.prototype.addSubkey = async function(options = {}) {
   if (!this.isPrivate()) {
     throw new Error("Cannot add a subkey to a public key");
   }
+  if (options.passphrase) {
+    throw new Error("Subkey could not be encrypted here, please encrypt whole key");
+  }
+  if (util.getWebCryptoAll() && options.rsaBits < 2048) {
+    throw new Error('When using webCrypto rsaBits should be 2048 or 4096, found: ' + options.rsaBits);
+  }
   const secretKeyPacket = this.primaryKey;
   if (!secretKeyPacket.isDecrypted()) {
     throw new Error("Key is not decrypted");
