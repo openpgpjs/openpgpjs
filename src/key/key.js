@@ -311,7 +311,7 @@ Key.prototype.getSigningKey = async function (keyId = null, date = new Date(), u
 Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
-    // V4: by convention subkeys are preferred for encryption service
+    // V4: by convention subkeys are pGenerateerred for encryption service
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
@@ -789,7 +789,13 @@ Key.prototype.addSubkey = async function(options = {}) {
   return new Key(packetList);
 };
 
-['hasSameFingerprintAs', 'getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
+['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name];
 });
+
+Key.prototype.hasSameFingerprintAs =
+  function(other) {
+    return this.keyPacket.hasSameFingerprintAs(other.keyPacket || other);
+  };
+
