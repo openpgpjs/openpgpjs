@@ -84,7 +84,7 @@ export async function generate(options) {
  * @static
  */
 export async function reformat(options) {
-  options = sanitizeKeyOptions(options);
+  options = sanitize(options);
 
   try {
     const isDecrypted = options.privateKey.getKeys().every(key => key.isDecrypted());
@@ -120,11 +120,11 @@ export async function reformat(options) {
     throw new Error('Number of subkey options does not match number of subkeys');
   }
 
-  options.subkeys = options.subkeys.map(function(subkey, index) { return sanitizeKeyOptions(options.subkeys[index], options); });
+  options.subkeys = options.subkeys.map(function(subkey, index) { return sanitize(options.subkeys[index], options); });
 
   return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options);
 
-  function sanitizeKeyOptions(options, subkeyDefaults = {}) {
+  function sanitize(options, subkeyDefaults = {}) {
     options.keyExpirationTime = options.keyExpirationTime || subkeyDefaults.keyExpirationTime;
     options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
     options.date = options.date || subkeyDefaults.date;

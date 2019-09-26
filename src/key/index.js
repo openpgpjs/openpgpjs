@@ -9,15 +9,15 @@ import { readArmored, generate, read, reformat } from './factory';
 import { getPreferredAlgo, isAeadSupported, getPreferredHashAlgo, createSignaturePacket } from './helper';
 
 const mod = {
-  getPreferredAlgo,
-  getPreferredHashAlgo,
-  createSignaturePacket,
-  isAeadSupported,
-  readArmored,
-  generate,
-  read,
-  reformat,
-  Key
+  getPreferredAlgo: getPreferredAlgo,
+  getPreferredHashAlgo: getPreferredHashAlgo,
+  createSignaturePacket: createSignaturePacket,
+  isAeadSupported: isAeadSupported,
+  readArmored: readArmored,
+  generate: generate,
+  read: read,
+  reformat: reformat,
+  Key: Key
 };
 
 export default mod;
