@@ -43,7 +43,7 @@ import * as helper from './helper';
  * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
  */
 // eslint-disable-next-line
-export default function Key(packetlist) {
+function Key(packetlist) {
   if (!(this instanceof Key)) {
     return new Key(packetlist);
   }
@@ -798,4 +798,6 @@ Key.prototype.hasSameFingerprintAs =
   function(other) {
     return this.keyPacket.hasSameFingerprintAs(other.keyPacket || other);
   };
+
+export default Key;
 

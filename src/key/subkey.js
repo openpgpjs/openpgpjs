@@ -12,7 +12,7 @@ import packet from '../packet';
  * @borrows module:packet.PublicSubkey#getCreationTime as SubKey#getCreationTime
  * @borrows module:packet.PublicSubkey#isDecrypted as SubKey#isDecrypted
  */
-export default function SubKey(subKeyPacket) {
+function SubKey(subKeyPacket) {
   if (!(this instanceof SubKey)) {
     return new SubKey(subKeyPacket);
   }
@@ -182,3 +182,5 @@ SubKey.prototype.hasSameFingerprintAs =
   function(other) {
     return this.keyPacket.hasSameFingerprintAs(other.keyPacket || other);
   };
+
+export default SubKey;
