@@ -34,7 +34,6 @@ import random from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
-import build from '../../../build.env';
 import { loadElliptic, getElliptic } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
@@ -171,7 +170,7 @@ function Curve(oid_or_name, params) {
     this.type = 'ed25519';
   }
   this.getIndutnyCurve = util.getUseElliptic() ? async name => {
-    const elliptic = getElliptic() || await loadElliptic(build.external_indutny_elliptic_path);
+    const elliptic = getElliptic() || await loadElliptic();
     return new elliptic.ec(name);
   } : undefined;
 }
