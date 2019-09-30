@@ -23,7 +23,7 @@
  */
 
 import { loadScript, dl } from '../../../lightweight';
-import build from '../../../build.env';
+import config from '../../../config';
 import util from '../../../util';
 
 /**
@@ -42,10 +42,10 @@ export default KeyPair;
 let elliptic;  // instance of the indutny/elliptic
 /**
  * Load elliptic by path or from node_modules
- * @param {String} path relative path to elliptic browserified package
  */
-export async function loadElliptic(path) {
-  if(typeof window !== 'undefined' && build.external_indutny_elliptic) {
+export async function loadElliptic() {
+  const path = config.external_indutny_elliptic_path;
+  if(typeof window !== 'undefined' && config.external_indutny_elliptic) {
     // Fetch again if it fails, mainly to solve chrome bug "body stream has been lost and cannot be disturbed"
     const ellipticPromise = dl({ filepath: path }).catch(() => dl({ filepath: path }));
     const ellipticContents = await ellipticPromise;
@@ -54,7 +54,7 @@ export async function loadElliptic(path) {
     URL.revokeObjectURL(mainUrl);
     elliptic = window.openpgp.elliptic;
     return elliptic;
-  } else if(util.detectNode() && build.external_indutny_elliptic) {
+  } else if(util.detectNode() && config.external_indutny_elliptic) {
     // eslint-disable-next-line
     elliptic = require('./' + path);
     return elliptic;
