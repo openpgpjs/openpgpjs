@@ -6,7 +6,7 @@ import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper'
  * @class
  * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
  */
-export default function User(userPacket) {
+function User(userPacket) {
   if (!(this instanceof User)) {
     return new User(userPacket);
   }
@@ -210,3 +210,5 @@ User.prototype.update = async function(user, primaryKey) {
     return isDataRevoked(primaryKey, enums.signature.cert_revocation, dataToVerify, [srcRevSig]);
   });
 };
+
+export default User;
