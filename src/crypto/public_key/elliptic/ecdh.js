@@ -40,7 +40,7 @@ import hash from '../../hash';
 import type_kdf_params from '../../../type/kdf_params';
 import enums from '../../../enums';
 import util from '../../../util';
-import KeyPair from './indutnyKey';
+import { KeyPair, getIndutnyCurve } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -321,7 +321,7 @@ async function webPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function ellipticPrivateEphemeralKey(curve, V, d) {
-  const indutnyCurve = await curve.getIndutnyCurve(curve.name);
+  const indutnyCurve = await getIndutnyCurve(curve.name);
   V = new KeyPair(indutnyCurve, { pub: V });
   d = new KeyPair(indutnyCurve, { priv: d });
   const secretKey = new Uint8Array(d.keyPair.getPrivate());
@@ -340,7 +340,7 @@ async function ellipticPrivateEphemeralKey(curve, V, d) {
  * @async
  */
 async function ellipticPublicEphemeralKey(curve, Q) {
-  const indutnyCurve = await curve.getIndutnyCurve(curve.name);
+  const indutnyCurve = await getIndutnyCurve(curve.name);
   const v = await curve.genKeyPair();
   Q = new KeyPair(indutnyCurve, { pub: Q });
   const V = new KeyPair(indutnyCurve, { priv: v.privateKey });

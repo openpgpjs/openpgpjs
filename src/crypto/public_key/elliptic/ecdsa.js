@@ -30,7 +30,7 @@ import stream from 'web-stream-tools';
 import enums from '../../../enums';
 import util from '../../../util';
 import Curve, { webCurves, privateToJwk, rawPublicToJwk } from './curves';
-import KeyPair from './indutnyKey';
+import { KeyPair, getIndutnyCurve } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -125,7 +125,7 @@ export default { sign, verify, ellipticVerify, ellipticSign };
 //////////////////////////
 
 async function ellipticSign(curve, hashed, privateKey) {
-  const indutnyCurve = await curve.getIndutnyCurve(curve.name);
+  const indutnyCurve = await getIndutnyCurve(curve.name);
   const key = new KeyPair(indutnyCurve, { priv: privateKey });
   const signature = key.keyPair.sign(hashed);
   return {
@@ -135,7 +135,7 @@ async function ellipticSign(curve, hashed, privateKey) {
 }
 
 async function ellipticVerify(curve, signature, digest, publicKey) {
-  const indutnyCurve = await curve.getIndutnyCurve(curve.name);
+  const indutnyCurve = await getIndutnyCurve(curve.name);
   const key = new KeyPair(indutnyCurve, { pub: publicKey });
   return key.keyPair.verify(digest, signature);
 }

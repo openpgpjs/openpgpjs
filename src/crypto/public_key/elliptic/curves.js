@@ -34,7 +34,7 @@ import random from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
-import { loadElliptic, getElliptic } from './indutnyKey';
+import { getIndutnyCurve } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -169,10 +169,6 @@ function Curve(oid_or_name, params) {
   } else if (this.name === 'ed25519') {
     this.type = 'ed25519';
   }
-  this.getIndutnyCurve = util.getUseElliptic() ? async name => {
-    const elliptic = getElliptic() || await loadElliptic();
-    return new elliptic.ec(name);
-  } : undefined;
 }
 
 Curve.prototype.genKeyPair = async function () {
@@ -209,7 +205,7 @@ Curve.prototype.genKeyPair = async function () {
   if (!util.getUseElliptic()) {
     throw new Error('This curve is only supported in the full build of OpenPGP.js');
   }
-  const indutnyCurve = await this.getIndutnyCurve(this.name);
+  const indutnyCurve = await getIndutnyCurve(this.name);
   keyPair = await indutnyCurve.genKeyPair({
     entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))
   });

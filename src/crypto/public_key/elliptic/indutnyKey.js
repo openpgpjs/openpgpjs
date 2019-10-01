@@ -29,14 +29,12 @@ import util from '../../../util';
 /**
  * @constructor
  */
-function KeyPair(indutnyCurve, options) {
+export function KeyPair(indutnyCurve, options) {
   this.keyPair = indutnyCurve.keyPair(options);
   if (this.keyPair.validate().result !== true) {
     throw new Error('Invalid elliptic public key');
   }
 }
-
-export default KeyPair;
 
 
 let elliptic;  // instance of the indutny/elliptic
@@ -66,4 +64,9 @@ export async function loadElliptic() {
 
 export function getElliptic() {
   return elliptic;
+}
+
+export async function getIndutnyCurve(name) {
+  const elliptic = getElliptic() || await loadElliptic();
+  return new elliptic.ec(name);
 }
