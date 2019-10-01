@@ -819,13 +819,26 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
     const key = (await openpgp.key.readArmored(pubkey)).keys[0];
 
-    const notations = key.users[0].selfCertifications[0].notations;
+    const { notations, rawNotations } = key.users[0].selfCertifications[0];
 
-    expect(notations.length).to.equal(2);
-    expect(notations[0][0]).to.equal('test@example.com');
-    expect(notations[0][1]).to.equal('2');
-    expect(notations[1][0]).to.equal('test@example.com');
-    expect(notations[1][1]).to.equal('3');
+    // Even though there are two notations with the same keys
+    // the `notations` property reads only the single one:
+    // the last one encountered during parse
+    expect(Object.keys(notations).length).to.equal(1);
+    expect(notations['test@example.com']).to.equal('3');
+
+    // On the other hand `rawNotations` property provides access to all
+    // notations, even non human-readable. The values are not deserialized
+    // and they are byte-arrays.
+    expect(rawNotations.length).to.equal(2);
+
+    expect(rawNotations[0].name).to.equal('test@example.com');
+    expect(rawNotations[0].value).to.deep.equal(Uint8Array.from(['2'.charCodeAt(0)]));
+    expect(rawNotations[0].humanReadable).to.equal(true);
+
+    expect(rawNotations[1].name).to.equal('test@example.com');
+    expect(rawNotations[1].value).to.deep.equal(Uint8Array.from(['3'.charCodeAt(0)]));
+    expect(rawNotations[1].humanReadable).to.equal(true);
   });
 
   it('Writing and encryption of a secret key packet.', function() {
