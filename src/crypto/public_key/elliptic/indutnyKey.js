@@ -22,7 +22,7 @@
  * @module crypto/public_key/elliptic/indutnyKey
  */
 
-import { loadScript, dl } from '../../../lightweight';
+import { loadScript, dl } from '../../../lightweight_helper';
 import config from '../../../config';
 import util from '../../../util';
 
@@ -45,9 +45,10 @@ let elliptic;  // instance of the indutny/elliptic
  */
 export async function loadElliptic() {
   const path = config.external_indutny_elliptic_path;
+  const options = config.indutny_elliptic_fetch_options;
   if(typeof window !== 'undefined' && config.external_indutny_elliptic) {
     // Fetch again if it fails, mainly to solve chrome bug "body stream has been lost and cannot be disturbed"
-    const ellipticPromise = dl({ filepath: path }).catch(() => dl({ filepath: path }));
+    const ellipticPromise = dl(path, options).catch(() => dl(path, options));
     const ellipticContents = await ellipticPromise;
     const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
     await loadScript(mainUrl);

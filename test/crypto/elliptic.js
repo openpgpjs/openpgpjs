@@ -7,9 +7,9 @@ const expect = chai.expect;
 
 describe('Elliptic Curve Cryptography @lightweight', function () {
   if (typeof window !== 'undefined') {
-    before(async function() {
-      await openpgp.loadElliptic('../dist/elliptic.min.js');
-    })
+    before(function() {
+      openpgp.config.external_indutny_elliptic_path = '../dist/elliptic.min.js';
+    });
   }
 
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;

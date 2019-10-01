@@ -1,5 +1,5 @@
 /**
- * @module lightweight
+ * @module lightweight_helper
  */
 
 /**
@@ -43,11 +43,7 @@ export const loadScript = (path, integrity) => {
  * download script from filepath
  * @param {Object} params download parameters
  */
-export const dl = async function({ filepath, integrity }) {
-  const options = {
-    integrity,
-    credentials: 'include'
-  };
+export const dl = async function(filepath, options) {
   const response = await fetch(filepath, options);
   return response.text();
 };

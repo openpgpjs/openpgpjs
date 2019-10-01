@@ -192,11 +192,22 @@ export default {
    */
   known_notations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"],
   /**
-   * Path to load elliptic from external file
+   * use external indutny/elliptic library
    */
-  external_indutny_elliptic_path: 'elliptic.min.js',
+  external_indutny_elliptic: false,
   /*
    * use indutny/elliptic library
    */
-  use_indutny_elliptic: true
+  use_indutny_elliptic: true,
+  /**
+   * Path to load elliptic from external file
+   */
+  external_indutny_elliptic_path: 'elliptic.min.js',
+
+  /*
+   * indutny elliptic fetch options
+   */
+  indutny_elliptic_fetch_options: {
+    credentials: 'include'
+  }
 };
