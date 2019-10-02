@@ -50,8 +50,11 @@ export async function loadElliptic() {
     const ellipticContents = await ellipticPromise;
     const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
     await loadScript(mainUrl);
-    URL.revokeObjectURL(mainUrl);
+    if(!window.openpgp.elliptic) {
+      throw new Error('elliptic has not loaded correctly');
+    }
     elliptic = window.openpgp.elliptic;
+    URL.revokeObjectURL(mainUrl);
     return elliptic;
   } else if(util.detectNode() && config.external_indutny_elliptic) {
     // eslint-disable-next-line
