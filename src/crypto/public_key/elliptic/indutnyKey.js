@@ -26,16 +26,18 @@ import { loadScript, dl } from '../../../lightweight_helper';
 import config from '../../../config';
 import util from '../../../util';
 
-/**
- * @constructor
- */
-export function KeyPair(indutnyCurve, options) {
-  this.keyPair = indutnyCurve.keyPair(options);
-  if (this.keyPair.validate().result !== true) {
-    throw new Error('Invalid elliptic public key');
-  }
+export function keyFromPrivate(indutnyCurve, priv) {
+  const keyPair = indutnyCurve.keyPair({ priv: priv });
+  return keyPair;
 }
 
+export function keyFromPublic(indutnyCurve, pub) {
+  const keyPair = indutnyCurve.keyPair({ pub: pub });
+  if (keyPair.validate().result !== true) {
+    throw new Error('Invalid elliptic public key');
+  }
+  return keyPair;
+}
 
 let elliptic;  // instance of the indutny/elliptic
 /**
