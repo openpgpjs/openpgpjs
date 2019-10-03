@@ -1,16 +1,7 @@
 module.exports = function(grunt) {
 
-  var version = grunt.option('release');
-  var fs = require('fs');
-  var browser_capabilities;
-
-  if (process.env.SELENIUM_BROWSER_CAPABILITIES !== undefined) {
-    browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
-  }
-
-  var getSauceKey = function getSaucekey () {
-    return '60ffb656-2346-4b77-81f3-bc435ff4c103';
-  };
+  const version = grunt.option('release');
+  const fs = require('fs');
 
   // Project configuration.
   const dev = !!grunt.option('dev');
@@ -50,8 +41,7 @@ module.exports = function(grunt) {
           browserifyOptions: {
             fullPaths: dev,
             debug: dev,
-            standalone: 'openpgp',
-            paths: ['./node_modules', './dist/lightweight']
+            standalone: 'openpgp'
           },
           cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + '.json',
           // Don't bundle these packages with openpgp.js
@@ -66,9 +56,9 @@ module.exports = function(grunt) {
               'core-js/fn/typed/uint8-array',
               'core-js/fn/string/repeat',
               'core-js/fn/symbol',
-              'core-js/fn/object/assign',
+              'core-js/fn/object/assign'
             ],
-            ( lightweight || exclude_elliptic ) ? [
+            (lightweight || exclude_elliptic) ? [
               'elliptic',
               'elliptic.min.js'
             ] : []
@@ -187,13 +177,13 @@ module.exports = function(grunt) {
         },
         options: {
           safari10: true
-        },
+        }
       }
     },
     header: {
       openpgp: {
         options: {
-            text: '/*! OpenPGP.js v<%= pkg.version %> - ' +
+          text: '/*! OpenPGP.js v<%= pkg.version %> - ' +
                 '<%= grunt.template.today("yyyy-mm-dd") %> - ' +
                 'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
         },
@@ -214,10 +204,10 @@ module.exports = function(grunt) {
       }
     },
     eslint: {
-      target: ['src/**/*.js'],
-      options: { 
+      target: ['src/**/*.js', './Gruntfile.js'],
+      options: {
         configFile: '.eslintrc.js',
-        fix: !!grunt.option('fix'),
+        fix: !!grunt.option('fix')
       }
     },
     jsdoc: {
@@ -298,7 +288,7 @@ module.exports = function(grunt) {
     watch: {
       src: {
         files: ['src/**/*.js'],
-        tasks: lightweight ? ['browserify:openpgp', 'browserify:worker',  'replace:lightweight_build'] : ['browserify:openpgp', 'browserify:worker']
+        tasks: lightweight ? ['browserify:openpgp', 'browserify:worker', 'replace:lightweight_build'] : ['browserify:openpgp', 'browserify:worker']
       },
       test: {
         files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
@@ -344,13 +334,14 @@ module.exports = function(grunt) {
   });
 
   function patchFile(options) {
-    var path = './' + options.fileName,
-      file = require(path);
+    const path = './' + options.fileName;
+    //eslint-disable-next-line
+    const file = require(path);
 
     if (options.version) {
       file.version = options.version;
     }
-
+    //eslint-disable-next-line
     fs.writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
   }
 
@@ -358,15 +349,15 @@ module.exports = function(grunt) {
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
   grunt.registerTask('build', function() {
-      if (lightweight) {
-        grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'terser', 'header', 'replace_min']);
-        return;
-      } else if (exclude_elliptic) {
-        grunt.task.run(['browserify:openpgp', 'browserify:worker', 'replace:exclude_elliptic_build', 'version', 'terser', 'header', 'replace_min']);
-        return;
-      }
-      grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
+    if (lightweight) {
+      grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'terser', 'header', 'replace_min']);
+      return;
+    } else if (exclude_elliptic) {
+      grunt.task.run(['browserify:openpgp', 'browserify:worker', 'replace:exclude_elliptic_build', 'version', 'terser', 'header', 'replace_min']);
+      return;
     }
+    grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
+  }
   );
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);

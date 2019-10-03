@@ -21,8 +21,7 @@ export {
   encrypt, decrypt, sign, verify,
   generateKey, reformatKey, revokeKey, decryptKey,
   encryptSessionKey, decryptSessionKeys,
-  initWorker, getWorker, destroyWorker,
-  loadElliptic, getElliptic
+  initWorker, getWorker, destroyWorker
 } from './openpgp';
 
 /**
