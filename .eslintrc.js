@@ -88,7 +88,7 @@ module.exports = {
         "allowKeywords": true
       }
     ],
-    "eol-last": "off",
+    "eol-last": ["error", "always"],
     "eqeqeq": "error",
     "for-direction": "error",
     "func-call-spacing": "error",

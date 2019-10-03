@@ -93,6 +93,7 @@ export function destroyWorker() {
   asyncProxy = undefined;
 }
 
+
 //////////////////////
 //                  //
 //   Key handling   //
