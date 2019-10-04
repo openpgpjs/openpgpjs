@@ -22,7 +22,7 @@
  * @module keyring/keyring
  */
 
-import keyMod from '../key';
+import { readArmored } from '../key';
 import LocalStore from './localstore';
 
 /**
@@ -187,7 +187,7 @@ KeyArray.prototype.getForId = function (keyId, deep) {
  * @async
  */
 KeyArray.prototype.importKey = async function (armored) {
-  const imported = await keyMod.readArmored(armored);
+  const imported = await readArmored(armored);
   for (let i = 0; i < imported.keys.length; i++) {
     const key = imported.keys[i];
     // check if key already in key array

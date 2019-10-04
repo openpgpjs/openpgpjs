@@ -4,20 +4,27 @@
  * @module key
  */
 
-import Key from './key';
-import { readArmored, generate, read, reformat } from './factory';
-import { getPreferredAlgo, isAeadSupported, getPreferredHashAlgo, createSignaturePacket } from './helper';
+import {
+  readArmored as readArmoredMod,
+  generate as generateMod,
+  read as readMod,
+  reformat as reformatMod
+} from './factory';
 
-const mod = {
-  getPreferredAlgo: getPreferredAlgo,
-  getPreferredHashAlgo: getPreferredHashAlgo,
-  createSignaturePacket: createSignaturePacket,
-  isAeadSupported: isAeadSupported,
-  readArmored: readArmored,
-  generate: generate,
-  read: read,
-  reformat: reformat,
-  Key: Key
-};
+import {
+  getPreferredAlgo as getPreferredAlgoMod,
+  isAeadSupported as isAeadSupportedMod,
+  getPreferredHashAlgo as getPreferredHashAlgoMod,
+  createSignaturePacket as createSignaturePacketMod
+} from './helper';
 
-export default mod;
+export const generate = generateMod;
+export const reformat = reformatMod;
+export { default as Key } from './key.js';
+export const readArmored = readArmoredMod;
+export const read = readMod;
+export const getPreferredAlgo = getPreferredAlgoMod;
+export const isAeadSupported = isAeadSupportedMod;
+export const getPreferredHashAlgo = getPreferredHashAlgoMod;
+export const createSignaturePacket = createSignaturePacketMod;
+

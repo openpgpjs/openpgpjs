@@ -42,7 +42,7 @@
 import stream from 'web-stream-tools';
 import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
-import keyMod from './key';
+import { generate, reformat } from './key';
 import config from './config/config';
 import enums from './enums';
 import './polyfills';
@@ -130,7 +130,7 @@ export function generateKey({ userIds = [], passphrase = "", numBits = 2048, rsa
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return keyMod.generate(options).then(async key => {
+  return generate(options).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
@@ -166,7 +166,7 @@ export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpi
 
   options.revoked = options.revocationCertificate;
 
-  return keyMod.reformat(options).then(async key => {
+  return reformat(options).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
