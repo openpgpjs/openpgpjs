@@ -8,7 +8,8 @@ import Key from './key';
 import { readArmored, generate, read, reformat } from './factory';
 import { getPreferredAlgo, isAeadSupported, getPreferredHashAlgo, createSignaturePacket } from './helper';
 
-const mod = {
+//eslint-disable-next-line
+export const mod = {
   getPreferredAlgo: getPreferredAlgo,
   getPreferredHashAlgo: getPreferredHashAlgo,
   createSignaturePacket: createSignaturePacket,
@@ -20,4 +21,4 @@ const mod = {
   Key: Key
 };
 
-export default mod;
+//export mod;

@@ -38,7 +38,7 @@ import enums from './enums';
 import util from './util';
 import packet from './packet';
 import { Signature } from './signature';
-import keyMod from './key';
+import { mod as keyMod } from './key';
 
 
 /**

@@ -24,7 +24,7 @@
 
 import util from './util';
 import crypto from './crypto';
-import keyMod from './key';
+import { mod as keyMod } from './key';
 
 /**
  * Initialize the WKD client

@@ -42,7 +42,7 @@
 import stream from 'web-stream-tools';
 import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
-import keyMod from './key';
+import { mod as keyMod } from './key';
 import config from './config/config';
 import enums from './enums';
 import './polyfills';

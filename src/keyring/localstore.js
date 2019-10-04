@@ -26,7 +26,7 @@
 
 import stream from 'web-stream-tools';
 import config from '../config';
-import keyMod from '../key';
+import { mod as keyMod } from '../key';
 import util from '../util';
 
 /**

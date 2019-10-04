@@ -22,7 +22,7 @@
  * @module keyring/keyring
  */
 
-import keyMod from '../key';
+import { mod as keyMod } from '../key';
 import LocalStore from './localstore';
 
 /**
