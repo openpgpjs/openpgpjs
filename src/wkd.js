@@ -24,7 +24,7 @@
 
 import util from './util';
 import crypto from './crypto';
-import { mod as keyMod } from './key';
+import { read } from './key';
 
 /**
  * Initialize the WKD client
@@ -69,7 +69,7 @@ WKD.prototype.lookup = async function(options) {
       if (options.rawBytes) {
         return rawBytes;
       }
-      return keyMod.read(rawBytes);
+      return read(rawBytes);
     }
   });
 };

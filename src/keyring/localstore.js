@@ -26,7 +26,7 @@
 
 import stream from 'web-stream-tools';
 import config from '../config';
-import { mod as keyMod } from '../key';
+import { readArmored } from '../key';
 import util from '../util';
 
 /**
@@ -76,7 +76,7 @@ async function loadKeys(storage, itemname) {
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     let key;
     for (let i = 0; i < armoredKeys.length; i++) {
-      key = await keyMod.readArmored(armoredKeys[i]);
+      key = await readArmored(armoredKeys[i]);
       if (!key.err) {
         keys.push(key.keys[0]);
       } else {
