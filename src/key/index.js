@@ -1,6 +1,5 @@
 /**
- * @fileoverview functions dealing with openPGP key object
- * @see module:key/key
+ * @fileoverview helper, factory methods, constructors dealing with openPGP key object
  * @module key
  */
 

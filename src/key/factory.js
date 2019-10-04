@@ -18,7 +18,7 @@
 /**
  * @fileoverview Provides factory methods for key creation
  * @requires packet
- * @requires key/key
+ * @requires key/Key
  * @requires key/helper
  * @requires enums
  * @requires util

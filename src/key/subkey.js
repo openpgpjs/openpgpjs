@@ -1,3 +1,10 @@
+/**
+ * @requires enums
+ * @requires key/helper
+ * @requires packet
+ * @module key/SubKey
+ */
+
 import enums from '../enums';
 import * as helper from './helper';
 import packet from '../packet';
@@ -12,6 +19,7 @@ import packet from '../packet';
  * @borrows module:packet.PublicSubkey#getCreationTime as SubKey#getCreationTime
  * @borrows module:packet.PublicSubkey#isDecrypted as SubKey#isDecrypted
  */
+
 export default function SubKey(subKeyPacket) {
   if (!(this instanceof SubKey)) {
     return new SubKey(subKeyPacket);

@@ -1,3 +1,10 @@
+/**
+ * @requires enums
+ * @requires packet
+ * @requires key/helper
+ * @module key/User
+ */
+
 import packet from '../packet';
 import enums from '../enums';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper';
@@ -6,6 +13,7 @@ import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper'
  * @class
  * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
  */
+
 export default function User(userPacket) {
   if (!(this instanceof User)) {
     return new User(userPacket);

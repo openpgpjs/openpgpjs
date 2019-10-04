@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Provides helpers methods for key module
+ * @requires packet
+ * @requires enums
+ * @requires config
+ * @requires crypto
+ * @module key/helper
+ */
+
 import packet from '../packet';
 import enums from '../enums';
 import config from '../config';

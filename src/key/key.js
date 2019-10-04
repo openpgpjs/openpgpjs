@@ -20,8 +20,11 @@
  * @requires packet
  * @requires enums
  * @requires util
- * @module key
+ * @requires key/User
+ * @requires key/Subkey
+ * @module key/Key
  */
+
 import armor from '../encoding/armor';
 import packet from '../packet';
 import enums from '../enums';
@@ -42,7 +45,7 @@ import * as helper from './helper';
  * @borrows module:packet.PublicKey#getCreationTime as Key#getCreationTime
  * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
  */
-// eslint-disable-next-line
+
 export default function Key(packetlist) {
   if (!(this instanceof Key)) {
     return new Key(packetlist);
