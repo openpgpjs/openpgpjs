@@ -39,39 +39,46 @@ export function keyFromPublic(indutnyCurve, pub) {
   return keyPair;
 }
 
-let elliptic;  // instance of the indutny/elliptic
+let ellipticPromise;
+
 /**
- * Load elliptic by path or from node_modules
+ * Load elliptic on demand to the window.openpgp.elliptic
+ * @returns {Promise<elliptic>}
  */
-export async function loadElliptic() {
+async function loadEllipticPromise() {
   const path = config.external_indutny_elliptic_path;
   const options = config.indutny_elliptic_fetch_options;
-  if(typeof window !== 'undefined' && config.external_indutny_elliptic) {
-    // Fetch again if it fails, mainly to solve chrome bug "body stream has been lost and cannot be disturbed"
-    const ellipticPromise = dl(path, options).catch(() => dl(path, options));
-    const ellipticContents = await ellipticPromise;
-    const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
-    await loadScript(mainUrl);
-    if(!window.openpgp.elliptic) {
-      throw new Error('elliptic has not loaded correctly');
-    }
-    elliptic = window.openpgp.elliptic;
-    URL.revokeObjectURL(mainUrl);
-    return elliptic;
-  } else if(util.detectNode() && config.external_indutny_elliptic) {
-    // eslint-disable-next-line
-    elliptic = require('./' + path);
-    return elliptic;
+  const ellipticPromise = dl(path, options).catch(() => dl(path, options));
+  const ellipticContents = await ellipticPromise;
+  const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
+  await loadScript(mainUrl);
+  if(!window.openpgp.elliptic) {
+    throw new Error('elliptic library has not loaded correctly');
   }
-  elliptic = require('elliptic');
-  return elliptic;
+  URL.revokeObjectURL(mainUrl);
+  return window.openpgp.elliptic;
 }
 
-export function getElliptic() {
-  return elliptic;
+function loadElliptic() {
+  if(util.detectNode() && config.external_indutny_elliptic) {
+    // eslint-disable-next-line
+    return require('./' + config.external_indutny_elliptic_path);
+  }
+  return require('elliptic');
 }
 
 export async function getIndutnyCurve(name) {
-  const elliptic = getElliptic() || await loadElliptic();
+  let elliptic;
+  if(typeof window !== 'undefined' && config.external_indutny_elliptic) {
+    if (!ellipticPromise) {
+      ellipticPromise = loadEllipticPromise().catch(e => {
+        ellipticPromise = undefined;
+        throw e;
+      });
+    }
+    elliptic = await ellipticPromise;
+  } else {
+    elliptic = loadElliptic();
+  }
   return new elliptic.ec(name);
 }
