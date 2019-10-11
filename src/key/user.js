@@ -13,7 +13,6 @@ import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper'
  * @class
  * @classdesc Class that represents an user ID or attribute packet and the relevant signatures.
  */
-
 export default function User(userPacket) {
   if (!(this instanceof User)) {
     return new User(userPacket);
@@ -41,11 +40,11 @@ User.prototype.toPacketlist = function() {
 /**
  * Signs user
  * @param  {module:packet.SecretKey|
-  *          module:packet.PublicKey} primaryKey  The primary key packet
-  * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
-  * @returns {Promise<module:key.Key>}             New user with new certificate signatures
-  * @async
-  */
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
+ * @returns {Promise<module:key.Key>}             New user with new certificate signatures
+ * @async
+ */
 User.prototype.sign = async function(primaryKey, privateKeys) {
   const dataToSign = {
     userId: this.userId,
@@ -76,18 +75,18 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
 };
 
 /**
-  * Checks if a given certificate of the user is revoked
-  * @param  {module:packet.SecretKey|
-  *          module:packet.PublicKey} primaryKey    The primary key packet
-  * @param  {module:packet.Signature}  certificate   The certificate to verify
-  * @param  {module:packet.PublicSubkey|
-  *          module:packet.SecretSubkey|
-  *          module:packet.PublicKey|
-  *          module:packet.SecretKey} key, optional The key to verify the signature
-  * @param  {Date}                     date          Use the given date instead of the current time
-  * @returns {Promise<Boolean>}                      True if the certificate is revoked
-  * @async
-  */
+ * Checks if a given certificate of the user is revoked
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey    The primary key packet
+ * @param  {module:packet.Signature}  certificate   The certificate to verify
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key to verify the signature
+ * @param  {Date}                     date          Use the given date instead of the current time
+ * @returns {Promise<Boolean>}                      True if the certificate is revoked
+ * @async
+ */
 User.prototype.isRevoked = async function(primaryKey, certificate, key, date = new Date()) {
   return isDataRevoked(
     primaryKey, enums.signature.cert_revocation, {
@@ -100,15 +99,15 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date = n
 
 
 /**
-  * Verifies the user certificate
-  * @param  {module:packet.SecretKey|
-  *          module:packet.PublicKey} primaryKey  The primary key packet
-  * @param  {module:packet.Signature}  certificate A certificate of this user
-  * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
-  * @param  {Date}                     date        Use the given date instead of the current time
-  * @returns {Promise<module:enums.keyStatus>}     status of the certificate
-  * @async
-  */
+ * Verifies the user certificate
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {module:packet.Signature}  certificate A certificate of this user
+ * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
+ * @param  {Date}                     date        Use the given date instead of the current time
+ * @returns {Promise<module:enums.keyStatus>}     status of the certificate
+ * @async
+ */
 User.prototype.verifyCertificate = async function(primaryKey, certificate, keys, date = new Date()) {
   const that = this;
   const keyid = certificate.issuerKeyId;
@@ -135,15 +134,15 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
 };
 
 /**
-  * Verifies all user certificates
-  * @param  {module:packet.SecretKey|
-  *          module:packet.PublicKey} primaryKey The primary key packet
-  * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
-  * @param  {Date}                     date        Use the given date instead of the current time
-  * @returns {Promise<Array<{keyid: module:type/keyid,
-  *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
-  * @async
-  */
+ * Verifies all user certificates
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
+ * @param  {Date}                     date        Use the given date instead of the current time
+ * @returns {Promise<Array<{keyid: module:type/keyid,
+ *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
+ * @async
+ */
 User.prototype.verifyAllCertifications = async function(primaryKey, keys, date = new Date()) {
   const that = this;
   const certifications = this.selfCertifications.concat(this.otherCertifications);
@@ -157,14 +156,14 @@ User.prototype.verifyAllCertifications = async function(primaryKey, keys, date =
 };
 
 /**
-  * Verify User. Checks for existence of self signatures, revocation signatures
-  * and validity of self signature
-  * @param  {module:packet.SecretKey|
-  *          module:packet.PublicKey} primaryKey The primary key packet
-  * @param  {Date}                    date       Use the given date instead of the current time
-  * @returns {Promise<module:enums.keyStatus>}    Status of user
-  * @async
-  */
+ * Verify User. Checks for existence of self signatures, revocation signatures
+ * and validity of self signature
+ * @param  {module:packet.SecretKey|
+ *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {Date}                    date       Use the given date instead of the current time
+ * @returns {Promise<module:enums.keyStatus>}    Status of user
+ * @async
+ */
 User.prototype.verify = async function(primaryKey, date = new Date()) {
   if (!this.selfCertifications.length) {
     return enums.keyStatus.no_self_cert;
@@ -194,13 +193,13 @@ User.prototype.verify = async function(primaryKey, date = new Date()) {
 };
 
 /**
-  * Update user with new components from specified user
-  * @param  {module:key.User}             user       Source user to merge
-  * @param  {module:packet.SecretKey|
-  *          module:packet.SecretSubkey} primaryKey primary key used for validation
-  * @returns {Promise<undefined>}
-  * @async
-  */
+ * Update user with new components from specified user
+ * @param  {module:key.User}             user       Source user to merge
+ * @param  {module:packet.SecretKey|
+ *          module:packet.SecretSubkey} primaryKey primary key used for validation
+ * @returns {Promise<undefined>}
+ * @async
+ */
 User.prototype.update = async function(user, primaryKey) {
   const dataToVerify = {
     userId: this.userId,

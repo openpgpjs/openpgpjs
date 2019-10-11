@@ -171,14 +171,14 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
  * Create signature packet
  * @param  {Object}                          dataToSign Contains packets to be signed
  * @param  {module:packet.SecretKey|
-  *          module:packet.SecretSubkey}      signingKeyPacket secret key packet for signing
-  * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
-  * @param  {Date} date                       (optional) override the creationtime of the signature
-  * @param  {Object} userId                   (optional) user ID
-  * @param  {Object} detached                 (optional) whether to create a detached signature packet
-  * @param  {Boolean} streaming               (optional) whether to process data as a stream
-  * @returns {module:packet/signature}         signature packet
-  */
+ *          module:packet.SecretSubkey}      signingKeyPacket secret key packet for signing
+ * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
+ * @param  {Date} date                       (optional) override the creationtime of the signature
+ * @param  {Object} userId                   (optional) user ID
+ * @param  {Object} detached                 (optional) whether to create a detached signature packet
+ * @param  {Boolean} streaming               (optional) whether to process data as a stream
+ * @returns {module:packet/signature}         signature packet
+ */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false) {
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
@@ -220,35 +220,35 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
 /**
  * Checks if a given certificate or binding signature is revoked
  * @param  {module:packet.SecretKey|
-  *          module:packet.PublicKey}       primaryKey   The primary key packet
-  * @param  {Object}                         dataToVerify The data to check
-  * @param  {Array<module:packet.Signature>} revocations  The revocation signatures to check
-  * @param  {module:packet.Signature}        signature    The certificate or signature to check
-  * @param  {module:packet.PublicSubkey|
-  *          module:packet.SecretSubkey|
-  *          module:packet.PublicKey|
-  *          module:packet.SecretKey} key, optional The key packet to check the signature
-  * @param  {Date}                     date          Use the given date instead of the current time
-  * @returns {Promise<Boolean>}                      True if the signature revokes the data
-  * @async
-  */
+ *          module:packet.PublicKey}       primaryKey   The primary key packet
+ * @param  {Object}                         dataToVerify The data to check
+ * @param  {Array<module:packet.Signature>} revocations  The revocation signatures to check
+ * @param  {module:packet.Signature}        signature    The certificate or signature to check
+ * @param  {module:packet.PublicSubkey|
+ *          module:packet.SecretSubkey|
+ *          module:packet.PublicKey|
+ *          module:packet.SecretKey} key, optional The key packet to check the signature
+ * @param  {Date}                     date          Use the given date instead of the current time
+ * @returns {Promise<Boolean>}                      True if the signature revokes the data
+ * @async
+ */
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date()) {
   key = key || primaryKey;
   const normDate = util.normalizeDate(date);
   const revocationKeyIds = [];
   await Promise.all(revocations.map(async function(revocationSignature) {
     if (
-    // Note: a third-party revocation signature could legitimately revoke a
-    // self-signature if the signature has an authorized revocation key.
-    // However, we don't support passing authorized revocation keys, nor
-    // verifying such revocation signatures. Instead, we indicate an error
-    // when parsing a key with an authorized revocation key, and ignore
-    // third-party revocation signatures here. (It could also be revoking a
-    // third-party key certification, which should only affect
-    // `verifyAllCertifications`.)
+      // Note: a third-party revocation signature could legitimately revoke a
+      // self-signature if the signature has an authorized revocation key.
+      // However, we don't support passing authorized revocation keys, nor
+      // verifying such revocation signatures. Instead, we indicate an error
+      // when parsing a key with an authorized revocation key, and ignore
+      // third-party revocation signatures here. (It could also be revoking a
+      // third-party key certification, which should only affect
+      // `verifyAllCertifications`.)
       (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
-       !(config.revocations_expire && revocationSignature.isExpired(normDate)) &&
-       (revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify))
+      !(config.revocations_expire && revocationSignature.isExpired(normDate)) &&
+      (revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify))
     ) {
       // TODO get an identifier of the revoked object instead
       revocationKeyIds.push(revocationSignature.issuerKeyId);
@@ -349,7 +349,6 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
 }
-
 
 export function isValidEncryptionKeyPacket(keyPacket, signature) {
   if (!signature.verified || signature.revoked !== false) { // Sanity check

@@ -45,7 +45,6 @@ import * as helper from './helper';
  * @borrows module:packet.PublicKey#getCreationTime as Key#getCreationTime
  * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
  */
-
 export default function Key(packetlist) {
   if (!(this instanceof Key)) {
     return new Key(packetlist);
@@ -314,7 +313,7 @@ Key.prototype.getSigningKey = async function (keyId = null, date = new Date(), u
 Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
-    // V4: by convention subkeys are pGenerateerred for encryption service
+    // V4: by convention subkeys are preffered for encryption service
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {

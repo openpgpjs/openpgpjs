@@ -268,10 +268,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
  * Reads an unarmored OpenPGP key list and returns one or multiple key objects
  * @param {Uint8Array} data to be parsed
  * @returns {Promise<{keys: Array<module:key.Key>,
-  *            err: (Array<Error>|null)}>} result object with key and error arrays
-  * @async
-  * @static
-  */
+ *            err: (Array<Error>|null)}>} result object with key and error arrays
+ * @async
+ * @static
+ */
 export async function read(data) {
   const result = {};
   result.keys = [];
@@ -306,10 +306,10 @@ export async function read(data) {
  * Reads an OpenPGP armored text and returns one or multiple key objects
  * @param {String | ReadableStream<String>} armoredText text to be parsed
  * @returns {Promise<{keys: Array<module:key.Key>,
-  *            err: (Array<Error>|null)}>} result object with key and error arrays
-  * @async
-  * @static
-  */
+ *            err: (Array<Error>|null)}>} result object with key and error arrays
+ * @async
+ * @static
+ */
 export async function readArmored(armoredText) {
   try {
     const input = await armor.decode(armoredText);
