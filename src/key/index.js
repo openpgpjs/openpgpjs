@@ -4,26 +4,29 @@
  */
 
 import {
-  readArmored as readArmoredMod,
-  generate as generateMod,
-  read as readMod,
-  reformat as reformatMod
+  readArmored,
+  generate,
+  read,
+  reformat
 } from './factory';
 
 import {
-  getPreferredAlgo as getPreferredAlgoMod,
-  isAeadSupported as isAeadSupportedMod,
-  getPreferredHashAlgo as getPreferredHashAlgoMod,
-  createSignaturePacket as createSignaturePacketMod
+  getPreferredAlgo,
+  isAeadSupported,
+  getPreferredHashAlgo,
+  createSignaturePacket
 } from './helper';
 
-export const generate = generateMod;
-export const reformat = reformatMod;
-export { default as Key } from './key.js';
-export const readArmored = readArmoredMod;
-export const read = readMod;
-export const getPreferredAlgo = getPreferredAlgoMod;
-export const isAeadSupported = isAeadSupportedMod;
-export const getPreferredHashAlgo = getPreferredHashAlgoMod;
-export const createSignaturePacket = createSignaturePacketMod;
+import Key from './key.js';
 
+export {
+  readArmored,
+  generate,
+  read,
+  reformat,
+  getPreferredAlgo,
+  isAeadSupported,
+  getPreferredHashAlgo,
+  createSignaturePacket,
+  Key
+};
