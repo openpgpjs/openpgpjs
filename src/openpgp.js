@@ -130,7 +130,9 @@ export function generateKey({ userIds = [], passphrase = "", numBits = 2048, rsa
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return keyMod.generate(options).then(async key => {
+  return Promise.resolve().then(() => {
+    return keyMod.generate(options);
+  }).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
@@ -166,7 +168,9 @@ export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpi
 
   options.revoked = options.revocationCertificate;
 
-  return keyMod.reformat(options).then(async key => {
+  return Promise.resolve().then(() => {
+    return keyMod.reformat(options);
+  }).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate();
     key.revocationSignatures = [];
 
