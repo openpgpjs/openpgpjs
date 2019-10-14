@@ -1,4 +1,3 @@
-
 /**
  * @param {String} path
  * @param {String} integrity
@@ -14,12 +13,11 @@ export const loadScript = (path, integrity) => {
     if (integrity) {
       script.integrity = integrity;
     }
-    script.onload = e => resolve(e);
+    script.onload = () => resolve();
     script.onerror = e => reject(e);
     document.head.appendChild(script);
   });
 };
-
 
 /**
  * download script from filepath

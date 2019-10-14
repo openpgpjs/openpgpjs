@@ -206,7 +206,5 @@ export default {
   /*
    * indutny elliptic fetch options
    */
-  indutny_elliptic_fetch_options: {
-    credentials: 'include'
-  }
+  indutny_elliptic_fetch_options: {}
 };

@@ -51,7 +51,11 @@ async function loadEllipticPromise() {
   const ellipticPromise = dl(path, options).catch(() => dl(path, options));
   const ellipticContents = await ellipticPromise;
   const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
-  await loadScript(mainUrl);
+  try {
+    await loadScript(mainUrl);
+  } catch (e) {
+    throw new Error('elliptic library has not loaded correctly');
+  }
   if(!window.openpgp.elliptic) {
     throw new Error('elliptic library has not loaded correctly');
   }
@@ -60,6 +64,15 @@ async function loadEllipticPromise() {
 }
 
 function loadElliptic() {
+  if(typeof window !== 'undefined' && config.external_indutny_elliptic) {
+    if (!ellipticPromise) {
+      ellipticPromise = loadEllipticPromise().catch(e => {
+        ellipticPromise = undefined;
+        throw e;
+      });
+    }
+    return ellipticPromise;
+  }
   if(util.detectNode() && config.external_indutny_elliptic) {
     // eslint-disable-next-line
     return require('./' + config.external_indutny_elliptic_path);
@@ -68,17 +81,6 @@ function loadElliptic() {
 }
 
 export async function getIndutnyCurve(name) {
-  let elliptic;
-  if(typeof window !== 'undefined' && config.external_indutny_elliptic) {
-    if (!ellipticPromise) {
-      ellipticPromise = loadEllipticPromise().catch(e => {
-        ellipticPromise = undefined;
-        throw e;
-      });
-    }
-    elliptic = await ellipticPromise;
-  } else {
-    elliptic = loadElliptic();
-  }
+  const elliptic = await loadElliptic();
   return new elliptic.ec(name);
 }
