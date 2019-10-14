@@ -3,8 +3,7 @@
  * @param {String} integrity
  */
 export const loadScript = (path, integrity) => {
-  // eslint-disable-next-line
-    if(self.importScripts) {
+  if(typeof importScripts !== 'undefined') {
     return importScripts(path);
   }
   return new Promise((resolve, reject) => {

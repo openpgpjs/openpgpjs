@@ -186,7 +186,7 @@ module.exports = {
       }
     ],
     "no-multi-str": "error",
-    "no-multiple-empty-lines": "error",
+    "no-multiple-empty-lines": ["error", { "max": 2, "maxEOF": 1, "maxBOF":0 }],
     "no-native-reassign": "error",
     "no-negated-condition": "off",
     "no-negated-in-lhs": "error",

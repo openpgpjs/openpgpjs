@@ -75,7 +75,7 @@ function loadElliptic() {
   }
   if(util.detectNode() && config.external_indutny_elliptic) {
     // eslint-disable-next-line
-    return require('./' + config.external_indutny_elliptic_path);
+    return require(config.external_indutny_elliptic_path);
   }
   return require('elliptic');
 }
