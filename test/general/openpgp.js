@@ -1696,7 +1696,7 @@ describe('OpenPGP.js public api tests', function() {
                   expect(e.message).to.match(/Ascii armor integrity check on message failed/);
                   expect(stepReached).to.equal(
                     j === 0 ? 0 :
-                      openpgp.config.aead_chunk_size_byte === 0 || (!openpgp.config.aead_protect && openpgp.config.allow_unauthenticated_stream) ? 2 :
+                      (openpgp.config.aead_chunk_size_byte === 0 && (j === 2 || openpgp.util.detectNode() || openpgp.util.getHardwareConcurrency() < 8)) || (!openpgp.config.aead_protect && openpgp.config.allow_unauthenticated_stream) ? 2 :
                       1
                   );
                   return;
