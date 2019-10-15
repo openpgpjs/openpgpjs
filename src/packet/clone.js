@@ -51,6 +51,9 @@ export function clonePackets(options) {
   if (options.privateKeys) {
     options.privateKeys = options.privateKeys.map(key => key.toPacketlist());
   }
+  if (options.publicKey) {
+    options.publicKey = options.publicKey.toPacketlist();
+  }
   if (options.privateKey) {
     options.privateKey = options.privateKey.toPacketlist();
   }
@@ -115,6 +118,9 @@ export function parseClonedPackets(options) {
   }
   if (options.privateKeys) {
     options.privateKeys = options.privateKeys.map(packetlistCloneToKey);
+  }
+  if (options.publicKey) {
+    options.publicKey = packetlistCloneToKey(options.publicKey);
   }
   if (options.privateKey) {
     options.privateKey = packetlistCloneToKey(options.privateKey);
