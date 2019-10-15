@@ -13,7 +13,7 @@ describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', functio
       openpgp.config.external_indutny_elliptic_path = '../dist/elliptic.min.js';
     });
   }
-  if (!openpgp.util.getUseElliptic() && !openpgp.util.getNodeCrypto()) {
+  if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
     before(function() {
       this.skip();
     });

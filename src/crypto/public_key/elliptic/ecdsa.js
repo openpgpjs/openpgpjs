@@ -72,9 +72,6 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
       }
     }
   }
-  if (!util.getUseElliptic()) {
-    throw new Error('This curve is supported only in the full build of OpenPGP.js');
-  }
   return ellipticSign(curve, hashed, privateKey);
 }
 
@@ -107,10 +104,6 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
         return nodeVerify(curve, hash_algo, signature, message, publicKey);
     }
   }
-  if (!util.getUseElliptic()) {
-    throw new Error('This curve is only supported in the full build of OpenPGP.js');
-  }
-  //elliptic fallback
   const digest = (typeof hash_algo === 'undefined') ? message : hashed;
   return ellipticVerify(curve, signature, digest, publicKey);
 }

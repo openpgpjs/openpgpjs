@@ -202,9 +202,6 @@ Curve.prototype.genKeyPair = async function () {
       return { publicKey, privateKey };
     }
   }
-  if (!util.getUseElliptic()) {
-    throw new Error('This curve is only supported in the full build of OpenPGP.js');
-  }
   const indutnyCurve = await getIndutnyCurve(this.name);
   keyPair = await indutnyCurve.genKeyPair({
     entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))

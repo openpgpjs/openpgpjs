@@ -110,9 +110,6 @@ async function genPublicEphemeralKey(curve, Q) {
     case 'node':
       return nodePublicEphemeralKey(curve, Q);
   }
-  if (!util.getUseElliptic()) {
-    throw new Error('This curve is only supported in the full build of OpenPGP.js');
-  }
   return ellipticPublicEphemeralKey(curve, Q);
 }
 
@@ -171,9 +168,6 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
       break;
     case 'node':
       return nodePrivateEphemeralKey(curve, V, d);
-  }
-  if (!util.getUseElliptic()) {
-    throw new Error('This curve is only supported in the full build of OpenPGP.js');
   }
   return ellipticPrivateEphemeralKey(curve, V, d);
 }

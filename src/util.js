@@ -638,10 +638,6 @@ export default {
     return navigator.hardwareConcurrency || 1;
   },
 
-  getUseElliptic: function() {
-    return config.use_indutny_elliptic;
-  },
-
   isEmailAddress: function(data) {
     if (!util.isString(data)) {
       return false;

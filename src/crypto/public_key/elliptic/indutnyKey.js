@@ -81,6 +81,9 @@ function loadElliptic() {
 }
 
 export async function getIndutnyCurve(name) {
+  if (!config.use_indutny_elliptic) {
+    throw new Error('This curve is only supported in the full build of OpenPGP.js');
+  }
   const elliptic = await loadElliptic();
   return new elliptic.ec(name);
 }
