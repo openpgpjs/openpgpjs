@@ -338,6 +338,7 @@ module.exports = {
     "no-unused-expressions": [ 2, { "allowShortCircuit": true } ],
     "no-constant-condition": [ 2, { "checkLoops": false } ],
     "new-cap": [ 2, { "properties": false, "capIsNewExceptionPattern": "CMAC|CBC|OMAC|CTR", "newIsCapExceptionPattern": "type|hash*"}],
+    "max-lines": [ 2, { "max": 550, "skipBlankLines": true, "skipComments": true } ],
 
     // Custom warnings:
     "no-console": 1,
