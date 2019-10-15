@@ -1699,6 +1699,11 @@ function versionSpecificTests() {
     openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha224;
     openpgp.config.compression = openpgp.enums.compression.zlib;
     openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
+    if (openpgp.getWorker()) {
+      openpgp.getWorker().workers.forEach(worker => {
+        worker.postMessage({ event: 'configure', config: openpgp.config });
+      });
+    }
 
     const testPref = function(key) {
       // key flags
@@ -1730,6 +1735,11 @@ function versionSpecificTests() {
       openpgp.config.prefer_hash_algorithm = prefer_hash_algorithmVal;
       openpgp.config.compression = compressionVal;
       openpgp.config.aead_mode = aead_modeVal;
+      if (openpgp.getWorker()) {
+        openpgp.getWorker().workers.forEach(worker => {
+          worker.postMessage({ event: 'configure', config: openpgp.config });
+        });
+      }
     }
   });
 
