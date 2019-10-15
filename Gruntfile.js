@@ -142,19 +142,6 @@ module.exports = function(grunt) {
           }
         ]
       },
-      exclude_elliptic_build: {
-        src: [
-          'dist/openpgp.js',
-          'dist/openpgp.js'
-        ],
-        overwrite: true,
-        replacements: [
-          {
-            from: "use_indutny_elliptic: true",
-            to: "use_indutny_elliptic: false"
-          }
-        ]
-      },
       indutny_global: {
         src: [
           'dist/elliptic.min.js',

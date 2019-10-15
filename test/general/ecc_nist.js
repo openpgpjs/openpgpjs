@@ -11,7 +11,7 @@ const expect = chai.expect;
 describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightweight', function () {
   if (typeof window !== 'undefined') {
     before(function() {
-      openpgp.config.external_indutny_elliptic_path = '../dist/elliptic.min.js';
+      openpgp.config.indutny_elliptic_path = '../dist/elliptic.min.js';
     });
   }
   function omnibus() {

@@ -46,7 +46,7 @@ let ellipticPromise;
  * @returns {Promise<elliptic>}
  */
 async function loadEllipticPromise() {
-  const path = config.external_indutny_elliptic_path;
+  const path = config.indutny_elliptic_path;
   const options = config.indutny_elliptic_fetch_options;
   const ellipticPromise = dl(path, options).catch(() => dl(path, options));
   const ellipticContents = await ellipticPromise;
@@ -75,7 +75,7 @@ function loadElliptic() {
   }
   if(util.detectNode() && config.external_indutny_elliptic) {
     // eslint-disable-next-line
-    return require(config.external_indutny_elliptic_path);
+    return require(config.indutny_elliptic_path);
   }
   return require('elliptic');
 }

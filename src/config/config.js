@@ -202,7 +202,7 @@ export default {
   /**
    * Path to load elliptic from external file
    */
-  external_indutny_elliptic_path: './elliptic.min.js',
+  indutny_elliptic_path: './elliptic.min.js',
   /*
    * indutny elliptic fetch options
    */
