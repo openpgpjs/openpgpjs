@@ -51,11 +51,7 @@ async function loadEllipticPromise() {
   const ellipticPromise = dl(path, options).catch(() => dl(path, options));
   const ellipticContents = await ellipticPromise;
   const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
-  try {
-    await loadScript(mainUrl);
-  } catch (e) {
-    throw new Error('elliptic library has not loaded correctly');
-  }
+  await loadScript(mainUrl);
   if(!window.openpgp.elliptic) {
     throw new Error('elliptic library has not loaded correctly');
   }

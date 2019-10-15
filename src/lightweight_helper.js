@@ -13,7 +13,7 @@ export const loadScript = (path, integrity) => {
       script.integrity = integrity;
     }
     script.onload = () => resolve();
-    script.onerror = e => reject(e);
+    script.onerror = e => reject(new Error(e.message));
     document.head.appendChild(script);
   });
 };
