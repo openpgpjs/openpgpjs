@@ -139,7 +139,7 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, strea
   return stream.transformPair(data, async (readable, writable) => {
     const reader = stream.getReader(readable);
     const buffer = new TransformStream({}, {
-      highWaterMark: streaming ? util.getHardwareConcurrency() * 2 ** (config.aead_chunk_size_byte + 6) : Infinity,
+      highWaterMark: streaming ? util.getHardwareConcurrency() * 2 ** (this.chunkSizeByte + 6) : Infinity,
       size: array => array.length
     });
     stream.pipe(buffer.readable, writable);
