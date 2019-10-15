@@ -791,12 +791,7 @@ Key.prototype.addSubkey = async function(options = {}) {
   return new Key(packetList);
 };
 
-['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
+['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted', 'hasSameFingerprintAs'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name];
 });
-
-Key.prototype.hasSameFingerprintAs =
-  function(other) {
-    return this.keyPacket.hasSameFingerprintAs(other.keyPacket || other);
-  };
