@@ -39,8 +39,6 @@ export function keyFromPublic(indutnyCurve, pub) {
   return keyPair;
 }
 
-let ellipticPromise;
-
 /**
  * Load elliptic on demand to the window.openpgp.elliptic
  * @returns {Promise<elliptic>}
@@ -52,28 +50,30 @@ async function loadEllipticPromise() {
   const ellipticContents = await ellipticPromise;
   const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
   await loadScript(mainUrl);
-  if(!window.openpgp.elliptic) {
-    throw new Error('elliptic library has not loaded correctly');
-  }
   URL.revokeObjectURL(mainUrl);
+  if (!window.openpgp.elliptic) {
+    throw new Error('Elliptic library failed to load correctly');
+  }
   return window.openpgp.elliptic;
 }
 
+let ellipticPromise;
+
 function loadElliptic() {
-  if(typeof window !== 'undefined' && config.external_indutny_elliptic) {
-    if (!ellipticPromise) {
-      ellipticPromise = loadEllipticPromise().catch(e => {
-        ellipticPromise = undefined;
-        throw e;
-      });
-    }
-    return ellipticPromise;
+  if (!config.external_indutny_elliptic) {
+    return require('elliptic');
   }
-  if(util.detectNode() && config.external_indutny_elliptic) {
+  if (util.detectNode()) {
     // eslint-disable-next-line
     return require(config.indutny_elliptic_path);
   }
-  return require('elliptic');
+  if (!ellipticPromise) {
+    ellipticPromise = loadEllipticPromise().catch(e => {
+      ellipticPromise = undefined;
+      throw e;
+    });
+  }
+  return ellipticPromise;
 }
 
 export async function getIndutnyCurve(name) {

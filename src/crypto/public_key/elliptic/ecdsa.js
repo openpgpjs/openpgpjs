@@ -56,7 +56,7 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
       case 'web': {
         // If browser doesn't support a curve, we'll catch it
         try {
-          // need to await to make sure browser succeeds
+          // Need to await to make sure browser succeeds
           return await webSign(curve, hash_algo, message, keyPair);
         } catch (err) {
           util.print_debug_error("Browser did not support signing: " + err.message);
@@ -94,7 +94,7 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
     switch (curve.type) {
       case 'web':
         try {
-          // need to await to make sure browser succeeds
+          // Need to await to make sure browser succeeds
           return await webVerify(curve, hash_algo, signature, message, publicKey);
         } catch (err) {
           util.print_debug_error("Browser did not support verifying: " + err.message);

@@ -7,7 +7,6 @@ module.exports = function(grunt) {
   const dev = !!grunt.option('dev');
   const compat = !!grunt.option('compat');
   const lightweight = !!grunt.option('lightweight');
-  const exclude_elliptic = !!grunt.option('exclude-elliptic');
   const plugins = compat ? [
     "transform-async-to-generator",
     "syntax-async-functions",
@@ -58,7 +57,7 @@ module.exports = function(grunt) {
               'core-js/fn/symbol',
               'core-js/fn/object/assign'
             ],
-            (lightweight || exclude_elliptic) ? [
+            lightweight ? [
               'elliptic',
               'elliptic.min.js'
             ] : []
@@ -130,10 +129,7 @@ module.exports = function(grunt) {
         }]
       },
       lightweight_build: {
-        src: [
-          'dist/openpgp.js',
-          'dist/openpgp.js'
-        ],
+        src: ['dist/openpgp.js'],
         overwrite: true,
         replacements: [
           {
@@ -143,10 +139,7 @@ module.exports = function(grunt) {
         ]
       },
       indutny_global: {
-        src: [
-          'dist/elliptic.min.js',
-          'dist/elliptic.min.js'
-        ],
+        src: ['dist/elliptic.min.js'],
         overwrite: true,
         replacements: [
           {
@@ -338,9 +331,6 @@ module.exports = function(grunt) {
   grunt.registerTask('build', function() {
     if (lightweight) {
       grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'terser', 'header', 'replace_min']);
-      return;
-    } else if (exclude_elliptic) {
-      grunt.task.run(['browserify:openpgp', 'browserify:worker', 'replace:exclude_elliptic_build', 'version', 'terser', 'header', 'replace_min']);
       return;
     }
     grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);

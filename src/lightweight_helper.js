@@ -1,17 +1,14 @@
 /**
+ * Load script from path
  * @param {String} path
- * @param {String} integrity
  */
-export const loadScript = (path, integrity) => {
-  if(typeof importScripts !== 'undefined') {
+export const loadScript = path => {
+  if (typeof importScripts !== 'undefined') {
     return importScripts(path);
   }
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.src = path;
-    if (integrity) {
-      script.integrity = integrity;
-    }
     script.onload = () => resolve();
     script.onerror = e => reject(new Error(e.message));
     document.head.appendChild(script);
@@ -19,10 +16,11 @@ export const loadScript = (path, integrity) => {
 };
 
 /**
- * download script from filepath
- * @param {Object} params download parameters
+ * Download script from path
+ * @param {String} path fetch path
+ * @param {Object} options fetch options
  */
-export const dl = async function(filepath, options) {
-  const response = await fetch(filepath, options);
-  return response.text();
+export const dl = async function(path, options) {
+  const response = await fetch(path, options);
+  return response.arrayBuffer();
 };

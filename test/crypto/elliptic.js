@@ -291,7 +291,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
           'secp256k1', 8, [], [], [], secp256k1_invalid_point
         )).to.eventually.be.false;
       }
-      if(openpgp.config.use_indutny_elliptic) {
+      if (openpgp.config.use_indutny_elliptic) {
         expect(verify_signature_elliptic(
           'secp256k1', 8, [], [], [], secp256k1_invalid_point
         )).to.be.rejectedWith(Error, /Invalid elliptic public key/);

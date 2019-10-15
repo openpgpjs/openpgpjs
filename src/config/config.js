@@ -191,20 +191,24 @@ export default {
    * @property {Array} known_notations
    */
   known_notations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"],
-  /*
-   * use indutny/elliptic library
+  /**
+   * @memberof module:config
+   * @property {Boolean} use_indutny_elliptic Whether to use the indutny/elliptic library. When false, certain curves will not be supported.
    */
   use_indutny_elliptic: true,
   /**
-   * use external indutny/elliptic library
+   * @memberof module:config
+   * @property {Boolean} external_indutny_elliptic Whether to lazily load the indutny/elliptic library from an external path on demand.
    */
   external_indutny_elliptic: false,
   /**
-   * Path to load elliptic from external file
+   * @memberof module:config
+   * @property {String} indutny_elliptic_path The path to load the indutny/elliptic library from. Only has an effect if `config.external_indutny_elliptic` is true.
    */
   indutny_elliptic_path: './elliptic.min.js',
-  /*
-   * indutny elliptic fetch options
+  /**
+   * @memberof module:config
+   * @property {Object} indutny_elliptic_fetch_options Options object to pass to `fetch` when loading the indutny/elliptic library. Only has an effect if `config.external_indutny_elliptic` is true.
    */
   indutny_elliptic_fetch_options: {}
 };
