@@ -250,7 +250,7 @@ export default {
    * @returns {String}          Base-64 encoded string
    */
   Uint8Array_to_b64: function (bytes, url) {
-    return b64.encode(bytes, url).replace(/(\n)/g, '');
+    return b64.encode(bytes, url).replace(/[\r\n]/g, '');
   },
 
   /**
