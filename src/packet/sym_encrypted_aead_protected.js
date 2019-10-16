@@ -124,6 +124,7 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, strea
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   const modeInstance = await mode(cipher, key);
   const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
+  const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;
   const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
   const adataBuffer = new ArrayBuffer(21);
   const adataArray = new Uint8Array(adataBuffer, 0, 13);
@@ -154,21 +155,22 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, strea
         if (!chunkIndex || chunk.length) {
           reader.unshift(finalChunk);
           cryptedPromise = modeInstance[fn](chunk, mode.getNonce(iv, chunkIndexArray), adataArray);
+          queuedBytes += chunk.length - tagLengthIfDecrypting + tagLengthIfEncrypting;
         } else {
           // After the last chunk, we either encrypt a final, empty
           // data chunk to get the final authentication tag or
           // validate that final authentication tag.
           adataView.setInt32(13 + 4, cryptedBytes); // Should be setInt64(13, ...)
           cryptedPromise = modeInstance[fn](finalChunk, mode.getNonce(iv, chunkIndexArray), adataTagArray);
+          queuedBytes += tagLengthIfEncrypting;
           done = true;
         }
         cryptedBytes += chunk.length - tagLengthIfDecrypting;
-        queuedBytes += chunk.length - tagLengthIfDecrypting;
         // eslint-disable-next-line no-loop-func
         latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
           await writer.ready;
           await writer.write(crypted);
-          queuedBytes -= chunk.length;
+          queuedBytes -= crypted.length;
         }).catch(err => writer.abort(err));
         if (done || queuedBytes > writer.desiredSize) {
           await latestPromise; // Respect backpressure
