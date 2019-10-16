@@ -46,8 +46,8 @@ export function keyFromPublic(indutnyCurve, pub) {
 async function loadEllipticPromise() {
   const path = config.indutny_elliptic_path;
   const options = config.indutny_elliptic_fetch_options;
-  const ellipticPromise = dl(path, options).catch(() => dl(path, options));
-  const ellipticContents = await ellipticPromise;
+  const ellipticDlPromise = dl(path, options).catch(() => dl(path, options));
+  const ellipticContents = await ellipticDlPromise;
   const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
   await loadScript(mainUrl);
   URL.revokeObjectURL(mainUrl);
