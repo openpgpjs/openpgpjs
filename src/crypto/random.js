@@ -41,6 +41,8 @@ export default {
     const buf = new Uint8Array(length);
     if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
       window.crypto.getRandomValues(buf);
+    } else if (typeof crypto !== 'undefined' && crypto && crypto.getRandomValues) {
+      crypto.getRandomValues(buf);
     } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
       window.msCrypto.getRandomValues(buf);
     } else if (nodeCrypto) {
