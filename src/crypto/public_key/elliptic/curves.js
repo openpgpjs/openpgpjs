@@ -93,41 +93,47 @@ const curves = {
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.secp256k1
+    node: nodeCurves.secp256k1,
+    payloadSize: 32
   },
   ed25519: {
     oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
     keyType: enums.publicKey.eddsa,
     hash: enums.hash.sha512,
-    node: false // nodeCurves.ed25519 TODO
+    node: false, // nodeCurves.ed25519 TODO
+    payloadSize: 32
   },
   curve25519: {
     oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: false // nodeCurves.curve25519 TODO
+    node: false, // nodeCurves.curve25519 TODO
+    payloadSize: 32
   },
   brainpoolP256r1: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.brainpoolP256r1
+    node: nodeCurves.brainpoolP256r1,
+    payloadSize: 32
   },
   brainpoolP384r1: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    node: nodeCurves.brainpoolP384r1
+    node: nodeCurves.brainpoolP384r1,
+    payloadSize: 48
   },
   brainpoolP512r1: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    node: nodeCurves.brainpoolP512r1
+    node: nodeCurves.brainpoolP512r1,
+    payloadSize: 64
   }
 };
 
@@ -185,12 +191,7 @@ Curve.prototype.genKeyPair = async function () {
       return nodeGenKeyPair(this.name);
     case 'curve25519': {
       const privateKey = await random.getRandomBytes(32);
-      const one = new BN(1);
-      const mask = one.ushln(255 - 3).sub(one).ushln(3);
-      let secretKey = new BN(privateKey);
-      secretKey = secretKey.or(one.ushln(255 - 1));
-      secretKey = secretKey.and(mask);
-      secretKey = secretKey.toArrayLike(Uint8Array, 'le', 32);
+      const secretKey = privateKey.slice().reverse();
       keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
       const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
       return { publicKey, privateKey };
@@ -314,10 +315,6 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
  */
 function privateToJwk(payloadSize, name, publicKey, privateKey) {
   const jwk = rawPublicToJwk(payloadSize, name, publicKey);
-  if (privateKey.length !== payloadSize) {
-    const start = payloadSize - privateKey.length;
-    privateKey = (new Uint8Array(payloadSize)).set(privateKey, start);
-  }
   jwk.d = util.Uint8Array_to_b64(privateKey, true);
   return jwk;
 }

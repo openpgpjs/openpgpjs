@@ -146,14 +146,14 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
  * @async
  */
 async function genPrivateEphemeralKey(curve, V, Q, d) {
+  if (d.length !== curve.payloadSize) {
+    const privateKey = new Uint8Array(curve.payloadSize);
+    privateKey.set(d, curve.payloadSize - d.length);
+    d = privateKey;
+  }
   switch (curve.type) {
     case 'curve25519': {
-      const one = new BN(1);
-      const mask = one.ushln(255 - 3).sub(one).ushln(3);
-      let secretKey = new BN(d);
-      secretKey = secretKey.or(one.ushln(255 - 1));
-      secretKey = secretKey.and(mask);
-      secretKey = secretKey.toArrayLike(Uint8Array, 'le', 32);
+      const secretKey = d.slice().reverse();
       const sharedKey = nacl.scalarMult(secretKey, V.subarray(1));
       return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
