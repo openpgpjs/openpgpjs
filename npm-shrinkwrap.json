@@ -2204,8 +2204,9 @@
       }
     },
     "email-addresses": {
-      "version": "github:openpgpjs/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
-      "from": "github:openpgpjs/email-addresses#686743c6452b44bafcd06d47db7f36ddf3f3f118",
+      "version": "3.1.0",
+      "resolved": "https://registry.npmjs.org/email-addresses/-/email-addresses-3.1.0.tgz",
+      "integrity": "sha512-k0/r7GrWVL32kZlGwfPNgB2Y/mMXVTq/decgLczm/j34whdaspNrZO8CnXPf1laaHxI6ptUlsnAxN+UAPw+fzg==",
       "dev": true
     },
     "encodeurl": {
