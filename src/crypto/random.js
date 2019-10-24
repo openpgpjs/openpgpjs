@@ -39,7 +39,7 @@ export default {
    */
   getRandomBytes: async function(length) {
     const buf = new Uint8Array(length);
-    if (typeof crypto !== 'undefined' && crypto && crypto.getRandomValues) {
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       crypto.getRandomValues(buf);
     } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
       window.msCrypto.getRandomValues(buf);
