@@ -677,7 +677,7 @@ export default {
       throw new Error('User id string is too long');
     }
     try {
-      const { name, address: email, comments } = emailAddresses.parseOneAddress(userid);
+      const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userid, atInDisplayName: true });
       return { name, email, comment: comments.replace(/^\(|\)$/g, '') };
     } catch(e) {
       throw new Error('Invalid user id format');
