@@ -9,11 +9,6 @@ const input = require('./testInputs.js');
 const expect = chai.expect;
 
 describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightweight', function () {
-  if (typeof window !== 'undefined') {
-    before(function() {
-      openpgp.config.indutny_elliptic_path = '../dist/elliptic.min.js';
-    });
-  }
   function omnibus() {
     it('Omnibus NIST P-256 Test', function () {
       const options = { userIds: {name: "Hi", email: "hi@hel.lo"}, curve: "p256" };

@@ -8,11 +8,6 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 
 describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', function () {
-  if (typeof window !== 'undefined') {
-    before(function() {
-      openpgp.config.indutny_elliptic_path = '../dist/elliptic.min.js';
-    });
-  }
   if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
     before(function() {
       this.skip();
