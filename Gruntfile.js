@@ -42,7 +42,7 @@ module.exports = function(grunt) {
             debug: dev,
             standalone: 'openpgp'
           },
-          cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + '.json',
+          cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + (lightweight ? '-lightweight' : '') + '.json',
           // Don't bundle these packages with openpgp.js
           external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'].concat(
             compat ? [] : [
