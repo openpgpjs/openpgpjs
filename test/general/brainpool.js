@@ -8,7 +8,13 @@ const input = require('./testInputs.js');
 
 const expect = chai.expect;
 
-(openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography', function () {
+(openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
+  //only x25519 crypto is fully functional in lightbuild
+  if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
+    before(function() {
+      this.skip();
+    });
+  }
   const data = {
     romeo: {
       id: 'fa3d64c9bcf338bc',
@@ -222,7 +228,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     const juliet = await load_pub_key('juliet');
     const romeo = await load_priv_key('romeo');
     const msg = await openpgp.message.readArmored(data.romeo.message_encrypted);
-    const result = await openpgp.decrypt({privateKeys: romeo, publicKeys: [juliet], message: msg});
+    const result = await openpgp.decrypt({ privateKeys: romeo, publicKeys: [juliet], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
@@ -241,6 +247,8 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result.signatures[0].valid).to.be.true;
   });
   it('Decrypt and verify message with leading zero in hash signed with old elliptic algorithm', async function () {
+    //this test would not work with nodeCrypto, since message is signed with leading zero stripped from the hash 
+    openpgp.config.use_native = false;
     const juliet = await load_priv_key('juliet');
     const romeo = await load_pub_key('romeo');
     const msg = await openpgp.message.readArmored(data.romeo. message_encrypted_with_leading_zero_in_hash_signed_by_elliptic_with_old_implementation);
@@ -331,12 +339,12 @@ function omnibus() {
   });
 }
 
-tryTests('Brainpool Omnibus Tests', omnibus, {
-  if: !openpgp.config.ci
+tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
+  if: !openpgp.config.ci && (openpgp.config.use_indutny_elliptic || openpgp.util.getNodeCrypto())
 });
 
-tryTests('Brainpool Omnibus Tests - Worker', omnibus, {
-  if: typeof window !== 'undefined' && window.Worker,
+tryTests('Brainpool Omnibus Tests - Worker @lightweight', omnibus, {
+  if: typeof window !== 'undefined' && window.Worker && (openpgp.config.use_indutny_elliptic || openpgp.util.getNodeCrypto()),
   before: async function() {
     await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
   },

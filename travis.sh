@@ -9,14 +9,14 @@ if [ $OPENPGPJSTEST = "coverage" ]; then
 
 elif [ $OPENPGPJSTEST = "unit" ]; then
   echo "Running OpenPGP.js unit tests on node.js."
-  npm test
+  grunt build test --lightweight=$LIGHTWEIGHT
 
 elif [ $OPENPGPJSTEST = "browserstack" ]; then
   echo "Running OpenPGP.js browser unit tests on Browserstack."
 
   grunt build browserify:unittests copy:browsertest --compat=$COMPAT
   echo -n "Using config: "
-  echo "{\"browsers\": [$BROWSER], \"test_framework\": \"mocha\", \"test_path\": [\"test/unittests.html?ci=true\"], \"timeout\": 1800, \"exit_with_fail\": true, \"project\": \"openpgpjs/${TRAVIS_EVENT_TYPE:-push}${COMPAT:+/compat}\"}" > browserstack.json
+  echo "{\"browsers\": [$BROWSER], \"test_framework\": \"mocha\", \"test_path\": [\"test/unittests.html?ci=true\"], \"timeout\": 1800, \"exit_with_fail\": true, \"project\": \"openpgpjs/${TRAVIS_EVENT_TYPE:-push}${COMPAT:+/compat}${LIGHTWEIGHT:+/lightweight}\"}" > browserstack.json
   cat browserstack.json
 
   result=0

@@ -1,20 +1,12 @@
 module.exports = function(grunt) {
 
-  var version = grunt.option('release');
-  var fs = require('fs');
-  var browser_capabilities;
-
-  if (process.env.SELENIUM_BROWSER_CAPABILITIES !== undefined) {
-    browser_capabilities = JSON.parse(process.env.SELENIUM_BROWSER_CAPABILITIES);
-  }
-
-  var getSauceKey = function getSaucekey () {
-    return '60ffb656-2346-4b77-81f3-bc435ff4c103';
-  };
+  const version = grunt.option('release');
+  const fs = require('fs');
 
   // Project configuration.
   const dev = !!grunt.option('dev');
   const compat = !!grunt.option('compat');
+  const lightweight = !!grunt.option('lightweight');
   const plugins = compat ? [
     "transform-async-to-generator",
     "syntax-async-functions",
@@ -50,7 +42,7 @@ module.exports = function(grunt) {
             debug: dev,
             standalone: 'openpgp'
           },
-          cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + '.json',
+          cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + (lightweight ? '-lightweight' : '') + '.json',
           // Don't bundle these packages with openpgp.js
           external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'].concat(
             compat ? [] : [
@@ -63,8 +55,12 @@ module.exports = function(grunt) {
               'core-js/fn/typed/uint8-array',
               'core-js/fn/string/repeat',
               'core-js/fn/symbol',
-              'core-js/fn/object/assign',
-            ]
+              'core-js/fn/object/assign'
+            ],
+            lightweight ? [
+              'elliptic',
+              'elliptic.min.js'
+            ] : []
           ),
           transform: [
             ["babelify", {
@@ -131,6 +127,26 @@ module.exports = function(grunt) {
           from: "openpgp.js",
           to: "openpgp.min.js"
         }]
+      },
+      lightweight_build: {
+        src: ['dist/openpgp.js'],
+        overwrite: true,
+        replacements: [
+          {
+            from: "external_indutny_elliptic: false",
+            to: "external_indutny_elliptic: true"
+          }
+        ]
+      },
+      indutny_global: {
+        src: ['dist/elliptic.min.js'],
+        overwrite: true,
+        replacements: [
+          {
+            from: 'b.elliptic=a()',
+            to: 'b.openpgp.elliptic=a()'
+          }
+        ]
       }
     },
     terser: {
@@ -141,13 +157,13 @@ module.exports = function(grunt) {
         },
         options: {
           safari10: true
-        },
+        }
       }
     },
     header: {
       openpgp: {
         options: {
-            text: '/*! OpenPGP.js v<%= pkg.version %> - ' +
+          text: '/*! OpenPGP.js v<%= pkg.version %> - ' +
                 '<%= grunt.template.today("yyyy-mm-dd") %> - ' +
                 'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
         },
@@ -168,8 +184,11 @@ module.exports = function(grunt) {
       }
     },
     eslint: {
-      target: ['src/**/*.js'],
-      options: { configFile: '.eslintrc.js' }
+      target: ['src/**/*.js', './Gruntfile.js'],
+      options: {
+        configFile: '.eslintrc.js',
+        fix: !!grunt.option('fix')
+      }
     },
     jsdoc: {
       dist: {
@@ -194,7 +213,8 @@ module.exports = function(grunt) {
       unittests: {
         options: {
           reporter: 'spec',
-          timeout: 120000
+          timeout: 120000,
+          grep: lightweight ? 'lightweight' : undefined
         },
         src: ['test/unittests.js']
       }
@@ -212,9 +232,24 @@ module.exports = function(grunt) {
         cwd: 'dist/',
         src: ['*.js'],
         dest: 'dist/compat/'
+      },
+      openpgp_lightweight: {
+        expand: true,
+        cwd: 'dist/',
+        src: ['*.js'],
+        dest: 'dist/lightweight/'
+      },
+      indutny_elliptic: {
+        expand: true,
+        flatten: true,
+        src: ['./node_modules/elliptic/dist/elliptic.min.js'],
+        dest: 'dist/'
       }
     },
-    clean: ['dist/'],
+    clean: {
+      dist: ['dist/'],
+      js: ['dist/*.js']
+    },
     connect: {
       dev: {
         options: {
@@ -233,7 +268,7 @@ module.exports = function(grunt) {
     watch: {
       src: {
         files: ['src/**/*.js'],
-        tasks: ['browserify:openpgp', 'browserify:worker']
+        tasks: lightweight ? ['browserify:openpgp', 'browserify:worker', 'replace:lightweight_build'] : ['browserify:openpgp', 'browserify:worker']
       },
       test: {
         files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
@@ -279,25 +314,32 @@ module.exports = function(grunt) {
   });
 
   function patchFile(options) {
-    var path = './' + options.fileName,
-      file = require(path);
+    const path = './' + options.fileName;
+    //eslint-disable-next-line
+    const file = require(path);
 
     if (options.version) {
       file.version = options.version;
     }
-
+    //eslint-disable-next-line
     fs.writeFileSync(path, JSON.stringify(file, null, 2) + '\n');
   }
 
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
-  grunt.registerTask('build', ['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
+  grunt.registerTask('build', function() {
+    if (lightweight) {
+      grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'terser', 'header', 'replace_min']);
+      return;
+    }
+    grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
+  }
+  );
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);
   grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
   grunt.registerTask('browsertest', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'watch']);
-
 };
