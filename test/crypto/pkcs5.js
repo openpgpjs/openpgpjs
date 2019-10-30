@@ -5,7 +5,7 @@ const expect = require('chai').expect;
 describe('PKCS5 padding', function() {
   function repeat(pattern, count) {
     let result = '';
-    for (let k=0; k<count; ++k) {
+    for (let k = 0; k < count; ++k) {
       result += pattern;
     }
     return result;
@@ -16,7 +16,7 @@ describe('PKCS5 padding', function() {
     while (s.length < 16) {
       const r = pkcs5.encode(s);
       // 0..7 -> 8, 8..15 -> 16
-      const l = Math.ceil((s.length+1)/8)*8;
+      const l = Math.ceil((s.length + 1) / 8) * 8;
       const c = l - s.length;
       expect(r.length).to.equal(l);
       expect(c).is.at.least(1).is.at.most(8);
@@ -25,8 +25,8 @@ describe('PKCS5 padding', function() {
     }
   });
   it('Remove padding', function () {
-    for (let k=1; k<=8; ++k) {
-      const s = repeat(' ', 8-k);
+    for (let k = 1; k <= 8; ++k) {
+      const s = repeat(' ', 8 - k);
       const r = s + repeat(String.fromCharCode(k), k);
       const t = pkcs5.decode(r);
       expect(t).to.equal(s);

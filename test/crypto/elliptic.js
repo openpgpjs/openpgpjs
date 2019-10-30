@@ -1,5 +1,8 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 const chai = require('chai');
+const mocha = require('mocha');
+
+//const skip = mocha.test.skip();
 
 chai.use(require('chai-as-promised'));
 
@@ -49,7 +52,8 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
         0xAF, 0x42, 0xBB, 0x79, 0x0A, 0x59, 0x51, 0x68,
         0x8E, 0xEA, 0x32, 0x7D, 0x4A, 0x4A, 0xBB, 0x26,
         0x13, 0xFB, 0x95, 0xC0, 0xB1, 0xA4, 0x54, 0xCA,
-        0xFA, 0x85, 0x8A, 0x4B, 0x58, 0x7C, 0x61, 0x39])
+        0xFA, 0x85, 0x8A, 0x4B, 0x58, 0x7C, 0x61, 0x39
+      ])
     },
     p521: {
       priv: new Uint8Array([
@@ -81,7 +85,8 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
         0x15, 0xCC, 0x12, 0xC0, 0x1C, 0x83, 0x6F, 0x7B,
         0x5A, 0x8A, 0x36, 0x4E, 0x46, 0x9E, 0x54, 0x3F,
         0xE2, 0xF7, 0xED, 0x63, 0xC9, 0x92, 0xA4, 0x38,
-        0x2B, 0x9C, 0xE2, 0xB7])
+        0x2B, 0x9C, 0xE2, 0xB7
+      ])
     },
     secp256k1: {
       priv: new Uint8Array([
@@ -99,7 +104,8 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
         0x07, 0x60, 0x29, 0x7D, 0x39, 0x8F, 0xB8, 0x68,
         0xF0, 0xFD, 0xA6, 0x67, 0x83, 0x55, 0x75, 0x7D,
         0xB8, 0xFD, 0x0B, 0xDF, 0x76, 0xCE, 0xBC, 0x95,
-        0x4B, 0x92, 0x26, 0xFC, 0xAA, 0x7A, 0x7C, 0x3F])
+        0x4B, 0x92, 0x26, 0xFC, 0xAA, 0x7A, 0x7C, 0x3F
+      ])
     }
   };
   const signature_data = {
@@ -118,7 +124,8 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
       0xDA, 0x4E, 0x8F, 0xCE, 0x04, 0xBE, 0xE2, 0xC3,
       0x82, 0x0B, 0x21, 0x4C, 0xBC, 0xED, 0x0E, 0xE2,
       0xF1, 0x14, 0x33, 0x9A, 0x86, 0x5F, 0xC6, 0xF9,
-      0x8E, 0x95, 0x24, 0x10, 0x1F, 0x0F, 0x13, 0xE4]),
+      0x8E, 0x95, 0x24, 0x10, 0x1F, 0x0F, 0x13, 0xE4
+    ]),
     message: new Uint8Array([
       0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
       0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
@@ -146,17 +153,20 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
   };
   describe('Basic Operations', function () {
     it('Creating curve from name or oid', function (done) {
-      for (let name_or_oid in openpgp.enums.curves) {
+      Object.keys(openpgp.enums.curve).forEach(function(name_or_oid) {
         expect(new elliptic_curves.Curve(name_or_oid)).to.exist;
-      }
+      });
+      Object.values(openpgp.enums.curve).forEach(function(name_or_oid) {
+        expect(new elliptic_curves.Curve(name_or_oid)).to.exist;
+      });
       done();
     });
     it('Creating KeyPair', function () {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
+        mocha.test.skip();
       }
       const names = openpgp.config.use_indutny_elliptic ? ['p256', 'p384', 'p521', 'secp256k1', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
-      ['p256', 'p384', 'p521', 'curve25519'];
+        ['p256', 'p384', 'p521', 'curve25519'];
       return Promise.all(names.map(function (name) {
         const curve = new elliptic_curves.Curve(name);
         return curve.genKeyPair().then(keyPair => {
@@ -211,12 +221,6 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
         new elliptic_curves.Curve(oid), { r: new Uint8Array(r), s: new Uint8Array(s) }, await openpgp.crypto.hash.digest(hash, message), new Uint8Array(pub)
       );
     };
-    const secp256k1_dummy_value = new Uint8Array([
-      0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    ]);
     const secp256k1_point = new Uint8Array([
       0x04,
       0x79, 0xBE, 0x66, 0x7E, 0xF9, 0xDC, 0xBB, 0xAC,
@@ -226,7 +230,8 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
       0x48, 0x3A, 0xDA, 0x77, 0x26, 0xA3, 0xC4, 0x65,
       0x5D, 0xA4, 0xFB, 0xFC, 0x0E, 0x11, 0x08, 0xA8,
       0xFD, 0x17, 0xB4, 0x48, 0xA6, 0x85, 0x54, 0x19,
-      0x9C, 0x47, 0xD0, 0x8F, 0xFB, 0x10, 0xD4, 0xB8]);
+      0x9C, 0x47, 0xD0, 0x8F, 0xFB, 0x10, 0xD4, 0xB8
+    ]);
     const secp256k1_invalid_point = new Uint8Array([
       0x04,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -236,13 +241,15 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    ]);
     const secp256k1_invalid_point_format = new Uint8Array([
       0x04,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    ]);
     it('Invalid curve oid', function () {
       return Promise.all([
         expect(verify_signature(
@@ -255,7 +262,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     });
     it('Invalid public key', async function () {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
+        mocha.test.skip();
       }
       if (openpgp.util.getNodeCrypto()) {
         await expect(verify_signature(
@@ -263,8 +270,8 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
         )).to.eventually.be.false;
         await expect(verify_signature(
           'secp256k1', 8, [], [], [], secp256k1_invalid_point_format
-        )).to.eventually.be.false; 
-      } 
+        )).to.eventually.be.false;
+      }
       if (openpgp.config.use_indutny_elliptic) {
         return Promise.all([
           expect(verify_signature_elliptic(
@@ -278,7 +285,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     });
     it('Invalid point', function () {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
+        mocha.test.skip();
       }
       if (openpgp.util.getNodeCrypto()) {
         expect(verify_signature(
@@ -293,7 +300,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     });
     it('Invalid signature', function (done) {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
+        mocha.test.skip();
       }
       expect(verify_signature(
         'secp256k1', 8, [], [], [], secp256k1_point
@@ -338,119 +345,43 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
       });
     });
   });
-  describe('ECDH key exchange', function () {
-    const decrypt_message = function (oid, hash, cipher, priv, pub, ephemeral, data, fingerprint) {
-      if (openpgp.util.isString(data)) {
-        data = openpgp.util.str_to_Uint8Array(data);
-      } else {
-        data = new Uint8Array(data);
-      }
-      return Promise.resolve().then(() => {
-        const curve = new elliptic_curves.Curve(oid);
-        return elliptic_curves.ecdh.decrypt(
-          new openpgp.OID(curve.oid),
-          cipher,
-          hash,
-          new Uint8Array(ephemeral),
-          data,
-          new Uint8Array(pub),
-          new Uint8Array(priv),
-          new Uint8Array(fingerprint)
-        );
-      });
-    };
-    const secp256k1_value = new Uint8Array([
-      0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    ]);
-    const secp256k1_point = new Uint8Array([
-      0x04,
-      0x79, 0xBE, 0x66, 0x7E, 0xF9, 0xDC, 0xBB, 0xAC,
-      0x55, 0xA0, 0x62, 0x95, 0xCE, 0x87, 0x0B, 0x07,
-      0x02, 0x9B, 0xFC, 0xDB, 0x2D, 0xCE, 0x28, 0xD9,
-      0x59, 0xF2, 0x81, 0x5B, 0x16, 0xF8, 0x17, 0x98,
-      0x48, 0x3A, 0xDA, 0x77, 0x26, 0xA3, 0xC4, 0x65,
-      0x5D, 0xA4, 0xFB, 0xFC, 0x0E, 0x11, 0x08, 0xA8,
-      0xFD, 0x17, 0xB4, 0x48, 0xA6, 0x85, 0x54, 0x19,
-      0x9C, 0x47, 0xD0, 0x8F, 0xFB, 0x10, 0xD4, 0xB8]);
-    const secp256k1_invalid_point = new Uint8Array([
-      0x04,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-    const secp256k1_data = new Uint8Array([
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-    ]);
-
-    it('Invalid curve oid', function (done) {
-      expect(decrypt_message(
-        '', 2, 7, [], [], [], [], []
-      )).to.be.rejectedWith(Error, /Not valid curve/).notify(done);
-    });
-    it('Invalid ephemeral key', function (done) {
-      if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
-      }
-      expect(decrypt_message(
-        'secp256k1', 2, 7, [], [], [], [], []
-      )).to.be.rejectedWith(Error, /Private key is not valid for specified curve|Unknown point format/).notify(done);
-    });
-    it('Invalid elliptic public key', function (done) {
-      if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
-      }
-      expect(decrypt_message(
-        'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_invalid_point, secp256k1_data, []
-      )).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Invalid elliptic public key/).notify(done);
-    });
-    it('Invalid key data integrity', function (done) {
-      if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
-      }
-      expect(decrypt_message(
-        'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_point, secp256k1_data, []
-      )).to.be.rejectedWith(Error, /Key Data Integrity failed/).notify(done);
-    });
-  });
 
   const Q1 = new Uint8Array([
-      64,
-      48,  226,  162,  114,  194,  194,  67, 214,
-      199, 10,  173,  22,  216,  240,  197,  202,
-      114,  49,  127, 107,  152,  58,  119,   48,
-      234,  194,  192,  66,  53,  165,  137,  93 ]);
-  const d1 = new Uint8Array ([
-      65, 200,  132,  198,  77,  86,  126,  196,
-      247, 169,  156,  201,  32,  52,   3,  198,
-      127, 144,  139,  47,  153,  239, 64,  235,
-      61,   7,  17,  214,  64,  211,  215,  80 ]);
+    64,
+    48, 226, 162, 114, 194, 194, 67, 214,
+    199, 10, 173, 22, 216, 240, 197, 202,
+    114, 49, 127, 107, 152, 58, 119, 48,
+    234, 194, 192, 66, 53, 165, 137, 93
+  ]);
+  const d1 = new Uint8Array([
+    65, 200, 132, 198, 77, 86, 126, 196,
+    247, 169, 156, 201, 32, 52, 3, 198,
+    127, 144, 139, 47, 153, 239, 64, 235,
+    61, 7, 17, 214, 64, 211, 215, 80
+  ]);
   const Q2 = new Uint8Array([
-      64,
-      154,  115,  36,  108,  33,  153,  64,  184,
-      25,  139,  67,  25,  178,  194,  227,  53,
-      254,  40,  101,  213,  28,  121,  154,  62,
-      27,  99,  92,  126,  33,  223,  122,  91 ]);
+    64,
+    154, 115, 36, 108, 33, 153, 64, 184,
+    25, 139, 67, 25, 178, 194, 227, 53,
+    254, 40, 101, 213, 28, 121, 154, 62,
+    27, 99, 92, 126, 33, 223, 122, 91
+  ]);
   const d2 = new Uint8Array([
-      123,  99,  163,  24,  201,  87,  0,  9,
-      204,  21,  154,  5,  5,  5,  127,  157,
-      237,  95,  76,  117,  89,  250,  64,  178,
-      72,  69,  69,  58,  89,  228,  113,  112 ]);
+    123, 99, 163, 24, 201, 87, 0, 9,
+    204, 21, 154, 5, 5, 5, 127, 157,
+    237, 95, 76, 117, 89, 250, 64, 178,
+    72, 69, 69, 58, 89, 228, 113, 112
+  ]);
   const fingerprint1 = new Uint8Array([
-      177, 183,
-      116,  123,  76,  133,  245,  212, 151, 243, 236,
-      71,  245,  86,  3,  168,  101,   74,  209,  105 ]);
+    177, 183,
+    116, 123, 76, 133, 245, 212, 151, 243, 236,
+    71, 245, 86, 3, 168, 101, 74, 209, 105
+  ]);
   const fingerprint2 = new Uint8Array([
-      177,  83,
-      123,  123,  76,  133,  245, 212, 151, 243, 236,
-      71,  245,  86,  3,  168,  101,  74,  209,  105 ]);
+    177, 83,
+    123, 123, 76, 133, 245, 212, 151, 243, 236,
+    71, 245, 86, 3, 168, 101, 74, 209, 105
+  ]);
   async function genPublicEphemeralKey(curve, Q, fingerprint) {
     const curveObj = new openpgp.crypto.publicKey.elliptic.Curve(curve);
     const oid = new openpgp.OID(curveObj.oid);
@@ -522,7 +453,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
   describe('ECDHE key generation', function () {
     it('Invalid curve', function (done) {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        this.skip();
+        mocha.test.skip();
       }
       expect(genPublicEphemeralKey("secp256k1", Q1, fingerprint1)
       ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/).notify(done);
@@ -567,7 +498,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     it('Comparing keys derived using webCrypto and elliptic', async function () {
       const names = ["p256", "p384", "p521"];
       if (!openpgp.util.getWebCrypto() || !openpgp.config.use_indutny_elliptic) {
-        this.skip();
+        mocha.test.skip();
       }
       return Promise.all(names.map(async function (name) {
         const curve = new elliptic_curves.Curve(name);
@@ -590,7 +521,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     it('Comparing keys derived using nodeCrypto and elliptic', async function () {
       const names = ["p256", "p384", "p521"];
       if (!openpgp.util.getNodeCrypto() || !openpgp.config.use_indutny_elliptic) {
-        this.skip();
+        mocha.test.skip();
       }
       return Promise.all(names.map(async function (name) {
         const ECDHE_VZ1 = await genPublicEphemeralKey(name, key_data[name].pub, fingerprint1);

@@ -2567,6 +2567,12 @@
         "pkg-dir": "^1.0.0"
       }
     },
+    "eslint-plugin-chai-friendly": {
+      "version": "0.5.0",
+      "resolved": "https://registry.npmjs.org/eslint-plugin-chai-friendly/-/eslint-plugin-chai-friendly-0.5.0.tgz",
+      "integrity": "sha512-Pxe6z8C9fP0pn2X2nGFU/b3GBOCM/5FVus1hsMwJsXP3R7RiXFl7g0ksJbsc0GxiLyidTW4mEFk77qsNn7Tk7g==",
+      "dev": true
+    },
     "eslint-plugin-import": {
       "version": "2.8.0",
       "resolved": "https://registry.npmjs.org/eslint-plugin-import/-/eslint-plugin-import-2.8.0.tgz",
