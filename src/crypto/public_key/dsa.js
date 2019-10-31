@@ -98,7 +98,7 @@ export default {
    * @param {BN} p
    * @param {BN} q
    * @param {BN} y
-   * @returns BN
+   * @returns {boolean}
    * @async
    */
   verify: async function(hash_algo, r, s, hashed, g, p, q, y) {

@@ -30,6 +30,10 @@ import prime from './prime';
 import random from '../random';
 import config from '../../config';
 import util from '../../util';
+import pkcs1 from '../pkcs1';
+import enums from '../../enums';
+
+const webCrypto = util.getWebCrypto();
 
 // Helper for IE11 KeyOperation objects
 function promisifyIE11Op(keyObj, err) {
@@ -64,35 +68,55 @@ const RSAPrivateKey = util.detectNode() ? require('asn1.js').define('RSAPrivateK
 
 export default {
   /** Create signature
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @param {BN} d RSA private exponent
-   * @returns {BN} RSA Signature
+   * @param {module:enums.hash} hash_algo Hash algorithm
+   * @param {Uint8Array} data message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @param {Uint8Array} d RSA private exponent
+   * @param {Uint8Array} p RSA private prime p
+   * @param {Uint8Array} q RSA private prime q
+   * @param {Uint8Array} u RSA private coefficient
+   * @param {Uint8Array} hashed hashed message
+   * @returns {Uint8Array} RSA Signature
    * @async
    */
-  sign: async function(m, n, e, d) {
-    if (n.cmp(m) <= 0) {
-      throw new Error('Message size cannot exceed modulus size');
+  sign: async function(hash_algo, data, n, e, d, p, q, u, hashed) {
+    if (webCrypto) {
+      const hash_name = getKeyByValue(enums.webHash, hash_algo);
+      if (typeof hash_name !== 'undefined') {
+        try {
+          return await this.webCryptoSign(hash_name, data, n, e, d, p, q, u);
+        } catch (err) {
+          util.print_debug_error(err);
+        }
+      }
     }
-    const nred = new BN.red(n);
-    return m.toRed(nred).redPow(d).toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnSign(hash_algo, n, d, hashed);
   },
 
   /**
    * Verify signature
-   * @param {BN} s signature
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @returns {BN}
+   * @param {module:enums.hash} hash_algo Hash algorithm
+   * @param {Uint8Array} data message
+   * @param {Uint8Array} s signature
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @param {Uint8Array} hashed  hashed message
+   * @returns {Boolean}
    * @async
    */
-  verify: async function(s, n, e) {
-    if (n.cmp(s) <= 0) {
-      throw new Error('Signature size cannot exceed modulus size');
+  verify: async function(hash_algo, data, s, n, e, hashed) {
+    if (webCrypto) {
+      const hash_name = getKeyByValue(enums.webHash, hash_algo);
+      if (typeof hash_name !== 'undefined') {
+        try {
+          return await this.webCryptoVerify(hash_name, data, s, n, e);
+        } catch (err) {
+          util.print_debug_error(err);
+        }
+      }
     }
-    const nred = new BN.red(n);
-    return s.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnVerify(hash_algo, s, n, e, hashed);
   },
 
   /**
@@ -119,7 +143,7 @@ export default {
    * @param {BN} d RSA private exponent
    * @param {BN} p RSA private prime p
    * @param {BN} q RSA private prime q
-   * @param {BN} u RSA private inverse of prime q
+   * @param {BN} u RSA private coefficient
    * @returns {BN} RSA Plaintext
    * @async
    */
@@ -274,5 +298,100 @@ export default {
     };
   },
 
+  bnSign: async function (hash_algo, n, d, hashed) {
+    n = new BN(n);
+    const m = new BN(await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength()), 16);
+    d = new BN(d);
+    if (n.cmp(m) <= 0) {
+      throw new Error('Message size cannot exceed modulus size');
+    }
+    const nred = new BN.red(n);
+    return m.toRed(nred).redPow(d).toArrayLike(Uint8Array, 'be', n.byteLength());
+  },
+
+  webCryptoSign: async function (hash_name, data, n, e, d, p, q, u) {
+    const jwk = privateToJwk(n, e, d, p, q, u);
+    const key = await webCrypto.importKey("jwk", jwk, {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: { name: hash_name }
+    }, false, ["sign"]);
+    return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5" }, key, data));
+  },
+
+  bnVerify: async function (hash_algo, s, n, e, hashed) {
+    n = new BN(n);
+    s = new BN(s);
+    e = new BN(e);
+    if (n.cmp(s) <= 0) {
+      throw new Error('Signature size cannot exceed modulus size');
+    }
+    const nred = new BN.red(n);
+    const EM1 = s.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+    const EM2 = await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength());
+    return util.Uint8Array_to_hex(EM1) === EM2;
+  },
+
+  webCryptoVerify: async function (hash_name, data, s, n, e) {
+    const jwk = publicToJwk(n, e);
+    const key = await webCrypto.importKey("jwk", jwk, {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: { name:  hash_name }
+    }, false, ["verify"]);
+    return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5" }, key, s, data);
+  },
+
   prime: prime
 };
+
+/** Convert Openpgp private key params to jwk key according to
+ * @link https://tools.ietf.org/html/rfc7517
+ * @param {String} hash_algo
+ * @param {Uint8Array} n
+ * @param {Uint8Array} e
+ * @param {Uint8Array} d
+ * @param {Uint8Array} p
+ * @param {Uint8Array} q
+ * @param {Uint8Array} u
+ */
+function privateToJwk(n, e, d, p, q, u) {
+  const pBNum = new BN(p);
+  const qBNum = new BN(q);
+  const dBNum = new BN(d);
+  let dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
+  let dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
+  dp = dp.toArrayLike(Uint8Array);
+  dq = dq.toArrayLike(Uint8Array);
+  return {
+    kty: 'RSA',
+    n: util.Uint8Array_to_b64(n, true),
+    e: util.Uint8Array_to_b64(e, true),
+    d: util.Uint8Array_to_b64(d, true),
+    // switch p and q, see comment on the line 271
+    p: util.Uint8Array_to_b64(q, true),
+    q: util.Uint8Array_to_b64(p, true),
+    // switch dp and dq, see comment on the line 271
+    dp: util.Uint8Array_to_b64(dq, true),
+    dq: util.Uint8Array_to_b64(dp, true),
+    qi: util.Uint8Array_to_b64(u, true),
+    ext: true
+  };
+}
+
+/** Convert Openpgp key public params to jwk key according to
+ * @link https://tools.ietf.org/html/rfc7517
+ * @param {String} hash_algo
+ * @param {Uint8Array} n
+ * @param {Uint8Array} e
+ */
+function publicToJwk(n, e) {
+  return {
+    kty: 'RSA',
+    n: util.Uint8Array_to_b64(n, true),
+    e: util.Uint8Array_to_b64(e, true),
+    ext: true
+  };
+}
+
+function getKeyByValue(object, value) {
+  return Object.keys(object).find(key => object[key] === value);
+}

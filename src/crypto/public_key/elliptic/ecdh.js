@@ -338,7 +338,7 @@ async function ellipticPublicEphemeralKey(curve, Q) {
   const v = await curve.genKeyPair();
   Q = keyFromPublic(indutnyCurve, Q);
   const V = keyFromPrivate(indutnyCurve, v.privateKey);
-  const publicKey = v.publicKey;
+  const publicKey = new Uint8Array(v.publicKey);
   const S = V.derive(Q.getPublic());
   const len = indutnyCurve.curve.p.byteLength();
   const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
