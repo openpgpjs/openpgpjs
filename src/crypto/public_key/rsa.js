@@ -26,6 +26,7 @@
  */
 
 import BN from 'bn.js';
+import stream from 'web-stream-tools';
 import prime from './prime';
 import random from '../random';
 import config from '../../config';
@@ -34,6 +35,8 @@ import pkcs1 from '../pkcs1';
 import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
+const nodeCrypto = util.getNodeCrypto();
+const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 
 // Helper for IE11 KeyOperation objects
 function promisifyIE11Op(keyObj, err) {
@@ -51,7 +54,7 @@ function promisifyIE11Op(keyObj, err) {
 }
 
 /* eslint-disable no-invalid-this */
-const RSAPrivateKey = util.detectNode() ? require('asn1.js').define('RSAPrivateKey', function () {
+const RSAPrivateKey = util.detectNode() ? asn1.define('RSAPrivateKey', function () {
   this.seq().obj( // used for native NodeJS keygen
     this.key('version').int(), // 0
     this.key('modulus').int(), // n
@@ -62,6 +65,13 @@ const RSAPrivateKey = util.detectNode() ? require('asn1.js').define('RSAPrivateK
     this.key('exponent1').int(), // dp
     this.key('exponent2').int(), // dq
     this.key('coefficient').int() // u
+  );
+}) : undefined;
+
+const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function () {
+  this.seq().obj( // used for native NodeJS keygen
+    this.key('modulus').int(), // n
+    this.key('publicExponent').int(), // e
   );
 }) : undefined;
 /* eslint-enable no-invalid-this */
@@ -81,14 +91,20 @@ export default {
    * @async
    */
   sign: async function(hash_algo, data, n, e, d, p, q, u, hashed) {
-    if (webCrypto) {
-      const hash_name = getKeyByValue(enums.webHash, hash_algo);
-      if (typeof hash_name !== 'undefined') {
-        try {
-          return await this.webCryptoSign(hash_name, data, n, e, d, p, q, u);
-        } catch (err) {
-          util.print_debug_error(err);
+    if (data && !data.locked) {
+      data = await stream.readToEnd(data);
+      if (webCrypto) {
+        const hash_name = getKeyByValue(enums.webHash, hash_algo);
+        if (typeof hash_name !== 'undefined') {
+          try {
+            return await this.webCryptoSign(hash_name, data, n, e, d, p, q, u);
+          } catch (err) {
+            util.print_debug_error(err);
+          }
         }
+      } else if(nodeCrypto) {
+        console.log('in node crypto');
+        return this.nodeCryptoSign(hash_algo, data, n, e, d, p, q, u);
       }
     }
     return this.bnSign(hash_algo, n, d, hashed);
@@ -106,14 +122,20 @@ export default {
    * @async
    */
   verify: async function(hash_algo, data, s, n, e, hashed) {
-    if (webCrypto) {
-      const hash_name = getKeyByValue(enums.webHash, hash_algo);
-      if (typeof hash_name !== 'undefined') {
-        try {
-          return await this.webCryptoVerify(hash_name, data, s, n, e);
-        } catch (err) {
-          util.print_debug_error(err);
+    if (data && !data.locked) {
+      data = await stream.readToEnd(data);
+      if (webCrypto) {
+        const hash_name = getKeyByValue(enums.webHash, hash_algo);
+        if (typeof hash_name !== 'undefined') {
+          try {
+            return await this.webCryptoVerify(hash_name, data, s, n, e);
+          } catch (err) {
+            util.print_debug_error(err);
+          }
         }
+      } else if (nodeCrypto) {
+        console.log('node crypto verify');
+        return this.nodeCryptoVerify(hash_algo, data, s, n, e);
       }
     }
     return this.bnVerify(hash_algo, s, n, e, hashed);
@@ -195,8 +217,6 @@ export default {
   generate: async function(B, E) {
     let key;
     E = new BN(E, 16);
-    const webCrypto = util.getWebCryptoAll();
-    const nodeCrypto = util.getNodeCrypto();
 
     // Native RSA keygen using Web Crypto
     if (webCrypto) {
@@ -318,6 +338,47 @@ export default {
     return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5" }, key, data));
   },
 
+  nodeCryptoSign: async function (hash_algo, data, n, e, d, p, q, u) {
+    const pBNum = new BN(p);
+    const qBNum = new BN(q);
+    const dBNum = new BN(d);
+    const dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
+    const dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
+    const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
+    sign.write(data);
+    sign.end();
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+      const der = RSAPrivateKey.encode({
+        version: 0,
+        modulus: new BN(n),
+        publicExponent: new BN(e),
+        privateExponent: new BN(d),
+        // switch p and q
+        prime1: new BN(q),
+        prime2: new BN(p),
+        exponent1: dq,
+        exponent2: dp,
+        coefficient: new BN(u)
+      }, 'der');
+      return new Uint8Array(sign.sign({ key: der, format: 'der', type: 'pkcs1' }));
+    }
+    const pem = RSAPrivateKey.encode({
+      version: 0,
+      modulus: new BN(n),
+      publicExponent: new BN(e),
+      privateExponent: new BN(d),
+      // switch p and q
+      prime1: new BN(q),
+      prime2: new BN(p),
+      exponent1: dq,
+      exponent2: dp,
+      coefficient: new BN(u)
+    }, 'pem', {
+      label: 'RSA PRIVATE KEY'
+    });
+    return new Uint8Array(sign.sign(pem));
+  },
+
   bnVerify: async function (hash_algo, s, n, e, hashed) {
     n = new BN(n);
     s = new BN(s);
@@ -338,6 +399,34 @@ export default {
       hash: { name:  hash_name }
     }, false, ["verify"]);
     return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5" }, key, s, data);
+  },
+
+  nodeCryptoVerify: async function (hash_algo, data, s, n, e) {
+    const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
+    verify.write(data);
+    verify.end();
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+      const der = RSAPublicKey.encode({
+        modulus: new BN(n),
+        publicExponent: new BN(e)
+      }, 'der');
+      try {
+        return verify.verify({ key: der, format: 'der', type: 'pkcs1' }, s);
+      } catch (err) {
+        return false;
+      }
+    }
+    const key = RSAPublicKey.encode({
+      modulus: new BN(n),
+      publicExponent: new BN(e)
+    }, 'pem', {
+      label: 'RSA PUBLIC KEY'
+    });
+    try {
+      return verify.verify(key, s);
+    } catch (err) {
+      return false;
+    }
   },
 
   prime: prime
