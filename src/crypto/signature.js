@@ -1,9 +1,7 @@
 /**
  * @fileoverview Provides functions for asymmetric signing and signature verification
- * @requires bn.js
  * @requires crypto/crypto
  * @requires crypto/public_key
- * @requires crypto/pkcs1
  * @requires enums
  * @requires util
  * @module crypto/signature

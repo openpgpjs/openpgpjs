@@ -76,6 +76,90 @@ const priv_key =
 
 const passphrase = 'hello world';
 
+const brainpoolPublic = [
+  '-----BEGIN PGP PUBLIC KEY BLOCK-----',
+  '',
+  'mHMEWq8ruRMJKyQDAwIIAQELAwMEhi/66JLo1vMhpytb1bYvBhd/aKHde2Zwke7r',
+  'zWFTYBZQl/DUrpMrVAhkQhk5G3kqFWf98O/DpvVmY6EDr3IjmODWowNvGfC4Avc9',
+  'rYRgV8GbMBUVLIS+ytS1YNpAKW4vtBlidW5ueSA8YnVubnlAYnVubnkuYnVubnk+',
+  'iLAEExMKADgWIQSLliWLcmzBLxv2/X36PWTJvPM4vAUCWq8ruQIbAwULCQgHAwUV',
+  'CgkICwUWAgMBAAIeAQIXgAAKCRD6PWTJvPM4vIcVAYCIO41QylZkb9W4FP+kd3bz',
+  'b73xxwojWpCiw1bWV9Xe/dKA23DtCYhlmhF/Twjh9lkBfihHXs/negGMnqbA8TQF',
+  'U1IvBflDcA7yj677lgLkze/yd5hg/ZVx7M8XyUzcEm9xi7h3BFqvK7kSCSskAwMC',
+  'CAEBCwMDBCkGskA01sBvG/B1bl0EN+yxF6xPn74WQoAMm7K4n1PlZ1u8RWg+BJVG',
+  'Kna/88ZGcT5BZSUvRrYWgqb4/SPAPea5C1p6UYd+C0C0dVf0FaGv5z0gCtc/+kwF',
+  '3sLGLZh3rAMBCQmImAQYEwoAIBYhBIuWJYtybMEvG/b9ffo9ZMm88zi8BQJaryu5',
+  'AhsMAAoJEPo9ZMm88zi8w1QBfR4k1d5ElME3ef7viE+Mud4qGv1ra56pKa86hS9+',
+  'l262twTxe1hk08/FySeJW08P3wF/WrhCrE9UDD6FQiZk1lqekhd9bf84v6i5Smbi',
+  'oml1QWkiI6BtbLD39Su6zQKR7u+Y',
+  '=wB7z',
+  '-----END PGP PUBLIC KEY BLOCK-----'
+  ].join('\n');
+
+const brainpoolPrivate = [
+    '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+    '',
+    'lNYEWq8ruRMJKyQDAwIIAQELAwMEhi/66JLo1vMhpytb1bYvBhd/aKHde2Zwke7r',
+    'zWFTYBZQl/DUrpMrVAhkQhk5G3kqFWf98O/DpvVmY6EDr3IjmODWowNvGfC4Avc9',
+    'rYRgV8GbMBUVLIS+ytS1YNpAKW4v/gcDAtyjmSfDquSq5ffphtkwJ56Zz5jc+jSm',
+    'yZaPgmnPOwcgYhWy1g7BcBKYFPNKZlajnV4Rut2VUWkELwWrRmchX4ENJoAKZob0',
+    'l/zjgOPug3FtEGirOPmvi7nOkjDEFNJwtBlidW5ueSA8YnVubnlAYnVubnkuYnVu',
+    'bnk+iLAEExMKADgWIQSLliWLcmzBLxv2/X36PWTJvPM4vAUCWq8ruQIbAwULCQgH',
+    'AwUVCgkICwUWAgMBAAIeAQIXgAAKCRD6PWTJvPM4vIcVAYCIO41QylZkb9W4FP+k',
+    'd3bzb73xxwojWpCiw1bWV9Xe/dKA23DtCYhlmhF/Twjh9lkBfihHXs/negGMnqbA',
+    '8TQFU1IvBflDcA7yj677lgLkze/yd5hg/ZVx7M8XyUzcEm9xi5zaBFqvK7kSCSsk',
+    'AwMCCAEBCwMDBCkGskA01sBvG/B1bl0EN+yxF6xPn74WQoAMm7K4n1PlZ1u8RWg+',
+    'BJVGKna/88ZGcT5BZSUvRrYWgqb4/SPAPea5C1p6UYd+C0C0dVf0FaGv5z0gCtc/',
+    '+kwF3sLGLZh3rAMBCQn+BwMC6RvzFHWyKqPlVqrm6+j797Y9vHdZW1zixtmEK0Wg',
+    'lvQRpZF8AbpSzk/XolsoeQyic1e18C6ubFZFw7cI7ekINiRu/OXOvBnTbc5TdbDi',
+    'kKTuOkL+lEwWrUTEwdshbJ+ImAQYEwoAIBYhBIuWJYtybMEvG/b9ffo9ZMm88zi8',
+    'BQJaryu5AhsMAAoJEPo9ZMm88zi8w1QBfR4k1d5ElME3ef7viE+Mud4qGv1ra56p',
+    'Ka86hS9+l262twTxe1hk08/FySeJW08P3wF/WrhCrE9UDD6FQiZk1lqekhd9bf84',
+    'v6i5Smbioml1QWkiI6BtbLD39Su6zQKR7u+Y',
+    '=uGZP',
+    '-----END PGP PRIVATE KEY BLOCK-----'
+    ].join('\n');
+
+const brainpoolPass = '321';
+
+const xPub = [
+  '-----BEGIN PGP PUBLIC KEY BLOCK-----',
+  '',
+  'mDMEWkN+5BYJKwYBBAHaRw8BAQdAIGqj23Kp273IPkgjwA7ue5MDIRAfWLYRqnFy',
+  'c2AFMcC0EUxpZ2h0IDxsaWdodEBzdW4+iJAEExYIADgWIQSGS0GuVELT3Rs0woce',
+  'zfAmwCRYMAUCWkN+5AIbAwULCQgHAgYVCAkKCwIEFgIDAQIeAQIXgAAKCRAezfAm',
+  'wCRYMLteAQCFZcl8kBxCH86wmqpc2+KtEA8l/hsfh7jd+JWuyFuuRAD7BOix8Vo1',
+  'P/hv8qUYwSn3IRXPeGXucoWVoKGgxRd+zAO4OARaQ37kEgorBgEEAZdVAQUBAQdA',
+  'L1KkHCFxtK1CgvZlInT/y6OQeCfXiYzd/i452t2ZR2ADAQgHiHgEGBYIACAWIQSG',
+  'S0GuVELT3Rs0wocezfAmwCRYMAUCWkN+5AIbDAAKCRAezfAmwCRYMJ71AQDmoQTg',
+  '36pfjrl82srS6XPRJxl3r/6lpWGaNij0VptB2wEA2V10ifOhnwILCw1qBle6On7a',
+  'Ba257lrFM+cOSMaEsgo=',
+  '=D8HS',
+  '-----END PGP PUBLIC KEY BLOCK-----'
+].join('\n');
+
+const xPriv = [
+  '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+  '',
+  'lIYEWkN+5BYJKwYBBAHaRw8BAQdAIGqj23Kp273IPkgjwA7ue5MDIRAfWLYRqnFy',
+  'c2AFMcD+BwMCeaL+cNXzgI7uJQ7HBv53TAXO3y5uyJQMonkFtQtldL8YDbNP3pbd',
+  '3zzo9fxU12bWAJyFwBlBWJqkrxZN+0jt0ElsG3kp+V67MESJkrRhKrQRTGlnaHQg',
+  'PGxpZ2h0QHN1bj6IkAQTFggAOBYhBIZLQa5UQtPdGzTChx7N8CbAJFgwBQJaQ37k',
+  'AhsDBQsJCAcCBhUICQoLAgQWAgMBAh4BAheAAAoJEB7N8CbAJFgwu14BAIVlyXyQ',
+  'HEIfzrCaqlzb4q0QDyX+Gx+HuN34la7IW65EAPsE6LHxWjU/+G/ypRjBKfchFc94',
+  'Ze5yhZWgoaDFF37MA5yLBFpDfuQSCisGAQQBl1UBBQEBB0AvUqQcIXG0rUKC9mUi',
+  'dP/Lo5B4J9eJjN3+Ljna3ZlHYAMBCAf+BwMCvyW2D5Yx6dbujE3yHi1XQ9MbhOY5',
+  'XRFFgYIUYzzi1qmaL+8Gr9zODsUdeO60XHnMXOmqVa6/sdx32TWo5s3sgS19kRUM',
+  'D+pbxS/aZnxvrYh4BBgWCAAgFiEEhktBrlRC090bNMKHHs3wJsAkWDAFAlpDfuQC',
+  'GwwACgkQHs3wJsAkWDCe9QEA5qEE4N+qX465fNrK0ulz0ScZd6/+paVhmjYo9Fab',
+  'QdsBANlddInzoZ8CCwsNagZXujp+2gWtue5axTPnDkjGhLIK',
+  '=wo91',
+  '-----END PGP PRIVATE KEY BLOCK-----'
+].join('\n');
+
+const xPass = 'sun';
+
+
 let privKey, pubKey, plaintext, data, i, canceled, expectedType, dataArrived;
 
 function tests() {
@@ -591,6 +675,7 @@ function tests() {
       message: openpgp.message.fromBinary(data),
       privateKeys: privKey,
       detached: true,
+      streaming: expectedType
     });
     const sigArmored = await openpgp.stream.readToEnd(signed.signature);
     const signature = await openpgp.message.readArmored(sigArmored);
@@ -624,6 +709,66 @@ function tests() {
     const verified = await openpgp.verify({
       signature,
       publicKeys: pubKey,
+      message: openpgp.message.fromText('hello world')
+    });
+    expect(openpgp.util.decode_utf8(verified.data)).to.equal('hello world');
+    expect(verified.signatures).to.exist.and.have.length(1);
+    expect(verified.signatures[0].valid).to.be.true;
+  });
+
+  it('Detached sign small message using brainpool curve keys', async function() {
+    dataArrived(); // Do not wait until data arrived.
+    const data = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(util.str_to_Uint8Array('hello '));
+        controller.enqueue(util.str_to_Uint8Array('world'));
+        controller.close();
+      }
+    });
+    const priv = (await openpgp.key.readArmored(brainpoolPrivate)).keys[0];
+    const pub = (await openpgp.key.readArmored(brainpoolPublic)).keys[0];
+    await priv.decrypt(brainpoolPass);
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: priv,
+      detached: true,
+      streaming: expectedType
+    });
+    const sigArmored = await openpgp.stream.readToEnd(signed.signature);
+    const signature = await openpgp.message.readArmored(sigArmored);
+    const verified = await openpgp.verify({
+      signature,
+      publicKeys: pub,
+      message: openpgp.message.fromText('hello world')
+    });
+    expect(openpgp.util.decode_utf8(verified.data)).to.equal('hello world');
+    expect(verified.signatures).to.exist.and.have.length(1);
+    expect(verified.signatures[0].valid).to.be.true;
+  });
+
+  it('Detached sign small message using x25519 curve keys', async function() {
+    dataArrived(); // Do not wait until data arrived.
+    const data = new ReadableStream({
+      async start(controller) {
+        controller.enqueue(util.str_to_Uint8Array('hello '));
+        controller.enqueue(util.str_to_Uint8Array('world'));
+        controller.close();
+      }
+    });
+    const priv = (await openpgp.key.readArmored(xPriv)).keys[0];
+    const pub = (await openpgp.key.readArmored(xPub)).keys[0];
+    await priv.decrypt(xPass);
+    const signed = await openpgp.sign({
+      message: openpgp.message.fromBinary(data),
+      privateKeys: priv,
+      detached: true,
+      streaming: expectedType
+    });
+    const sigArmored = await openpgp.stream.readToEnd(signed.signature);
+    const signature = await openpgp.message.readArmored(sigArmored);
+    const verified = await openpgp.verify({
+      signature,
+      publicKeys: pub,
       message: openpgp.message.fromText('hello world')
     });
     expect(openpgp.util.decode_utf8(verified.data)).to.equal('hello world');
@@ -684,7 +829,7 @@ function tests() {
   }
 }
 
-describe('Streaming', function() {
+describe.only('Streaming', function() {
   let currentTest = 0;
 
   before(async function() {
