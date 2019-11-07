@@ -103,7 +103,6 @@ export default {
           }
         }
       } else if(nodeCrypto) {
-        console.log('in node crypto');
         return this.nodeCryptoSign(hash_algo, data, n, e, d, p, q, u);
       }
     }
@@ -134,7 +133,6 @@ export default {
           }
         }
       } else if (nodeCrypto) {
-        console.log('node crypto verify');
         return this.nodeCryptoVerify(hash_algo, data, s, n, e);
       }
     }
@@ -423,7 +421,7 @@ export default {
       label: 'RSA PUBLIC KEY'
     });
     try {
-      return verify.verify(key, s);
+      return await verify.verify(key, s);
     } catch (err) {
       return false;
     }

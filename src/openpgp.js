@@ -432,7 +432,6 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
 export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [] }) {
   checkCleartextOrMessage(message);
   privateKeys = toArray(privateKeys); fromUserIds = toArray(fromUserIds);
-
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', {
       message, privateKeys, armor, streaming, detached, date, fromUserIds
@@ -442,7 +441,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
   const result = {};
   return Promise.resolve().then(async function() {
     if (detached) {
-      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, message.fromStream);
+      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, streaming);
       result.signature = armor ? signature.armor() : signature;
       if (message.packets) {
         result.signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
@@ -453,7 +452,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
         });
       }
     } else {
-      message = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream);
+      message = await message.sign(privateKeys, undefined, date, fromUserIds, streaming);
       if (armor) {
         result.data = message.armor();
       } else {
