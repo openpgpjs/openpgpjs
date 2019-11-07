@@ -191,6 +191,8 @@ Curve.prototype.genKeyPair = async function () {
       return nodeGenKeyPair(this.name);
     case 'curve25519': {
       const privateKey = await random.getRandomBytes(32);
+      privateKey[0] = (privateKey[0] & 127) | 64;
+      privateKey[31] &= 248;
       const secretKey = privateKey.slice().reverse();
       keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
       const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
