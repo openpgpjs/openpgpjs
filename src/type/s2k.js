@@ -167,9 +167,9 @@ S2K.prototype.produce_key = async function (passphrase, numBytes) {
         toHash = util.concatUint8Array([new Uint8Array(prefixlen), this.salt, passphrase]);
         break;
       case 'iterated': {
-        const count = this.get_count();
         const data = util.concatUint8Array([this.salt, passphrase]);
         let datalen = data.length;
+        const count = Math.max(this.get_count(), datalen);
         toHash = new Uint8Array(prefixlen + count);
         toHash.set(data, prefixlen);
         for (let pos = prefixlen + datalen; pos < count; pos += datalen, datalen *= 2) {
