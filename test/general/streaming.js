@@ -76,7 +76,7 @@ const priv_key =
 
 const passphrase = 'hello world';
 
-const brainpoolPublic = [
+const brainpoolPub = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
   '',
   'mHMEWq8ruRMJKyQDAwIIAQELAwMEhi/66JLo1vMhpytb1bYvBhd/aKHde2Zwke7r',
@@ -96,7 +96,7 @@ const brainpoolPublic = [
   '-----END PGP PUBLIC KEY BLOCK-----'
   ].join('\n');
 
-const brainpoolPrivate = [
+const brainpoolPriv = [
     '-----BEGIN PGP PRIVATE KEY BLOCK-----',
     '',
     'lNYEWq8ruRMJKyQDAwIIAQELAwMEhi/66JLo1vMhpytb1bYvBhd/aKHde2Zwke7r',
@@ -294,6 +294,68 @@ function tests() {
       const decrypted = await openpgp.decrypt({
         publicKeys: pubKey,
         privateKeys: privKey,
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      const reader = openpgp.stream.getReader(decrypted.data);
+      expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
+      dataArrived();
+      expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
+    } finally {
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
+    }
+  });
+
+  it('Encrypt and decrypt larger message roundtrip using curve x25519 (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
+    const priv = (await openpgp.key.readArmored(xPriv)).keys[0];
+    const pub = (await openpgp.key.readArmored(xPub)).keys[0];
+    await priv.decrypt(xPass);
+    try {
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(data),
+        publicKeys: pub,
+        privateKeys: priv
+      });
+
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(msgAsciiArmored);
+      const decrypted = await openpgp.decrypt({
+        publicKeys: pub,
+        privateKeys: priv,
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      const reader = openpgp.stream.getReader(decrypted.data);
+      expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
+      dataArrived();
+      expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
+    } finally {
+      openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
+    }
+  });
+
+  it('Encrypt and decrypt larger message roundtrip using curve brainpool (allow_unauthenticated_stream=true)', async function() {
+    let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
+    openpgp.config.allow_unauthenticated_stream = true;
+    const priv = (await openpgp.key.readArmored(brainpoolPriv)).keys[0];
+    const pub = (await openpgp.key.readArmored(brainpoolPub)).keys[0];
+    await priv.decrypt(brainpoolPass);
+    try {
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(data),
+        publicKeys: pub,
+        privateKeys: priv
+      });
+
+      const msgAsciiArmored = encrypted.data;
+      const message = await openpgp.message.readArmored(msgAsciiArmored);
+      const decrypted = await openpgp.decrypt({
+        publicKeys: pub,
+        privateKeys: priv,
         message,
         format: 'binary'
       });
@@ -725,8 +787,8 @@ function tests() {
         controller.close();
       }
     });
-    const priv = (await openpgp.key.readArmored(brainpoolPrivate)).keys[0];
-    const pub = (await openpgp.key.readArmored(brainpoolPublic)).keys[0];
+    const priv = (await openpgp.key.readArmored(brainpoolPriv)).keys[0];
+    const pub = (await openpgp.key.readArmored(brainpoolPub)).keys[0];
     await priv.decrypt(brainpoolPass);
     const signed = await openpgp.sign({
       message: openpgp.message.fromBinary(data),

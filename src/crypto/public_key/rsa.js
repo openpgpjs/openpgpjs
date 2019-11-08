@@ -55,7 +55,7 @@ function promisifyIE11Op(keyObj, err) {
 
 /* eslint-disable no-invalid-this */
 const RSAPrivateKey = util.detectNode() ? asn1.define('RSAPrivateKey', function () {
-  this.seq().obj( // used for native NodeJS keygen
+  this.seq().obj( // used for native NodeJS crypto
     this.key('version').int(), // 0
     this.key('modulus').int(), // n
     this.key('publicExponent').int(), // e
@@ -69,7 +69,7 @@ const RSAPrivateKey = util.detectNode() ? asn1.define('RSAPrivateKey', function 
 }) : undefined;
 
 const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function () {
-  this.seq().obj( // used for native NodeJS keygen
+  this.seq().obj( // used for native NodeJS crypto
     this.key('modulus').int(), // n
     this.key('publicExponent').int(), // e
   );
@@ -453,10 +453,10 @@ function privateToJwk(n, e, d, p, q, u) {
     n: util.Uint8Array_to_b64(n, true),
     e: util.Uint8Array_to_b64(e, true),
     d: util.Uint8Array_to_b64(d, true),
-    // switch p and q, see comment on the line 271
+    // switch p and q
     p: util.Uint8Array_to_b64(q, true),
     q: util.Uint8Array_to_b64(p, true),
-    // switch dp and dq, see comment on the line 271
+    // switch dp and dq
     dp: util.Uint8Array_to_b64(dq, true),
     dq: util.Uint8Array_to_b64(dp, true),
     qi: util.Uint8Array_to_b64(u, true),
