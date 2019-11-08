@@ -178,16 +178,16 @@ Signature.prototype.sign = async function (key, data, detached = false, streamin
   this.signatureData = util.concat(arr);
 
   if (util.isStream(data.data) && !streaming) {
-    console.log('in convert stream');
     data.data = await stream.readToEnd(data.data);
   }
   const toHash = this.toHash(signatureType, data, detached);
+  const dataStream = stream.passiveClone(toHash);
   const hash = await this.hash(signatureType, data, toHash, detached);
 
   this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
   const params = key.params;
   const signed = async () => crypto.signature.sign(
-    publicKeyAlgorithm, hashAlgorithm, params, toHash, await stream.readToEnd(hash)
+    publicKeyAlgorithm, hashAlgorithm, params, dataStream, await stream.readToEnd(hash)
   );
   if (streaming) {
     this.signature = stream.fromAsync(signed);

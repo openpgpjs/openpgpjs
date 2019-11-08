@@ -829,7 +829,7 @@ function tests() {
   }
 }
 
-describe.only('Streaming', function() {
+describe('Streaming', function() {
   let currentTest = 0;
 
   before(async function() {
