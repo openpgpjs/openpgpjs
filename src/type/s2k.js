@@ -151,53 +151,41 @@ S2K.prototype.write = function () {
  */
 S2K.prototype.produce_key = async function (passphrase, numBytes) {
   passphrase = util.encode_utf8(passphrase);
-
-  async function round(prefix, s2k) {
-    const algorithm = enums.write(enums.hash, s2k.algorithm);
-
-    switch (s2k.type) {
-      case 'simple':
-        return crypto.hash.digest(algorithm, util.concatUint8Array([prefix, passphrase]));
-
-      case 'salted':
-        return crypto.hash.digest(
-          algorithm,
-          util.concatUint8Array([prefix, s2k.salt, passphrase])
-        );
-
-      case 'iterated': {
-        const count = s2k.get_count();
-        const data = util.concatUint8Array([s2k.salt, passphrase]);
-        const datalen = data.length;
-        const isp = new Uint8Array(prefix.length + count + datalen);
-        isp.set(prefix);
-        for (let pos = prefix.length; pos < count; pos += datalen) {
-          isp.set(data, pos);
-        }
-        return crypto.hash.digest(algorithm, isp.subarray(0, prefix.length + count));
-      }
-      case 'gnu':
-        throw new Error("GNU s2k type not supported.");
-
-      default:
-        throw new Error("Unknown s2k type.");
-    }
-  }
+  const algorithm = enums.write(enums.hash, this.algorithm);
 
   const arr = [];
   let rlength = 0;
-  const prefix = new Uint8Array(numBytes);
 
-  for (let i = 0; i < numBytes; i++) {
-    prefix[i] = 0;
-  }
-
-  let i = 0;
+  let prefixlen = 0;
   while (rlength < numBytes) {
-    const result = await round(prefix.subarray(0, i), this);
+    let toHash;
+    switch (this.type) {
+      case 'simple':
+        toHash = util.concatUint8Array([new Uint8Array(prefixlen), passphrase]);
+        break;
+      case 'salted':
+        toHash = util.concatUint8Array([new Uint8Array(prefixlen), this.salt, passphrase]);
+        break;
+      case 'iterated': {
+        const data = util.concatUint8Array([this.salt, passphrase]);
+        let datalen = data.length;
+        const count = Math.max(this.get_count(), datalen);
+        toHash = new Uint8Array(prefixlen + count);
+        toHash.set(data, prefixlen);
+        for (let pos = prefixlen + datalen; pos < count; pos += datalen, datalen *= 2) {
+          toHash.copyWithin(pos, prefixlen, pos);
+        }
+        break;
+      }
+      case 'gnu':
+        throw new Error("GNU s2k type not supported.");
+      default:
+        throw new Error("Unknown s2k type.");
+    }
+    const result = await crypto.hash.digest(algorithm, toHash);
     arr.push(result);
     rlength += result.length;
-    i++;
+    prefixlen++;
   }
 
   return util.concatUint8Array(arr).subarray(0, numBytes);
