@@ -26,7 +26,6 @@
  */
 
 import BN from 'bn.js';
-import stream from 'web-stream-tools';
 import prime from './prime';
 import random from '../random';
 import config from '../../config';
@@ -91,8 +90,7 @@ export default {
    * @async
    */
   sign: async function(hash_algo, data, n, e, d, p, q, u, hashed) {
-    if (data && !data.locked) {
-      data = await stream.readToEnd(data);
+    if (data && !util.isStream(data)) {
       if (webCrypto) {
         const hash_name = getKeyByValue(enums.webHash, hash_algo);
         if (typeof hash_name !== 'undefined') {
@@ -121,8 +119,7 @@ export default {
    * @async
    */
   verify: async function(hash_algo, data, s, n, e, hashed) {
-    if (data && !data.locked) {
-      data = await stream.readToEnd(data);
+    if (data && !util.isStream(data)) {
       if (webCrypto) {
         const hash_name = getKeyByValue(enums.webHash, hash_algo);
         if (typeof hash_name !== 'undefined') {

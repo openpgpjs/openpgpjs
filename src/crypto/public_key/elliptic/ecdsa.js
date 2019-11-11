@@ -26,7 +26,6 @@
  */
 
 import BN from 'bn.js';
-import stream from 'web-stream-tools';
 import enums from '../../../enums';
 import util from '../../../util';
 import Curve, { webCurves, privateToJwk, rawPublicToJwk } from './curves';
@@ -49,8 +48,7 @@ const nodeCrypto = util.getNodeCrypto();
  */
 async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
   const curve = new Curve(oid);
-  if (message && !message.locked) {
-    message = await stream.readToEnd(message);
+  if (message && !util.isStream(message)) {
     const keyPair = { publicKey, privateKey };
     switch (curve.type) {
       case 'web': {
@@ -89,8 +87,7 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
  */
 async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
   const curve = new Curve(oid);
-  if (message && !message.locked) {
-    message = await stream.readToEnd(message);
+  if (message && !util.isStream(message)) {
     switch (curve.type) {
       case 'web':
         try {
