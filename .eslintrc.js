@@ -34,7 +34,6 @@ module.exports = {
     "TransformStream": true
   },
 
-
   "rules": {
     // Auto generated rules:
     "accessor-pairs": "error",

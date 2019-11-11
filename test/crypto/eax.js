@@ -87,7 +87,7 @@ function testAESEAX() {
 
     const cipher = 'aes128';
 
-    vectors.map(async vec => {
+    vectors.forEach(async vec => {
       const keyBytes = openpgp.util.hex_to_Uint8Array(vec.key);
       const msgBytes = openpgp.util.hex_to_Uint8Array(vec.msg);
       const nonceBytes = openpgp.util.hex_to_Uint8Array(vec.nonce);
