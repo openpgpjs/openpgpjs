@@ -441,7 +441,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
   const result = {};
   return Promise.resolve().then(async function() {
     if (detached) {
-      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, streaming);
+      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, message.fromStream);
       result.signature = armor ? signature.armor() : signature;
       if (message.packets) {
         result.signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
@@ -452,7 +452,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
         });
       }
     } else {
-      message = await message.sign(privateKeys, undefined, date, fromUserIds, streaming);
+      message = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream);
       if (armor) {
         result.data = message.armor();
       } else {

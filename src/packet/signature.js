@@ -177,9 +177,6 @@ Signature.prototype.sign = async function (key, data, detached = false, streamin
 
   this.signatureData = util.concat(arr);
 
-  if (util.isStream(data.data) && !streaming) {
-    data.data = await stream.readToEnd(data.data);
-  }
   const toHash = this.toHash(signatureType, data, detached);
   const hash = await this.hash(signatureType, data, toHash, detached);
 
