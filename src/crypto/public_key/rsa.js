@@ -324,7 +324,8 @@ export default {
       name: "RSASSA-PKCS1-v1_5",
       hash: { name: hash_name }
     }, false, ["sign"]);
-    return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5" }, key, data));
+    // add hash field for ms edge and safari support
+    return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, data));
   },
 
   nodeSign: async function (hash_algo, data, n, e, d, p, q, u) {
@@ -377,7 +378,8 @@ export default {
       name: "RSASSA-PKCS1-v1_5",
       hash: { name:  hash_name }
     }, false, ["verify"]);
-    return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5" }, key, s, data);
+    // add hash field for ms edge and safari support
+    return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, s, data);
   },
 
   nodeVerify: async function (hash_algo, data, s, n, e) {
