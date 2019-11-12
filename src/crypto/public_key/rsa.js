@@ -324,7 +324,7 @@ export default {
       name: "RSASSA-PKCS1-v1_5",
       hash: { name: hash_name }
     }, false, ["sign"]);
-    // add hash field for ms edge and safari support
+    // add hash field for ms edge support
     return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, data));
   },
 
@@ -378,7 +378,7 @@ export default {
       name: "RSASSA-PKCS1-v1_5",
       hash: { name:  hash_name }
     }, false, ["verify"]);
-    // add hash field for ms edge and safari support
+    // add hash field for ms edge support
     return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, s, data);
   },
 
