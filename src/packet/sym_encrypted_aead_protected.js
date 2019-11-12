@@ -182,7 +182,7 @@ SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, strea
           break;
         }
       }
-    } catch(e) {
+    } catch (e) {
       await writer.abort(e);
     }
   });

@@ -677,7 +677,7 @@ async function prepareSignatures(signatures) {
     signature.signature = await signature.signature;
     try {
       signature.valid = await signature.verified;
-    } catch(e) {
+    } catch (e) {
       signature.valid = null;
       signature.error = e;
       util.print_debug_error(e);
@@ -698,7 +698,7 @@ function onError(message, error) {
   // update error message
   try {
     error.message = message + ': ' + error.message;
-  } catch(e) {}
+  } catch (e) {}
 
   throw error;
 }

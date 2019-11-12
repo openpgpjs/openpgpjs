@@ -92,16 +92,13 @@ export default {
   sign: async function(hash_algo, data, n, e, d, p, q, u, hashed) {
     if (data && !util.isStream(data)) {
       if (webCrypto) {
-        const hash_name = getKeyByValue(enums.webHash, hash_algo);
-        if (typeof hash_name !== 'undefined') {
-          try {
-            return await this.webCryptoSign(hash_name, data, n, e, d, p, q, u);
-          } catch (err) {
-            util.print_debug_error(err);
-          }
+        try {
+          return await this.webSign(enums.read(enums.webHash, hash_algo), data, n, e, d, p, q, u);
+        } catch (err) {
+          util.print_debug_error(err);
         }
-      } else if(nodeCrypto) {
-        return this.nodeCryptoSign(hash_algo, data, n, e, d, p, q, u);
+      } else if (nodeCrypto) {
+        return this.nodeSign(hash_algo, data, n, e, d, p, q, u);
       }
     }
     return this.bnSign(hash_algo, n, d, hashed);
@@ -121,16 +118,13 @@ export default {
   verify: async function(hash_algo, data, s, n, e, hashed) {
     if (data && !util.isStream(data)) {
       if (webCrypto) {
-        const hash_name = getKeyByValue(enums.webHash, hash_algo);
-        if (typeof hash_name !== 'undefined') {
-          try {
-            return await this.webCryptoVerify(hash_name, data, s, n, e);
-          } catch (err) {
-            util.print_debug_error(err);
-          }
+        try {
+          return await this.webVerify(enums.read(enums.webHash, hash_algo), data, s, n, e);
+        } catch (err) {
+          util.print_debug_error(err);
         }
       } else if (nodeCrypto) {
-        return this.nodeCryptoVerify(hash_algo, data, s, n, e);
+        return this.nodeVerify(hash_algo, data, s, n, e);
       }
     }
     return this.bnVerify(hash_algo, s, n, e, hashed);
@@ -324,7 +318,7 @@ export default {
     return m.toRed(nred).redPow(d).toArrayLike(Uint8Array, 'be', n.byteLength());
   },
 
-  webCryptoSign: async function (hash_name, data, n, e, d, p, q, u) {
+  webSign: async function (hash_name, data, n, e, d, p, q, u) {
     const jwk = privateToJwk(n, e, d, p, q, u);
     const key = await webCrypto.importKey("jwk", jwk, {
       name: "RSASSA-PKCS1-v1_5",
@@ -333,7 +327,7 @@ export default {
     return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5" }, key, data));
   },
 
-  nodeCryptoSign: async function (hash_algo, data, n, e, d, p, q, u) {
+  nodeSign: async function (hash_algo, data, n, e, d, p, q, u) {
     const pBNum = new BN(p);
     const qBNum = new BN(q);
     const dBNum = new BN(d);
@@ -342,22 +336,7 @@ export default {
     const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
     sign.write(data);
     sign.end();
-    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
-      const der = RSAPrivateKey.encode({
-        version: 0,
-        modulus: new BN(n),
-        publicExponent: new BN(e),
-        privateExponent: new BN(d),
-        // switch p and q
-        prime1: new BN(q),
-        prime2: new BN(p),
-        exponent1: dq,
-        exponent2: dp,
-        coefficient: new BN(u)
-      }, 'der');
-      return new Uint8Array(sign.sign({ key: der, format: 'der', type: 'pkcs1' }));
-    }
-    const pem = RSAPrivateKey.encode({
+    const keyObject = {
       version: 0,
       modulus: new BN(n),
       publicExponent: new BN(e),
@@ -368,7 +347,12 @@ export default {
       exponent1: dq,
       exponent2: dp,
       coefficient: new BN(u)
-    }, 'pem', {
+    };
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+      const der = RSAPrivateKey.encode(keyObject, 'der');
+      return new Uint8Array(sign.sign({ key: der, format: 'der', type: 'pkcs1' }));
+    }
+    const pem = RSAPrivateKey.encode(keyObject, 'pem', {
       label: 'RSA PRIVATE KEY'
     });
     return new Uint8Array(sign.sign(pem));
@@ -387,7 +371,7 @@ export default {
     return util.Uint8Array_to_hex(EM1) === EM2;
   },
 
-  webCryptoVerify: async function (hash_name, data, s, n, e) {
+  webVerify: async function (hash_name, data, s, n, e) {
     const jwk = publicToJwk(n, e);
     const key = await webCrypto.importKey("jwk", jwk, {
       name: "RSASSA-PKCS1-v1_5",
@@ -396,27 +380,23 @@ export default {
     return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5" }, key, s, data);
   },
 
-  nodeCryptoVerify: async function (hash_algo, data, s, n, e) {
+  nodeVerify: async function (hash_algo, data, s, n, e) {
     const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
     verify.write(data);
     verify.end();
-    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
-      const der = RSAPublicKey.encode({
-        modulus: new BN(n),
-        publicExponent: new BN(e)
-      }, 'der');
-      try {
-        return verify.verify({ key: der, format: 'der', type: 'pkcs1' }, s);
-      } catch (err) {
-        return false;
-      }
-    }
-    const key = RSAPublicKey.encode({
+    const keyObject = {
       modulus: new BN(n),
       publicExponent: new BN(e)
-    }, 'pem', {
-      label: 'RSA PUBLIC KEY'
-    });
+    };
+    let key;
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+      const der = RSAPublicKey.encode(keyObject, 'der');
+      key = { key: der, format: 'der', type: 'pkcs1' };
+    } else {
+      key = RSAPublicKey.encode(keyObject, 'pem', {
+        label: 'RSA PUBLIC KEY'
+      });
+    }
     try {
       return await verify.verify(key, s);
     } catch (err) {
@@ -474,8 +454,4 @@ function publicToJwk(n, e) {
     e: util.Uint8Array_to_b64(e, true),
     ext: true
   };
-}
-
-function getKeyByValue(object, value) {
-  return Object.keys(object).find(key => object[key] === value);
 }

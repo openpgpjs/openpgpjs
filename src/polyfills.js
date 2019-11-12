@@ -46,7 +46,7 @@ if (typeof window !== 'undefined') {
     if (typeof Object.assign === 'undefined') {
       require('core-js/fn/object/assign');
     }
-  } catch(e) {}
+  } catch (e) {}
 }
 
 if (typeof TransformStream === 'undefined') {

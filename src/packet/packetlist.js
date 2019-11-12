@@ -68,7 +68,7 @@ List.prototype.read = async function (bytes, streaming) {
           return;
         }
       }
-    } catch(e) {
+    } catch (e) {
       await writer.abort(e);
     }
   });

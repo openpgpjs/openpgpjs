@@ -344,7 +344,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
     try {
       const modeInstance = await mode(this.symmetric, key);
       cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
-    } catch(err) {
+    } catch (err) {
       if (err.message === 'Authentication tag mismatch') {
         throw new Error('Incorrect key passphrase: ' + err.message);
       }

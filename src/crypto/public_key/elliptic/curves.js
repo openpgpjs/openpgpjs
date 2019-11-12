@@ -209,7 +209,7 @@ Curve.prototype.genKeyPair = async function () {
   keyPair = await indutnyCurve.genKeyPair({
     entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))
   });
-  return { publicKey: keyPair.getPublic('array', false), privateKey: keyPair.getPrivate().toArray() };
+  return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
 };
 
 async function generate(curve) {

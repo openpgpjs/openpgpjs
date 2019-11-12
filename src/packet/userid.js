@@ -61,7 +61,7 @@ Userid.prototype.read = function (bytes) {
 Userid.prototype.parse = function (userid) {
   try {
     Object.assign(this, util.parseUserId(userid));
-  } catch(e) {}
+  } catch (e) {}
   this.userid = userid;
 };
 

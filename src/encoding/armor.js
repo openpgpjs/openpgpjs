@@ -275,7 +275,7 @@ function dearmor(input) {
               }
             }
           }
-        } catch(e) {
+        } catch (e) {
           reject(e);
           return;
         }
@@ -307,7 +307,7 @@ function dearmor(input) {
           }
           await writer.ready;
           await writer.close();
-        } catch(e) {
+        } catch (e) {
           await writer.abort(e);
         }
       }));
@@ -325,11 +325,11 @@ function dearmor(input) {
           }
           await writer.ready;
           await writer.close();
-        } catch(e) {
+        } catch (e) {
           await writer.abort(e);
         }
       });
-    } catch(e) {
+    } catch (e) {
       reject(e);
     }
   });
