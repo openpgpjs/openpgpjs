@@ -38,7 +38,7 @@ describe('basic RSA cryptography', function () {
   });
 
   it('compare webCrypto and bn math sign', async function() {
-    if (!openpgp.util.getWebCryptoAll()) {
+    if (!openpgp.util.getWebCrypto()) {
       this.skip();
     }
     const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
@@ -54,19 +54,18 @@ describe('basic RSA cryptography', function () {
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
     let signatureWeb;
-    let signatureBN;
     try {
       signatureWeb = await openpgp.crypto.publicKey.rsa.webSign('SHA-256', message, n, e, d, p, q, u, hashed);
-      signatureBN = await openpgp.crypto.publicKey.rsa.bnSign(hash_algo, n, d, hashed);
     } catch (error) {
       openpgp.util.print_debug_error('web crypto error');
       this.skip();
     }
+    const signatureBN = await openpgp.crypto.publicKey.rsa.bnSign(hash_algo, n, d, hashed);
     expect(openpgp.util.Uint8Array_to_hex(signatureWeb)).to.be.equal(openpgp.util.Uint8Array_to_hex(signatureBN));
   });
 
   it('compare webCrypto and bn math verify', async function() {
-    if (!openpgp.util.getWebCryptoAll()) {
+    if (!openpgp.util.getWebCrypto()) {
       this.skip();
     }
     const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
@@ -82,15 +81,15 @@ describe('basic RSA cryptography', function () {
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
     let verifyWeb;
-    let verifyBN;
+    let signature;
     try {
-      const signature1 = await openpgp.crypto.publicKey.rsa.webSign('SHA-256', message, n, e, d, p, q, u, hashed);
-      verifyWeb = await openpgp.crypto.publicKey.rsa.webVerify('SHA-256', message, signature1, n, e);
-      verifyBN = await openpgp.crypto.publicKey.rsa.bnVerify(hash_algo, signature1, n, e, hashed);
+      signature = await openpgp.crypto.publicKey.rsa.webSign('SHA-256', message, n, e, d, p, q, u, hashed);
+      verifyWeb = await openpgp.crypto.publicKey.rsa.webVerify('SHA-256', message, signature, n, e);
     } catch (error) {
       openpgp.util.print_debug_error('web crypto error');
       this.skip();
     }
+    const verifyBN = await openpgp.crypto.publicKey.rsa.bnVerify(hash_algo, signature, n, e, hashed);
     expect(verifyWeb).to.be.true;
     expect(verifyBN).to.be.true;
   });

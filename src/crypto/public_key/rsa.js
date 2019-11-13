@@ -247,15 +247,16 @@ export default {
       if (jwk instanceof ArrayBuffer) {
         jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(jwk)));
       }
-
       // map JWK parameters to BN
       key = {};
       key.n = new BN(util.b64_to_Uint8Array(jwk.n));
       key.e = E;
       key.d = new BN(util.b64_to_Uint8Array(jwk.d));
-      key.p = new BN(util.b64_to_Uint8Array(jwk.p));
-      key.q = new BN(util.b64_to_Uint8Array(jwk.q));
-      key.u = key.p.invm(key.q);
+      // switch p and q
+      key.p = new BN(util.b64_to_Uint8Array(jwk.q));
+      key.q = new BN(util.b64_to_Uint8Array(jwk.p));
+      // Since p and q are switched in places, we could keep u
+      key.u = new BN(util.b64_to_Uint8Array(jwk.qi));
       return key;
     } else if (nodeCrypto && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
@@ -271,26 +272,29 @@ export default {
           resolve(RSAPrivateKey.decode(der, 'der'));
         }
       }));
+      /**  PGP spec differs from DER spec, DER: `(inverse of q) mod p`, PGP: `(inverse of p) mod q`.
+       * @link https://tools.ietf.org/html/rfc3447#section-3.2
+       * @link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-08#section-5.6.1
+       */
       return {
         n: prv.modulus,
         e: prv.publicExponent,
         d: prv.privateExponent,
-        p: prv.prime1,
-        q: prv.prime2,
-        dp: prv.exponent1,
-        dq: prv.exponent2,
-        // re-compute `u` because PGP spec differs from DER spec, DER: `(inverse of q) mod p`, PGP: `(inverse of p) mod q`
-        u: prv.prime1.invm(prv.prime2) // PGP type of u
+        // switch p and q
+        p: prv.prime2,
+        q: prv.prime1,
+        // Since p and q are switched in places, we could keep u
+        u: prv.coefficient // PGP type of u
       };
     }
 
     // RSA keygen fallback using 40 iterations of the Miller-Rabin test
     // See https://stackoverflow.com/a/6330138 for justification
     // Also see section C.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST
-    let p = await prime.randomProbablePrime(B - (B >> 1), E, 40);
-    let q = await prime.randomProbablePrime(B >> 1, E, 40);
+    let q = await prime.randomProbablePrime(B - (B >> 1), E, 40);
+    let p = await prime.randomProbablePrime(B >> 1, E, 40);
 
-    if (p.cmp(q) < 0) {
+    if (q.cmp(p) < 0) {
       [p, q] = [q, p];
     }
 
@@ -320,10 +324,11 @@ export default {
 
   webSign: async function (hash_name, data, n, e, d, p, q, u) {
     const jwk = privateToJwk(n, e, d, p, q, u);
-    const key = await webCrypto.importKey("jwk", jwk, {
+    const algo = {
       name: "RSASSA-PKCS1-v1_5",
       hash: { name: hash_name }
-    }, false, ["sign"]);
+    };
+    const key = await webCrypto.importKey("jwk", jwk, algo, false, ["sign"]);
     // add hash field for ms edge support
     return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, data));
   },
@@ -345,6 +350,7 @@ export default {
       // switch p and q
       prime1: new BN(q),
       prime2: new BN(p),
+      // switch dp and dq
       exponent1: dq,
       exponent2: dp,
       coefficient: new BN(u)
@@ -423,6 +429,7 @@ function privateToJwk(n, e, d, p, q, u) {
   const pBNum = new BN(p);
   const qBNum = new BN(q);
   const dBNum = new BN(d);
+
   let dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
   let dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
   dp = dp.toArrayLike(Uint8Array);
@@ -433,6 +440,7 @@ function privateToJwk(n, e, d, p, q, u) {
     e: util.Uint8Array_to_b64(e, true),
     d: util.Uint8Array_to_b64(d, true),
     // switch p and q
+    // safari webCrypto requires p > q. Not all openpgp keys are compatible with this requirement
     p: util.Uint8Array_to_b64(q, true),
     q: util.Uint8Array_to_b64(p, true),
     // switch dp and dq
