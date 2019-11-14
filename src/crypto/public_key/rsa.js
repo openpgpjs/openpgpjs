@@ -323,6 +323,7 @@ export default {
   },
 
   webSign: async function (hash_name, data, n, e, d, p, q, u) {
+    // safari webCrypto requires p > q. Not all openpgp keys are compatible with this requirement
     const jwk = privateToJwk(n, e, d, p, q, u);
     const algo = {
       name: "RSASSA-PKCS1-v1_5",
@@ -440,7 +441,6 @@ function privateToJwk(n, e, d, p, q, u) {
     e: util.Uint8Array_to_b64(e, true),
     d: util.Uint8Array_to_b64(d, true),
     // switch p and q
-    // safari webCrypto requires p > q. Not all openpgp keys are compatible with this requirement
     p: util.Uint8Array_to_b64(q, true),
     q: util.Uint8Array_to_b64(p, true),
     // switch dp and dq

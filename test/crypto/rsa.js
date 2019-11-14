@@ -22,7 +22,7 @@ describe('basic RSA cryptography', function () {
   it('sign and verify using generated key params', async function() {
     const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
     const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
-    const message = new Uint8Array(Array.from({ length: 64 }, () => Math.floor(Math.random() * 256)));
+    const message = await openpgp.crypto.random.getRandomBytes(64);
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, 'sha256');
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
     const n = keyParams[0].toUint8Array();
@@ -49,7 +49,7 @@ describe('basic RSA cryptography', function () {
     const p = keyParams[3].toUint8Array();
     const q = keyParams[4].toUint8Array();
     const u = keyParams[5].toUint8Array();
-    const message = new Uint8Array(Array.from({ length: 64 }, () => Math.floor(Math.random() * 256)));
+    const message = await openpgp.crypto.random.getRandomBytes(64);
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
@@ -76,7 +76,7 @@ describe('basic RSA cryptography', function () {
     const p = keyParams[3].toUint8Array();
     const q = keyParams[4].toUint8Array();
     const u = keyParams[5].toUint8Array();
-    const message = new Uint8Array(Array.from({ length: 64 }, () => Math.floor(Math.random() * 256)));
+    const message = await openpgp.crypto.random.getRandomBytes(64);
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
@@ -106,7 +106,7 @@ describe('basic RSA cryptography', function () {
     const p = keyParams[3].toUint8Array();
     const q = keyParams[4].toUint8Array();
     const u = keyParams[5].toUint8Array();
-    const message = new Uint8Array(Array.from({ length: 64 }, () => Math.floor(Math.random() * 256)));
+    const message = await openpgp.crypto.random.getRandomBytes(64);
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
@@ -127,7 +127,7 @@ describe('basic RSA cryptography', function () {
     const p = keyParams[3].toUint8Array();
     const q = keyParams[4].toUint8Array();
     const u = keyParams[5].toUint8Array();
-    const message = new Uint8Array(Array.from({ length: 64 }, () => Math.floor(Math.random() * 256)));
+    const message = await openpgp.crypto.random.getRandomBytes(64);
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
