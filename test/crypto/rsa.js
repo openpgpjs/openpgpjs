@@ -7,7 +7,8 @@ const expect = chai.expect;
 
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-invalid-this */
-describe('basic RSA cryptography', function () {
+const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
+(!native ? describe.skip : describe)('basic RSA cryptography with native crypto', function () {
   it('generate rsa key', async function() {
     const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
     const keyObject = await openpgp.crypto.publicKey.rsa.generate(bits, "10001");
@@ -41,7 +42,7 @@ describe('basic RSA cryptography', function () {
     if (!openpgp.util.getWebCrypto()) {
       this.skip();
     }
-    const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
+    const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
     const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
@@ -68,7 +69,7 @@ describe('basic RSA cryptography', function () {
     if (!openpgp.util.getWebCrypto()) {
       this.skip();
     }
-    const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
+    const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
     const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
@@ -119,7 +120,7 @@ describe('basic RSA cryptography', function () {
     if (!openpgp.util.getNodeCrypto()) {
       this.skip();
     }
-    const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
+    const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
     const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
