@@ -7,7 +7,7 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 const key_data = elliptic_data.key_data;
 
-describe.only('ECDH key exchange', function () {
+describe('ECDH key exchange @lightweight', function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const decrypt_message = function (oid, hash, cipher, priv, pub, ephemeral, data, fingerprint) {
     if (openpgp.util.isString(data)) {
@@ -254,7 +254,7 @@ describe.only('ECDH key exchange', function () {
             name: "ECDSA",
             namedCurve: curve.web.web
           }, false, ["sign", "verify"]);
-        } catch(err) {
+        } catch (err) {
           openpgp.util.print_debug_error(err);
           return;
         }

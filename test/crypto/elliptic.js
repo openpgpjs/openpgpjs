@@ -1,6 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 const chai = require('chai');
-const mocha = require('mocha');
 
 const elliptic_data = require('./elliptic_data');
 

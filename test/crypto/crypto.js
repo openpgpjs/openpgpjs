@@ -289,7 +289,7 @@ describe('API functional testing', function() {
 
     function testAESGCM(plaintext, nativeDecrypt) {
       symmAlgos.forEach(function(algo) {
-        if(algo.substr(0,3) === 'aes') {
+        if (algo.substr(0,3) === 'aes') {
           it(algo, async function() {
             const key = await crypto.generateSessionKey(algo);
             const iv = await crypto.random.getRandomBytes(crypto.gcm.ivLength);

@@ -1,4 +1,4 @@
-module.exports = {
+const elliptic_data = {
   key_data: {
     p256: {
       priv: new Uint8Array([
@@ -98,3 +98,5 @@ module.exports = {
     }
   }
 };
+
+module.exports = elliptic_data;
