@@ -68,12 +68,12 @@ function SecretKey(date = new Date()) {
    * Symmetric algorithm
    * @type {String}
    */
-  this.symmetric = 'aes256';
+  this.symmetric = null;
   /**
    * AEAD algorithm
    * @type {String}
    */
-  this.aead = 'eax';
+  this.aead = null;
 }
 
 SecretKey.prototype = new PublicKey();
@@ -287,12 +287,14 @@ SecretKey.prototype.encrypt = async function (passphrase) {
   this.s2k = new type_s2k();
   this.s2k.salt = await crypto.random.getRandomBytes(8);
   const cleartext = write_cleartext_params(this.params, this.algorithm);
+  this.symmetric = 'aes256';
   const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
   const blockLen = crypto.cipher[this.symmetric].blockSize;
   this.iv = await crypto.random.getRandomBytes(blockLen);
 
   if (this.version === 5) {
     this.s2k_usage = 253;
+    this.aead = 'eax';
     const mode = crypto[this.aead];
     const modeInstance = await mode(this.symmetric, key);
     this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
