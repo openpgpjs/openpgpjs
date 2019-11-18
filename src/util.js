@@ -86,7 +86,7 @@ export default {
                   try {
                     const result = await reader.read();
                     port1.postMessage(result, util.getTransferables(result));
-                  } catch(e) {
+                  } catch (e) {
                     port1.postMessage({ error: e.message });
                   }
                 } else if (action === 'cancel') {
@@ -679,7 +679,7 @@ export default {
     try {
       const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userid, atInDisplayName: true });
       return { name, email, comment: comments.replace(/^\(|\)$/g, '') };
-    } catch(e) {
+    } catch (e) {
       throw new Error('Invalid user id format');
     }
   },

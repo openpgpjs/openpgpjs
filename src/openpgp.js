@@ -432,7 +432,6 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
 export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [] }) {
   checkCleartextOrMessage(message);
   privateKeys = toArray(privateKeys); fromUserIds = toArray(fromUserIds);
-
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('sign', {
       message, privateKeys, armor, streaming, detached, date, fromUserIds
@@ -678,7 +677,7 @@ async function prepareSignatures(signatures) {
     signature.signature = await signature.signature;
     try {
       signature.valid = await signature.verified;
-    } catch(e) {
+    } catch (e) {
       signature.valid = null;
       signature.error = e;
       util.print_debug_error(e);
@@ -699,7 +698,7 @@ function onError(message, error) {
   // update error message
   try {
     error.message = message + ': ' + error.message;
-  } catch(e) {}
+  } catch (e) {}
 
   throw error;
 }

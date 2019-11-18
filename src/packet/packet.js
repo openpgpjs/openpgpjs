@@ -237,7 +237,7 @@ export default {
             }
           }
         }
-      } while(wasPartialLength);
+      } while (wasPartialLength);
 
       // If this was not a packet that "supports streaming", we peek to check
       // whether it is the last packet in the message. We peek 2 bytes instead
@@ -283,7 +283,7 @@ export default {
         await callback({ tag, packet });
       }
       return !nextPacket || !nextPacket.length;
-    } catch(e) {
+    } catch (e) {
       if (writer) {
         await writer.abort(e);
         return true;

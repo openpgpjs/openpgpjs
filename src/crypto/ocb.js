@@ -38,7 +38,7 @@ const tagLength = 16;
 
 function ntz(n) {
   let ntz = 0;
-  for(let i = 1; (n & i) === 0; i <<= 1) {
+  for (let i = 1; (n & i) === 0; i <<= 1) {
     ntz++;
   }
   return ntz;

@@ -30,6 +30,12 @@ import prime from './prime';
 import random from '../random';
 import config from '../../config';
 import util from '../../util';
+import pkcs1 from '../pkcs1';
+import enums from '../../enums';
+
+const webCrypto = util.getWebCrypto();
+const nodeCrypto = util.getNodeCrypto();
+const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 
 // Helper for IE11 KeyOperation objects
 function promisifyIE11Op(keyObj, err) {
@@ -47,8 +53,8 @@ function promisifyIE11Op(keyObj, err) {
 }
 
 /* eslint-disable no-invalid-this */
-const RSAPrivateKey = util.detectNode() ? require('asn1.js').define('RSAPrivateKey', function () {
-  this.seq().obj( // used for native NodeJS keygen
+const RSAPrivateKey = util.detectNode() ? asn1.define('RSAPrivateKey', function () {
+  this.seq().obj( // used for native NodeJS crypto
     this.key('version').int(), // 0
     this.key('modulus').int(), // n
     this.key('publicExponent').int(), // e
@@ -60,39 +66,68 @@ const RSAPrivateKey = util.detectNode() ? require('asn1.js').define('RSAPrivateK
     this.key('coefficient').int() // u
   );
 }) : undefined;
+
+const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function () {
+  this.seq().obj( // used for native NodeJS crypto
+    this.key('modulus').int(), // n
+    this.key('publicExponent').int(), // e
+  );
+}) : undefined;
 /* eslint-enable no-invalid-this */
 
 export default {
   /** Create signature
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @param {BN} d RSA private exponent
-   * @returns {BN} RSA Signature
+   * @param {module:enums.hash} hash_algo Hash algorithm
+   * @param {Uint8Array} data message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @param {Uint8Array} d RSA private exponent
+   * @param {Uint8Array} p RSA private prime p
+   * @param {Uint8Array} q RSA private prime q
+   * @param {Uint8Array} u RSA private coefficient
+   * @param {Uint8Array} hashed hashed message
+   * @returns {Uint8Array} RSA Signature
    * @async
    */
-  sign: async function(m, n, e, d) {
-    if (n.cmp(m) <= 0) {
-      throw new Error('Message size cannot exceed modulus size');
+  sign: async function(hash_algo, data, n, e, d, p, q, u, hashed) {
+    if (data && !util.isStream(data)) {
+      if (webCrypto) {
+        try {
+          return await this.webSign(enums.read(enums.webHash, hash_algo), data, n, e, d, p, q, u);
+        } catch (err) {
+          util.print_debug_error(err);
+        }
+      } else if (nodeCrypto) {
+        return this.nodeSign(hash_algo, data, n, e, d, p, q, u);
+      }
     }
-    const nred = new BN.red(n);
-    return m.toRed(nred).redPow(d).toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnSign(hash_algo, n, d, hashed);
   },
 
   /**
    * Verify signature
-   * @param {BN} s signature
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @returns {BN}
+   * @param {module:enums.hash} hash_algo Hash algorithm
+   * @param {Uint8Array} data message
+   * @param {Uint8Array} s signature
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @param {Uint8Array} hashed  hashed message
+   * @returns {Boolean}
    * @async
    */
-  verify: async function(s, n, e) {
-    if (n.cmp(s) <= 0) {
-      throw new Error('Signature size cannot exceed modulus size');
+  verify: async function(hash_algo, data, s, n, e, hashed) {
+    if (data && !util.isStream(data)) {
+      if (webCrypto) {
+        try {
+          return await this.webVerify(enums.read(enums.webHash, hash_algo), data, s, n, e);
+        } catch (err) {
+          util.print_debug_error(err);
+        }
+      } else if (nodeCrypto) {
+        return this.nodeVerify(hash_algo, data, s, n, e);
+      }
     }
-    const nred = new BN.red(n);
-    return s.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnVerify(hash_algo, s, n, e, hashed);
   },
 
   /**
@@ -119,7 +154,7 @@ export default {
    * @param {BN} d RSA private exponent
    * @param {BN} p RSA private prime p
    * @param {BN} q RSA private prime q
-   * @param {BN} u RSA private inverse of prime q
+   * @param {BN} u RSA private coefficient
    * @returns {BN} RSA Plaintext
    * @async
    */
@@ -171,8 +206,6 @@ export default {
   generate: async function(B, E) {
     let key;
     E = new BN(E, 16);
-    const webCrypto = util.getWebCryptoAll();
-    const nodeCrypto = util.getNodeCrypto();
 
     // Native RSA keygen using Web Crypto
     if (webCrypto) {
@@ -214,15 +247,16 @@ export default {
       if (jwk instanceof ArrayBuffer) {
         jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(jwk)));
       }
-
       // map JWK parameters to BN
       key = {};
       key.n = new BN(util.b64_to_Uint8Array(jwk.n));
       key.e = E;
       key.d = new BN(util.b64_to_Uint8Array(jwk.d));
-      key.p = new BN(util.b64_to_Uint8Array(jwk.p));
-      key.q = new BN(util.b64_to_Uint8Array(jwk.q));
-      key.u = key.p.invm(key.q);
+      // switch p and q
+      key.p = new BN(util.b64_to_Uint8Array(jwk.q));
+      key.q = new BN(util.b64_to_Uint8Array(jwk.p));
+      // Since p and q are switched in places, we could keep u
+      key.u = new BN(util.b64_to_Uint8Array(jwk.qi));
       return key;
     } else if (nodeCrypto && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
@@ -238,26 +272,29 @@ export default {
           resolve(RSAPrivateKey.decode(der, 'der'));
         }
       }));
+      /**  PGP spec differs from DER spec, DER: `(inverse of q) mod p`, PGP: `(inverse of p) mod q`.
+       * @link https://tools.ietf.org/html/rfc3447#section-3.2
+       * @link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-08#section-5.6.1
+       */
       return {
         n: prv.modulus,
         e: prv.publicExponent,
         d: prv.privateExponent,
-        p: prv.prime1,
-        q: prv.prime2,
-        dp: prv.exponent1,
-        dq: prv.exponent2,
-        // re-compute `u` because PGP spec differs from DER spec, DER: `(inverse of q) mod p`, PGP: `(inverse of p) mod q`
-        u: prv.prime1.invm(prv.prime2) // PGP type of u
+        // switch p and q
+        p: prv.prime2,
+        q: prv.prime1,
+        // Since p and q are switched in places, we could keep u
+        u: prv.coefficient // PGP type of u
       };
     }
 
     // RSA keygen fallback using 40 iterations of the Miller-Rabin test
     // See https://stackoverflow.com/a/6330138 for justification
     // Also see section C.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST
-    let p = await prime.randomProbablePrime(B - (B >> 1), E, 40);
-    let q = await prime.randomProbablePrime(B >> 1, E, 40);
+    let q = await prime.randomProbablePrime(B - (B >> 1), E, 40);
+    let p = await prime.randomProbablePrime(B >> 1, E, 40);
 
-    if (p.cmp(q) < 0) {
+    if (q.cmp(p) < 0) {
       [p, q] = [q, p];
     }
 
@@ -274,5 +311,161 @@ export default {
     };
   },
 
+  bnSign: async function (hash_algo, n, d, hashed) {
+    n = new BN(n);
+    const m = new BN(await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength()), 16);
+    d = new BN(d);
+    if (n.cmp(m) <= 0) {
+      throw new Error('Message size cannot exceed modulus size');
+    }
+    const nred = new BN.red(n);
+    return m.toRed(nred).redPow(d).toArrayLike(Uint8Array, 'be', n.byteLength());
+  },
+
+  webSign: async function (hash_name, data, n, e, d, p, q, u) {
+    // OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
+    // We swap them in privateToJwk, so it usually works out, but nevertheless,
+    // not all OpenPGP keys are compatible with this requirement.
+    // OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
+    // does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+    const jwk = privateToJwk(n, e, d, p, q, u);
+    const algo = {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: { name: hash_name }
+    };
+    const key = await webCrypto.importKey("jwk", jwk, algo, false, ["sign"]);
+    // add hash field for ms edge support
+    return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, data));
+  },
+
+  nodeSign: async function (hash_algo, data, n, e, d, p, q, u) {
+    const pBNum = new BN(p);
+    const qBNum = new BN(q);
+    const dBNum = new BN(d);
+    const dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
+    const dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
+    const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
+    sign.write(data);
+    sign.end();
+    const keyObject = {
+      version: 0,
+      modulus: new BN(n),
+      publicExponent: new BN(e),
+      privateExponent: new BN(d),
+      // switch p and q
+      prime1: new BN(q),
+      prime2: new BN(p),
+      // switch dp and dq
+      exponent1: dq,
+      exponent2: dp,
+      coefficient: new BN(u)
+    };
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+      const der = RSAPrivateKey.encode(keyObject, 'der');
+      return new Uint8Array(sign.sign({ key: der, format: 'der', type: 'pkcs1' }));
+    }
+    const pem = RSAPrivateKey.encode(keyObject, 'pem', {
+      label: 'RSA PRIVATE KEY'
+    });
+    return new Uint8Array(sign.sign(pem));
+  },
+
+  bnVerify: async function (hash_algo, s, n, e, hashed) {
+    n = new BN(n);
+    s = new BN(s);
+    e = new BN(e);
+    if (n.cmp(s) <= 0) {
+      throw new Error('Signature size cannot exceed modulus size');
+    }
+    const nred = new BN.red(n);
+    const EM1 = s.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+    const EM2 = await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength());
+    return util.Uint8Array_to_hex(EM1) === EM2;
+  },
+
+  webVerify: async function (hash_name, data, s, n, e) {
+    const jwk = publicToJwk(n, e);
+    const key = await webCrypto.importKey("jwk", jwk, {
+      name: "RSASSA-PKCS1-v1_5",
+      hash: { name:  hash_name }
+    }, false, ["verify"]);
+    // add hash field for ms edge support
+    return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, s, data);
+  },
+
+  nodeVerify: async function (hash_algo, data, s, n, e) {
+    const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
+    verify.write(data);
+    verify.end();
+    const keyObject = {
+      modulus: new BN(n),
+      publicExponent: new BN(e)
+    };
+    let key;
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+      const der = RSAPublicKey.encode(keyObject, 'der');
+      key = { key: der, format: 'der', type: 'pkcs1' };
+    } else {
+      key = RSAPublicKey.encode(keyObject, 'pem', {
+        label: 'RSA PUBLIC KEY'
+      });
+    }
+    try {
+      return await verify.verify(key, s);
+    } catch (err) {
+      return false;
+    }
+  },
+
   prime: prime
 };
+
+/** Convert Openpgp private key params to jwk key according to
+ * @link https://tools.ietf.org/html/rfc7517
+ * @param {String} hash_algo
+ * @param {Uint8Array} n
+ * @param {Uint8Array} e
+ * @param {Uint8Array} d
+ * @param {Uint8Array} p
+ * @param {Uint8Array} q
+ * @param {Uint8Array} u
+ */
+function privateToJwk(n, e, d, p, q, u) {
+  const pBNum = new BN(p);
+  const qBNum = new BN(q);
+  const dBNum = new BN(d);
+
+  let dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
+  let dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
+  dp = dp.toArrayLike(Uint8Array);
+  dq = dq.toArrayLike(Uint8Array);
+  return {
+    kty: 'RSA',
+    n: util.Uint8Array_to_b64(n, true),
+    e: util.Uint8Array_to_b64(e, true),
+    d: util.Uint8Array_to_b64(d, true),
+    // switch p and q
+    p: util.Uint8Array_to_b64(q, true),
+    q: util.Uint8Array_to_b64(p, true),
+    // switch dp and dq
+    dp: util.Uint8Array_to_b64(dq, true),
+    dq: util.Uint8Array_to_b64(dp, true),
+    qi: util.Uint8Array_to_b64(u, true),
+    ext: true
+  };
+}
+
+/** Convert Openpgp key public params to jwk key according to
+ * @link https://tools.ietf.org/html/rfc7517
+ * @param {String} hash_algo
+ * @param {Uint8Array} n
+ * @param {Uint8Array} e
+ */
+function publicToJwk(n, e) {
+  return {
+    kty: 'RSA',
+    n: util.Uint8Array_to_b64(n, true),
+    e: util.Uint8Array_to_b64(e, true),
+    ext: true
+  };
+}

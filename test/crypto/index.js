@@ -8,4 +8,5 @@ describe('Crypto', function () {
   require('./aes_kw.js');
   require('./eax.js');
   require('./ocb.js');
+  require('./rsa.js');
 });

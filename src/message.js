@@ -598,7 +598,7 @@ Message.prototype.verify = async function(keys, date = new Date(), streaming) {
         await reader.readToEnd();
         await writer.ready;
         await writer.close();
-      } catch(e) {
+      } catch (e) {
         onePassSigList.forEach(onePassSig => {
           onePassSig.correspondingSigReject(e);
         });
