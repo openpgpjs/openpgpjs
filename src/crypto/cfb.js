@@ -45,7 +45,7 @@ export default {
     const block_size = cipherfn.blockSize;
 
     let blocki = new Uint8Array(block_size);
-    const blockc = iv;
+    const blockc = iv.slice();
     let pos = 0;
     const ciphertext = new Uint8Array(plaintext.length);
     let i;
