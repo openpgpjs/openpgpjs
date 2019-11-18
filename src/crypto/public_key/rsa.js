@@ -323,7 +323,11 @@ export default {
   },
 
   webSign: async function (hash_name, data, n, e, d, p, q, u) {
-    // safari webCrypto requires p > q. Not all openpgp keys are compatible with this requirement
+    // OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
+    // We swap them in privateToJwk, so it usually works out, but nevertheless,
+    // not all OpenPGP keys are compatible with this requirement.
+    // OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
+    // does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
     const jwk = privateToJwk(n, e, d, p, q, u);
     const algo = {
       name: "RSASSA-PKCS1-v1_5",
