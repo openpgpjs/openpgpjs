@@ -20,6 +20,7 @@ grunt set_version --release=$1
 
 # build and test
 rm -rf dist
+rm -f browserify-cache*
 npm run build
 grunt test
 
