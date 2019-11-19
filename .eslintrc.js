@@ -8,6 +8,10 @@ module.exports = {
     "node": true
   },
 
+  "plugins": [
+    "chai-friendly"
+  ],
+
   "globals": { // TODO are all these necessary?
     "console": true,
     "Promise": true,
@@ -230,7 +234,6 @@ module.exports = {
         "defaultAssignment": true
       }
     ],
-    "no-unused-expressions": "error",
     "no-use-before-define": "off",
     "no-useless-call": "error",
     "no-useless-computed-key": "error",
@@ -335,10 +338,11 @@ module.exports = {
     "no-trailing-spaces": 2,
     "no-mixed-operators": [ 2, {"groups": [["&", "|", "^", "~", "<<", ">>", ">>>"], ["&&", "||"]]}],
     "no-use-before-define": [ 2, { "functions": false, "classes": true, "variables": false }],
-    "no-unused-expressions": [ 2, { "allowShortCircuit": true } ],
     "no-constant-condition": [ 2, { "checkLoops": false } ],
     "new-cap": [ 2, { "properties": false, "capIsNewExceptionPattern": "CMAC|CBC|OMAC|CTR", "newIsCapExceptionPattern": "type|hash*"}],
     "max-lines": [ 2, { "max": 550, "skipBlankLines": true, "skipComments": true } ],
+    "no-unused-expressions": 0,
+    "chai-friendly/no-unused-expressions": [ 2, { "allowShortCircuit": true } ],
 
     // Custom warnings:
     "no-console": 1,

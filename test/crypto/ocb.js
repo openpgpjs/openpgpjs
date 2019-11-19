@@ -14,7 +14,7 @@ describe('Symmetric AES-OCB', function() {
     const K = '000102030405060708090A0B0C0D0E0F';
     const keyBytes = openpgp.util.hex_to_Uint8Array(K);
 
-    var vectors = [
+    const vectors = [
       // From https://tools.ietf.org/html/rfc7253#appendix-A
       {
         N: 'BBAA99887766554433221100',
@@ -116,11 +116,11 @@ describe('Symmetric AES-OCB', function() {
 
     const cipher = 'aes128';
 
-    for(const [i, vec] of vectors.entries()) {
-      const msgBytes = openpgp.util.hex_to_Uint8Array(vec.P),
-        nonceBytes = openpgp.util.hex_to_Uint8Array(vec.N),
-        headerBytes = openpgp.util.hex_to_Uint8Array(vec.A),
-        ctBytes = openpgp.util.hex_to_Uint8Array(vec.C);
+    await Promise.all(vectors.map(async vec => {
+      const msgBytes = openpgp.util.hex_to_Uint8Array(vec.P);
+      const nonceBytes = openpgp.util.hex_to_Uint8Array(vec.N);
+      const headerBytes = openpgp.util.hex_to_Uint8Array(vec.A);
+      const ctBytes = openpgp.util.hex_to_Uint8Array(vec.C);
 
       const ocb = await openpgp.crypto.ocb(cipher, keyBytes);
 
@@ -136,7 +136,7 @@ describe('Symmetric AES-OCB', function() {
       ct = await ocb.encrypt(msgBytes, nonceBytes, headerBytes);
       ct[2] ^= 8;
       pt = ocb.decrypt(ct, nonceBytes, headerBytes);
-      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch')
+      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch');
 
       // testing without additional data
       ct = await ocb.encrypt(msgBytes, nonceBytes, new Uint8Array());
@@ -147,37 +147,37 @@ describe('Symmetric AES-OCB', function() {
       ct = await ocb.encrypt(msgBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       pt = await ocb.decrypt(ct, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.P.toLowerCase());
-    }
+    }));
   });
 
   it('Different key size test vectors', async function() {
-    const TAGLEN = 128;
+    const taglen = 128;
     const outputs = {
       128: '67E944D23256C5E0B6C61FA22FDF1EA2',
       192: 'F673F2C3E7174AAE7BAE986CA9F29E17',
       256: 'D90EB8E9C977C88B79DD793D7FFA161C'
     };
+    const keylens = [128, 192, 256];
+    await Promise.all(keylens.map(async keylen => {
+      const k = new Uint8Array(keylen / 8);
+      k[k.length - 1] = taglen;
 
-    for (const KEYLEN of [128, 192, 256]) {
-      const K = new Uint8Array(KEYLEN / 8);
-      K[K.length - 1] = TAGLEN;
+      const ocb = await openpgp.crypto.ocb('aes' + keylen, k);
 
-      const ocb = await openpgp.crypto.ocb('aes' + KEYLEN, K);
-
-      const C = [];
-      let N;
+      const c = [];
+      let n;
       for (let i = 0; i < 128; i++) {
-        const S = new Uint8Array(i);
-        N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 1, 4)]);
-        C.push(await ocb.encrypt(S, N, S));
-        N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 2, 4)]);
-        C.push(await ocb.encrypt(S, N, new Uint8Array()));
-        N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 3, 4)]);
-        C.push(await ocb.encrypt(new Uint8Array(), N, S));
+        const s = new Uint8Array(i);
+        n = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 1, 4)]);
+        c.push(await ocb.encrypt(s, n, s));
+        n = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 2, 4)]);
+        c.push(await ocb.encrypt(s, n, new Uint8Array()));
+        n = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(3 * i + 3, 4)]);
+        c.push(await ocb.encrypt(new Uint8Array(), n, s));
       }
-      N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(385, 4)]);
-      const output = await ocb.encrypt(new Uint8Array(), N, openpgp.util.concatUint8Array(C));
-      expect(openpgp.util.Uint8Array_to_hex(output)).to.equal(outputs[KEYLEN].toLowerCase());
-    }
+      n = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(385, 4)]);
+      const output = await ocb.encrypt(new Uint8Array(), n, openpgp.util.concatUint8Array(c));
+      expect(openpgp.util.Uint8Array_to_hex(output)).to.equal(outputs[keylen].toLowerCase());
+    }));
   });
 });

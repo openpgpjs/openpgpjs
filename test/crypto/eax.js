@@ -11,7 +11,7 @@ const expect = chai.expect;
 
 function testAESEAX() {
   it('Passes all test vectors', async function() {
-    var vectors = [
+    const vectors = [
       // From http://www.cs.ucdavis.edu/~rogaway/papers/eax.pdf ...
       {
         msg: "",
@@ -82,17 +82,17 @@ function testAESEAX() {
         nonce: "22E7ADD93CFC6393C57EC0B3C17D6B44",
         header: "126735FCC320D25A",
         ct: "CB8920F87A6C75CFF39627B56E3ED197C552D295A7CFC46AFC253B4652B1AF3795B124AB6E"
-      },
+      }
     ];
 
     const cipher = 'aes128';
 
-    for(const [i, vec] of vectors.entries()) {
-      const keyBytes = openpgp.util.hex_to_Uint8Array(vec.key),
-        msgBytes = openpgp.util.hex_to_Uint8Array(vec.msg),
-        nonceBytes = openpgp.util.hex_to_Uint8Array(vec.nonce),
-        headerBytes = openpgp.util.hex_to_Uint8Array(vec.header),
-        ctBytes = openpgp.util.hex_to_Uint8Array(vec.ct);
+    await Promise.all(vectors.map(async vec => {
+      const keyBytes = openpgp.util.hex_to_Uint8Array(vec.key);
+      const msgBytes = openpgp.util.hex_to_Uint8Array(vec.msg);
+      const nonceBytes = openpgp.util.hex_to_Uint8Array(vec.nonce);
+      const headerBytes = openpgp.util.hex_to_Uint8Array(vec.header);
+      const ctBytes = openpgp.util.hex_to_Uint8Array(vec.ct);
 
       const eax = await openpgp.crypto.eax(cipher, keyBytes);
 
@@ -108,7 +108,7 @@ function testAESEAX() {
       ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);
       ct[2] ^= 8;
       pt = eax.decrypt(ct, nonceBytes, headerBytes);
-      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch')
+      await expect(pt).to.eventually.be.rejectedWith('Authentication tag mismatch');
 
       // testing without additional data
       ct = await eax.encrypt(msgBytes, nonceBytes, new Uint8Array());
@@ -119,7 +119,7 @@ function testAESEAX() {
       ct = await eax.encrypt(msgBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       pt = await eax.decrypt(ct, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.msg.toLowerCase());
-    }
+    }));
   });
 }
 

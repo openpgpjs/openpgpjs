@@ -184,7 +184,7 @@ module.exports = function(grunt) {
       }
     },
     eslint: {
-      target: ['src/**/*.js', './Gruntfile.js', 'test/crypto/rsa.js'],
+      target: ['src/**/*.js', './Gruntfile.js', './eslintrc.js', 'test/crypto/**/*.js'],
       options: {
         configFile: '.eslintrc.js',
         fix: !!grunt.option('fix')
