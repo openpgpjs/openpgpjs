@@ -6,7 +6,7 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 const key_data = elliptic_data.key_data;
-
+/* eslint-disable no-invalid-this */
 describe('ECDH key exchange @lightweight', function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const decrypt_message = function (oid, hash, cipher, priv, pub, ephemeral, data, fingerprint) {
@@ -69,7 +69,7 @@ describe('ECDH key exchange @lightweight', function () {
   });
   it('Invalid ephemeral key', function (done) {
     if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-      mocha.test.skip();
+      this.skip();
     }
     expect(decrypt_message(
       'secp256k1', 2, 7, [], [], [], [], []
@@ -77,7 +77,7 @@ describe('ECDH key exchange @lightweight', function () {
   });
   it('Invalid elliptic public key', function (done) {
     if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-      mocha.test.skip();
+      this.skip();
     }
     expect(decrypt_message(
       'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_invalid_point, secp256k1_data, []
@@ -85,7 +85,7 @@ describe('ECDH key exchange @lightweight', function () {
   });
   it('Invalid key data integrity', function (done) {
     if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-      mocha.test.skip();
+      this.skip();
     }
     expect(decrypt_message(
       'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_point, secp256k1_data, []
@@ -199,7 +199,7 @@ describe('ECDH key exchange @lightweight', function () {
   describe('ECDHE key generation', function () {
     it('Invalid curve', function (done) {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        mocha.test.skip();
+        this.skip();
       }
       expect(genPublicEphemeralKey("secp256k1", Q1, fingerprint1)
       ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/).notify(done);

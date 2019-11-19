@@ -7,7 +7,7 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 const key_data = elliptic_data.key_data;
-
+/* eslint-disable no-invalid-this */
 describe('Elliptic Curve Cryptography @lightweight', function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
 
@@ -66,7 +66,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     });
     it('Creating KeyPair', function () {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        mocha.test.skip();
+        this.skip();
       }
       const names = openpgp.config.use_indutny_elliptic ? ['p256', 'p384', 'p521', 'secp256k1', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
         ['p256', 'p384', 'p521', 'curve25519'];
@@ -165,7 +165,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     });
     it('Invalid public key', async function () {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        mocha.test.skip();
+        this.skip();
       }
       if (openpgp.util.getNodeCrypto()) {
         await expect(verify_signature(
@@ -188,7 +188,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     });
     it('Invalid point', function () {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        mocha.test.skip();
+        this.skip();
       }
       if (openpgp.util.getNodeCrypto()) {
         expect(verify_signature(
@@ -203,7 +203,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     });
     it('Invalid signature', function (done) {
       if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
-        mocha.test.skip();
+        this.skip();
       }
       expect(verify_signature(
         'secp256k1', 8, [], [], [], secp256k1_point
