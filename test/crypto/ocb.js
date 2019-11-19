@@ -116,7 +116,7 @@ describe('Symmetric AES-OCB', function() {
 
     const cipher = 'aes128';
 
-    vectors.forEach(async vec => {
+    await Promise.all(vectors.map(async vec => {
       const msgBytes = openpgp.util.hex_to_Uint8Array(vec.P);
       const nonceBytes = openpgp.util.hex_to_Uint8Array(vec.N);
       const headerBytes = openpgp.util.hex_to_Uint8Array(vec.A);
@@ -147,7 +147,7 @@ describe('Symmetric AES-OCB', function() {
       ct = await ocb.encrypt(msgBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       pt = await ocb.decrypt(ct, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.P.toLowerCase());
-    });
+    }));
   });
 
   it('Different key size test vectors', async function() {
@@ -158,7 +158,7 @@ describe('Symmetric AES-OCB', function() {
       256: 'D90EB8E9C977C88B79DD793D7FFA161C'
     };
     const keylens = [128, 192, 256];
-    keylens.forEach(async KEYLEN => {
+    await Promise.all(keylens.map(async KEYLEN => {
       const K = new Uint8Array(KEYLEN / 8);
       K[K.length - 1] = TAGLEN;
 
@@ -178,6 +178,6 @@ describe('Symmetric AES-OCB', function() {
       N = openpgp.util.concatUint8Array([new Uint8Array(8), openpgp.util.writeNumber(385, 4)]);
       const output = await ocb.encrypt(new Uint8Array(), N, openpgp.util.concatUint8Array(C));
       expect(openpgp.util.Uint8Array_to_hex(output)).to.equal(outputs[KEYLEN].toLowerCase());
-    });
+    }));
   });
 });

@@ -87,7 +87,7 @@ function testAESEAX() {
 
     const cipher = 'aes128';
 
-    vectors.forEach(async vec => {
+    await Promise.all(vectors.map(async vec => {
       const keyBytes = openpgp.util.hex_to_Uint8Array(vec.key);
       const msgBytes = openpgp.util.hex_to_Uint8Array(vec.msg);
       const nonceBytes = openpgp.util.hex_to_Uint8Array(vec.nonce);
@@ -119,7 +119,7 @@ function testAESEAX() {
       ct = await eax.encrypt(msgBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       pt = await eax.decrypt(ct, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
       expect(openpgp.util.Uint8Array_to_hex(pt)).to.equal(vec.msg.toLowerCase());
-    });
+    }));
   });
 }
 
