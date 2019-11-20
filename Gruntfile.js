@@ -107,7 +107,7 @@ module.exports = function(grunt) {
       cover: {
         options: {
           include: ['dist/**'],
-          reporter: ['text-summary', 'text'],
+          reporter: ['text-summary'],
           reportDir: 'coverage'
         },
         cmd: false,
