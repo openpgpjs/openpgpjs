@@ -7,3 +7,4 @@ dist/
 openpgp.store/
 doc/
 browserify-cache*.json
+.nyc_output/
