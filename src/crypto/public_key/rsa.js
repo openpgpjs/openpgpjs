@@ -132,18 +132,17 @@ export default {
 
   /**
    * Encrypt message
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @returns {BN} RSA Ciphertext
+   * @param {Uint8Array} data message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @returns {Uint8Array} RSA Ciphertext
    * @async
    */
-  encrypt: async function(m, n, e) {
-    if (n.cmp(m) <= 0) {
-      throw new Error('Message size cannot exceed modulus size');
+  encrypt: async function(data, n, e) {
+    if (data && !util.isStream(data) && nodeCrypto) {
+      return this.nodeEncrypt(data, n, e);
     }
-    const nred = new BN.red(n);
-    return m.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnEncrypt(data, n, e);
   },
 
   /**
@@ -158,36 +157,11 @@ export default {
    * @returns {BN} RSA Plaintext
    * @async
    */
-  decrypt: async function(m, n, e, d, p, q, u) {
-    if (n.cmp(m) <= 0) {
-      throw new Error('Data too large.');
+  decrypt: async function(data, n, e, d, p, q, u) {
+    if (data && !util.isStream(data) && nodeCrypto) {
+      return this.nodeDecrypt(data, n, e, d, p, q, u);
     }
-    const dq = d.mod(q.subn(1)); // d mod (q-1)
-    const dp = d.mod(p.subn(1)); // d mod (p-1)
-    const pred = new BN.red(p);
-    const qred = new BN.red(q);
-    const nred = new BN.red(n);
-
-    let blinder;
-    let unblinder;
-    if (config.rsa_blinding) {
-      unblinder = (await random.getRandomBN(new BN(2), n)).toRed(nred);
-      blinder = unblinder.redInvm().redPow(e);
-      m = m.toRed(nred).redMul(blinder).fromRed();
-    }
-
-    const mp = m.toRed(pred).redPow(dp);
-    const mq = m.toRed(qred).redPow(dq);
-    const t = mq.redSub(mp.fromRed().toRed(qred));
-    const h = u.toRed(qred).redMul(t).fromRed();
-
-    let result = h.mul(p).add(mp).toRed(nred);
-
-    if (config.rsa_blinding) {
-      result = result.redMul(unblinder);
-    }
-
-    return result.toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnDecrypt(data, n, e, d, p, q, u);
   },
 
   /**
@@ -415,6 +389,106 @@ export default {
     } catch (err) {
       return false;
     }
+  },
+
+  nodeEncrypt: function (data, n, e) {
+    const keyObject = {
+      modulus: new BN(n),
+      publicExponent: new BN(e)
+    };
+    let key;
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
+      const der = RSAPublicKey.encode(keyObject, 'der');
+      key = { key: der, format: 'der', type: 'pkcs1' , padding: nodeCrypto.constants.RSA_NO_PADDING };
+    } else {
+      const pem = RSAPublicKey.encode(keyObject, 'pem', {
+        label: 'RSA PUBLIC KEY'
+      });
+      key = { key: pem, padding: nodeCrypto.constants.RSA_NO_PADDING };
+    }
+    return new Uint8Array(nodeCrypto.publicEncrypt(key, data));
+  },
+
+  bnEncrypt: function (data, n, e) {
+    data = new BN(data);
+    n = new BN(n);
+    e = new BN(e);
+    if (n.cmp(data) <= 0) {
+      throw new Error('Message size cannot exceed modulus size');
+    }
+    const nred = new BN.red(n);
+    return data.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+  },
+
+  nodeDecrypt: function (data, n, e, d, p, q, u) {
+    const pBNum = new BN(p);
+    const qBNum = new BN(q);
+    const dBNum = new BN(d);
+    const dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
+    const dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
+    const keyObject = {
+      version: 0,
+      modulus: new BN(n),
+      publicExponent: new BN(e),
+      privateExponent: new BN(d),
+      // switch p and q
+      prime1: new BN(q),
+      prime2: new BN(p),
+      // switch dp and dq
+      exponent1: dq,
+      exponent2: dp,
+      coefficient: new BN(u)
+    };
+    let key;
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+      const der = RSAPrivateKey.encode(keyObject, 'der');
+      key = { key: der, format: 'der', type: 'pkcs1' , padding: nodeCrypto.constants.RSA_NO_PADDING };
+    } else {
+      const pem = RSAPrivateKey.encode(keyObject, 'pem', {
+        label: 'RSA PRIVATE KEY'
+      });
+      key = { key: pem, padding: nodeCrypto.constants.RSA_NO_PADDING };
+    }
+    return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
+  },
+
+  bdDecrypt: async function(data, n, e, d, p, q, u) {
+    data = new BN(data);
+    n = new BN(n);
+    e = new BN(e);
+    d = new BN(d);
+    p = new BN(p);
+    q = new BN(q);
+    u = new BN(u);
+    if (n.cmp(data) <= 0) {
+      throw new Error('Data too large.');
+    }
+    const dq = d.mod(q.subn(1)); // d mod (q-1)
+    const dp = d.mod(p.subn(1)); // d mod (p-1)
+    const pred = new BN.red(p);
+    const qred = new BN.red(q);
+    const nred = new BN.red(n);
+
+    let blinder;
+    let unblinder;
+    if (config.rsa_blinding) {
+      unblinder = (await random.getRandomBN(new BN(2), n)).toRed(nred);
+      blinder = unblinder.redInvm().redPow(e);
+      data = data.toRed(nred).redMul(blinder).fromRed();
+    }
+
+    const mp = data.toRed(pred).redPow(dp);
+    const mq = data.toRed(qred).redPow(dq);
+    const t = mq.redSub(mp.fromRed().toRed(qred));
+    const h = u.toRed(qred).redMul(t).fromRed();
+
+    let result = h.mul(p).add(mp).toRed(nred);
+
+    if (config.rsa_blinding) {
+      result = result.redMul(unblinder);
+    }
+
+    return result.toArrayLike(Uint8Array, 'be', n.byteLength());
   },
 
   prime: prime

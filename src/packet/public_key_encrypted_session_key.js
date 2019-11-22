@@ -120,7 +120,6 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   } else {
     toEncrypt = new type_mpi(await crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
   }
-
   this.encrypted = await crypto.publicKeyEncrypt(
     algo, key.params, toEncrypt, key.getFingerprintBytes());
   return true;

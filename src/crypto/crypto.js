@@ -70,9 +70,9 @@ export default {
     switch (algo) {
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_encrypt_sign: {
-        const m = data.toBN();
-        const n = pub_params[0].toBN();
-        const e = pub_params[1].toBN();
+        const m = data.toUint8Array();
+        const n = pub_params[0].toUint8Array();
+        const e = pub_params[1].toUint8Array();
         const res = await publicKey.rsa.encrypt(m, n, e);
         return constructParams(types, [res]);
       }
@@ -115,13 +115,13 @@ export default {
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt: {
-        const c = data_params[0].toBN();
-        const n = key_params[0].toBN(); // n = pq
-        const e = key_params[1].toBN();
-        const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
-        const p = key_params[3].toBN();
-        const q = key_params[4].toBN();
-        const u = key_params[5].toBN(); // p^-1 mod q
+        const c = data_params[0].toUint8Array();
+        const n = key_params[0].toUint8Array(); // n = pq
+        const e = key_params[1].toUint8Array();
+        const d = key_params[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
+        const p = key_params[3].toUint8Array();
+        const q = key_params[4].toUint8Array();
+        const u = key_params[5].toUint8Array(); // p^-1 mod q
         return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
       }
       case enums.publicKey.elgamal: {
