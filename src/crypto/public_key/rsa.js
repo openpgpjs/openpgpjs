@@ -155,7 +155,7 @@ export default {
    * @param {Uint8Array} p RSA private prime p
    * @param {Uint8Array} q RSA private prime q
    * @param {Uint8Array} u RSA private coefficient
-   * @returns {Uint8Array} RSA Plaintext
+   * @returns {String} RSA Plaintext
    * @async
    */
   decrypt: async function(data, n, e, d, p, q, u) {

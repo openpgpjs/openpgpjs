@@ -38,6 +38,45 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
     expect(verify).to.be.true;
   });
 
+  it('encrypt and decrypt using generated key params', async function() {
+    const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const n = keyParams[0].toUint8Array();
+    const e = keyParams[1].toUint8Array();
+    const d = keyParams[2].toUint8Array();
+    const p = keyParams[3].toUint8Array();
+    const q = keyParams[4].toUint8Array();
+    const u = keyParams[5].toUint8Array();
+    const message = openpgp.util.Uint8Array_to_str(await openpgp.crypto.generateSessionKey('aes256'));
+    const encrypted = await openpgp.crypto.publicKey.rsa.encrypt(openpgp.util.str_to_Uint8Array(message), n, e);
+    const result = new openpgp.MPI(encrypted);
+    const decrypted = await openpgp.crypto.publicKey.rsa.decrypt(result.toUint8Array(), n, e, d, p, q, u);
+    expect(decrypted).to.be.equal(message);
+  });
+
+  it('decrypt nodeCrypto by bnCrypto and vice versa', async function() {
+    if (!openpgp.util.getNodeCrypto()) {
+      this.skip();
+    }
+    const bits = 1024;
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const n = keyParams[0].toUint8Array();
+    const e = keyParams[1].toUint8Array();
+    const d = keyParams[2].toUint8Array();
+    const p = keyParams[3].toUint8Array();
+    const q = keyParams[4].toUint8Array();
+    const u = keyParams[5].toUint8Array();
+    const message = openpgp.util.Uint8Array_to_str(await openpgp.crypto.generateSessionKey('aes256'));
+    const encryptedBn = await openpgp.crypto.publicKey.rsa.bnEncrypt(openpgp.util.str_to_Uint8Array(message), n, e);
+    const resultBN = new openpgp.MPI(encryptedBn);
+    const decrypted1 = await openpgp.crypto.publicKey.rsa.nodeDecrypt(resultBN.toUint8Array(), n, e, d, p, q, u);
+    expect(decrypted1).to.be.equal(message);
+    const encryptedNode = await openpgp.crypto.publicKey.rsa.nodeEncrypt(openpgp.util.str_to_Uint8Array(message), n, e);
+    const resultNode = new openpgp.MPI(encryptedNode);
+    const decrypted2 = await openpgp.crypto.publicKey.rsa.bnDecrypt(resultNode.toUint8Array(), n, e, d, p, q, u);
+    expect(decrypted2).to.be.equal(message);
+  });
+
   it('compare webCrypto and bn math sign', async function() {
     if (!openpgp.util.getWebCrypto()) {
       this.skip();
