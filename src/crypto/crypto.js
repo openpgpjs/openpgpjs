@@ -61,7 +61,7 @@ export default {
    * @param {Array<module:type/mpi|
                    module:type/oid|
                    module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
-   * @param {string}                        data        Data to be encrypted
+   * @param {String}                        data        Data to be encrypted
    * @param {String}                        fingerprint Recipient fingerprint
    * @returns {Array<module:type/mpi|
    *                 module:type/ecdh_symkey>}          encrypted session key parameters
@@ -112,7 +112,7 @@ export default {
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
    * @param {String}                        fingerprint Recipient fingerprint
-   * @returns {BN}                          A BN containing the decrypted data
+   * @returns {String}                          String containing the decrypted data
    * @async
    */
   publicKeyDecrypt: async function(algo, key_params, data_params, fingerprint) {
@@ -133,7 +133,8 @@ export default {
         const c2 = data_params[1].toBN();
         const p = key_params[0].toBN();
         const x = key_params[3].toBN();
-        return publicKey.elgamal.decrypt(c1, c2, p, x);
+        const result = new type_mpi(await publicKey.elgamal.decrypt(c1, c2, p, x));
+        return pkcs1.eme.decode(result.toString());
       }
       case enums.publicKey.ecdh: {
         const oid = key_params[0];
@@ -142,8 +143,9 @@ export default {
         const C = data_params[1].data;
         const Q = key_params[1].toUint8Array();
         const d = key_params[3].toUint8Array();
-        return publicKey.elliptic.ecdh.decrypt(
-          oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint);
+        const result = new type_mpi(await publicKey.elliptic.ecdh.decrypt(
+          oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint));
+        return pkcs5.decode(result.toString());
       }
       default:
         throw new Error('Invalid public key encryption algorithm.');

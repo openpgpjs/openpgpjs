@@ -148,14 +148,14 @@ export default {
 
   /**
    * Decrypt RSA message
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @param {BN} d RSA private exponent
-   * @param {BN} p RSA private prime p
-   * @param {BN} q RSA private prime q
-   * @param {BN} u RSA private coefficient
-   * @returns {BN} RSA Plaintext
+   * @param {Uint8Array} m message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @param {Uint8Array} d RSA private exponent
+   * @param {Uint8Array} p RSA private prime p
+   * @param {Uint8Array} q RSA private prime q
+   * @param {Uint8Array} u RSA private coefficient
+   * @returns {Uint8Array} RSA Plaintext
    * @async
    */
   decrypt: async function(data, n, e, d, p, q, u) {
@@ -401,7 +401,7 @@ export default {
     let key;
     if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
       const der = RSAPublicKey.encode(keyObject, 'der');
-      key = { key: der, format: 'der', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+      key = { key: der, format: 'der', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     } else {
       const pem = RSAPublicKey.encode(keyObject, 'pem', {
         label: 'RSA PUBLIC KEY'
@@ -413,7 +413,8 @@ export default {
 
   bnEncrypt: async function (data, n, e) {
     n = new BN(n);
-    data = (new type_mpi(await pkcs1.eme.encode(data, n.byteLength()))).toBN();
+    data = new type_mpi(await pkcs1.eme.encode(util.Uint8Array_to_str(data), n.byteLength()));
+    data = data.toBN();
     e = new BN(e);
     if (n.cmp(data) <= 0) {
       throw new Error('Message size cannot exceed modulus size');
@@ -442,19 +443,19 @@ export default {
       coefficient: new BN(u)
     };
     let key;
-    if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
       const der = RSAPrivateKey.encode(keyObject, 'der');
-      key = { key: der, format: 'der', type: 'pkcs1' , padding: nodeCrypto.constants.RSA_NO_PADDING };
+      key = { key: der, format: 'der' , type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     } else {
       const pem = RSAPrivateKey.encode(keyObject, 'pem', {
         label: 'RSA PRIVATE KEY'
       });
-      key = { key: pem, padding: nodeCrypto.constants.RSA_NO_PADDING };
+      key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     }
-    return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
+    return util.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
   },
 
-  bdDecrypt: async function(data, n, e, d, p, q, u) {
+  bnDecrypt: async function(data, n, e, d, p, q, u) {
     data = new BN(data);
     n = new BN(n);
     e = new BN(e);
@@ -490,7 +491,7 @@ export default {
       result = result.redMul(unblinder);
     }
 
-    return result.toArrayLike(Uint8Array, 'be', n.byteLength());
+    return pkcs1.eme.decode((new type_mpi(result.toArrayLike(Uint8Array, 'be', n.byteLength()))).toString());
   },
 
   prime: prime
