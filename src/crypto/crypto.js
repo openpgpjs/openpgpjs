@@ -41,6 +41,8 @@ import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
 import enums from '../enums';
 import util from '../util';
+import pkcs1 from './pkcs1';
+import pkcs5 from './pkcs5';
 
 function constructParams(types, data) {
   return types.map(function(type, i) {
@@ -59,7 +61,7 @@ export default {
    * @param {Array<module:type/mpi|
                    module:type/oid|
                    module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
-   * @param {module:type/mpi}               data        Data to be encrypted as MPI
+   * @param {string}                        data        Data to be encrypted
    * @param {String}                        fingerprint Recipient fingerprint
    * @returns {Array<module:type/mpi|
    *                 module:type/ecdh_symkey>}          encrypted session key parameters
@@ -70,13 +72,14 @@ export default {
     switch (algo) {
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_encrypt_sign: {
-        const m = data.toUint8Array();
+        data = util.str_to_Uint8Array(data);
         const n = pub_params[0].toUint8Array();
         const e = pub_params[1].toUint8Array();
-        const res = await publicKey.rsa.encrypt(m, n, e);
+        const res = await publicKey.rsa.encrypt(data, n, e);
         return constructParams(types, [res]);
       }
       case enums.publicKey.elgamal: {
+        data = new type_mpi(await pkcs1.eme.encode(data, pub_params[0].byteLength()));
         const m = data.toBN();
         const p = pub_params[0].toBN();
         const g = pub_params[1].toBN();
@@ -85,6 +88,7 @@ export default {
         return constructParams(types, [res.c1, res.c2]);
       }
       case enums.publicKey.ecdh: {
+        data = new type_mpi(pkcs5.encode(data));
         const oid = pub_params[0];
         const Q = pub_params[1].toUint8Array();
         const kdf_params = pub_params[2];

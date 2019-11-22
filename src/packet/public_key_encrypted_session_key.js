@@ -112,16 +112,9 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
 
   data += util.Uint8Array_to_str(this.sessionKey);
   data += util.Uint8Array_to_str(util.write_checksum(this.sessionKey));
-
-  let toEncrypt;
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  if (algo === enums.publicKey.ecdh) {
-    toEncrypt = new type_mpi(crypto.pkcs5.encode(data));
-  } else {
-    toEncrypt = new type_mpi(await crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
-  }
   this.encrypted = await crypto.publicKeyEncrypt(
-    algo, key.params, toEncrypt, key.getFingerprintBytes());
+    algo, key.params, data, key.getFingerprintBytes());
   return true;
 };
 

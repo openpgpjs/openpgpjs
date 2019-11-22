@@ -32,6 +32,7 @@ import config from '../../config';
 import util from '../../util';
 import pkcs1 from '../pkcs1';
 import enums from '../../enums';
+import type_mpi from '../../type/mpi';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -297,11 +298,12 @@ export default {
   },
 
   webSign: async function (hash_name, data, n, e, d, p, q, u) {
-    // OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
-    // We swap them in privateToJwk, so it usually works out, but nevertheless,
-    // not all OpenPGP keys are compatible with this requirement.
-    // OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
-    // does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+    /** OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
+     * We swap them in privateToJwk, so it usually works out, but nevertheless,
+     * not all OpenPGP keys are compatible with this requirement.
+     * OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
+     * does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+     */
     const jwk = privateToJwk(n, e, d, p, q, u);
     const algo = {
       name: "RSASSA-PKCS1-v1_5",
@@ -391,7 +393,7 @@ export default {
     }
   },
 
-  nodeEncrypt: function (data, n, e) {
+  nodeEncrypt: async function (data, n, e) {
     const keyObject = {
       modulus: new BN(n),
       publicExponent: new BN(e)
@@ -399,19 +401,19 @@ export default {
     let key;
     if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
       const der = RSAPublicKey.encode(keyObject, 'der');
-      key = { key: der, format: 'der', type: 'pkcs1' , padding: nodeCrypto.constants.RSA_NO_PADDING };
+      key = { key: der, format: 'der', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     } else {
       const pem = RSAPublicKey.encode(keyObject, 'pem', {
         label: 'RSA PUBLIC KEY'
       });
-      key = { key: pem, padding: nodeCrypto.constants.RSA_NO_PADDING };
+      key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     }
     return new Uint8Array(nodeCrypto.publicEncrypt(key, data));
   },
 
-  bnEncrypt: function (data, n, e) {
-    data = new BN(data);
+  bnEncrypt: async function (data, n, e) {
     n = new BN(n);
+    data = (new type_mpi(await pkcs1.eme.encode(data, n.byteLength()))).toBN();
     e = new BN(e);
     if (n.cmp(data) <= 0) {
       throw new Error('Message size cannot exceed modulus size');
