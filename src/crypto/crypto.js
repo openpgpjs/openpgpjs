@@ -41,6 +41,8 @@ import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
 import enums from '../enums';
 import util from '../util';
+import pkcs1 from './pkcs1';
+import pkcs5 from './pkcs5';
 
 function constructParams(types, data) {
   return types.map(function(type, i) {
@@ -59,7 +61,7 @@ export default {
    * @param {Array<module:type/mpi|
                    module:type/oid|
                    module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
-   * @param {module:type/mpi}               data        Data to be encrypted as MPI
+   * @param {String}                        data        Data to be encrypted
    * @param {String}                        fingerprint Recipient fingerprint
    * @returns {Array<module:type/mpi|
    *                 module:type/ecdh_symkey>}          encrypted session key parameters
@@ -70,13 +72,14 @@ export default {
     switch (algo) {
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_encrypt_sign: {
-        const m = data.toBN();
-        const n = pub_params[0].toBN();
-        const e = pub_params[1].toBN();
-        const res = await publicKey.rsa.encrypt(m, n, e);
+        data = util.str_to_Uint8Array(data);
+        const n = pub_params[0].toUint8Array();
+        const e = pub_params[1].toUint8Array();
+        const res = await publicKey.rsa.encrypt(data, n, e);
         return constructParams(types, [res]);
       }
       case enums.publicKey.elgamal: {
+        data = new type_mpi(await pkcs1.eme.encode(data, pub_params[0].byteLength()));
         const m = data.toBN();
         const p = pub_params[0].toBN();
         const g = pub_params[1].toBN();
@@ -85,6 +88,7 @@ export default {
         return constructParams(types, [res.c1, res.c2]);
       }
       case enums.publicKey.ecdh: {
+        data = new type_mpi(pkcs5.encode(data));
         const oid = pub_params[0];
         const Q = pub_params[1].toUint8Array();
         const kdf_params = pub_params[2];
@@ -108,20 +112,20 @@ export default {
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
    * @param {String}                        fingerprint Recipient fingerprint
-   * @returns {BN}                          A BN containing the decrypted data
+   * @returns {String}                          String containing the decrypted data
    * @async
    */
   publicKeyDecrypt: async function(algo, key_params, data_params, fingerprint) {
     switch (algo) {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt: {
-        const c = data_params[0].toBN();
-        const n = key_params[0].toBN(); // n = pq
-        const e = key_params[1].toBN();
-        const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
-        const p = key_params[3].toBN();
-        const q = key_params[4].toBN();
-        const u = key_params[5].toBN(); // p^-1 mod q
+        const c = data_params[0].toUint8Array();
+        const n = key_params[0].toUint8Array(); // n = pq
+        const e = key_params[1].toUint8Array();
+        const d = key_params[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
+        const p = key_params[3].toUint8Array();
+        const q = key_params[4].toUint8Array();
+        const u = key_params[5].toUint8Array(); // p^-1 mod q
         return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
       }
       case enums.publicKey.elgamal: {
@@ -129,7 +133,8 @@ export default {
         const c2 = data_params[1].toBN();
         const p = key_params[0].toBN();
         const x = key_params[3].toBN();
-        return publicKey.elgamal.decrypt(c1, c2, p, x);
+        const result = new type_mpi(await publicKey.elgamal.decrypt(c1, c2, p, x));
+        return pkcs1.eme.decode(result.toString());
       }
       case enums.publicKey.ecdh: {
         const oid = key_params[0];
@@ -138,8 +143,9 @@ export default {
         const C = data_params[1].data;
         const Q = key_params[1].toUint8Array();
         const d = key_params[3].toUint8Array();
-        return publicKey.elliptic.ecdh.decrypt(
-          oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint);
+        const result = new type_mpi(await publicKey.elliptic.ecdh.decrypt(
+          oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint));
+        return pkcs5.decode(result.toString());
       }
       default:
         throw new Error('Invalid public key encryption algorithm.');

@@ -24,7 +24,6 @@
  */
 
 import type_keyid from '../type/keyid';
-import type_mpi from '../type/mpi';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -112,17 +111,9 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
 
   data += util.Uint8Array_to_str(this.sessionKey);
   data += util.Uint8Array_to_str(util.write_checksum(this.sessionKey));
-
-  let toEncrypt;
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  if (algo === enums.publicKey.ecdh) {
-    toEncrypt = new type_mpi(crypto.pkcs5.encode(data));
-  } else {
-    toEncrypt = new type_mpi(await crypto.pkcs1.eme.encode(data, key.params[0].byteLength()));
-  }
-
   this.encrypted = await crypto.publicKeyEncrypt(
-    algo, key.params, toEncrypt, key.getFingerprintBytes());
+    algo, key.params, data, key.getFingerprintBytes());
   return true;
 };
 
@@ -137,19 +128,8 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  const result = new type_mpi(await crypto.publicKeyDecrypt(
-    algo, key.params, this.encrypted, key.getFingerprintBytes()));
-
-  let checksum;
-  let decoded;
-  if (algo === enums.publicKey.ecdh) {
-    decoded = crypto.pkcs5.decode(result.toString());
-    checksum = util.str_to_Uint8Array(decoded.substr(decoded.length - 2));
-  } else {
-    decoded = crypto.pkcs1.eme.decode(result.toString());
-    checksum = result.toUint8Array().slice(result.byteLength() - 2);
-  }
-
+  const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
+  const checksum = util.str_to_Uint8Array(decoded.substr(decoded.length - 2));
   key = util.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
   if (!util.equalsUint8Array(checksum, util.write_checksum(key))) {
