@@ -140,7 +140,7 @@ export default {
    * @async
    */
   encrypt: async function(data, n, e) {
-    if (data && !util.isStream(data) && nodeCrypto) {
+    if (nodeCrypto) {
       return this.nodeEncrypt(data, n, e);
     }
     return this.bnEncrypt(data, n, e);
@@ -159,7 +159,7 @@ export default {
    * @async
    */
   decrypt: async function(data, n, e, d, p, q, u) {
-    if (data && !util.isStream(data) && nodeCrypto) {
+    if (nodeCrypto) {
       return this.nodeDecrypt(data, n, e, d, p, q, u);
     }
     return this.bnDecrypt(data, n, e, d, p, q, u);
@@ -491,7 +491,7 @@ export default {
       result = result.redMul(unblinder);
     }
 
-    return pkcs1.eme.decode((new type_mpi(result.toArrayLike(Uint8Array, 'be', n.byteLength()))).toString());
+    return pkcs1.eme.decode((new type_mpi(result)).toString());
   },
 
   prime: prime
