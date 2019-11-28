@@ -92,13 +92,13 @@ export default {
    */
   sign: async function(hash_algo, data, n, e, d, p, q, u, hashed) {
     if (data && !util.isStream(data)) {
-      if (webCrypto) {
+      if (util.getWebCrypto()) {
         try {
           return await this.webSign(enums.read(enums.webHash, hash_algo), data, n, e, d, p, q, u);
         } catch (err) {
           util.print_debug_error(err);
         }
-      } else if (nodeCrypto) {
+      } else if (util.getNodeCrypto()) {
         return this.nodeSign(hash_algo, data, n, e, d, p, q, u);
       }
     }
@@ -118,13 +118,13 @@ export default {
    */
   verify: async function(hash_algo, data, s, n, e, hashed) {
     if (data && !util.isStream(data)) {
-      if (webCrypto) {
+      if (util.getWebCrypto()) {
         try {
           return await this.webVerify(enums.read(enums.webHash, hash_algo), data, s, n, e);
         } catch (err) {
           util.print_debug_error(err);
         }
-      } else if (nodeCrypto) {
+      } else if (util.getNodeCrypto()) {
         return this.nodeVerify(hash_algo, data, s, n, e);
       }
     }
@@ -140,7 +140,7 @@ export default {
    * @async
    */
   encrypt: async function(data, n, e) {
-    if (nodeCrypto) {
+    if (util.getNodeCrypto()) {
       return this.nodeEncrypt(data, n, e);
     }
     return this.bnEncrypt(data, n, e);
@@ -159,7 +159,7 @@ export default {
    * @async
    */
   decrypt: async function(data, n, e, d, p, q, u) {
-    if (nodeCrypto) {
+    if (util.getNodeCrypto()) {
       return this.nodeDecrypt(data, n, e, d, p, q, u);
     }
     return this.bnDecrypt(data, n, e, d, p, q, u);
@@ -183,7 +183,7 @@ export default {
     E = new BN(E, 16);
 
     // Native RSA keygen using Web Crypto
-    if (webCrypto) {
+    if (util.getWebCrypto()) {
       let keyPair;
       let keyGenOpt;
       if ((window.crypto && window.crypto.subtle) || window.msCrypto) {
@@ -233,7 +233,7 @@ export default {
       // Since p and q are switched in places, we could keep u
       key.u = new BN(util.b64_to_Uint8Array(jwk.qi));
       return key;
-    } else if (nodeCrypto && nodeCrypto.generateKeyPair && RSAPrivateKey) {
+    } else if (util.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
         modulusLength: Number(B.toString(10)),
         publicExponent: Number(E.toString(10)),
