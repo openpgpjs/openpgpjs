@@ -36,9 +36,9 @@ export default {
       case enums.publicKey.rsa_encrypt_sign:
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_sign: {
-        const m = msg_MPIs[0].toUint8Array();
         const n = pub_MPIs[0].toUint8Array();
         const e = pub_MPIs[1].toUint8Array();
+        const m = msg_MPIs[0].toUint8Array('be', n.length);
         return publicKey.rsa.verify(hash_algo, data, m, n, e, hashed);
       }
       case enums.publicKey.dsa: {
