@@ -31493,7 +31493,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.7.0",
+  versionstring: "OpenPGP.js v4.7.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -33727,6 +33727,14 @@ var _util = _dereq_('../util');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _pkcs = _dereq_('./pkcs1');
+
+var _pkcs2 = _interopRequireDefault(_pkcs);
+
+var _pkcs3 = _dereq_('./pkcs5');
+
+var _pkcs4 = _interopRequireDefault(_pkcs3);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function constructParams(types, data) {
@@ -33778,7 +33786,7 @@ exports.default = {
    * @param {Array<module:type/mpi|
                    module:type/oid|
                    module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
-   * @param {module:type/mpi}               data        Data to be encrypted as MPI
+   * @param {String}                        data        Data to be encrypted
    * @param {String}                        fingerprint Recipient fingerprint
    * @returns {Array<module:type/mpi|
    *                 module:type/ecdh_symkey>}          encrypted session key parameters
@@ -33786,7 +33794,7 @@ exports.default = {
    */
   publicKeyEncrypt: function () {
     var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(algo, pub_params, data, fingerprint) {
-      var types, m, n, e, res, _m, p, g, y, _res, oid, Q, kdf_params, _ref2, V, C;
+      var types, n, e, res, m, p, g, y, _res, oid, Q, kdf_params, _ref2, V, C;
 
       return _regenerator2.default.wrap(function _callee$(_context) {
         while (1) {
@@ -33794,49 +33802,57 @@ exports.default = {
             case 0:
               types = this.getEncSessionKeyParamTypes(algo);
               _context.t0 = algo;
-              _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 4 : _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 4 : _context.t0 === _enums2.default.publicKey.elgamal ? 11 : _context.t0 === _enums2.default.publicKey.ecdh ? 19 : 28;
+              _context.next = _context.t0 === _enums2.default.publicKey.rsa_encrypt ? 4 : _context.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 4 : _context.t0 === _enums2.default.publicKey.elgamal ? 11 : _context.t0 === _enums2.default.publicKey.ecdh ? 24 : 34;
               break;
 
             case 4:
-              m = data.toBN();
-              n = pub_params[0].toBN();
-              e = pub_params[1].toBN();
+              data = _util2.default.str_to_Uint8Array(data);
+              n = pub_params[0].toUint8Array();
+              e = pub_params[1].toUint8Array();
               _context.next = 9;
-              return _public_key2.default.rsa.encrypt(m, n, e);
+              return _public_key2.default.rsa.encrypt(data, n, e);
 
             case 9:
               res = _context.sent;
               return _context.abrupt('return', constructParams(types, [res]));
 
             case 11:
-              _m = data.toBN();
+              _context.t1 = _mpi2.default;
+              _context.next = 14;
+              return _pkcs2.default.eme.encode(data, pub_params[0].byteLength());
+
+            case 14:
+              _context.t2 = _context.sent;
+              data = new _context.t1(_context.t2);
+              m = data.toBN();
               p = pub_params[0].toBN();
               g = pub_params[1].toBN();
               y = pub_params[2].toBN();
-              _context.next = 17;
-              return _public_key2.default.elgamal.encrypt(_m, p, g, y);
+              _context.next = 22;
+              return _public_key2.default.elgamal.encrypt(m, p, g, y);
 
-            case 17:
+            case 22:
               _res = _context.sent;
               return _context.abrupt('return', constructParams(types, [_res.c1, _res.c2]));
 
-            case 19:
+            case 24:
+              data = new _mpi2.default(_pkcs4.default.encode(data));
               oid = pub_params[0];
               Q = pub_params[1].toUint8Array();
               kdf_params = pub_params[2];
-              _context.next = 24;
+              _context.next = 30;
               return _public_key2.default.elliptic.ecdh.encrypt(oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
 
-            case 24:
+            case 30:
               _ref2 = _context.sent;
               V = _ref2.publicKey;
               C = _ref2.wrappedKey;
               return _context.abrupt('return', constructParams(types, [V, C]));
 
-            case 28:
+            case 34:
               return _context.abrupt('return', []);
 
-            case 29:
+            case 35:
             case 'end':
               return _context.stop();
           }
@@ -33862,31 +33878,31 @@ exports.default = {
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
    * @param {String}                        fingerprint Recipient fingerprint
-   * @returns {BN}                          A BN containing the decrypted data
+   * @returns {String}                          String containing the decrypted data
    * @async
    */
   publicKeyDecrypt: function () {
     var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(algo, key_params, data_params, fingerprint) {
-      var c, n, e, d, p, q, u, c1, c2, _p, x, oid, kdf_params, V, C, Q, _d;
+      var c, n, e, d, p, q, u, c1, c2, _p, x, result, oid, kdf_params, V, C, Q, _d, _result;
 
       return _regenerator2.default.wrap(function _callee2$(_context2) {
         while (1) {
           switch (_context2.prev = _context2.next) {
             case 0:
               _context2.t0 = algo;
-              _context2.next = _context2.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context2.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context2.t0 === _enums2.default.publicKey.elgamal ? 11 : _context2.t0 === _enums2.default.publicKey.ecdh ? 16 : 23;
+              _context2.next = _context2.t0 === _enums2.default.publicKey.rsa_encrypt_sign ? 3 : _context2.t0 === _enums2.default.publicKey.rsa_encrypt ? 3 : _context2.t0 === _enums2.default.publicKey.elgamal ? 11 : _context2.t0 === _enums2.default.publicKey.ecdh ? 21 : 33;
               break;
 
             case 3:
-              c = data_params[0].toBN();
-              n = key_params[0].toBN(); // n = pq
+              c = data_params[0].toUint8Array();
+              n = key_params[0].toUint8Array(); // n = pq
 
-              e = key_params[1].toBN();
-              d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
+              e = key_params[1].toUint8Array();
+              d = key_params[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
 
-              p = key_params[3].toBN();
-              q = key_params[4].toBN();
-              u = key_params[5].toBN(); // p^-1 mod q
+              p = key_params[3].toUint8Array();
+              q = key_params[4].toUint8Array();
+              u = key_params[5].toUint8Array(); // p^-1 mod q
 
               return _context2.abrupt('return', _public_key2.default.rsa.decrypt(c, n, e, d, p, q, u));
 
@@ -33895,21 +33911,35 @@ exports.default = {
               c2 = data_params[1].toBN();
               _p = key_params[0].toBN();
               x = key_params[3].toBN();
-              return _context2.abrupt('return', _public_key2.default.elgamal.decrypt(c1, c2, _p, x));
+              _context2.t1 = _mpi2.default;
+              _context2.next = 18;
+              return _public_key2.default.elgamal.decrypt(c1, c2, _p, x);
 
-            case 16:
+            case 18:
+              _context2.t2 = _context2.sent;
+              result = new _context2.t1(_context2.t2);
+              return _context2.abrupt('return', _pkcs2.default.eme.decode(result.toString()));
+
+            case 21:
               oid = key_params[0];
               kdf_params = key_params[2];
               V = data_params[0].toUint8Array();
               C = data_params[1].data;
               Q = key_params[1].toUint8Array();
               _d = key_params[3].toUint8Array();
-              return _context2.abrupt('return', _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, Q, _d, fingerprint));
+              _context2.t3 = _mpi2.default;
+              _context2.next = 30;
+              return _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, Q, _d, fingerprint);
 
-            case 23:
+            case 30:
+              _context2.t4 = _context2.sent;
+              _result = new _context2.t3(_context2.t4);
+              return _context2.abrupt('return', _pkcs4.default.decode(_result.toString()));
+
+            case 33:
               throw new Error('Invalid public key encryption algorithm.');
 
-            case 24:
+            case 34:
             case 'end':
               return _context2.stop();
           }
@@ -34114,7 +34144,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":384,"../type/ecdh_symkey":423,"../type/kdf_params":424,"../type/mpi":426,"../type/oid":427,"../util":429,"./cipher":357,"./public_key":377,"./random":380,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":43}],361:[function(_dereq_,module,exports){
+},{"../enums":384,"../type/ecdh_symkey":423,"../type/kdf_params":424,"../type/mpi":426,"../type/oid":427,"../util":429,"./cipher":357,"./pkcs1":367,"./pkcs5":368,"./public_key":377,"./random":380,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":43}],361:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -39090,9 +39120,13 @@ var _enums = _dereq_('../../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
+var _mpi = _dereq_('../../type/mpi');
+
+var _mpi2 = _interopRequireDefault(_mpi);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var webCrypto = _util2.default.getWebCrypto(); // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -39119,6 +39153,7 @@ var webCrypto = _util2.default.getWebCrypto(); // GPG4Browsers - An OpenPGP impl
  * @module crypto/public_key/rsa
  */
 
+var webCrypto = _util2.default.getWebCrypto();
 var nodeCrypto = _util2.default.getNodeCrypto();
 var asn1 = nodeCrypto ? _dereq_('asn1.js') : undefined;
 
@@ -39186,7 +39221,7 @@ exports.default = {
                 break;
               }
 
-              if (!webCrypto) {
+              if (!_util2.default.getWebCrypto()) {
                 _context.next = 13;
                 break;
               }
@@ -39209,7 +39244,7 @@ exports.default = {
               break;
 
             case 13:
-              if (!nodeCrypto) {
+              if (!_util2.default.getNodeCrypto()) {
                 _context.next = 15;
                 break;
               }
@@ -39256,7 +39291,7 @@ exports.default = {
                 break;
               }
 
-              if (!webCrypto) {
+              if (!_util2.default.getWebCrypto()) {
                 _context2.next = 13;
                 break;
               }
@@ -39279,7 +39314,7 @@ exports.default = {
               break;
 
             case 13:
-              if (!nodeCrypto) {
+              if (!_util2.default.getNodeCrypto()) {
                 _context2.next = 15;
                 break;
               }
@@ -39306,31 +39341,29 @@ exports.default = {
 
   /**
    * Encrypt message
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @returns {BN} RSA Ciphertext
+   * @param {Uint8Array} data message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @returns {Uint8Array} RSA Ciphertext
    * @async
    */
   encrypt: function () {
-    var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(m, n, e) {
-      var nred;
+    var _ref3 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(data, n, e) {
       return _regenerator2.default.wrap(function _callee3$(_context3) {
         while (1) {
           switch (_context3.prev = _context3.next) {
             case 0:
-              if (!(n.cmp(m) <= 0)) {
+              if (!_util2.default.getNodeCrypto()) {
                 _context3.next = 2;
                 break;
               }
 
-              throw new Error('Message size cannot exceed modulus size');
+              return _context3.abrupt('return', this.nodeEncrypt(data, n, e));
 
             case 2:
-              nred = new _bn2.default.red(n);
-              return _context3.abrupt('return', m.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength()));
+              return _context3.abrupt('return', this.bnEncrypt(data, n, e));
 
-            case 4:
+            case 3:
             case 'end':
               return _context3.stop();
           }
@@ -39347,71 +39380,33 @@ exports.default = {
 
   /**
    * Decrypt RSA message
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @param {BN} d RSA private exponent
-   * @param {BN} p RSA private prime p
-   * @param {BN} q RSA private prime q
-   * @param {BN} u RSA private coefficient
-   * @returns {BN} RSA Plaintext
+   * @param {Uint8Array} m message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @param {Uint8Array} d RSA private exponent
+   * @param {Uint8Array} p RSA private prime p
+   * @param {Uint8Array} q RSA private prime q
+   * @param {Uint8Array} u RSA private coefficient
+   * @returns {String} RSA Plaintext
    * @async
    */
   decrypt: function () {
-    var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(m, n, e, d, p, q, u) {
-      var dq, dp, pred, qred, nred, blinder, unblinder, mp, mq, t, h, result;
+    var _ref4 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(data, n, e, d, p, q, u) {
       return _regenerator2.default.wrap(function _callee4$(_context4) {
         while (1) {
           switch (_context4.prev = _context4.next) {
             case 0:
-              if (!(n.cmp(m) <= 0)) {
+              if (!_util2.default.getNodeCrypto()) {
                 _context4.next = 2;
                 break;
               }
 
-              throw new Error('Data too large.');
+              return _context4.abrupt('return', this.nodeDecrypt(data, n, e, d, p, q, u));
 
             case 2:
-              dq = d.mod(q.subn(1)); // d mod (q-1)
+              return _context4.abrupt('return', this.bnDecrypt(data, n, e, d, p, q, u));
 
-              dp = d.mod(p.subn(1)); // d mod (p-1)
-
-              pred = new _bn2.default.red(p);
-              qred = new _bn2.default.red(q);
-              nred = new _bn2.default.red(n);
-              blinder = void 0;
-              unblinder = void 0;
-
-              if (!_config2.default.rsa_blinding) {
-                _context4.next = 16;
-                break;
-              }
-
-              _context4.next = 12;
-              return _random2.default.getRandomBN(new _bn2.default(2), n);
-
-            case 12:
-              _context4.t0 = nred;
-              unblinder = _context4.sent.toRed(_context4.t0);
-
-              blinder = unblinder.redInvm().redPow(e);
-              m = m.toRed(nred).redMul(blinder).fromRed();
-
-            case 16:
-              mp = m.toRed(pred).redPow(dp);
-              mq = m.toRed(qred).redPow(dq);
-              t = mq.redSub(mp.fromRed().toRed(qred));
-              h = u.toRed(qred).redMul(t).fromRed();
-              result = h.mul(p).add(mp).toRed(nred);
-
-
-              if (_config2.default.rsa_blinding) {
-                result = result.redMul(unblinder);
-              }
-
-              return _context4.abrupt('return', result.toArrayLike(Uint8Array, 'be', n.byteLength()));
-
-            case 23:
+            case 3:
             case 'end':
               return _context4.stop();
           }
@@ -39453,7 +39448,7 @@ exports.default = {
 
               // Native RSA keygen using Web Crypto
 
-              if (!webCrypto) {
+              if (!_util2.default.getWebCrypto()) {
                 _context5.next = 36;
                 break;
               }
@@ -39539,7 +39534,7 @@ exports.default = {
               return _context5.abrupt('return', key);
 
             case 36:
-              if (!(nodeCrypto && nodeCrypto.generateKeyPair && RSAPrivateKey)) {
+              if (!(_util2.default.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey)) {
                 _context5.next = 42;
                 break;
               }
@@ -39671,11 +39666,12 @@ exports.default = {
         while (1) {
           switch (_context7.prev = _context7.next) {
             case 0:
-              // OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
-              // We swap them in privateToJwk, so it usually works out, but nevertheless,
-              // not all OpenPGP keys are compatible with this requirement.
-              // OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
-              // does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+              /** OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
+               * We swap them in privateToJwk, so it usually works out, but nevertheless,
+               * not all OpenPGP keys are compatible with this requirement.
+               * OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
+               * does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+               */
               jwk = privateToJwk(n, e, d, p, q, u);
               algo = {
                 name: "RSASSA-PKCS1-v1_5",
@@ -39901,6 +39897,201 @@ exports.default = {
     return nodeVerify;
   }(),
 
+  nodeEncrypt: function () {
+    var _ref13 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee12(data, n, e) {
+      var keyObject, key, der, pem;
+      return _regenerator2.default.wrap(function _callee12$(_context12) {
+        while (1) {
+          switch (_context12.prev = _context12.next) {
+            case 0:
+              keyObject = {
+                modulus: new _bn2.default(n),
+                publicExponent: new _bn2.default(e)
+              };
+              key = void 0;
+
+              if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
+                der = RSAPublicKey.encode(keyObject, 'der');
+
+                key = { key: der, format: 'der', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+              } else {
+                pem = RSAPublicKey.encode(keyObject, 'pem', {
+                  label: 'RSA PUBLIC KEY'
+                });
+
+                key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+              }
+              return _context12.abrupt('return', new Uint8Array(nodeCrypto.publicEncrypt(key, data)));
+
+            case 4:
+            case 'end':
+              return _context12.stop();
+          }
+        }
+      }, _callee12, this);
+    }));
+
+    function nodeEncrypt(_x63, _x64, _x65) {
+      return _ref13.apply(this, arguments);
+    }
+
+    return nodeEncrypt;
+  }(),
+
+  bnEncrypt: function () {
+    var _ref14 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee13(data, n, e) {
+      var nred;
+      return _regenerator2.default.wrap(function _callee13$(_context13) {
+        while (1) {
+          switch (_context13.prev = _context13.next) {
+            case 0:
+              n = new _bn2.default(n);
+              _context13.t0 = _mpi2.default;
+              _context13.next = 4;
+              return _pkcs2.default.eme.encode(_util2.default.Uint8Array_to_str(data), n.byteLength());
+
+            case 4:
+              _context13.t1 = _context13.sent;
+              data = new _context13.t0(_context13.t1);
+
+              data = data.toBN();
+              e = new _bn2.default(e);
+
+              if (!(n.cmp(data) <= 0)) {
+                _context13.next = 10;
+                break;
+              }
+
+              throw new Error('Message size cannot exceed modulus size');
+
+            case 10:
+              nred = new _bn2.default.red(n);
+              return _context13.abrupt('return', data.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength()));
+
+            case 12:
+            case 'end':
+              return _context13.stop();
+          }
+        }
+      }, _callee13, this);
+    }));
+
+    function bnEncrypt(_x66, _x67, _x68) {
+      return _ref14.apply(this, arguments);
+    }
+
+    return bnEncrypt;
+  }(),
+
+  nodeDecrypt: function nodeDecrypt(data, n, e, d, p, q, u) {
+    var pBNum = new _bn2.default(p);
+    var qBNum = new _bn2.default(q);
+    var dBNum = new _bn2.default(d);
+    var dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
+    var dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
+    var keyObject = {
+      version: 0,
+      modulus: new _bn2.default(n),
+      publicExponent: new _bn2.default(e),
+      privateExponent: new _bn2.default(d),
+      // switch p and q
+      prime1: new _bn2.default(q),
+      prime2: new _bn2.default(p),
+      // switch dp and dq
+      exponent1: dq,
+      exponent2: dp,
+      coefficient: new _bn2.default(u)
+    };
+    var key = void 0;
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
+      var der = RSAPrivateKey.encode(keyObject, 'der');
+      key = { key: der, format: 'der', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+    } else {
+      var pem = RSAPrivateKey.encode(keyObject, 'pem', {
+        label: 'RSA PRIVATE KEY'
+      });
+      key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+    }
+    return _util2.default.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
+  },
+
+  bnDecrypt: function () {
+    var _ref15 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee14(data, n, e, d, p, q, u) {
+      var dq, dp, pred, qred, nred, blinder, unblinder, mp, mq, t, h, result;
+      return _regenerator2.default.wrap(function _callee14$(_context14) {
+        while (1) {
+          switch (_context14.prev = _context14.next) {
+            case 0:
+              data = new _bn2.default(data);
+              n = new _bn2.default(n);
+              e = new _bn2.default(e);
+              d = new _bn2.default(d);
+              p = new _bn2.default(p);
+              q = new _bn2.default(q);
+              u = new _bn2.default(u);
+
+              if (!(n.cmp(data) <= 0)) {
+                _context14.next = 9;
+                break;
+              }
+
+              throw new Error('Data too large.');
+
+            case 9:
+              dq = d.mod(q.subn(1)); // d mod (q-1)
+
+              dp = d.mod(p.subn(1)); // d mod (p-1)
+
+              pred = new _bn2.default.red(p);
+              qred = new _bn2.default.red(q);
+              nred = new _bn2.default.red(n);
+              blinder = void 0;
+              unblinder = void 0;
+
+              if (!_config2.default.rsa_blinding) {
+                _context14.next = 23;
+                break;
+              }
+
+              _context14.next = 19;
+              return _random2.default.getRandomBN(new _bn2.default(2), n);
+
+            case 19:
+              _context14.t0 = nred;
+              unblinder = _context14.sent.toRed(_context14.t0);
+
+              blinder = unblinder.redInvm().redPow(e);
+              data = data.toRed(nred).redMul(blinder).fromRed();
+
+            case 23:
+              mp = data.toRed(pred).redPow(dp);
+              mq = data.toRed(qred).redPow(dq);
+              t = mq.redSub(mp.fromRed().toRed(qred));
+              h = u.toRed(qred).redMul(t).fromRed();
+              result = h.mul(p).add(mp).toRed(nred);
+
+
+              if (_config2.default.rsa_blinding) {
+                result = result.redMul(unblinder);
+              }
+
+              return _context14.abrupt('return', _pkcs2.default.eme.decode(new _mpi2.default(result).toString()));
+
+            case 30:
+            case 'end':
+              return _context14.stop();
+          }
+        }
+      }, _callee14, this);
+    }));
+
+    function bnDecrypt(_x69, _x70, _x71, _x72, _x73, _x74, _x75) {
+      return _ref15.apply(this, arguments);
+    }
+
+    return bnDecrypt;
+  }(),
+
   prime: _prime2.default
 };
 
@@ -39955,7 +40146,7 @@ function publicToJwk(n, e) {
   };
 }
 
-},{"../../config":350,"../../enums":384,"../../util":429,"../pkcs1":367,"../random":380,"./prime":378,"asn1.js":"asn1.js","babel-runtime/core-js/promise":31,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":43,"bn.js":44}],380:[function(_dereq_,module,exports){
+},{"../../config":350,"../../enums":384,"../../type/mpi":426,"../../util":429,"../pkcs1":367,"../random":380,"./prime":378,"asn1.js":"asn1.js","babel-runtime/core-js/promise":31,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":43,"bn.js":44}],380:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -40315,7 +40506,7 @@ exports.default = {
    */
   verify: function () {
     var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(algo, hash_algo, msg_MPIs, pub_MPIs, data, hashed) {
-      var types, m, n, e, r, s, p, q, g, y, oid, signature, Q, _oid, _signature, _Q;
+      var types, n, e, m, r, s, p, q, g, y, oid, signature, Q, _oid, _signature, _Q;
 
       return _regenerator2.default.wrap(function _callee$(_context) {
         while (1) {
@@ -40336,9 +40527,9 @@ exports.default = {
               break;
 
             case 6:
-              m = msg_MPIs[0].toUint8Array();
               n = pub_MPIs[0].toUint8Array();
               e = pub_MPIs[1].toUint8Array();
+              m = msg_MPIs[0].toUint8Array('be', n.length);
               return _context.abrupt('return', _public_key2.default.rsa.verify(hash_algo, data, m, n, e, hashed));
 
             case 10:
@@ -53557,10 +53748,6 @@ var _keyid = _dereq_('../type/keyid');
 
 var _keyid2 = _interopRequireDefault(_keyid);
 
-var _mpi = _dereq_('../type/mpi');
-
-var _mpi2 = _interopRequireDefault(_mpi);
-
 var _crypto = _dereq_('../crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
@@ -53593,29 +53780,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @memberof module:packet
  * @constructor
  */
-function PublicKeyEncryptedSessionKey() {
-  this.tag = _enums2.default.packet.publicKeyEncryptedSessionKey;
-  this.version = 3;
-
-  this.publicKeyId = new _keyid2.default();
-  this.publicKeyAlgorithm = null;
-
-  this.sessionKey = null;
-  this.sessionKeyAlgorithm = null;
-
-  /** @type {Array<module:type/mpi>} */
-  this.encrypted = [];
-}
-
-/**
- * Parsing function for a publickey encrypted session key packet (tag 1).
- *
- * @param {Uint8Array} input Payload of a tag 1 packet
- * @param {Integer} position Position to start reading from the input string
- * @param {Integer} len Length of the packet or the remaining length of
- *            input at position
- * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
- */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -53641,6 +53805,29 @@ function PublicKeyEncryptedSessionKey() {
  * @requires util
  */
 
+function PublicKeyEncryptedSessionKey() {
+  this.tag = _enums2.default.packet.publicKeyEncryptedSessionKey;
+  this.version = 3;
+
+  this.publicKeyId = new _keyid2.default();
+  this.publicKeyAlgorithm = null;
+
+  this.sessionKey = null;
+  this.sessionKeyAlgorithm = null;
+
+  /** @type {Array<module:type/mpi>} */
+  this.encrypted = [];
+}
+
+/**
+ * Parsing function for a publickey encrypted session key packet (tag 1).
+ *
+ * @param {Uint8Array} input Payload of a tag 1 packet
+ * @param {Integer} position Position to start reading from the input string
+ * @param {Integer} len Length of the packet or the remaining length of
+ *            input at position
+ * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
+ */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   this.version = bytes[0];
   this.publicKeyId.read(bytes.subarray(1, bytes.length));
@@ -53680,7 +53867,7 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
  */
 PublicKeyEncryptedSessionKey.prototype.encrypt = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(key) {
-    var data, toEncrypt, algo;
+    var data, algo;
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
         switch (_context.prev = _context.next) {
@@ -53690,37 +53877,15 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function () {
 
             data += _util2.default.Uint8Array_to_str(this.sessionKey);
             data += _util2.default.Uint8Array_to_str(_util2.default.write_checksum(this.sessionKey));
-
-            toEncrypt = void 0;
             algo = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
+            _context.next = 6;
+            return _crypto2.default.publicKeyEncrypt(algo, key.params, data, key.getFingerprintBytes());
 
-            if (!(algo === _enums2.default.publicKey.ecdh)) {
-              _context.next = 9;
-              break;
-            }
-
-            toEncrypt = new _mpi2.default(_crypto2.default.pkcs5.encode(data));
-            _context.next = 14;
-            break;
-
-          case 9:
-            _context.t0 = _mpi2.default;
-            _context.next = 12;
-            return _crypto2.default.pkcs1.eme.encode(data, key.params[0].byteLength());
-
-          case 12:
-            _context.t1 = _context.sent;
-            toEncrypt = new _context.t0(_context.t1);
-
-          case 14:
-            _context.next = 16;
-            return _crypto2.default.publicKeyEncrypt(algo, key.params, toEncrypt, key.getFingerprintBytes());
-
-          case 16:
+          case 6:
             this.encrypted = _context.sent;
             return _context.abrupt('return', true);
 
-          case 18:
+          case 8:
           case 'end':
             return _context.stop();
         }
@@ -53744,47 +53909,36 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = function () {
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = function () {
   var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2(key) {
-    var algo, result, checksum, decoded;
+    var algo, decoded, checksum;
     return _regenerator2.default.wrap(function _callee2$(_context2) {
       while (1) {
         switch (_context2.prev = _context2.next) {
           case 0:
             algo = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
-            _context2.t0 = _mpi2.default;
-            _context2.next = 4;
+            _context2.next = 3;
             return _crypto2.default.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
 
-          case 4:
-            _context2.t1 = _context2.sent;
-            result = new _context2.t0(_context2.t1);
-            checksum = void 0;
-            decoded = void 0;
-
-            if (algo === _enums2.default.publicKey.ecdh) {
-              decoded = _crypto2.default.pkcs5.decode(result.toString());
-              checksum = _util2.default.str_to_Uint8Array(decoded.substr(decoded.length - 2));
-            } else {
-              decoded = _crypto2.default.pkcs1.eme.decode(result.toString());
-              checksum = result.toUint8Array().slice(result.byteLength() - 2);
-            }
+          case 3:
+            decoded = _context2.sent;
+            checksum = _util2.default.str_to_Uint8Array(decoded.substr(decoded.length - 2));
 
             key = _util2.default.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
             if (_util2.default.equalsUint8Array(checksum, _util2.default.write_checksum(key))) {
-              _context2.next = 14;
+              _context2.next = 10;
               break;
             }
 
             throw new Error('Decryption error');
 
-          case 14:
+          case 10:
             this.sessionKey = key;
             this.sessionKeyAlgorithm = _enums2.default.read(_enums2.default.symmetric, decoded.charCodeAt(0));
 
-          case 16:
+          case 12:
             return _context2.abrupt('return', true);
 
-          case 17:
+          case 13:
           case 'end':
             return _context2.stop();
         }
@@ -53811,7 +53965,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":365,"../enums":384,"../type/keyid":425,"../type/mpi":426,"../util":429,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":43}],410:[function(_dereq_,module,exports){
+},{"../crypto":365,"../enums":384,"../type/keyid":425,"../util":429,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/regenerator":43}],410:[function(_dereq_,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {

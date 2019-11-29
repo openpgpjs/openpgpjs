@@ -25052,7 +25052,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.7.0",
+  versionstring: "OpenPGP.js v4.7.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -27051,6 +27051,14 @@ var _util = require('../util');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _pkcs = require('./pkcs1');
+
+var _pkcs2 = _interopRequireDefault(_pkcs);
+
+var _pkcs3 = require('./pkcs5');
+
+var _pkcs4 = _interopRequireDefault(_pkcs3);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function constructParams(types, data) {
@@ -27102,7 +27110,7 @@ exports.default = {
    * @param {Array<module:type/mpi|
                    module:type/oid|
                    module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
-   * @param {module:type/mpi}               data        Data to be encrypted as MPI
+   * @param {String}                        data        Data to be encrypted
    * @param {String}                        fingerprint Recipient fingerprint
    * @returns {Array<module:type/mpi|
    *                 module:type/ecdh_symkey>}          encrypted session key parameters
@@ -27114,14 +27122,15 @@ exports.default = {
       case _enums2.default.publicKey.rsa_encrypt:
       case _enums2.default.publicKey.rsa_encrypt_sign:
         {
-          const m = data.toBN();
-          const n = pub_params[0].toBN();
-          const e = pub_params[1].toBN();
-          const res = await _public_key2.default.rsa.encrypt(m, n, e);
+          data = _util2.default.str_to_Uint8Array(data);
+          const n = pub_params[0].toUint8Array();
+          const e = pub_params[1].toUint8Array();
+          const res = await _public_key2.default.rsa.encrypt(data, n, e);
           return constructParams(types, [res]);
         }
       case _enums2.default.publicKey.elgamal:
         {
+          data = new _mpi2.default((await _pkcs2.default.eme.encode(data, pub_params[0].byteLength())));
           const m = data.toBN();
           const p = pub_params[0].toBN();
           const g = pub_params[1].toBN();
@@ -27131,6 +27140,7 @@ exports.default = {
         }
       case _enums2.default.publicKey.ecdh:
         {
+          data = new _mpi2.default(_pkcs4.default.encode(data));
           const oid = pub_params[0];
           const Q = pub_params[1].toUint8Array();
           const kdf_params = pub_params[2];
@@ -27158,7 +27168,7 @@ exports.default = {
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
    * @param {String}                        fingerprint Recipient fingerprint
-   * @returns {BN}                          A BN containing the decrypted data
+   * @returns {String}                          String containing the decrypted data
    * @async
    */
   publicKeyDecrypt: async function publicKeyDecrypt(algo, key_params, data_params, fingerprint) {
@@ -27166,13 +27176,13 @@ exports.default = {
       case _enums2.default.publicKey.rsa_encrypt_sign:
       case _enums2.default.publicKey.rsa_encrypt:
         {
-          const c = data_params[0].toBN();
-          const n = key_params[0].toBN(); // n = pq
-          const e = key_params[1].toBN();
-          const d = key_params[2].toBN(); // de = 1 mod (p-1)(q-1)
-          const p = key_params[3].toBN();
-          const q = key_params[4].toBN();
-          const u = key_params[5].toBN(); // p^-1 mod q
+          const c = data_params[0].toUint8Array();
+          const n = key_params[0].toUint8Array(); // n = pq
+          const e = key_params[1].toUint8Array();
+          const d = key_params[2].toUint8Array(); // de = 1 mod (p-1)(q-1)
+          const p = key_params[3].toUint8Array();
+          const q = key_params[4].toUint8Array();
+          const u = key_params[5].toUint8Array(); // p^-1 mod q
           return _public_key2.default.rsa.decrypt(c, n, e, d, p, q, u);
         }
       case _enums2.default.publicKey.elgamal:
@@ -27181,7 +27191,8 @@ exports.default = {
           const c2 = data_params[1].toBN();
           const p = key_params[0].toBN();
           const x = key_params[3].toBN();
-          return _public_key2.default.elgamal.decrypt(c1, c2, p, x);
+          const result = new _mpi2.default((await _public_key2.default.elgamal.decrypt(c1, c2, p, x)));
+          return _pkcs2.default.eme.decode(result.toString());
         }
       case _enums2.default.publicKey.ecdh:
         {
@@ -27191,7 +27202,8 @@ exports.default = {
           const C = data_params[1].data;
           const Q = key_params[1].toUint8Array();
           const d = key_params[3].toUint8Array();
-          return _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint);
+          const result = new _mpi2.default((await _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint)));
+          return _pkcs4.default.decode(result.toString());
         }
       default:
         throw new Error('Invalid public key encryption algorithm.');
@@ -27364,7 +27376,7 @@ exports.default = {
   constructParams: constructParams
 };
 
-},{"../enums":113,"../type/ecdh_symkey":152,"../type/kdf_params":153,"../type/mpi":155,"../type/oid":156,"../util":158,"./cipher":86,"./public_key":106,"./random":109}],90:[function(require,module,exports){
+},{"../enums":113,"../type/ecdh_symkey":152,"../type/kdf_params":153,"../type/mpi":155,"../type/oid":156,"../util":158,"./cipher":86,"./pkcs1":96,"./pkcs5":97,"./public_key":106,"./random":109}],90:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30540,9 +30552,13 @@ var _enums = require('../../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
 
+var _mpi = require('../../type/mpi');
+
+var _mpi2 = _interopRequireDefault(_mpi);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const webCrypto = _util2.default.getWebCrypto(); // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -30569,6 +30585,7 @@ const webCrypto = _util2.default.getWebCrypto(); // GPG4Browsers - An OpenPGP im
  * @module crypto/public_key/rsa
  */
 
+const webCrypto = _util2.default.getWebCrypto();
 const nodeCrypto = _util2.default.getNodeCrypto();
 const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 
@@ -30627,13 +30644,13 @@ exports.default = {
    */
   sign: async function sign(hash_algo, data, n, e, d, p, q, u, hashed) {
     if (data && !_util2.default.isStream(data)) {
-      if (webCrypto) {
+      if (_util2.default.getWebCrypto()) {
         try {
           return await this.webSign(_enums2.default.read(_enums2.default.webHash, hash_algo), data, n, e, d, p, q, u);
         } catch (err) {
           _util2.default.print_debug_error(err);
         }
-      } else if (nodeCrypto) {
+      } else if (_util2.default.getNodeCrypto()) {
         return this.nodeSign(hash_algo, data, n, e, d, p, q, u);
       }
     }
@@ -30653,13 +30670,13 @@ exports.default = {
    */
   verify: async function verify(hash_algo, data, s, n, e, hashed) {
     if (data && !_util2.default.isStream(data)) {
-      if (webCrypto) {
+      if (_util2.default.getWebCrypto()) {
         try {
           return await this.webVerify(_enums2.default.read(_enums2.default.webHash, hash_algo), data, s, n, e);
         } catch (err) {
           _util2.default.print_debug_error(err);
         }
-      } else if (nodeCrypto) {
+      } else if (_util2.default.getNodeCrypto()) {
         return this.nodeVerify(hash_algo, data, s, n, e);
       }
     }
@@ -30668,62 +30685,36 @@ exports.default = {
 
   /**
    * Encrypt message
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @returns {BN} RSA Ciphertext
+   * @param {Uint8Array} data message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @returns {Uint8Array} RSA Ciphertext
    * @async
    */
-  encrypt: async function encrypt(m, n, e) {
-    if (n.cmp(m) <= 0) {
-      throw new Error('Message size cannot exceed modulus size');
+  encrypt: async function encrypt(data, n, e) {
+    if (_util2.default.getNodeCrypto()) {
+      return this.nodeEncrypt(data, n, e);
     }
-    const nred = new _bn2.default.red(n);
-    return m.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnEncrypt(data, n, e);
   },
 
   /**
    * Decrypt RSA message
-   * @param {BN} m message
-   * @param {BN} n RSA public modulus
-   * @param {BN} e RSA public exponent
-   * @param {BN} d RSA private exponent
-   * @param {BN} p RSA private prime p
-   * @param {BN} q RSA private prime q
-   * @param {BN} u RSA private coefficient
-   * @returns {BN} RSA Plaintext
+   * @param {Uint8Array} m message
+   * @param {Uint8Array} n RSA public modulus
+   * @param {Uint8Array} e RSA public exponent
+   * @param {Uint8Array} d RSA private exponent
+   * @param {Uint8Array} p RSA private prime p
+   * @param {Uint8Array} q RSA private prime q
+   * @param {Uint8Array} u RSA private coefficient
+   * @returns {String} RSA Plaintext
    * @async
    */
-  decrypt: async function decrypt(m, n, e, d, p, q, u) {
-    if (n.cmp(m) <= 0) {
-      throw new Error('Data too large.');
+  decrypt: async function decrypt(data, n, e, d, p, q, u) {
+    if (_util2.default.getNodeCrypto()) {
+      return this.nodeDecrypt(data, n, e, d, p, q, u);
     }
-    const dq = d.mod(q.subn(1)); // d mod (q-1)
-    const dp = d.mod(p.subn(1)); // d mod (p-1)
-    const pred = new _bn2.default.red(p);
-    const qred = new _bn2.default.red(q);
-    const nred = new _bn2.default.red(n);
-
-    let blinder;
-    let unblinder;
-    if (_config2.default.rsa_blinding) {
-      unblinder = (await _random2.default.getRandomBN(new _bn2.default(2), n)).toRed(nred);
-      blinder = unblinder.redInvm().redPow(e);
-      m = m.toRed(nred).redMul(blinder).fromRed();
-    }
-
-    const mp = m.toRed(pred).redPow(dp);
-    const mq = m.toRed(qred).redPow(dq);
-    const t = mq.redSub(mp.fromRed().toRed(qred));
-    const h = u.toRed(qred).redMul(t).fromRed();
-
-    let result = h.mul(p).add(mp).toRed(nred);
-
-    if (_config2.default.rsa_blinding) {
-      result = result.redMul(unblinder);
-    }
-
-    return result.toArrayLike(Uint8Array, 'be', n.byteLength());
+    return this.bnDecrypt(data, n, e, d, p, q, u);
   },
 
   /**
@@ -30744,7 +30735,7 @@ exports.default = {
     E = new _bn2.default(E, 16);
 
     // Native RSA keygen using Web Crypto
-    if (webCrypto) {
+    if (_util2.default.getWebCrypto()) {
       let keyPair;
       let keyGenOpt;
       if (window.crypto && window.crypto.subtle || window.msCrypto) {
@@ -30794,7 +30785,7 @@ exports.default = {
       // Since p and q are switched in places, we could keep u
       key.u = new _bn2.default(_util2.default.b64_to_Uint8Array(jwk.qi));
       return key;
-    } else if (nodeCrypto && nodeCrypto.generateKeyPair && RSAPrivateKey) {
+    } else if (_util2.default.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
         modulusLength: Number(B.toString(10)),
         publicExponent: Number(E.toString(10)),
@@ -30861,11 +30852,12 @@ exports.default = {
   },
 
   webSign: async function webSign(hash_name, data, n, e, d, p, q, u) {
-    // OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
-    // We swap them in privateToJwk, so it usually works out, but nevertheless,
-    // not all OpenPGP keys are compatible with this requirement.
-    // OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
-    // does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+    /** OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
+     * We swap them in privateToJwk, so it usually works out, but nevertheless,
+     * not all OpenPGP keys are compatible with this requirement.
+     * OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
+     * does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+     */
     const jwk = privateToJwk(n, e, d, p, q, u);
     const algo = {
       name: "RSASSA-PKCS1-v1_5",
@@ -30957,6 +30949,107 @@ exports.default = {
     }
   },
 
+  nodeEncrypt: async function nodeEncrypt(data, n, e) {
+    const keyObject = {
+      modulus: new _bn2.default(n),
+      publicExponent: new _bn2.default(e)
+    };
+    let key;
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
+      const der = RSAPublicKey.encode(keyObject, 'der');
+      key = { key: der, format: 'der', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+    } else {
+      const pem = RSAPublicKey.encode(keyObject, 'pem', {
+        label: 'RSA PUBLIC KEY'
+      });
+      key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+    }
+    return new Uint8Array(nodeCrypto.publicEncrypt(key, data));
+  },
+
+  bnEncrypt: async function bnEncrypt(data, n, e) {
+    n = new _bn2.default(n);
+    data = new _mpi2.default((await _pkcs2.default.eme.encode(_util2.default.Uint8Array_to_str(data), n.byteLength())));
+    data = data.toBN();
+    e = new _bn2.default(e);
+    if (n.cmp(data) <= 0) {
+      throw new Error('Message size cannot exceed modulus size');
+    }
+    const nred = new _bn2.default.red(n);
+    return data.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
+  },
+
+  nodeDecrypt: function nodeDecrypt(data, n, e, d, p, q, u) {
+    const pBNum = new _bn2.default(p);
+    const qBNum = new _bn2.default(q);
+    const dBNum = new _bn2.default(d);
+    const dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
+    const dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
+    const keyObject = {
+      version: 0,
+      modulus: new _bn2.default(n),
+      publicExponent: new _bn2.default(e),
+      privateExponent: new _bn2.default(d),
+      // switch p and q
+      prime1: new _bn2.default(q),
+      prime2: new _bn2.default(p),
+      // switch dp and dq
+      exponent1: dq,
+      exponent2: dp,
+      coefficient: new _bn2.default(u)
+    };
+    let key;
+    if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
+      const der = RSAPrivateKey.encode(keyObject, 'der');
+      key = { key: der, format: 'der', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+    } else {
+      const pem = RSAPrivateKey.encode(keyObject, 'pem', {
+        label: 'RSA PRIVATE KEY'
+      });
+      key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
+    }
+    return _util2.default.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
+  },
+
+  bnDecrypt: async function bnDecrypt(data, n, e, d, p, q, u) {
+    data = new _bn2.default(data);
+    n = new _bn2.default(n);
+    e = new _bn2.default(e);
+    d = new _bn2.default(d);
+    p = new _bn2.default(p);
+    q = new _bn2.default(q);
+    u = new _bn2.default(u);
+    if (n.cmp(data) <= 0) {
+      throw new Error('Data too large.');
+    }
+    const dq = d.mod(q.subn(1)); // d mod (q-1)
+    const dp = d.mod(p.subn(1)); // d mod (p-1)
+    const pred = new _bn2.default.red(p);
+    const qred = new _bn2.default.red(q);
+    const nred = new _bn2.default.red(n);
+
+    let blinder;
+    let unblinder;
+    if (_config2.default.rsa_blinding) {
+      unblinder = (await _random2.default.getRandomBN(new _bn2.default(2), n)).toRed(nred);
+      blinder = unblinder.redInvm().redPow(e);
+      data = data.toRed(nred).redMul(blinder).fromRed();
+    }
+
+    const mp = data.toRed(pred).redPow(dp);
+    const mq = data.toRed(qred).redPow(dq);
+    const t = mq.redSub(mp.fromRed().toRed(qred));
+    const h = u.toRed(qred).redMul(t).fromRed();
+
+    let result = h.mul(p).add(mp).toRed(nred);
+
+    if (_config2.default.rsa_blinding) {
+      result = result.redMul(unblinder);
+    }
+
+    return _pkcs2.default.eme.decode(new _mpi2.default(result).toString());
+  },
+
   prime: _prime2.default
 };
 
@@ -31011,7 +31104,7 @@ function publicToJwk(n, e) {
   };
 }
 
-},{"../../config":79,"../../enums":113,"../../util":158,"../pkcs1":96,"../random":109,"./prime":107,"asn1.js":"asn1.js","bn.js":16}],109:[function(require,module,exports){
+},{"../../config":79,"../../enums":113,"../../type/mpi":155,"../../util":158,"../pkcs1":96,"../random":109,"./prime":107,"asn1.js":"asn1.js","bn.js":16}],109:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31231,9 +31324,9 @@ exports.default = {
       case _enums2.default.publicKey.rsa_encrypt:
       case _enums2.default.publicKey.rsa_sign:
         {
-          const m = msg_MPIs[0].toUint8Array();
           const n = pub_MPIs[0].toUint8Array();
           const e = pub_MPIs[1].toUint8Array();
+          const m = msg_MPIs[0].toUint8Array('be', n.length);
           return _public_key2.default.rsa.verify(hash_algo, data, m, n, e, hashed);
         }
       case _enums2.default.publicKey.dsa:
@@ -38916,10 +39009,6 @@ var _keyid = require('../type/keyid');
 
 var _keyid2 = _interopRequireDefault(_keyid);
 
-var _mpi = require('../type/mpi');
-
-var _mpi2 = _interopRequireDefault(_mpi);
-
 var _crypto = require('../crypto');
 
 var _crypto2 = _interopRequireDefault(_crypto);
@@ -38952,29 +39041,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @memberof module:packet
  * @constructor
  */
-function PublicKeyEncryptedSessionKey() {
-  this.tag = _enums2.default.packet.publicKeyEncryptedSessionKey;
-  this.version = 3;
-
-  this.publicKeyId = new _keyid2.default();
-  this.publicKeyAlgorithm = null;
-
-  this.sessionKey = null;
-  this.sessionKeyAlgorithm = null;
-
-  /** @type {Array<module:type/mpi>} */
-  this.encrypted = [];
-}
-
-/**
- * Parsing function for a publickey encrypted session key packet (tag 1).
- *
- * @param {Uint8Array} input Payload of a tag 1 packet
- * @param {Integer} position Position to start reading from the input string
- * @param {Integer} len Length of the packet or the remaining length of
- *            input at position
- * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
- */
 // GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
@@ -39000,6 +39066,29 @@ function PublicKeyEncryptedSessionKey() {
  * @requires util
  */
 
+function PublicKeyEncryptedSessionKey() {
+  this.tag = _enums2.default.packet.publicKeyEncryptedSessionKey;
+  this.version = 3;
+
+  this.publicKeyId = new _keyid2.default();
+  this.publicKeyAlgorithm = null;
+
+  this.sessionKey = null;
+  this.sessionKeyAlgorithm = null;
+
+  /** @type {Array<module:type/mpi>} */
+  this.encrypted = [];
+}
+
+/**
+ * Parsing function for a publickey encrypted session key packet (tag 1).
+ *
+ * @param {Uint8Array} input Payload of a tag 1 packet
+ * @param {Integer} position Position to start reading from the input string
+ * @param {Integer} len Length of the packet or the remaining length of
+ *            input at position
+ * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
+ */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
   this.version = bytes[0];
   this.publicKeyId.read(bytes.subarray(1, bytes.length));
@@ -39042,16 +39131,8 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
 
   data += _util2.default.Uint8Array_to_str(this.sessionKey);
   data += _util2.default.Uint8Array_to_str(_util2.default.write_checksum(this.sessionKey));
-
-  let toEncrypt;
   const algo = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
-  if (algo === _enums2.default.publicKey.ecdh) {
-    toEncrypt = new _mpi2.default(_crypto2.default.pkcs5.encode(data));
-  } else {
-    toEncrypt = new _mpi2.default((await _crypto2.default.pkcs1.eme.encode(data, key.params[0].byteLength())));
-  }
-
-  this.encrypted = await _crypto2.default.publicKeyEncrypt(algo, key.params, toEncrypt, key.getFingerprintBytes());
+  this.encrypted = await _crypto2.default.publicKeyEncrypt(algo, key.params, data, key.getFingerprintBytes());
   return true;
 };
 
@@ -39066,18 +39147,8 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
-  const result = new _mpi2.default((await _crypto2.default.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes())));
-
-  let checksum;
-  let decoded;
-  if (algo === _enums2.default.publicKey.ecdh) {
-    decoded = _crypto2.default.pkcs5.decode(result.toString());
-    checksum = _util2.default.str_to_Uint8Array(decoded.substr(decoded.length - 2));
-  } else {
-    decoded = _crypto2.default.pkcs1.eme.decode(result.toString());
-    checksum = result.toUint8Array().slice(result.byteLength() - 2);
-  }
-
+  const decoded = await _crypto2.default.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
+  const checksum = _util2.default.str_to_Uint8Array(decoded.substr(decoded.length - 2));
   key = _util2.default.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
   if (!_util2.default.equalsUint8Array(checksum, _util2.default.write_checksum(key))) {
@@ -39103,7 +39174,7 @@ PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function () {
 
 exports.default = PublicKeyEncryptedSessionKey;
 
-},{"../crypto":94,"../enums":113,"../type/keyid":154,"../type/mpi":155,"../util":158}],139:[function(require,module,exports){
+},{"../crypto":94,"../enums":113,"../type/keyid":154,"../util":158}],139:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
