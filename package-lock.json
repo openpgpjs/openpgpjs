@@ -186,11 +186,10 @@
         }
       }
     },
-    "@mattiasbuelens/web-streams-polyfill": {
-      "version": "0.3.1",
-      "resolved": "https://registry.npmjs.org/@mattiasbuelens/web-streams-polyfill/-/web-streams-polyfill-0.3.1.tgz",
-      "integrity": "sha512-IW+tCurEH2NL2tA3KKFAMXa90WWmTJMZksnQWMABe3bMijV7hEiOLthy4tKGTnUTV8qVf8WTCApiGmKb75Bxkg==",
-      "dev": true
+    "@mattiasbuelens/web-streams-adapter": {
+      "version": "0.1.0-alpha.3",
+      "resolved": "https://registry.npmjs.org/@mattiasbuelens/web-streams-adapter/-/web-streams-adapter-0.1.0-alpha.3.tgz",
+      "integrity": "sha512-zZ5DOPokJLzmvklk151Rk9e79+xos5d9V0azVLy6jX+28113ffoCR0FYUVu0YQr+J4L/qFZI46jXsbv1a9velA=="
     },
     "@sinonjs/commons": {
       "version": "1.7.1",
@@ -8959,8 +8958,18 @@
       }
     },
     "web-stream-tools": {
-      "version": "github:openpgpjs/web-stream-tools#619abcbe2d9115bb005047f609b72d71108edadb",
-      "from": "github:openpgpjs/web-stream-tools#619abcbe2d9115bb005047f609b72d71108edadb",
+      "version": "github:openpgpjs/web-stream-tools#699d88c8d8f78d1513769e16cf557929c97bf83c",
+      "from": "github:openpgpjs/web-stream-tools#699d88c8d8f78d1513769e16cf557929c97bf83c",
+      "dev": true,
+      "requires": {
+        "@mattiasbuelens/web-streams-adapter": "0.1.0-alpha.3",
+        "web-streams-polyfill": "~2.0.6"
+      }
+    },
+    "web-streams-polyfill": {
+      "version": "2.0.6",
+      "resolved": "https://registry.npmjs.org/web-streams-polyfill/-/web-streams-polyfill-2.0.6.tgz",
+      "integrity": "sha512-nXOi4fBykO4LzyQhZX3MAGib635KGZBoNTkNXrNIkz0zthEf2QokEWxRb0H632xNLDWtHFb1R6dFGzksjYMSDw==",
       "dev": true
     },
     "websocket-driver": {
