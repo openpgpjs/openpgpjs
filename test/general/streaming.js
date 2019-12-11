@@ -9,6 +9,8 @@ const { expect } = chai;
 
 const { stream, util } = openpgp;
 
+const ReadableStream = global.ReadableStream || openpgp.stream.ReadableStream;
+
 const pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -605,6 +607,7 @@ function tests() {
     });
     await new Promise(resolve => setTimeout(resolve));
     await stream.cancel(transformed);
+    await new Promise(resolve => setTimeout(resolve));
     expect(canceled).to.be.true;
   });
 
@@ -933,7 +936,7 @@ describe('Streaming', function() {
   tryTests('WhatWG Streams', tests, {
     if: true,
     beforeEach: function() {
-      expectedType = 'web';
+      expectedType = global.ReadableStream ? 'web' : 'ponyfill';
     }
   });
 

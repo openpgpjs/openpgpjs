@@ -153,7 +153,7 @@ export default {
       const supportsStreaming = this.supportsStreaming(tag);
       let packet = null;
       if (streaming && supportsStreaming) {
-        const transform = new TransformStream();
+        const transform = new stream.TransformStream();
         writer = stream.getWriter(transform.writable);
         packet = transform.readable;
         callbackReturned = callback({ tag, packet });

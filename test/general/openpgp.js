@@ -1695,7 +1695,7 @@ describe('OpenPGP.js public api tests', function() {
               await Promise.all([
                 encrypted,
                 openpgp.stream.toStream(encrypted),
-                new ReadableStream({
+                new openpgp.stream.ReadableStream({
                   start() {
                     this.remaining = encrypted.split('\n');
                   },
@@ -1935,7 +1935,7 @@ describe('OpenPGP.js public api tests', function() {
           it('Streaming encrypt and decrypt small message roundtrip', async function() {
             let plaintext = [];
             let i = 0;
-            const data = new ReadableStream({
+            const data = new (global.ReadableStream || openpgp.stream.ReadableStream)({
               async pull(controller) {
                 if (i++ < 4) {
                   let randomBytes = await openpgp.crypto.random.getRandomBytes(10);
@@ -1948,8 +1948,9 @@ describe('OpenPGP.js public api tests', function() {
             });
             const encrypted = await openpgp.encrypt(modifyCompressionEncryptOptions({
               message: openpgp.message.fromBinary(data),
-              passwords: ['test'],
+              passwords: ['test']
             }));
+            expect(openpgp.util.isStream(encrypted.data)).to.equal(global.ReadableStream ? 'web' : 'ponyfill');
 
             const msgAsciiArmored = encrypted.data;
             const message = await openpgp.message.readArmored(msgAsciiArmored);
@@ -1958,7 +1959,7 @@ describe('OpenPGP.js public api tests', function() {
               message,
               format: 'binary'
             });
-            expect(openpgp.util.isStream(decrypted.data)).to.equal('web');
+            expect(openpgp.util.isStream(decrypted.data)).to.equal(global.ReadableStream ? 'web' : 'ponyfill');
             expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(openpgp.util.concatUint8Array(plaintext));
           });
         });
@@ -2265,7 +2266,7 @@ describe('OpenPGP.js public api tests', function() {
             format: 'binary'
           };
           return openpgp.sign(signOpt).then(async function (signed) {
-            expect(openpgp.util.isStream(signed.data)).to.equal('web');
+            expect(openpgp.util.isStream(signed.data)).to.equal(global.ReadableStream ? 'web' : 'ponyfill');
             const message = await openpgp.message.read(signed.data);
             message.packets.concat(await openpgp.stream.readToEnd(message.packets.stream, _ => _));
             const packets = new openpgp.packet.List();
@@ -2274,7 +2275,7 @@ describe('OpenPGP.js public api tests', function() {
             verifyOpt.message = new openpgp.message.Message(packets);
             return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
-            expect(openpgp.stream.isStream(verified.data)).to.equal('web');
+            expect(openpgp.stream.isStream(verified.data)).to.equal(global.ReadableStream ? 'web' : 'ponyfill');
             expect([].slice.call(await openpgp.stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
             expect(await verified.signatures[0].verified).to.be.true;
             expect(await signOpt.privateKeys[0].getSigningKey(verified.signatures[0].keyid))
