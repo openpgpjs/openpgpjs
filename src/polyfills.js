@@ -49,9 +49,6 @@ if (typeof global !== 'undefined') {
   } catch (e) {}
 }
 
-if (typeof TransformStream === 'undefined') {
-  require('@mattiasbuelens/web-streams-polyfill/es6');
-}
 if (typeof TextEncoder === 'undefined') {
   const nodeUtil = util.nodeRequire('util') || {};
   global.TextEncoder = nodeUtil.TextEncoder;
