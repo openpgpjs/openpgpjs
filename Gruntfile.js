@@ -66,7 +66,7 @@ module.exports = function(grunt) {
             ["babelify", {
               global: true,
               // Only babelify web-streams-polyfill, web-stream-tools, asmcrypto, email-addresses and seek-bzip in node_modules
-              only: /^(?:.*\/node_modules\/@mattiasbuelens\/web-streams-polyfill\/|.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/email-addresses\/|.*\/node_modules\/seek-bzip\/|(?!.*\/node_modules\/)).*$/,
+              only: /^(?:.*\/node_modules\/web-streams-polyfill\/|.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/email-addresses\/|.*\/node_modules\/seek-bzip\/|(?!.*\/node_modules\/)).*$/,
               ignore: ['*.min.js'],
               plugins,
               presets
