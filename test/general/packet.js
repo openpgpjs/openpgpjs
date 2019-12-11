@@ -759,7 +759,7 @@ describe("Packet", function() {
         expect(payload[2].verify(
           key[0], openpgp.enums.signature.binary, payload[1]
         )).to.eventually.be.true,
-        openpgp.stream.pipe(payload[1].getBytes(), new WritableStream())
+        openpgp.stream.pipe(payload[1].getBytes(), new openpgp.stream.WritableStream())
       ]);
     });
   });
@@ -942,7 +942,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
           await Promise.all([
             expect(signed2[1].verify(key, openpgp.enums.signature.text, signed2[0])).to.eventually.be.true,
-            openpgp.stream.pipe(signed2[0].getBytes(), new WritableStream())
+            openpgp.stream.pipe(signed2[0].getBytes(), new openpgp.stream.WritableStream())
           ]);
         });
     });

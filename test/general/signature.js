@@ -956,7 +956,7 @@ bwM=
       const sMsg = await openpgp.message.readArmored(signedArmor);
       const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
       const verified = await sMsg.verify([pub_key]);
-      openpgp.stream.pipe(sMsg.getLiteralData(), new WritableStream());
+      openpgp.stream.pipe(sMsg.getLiteralData(), new openpgp.stream.WritableStream());
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(await verified[0].verified).to.be.true;
@@ -1064,7 +1064,7 @@ bwM=
       const sMsg = await openpgp.message.readArmored(signature_with_critical_notation);
       const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
       const verified = await sMsg.verify([pub_key]);
-      openpgp.stream.pipe(sMsg.getLiteralData(), new WritableStream());
+      openpgp.stream.pipe(sMsg.getLiteralData(), new openpgp.stream.WritableStream());
       expect(await verified[0].verified).to.be.true;
     } finally {
       openpgp.config.known_notations.pop();
@@ -1240,7 +1240,7 @@ yYDnCgA=
 -----END PGP MESSAGE-----`.split('');
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      const sMsg = await openpgp.message.readArmored(new ReadableStream({
+      const sMsg = await openpgp.message.readArmored(new openpgp.stream.ReadableStream({
         async pull(controller) {
           await new Promise(setTimeout);
           controller.enqueue(msg_armor.shift());
@@ -1306,7 +1306,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 -----END PGP MESSAGE-----`.split('');
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      const sMsg = await openpgp.message.readArmored(new ReadableStream({
+      const sMsg = await openpgp.message.readArmored(new openpgp.stream.ReadableStream({
         async pull(controller) {
           await new Promise(setTimeout);
           controller.enqueue(msg_armor.shift());
@@ -1608,7 +1608,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const msg = openpgp.message.fromText(content);
     await msg.appendSignature(detachedSig);
     return msg.verify(publicKeys).then(async result => {
-      openpgp.stream.pipe(msg.getLiteralData(), new WritableStream());
+      openpgp.stream.pipe(msg.getLiteralData(), new openpgp.stream.WritableStream());
       expect(await result[0].verified).to.be.true;
     });
   });

@@ -5,9 +5,6 @@ if (typeof Symbol === 'undefined') {
 if (typeof Promise === 'undefined') {
   require('core-js/fn/promise');
 }
-if (typeof TransformStream === 'undefined') {
-  require('@mattiasbuelens/web-streams-polyfill');
-}
 
 (typeof window !== 'undefined' ? window : global).resolves = function(val) {
   return new Promise(function(res) { res(val); });
