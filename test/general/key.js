@@ -1258,6 +1258,84 @@ lbjwPj3QUTbLFvHisYzXEQ==
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
+const key_with_authorized_revocation_key_in_separate_sig = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: CounterMailEngine v1.4
+
+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
+=KtVw
+-----END PGP PUBLIC KEY BLOCK-----
+`;
+
 const key_with_revoked_third_party_cert = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 Comment: GPGTools - https://gpgtools.org
 
@@ -2268,12 +2346,15 @@ describe('Key', function() {
     expect(pubKeys.keys[1].getKeyId().toHex()).to.equal('dbf223e870534df4');
   });
 
-  it('Parsing armored key with an authorized revocation key', async function() {
-    const pubKeys = await openpgp.key.readArmored(key_with_authorized_revocation_key);
-    expect(pubKeys).to.exist;
-    expect(pubKeys.err).to.exist.and.have.length(1);
-    expect(pubKeys.err[0].message).to.equal('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
-    expect(pubKeys.keys).to.have.length(0);
+  it('Parsing armored key with an authorized revocation key in a User ID self-signature', async function() {
+    const { keys: [pubKey] } = await openpgp.key.readArmored(key_with_authorized_revocation_key);
+    await expect(pubKey.getPrimaryUser()).to.be.rejectedWith('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
+  });
+
+  it('Parsing armored key with an authorized revocation key in a direct-key signature', async function() {
+    const { keys: [pubKey] } = await openpgp.key.readArmored(key_with_authorized_revocation_key_in_separate_sig);
+    const primaryUser = await pubKey.getPrimaryUser();
+    expect(primaryUser).to.exist;
   });
 
   it('Parsing V5 public key packet', async function() {

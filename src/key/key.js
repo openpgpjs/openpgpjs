@@ -106,7 +106,6 @@ Key.prototype.packetlist2structure = function(packetlist) {
               continue;
             }
             if (packetlist[i].issuerKeyId.equals(primaryKeyId)) {
-              helper.checkRevocationKey(packetlist[i], primaryKeyId);
               user.selfCertifications.push(packetlist[i]);
             } else {
               user.otherCertifications.push(packetlist[i]);
@@ -120,7 +119,6 @@ Key.prototype.packetlist2structure = function(packetlist) {
             }
             break;
           case enums.signature.key:
-            helper.checkRevocationKey(packetlist[i], primaryKeyId);
             this.directSignatures.push(packetlist[i]);
             break;
           case enums.signature.subkey_binding:
@@ -128,7 +126,6 @@ Key.prototype.packetlist2structure = function(packetlist) {
               util.print_debug('Dropping subkey binding signature without preceding subkey packet');
               continue;
             }
-            helper.checkRevocationKey(packetlist[i], primaryKeyId);
             subKey.bindingSignatures.push(packetlist[i]);
             break;
           case enums.signature.key_revocation:
