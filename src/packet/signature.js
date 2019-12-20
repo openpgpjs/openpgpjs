@@ -706,9 +706,10 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
     hash = await this.hash(signatureType, data, toHash);
   }
   hash = await stream.readToEnd(hash);
+  let verified;
   if (this.signedHashValue[0] !== hash[0] ||
       this.signedHashValue[1] !== hash[1]) {
-    this.verified = false;
+    verified = false;
   } else {
     let mpicount = 0;
     // Algorithm-Specific Fields for RSA signatures:
@@ -735,12 +736,16 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
       mpi[j] = new type_mpi();
       i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
     }
-    this.verified = await crypto.signature.verify(
+    verified = await crypto.signature.verify(
       publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
       toHash, hash
     );
+    if (verified && this.revocationKeyClass !== null) {
+      throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
+    }
   }
-  return this.verified;
+  this.verified = verified;
+  return verified;
 };
 
 /**

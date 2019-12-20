@@ -275,19 +275,6 @@ export function getExpirationTime(keyPacket, signature) {
 }
 
 /**
- * Check if signature has revocation key sub packet (not supported by OpenPGP.js)
- * and throw error if found
- * @param {module:packet.Signature} signature The certificate or signature to check
- * @param {type/keyid} keyId Check only certificates or signatures from a certain issuer key ID
- */
-export function checkRevocationKey(signature, keyId) {
-  if (signature.revocationKeyClass !== null &&
-      signature.issuerKeyId.equals(keyId)) {
-    throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
-  }
-}
-
-/**
  * Returns whether aead is supported by all keys in the set
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
