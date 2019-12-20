@@ -198,7 +198,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     ], config.prefer_hash_algorithm);
     signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
       enums.compression.zlib,
-      enums.compression.zip
+      enums.compression.zip,
+      enums.compression.uncompressed
     ], config.compression);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
