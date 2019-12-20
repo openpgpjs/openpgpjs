@@ -64,7 +64,7 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
 
 /**
  * Create Binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
- * @param {module:packet.SecretSubkey|} subkey Subkey key packet
+ * @param {module:packet.SecretSubkey} subkey Subkey key packet
  * @param {module:packet.SecretKey} primaryKey Primary key packet
  * @param {Object} options
  */
