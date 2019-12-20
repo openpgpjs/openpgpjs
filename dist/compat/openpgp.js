@@ -31493,7 +31493,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.7.1",
+  versionstring: "OpenPGP.js v4.7.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -42764,7 +42764,7 @@ var wrapKeyObject = function () {
                         signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
                         // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
                         _enums2.default.hash.sha256, _enums2.default.hash.sha512, _enums2.default.hash.sha1], _config2.default.prefer_hash_algorithm);
-                        signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([_enums2.default.compression.zlib, _enums2.default.compression.zip], _config2.default.compression);
+                        signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([_enums2.default.compression.zlib, _enums2.default.compression.zip, _enums2.default.compression.uncompressed], _config2.default.compression);
                         if (index === 0) {
                           signaturePacket.isPrimaryUserID = true;
                         }
@@ -43846,7 +43846,6 @@ var isAeadSupported = exports.isAeadSupported = function () {
 
 exports.isDataExpired = isDataExpired;
 exports.getExpirationTime = getExpirationTime;
-exports.checkRevocationKey = checkRevocationKey;
 exports.sanitizeKeyOptions = sanitizeKeyOptions;
 exports.isValidSigningKeyPacket = isValidSigningKeyPacket;
 exports.isValidEncryptionKeyPacket = isValidEncryptionKeyPacket;
@@ -43889,18 +43888,6 @@ function isDataExpired(keyPacket, signature) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime * 1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;
-}
-
-/**
- * Check if signature has revocation key sub packet (not supported by OpenPGP.js)
- * and throw error if found
- * @param {module:packet.Signature} signature The certificate or signature to check
- * @param {type/keyid} keyId Check only certificates or signatures from a certain issuer key ID
- */
-function checkRevocationKey(signature, keyId) {
-  if (signature.revocationKeyClass !== null && signature.issuerKeyId.equals(keyId)) {
-    throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
-  }
 }function sanitizeKeyOptions(options) {
   var subkeyDefaults = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -44133,7 +44120,6 @@ Key.prototype.packetlist2structure = function (packetlist) {
               continue;
             }
             if (packetlist[i].issuerKeyId.equals(primaryKeyId)) {
-              helper.checkRevocationKey(packetlist[i], primaryKeyId);
               user.selfCertifications.push(packetlist[i]);
             } else {
               user.otherCertifications.push(packetlist[i]);
@@ -44147,7 +44133,6 @@ Key.prototype.packetlist2structure = function (packetlist) {
             }
             break;
           case _enums2.default.signature.key:
-            helper.checkRevocationKey(packetlist[i], primaryKeyId);
             this.directSignatures.push(packetlist[i]);
             break;
           case _enums2.default.signature.subkey_binding:
@@ -44155,7 +44140,6 @@ Key.prototype.packetlist2structure = function (packetlist) {
               _util2.default.print_debug('Dropping subkey binding signature without preceding subkey packet');
               continue;
             }
-            helper.checkRevocationKey(packetlist[i], primaryKeyId);
             subKey.bindingSignatures.push(packetlist[i]);
             break;
           case _enums2.default.signature.key_revocation:
@@ -55616,7 +55600,7 @@ Signature.prototype.verify = function () {
   var _ref7 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5(key, signatureType, data) {
     var detached = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
     var streaming = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-    var publicKeyAlgorithm, hashAlgorithm, toHash, hash, mpicount, endian, mpi, i, j;
+    var publicKeyAlgorithm, hashAlgorithm, toHash, hash, verified, mpicount, endian, mpi, i, j;
     return _regenerator2.default.wrap(function _callee5$(_context5) {
       while (1) {
         switch (_context5.prev = _context5.next) {
@@ -55671,17 +55655,18 @@ Signature.prototype.verify = function () {
 
           case 20:
             hash = _context5.sent;
+            verified = void 0;
 
             if (!(this.signedHashValue[0] !== hash[0] || this.signedHashValue[1] !== hash[1])) {
-              _context5.next = 25;
+              _context5.next = 26;
               break;
             }
 
-            this.verified = false;
-            _context5.next = 37;
+            verified = false;
+            _context5.next = 40;
             break;
 
-          case 25:
+          case 26:
             mpicount = 0;
             // Algorithm-Specific Fields for RSA signatures:
             //      - multiprecision number (MPI) of RSA signature value m**d mod n.
@@ -55701,26 +55686,34 @@ Signature.prototype.verify = function () {
             endian = publicKeyAlgorithm === _enums2.default.publicKey.eddsa ? 'le' : 'be';
             mpi = [];
             i = 0;
-            _context5.next = 32;
+            _context5.next = 33;
             return _webStreamTools2.default.readToEnd(this.signature);
 
-          case 32:
+          case 33:
             this.signature = _context5.sent;
 
             for (j = 0; j < mpicount; j++) {
               mpi[j] = new _mpi2.default();
               i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
             }
-            _context5.next = 36;
+            _context5.next = 37;
             return _crypto2.default.signature.verify(publicKeyAlgorithm, hashAlgorithm, mpi, key.params, toHash, hash);
 
-          case 36:
-            this.verified = _context5.sent;
-
           case 37:
-            return _context5.abrupt('return', this.verified);
+            verified = _context5.sent;
 
-          case 38:
+            if (!(verified && this.revocationKeyClass !== null)) {
+              _context5.next = 40;
+              break;
+            }
+
+            throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
+
+          case 40:
+            this.verified = verified;
+            return _context5.abrupt('return', verified);
+
+          case 42:
           case 'end':
             return _context5.stop();
         }
