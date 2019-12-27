@@ -310,7 +310,7 @@ Key.prototype.getSigningKey = async function (keyId = null, date = new Date(), u
 Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   if (await this.verifyPrimaryKey(date, userId) === enums.keyStatus.valid) {
-    // V4: by convention subkeys are preffered for encryption service
+    // V4: by convention subkeys are preferred for encryption service
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
@@ -760,7 +760,7 @@ Key.prototype.verifyAllUsers = async function(keys) {
  *                             The number of seconds after the key creation time that the key expires
  * @param {String} curve       (optional) Elliptic curve for ECC keys
  * @param {Date} date          (optional) Override the creation date of the key and the key signatures
- * @param {Boolean} subkeys    (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
+ * @param {Boolean} sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
  * @returns {Promise<module:key.Key>}
  * @async
  */
