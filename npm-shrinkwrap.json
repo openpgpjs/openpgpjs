@@ -244,8 +244,8 @@
       "dev": true
     },
     "asmcrypto.js": {
-      "version": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
-      "from": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
+      "version": "github:openpgpjs/asmcrypto#475cffa5ccb2cf2556427056679414acf3610d1b",
+      "from": "github:openpgpjs/asmcrypto#475cffa5ccb2cf2556427056679414acf3610d1b",
       "dev": true
     },
     "asn1.js": {

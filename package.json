@@ -71,7 +71,7 @@
     "text-encoding-utf-8": "^1.0.2",
     "whatwg-fetch": "^2.0.3",
     "@mattiasbuelens/web-streams-polyfill": "^0.3.1",
-    "asmcrypto.js": "github:openpgpjs/asmcrypto#6e4e407b9b8ae317925a9e677cc7b4de3e447e83",
+    "asmcrypto.js": "github:openpgpjs/asmcrypto#475cffa5ccb2cf2556427056679414acf3610d1b",
     "bn.js": "^4.11.8",
     "buffer": "^5.0.8",
     "elliptic": "github:openpgpjs/elliptic#ab7d8268c60b6abeb175841c578c224ac5b2d279",
