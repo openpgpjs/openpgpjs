@@ -393,6 +393,30 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
 };
 
 /**
+ * Check whether the private and public key parameters of the primary key match
+ * @returns {Promise<Boolean>} true if the primary key parameters correspond
+ * @async
+ */
+Key.prototype.validate = async function() {
+  if (!this.isPrivate()) {
+    throw new Error("Can't validate a public key");
+  }
+  const signingKeyPacket = this.primaryKey;
+  if (!signingKeyPacket.isDecrypted()) {
+    throw new Error("Key is not decrypted");
+  }
+  const data = new packet.Literal();
+  data.setBytes(new Uint8Array(), 'binary');
+  const signature = new packet.Signature();
+  signature.publicKeyAlgorithm = signingKeyPacket.algorithm;
+  signature.hashAlgorithm = enums.hash.sha256;
+  const signatureType = enums.signature.binary;
+  signature.signatureType = signatureType;
+  await signature.sign(signingKeyPacket, data);
+  return signature.verify(signingKeyPacket, signatureType, data);
+};
+
+/**
  * Checks if a signature on a key is revoked
  * @param  {module:packet.SecretKey|
  * @param  {module:packet.Signature}  signature    The signature to verify
