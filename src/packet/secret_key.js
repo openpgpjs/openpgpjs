@@ -334,10 +334,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   }
 
   let key;
-  if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
+  if (this.s2k_usage === 254 || this.s2k_usage === 253) {
     key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
   } else {
-    key = await crypto.hash.md5(passphrase);
+    throw new Error('Unsupported legacy encrypted key');
   }
 
   let cleartext;
@@ -355,19 +355,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   } else {
     const cleartextWithHash = await crypto.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
 
-    let hash;
-    let hashlen;
-    if (this.s2k_usage === 255) {
-      hashlen = 2;
-      cleartext = cleartextWithHash.subarray(0, -hashlen);
-      hash = util.write_checksum(cleartext);
-    } else {
-      hashlen = 20;
-      cleartext = cleartextWithHash.subarray(0, -hashlen);
-      hash = await crypto.hash.sha1(cleartext);
-    }
+    cleartext = cleartextWithHash.subarray(0, -20);
+    const hash = await crypto.hash.sha1(cleartext);
 
-    if (!util.equalsUint8Array(hash, cleartextWithHash.subarray(-hashlen))) {
+    if (!util.equalsUint8Array(hash, cleartextWithHash.subarray(-20))) {
       throw new Error('Incorrect key passphrase');
     }
   }
