@@ -143,7 +143,7 @@ function delegate(id, method, options) {
   if (options.privateKeys) {
     options.privateKeys = options.privateKeys.map(getCachedKey);
   }
-  openpgp[method](options).then(function(data) {
+  openpgp[method](options, true).then(function(data) {
     // clone packets (for web worker structured cloning algorithm)
     response({ id:id, event:'method-return', data:openpgp.packet.clone.clonePackets(data) });
   }).catch(function(e) {
