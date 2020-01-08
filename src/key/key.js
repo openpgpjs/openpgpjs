@@ -159,6 +159,21 @@ Key.prototype.toPacketlist = function() {
 };
 
 /**
+ * Clones the key object
+ * @param  {type/keyid} deep Whether to clone each packet, in addition to the list of packets
+ * @returns {Promise<module:key.Key>} cloned key
+ * @async
+ */
+Key.prototype.clone = async function(deep = false) {
+  if (deep) {
+    const packetlist = new packet.List();
+    await packetlist.read(this.toPacketlist().write());
+    return new Key(packetlist);
+  }
+  return new Key(this.toPacketlist());
+};
+
+/**
  * Returns an array containing all public or private subkeys matching keyId;
  * If keyId is not present, returns all subkeys.
  * @param  {type/keyid} keyId
@@ -713,7 +728,7 @@ Key.prototype.revoke = async function({
     throw new Error('Need private key for revoking');
   }
   const dataToSign = { key: this.keyPacket };
-  const key = new Key(this.toPacketlist());
+  const key = await this.clone();
   key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, this.keyPacket, {
     signatureType: enums.signature.key_revocation,
     reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
@@ -764,7 +779,7 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
   } catch (e) {
     throw util.wrapError('Could not verify revocation signature', e);
   }
-  const key = new Key(this.toPacketlist());
+  const key = await this.clone();
   key.revocationSignatures.push(revocationSignature);
   return key;
 };
@@ -780,7 +795,7 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
 Key.prototype.signPrimaryUser = async function(privateKeys, date, userId) {
   const { index, user } = await this.getPrimaryUser(date, userId);
   const userSign = await user.sign(this.keyPacket, privateKeys);
-  const key = new Key(this.toPacketlist());
+  const key = await this.clone();
   key.users[index] = userSign;
   return key;
 };
@@ -793,7 +808,7 @@ Key.prototype.signPrimaryUser = async function(privateKeys, date, userId) {
  */
 Key.prototype.signAllUsers = async function(privateKeys) {
   const that = this;
-  const key = new Key(this.toPacketlist());
+  const key = await this.clone();
   key.users = await Promise.all(this.users.map(function(user) {
     return user.sign(that.keyPacket, privateKeys);
   }));
