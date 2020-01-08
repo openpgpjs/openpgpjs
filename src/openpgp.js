@@ -242,15 +242,15 @@ export function revokeKey({
  * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
  * @async
  */
-export function decryptKey({ privateKey, passphrase }) {
+export function decryptKey({ privateKey, passphrase }, fromWorker = false) {
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('decryptKey', { privateKey, passphrase });
   }
 
   return Promise.resolve().then(async function() {
-    await privateKey.decrypt(passphrase);
-
-    return privateKey;
+    const key = fromWorker ? privateKey : await privateKey.clone(true);
+    await key.decrypt(passphrase);
+    return key;
   }).catch(onError.bind(null, 'Error decrypting private key'));
 }
 
@@ -261,16 +261,16 @@ export function decryptKey({ privateKey, passphrase }) {
  * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
  * @async
  */
-export function encryptKey({ privateKey, passphrase }) {
+export function encryptKey({ privateKey, passphrase }, fromWorker = false) {
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('encryptKey', { privateKey, passphrase });
   }
 
   return Promise.resolve().then(async function() {
-    await privateKey.encrypt(passphrase);
-
-    return privateKey;
-  }).catch(onError.bind(null, 'Error decrypting private key'));
+    const key = fromWorker ? privateKey : await privateKey.clone(true);
+    await key.encrypt(passphrase);
+    return key;
+  }).catch(onError.bind(null, 'Error encrypting private key'));
 }
 
 

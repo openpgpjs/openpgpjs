@@ -811,6 +811,7 @@ describe('OpenPGP.js public api tests', function() {
         }).then(function(unlocked){
           expect(unlocked.getKeyId().toHex()).to.equal(privateKey.keys[0].getKeyId().toHex());
           expect(unlocked.isDecrypted()).to.be.true;
+          expect(privateKey.keys[0].isDecrypted()).to.be.false;
         });
       });
 
