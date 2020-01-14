@@ -2487,8 +2487,7 @@ exports.Hash = Hash;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.sha1_asm = sha1_asm;
-function sha1_asm(stdlib, foreign, buffer) {
+var sha1_asm = exports.sha1_asm = function sha1_asm(stdlib, foreign, buffer) {
     "use asm";
 
     // SHA256 state
@@ -3375,7 +3374,7 @@ function sha1_asm(stdlib, foreign, buffer) {
         // PBKDF2-HMAC-SHA1
         pbkdf2_generate_block: pbkdf2_generate_block
     };
-}
+};
 
 },{}],11:[function(require,module,exports){
 'use strict';
@@ -3431,8 +3430,7 @@ exports.Sha1 = Sha1;
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.sha256_asm = sha256_asm;
-function sha256_asm(stdlib, foreign, buffer) {
+var sha256_asm = exports.sha256_asm = function sha256_asm(stdlib, foreign, buffer) {
     "use asm";
 
     // SHA256 state
@@ -4240,7 +4238,7 @@ function sha256_asm(stdlib, foreign, buffer) {
         // PBKDF2-HMAC-SHA256
         pbkdf2_generate_block: pbkdf2_generate_block
     };
-}
+};
 
 },{}],13:[function(require,module,exports){
 'use strict';
@@ -20665,7 +20663,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.7.2",
+  versionstring: "OpenPGP.js v4.8.0",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -28978,7 +28976,7 @@ function isDataExpired(keyPacket, signature, date = new Date()) {
 
 /**
  * Create Binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
- * @param {module:packet.SecretSubkey|} subkey Subkey key packet
+ * @param {module:packet.SecretSubkey} subkey Subkey key packet
  * @param {module:packet.SecretKey} primaryKey Primary key packet
  * @param {Object} options
  */
@@ -29617,7 +29615,7 @@ Key.prototype.getSigningKey = async function (keyId = null, date = new Date(), u
 Key.prototype.getEncryptionKey = async function (keyId, date = new Date(), userId = {}) {
   const primaryKey = this.keyPacket;
   if ((await this.verifyPrimaryKey(date, userId)) === _enums2.default.keyStatus.valid) {
-    // V4: by convention subkeys are preffered for encryption service
+    // V4: by convention subkeys are preferred for encryption service
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     for (let i = 0; i < subKeys.length; i++) {
       if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
@@ -29696,6 +29694,30 @@ Key.prototype.decrypt = async function (passphrases, keyId = null) {
     return decrypted;
   }));
   return results.every(result => result === true);
+};
+
+/**
+ * Check whether the private and public key parameters of the primary key match
+ * @returns {Promise<Boolean>} true if the primary key parameters correspond
+ * @async
+ */
+Key.prototype.validate = async function () {
+  if (!this.isPrivate()) {
+    throw new Error("Can't validate a public key");
+  }
+  const signingKeyPacket = this.primaryKey;
+  if (!signingKeyPacket.isDecrypted()) {
+    throw new Error("Key is not decrypted");
+  }
+  const data = new _packet2.default.Literal();
+  data.setBytes(new Uint8Array(), 'binary');
+  const signature = new _packet2.default.Signature();
+  signature.publicKeyAlgorithm = signingKeyPacket.algorithm;
+  signature.hashAlgorithm = _enums2.default.hash.sha256;
+  const signatureType = _enums2.default.signature.binary;
+  signature.signatureType = signatureType;
+  await signature.sign(signingKeyPacket, data);
+  return signature.verify(signingKeyPacket, signatureType, data);
 };
 
 /**
@@ -30065,7 +30087,7 @@ Key.prototype.verifyAllUsers = async function (keys) {
  *                             The number of seconds after the key creation time that the key expires
  * @param {String} curve       (optional) Elliptic curve for ECC keys
  * @param {Date} date          (optional) Override the creation date of the key and the key signatures
- * @param {Boolean} subkeys    (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
+ * @param {Boolean} sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
  * @returns {Promise<module:key.Key>}
  * @async
  */
@@ -35179,10 +35201,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   }
 
   let key;
-  if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
+  if (this.s2k_usage === 254 || this.s2k_usage === 253) {
     key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
   } else {
-    key = await _crypto2.default.hash.md5(passphrase);
+    throw new Error('Unsupported legacy encrypted key');
   }
 
   let cleartext;
@@ -35200,19 +35222,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   } else {
     const cleartextWithHash = await _crypto2.default.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
 
-    let hash;
-    let hashlen;
-    if (this.s2k_usage === 255) {
-      hashlen = 2;
-      cleartext = cleartextWithHash.subarray(0, -hashlen);
-      hash = _util2.default.write_checksum(cleartext);
-    } else {
-      hashlen = 20;
-      cleartext = cleartextWithHash.subarray(0, -hashlen);
-      hash = await _crypto2.default.hash.sha1(cleartext);
-    }
+    cleartext = cleartextWithHash.subarray(0, -20);
+    const hash = await _crypto2.default.hash.sha1(cleartext);
 
-    if (!_util2.default.equalsUint8Array(hash, cleartextWithHash.subarray(-hashlen))) {
+    if (!_util2.default.equalsUint8Array(hash, cleartextWithHash.subarray(-20))) {
       throw new Error('Incorrect key passphrase');
     }
   }

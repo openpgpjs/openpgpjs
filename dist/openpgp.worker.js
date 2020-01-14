@@ -104,6 +104,16 @@ function seedRandom(buffer) {
   openpgp.crypto.random.randomBuffer.set(buffer);
 }
 
+const keyCache = new Map();
+function getCachedKey(key) {
+  const armor = key.armor();
+  if (keyCache.has(armor)) {
+    return keyCache.get(armor);
+  }
+  keyCache.set(armor, key);
+  return key;
+}
+
 /**
  * Generic proxy function that handles all commands from the public api.
  * @param  {String} method    The public api function to be delegated to the worker thread
@@ -118,6 +128,13 @@ function delegate(id, method, options) {
   openpgp.util.restoreStreams(options);
   // parse cloned packets
   options = openpgp.packet.clone.parseClonedPackets(options, method);
+  // cache keys by armor, so that we don't have to repeatedly verify self-signatures
+  if (options.publicKeys) {
+    options.publicKeys = options.publicKeys.map(getCachedKey);
+  }
+  if (options.privateKeys) {
+    options.privateKeys = options.privateKeys.map(getCachedKey);
+  }
   openpgp[method](options).then(function(data) {
     // clone packets (for web worker structured cloning algorithm)
     response({ id:id, event:'method-return', data:openpgp.packet.clone.clonePackets(data) });
