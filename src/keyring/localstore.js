@@ -39,8 +39,8 @@ function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';
   this.publicKeysItem = prefix + this.publicKeysItem;
   this.privateKeysItem = prefix + this.privateKeysItem;
-  if (typeof window !== 'undefined' && window.localStorage) {
-    this.storage = window.localStorage;
+  if (typeof global !== 'undefined' && global.localStorage) {
+    this.storage = global.localStorage;
   } else {
     this.storage = new (require('node-localstorage').LocalStorage)(config.node_store);
   }
