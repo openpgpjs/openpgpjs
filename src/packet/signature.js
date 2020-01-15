@@ -699,7 +699,7 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
   let toHash;
   let hash;
   if (this.hashed) {
-    hash = this.hashed;
+    hash = await this.hashed;
   } else {
     toHash = this.toHash(signatureType, data, detached);
     if (!streaming) toHash = await stream.readToEnd(toHash);

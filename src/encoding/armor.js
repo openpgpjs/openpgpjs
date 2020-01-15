@@ -312,13 +312,13 @@ function dearmor(input) {
         }
       }));
       data = stream.transformPair(data, async (readable, writable) => {
-        const checksumVerified = getCheckSum(stream.passiveClone(readable));
+        const checksumVerified = stream.readToEnd(getCheckSum(stream.passiveClone(readable)));
         await stream.pipe(readable, writable, {
           preventClose: true
         });
         const writer = stream.getWriter(writable);
         try {
-          const checksumVerifiedString = await stream.readToEnd(checksumVerified);
+          const checksumVerifiedString = await checksumVerified;
           if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
             throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
                     checksumVerifiedString + "'");
