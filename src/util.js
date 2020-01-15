@@ -546,7 +546,7 @@ export default {
       return;
     }
 
-    return typeof window !== 'undefined' && window.crypto && window.crypto.subtle;
+    return typeof global !== 'undefined' && global.crypto && global.crypto.subtle;
   },
 
   /**
@@ -561,12 +561,12 @@ export default {
       return;
     }
 
-    if (typeof window !== 'undefined') {
-      if (window.crypto) {
-        return window.crypto.subtle || window.crypto.webkitSubtle;
+    if (typeof global !== 'undefined') {
+      if (global.crypto) {
+        return global.crypto.subtle || global.crypto.webkitSubtle;
       }
-      if (window.msCrypto) {
-        return window.msCrypto.subtle;
+      if (global.msCrypto) {
+        return global.msCrypto.subtle;
       }
     }
   },

@@ -28,10 +28,8 @@
  * @module worker/worker
  */
 
-self.window = self; // to make UMD bundles work
-
 importScripts('openpgp.js');
-var openpgp = window.openpgp;
+var openpgp = global.openpgp;
 
 var randomQueue = [];
 var MAX_SIZE_RANDOM_BUFFER = 60000;
@@ -92,7 +90,7 @@ function configure(config) {
 }
 
 /**
- * Seed the library with entropy gathered window.crypto.getRandomValues
+ * Seed the library with entropy gathered global.crypto.getRandomValues
  * as this api is only avalible in the main window.
  * @param  {ArrayBuffer} buffer   Some random bytes
  */

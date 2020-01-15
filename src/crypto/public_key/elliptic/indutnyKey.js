@@ -40,7 +40,7 @@ export function keyFromPublic(indutnyCurve, pub) {
 }
 
 /**
- * Load elliptic on demand to the window.openpgp.elliptic
+ * Load elliptic on demand to global.openpgp.elliptic
  * @returns {Promise<elliptic>}
  */
 async function loadEllipticPromise() {
@@ -51,10 +51,10 @@ async function loadEllipticPromise() {
   const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
   await loadScript(mainUrl);
   URL.revokeObjectURL(mainUrl);
-  if (!window.openpgp.elliptic) {
+  if (!global.openpgp.elliptic) {
     throw new Error('Elliptic library failed to load correctly');
   }
-  return window.openpgp.elliptic;
+  return global.openpgp.elliptic;
 }
 
 let ellipticPromise;

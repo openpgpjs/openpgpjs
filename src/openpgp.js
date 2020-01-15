@@ -67,7 +67,7 @@ let asyncProxy; // instance of the asyncproxy
  * @async
  */
 export async function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
-  if (workers.length || (typeof window !== 'undefined' && window.Worker && window.MessageChannel)) {
+  if (workers.length || (typeof global !== 'undefined' && global.Worker && global.MessageChannel)) {
     const proxy = new AsyncProxy({ path, n, workers, config });
     const loaded = await proxy.loaded();
     if (loaded) {

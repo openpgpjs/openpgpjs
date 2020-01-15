@@ -8,14 +8,14 @@
 
 import util from './util';
 
-if (typeof window !== 'undefined') {
+if (typeof global !== 'undefined') {
   /********************************************************************
    * NOTE: This list is duplicated in Gruntfile.js,                   *
    * so that these polyfills are only included in the compat bundle.  *
    ********************************************************************/
 
   try {
-    if (typeof window.fetch === 'undefined') {
+    if (typeof global.fetch === 'undefined') {
       require('whatwg-fetch');
     }
     if (typeof Array.prototype.fill === 'undefined') {
