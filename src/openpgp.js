@@ -90,7 +90,10 @@ export function getWorker() {
  * Cleanup the current instance of the web worker.
  */
 export function destroyWorker() {
-  asyncProxy = undefined;
+  if (asyncProxy) {
+    asyncProxy.terminate();
+    asyncProxy = undefined;
+  }
 }
 
 

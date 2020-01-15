@@ -446,7 +446,8 @@ describe('OpenPGP.js public api tests', function() {
 
     it('should work', async function() {
       const workerStub = {
-        postMessage: function() {}
+        postMessage: function() {},
+        terminate: function() {}
       };
       await Promise.all([
         openpgp.initWorker({
@@ -600,7 +601,8 @@ describe('OpenPGP.js public api tests', function() {
 
     it('should delegate to async proxy', async function() {
       const workerStub = {
-        postMessage: function() {}
+        postMessage: function() {},
+        terminate: function() {}
       };
       await Promise.all([
         openpgp.initWorker({
