@@ -103,6 +103,23 @@ module.exports = function(grunt) {
         }
       }
     },
+    nyc: {
+      cover: {
+        options: {
+          include: ['dist/**'],
+          reporter: ['text-summary'],
+          reportDir: 'coverage'
+        },
+        cmd: false,
+        args: ['grunt', 'mochaTest'],
+        sourceMap: true
+      },
+      report: {
+        options: {
+          reporter: 'text'
+        }
+      }
+    },
     replace: {
       openpgp: {
         src: ['dist/openpgp.js'],
@@ -200,15 +217,6 @@ module.exports = function(grunt) {
         }
       }
     },
-    mocha_istanbul: {
-      coverage: {
-        src: 'test',
-        options: {
-          root: '.',
-          timeout: 240000
-        }
-      }
-    },
     mochaTest: {
       unittests: {
         options: {
@@ -285,12 +293,12 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-jsbeautifier');
   grunt.loadNpmTasks('grunt-jsdoc');
   grunt.loadNpmTasks('gruntify-eslint');
-  grunt.loadNpmTasks('grunt-mocha-istanbul');
   grunt.loadNpmTasks('grunt-mocha-test');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-simple-nyc');
 
   grunt.registerTask('set_version', function() {
     if (!version) {
@@ -340,6 +348,6 @@ module.exports = function(grunt) {
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks
   grunt.registerTask('test', ['eslint', 'mochaTest']);
-  grunt.registerTask('coverage', ['mocha_istanbul:coverage']);
+  grunt.registerTask('coverage', ['nyc']);
   grunt.registerTask('browsertest', ['build', 'browserify:unittests', 'copy:browsertest', 'connect:test', 'watch']);
 };
