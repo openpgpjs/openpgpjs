@@ -2598,6 +2598,39 @@ describe('Key', function() {
     expect(await key.validate()).to.be.false;
   });
 
+  it('clearPrivateParams() - check that private key can no longer be used', async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
+    await key.decrypt('hello world');
+    await key.clearPrivateParams();
+    await expect(key.validate()).to.be.rejectedWith('Key is not decrypted');
+  });
+
+  it('clearPrivateParams() - check that private key parameters were removed', async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
+    await key.decrypt('hello world');
+    const params = key.primaryKey.params;
+    await key.clearPrivateParams();
+    key.primaryKey.isEncrypted = false;
+    key.primaryKey.params = params;
+    await expect(key.validate()).to.be.rejectedWith('Missing private key parameters');
+  });
+
+  it.only('clearPrivateParams() - check that private key parameters were zeroed out', async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
+    await key.decrypt('hello world');
+    const params = key.primaryKey.params.slice();
+    await key.clearPrivateParams();
+    key.primaryKey.isEncrypted = false;
+    key.primaryKey.params = params;
+    const use_nativeVal = openpgp.config.use_native;
+    openpgp.config.use_native = false;
+    try {
+      expect(await key.validate()).to.be.false;
+    } finally {
+      openpgp.config.use_native = use_nativeVal;
+    }
+  });
+
   it('update() - throw error if fingerprints not equal', async function() {
     const keys = (await openpgp.key.readArmored(twoKeys)).keys;
     await expect(keys[0].update.bind(

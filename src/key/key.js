@@ -417,6 +417,20 @@ Key.prototype.validate = async function() {
 };
 
 /**
+ * Clear private key parameters
+ */
+Key.prototype.clearPrivateParams = function () {
+  if (!this.isPrivate()) {
+    throw new Error("Can't clear private parameters of a public key");
+  }
+  this.getKeys().forEach(({ keyPacket }) => {
+    if (keyPacket.isDecrypted()) {
+      keyPacket.clearPrivateParams();
+    }
+  });
+};
+
+/**
  * Checks if a signature on a key is revoked
  * @param  {module:packet.SecretKey|
  * @param  {module:packet.Signature}  signature    The signature to verify
