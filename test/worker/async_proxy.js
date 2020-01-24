@@ -40,8 +40,8 @@ tryTests('Async Proxy', tests, {
     await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
     pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
   },
-  after: function() {
-    openpgp.destroyWorker();
+  after: async function() {
+    await openpgp.destroyWorker();
   }
 });
 

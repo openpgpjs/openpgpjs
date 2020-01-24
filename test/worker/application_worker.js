@@ -11,6 +11,12 @@ tryTests('Application Worker', tests, {
 function tests() {
 
   it('Should support loading OpenPGP.js from inside a Web Worker', async function() {
+    try {
+      eval('async function() {}');
+    } catch (e) {
+      console.error(e);
+      this.skip();
+    }
     const worker = new Worker('./worker/worker_example.js');
     async function delegate(action, message) {
       return new Promise((resolve, reject) => {
