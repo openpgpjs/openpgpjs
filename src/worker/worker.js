@@ -119,6 +119,16 @@ function getCachedKey(key) {
  * @param  {Object} options   The api function's options
  */
 function delegate(id, method, options) {
+  if (method === 'clear-key-cache') {
+    Array.from(keyCache.values()).forEach(key => {
+      if (key.isPrivate()) {
+        key.clearPrivateParams();
+      }
+    });
+    keyCache.clear();
+    response({ id, event: 'method-return' });
+    return;
+  }
   if (typeof openpgp[method] !== 'function') {
     response({ id:id, event:'method-return', err:'Unknown Worker Event' });
     return;
