@@ -379,7 +379,7 @@ SecretKey.prototype.generate = async function (bits, curve) {
 };
 
 /**
- * Clear private params, return to initial state
+ * Clear private key parameters
  */
 SecretKey.prototype.clearPrivateParams = function () {
   if (this.s2k && this.s2k.type === 'gnu-dummy') {
@@ -387,9 +387,6 @@ SecretKey.prototype.clearPrivateParams = function () {
     return;
   }
 
-  if (!this.keyMaterial) {
-    throw new Error('If secret key is not encrypted, clearing private params is irreversible.');
-  }
   const algo = enums.write(enums.publicKey, this.algorithm);
   this.params = this.params.slice(0, crypto.getPubKeyParamTypes(algo).length);
   this.isEncrypted = true;
