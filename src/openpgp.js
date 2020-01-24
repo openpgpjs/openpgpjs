@@ -89,10 +89,12 @@ export function getWorker() {
 /**
  * Cleanup the current instance of the web worker.
  */
-export function destroyWorker() {
-  if (asyncProxy) {
-    asyncProxy.terminate();
-    asyncProxy = undefined;
+export async function destroyWorker() {
+  const proxy = asyncProxy;
+  asyncProxy = undefined;
+  if (proxy) {
+    await proxy.clearKeyCache();
+    proxy.terminate();
   }
 }
 
