@@ -2615,7 +2615,7 @@ describe('Key', function() {
     await expect(key.validate()).to.be.rejectedWith('Missing private key parameters');
   });
 
-  it.only('clearPrivateParams() - check that private key parameters were zeroed out', async function() {
+  it('clearPrivateParams() - check that private key parameters were zeroed out', async function() {
     const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
     const params = key.primaryKey.params.slice();
