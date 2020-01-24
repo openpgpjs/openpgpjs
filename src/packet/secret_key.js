@@ -388,7 +388,11 @@ SecretKey.prototype.clearPrivateParams = function () {
   }
 
   const algo = enums.write(enums.publicKey, this.algorithm);
-  this.params = this.params.slice(0, crypto.getPubKeyParamTypes(algo).length);
+  const publicParamCount = crypto.getPubKeyParamTypes(algo).length;
+  this.params.slice(publicParamCount).forEach(param => {
+    param.data.fill(0);
+  });
+  this.params.length = publicParamCount;
   this.isEncrypted = true;
 };
 
