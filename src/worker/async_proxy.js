@@ -135,6 +135,20 @@ AsyncProxy.prototype.seedRandom = async function(workerId, size) {
 };
 
 /**
+ * Clear key caches
+ * @async
+ */
+AsyncProxy.prototype.clearKeyCache = async function() {
+  await Promise.all(this.workers.map(worker => new Promise((resolve, reject) => {
+    const id = this.getID();
+
+    worker.postMessage({ id, event: 'clear-key-cache' });
+
+    this.tasks[id] = { resolve, reject };
+  })));
+};
+
+/**
  * Terminates the workers
  */
 AsyncProxy.prototype.terminate = function() {
