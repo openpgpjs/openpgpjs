@@ -586,6 +586,7 @@ Message.prototype.verify = async function(keys, date = new Date(), streaming) {
       });
       onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
       onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming));
+      onePassSig.hashed.catch(() => {});
     }));
     msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
       const reader = stream.getReader(readable);

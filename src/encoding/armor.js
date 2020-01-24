@@ -313,6 +313,7 @@ function dearmor(input) {
       }));
       data = stream.transformPair(data, async (readable, writable) => {
         const checksumVerified = stream.readToEnd(getCheckSum(stream.passiveClone(readable)));
+        checksumVerified.catch(() => {});
         await stream.pipe(readable, writable, {
           preventClose: true
         });
