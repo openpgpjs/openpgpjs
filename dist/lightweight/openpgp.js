@@ -20663,7 +20663,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.8.0",
+  versionstring: "OpenPGP.js v4.8.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -25765,6 +25765,7 @@ exports.default = {
 };
 
 },{"./curves":78,"./ecdh":79,"./ecdsa":80,"./eddsa":81}],83:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25822,7 +25823,7 @@ function keyFromPublic(indutnyCurve, pub) {
 }
 
 /**
- * Load elliptic on demand to the window.openpgp.elliptic
+ * Load elliptic on demand to global.openpgp.elliptic
  * @returns {Promise<elliptic>}
  */
 async function loadEllipticPromise() {
@@ -25833,10 +25834,10 @@ async function loadEllipticPromise() {
   const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
   await (0, _lightweight_helper.loadScript)(mainUrl);
   URL.revokeObjectURL(mainUrl);
-  if (!window.openpgp.elliptic) {
+  if (!global.openpgp.elliptic) {
     throw new Error('Elliptic library failed to load correctly');
   }
-  return window.openpgp.elliptic;
+  return global.openpgp.elliptic;
 }
 
 let ellipticPromise;
@@ -25866,6 +25867,7 @@ async function getIndutnyCurve(name) {
   return new elliptic.ec(name);
 }
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../../../config":57,"../../../lightweight_helper":103,"../../../util":136,"elliptic":"elliptic"}],84:[function(require,module,exports){
 'use strict';
 
@@ -26129,6 +26131,7 @@ async function millerRabin(n, k, rand) {
 }
 
 },{"../random":87,"bn.js":16}],86:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26349,7 +26352,7 @@ exports.default = {
     if (_util2.default.getWebCrypto()) {
       let keyPair;
       let keyGenOpt;
-      if (window.crypto && window.crypto.subtle || window.msCrypto) {
+      if (global.crypto && global.crypto.subtle || global.msCrypto) {
         // current standard spec
         keyGenOpt = {
           name: 'RSASSA-PKCS1-v1_5',
@@ -26361,7 +26364,7 @@ exports.default = {
         };
         keyPair = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
         keyPair = await promisifyIE11Op(keyPair, 'Error generating RSA key pair.');
-      } else if (window.crypto && window.crypto.webkitSubtle) {
+      } else if (global.crypto && global.crypto.webkitSubtle) {
         // outdated spec implemented by old Webkit
         keyGenOpt = {
           name: 'RSA-OAEP',
@@ -26715,7 +26718,9 @@ function publicToJwk(n, e) {
   };
 }
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../../config":57,"../../enums":91,"../../type/mpi":133,"../../util":136,"../pkcs1":74,"../random":87,"./prime":85,"asn1.js":"asn1.js","bn.js":16}],87:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -26772,8 +26777,8 @@ exports.default = {
     const buf = new Uint8Array(length);
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
       crypto.getRandomValues(buf);
-    } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
-      window.msCrypto.getRandomValues(buf);
+    } else if (typeof global !== 'undefined' && typeof global.msCrypto === 'object' && typeof global.msCrypto.getRandomValues === 'function') {
+      global.msCrypto.getRandomValues(buf);
     } else if (nodeCrypto) {
       const bytes = nodeCrypto.randomBytes(buf.length);
       buf.set(bytes);
@@ -26876,6 +26881,7 @@ RandomBuffer.prototype.get = async function (buf) {
   }
 };
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../util":136,"bn.js":16,"crypto":"crypto"}],88:[function(require,module,exports){
 'use strict';
 
@@ -27349,13 +27355,14 @@ function dearmor(input) {
         }
       }));
       data = _webStreamTools2.default.transformPair(data, async (readable, writable) => {
-        const checksumVerified = getCheckSum(_webStreamTools2.default.passiveClone(readable));
+        const checksumVerified = _webStreamTools2.default.readToEnd(getCheckSum(_webStreamTools2.default.passiveClone(readable)));
+        checksumVerified.catch(() => {});
         await _webStreamTools2.default.pipe(readable, writable, {
           preventClose: true
         });
         const writer = _webStreamTools2.default.getWriter(writable);
         try {
-          const checksumVerifiedString = await _webStreamTools2.default.readToEnd(checksumVerified);
+          const checksumVerifiedString = await checksumVerified;
           if (checksum !== checksumVerifiedString && (checksum || _config2.default.checksum_required)) {
             throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" + checksumVerifiedString + "'");
           }
@@ -28099,6 +28106,7 @@ exports.default = {
 };
 
 },{}],92:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -28120,7 +28128,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl || _config2.default.keyserver;
-  this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
+  this._fetch = typeof global !== 'undefined' ? global.fetch : require('node-fetch');
 }
 
 /**
@@ -28199,6 +28207,7 @@ HKP.prototype.upload = function (publicKeyArmored) {
 
 exports.default = HKP;
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./config":57,"node-fetch":"node-fetch"}],93:[function(require,module,exports){
 'use strict';
 
@@ -29721,6 +29730,20 @@ Key.prototype.validate = async function () {
 };
 
 /**
+ * Clear private key parameters
+ */
+Key.prototype.clearPrivateParams = function () {
+  if (!this.isPrivate()) {
+    throw new Error("Can't clear private parameters of a public key");
+  }
+  this.getKeys().forEach(({ keyPacket }) => {
+    if (keyPacket.isDecrypted()) {
+      keyPacket.clearPrivateParams();
+    }
+  });
+};
+
+/**
  * Checks if a signature on a key is revoked
  * @param  {module:packet.SecretKey|
  * @param  {module:packet.Signature}  signature    The signature to verify
@@ -30824,6 +30847,7 @@ KeyArray.prototype.removeForId = function (keyId) {
 exports.default = Keyring;
 
 },{"../key":96,"./localstore":102}],102:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -30882,8 +30906,8 @@ function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';
   this.publicKeysItem = prefix + this.publicKeysItem;
   this.privateKeysItem = prefix + this.privateKeysItem;
-  if (typeof window !== 'undefined' && window.localStorage) {
-    this.storage = window.localStorage;
+  if (typeof global !== 'undefined' && global.localStorage) {
+    this.storage = global.localStorage;
   } else {
     this.storage = new (require('node-localstorage').LocalStorage)(_config2.default.node_store);
   }
@@ -30961,6 +30985,7 @@ async function storeKeys(storage, itemname, keys) {
 
 exports.default = LocalStore;
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../config":57,"../key":96,"../util":136,"node-localstorage":"node-localstorage","web-stream-tools":53}],103:[function(require,module,exports){
 'use strict';
 
@@ -31612,7 +31637,8 @@ Message.prototype.verify = async function (keys, date = new Date(), streaming) {
         onePassSig.correspondingSigReject = reject;
       });
       onePassSig.signatureData = _webStreamTools2.default.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-      onePassSig.hashed = await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming);
+      onePassSig.hashed = _webStreamTools2.default.readToEnd((await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming)));
+      onePassSig.hashed.catch(() => {});
     }));
     msg.packets.stream = _webStreamTools2.default.transformPair(msg.packets.stream, async (readable, writable) => {
       const reader = _webStreamTools2.default.getReader(readable);
@@ -31858,6 +31884,7 @@ function fromBinary(bytes, filename, date = new Date(), type = 'binary') {
 }
 
 },{"./config":57,"./crypto":72,"./encoding/armor":89,"./enums":91,"./key":96,"./packet":109,"./signature":129,"./type/keyid":132,"./util":136,"web-stream-tools":53}],105:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -31971,7 +31998,7 @@ let asyncProxy; // instance of the asyncproxy
  */
 
 async function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
-  if (workers.length || typeof window !== 'undefined' && window.Worker && window.MessageChannel) {
+  if (workers.length || typeof global !== 'undefined' && global.Worker && global.MessageChannel) {
     const proxy = new _async_proxy2.default({ path, n, workers, config: _config2.default });
     const loaded = await proxy.loaded();
     if (loaded) {
@@ -31993,8 +32020,13 @@ function getWorker() {
 /**
  * Cleanup the current instance of the web worker.
  */
-function destroyWorker() {
+async function destroyWorker() {
+  const proxy = asyncProxy;
   asyncProxy = undefined;
+  if (proxy) {
+    await proxy.clearKeyCache();
+    proxy.terminate();
+  }
 }
 
 //////////////////////
@@ -32618,6 +32650,7 @@ function nativeAEAD() {
   return _config2.default.aead_protect && (_config2.default.aead_mode === _enums2.default.aead.eax || _config2.default.aead_mode === _enums2.default.aead.experimental_gcm) && _util2.default.getWebCrypto();
 }
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./cleartext":55,"./config/config":56,"./enums":91,"./key":96,"./message":104,"./polyfills":128,"./util":136,"./worker/async_proxy":138,"web-stream-tools":53}],106:[function(require,module,exports){
 'use strict';
 
@@ -32946,6 +32979,7 @@ function verificationObjectToClone(verObject) {
       try {
         await verified;
         delete packets[0].signature;
+        delete packets[0].hashed;
       } catch (e) {}
       return packets;
     });
@@ -35246,7 +35280,7 @@ SecretKey.prototype.generate = async function (bits, curve) {
 };
 
 /**
- * Clear private params, return to initial state
+ * Clear private key parameters
  */
 SecretKey.prototype.clearPrivateParams = function () {
   if (this.s2k && this.s2k.type === 'gnu-dummy') {
@@ -35254,11 +35288,12 @@ SecretKey.prototype.clearPrivateParams = function () {
     return;
   }
 
-  if (!this.keyMaterial) {
-    throw new Error('If secret key is not encrypted, clearing private params is irreversible.');
-  }
   const algo = _enums2.default.write(_enums2.default.publicKey, this.algorithm);
-  this.params = this.params.slice(0, _crypto2.default.getPubKeyParamTypes(algo).length);
+  const publicParamCount = _crypto2.default.getPubKeyParamTypes(algo).length;
+  this.params.slice(publicParamCount).forEach(param => {
+    param.data.fill(0);
+  });
+  this.params.length = publicParamCount;
   this.isEncrypted = true;
 };
 
@@ -36064,7 +36099,7 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
   let toHash;
   let hash;
   if (this.hashed) {
-    hash = this.hashed;
+    hash = await this.hashed;
   } else {
     toHash = this.toHash(signatureType, data, detached);
     if (!streaming) toHash = await _webStreamTools2.default.readToEnd(toHash);
@@ -37143,14 +37178,14 @@ var _util2 = _interopRequireDefault(_util);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-if (typeof window !== 'undefined') {
+if (typeof global !== 'undefined') {
   /********************************************************************
    * NOTE: This list is duplicated in Gruntfile.js,                   *
    * so that these polyfills are only included in the compat bundle.  *
    ********************************************************************/
 
   try {
-    if (typeof window.fetch === 'undefined') {
+    if (typeof global.fetch === 'undefined') {
       require('whatwg-fetch');
     }
     if (typeof Array.prototype.fill === 'undefined') {
@@ -38632,7 +38667,7 @@ exports.default = {
       return;
     }
 
-    return typeof window !== 'undefined' && window.crypto && window.crypto.subtle;
+    return typeof global !== 'undefined' && global.crypto && global.crypto.subtle;
   },
 
   /**
@@ -38647,12 +38682,12 @@ exports.default = {
       return;
     }
 
-    if (typeof window !== 'undefined') {
-      if (window.crypto) {
-        return window.crypto.subtle || window.crypto.webkitSubtle;
+    if (typeof global !== 'undefined') {
+      if (global.crypto) {
+        return global.crypto.subtle || global.crypto.webkitSubtle;
       }
-      if (window.msCrypto) {
-        return window.msCrypto.subtle;
+      if (global.msCrypto) {
+        return global.msCrypto.subtle;
       }
     }
   },
@@ -38873,6 +38908,7 @@ exports.default = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./config":57,"./encoding/base64":90,"./util":136,"email-addresses":17,"web-stream-tools":53}],137:[function(require,module,exports){
+(function (global){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -38924,7 +38960,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @constructor
  */
 function WKD() {
-  this._fetch = typeof window !== 'undefined' ? window.fetch : require('node-fetch');
+  this._fetch = typeof global !== 'undefined' ? global.fetch : require('node-fetch');
 }
 
 /**
@@ -38974,6 +39010,7 @@ WKD.prototype.lookup = async function (options) {
 
 exports.default = WKD;
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./crypto":72,"./key":96,"./util":136,"node-fetch":"node-fetch"}],138:[function(require,module,exports){
 'use strict';
 
@@ -39126,6 +39163,20 @@ AsyncProxy.prototype.getID = function () {
 AsyncProxy.prototype.seedRandom = async function (workerId, size) {
   const buf = await _crypto2.default.random.getRandomBytes(size);
   this.workers[workerId].postMessage({ event: 'seed-random', buf }, _util2.default.getTransferables(buf, true));
+};
+
+/**
+ * Clear key caches
+ * @async
+ */
+AsyncProxy.prototype.clearKeyCache = async function () {
+  await Promise.all(this.workers.map(worker => new Promise((resolve, reject) => {
+    const id = this.getID();
+
+    worker.postMessage({ id, event: 'clear-key-cache' });
+
+    this.tasks[id] = { resolve, reject };
+  })));
 };
 
 /**
