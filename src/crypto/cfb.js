@@ -60,23 +60,26 @@ export default {
     const cipherfn = new cipher[algo](key);
     const block_size = cipherfn.blockSize;
 
-    let blocki = new Uint8Array(block_size);
     const blockc = iv.slice();
-    let pos = 0;
-    const ciphertext = new Uint8Array(plaintext.length);
-    let i;
-    let j = 0;
-
-    while (plaintext.length > block_size * pos) {
-      const encblock = cipherfn.encrypt(blockc);
-      blocki = plaintext.subarray((pos * block_size), (pos * block_size) + block_size);
-      for (i = 0; i < blocki.length; i++) {
-        blockc[i] = blocki[i] ^ encblock[i];
-        ciphertext[j++] = blockc[i];
+    let pt = new Uint8Array();
+    const process = chunk => {
+      if (chunk) {
+        pt = util.concatUint8Array([pt, chunk]);
       }
-      pos++;
-    }
-    return ciphertext;
+      const ciphertext = new Uint8Array(pt.length);
+      let i;
+      let j = 0;
+      while (chunk ? pt.length >= block_size : pt.length) {
+        const encblock = cipherfn.encrypt(blockc);
+        for (i = 0; i < block_size; i++) {
+          blockc[i] = pt[i] ^ encblock[i];
+          ciphertext[j++] = blockc[i];
+        }
+        pt = pt.subarray(block_size);
+      }
+      return ciphertext.subarray(0, j);
+    };
+    return stream.transform(plaintext, process, process);
   },
 
   decrypt: async function(algo, key, ciphertext, iv) {
@@ -87,28 +90,29 @@ export default {
       return aesDecrypt(algo, key, ciphertext, iv);
     }
 
-    ciphertext = await stream.readToEnd(ciphertext);
-
     const cipherfn = new cipher[algo](key);
     const block_size = cipherfn.blockSize;
 
     let blockp = iv;
-    let pos = 0;
-    const plaintext = new Uint8Array(ciphertext.length);
-    const offset = 0;
-    let i;
-    let j = 0;
-
-    while (ciphertext.length > (block_size * pos)) {
-      const decblock = cipherfn.encrypt(blockp);
-      blockp = ciphertext.subarray((pos * (block_size)) + offset, (pos * (block_size)) + (block_size) + offset);
-      for (i = 0; i < blockp.length; i++) {
-        plaintext[j++] = blockp[i] ^ decblock[i];
+    let ct = new Uint8Array();
+    const process = chunk => {
+      if (chunk) {
+        ct = util.concatUint8Array([ct, chunk]);
       }
-      pos++;
-    }
-
-    return plaintext;
+      const plaintext = new Uint8Array(ct.length);
+      let i;
+      let j = 0;
+      while (chunk ? ct.length >= block_size : ct.length) {
+        const decblock = cipherfn.encrypt(blockp);
+        blockp = ct;
+        for (i = 0; i < block_size; i++) {
+          plaintext[j++] = blockp[i] ^ decblock[i];
+        }
+        ct = ct.subarray(block_size);
+      }
+      return plaintext.subarray(0, j);
+    };
+    return stream.transform(ciphertext, process, process);
   }
 };
 
