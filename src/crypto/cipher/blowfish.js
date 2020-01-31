@@ -393,6 +393,6 @@ function BF(key) {
 }
 
 BF.keySize = BF.prototype.keySize = 16;
-BF.blockSize = BF.prototype.blockSize = 16;
+BF.blockSize = BF.prototype.blockSize = 8;
 
 export default BF;
