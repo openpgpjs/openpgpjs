@@ -300,7 +300,7 @@ SecretKey.prototype.encrypt = async function (passphrase) {
     this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
   } else {
     this.s2k_usage = 254;
-    this.keyMaterial = crypto.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
+    this.keyMaterial = await crypto.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
       cleartext,
       await crypto.hash.sha1(cleartext)
     ]), this.iv);
