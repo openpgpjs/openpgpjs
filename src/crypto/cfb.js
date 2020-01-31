@@ -50,7 +50,7 @@ const nodeAlgos = {
 
 export default {
   encrypt: function(algo, key, plaintext, iv) {
-    if (nodeCrypto && nodeAlgos[algo]) { // Node crypto library.
+    if (util.getNodeCrypto() && nodeAlgos[algo]) { // Node crypto library.
       return nodeEncrypt(algo, key, plaintext, iv);
     }
     if (algo.substr(0, 3) === 'aes') {
@@ -83,7 +83,7 @@ export default {
   },
 
   decrypt: async function(algo, key, ciphertext, iv) {
-    if (nodeCrypto && nodeAlgos[algo]) { // Node crypto library.
+    if (util.getNodeCrypto() && nodeAlgos[algo]) { // Node crypto library.
       return nodeDecrypt(algo, key, ciphertext, iv);
     }
     if (algo.substr(0, 3) === 'aes') {
