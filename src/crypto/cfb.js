@@ -35,8 +35,24 @@ const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 const Buffer = util.getNodeBuffer();
 
+const knownAlgos = nodeCrypto ? nodeCrypto.getCiphers() : [];
+const nodeAlgos = {
+  idea: knownAlgos.includes('idea-cfb') ? 'idea-cfb' : undefined, /* Unused, not implemented */
+  '3des': knownAlgos.includes('des-ede3-cfb') ? 'des-ede3-cfb' : undefined,
+  tripledes: knownAlgos.includes('des-ede3-cfb') ? 'des-ede3-cfb' : undefined,
+  cast5: knownAlgos.includes('cast5-cfb') ? 'cast5-cfb' : undefined,
+  blowfish: knownAlgos.includes('bf-cfb') ? 'bf-cfb' : undefined,
+  aes128: knownAlgos.includes('aes-128-cfb') ? 'aes-128-cfb' : undefined,
+  aes192: knownAlgos.includes('aes-192-cfb') ? 'aes-192-cfb' : undefined,
+  aes256: knownAlgos.includes('aes-256-cfb') ? 'aes-256-cfb' : undefined
+  /* twofish is not implemented in OpenSSL */
+};
+
 export default {
   encrypt: function(algo, key, plaintext, iv) {
+    if (nodeCrypto && nodeAlgos[algo]) { // Node crypto library.
+      return nodeEncrypt(algo, key, plaintext, iv);
+    }
     if (algo.substr(0, 3) === 'aes') {
       return aesEncrypt(algo, key, plaintext, iv);
     }
@@ -64,6 +80,9 @@ export default {
   },
 
   decrypt: async function(algo, key, ciphertext, iv) {
+    if (nodeCrypto && nodeAlgos[algo]) { // Node crypto library.
+      return nodeDecrypt(algo, key, ciphertext, iv);
+    }
     if (algo.substr(0, 3) === 'aes') {
       return aesDecrypt(algo, key, ciphertext, iv);
     }
@@ -102,17 +121,12 @@ function aesEncrypt(algo, key, pt, iv) {
   ) { // Web Crypto
     return webEncrypt(algo, key, pt, iv);
   }
-  if (nodeCrypto) { // Node crypto library.
-    return nodeEncrypt(algo, key, pt, iv);
-  } // asm.js fallback
+  // asm.js fallback
   const cfb = new AES_CFB(key, iv);
   return stream.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
 }
 
 function aesDecrypt(algo, key, ct, iv) {
-  if (nodeCrypto) { // Node crypto library.
-    return nodeDecrypt(algo, key, ct, iv);
-  }
   if (util.isStream(ct)) {
     const cfb = new AES_CFB(key, iv);
     return stream.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
@@ -139,13 +153,13 @@ async function webEncrypt(algo, key, pt, iv) {
 function nodeEncrypt(algo, key, pt, iv) {
   key = Buffer.from(key);
   iv = Buffer.from(iv);
-  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  const cipherObj = new nodeCrypto.createCipheriv(nodeAlgos[algo], key, iv);
   return stream.transform(pt, value => new Uint8Array(cipherObj.update(Buffer.from(value))));
 }
 
 function nodeDecrypt(algo, key, ct, iv) {
   key = Buffer.from(key);
   iv = Buffer.from(iv);
-  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  const decipherObj = new nodeCrypto.createDecipheriv(nodeAlgos[algo], key, iv);
   return stream.transform(ct, value => new Uint8Array(decipherObj.update(Buffer.from(value))));
 }
