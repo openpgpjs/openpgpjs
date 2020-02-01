@@ -111,11 +111,50 @@ Here are some examples of how to use the v2.x+ API. For more elaborate examples 
 
 #### Set up
 
-```js
-const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
+##### Node.js
 
+```js
+const openpgp = require('openpgp');
+```
+
+##### Browser
+
+Copy `dist/openpgp.min.js` or `dist/compat/openpgp.min.js` (depending on the browser support you need, see [Platform Support](#platform-support)) to your project folder, and load it in a script tag:
+
+```html
+<script src="openpgp.min.js"></script>
+```
+
+If you want to use the built-in Web Worker, to offload cryptographic operations off the main thread:
+
+```js
 await openpgp.initWorker({ path: 'openpgp.worker.js' }); // set the relative web worker path
 ```
+
+On logout, be sure to destroy the worker again, to clear private keys from memory:
+
+```js
+await openpgp.destroyWorker();
+```
+
+Alternatively, you can also implement a Web Worker in your application and load OpenPGP.js from there. This can be more performant if you store or fetch keys and messages directly inside the Worker, so that they don't have to be `postMessage`d there.
+
+If you want to use the lightweight build (which is smaller, and lazily loads non-default curves on demand), copy `dist/lightweight/openpgp.min.js` and `dist/lightweight/elliptic.min.js`, load the former in a script tag, and point `openpgp.config.indutny_elliptic_path` to the latter:
+
+```html
+<script src="lightweight/openpgp.min.js"></script>
+<script>
+openpgp.config.indutny_elliptic_path = 'lightweight/elliptic.min.js';
+</script>
+```
+
+To test whether the lazy loading works, try:
+
+```js
+await openpgp.generateKey({ curve: 'brainpoolP512r1',  userIds: [{ name: 'Test', email: 'test@test.com' }] });
+```
+
+For more examples of how to generate a key, see [Generate new key pair](#generate-new-key-pair). It is recommended to use `curve25519` instead of `brainpoolP512r1` by default.
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
