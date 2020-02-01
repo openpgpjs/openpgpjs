@@ -302,6 +302,10 @@ Where the value can be any of:
         if (done) break;
         console.log('new chunk:', value); // Uint8Array
     }
+
+    // Or, in Node.js, you can pipe the above stream as follows:
+    const nodeStream = openpgp.stream.webToNode(encrypted);
+    nodeStream.pipe(nodeWritableStream);
 })();
 ```
 
