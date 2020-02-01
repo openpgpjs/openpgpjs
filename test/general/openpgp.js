@@ -2445,6 +2445,48 @@ describe('OpenPGP.js public api tests', function() {
         expect(decrypted.data).to.equal('Tesssst<br><br><br>Sent from ProtonMail mobile<br><br><br>');
       });
 
+      it('should decrypt broken Blowfish message from old OpenPGP.js', async function() {
+        openpgp.crypto.cipher.blowfish.blockSize = 16;
+        openpgp.crypto.cipher.blowfish.prototype.blockSize = 16;
+        const use_nativeVal = openpgp.config.use_native;
+        openpgp.config.use_native = false;
+        try {
+          const { data } = await openpgp.decrypt({
+            passwords: 'test',
+            message: await openpgp.message.readArmored(`-----BEGIN PGP MESSAGE-----
+Version: OpenPGP.js v4.8.1
+Comment: https://openpgpjs.org
+
+wx4EBAMI0eHVbTnl2iLg6pIJ4sWw2K7OwfxFP8bmaUvSRAGiSDGJSFNUuB4v
+SU69Z1XyXiuTpD3780FnLnR4dF41nhbrTXaDG+X1b3JsZCHTFMGF7Eb+YVhh
+YCXOZwd3z5lxcj/M
+=oXcN
+-----END PGP MESSAGE-----`)
+          });
+          expect(data).to.equal('Hello World!');
+        } finally {
+          openpgp.crypto.cipher.blowfish.blockSize = 8;
+          openpgp.crypto.cipher.blowfish.prototype.blockSize = 8;
+          openpgp.config.use_native = use_nativeVal;
+        }
+      });
+
+      it('should decrypt correct Blowfish message from new OpenPGP.js', async function() {
+        const { data } = await openpgp.decrypt({
+          passwords: 'test',
+          message: await openpgp.message.readArmored(`-----BEGIN PGP MESSAGE-----
+Version: OpenPGP.js v4.9.0
+Comment: https://openpgpjs.org
+
+wx4EBAMI7Di70u7hoDfgBUJQ2+1ig6ym3KMjRS9kAovSPAGRQLIPv2DgkINL
+3DUgMNqtQCA23xWhq7Ly6o9H1lRfoAo7V5UElVCqGEX7cgyZjI97alY6Je3o
+amnR6g==
+=rPIK
+-----END PGP MESSAGE-----`)
+        });
+        expect(data).to.equal('Hello World!');
+      });
+
     });
 
     describe('Errors', function() {
