@@ -112,9 +112,9 @@ Here are some examples of how to use the v2.x+ API. For more elaborate examples 
 #### Set up
 
 ```js
-var openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
+const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
-await openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
+await openpgp.initWorker({ path: 'openpgp.worker.js' }); // set the relative web worker path
 ```
 
 #### Encrypt and decrypt *Uint8Array* data with a password
@@ -122,29 +122,21 @@ await openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web w
 Encryption will use the algorithm specified in config.encryption_cipher (defaults to aes256), and decryption will use the algorithm used for encryption.
 
 ```js
-var options, encrypted;
+(async () => {
+    const { message } = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x01, 0x01])), // input as Message object
+        passwords: ['secret stuff'],                                             // multiple passwords possible
+        armor: false                                                             // don't ASCII armor (for Uint8Array output)
+    });
+    const encrypted = message.packets.write(); // get raw encrypted packets as Uint8Array
 
-options = {
-    message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x01, 0x01])), // input as Message object
-    passwords: ['secret stuff'],                                             // multiple passwords possible
-    armor: false                                                             // don't ASCII armor (for Uint8Array output)
-};
-
-openpgp.encrypt(options).then(function(ciphertext) {
-    encrypted = ciphertext.message.packets.write(); // get raw encrypted packets as Uint8Array
-});
-```
-
-```js
-options = {
-    message: await openpgp.message.read(encrypted), // parse encrypted bytes
-    passwords: ['secret stuff'],              // decrypt with password
-    format: 'binary'                          // output as Uint8Array
-};
-
-openpgp.decrypt(options).then(function(plaintext) {
-    return plaintext.data // Uint8Array([0x01, 0x01, 0x01])
-});
+    const { data: decrypted } = await openpgp.encrypt({
+        message: await openpgp.message.read(encrypted), // parse encrypted bytes
+        passwords: ['secret stuff'],                    // decrypt with password
+        format: 'binary'                                // output as Uint8Array
+    });
+    console.log(decrypted); // Uint8Array([0x01, 0x01, 0x01])
+})();
 ```
 
 #### Encrypt and decrypt *String* data with PGP keys
@@ -152,85 +144,70 @@ openpgp.decrypt(options).then(function(plaintext) {
 Encryption will use the algorithm preferred by the public key (defaults to aes256 for keys generated in OpenPGP.js), and decryption will use the algorithm used for encryption.
 
 ```js
-const openpgp = require('openpgp') // use as CommonJS, AMD, ES6 module or via window.openpgp
+const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
-await openpgp.initWorker({ path:'openpgp.worker.js' }) // set the relative web worker path
+(async () => {
+    await openpgp.initWorker({ path: 'openpgp.worker.js' }); // set the relative web worker path
 
-// put keys in backtick (``) to avoid errors caused by spaces or tabs
-const pubkey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+    // put keys in backtick (``) to avoid errors caused by spaces or tabs
+    const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...
------END PGP PUBLIC KEY BLOCK-----`
-const privkey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+-----END PGP PUBLIC KEY BLOCK-----`;
+    const privateKeyArmored = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 ...
------END PGP PRIVATE KEY BLOCK-----` //encrypted private key
-const passphrase = `yourPassphrase` //what the privKey is encrypted with
+-----END PGP PRIVATE KEY BLOCK-----`; // encrypted private key
+    const passphrase = `yourPassphrase`; // what the private key is encrypted with
 
-const encryptDecryptFunction = async() => {
-    const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0]
-    await privKeyObj.decrypt(passphrase)
+    const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
+    await privateKey.decrypt(passphrase);
 
-    const options = {
-        message: openpgp.message.fromText('Hello, World!'),       // input as Message object
-        publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for encryption
-        privateKeys: [privKeyObj]                                 // for signing (optional)
-    }
-
-    openpgp.encrypt(options).then(ciphertext => {
-        encrypted = ciphertext.data // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
-        return encrypted
-    })
-    .then(async encrypted => {
-        const options = {
-            message: await openpgp.message.readArmored(encrypted),    // parse armored message
-            publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for verification (optional)
-            privateKeys: [privKeyObj]                                 // for decryption
-        }
-
-        openpgp.decrypt(options).then(plaintext => {
-            console.log(plaintext.data)
-            return plaintext.data // 'Hello, World!'
-        })
-
-    })
-}
-
-encryptDecryptFunction()
+    const { data: encrypted } = await openpgp.encrypt({
+        message: openpgp.message.fromText('Hello, World!'),                 // input as Message object
+        publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys, // for encryption
+        privateKeys: [privateKey]                                           // for signing (optional)
+    });
+    console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+    const { data: decrypted } = await openpgp.decrypt({
+        message: await openpgp.message.readArmored(encrypted),              // parse armored message
+        publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys, // for verification (optional)
+        privateKeys: [privateKey]                                           // for decryption
+    });
+    console.log(decrypted); // 'Hello, World!'
+})();
 ```
 
 Encrypt with multiple public keys:
 
 ```js
-const pubkeys = [`-----BEGIN PGP PUBLIC KEY BLOCK-----
+(async () => {
+    const publicKeysArmored = [
+        `-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...
 -----END PGP PUBLIC KEY BLOCK-----`,
-`-----BEGIN PGP PUBLIC KEY BLOCK-----
+        `-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...
 -----END PGP PUBLIC KEY BLOCK-----`
-const privkey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+    ];
+    const privateKeyArmored = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 ...
------END PGP PRIVATE KEY BLOCK-----` //encrypted private key
-const passphrase = `yourPassphrase` //what the privKey is encrypted with
-const message = 'Hello, World!'    // input as Message object
+-----END PGP PRIVATE KEY BLOCK-----`;    // encrypted private key
+    const passphrase = `yourPassphrase`; // what the private key is encrypted with
+    const message = 'Hello, World!';
 
-async encryptWithMultiplePublicKeys(pubkeys, privkey, passphrase, message) {
-    const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0]
-    await privKeyObj.decrypt(passphrase)
+    const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
+    await privateKey.decrypt(passphrase)
 
-    pubkeys = pubkeys.map(async (key) => {
-    	return (await openpgp.key.readArmored(key)).keys[0]
+    const publicKeys = await Promise.all(publicKeysArmored.map(async (key) => {
+        return (await openpgp.key.readArmored(key)).keys[0];
+    }));
+
+    const { data: encrypted } = await openpgp.encrypt({
+        message: openpgp.message.fromText(message),   // input as Message object
+        publicKeys,                                   // for encryption
+        privateKeys: [privateKey]                     // for signing (optional)
     });
-
-    const options = {
-        message: openpgp.message.fromText(message),
-        publicKeys: pubkeys,           				  // for encryption
-        privateKeys: [privKeyObj]                                 // for signing (optional)
-    }
-
-    return openpgp.encrypt(options).then(ciphertext => {
-        encrypted = ciphertext.data // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
-        return encrypted
-    })
-   };
+    console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+})();
 ```
 
 #### Encrypt with compression
@@ -240,21 +217,19 @@ By default, `encrypt` will not use any compression. It's possible to override th
 Either set the `compression` parameter in the options object when calling `encrypt`.
 
 ```js
-var options, encrypted;
-
-options = {
-    message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])), // or .fromText('string')
-    passwords: ['secret stuff'],                                             // multiple passwords possible
-    compression: openpgp.enums.compression.zip                               // compress the data with zip
-};
-
-ciphertext = await openpgp.encrypt(options);     // use ciphertext
+(async () => {
+    const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])), // or .fromText('string')
+        passwords: ['secret stuff'],                                             // multiple passwords possible
+        compression: openpgp.enums.compression.zip                               // compress the data with zip
+    });
+})();
 ```
 
 Or, override the config to enable compression:
 
 ```js
-openpgp.config.compression = openpgp.enums.compression.zlib
+openpgp.config.compression = openpgp.enums.compression.zlib;
 ```
 
 Where the value can be any of:
@@ -265,21 +240,20 @@ Where the value can be any of:
 #### Streaming encrypt *Uint8Array* data with a password
 
 ```js
-const readableStream = new ReadableStream({
-    start(controller) {
-        controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
-        controller.close();
-    }
-});
+(async () => {
+    const readableStream = new ReadableStream({
+        start(controller) {
+            controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
+            controller.close();
+        }
+    });
 
-const options = {
-    message: openpgp.message.fromBinary(readableStream), // input as Message object
-    passwords: ['secret stuff'],                         // multiple passwords possible
-    armor: false                                         // don't ASCII armor (for Uint8Array output)
-};
-
-openpgp.encrypt(options).then(async function(ciphertext) {
-    const encrypted = ciphertext.message.packets.write(); // get raw encrypted packets as ReadableStream<Uint8Array>
+    const { message } = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(readableStream), // input as Message object
+        passwords: ['secret stuff'],                         // multiple passwords possible
+        armor: false                                         // don't ASCII armor (for Uint8Array output)
+    });
+    const encrypted = message.packets.write(); // get raw encrypted packets as ReadableStream<Uint8Array>
 
     // Either pipe the above stream somewhere, pass it to another function,
     // or read it manually as follows:
@@ -289,7 +263,7 @@ openpgp.encrypt(options).then(async function(ciphertext) {
         if (done) break;
         console.log('new chunk:', value); // Uint8Array
     }
-});
+})();
 ```
 
 For more information on creating ReadableStreams, see [the MDN Documentation on `new
@@ -303,18 +277,16 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
 
 ```js
 (async () => {
-    let options;
+    const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`; // Public key
+    const [privateKeyArmored] = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+...
+-----END PGP PRIVATE KEY BLOCK-----`; // Encrypted private key
+    const passphrase = `yourPassphrase`; // Password that private key is encrypted with
 
-    const pubkey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
-    ...
-    -----END PGP PUBLIC KEY BLOCK-----`; // Public key
-    const privkey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
-    ...
-    -----END PGP PRIVATE KEY BLOCK-----`; // Encrypted private key
-    const passphrase = `yourPassphrase`; // Password that privKey is encrypted with
-
-    const privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0];
-    await privKeyObj.decrypt(passphrase);
+    const privateKey = (await openpgp.key.readArmored([privateKeyArmored])).keys[0];
+    await privateKey.decrypt(passphrase);
 
     const readableStream = new ReadableStream({
         start(controller) {
@@ -323,22 +295,18 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
         }
     });
 
-    options = {
-        message: openpgp.message.fromText(readableStream),        // input as Message object
-        publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for encryption
-        privateKeys: [privKeyObj]                                 // for signing (optional)
-    };
-
-    const encrypted = await openpgp.encrypt(options);
+    const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromText(readableStream),                  // input as Message object
+        publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys, // for encryption
+        privateKeys: [privateKey]                                           // for signing (optional)
+    });
     const ciphertext = encrypted.data; // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
-    options = {
-        message: await openpgp.message.readArmored(ciphertext),   // parse armored message
-        publicKeys: (await openpgp.key.readArmored(pubkey)).keys, // for verification (optional)
-        privateKeys: [privKeyObj]                                 // for decryption
-    };
-
-    const decrypted = await openpgp.decrypt(options);
+    const decrypted = await openpgp.decrypt({
+        message: await openpgp.message.readArmored(ciphertext),             // parse armored message
+        publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys, // for verification (optional)
+        privateKeys: [privateKey]                                           // for decryption
+    });
     const plaintext = await openpgp.stream.readToEnd(decrypted.data); // 'Hello, World!'
 })();
 ```
@@ -346,212 +314,203 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
 
 #### Generate new key pair
 
-RSA keys:
-```js
-var options = {
-    userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
-    rsaBits: 4096,                                            // RSA key size
-    passphrase: 'super long and hard to guess secret'         // protects the private key
-};
-```
-
 ECC keys:
 
-Possible values for curve are: `curve25519`, `ed25519`, `p256`, `p384`, `p521`, `secp256k1`,
+Possible values for `curve` are: `curve25519`, `ed25519`, `p256`, `p384`, `p521`, `secp256k1`,
 `brainpoolP256r1`, `brainpoolP384r1`, or `brainpoolP512r1`.
-Note that options both `curve25519` and `ed25519` generate a primary key for signing using Ed25519
+Note that both the `curve25519` and `ed25519` options generate a primary key for signing using Ed25519
 and a subkey for encryption using Curve25519.
 
 ```js
-var options = {
-    userIds: [{ name:'Jon Smith', email:'jon@example.com' }], // multiple user IDs
-    curve: "ed25519",                                         // ECC curve name
-    passphrase: 'super long and hard to guess secret'         // protects the private key
-};
+(async () => {
+    const { privateKeyArmored, publicKeyArmored, revocationCertificate } = await openpgp.generateKey({
+        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        curve: 'ed25519',                                           // ECC curve name
+        passphrase: 'super long and hard to guess secret'           // protects the private key
+    });
+
+    console.log(privateKeyArmored);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
+    console.log(publicKeyArmored);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+    console.log(revocationCertificate); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+})();
 ```
 
+RSA keys:
+
 ```js
-openpgp.generateKey(options).then(function(key) {
-    var privkey = key.privateKeyArmored; // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
-    var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
-    var revocationCertificate = key.revocationCertificate; // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
-});
+(async () => {
+    const key = await openpgp.generateKey({
+        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        rsaBits: 4096,                                              // RSA key size
+        passphrase: 'super long and hard to guess secret'           // protects the private key
+    });
+})();
 ```
 
 #### Revoke a key
 
 Using a revocation certificate:
 ```js
-var options = {
-    key: openpgp.key.readArmored(pubkey).keys[0],
-    revocationCertificate: revocationCertificate
-};
+(async () => {
+    const { publicKeyArmored: revokedKeyArmored } = await openpgp.revokeKey({
+        key: (await openpgp.key.readArmored(publicKeyArmored)).keys[0],
+        revocationCertificate
+    });
+    console.log(revokedKeyArmored); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+})();
 ```
 
 Using the private key:
 ```js
-var options = {
-    key: openpgp.key.readArmored(privkey).keys[0]
-};
-```
-
-```js
-openpgp.revokeKey(options).then(function(key) {
-    var pubkey = key.publicKeyArmored;   // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
-});
+(async () => {
+    const { publicKeyArmored, publicKey } = await openpgp.revokeKey({
+        key: (await openpgp.key.readArmored(privateKeyArmored)).keys[0]
+    });
+})();
 ```
 
 #### Lookup public key on HKP server
 
 ```js
-var hkp = new openpgp.HKP(); // Defaults to https://keyserver.ubuntu.com, or pass another keyserver URL as a string
+(async () => {
+    var hkp = new openpgp.HKP(); // Defaults to https://keyserver.ubuntu.com, or pass another keyserver URL as a string
 
-var options = {
-    query: 'alice@example.com'
-};
-
-let armoredPubkey = await hkp.lookup(options);
-var pubkey = await openpgp.key.readArmored(armoredPubkey);
+    let publicKeyArmored = await hkp.lookup({
+        query: 'alice@example.com'
+    });
+    var { keys: [publicKey] } = await openpgp.key.readArmored(publicKeyArmored);
+})();
 ```
 
 #### Upload public key to HKP server
 
 ```js
-var hkp = new openpgp.HKP('https://pgp.mit.edu');
+(async () => {
+    var hkp = new openpgp.HKP('https://pgp.mit.edu');
 
-var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
+    var publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`;
 
-hkp.upload(pubkey).then(function() { ... });
+    await hkp.upload(publicKeyArmored);
+})();
 ```
 
 #### Sign and verify cleartext messages
 
 ```js
-var options, cleartext, validity;
+(async () => {
+    const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`;
+    const privateKeyArmored = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+...
+-----END PGP PRIVATE KEY BLOCK-----`; // encrypted private key
+    const passphrase = `yourPassphrase`; // what the private key is encrypted with
 
-var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----'; //encrypted private key
-var passphrase = 'secret passphrase'; //what the privKey is encrypted with
+    const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
+    await privateKey.decrypt(passphrase);
 
-var privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0];
-await privKeyObj.decrypt(passphrase);
-```
+    const { data: cleartext } = await openpgp.sign({
+        message: openpgp.cleartext.fromText('Hello, World!'), // CleartextMessage or Message object
+        privateKeys: [privateKey]                             // for signing
+    });
+    console.log(cleartext); // '-----BEGIN PGP SIGNED MESSAGE ... END PGP SIGNATURE-----'
 
-```js
-options = {
-    message: openpgp.cleartext.fromText('Hello, World!'), // CleartextMessage or Message object
-    privateKeys: [privKeyObj]                             // for signing
-};
-
-openpgp.sign(options).then(function(signed) {
-    cleartext = signed.data; // '-----BEGIN PGP SIGNED MESSAGE ... END PGP SIGNATURE-----'
-});
-```
-
-```js
-options = {
-    message: await openpgp.cleartext.readArmored(cleartext), // parse armored message
-    publicKeys: (await openpgp.key.readArmored(pubkey)).keys // for verification
-};
-
-openpgp.verify(options).then(function(verified) {
-	validity = verified.signatures[0].valid; // true
-	if (validity) {
-		console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
-	}
-});
+    const { signatures } = await openpgp.verify({
+        message: await openpgp.cleartext.readArmored(cleartext),           // parse armored message
+        publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys // for verification
+    });
+    const { valid } = verified.signatures[0];
+    if (valid) {
+        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+    } else {
+        throw new Error('signature could not be verified');
+    }
+})();
 ```
 
 #### Create and verify *detached* signatures
 
 ```js
-var options, detachedSig, validity;
+(async () => {
+    const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`;
+    const privateKeyArmored = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+...
+-----END PGP PRIVATE KEY BLOCK-----`; // encrypted private key
+    const passphrase = `yourPassphrase`; // what the private key is encrypted with
 
-var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----'; //encrypted private key
-var passphrase = 'secret passphrase'; //what the privKey is encrypted with
+    const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
+    await privateKey.decrypt(passphrase);
 
-var privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0];
-await privKeyObj.decrypt(passphrase);
-```
+    const { signature: detachedSignature } = await openpgp.sign({
+        message: openpgp.cleartext.fromText('Hello, World!'), // CleartextMessage or Message object
+        privateKeys: [privateKey],                            // for signing
+        detached: true
+    });
+    console.log(detachedSignature);
 
-```js
-options = {
-    message: openpgp.cleartext.fromText('Hello, World!'), // CleartextMessage or Message object
-    privateKeys: [privKeyObj],                            // for signing
-    detached: true
-};
-
-openpgp.sign(options).then(function(signed) {
-    detachedSig = signed.signature;
-});
-```
-
-
-```js
-options = {
-    message: openpgp.cleartext.fromText('Hello, World!'),        // CleartextMessage or Message object
-    signature: await openpgp.signature.readArmored(detachedSig), // parse detached signature
-    publicKeys: (await openpgp.key.readArmored(pubkey)).keys     // for verification
-};
-
-openpgp.verify(options).then(function(verified) {
-    validity = verified.signatures[0].valid; // true
-    if (validity) {
+    const { signatures } = await openpgp.verify({
+        message: openpgp.cleartext.fromText('Hello, World!'),              // CleartextMessage or Message object
+        signature: await openpgp.signature.readArmored(detachedSignature), // parse detached signature
+        publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys // for verification
+    });
+    const { valid } = verified.signatures[0];
+    if (valid) {
         console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+    } else {
+        throw new Error('signature could not be verified');
     }
-});
+})();
 ```
-
 
 #### Streaming sign and verify *Uint8Array* data
 
 ```js
-var readableStream = new ReadableStream({
-    start(controller) {
-        controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
-        controller.close();
-    }
-});
+(async () => {
+    var readableStream = new ReadableStream({
+        start(controller) {
+            controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
+            controller.close();
+        }
+    });
 
-var options, signedArmor, validity;
+    const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`;
+    const privateKeyArmored = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+...
+-----END PGP PRIVATE KEY BLOCK-----`; // encrypted private key
+    const passphrase = `yourPassphrase`; // what the private key is encrypted with
 
-var pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK ... END PGP PUBLIC KEY BLOCK-----';
-var privkey = '-----BEGIN PGP PRIVATE KEY BLOCK ... END PGP PRIVATE KEY BLOCK-----'; //encrypted private key
-var passphrase = 'secret passphrase'; //what the privKey is encrypted with
+    const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
+    await privateKey.decrypt(passphrase);
 
-var privKeyObj = (await openpgp.key.readArmored(privkey)).keys[0];
-await privKeyObj.decrypt(passphrase);
-```
+    const { data: signatureArmored } = await openpgp.sign({
+        message: openpgp.message.fromBinary(readableStream),  // or .fromText(readableStream: ReadableStream<String>)
+        privateKeys: [privateKey]                             // for signing
+    });
+    console.log(signatureArmored); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
-```js
-options = {
-    message: openpgp.message.fromBinary(readableStream),  // or .fromText(readableStream: ReadableStream<String>)
-    privateKeys: [privKeyObj]                             // for signing
-};
+    const { signatures } = await openpgp.verify({
+        message: await openpgp.message.readArmored(signatureArmored),       // parse armored signature
+        publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys  // for verification
+    });
 
-openpgp.sign(options).then(function(signed) {
-    signedArmor = signed.data; // ReadableStream containing '-----BEGIN PGP SIGNED MESSAGE ... END PGP SIGNATURE-----'
-});
-```
-
-```js
-options = {
-    message: await openpgp.message.readArmored(signedArmor), // parse armored message
-    publicKeys: (await openpgp.key.readArmored(pubkey)).keys // for verification
-};
-
-openpgp.verify(options).then(async function(verified) {
     await openpgp.stream.readToEnd(verified.data);
     // Note: you *have* to read `verified.data` in some way or other,
     // even if you don't need it, as that is what triggers the
     // verification of the data.
 
-    validity = await verified.signatures[0].verified; // true
-    if (validity) {
+    const { valid } = verified.signatures[0];
+    if (valid) {
         console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+    } else {
+        throw new Error('signature could not be verified');
     }
-});
+})();
 ```
 
 ### Documentation
