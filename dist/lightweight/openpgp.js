@@ -20663,7 +20663,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.8.1",
+  versionstring: "OpenPGP.js v4.9.0",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -20979,8 +20979,25 @@ const webCrypto = _util2.default.getWebCrypto(); // Modified by ProtonTech AG
 const nodeCrypto = _util2.default.getNodeCrypto();
 const Buffer = _util2.default.getNodeBuffer();
 
+const knownAlgos = nodeCrypto ? nodeCrypto.getCiphers() : [];
+const nodeAlgos = {
+  idea: knownAlgos.includes('idea-cfb') ? 'idea-cfb' : undefined, /* Unused, not implemented */
+  '3des': knownAlgos.includes('des-ede3-cfb') ? 'des-ede3-cfb' : undefined,
+  tripledes: knownAlgos.includes('des-ede3-cfb') ? 'des-ede3-cfb' : undefined,
+  cast5: knownAlgos.includes('cast5-cfb') ? 'cast5-cfb' : undefined,
+  blowfish: knownAlgos.includes('bf-cfb') ? 'bf-cfb' : undefined,
+  aes128: knownAlgos.includes('aes-128-cfb') ? 'aes-128-cfb' : undefined,
+  aes192: knownAlgos.includes('aes-192-cfb') ? 'aes-192-cfb' : undefined,
+  aes256: knownAlgos.includes('aes-256-cfb') ? 'aes-256-cfb' : undefined
+  /* twofish is not implemented in OpenSSL */
+};
+
 exports.default = {
   encrypt: function encrypt(algo, key, plaintext, iv) {
+    if (_util2.default.getNodeCrypto() && nodeAlgos[algo]) {
+      // Node crypto library.
+      return nodeEncrypt(algo, key, plaintext, iv);
+    }
     if (algo.substr(0, 3) === 'aes') {
       return aesEncrypt(algo, key, plaintext, iv);
     }
@@ -20988,52 +21005,60 @@ exports.default = {
     const cipherfn = new _cipher2.default[algo](key);
     const block_size = cipherfn.blockSize;
 
-    let blocki = new Uint8Array(block_size);
     const blockc = iv.slice();
-    let pos = 0;
-    const ciphertext = new Uint8Array(plaintext.length);
-    let i;
-    let j = 0;
-
-    while (plaintext.length > block_size * pos) {
-      const encblock = cipherfn.encrypt(blockc);
-      blocki = plaintext.subarray(pos * block_size, pos * block_size + block_size);
-      for (i = 0; i < blocki.length; i++) {
-        blockc[i] = blocki[i] ^ encblock[i];
-        ciphertext[j++] = blockc[i];
+    let pt = new Uint8Array();
+    const process = chunk => {
+      if (chunk) {
+        pt = _util2.default.concatUint8Array([pt, chunk]);
       }
-      pos++;
-    }
-    return ciphertext;
+      const ciphertext = new Uint8Array(pt.length);
+      let i;
+      let j = 0;
+      while (chunk ? pt.length >= block_size : pt.length) {
+        const encblock = cipherfn.encrypt(blockc);
+        for (i = 0; i < block_size; i++) {
+          blockc[i] = pt[i] ^ encblock[i];
+          ciphertext[j++] = blockc[i];
+        }
+        pt = pt.subarray(block_size);
+      }
+      return ciphertext.subarray(0, j);
+    };
+    return _webStreamTools2.default.transform(plaintext, process, process);
   },
 
   decrypt: async function decrypt(algo, key, ciphertext, iv) {
+    if (_util2.default.getNodeCrypto() && nodeAlgos[algo]) {
+      // Node crypto library.
+      return nodeDecrypt(algo, key, ciphertext, iv);
+    }
     if (algo.substr(0, 3) === 'aes') {
       return aesDecrypt(algo, key, ciphertext, iv);
     }
-
-    ciphertext = await _webStreamTools2.default.readToEnd(ciphertext);
 
     const cipherfn = new _cipher2.default[algo](key);
     const block_size = cipherfn.blockSize;
 
     let blockp = iv;
-    let pos = 0;
-    const plaintext = new Uint8Array(ciphertext.length);
-    const offset = 0;
-    let i;
-    let j = 0;
-
-    while (ciphertext.length > block_size * pos) {
-      const decblock = cipherfn.encrypt(blockp);
-      blockp = ciphertext.subarray(pos * block_size + offset, pos * block_size + block_size + offset);
-      for (i = 0; i < blockp.length; i++) {
-        plaintext[j++] = blockp[i] ^ decblock[i];
+    let ct = new Uint8Array();
+    const process = chunk => {
+      if (chunk) {
+        ct = _util2.default.concatUint8Array([ct, chunk]);
       }
-      pos++;
-    }
-
-    return plaintext;
+      const plaintext = new Uint8Array(ct.length);
+      let i;
+      let j = 0;
+      while (chunk ? ct.length >= block_size : ct.length) {
+        const decblock = cipherfn.encrypt(blockp);
+        blockp = ct;
+        for (i = 0; i < block_size; i++) {
+          plaintext[j++] = blockp[i] ^ decblock[i];
+        }
+        ct = ct.subarray(block_size);
+      }
+      return plaintext.subarray(0, j);
+    };
+    return _webStreamTools2.default.transform(ciphertext, process, process);
   }
 };
 
@@ -21045,19 +21070,12 @@ function aesEncrypt(algo, key, pt, iv) {
       // Web Crypto
       return webEncrypt(algo, key, pt, iv);
     }
-  if (nodeCrypto) {
-    // Node crypto library.
-    return nodeEncrypt(algo, key, pt, iv);
-  } // asm.js fallback
+  // asm.js fallback
   const cfb = new _cfb.AES_CFB(key, iv);
   return _webStreamTools2.default.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
 }
 
 function aesDecrypt(algo, key, ct, iv) {
-  if (nodeCrypto) {
-    // Node crypto library.
-    return nodeDecrypt(algo, key, ct, iv);
-  }
   if (_util2.default.isStream(ct)) {
     const cfb = new _cfb.AES_CFB(key, iv);
     return _webStreamTools2.default.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
@@ -21085,14 +21103,14 @@ async function webEncrypt(algo, key, pt, iv) {
 function nodeEncrypt(algo, key, pt, iv) {
   key = Buffer.from(key);
   iv = Buffer.from(iv);
-  const cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  const cipherObj = new nodeCrypto.createCipheriv(nodeAlgos[algo], key, iv);
   return _webStreamTools2.default.transform(pt, value => new Uint8Array(cipherObj.update(Buffer.from(value))));
 }
 
 function nodeDecrypt(algo, key, ct, iv) {
   key = Buffer.from(key);
   iv = Buffer.from(iv);
-  const decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  const decipherObj = new nodeCrypto.createDecipheriv(nodeAlgos[algo], key, iv);
   return _webStreamTools2.default.transform(ct, value => new Uint8Array(decipherObj.update(Buffer.from(value))));
 }
 
@@ -21345,7 +21363,7 @@ function BF(key) {
 }
 
 BF.keySize = BF.prototype.keySize = 16;
-BF.blockSize = BF.prototype.blockSize = 16;
+BF.blockSize = BF.prototype.blockSize = 8;
 
 exports.default = BF;
 
@@ -35207,7 +35225,7 @@ SecretKey.prototype.encrypt = async function (passphrase) {
     this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
   } else {
     this.s2k_usage = 254;
-    this.keyMaterial = _crypto2.default.cfb.encrypt(this.symmetric, key, _util2.default.concatUint8Array([cleartext, await _crypto2.default.hash.sha1(cleartext)]), this.iv);
+    this.keyMaterial = await _crypto2.default.cfb.encrypt(this.symmetric, key, _util2.default.concatUint8Array([cleartext, await _crypto2.default.hash.sha1(cleartext)]), this.iv);
   }
   return true;
 };

@@ -31491,7 +31491,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.8.1",
+  versionstring: "OpenPGP.js v4.9.0",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -31856,8 +31856,25 @@ var webCrypto = _util2.default.getWebCrypto(); // Modified by ProtonTech AG
 var nodeCrypto = _util2.default.getNodeCrypto();
 var Buffer = _util2.default.getNodeBuffer();
 
+var knownAlgos = nodeCrypto ? nodeCrypto.getCiphers() : [];
+var nodeAlgos = {
+  idea: knownAlgos.includes('idea-cfb') ? 'idea-cfb' : undefined, /* Unused, not implemented */
+  '3des': knownAlgos.includes('des-ede3-cfb') ? 'des-ede3-cfb' : undefined,
+  tripledes: knownAlgos.includes('des-ede3-cfb') ? 'des-ede3-cfb' : undefined,
+  cast5: knownAlgos.includes('cast5-cfb') ? 'cast5-cfb' : undefined,
+  blowfish: knownAlgos.includes('bf-cfb') ? 'bf-cfb' : undefined,
+  aes128: knownAlgos.includes('aes-128-cfb') ? 'aes-128-cfb' : undefined,
+  aes192: knownAlgos.includes('aes-192-cfb') ? 'aes-192-cfb' : undefined,
+  aes256: knownAlgos.includes('aes-256-cfb') ? 'aes-256-cfb' : undefined
+  /* twofish is not implemented in OpenSSL */
+};
+
 exports.default = {
   encrypt: function encrypt(algo, key, plaintext, iv) {
+    if (_util2.default.getNodeCrypto() && nodeAlgos[algo]) {
+      // Node crypto library.
+      return nodeEncrypt(algo, key, plaintext, iv);
+    }
     if (algo.substr(0, 3) === 'aes') {
       return aesEncrypt(algo, key, plaintext, iv);
     }
@@ -31865,68 +31882,77 @@ exports.default = {
     var cipherfn = new _cipher2.default[algo](key);
     var block_size = cipherfn.blockSize;
 
-    var blocki = new Uint8Array(block_size);
     var blockc = iv.slice();
-    var pos = 0;
-    var ciphertext = new Uint8Array(plaintext.length);
-    var i = void 0;
-    var j = 0;
-
-    while (plaintext.length > block_size * pos) {
-      var encblock = cipherfn.encrypt(blockc);
-      blocki = plaintext.subarray(pos * block_size, pos * block_size + block_size);
-      for (i = 0; i < blocki.length; i++) {
-        blockc[i] = blocki[i] ^ encblock[i];
-        ciphertext[j++] = blockc[i];
+    var pt = new Uint8Array();
+    var process = function process(chunk) {
+      if (chunk) {
+        pt = _util2.default.concatUint8Array([pt, chunk]);
       }
-      pos++;
-    }
-    return ciphertext;
+      var ciphertext = new Uint8Array(pt.length);
+      var i = void 0;
+      var j = 0;
+      while (chunk ? pt.length >= block_size : pt.length) {
+        var encblock = cipherfn.encrypt(blockc);
+        for (i = 0; i < block_size; i++) {
+          blockc[i] = pt[i] ^ encblock[i];
+          ciphertext[j++] = blockc[i];
+        }
+        pt = pt.subarray(block_size);
+      }
+      return ciphertext.subarray(0, j);
+    };
+    return _webStreamTools2.default.transform(plaintext, process, process);
   },
 
   decrypt: function () {
     var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(algo, key, ciphertext, iv) {
-      var cipherfn, block_size, blockp, pos, plaintext, offset, i, j, decblock;
+      var cipherfn, block_size, blockp, ct, process;
       return _regenerator2.default.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              if (!(algo.substr(0, 3) === 'aes')) {
+              if (!(_util2.default.getNodeCrypto() && nodeAlgos[algo])) {
                 _context.next = 2;
+                break;
+              }
+
+              return _context.abrupt('return', nodeDecrypt(algo, key, ciphertext, iv));
+
+            case 2:
+              if (!(algo.substr(0, 3) === 'aes')) {
+                _context.next = 4;
                 break;
               }
 
               return _context.abrupt('return', aesDecrypt(algo, key, ciphertext, iv));
 
-            case 2:
-              _context.next = 4;
-              return _webStreamTools2.default.readToEnd(ciphertext);
-
             case 4:
-              ciphertext = _context.sent;
               cipherfn = new _cipher2.default[algo](key);
               block_size = cipherfn.blockSize;
               blockp = iv;
-              pos = 0;
-              plaintext = new Uint8Array(ciphertext.length);
-              offset = 0;
-              i = void 0;
-              j = 0;
+              ct = new Uint8Array();
 
-
-              while (ciphertext.length > block_size * pos) {
-                decblock = cipherfn.encrypt(blockp);
-
-                blockp = ciphertext.subarray(pos * block_size + offset, pos * block_size + block_size + offset);
-                for (i = 0; i < blockp.length; i++) {
-                  plaintext[j++] = blockp[i] ^ decblock[i];
+              process = function process(chunk) {
+                if (chunk) {
+                  ct = _util2.default.concatUint8Array([ct, chunk]);
                 }
-                pos++;
-              }
+                var plaintext = new Uint8Array(ct.length);
+                var i = void 0;
+                var j = 0;
+                while (chunk ? ct.length >= block_size : ct.length) {
+                  var decblock = cipherfn.encrypt(blockp);
+                  blockp = ct;
+                  for (i = 0; i < block_size; i++) {
+                    plaintext[j++] = blockp[i] ^ decblock[i];
+                  }
+                  ct = ct.subarray(block_size);
+                }
+                return plaintext.subarray(0, j);
+              };
 
-              return _context.abrupt('return', plaintext);
+              return _context.abrupt('return', _webStreamTools2.default.transform(ciphertext, process, process));
 
-            case 15:
+            case 10:
             case 'end':
               return _context.stop();
           }
@@ -31950,10 +31976,7 @@ function aesEncrypt(algo, key, pt, iv) {
       // Web Crypto
       return webEncrypt(algo, key, pt, iv);
     }
-  if (nodeCrypto) {
-    // Node crypto library.
-    return nodeEncrypt(algo, key, pt, iv);
-  } // asm.js fallback
+  // asm.js fallback
   var cfb = new _cfb.AES_CFB(key, iv);
   return _webStreamTools2.default.transform(pt, function (value) {
     return cfb.AES_Encrypt_process(value);
@@ -31963,10 +31986,6 @@ function aesEncrypt(algo, key, pt, iv) {
 }
 
 function aesDecrypt(algo, key, ct, iv) {
-  if (nodeCrypto) {
-    // Node crypto library.
-    return nodeDecrypt(algo, key, ct, iv);
-  }
   if (_util2.default.isStream(ct)) {
     var cfb = new _cfb.AES_CFB(key, iv);
     return _webStreamTools2.default.transform(ct, function (value) {
@@ -31987,7 +32006,7 @@ function xorMut(a, b) {
 function nodeEncrypt(algo, key, pt, iv) {
   key = Buffer.from(key);
   iv = Buffer.from(iv);
-  var cipherObj = new nodeCrypto.createCipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  var cipherObj = new nodeCrypto.createCipheriv(nodeAlgos[algo], key, iv);
   return _webStreamTools2.default.transform(pt, function (value) {
     return new Uint8Array(cipherObj.update(Buffer.from(value)));
   });
@@ -31996,7 +32015,7 @@ function nodeEncrypt(algo, key, pt, iv) {
 function nodeDecrypt(algo, key, ct, iv) {
   key = Buffer.from(key);
   iv = Buffer.from(iv);
-  var decipherObj = new nodeCrypto.createDecipheriv('aes-' + algo.substr(3, 3) + '-cfb', key, iv);
+  var decipherObj = new nodeCrypto.createDecipheriv(nodeAlgos[algo], key, iv);
   return _webStreamTools2.default.transform(ct, function (value) {
     return new Uint8Array(decipherObj.update(Buffer.from(value)));
   });
@@ -32251,7 +32270,7 @@ function BF(key) {
 }
 
 BF.keySize = BF.prototype.keySize = 16;
-BF.blockSize = BF.prototype.blockSize = 16;
+BF.blockSize = BF.prototype.blockSize = 8;
 
 exports.default = BF;
 
@@ -54536,7 +54555,7 @@ SecretKey.prototype.encrypt = function () {
 
           case 33:
             this.keyMaterial = _context.sent;
-            _context.next = 49;
+            _context.next = 51;
             break;
 
           case 36:
@@ -54554,12 +54573,16 @@ SecretKey.prototype.encrypt = function () {
             _context.t6 = [_context.t4, _context.t5];
             _context.t7 = _context.t3.concatUint8Array.call(_context.t3, _context.t6);
             _context.t8 = this.iv;
-            this.keyMaterial = _context.t0.encrypt.call(_context.t0, _context.t1, _context.t2, _context.t7, _context.t8);
-
-          case 49:
-            return _context.abrupt('return', true);
+            _context.next = 50;
+            return _context.t0.encrypt.call(_context.t0, _context.t1, _context.t2, _context.t7, _context.t8);
 
           case 50:
+            this.keyMaterial = _context.sent;
+
+          case 51:
+            return _context.abrupt('return', true);
+
+          case 52:
           case 'end':
             return _context.stop();
         }
