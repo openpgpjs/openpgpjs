@@ -169,7 +169,7 @@ Encryption will use the algorithm specified in config.encryption_cipher (default
     });
     const encrypted = message.packets.write(); // get raw encrypted packets as Uint8Array
 
-    const { data: decrypted } = await openpgp.encrypt({
+    const { data: decrypted } = await openpgp.decrypt({
         message: await openpgp.message.read(encrypted), // parse encrypted bytes
         passwords: ['secret stuff'],                    // decrypt with password
         format: 'binary'                                // output as Uint8Array
