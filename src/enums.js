@@ -403,18 +403,6 @@ export default {
     shared_private_key: 128
   },
 
-  /** Key status
-   * @enum {Integer}
-   * @readonly
-   */
-  keyStatus: {
-    invalid:      0,
-    expired:      1,
-    revoked:      2,
-    valid:        3,
-    no_self_cert: 4
-  },
-
   /** Armor type
    * @enum {Integer}
    * @readonly

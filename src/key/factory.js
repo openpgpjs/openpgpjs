@@ -111,8 +111,8 @@ export async function reformat(options) {
 
   if (!options.subkeys) {
     options.subkeys = await Promise.all(secretSubkeyPackets.map(async secretSubkeyPacket => ({
-      sign: await options.privateKey.getSigningKey(secretSubkeyPacket.getKeyId(), null) &&
-          !await options.privateKey.getEncryptionKey(secretSubkeyPacket.getKeyId(), null)
+      sign: await options.privateKey.getSigningKey(secretSubkeyPacket.getKeyId(), null).catch(() => {}) &&
+          !await options.privateKey.getEncryptionKey(secretSubkeyPacket.getKeyId(), null).catch(() => {})
     })));
   }
 

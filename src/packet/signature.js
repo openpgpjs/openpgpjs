@@ -706,46 +706,55 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
     hash = await this.hash(signatureType, data, toHash);
   }
   hash = await stream.readToEnd(hash);
-  let verified;
   if (this.signedHashValue[0] !== hash[0] ||
       this.signedHashValue[1] !== hash[1]) {
-    verified = false;
-  } else {
-    let mpicount = 0;
-    // Algorithm-Specific Fields for RSA signatures:
-    //      - multiprecision number (MPI) of RSA signature value m**d mod n.
-    if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
-      mpicount = 1;
-
-    //    Algorithm-Specific Fields for DSA, ECDSA, and EdDSA signatures:
-    //      - MPI of DSA value r.
-    //      - MPI of DSA value s.
-    } else if (publicKeyAlgorithm === enums.publicKey.dsa ||
-             publicKeyAlgorithm === enums.publicKey.ecdsa ||
-             publicKeyAlgorithm === enums.publicKey.eddsa) {
-      mpicount = 2;
-    }
-
-    // EdDSA signature parameters are encoded in little-endian format
-    // https://tools.ietf.org/html/rfc8032#section-5.1.2
-    const endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
-    const mpi = [];
-    let i = 0;
-    this.signature = await stream.readToEnd(this.signature);
-    for (let j = 0; j < mpicount; j++) {
-      mpi[j] = new type_mpi();
-      i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
-    }
-    verified = await crypto.signature.verify(
-      publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
-      toHash, hash
-    );
-    if (verified && this.revocationKeyClass !== null) {
-      throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
-    }
+    throw new Error('Message digest did not match');
   }
-  this.verified = verified;
-  return verified;
+
+  let mpicount = 0;
+  // Algorithm-Specific Fields for RSA signatures:
+  //      - multiprecision number (MPI) of RSA signature value m**d mod n.
+  if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
+    mpicount = 1;
+
+  //    Algorithm-Specific Fields for DSA, ECDSA, and EdDSA signatures:
+  //      - MPI of DSA value r.
+  //      - MPI of DSA value s.
+  } else if (publicKeyAlgorithm === enums.publicKey.dsa ||
+            publicKeyAlgorithm === enums.publicKey.ecdsa ||
+            publicKeyAlgorithm === enums.publicKey.eddsa) {
+    mpicount = 2;
+  }
+
+  // EdDSA signature parameters are encoded in little-endian format
+  // https://tools.ietf.org/html/rfc8032#section-5.1.2
+  const endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
+  const mpi = [];
+  let i = 0;
+  this.signature = await stream.readToEnd(this.signature);
+  for (let j = 0; j < mpicount; j++) {
+    mpi[j] = new type_mpi();
+    i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
+  }
+  const verified = await crypto.signature.verify(
+    publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
+    toHash, hash
+  );
+  if (!verified) {
+    throw new Error('Signature verification failed');
+  }
+  if (config.reject_hash_algorithms.has(hashAlgorithm)) {
+    throw new Error('Insecure hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
+  }
+  if (config.reject_message_hash_algorithms.has(hashAlgorithm) &&
+    [enums.signature.binary, enums.signature.text].includes(this.signatureType)) {
+    throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
+  }
+  if (this.revocationKeyClass !== null) {
+    throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
+  }
+  this.verified = true;
+  return true;
 };
 
 /**

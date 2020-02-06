@@ -478,41 +478,52 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
 -----END PGP MESSAGE-----`;
 
   it('Testing signature checking on CAST5-enciphered message', async function() {
-    const priv_key = (await openpgp.key.readArmored(priv_key_arm1)).keys[0];
-    const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
-    const msg = await openpgp.message.readArmored(msg_arm1);
-    await priv_key.decrypt("abcd");
-    return openpgp.decrypt({ privateKeys: priv_key, publicKeys:[pub_key], message:msg }).then(function(decrypted) {
+    const { reject_message_hash_algorithms } = openpgp.config;
+    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    try {
+      const priv_key = (await openpgp.key.readArmored(priv_key_arm1)).keys[0];
+      const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
+      const msg = await openpgp.message.readArmored(msg_arm1);
+      await priv_key.decrypt("abcd");
+      const decrypted = await openpgp.decrypt({ privateKeys: priv_key, publicKeys:[pub_key], message:msg });
       expect(decrypted.data).to.exist;
       expect(decrypted.signatures[0].valid).to.be.true;
       expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
-    });
+    } finally {
+      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+    }
   });
 
   it('Supports decrypting with GnuPG stripped-key extension', async function() {
-    // exercises the GnuPG s2k type 1001 extension:
-    // the secrets on the primary key have been stripped.
-    const priv_key_gnupg_ext = (await openpgp.key.readArmored(priv_key_arm1_stripped)).keys[0];
-    const priv_key_gnupg_ext_2 = (await openpgp.key.readArmored(priv_key_arm1_stripped)).keys[0];
-    const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
-    const message = await openpgp.message.readArmored(msg_arm1);
-    const primaryKey_packet = priv_key_gnupg_ext.primaryKey.write();
-    expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
-    await priv_key_gnupg_ext.decrypt("abcd");
-    await priv_key_gnupg_ext_2.decrypt("abcd");
-    expect(priv_key_gnupg_ext.isDecrypted()).to.be.true;
-    const msg = await openpgp.decrypt({ message, privateKeys: [priv_key_gnupg_ext], publicKeys: [pub_key] });
-    expect(msg.signatures).to.exist;
-    expect(msg.signatures).to.have.length(1);
-    expect(msg.signatures[0].valid).to.be.true;
-    expect(msg.signatures[0].signature.packets.length).to.equal(1);
-    await expect(openpgp.sign({ message: openpgp.message.fromText('test'), privateKeys: [priv_key_gnupg_ext] })).to.eventually.be.rejectedWith('Missing private key parameters');
-    await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith('Missing private key parameters');
-    await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith('Missing private key parameters');
-    await priv_key_gnupg_ext.encrypt("abcd");
-    expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
-    const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();
-    expect(primaryKey_packet).to.deep.equal(primaryKey_packet2);
+    const { reject_message_hash_algorithms } = openpgp.config;
+    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    try {
+      // exercises the GnuPG s2k type 1001 extension:
+      // the secrets on the primary key have been stripped.
+      const priv_key_gnupg_ext = (await openpgp.key.readArmored(priv_key_arm1_stripped)).keys[0];
+      const priv_key_gnupg_ext_2 = (await openpgp.key.readArmored(priv_key_arm1_stripped)).keys[0];
+      const pub_key = (await openpgp.key.readArmored(pub_key_arm1)).keys[0];
+      const message = await openpgp.message.readArmored(msg_arm1);
+      const primaryKey_packet = priv_key_gnupg_ext.primaryKey.write();
+      expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
+      await priv_key_gnupg_ext.decrypt("abcd");
+      await priv_key_gnupg_ext_2.decrypt("abcd");
+      expect(priv_key_gnupg_ext.isDecrypted()).to.be.true;
+      const msg = await openpgp.decrypt({ message, privateKeys: [priv_key_gnupg_ext], publicKeys: [pub_key] });
+      expect(msg.signatures).to.exist;
+      expect(msg.signatures).to.have.length(1);
+      expect(msg.signatures[0].valid).to.be.true;
+      expect(msg.signatures[0].signature.packets.length).to.equal(1);
+      await expect(openpgp.sign({ message: openpgp.message.fromText('test'), privateKeys: [priv_key_gnupg_ext] })).to.eventually.be.rejectedWith('Missing private key parameters');
+      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith('Missing private key parameters');
+      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith('Missing private key parameters');
+      await priv_key_gnupg_ext.encrypt("abcd");
+      expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
+      const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();
+      expect(primaryKey_packet).to.deep.equal(primaryKey_packet2);
+    } finally {
+      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+    }
   });
 
   it('Supports signing with GnuPG stripped-key extension', async function() {
@@ -523,27 +534,32 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
   });
 
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', async function() {
-    const signedArmor =
-      ['-----BEGIN PGP MESSAGE-----',
-        'Version: GnuPG v2.0.19 (GNU/Linux)',
-        '',
-        'owGbwMvMwMT4oOW7S46CznTGNeZJLCWpFSVBU3ZGF2fkF5Uo5KYWFyemp3LlAUUV',
-        'cjLzUrneTp3zauvaN9O26L9ZuOFNy4LXyydwcXXMYWFgZGJgY2UCaWXg4hSAmblK',
-        'nPmfsXYxd58Ka9eVrEnSpzilr520fXBrJsf2P/oTqzTj3hzyLG0o3TTzxFfrtOXf',
-        'cw6U57n3/Z4X0pEZ68C5/o/6NpPICD7fuEOz3936raZ6wXGzueY8pfPnVjY0ajAc',
-        'PtJzvvqj+ubYaT1sK9wWhd9lL3/V+9Zuua9QjOWC22buchsCroh8fLoZAA==',
-        '=VH8F',
-        '-----END PGP MESSAGE-----'].join('\n');
+    const { reject_message_hash_algorithms } = openpgp.config;
+    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    try {
+      const signedArmor =
+        ['-----BEGIN PGP MESSAGE-----',
+          'Version: GnuPG v2.0.19 (GNU/Linux)',
+          '',
+          'owGbwMvMwMT4oOW7S46CznTGNeZJLCWpFSVBU3ZGF2fkF5Uo5KYWFyemp3LlAUUV',
+          'cjLzUrneTp3zauvaN9O26L9ZuOFNy4LXyydwcXXMYWFgZGJgY2UCaWXg4hSAmblK',
+          'nPmfsXYxd58Ka9eVrEnSpzilr520fXBrJsf2P/oTqzTj3hzyLG0o3TTzxFfrtOXf',
+          'cw6U57n3/Z4X0pEZ68C5/o/6NpPICD7fuEOz3936raZ6wXGzueY8pfPnVjY0ajAc',
+          'PtJzvvqj+ubYaT1sK9wWhd9lL3/V+9Zuua9QjOWC22buchsCroh8fLoZAA==',
+          '=VH8F',
+          '-----END PGP MESSAGE-----'].join('\n');
 
-    const sMsg = await openpgp.message.readArmored(signedArmor);
-    const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
-    return sMsg.verify([pub_key]).then(async verified => {
+      const sMsg = await openpgp.message.readArmored(signedArmor);
+      const pub_key = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+      const verified = await sMsg.verify([pub_key]);
       openpgp.stream.pipe(sMsg.getLiteralData(), new WritableStream());
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(await verified[0].verified).to.be.true;
       expect((await verified[0].signature).packets.length).to.equal(1);
-    });
+    } finally {
+      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+    }
   });
 
   it('Verify signature of signed and encrypted message from GPG2 with openpgp.decrypt', async function() {
@@ -698,8 +714,11 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
   });
 
   it('Verify cleartext signed message with trailing spaces from GPG', async function() {
-    const msg_armor =
-      `-----BEGIN PGP SIGNED MESSAGE-----
+    const { reject_message_hash_algorithms } = openpgp.config;
+    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    try {
+      const msg_armor =
+        `-----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
 space: 
@@ -718,21 +737,23 @@ zmuVOdNuWQqxT9Sqa84=
 =bqAR
 -----END PGP SIGNATURE-----`;
 
-    const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-    const csMsg = await openpgp.cleartext.readArmored(msg_armor);
-    const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
+      const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      const csMsg = await openpgp.cleartext.readArmored(msg_armor);
+      const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
 
-    const keyids = csMsg.getSigningKeyIds();
+      const keyids = csMsg.getSigningKeyIds();
 
-    expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
+      expect(pubKey.getKeys(keyids[0])).to.not.be.empty;
 
-    return openpgp.verify({ publicKeys:[pubKey], message:csMsg }).then(function(cleartextSig) {
+      const cleartextSig = await openpgp.verify({ publicKeys:[pubKey], message:csMsg });
       expect(cleartextSig).to.exist;
       expect(cleartextSig.data).to.equal(plaintext.replace(/[ \t]+$/mg, ''));
       expect(cleartextSig.signatures).to.have.length(1);
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
-    });
+    } finally {
+      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+    }
   });
 
   function tests() {
@@ -762,7 +783,7 @@ yYDnCgA=
         expect(cleartextSig).to.exist;
         expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(cleartextSig.data))).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
-        expect(cleartextSig.signatures[0].valid).to.be.true;
+        expect(cleartextSig.signatures[0].valid).to.equal(!openpgp.config.reject_message_hash_algorithms.has(openpgp.enums.hash.sha1));
         expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
       });
     });
@@ -799,7 +820,11 @@ yYDnCgA=
         expect(cleartextSig).to.exist;
         expect(openpgp.util.nativeEOL(openpgp.util.Uint8Array_to_str(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
-        expect(await cleartextSig.signatures[0].verified).to.be.true;
+        if (!openpgp.config.reject_message_hash_algorithms.has(openpgp.enums.hash.sha1)) {
+          expect(await cleartextSig.signatures[0].verified).to.be.true;
+        } else {
+          await expect(cleartextSig.signatures[0].verified).to.be.rejectedWith('Insecure message hash algorithm: SHA1');
+        }
         expect((await cleartextSig.signatures[0].signature).packets.length).to.equal(1);
       });
     });
@@ -876,6 +901,18 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     },
     after: function() {
       openpgp.destroyWorker();
+    }
+  });
+
+  let reject_message_hash_algorithms;
+  tryTests('Accept SHA-1 signatures', tests, {
+    if: true,
+    before: function() {
+      ({ reject_message_hash_algorithms } = openpgp.config);
+      Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    },
+    after: function() {
+      Object.assign(openpgp.config, { reject_message_hash_algorithms });
     }
   });
 
@@ -1234,7 +1271,7 @@ iTuGu4fEU1UligAXSrZmCdE=
 
     const key = (await openpgp.key.readArmored(armoredKeyWithPhoto)).keys[0];
     for (const user of key.users) {
-      expect(await user.verify(key.primaryKey)).to.equal(openpgp.enums.keyStatus.valid);
+      await user.verify(key.primaryKey);
     }
   });
 

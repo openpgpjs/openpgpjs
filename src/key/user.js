@@ -1,12 +1,14 @@
 /**
  * @requires enums
+ * @requires util
  * @requires packet
  * @requires key/helper
  * @module key/User
  */
 
-import packet from '../packet';
 import enums from '../enums';
+import util from '../util';
+import packet from '../packet';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper';
 
 /**
@@ -60,10 +62,6 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
       throw new Error('Not implemented for self signing');
     }
     const signingKey = await privateKey.getSigningKey();
-    if (!signingKey) {
-      throw new Error('Could not find valid signing key packet in key ' +
-                       privateKey.getKeyId().toHex());
-    }
     return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
       // Most OpenPGP implementations use generic certification (0x10)
       signatureType: enums.signature.cert_generic,
@@ -99,13 +97,13 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date = n
 
 
 /**
- * Verifies the user certificate
+ * Verifies the user certificate. Throws if the user certificate is invalid.
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey  The primary key packet
  * @param  {module:packet.Signature}  certificate A certificate of this user
  * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
  * @param  {Date}                     date        Use the given date instead of the current time
- * @returns {Promise<module:enums.keyStatus>}     status of the certificate
+ * @returns {Promise<true>}                       status of the certificate
  * @async
  */
 User.prototype.verifyCertificate = async function(primaryKey, certificate, keys, date = new Date()) {
@@ -117,20 +115,24 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
     key: primaryKey
   };
   const results = await Promise.all(keys.map(async function(key) {
-    if (!key.getKeyIds().some(id => id.equals(keyid))) { return; }
+    if (!key.getKeyIds().some(id => id.equals(keyid))) {
+      return null;
+    }
     const signingKey = await key.getSigningKey(keyid, date);
     if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date)) {
-      return enums.keyStatus.revoked;
+      throw new Error('User certificate is revoked');
     }
-    if (!(certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.cert_generic, dataToVerify))) {
-      return enums.keyStatus.invalid;
+    try {
+      certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.cert_generic, dataToVerify);
+    } catch (e) {
+      throw util.wrapError('User certificate is invalid', e);
     }
     if (certificate.isExpired(date)) {
-      return enums.keyStatus.expired;
+      throw new Error('User certificate is expired');
     }
-    return enums.keyStatus.valid;
+    return true;
   }));
-  return results.find(result => result !== undefined);
+  return results.find(result => result !== null) || null;
 };
 
 /**
@@ -147,26 +149,25 @@ User.prototype.verifyAllCertifications = async function(primaryKey, keys, date =
   const that = this;
   const certifications = this.selfCertifications.concat(this.otherCertifications);
   return Promise.all(certifications.map(async function(certification) {
-    const status = await that.verifyCertificate(primaryKey, certification, keys, date);
     return {
       keyid: certification.issuerKeyId,
-      valid: status === undefined ? null : status === enums.keyStatus.valid
+      valid: await that.verifyCertificate(primaryKey, certification, keys, date).catch(() => false)
     };
   }));
 };
 
 /**
  * Verify User. Checks for existence of self signatures, revocation signatures
- * and validity of self signature
+ * and validity of self signature. Throws when there are no valid self signatures.
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey The primary key packet
  * @param  {Date}                    date       Use the given date instead of the current time
- * @returns {Promise<module:enums.keyStatus>}    Status of user
+ * @returns {Promise<true>}                     Status of user
  * @async
  */
 User.prototype.verify = async function(primaryKey, date = new Date()) {
   if (!this.selfCertifications.length) {
-    return enums.keyStatus.no_self_cert;
+    throw new Error('No self-certifications');
   }
   const that = this;
   const dataToVerify = {
@@ -175,21 +176,27 @@ User.prototype.verify = async function(primaryKey, date = new Date()) {
     key: primaryKey
   };
   // TODO replace when Promise.some or Promise.any are implemented
-  const results = [enums.keyStatus.invalid].concat(
-    await Promise.all(this.selfCertifications.map(async function(selfCertification) {
+  let exception;
+  for (let i = this.selfCertifications.length - 1; i >= 0; i--) {
+    try {
+      const selfCertification = this.selfCertifications[i];
       if (selfCertification.revoked || await that.isRevoked(primaryKey, selfCertification, undefined, date)) {
-        return enums.keyStatus.revoked;
+        throw new Error('Self-certification is revoked');
       }
-      if (!(selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.cert_generic, dataToVerify))) {
-        return enums.keyStatus.invalid;
+      try {
+        selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.cert_generic, dataToVerify);
+      } catch (e) {
+        throw util.wrapError('Self-certification is invalid', e);
       }
       if (selfCertification.isExpired(date)) {
-        return enums.keyStatus.expired;
+        throw new Error('Self-certification is expired');
       }
-      return enums.keyStatus.valid;
-    })));
-  return results.some(status => status === enums.keyStatus.valid) ?
-    enums.keyStatus.valid : results.pop();
+      return true;
+    } catch (e) {
+      exception = e;
+    }
+  }
+  throw exception;
 };
 
 /**
@@ -208,7 +215,11 @@ User.prototype.update = async function(user, primaryKey) {
   };
   // self signatures
   await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
-    return srcSelfSig.verified || srcSelfSig.verify(primaryKey, enums.signature.cert_generic, dataToVerify);
+    try {
+      return srcSelfSig.verified || srcSelfSig.verify(primaryKey, enums.signature.cert_generic, dataToVerify);
+    } catch (e) {
+      return false;
+    }
   });
   // other signatures
   await mergeSignatures(user, this, 'otherCertifications');

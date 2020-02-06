@@ -38,16 +38,28 @@ export async function generateSecretKey(options) {
  */
 export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date()) {
   let signature;
+  let exception;
   for (let i = signatures.length - 1; i >= 0; i--) {
-    if (
-      (!signature || signatures[i].created >= signature.created) &&
-      // check binding signature is not expired (ie, check for V4 expiration time)
-      !signatures[i].isExpired(date) &&
-      // check binding signature is verified
-      (signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify))
-    ) {
-      signature = signatures[i];
+    try {
+      if (
+        (!signature || signatures[i].created >= signature.created) &&
+        // check binding signature is not expired (ie, check for V4 expiration time)
+        !signatures[i].isExpired(date) &&
+        // check binding signature is verified
+        (signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify))
+      ) {
+        signature = signatures[i];
+      }
+    } catch (e) {
+      exception = e;
     }
+  }
+  if (!signature) {
+    throw util.wrapError(
+      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyId().toHex()}`
+        .replace('cert_generic ', 'self-')
+        .replace('_', ' ')
+      , exception);
   }
   return signature;
 }
@@ -106,7 +118,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
   let pref_algo = hash_algo;
   if (key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
-    if (primaryUser && primaryUser.selfCertification.preferredHashAlgorithms) {
+    if (primaryUser.selfCertification.preferredHashAlgorithms) {
       [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
       hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
         pref_algo : hash_algo;
@@ -143,7 +155,7 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
   const prioMap = {};
   await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i]);
-    if (!primaryUser || !primaryUser.selfCertification[prefProperty]) {
+    if (!primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
     primaryUser.selfCertification[prefProperty].forEach(function(algo, index) {
@@ -237,24 +249,24 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
   const normDate = util.normalizeDate(date);
   const revocationKeyIds = [];
   await Promise.all(revocations.map(async function(revocationSignature) {
-    if (
-      // Note: a third-party revocation signature could legitimately revoke a
-      // self-signature if the signature has an authorized revocation key.
-      // However, we don't support passing authorized revocation keys, nor
-      // verifying such revocation signatures. Instead, we indicate an error
-      // when parsing a key with an authorized revocation key, and ignore
-      // third-party revocation signatures here. (It could also be revoking a
-      // third-party key certification, which should only affect
-      // `verifyAllCertifications`.)
-      (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
-      !(config.revocations_expire && revocationSignature.isExpired(normDate)) &&
-      (revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify))
-    ) {
-      // TODO get an identifier of the revoked object instead
-      revocationKeyIds.push(revocationSignature.issuerKeyId);
-      return true;
-    }
-    return false;
+    try {
+      if (
+        // Note: a third-party revocation signature could legitimately revoke a
+        // self-signature if the signature has an authorized revocation key.
+        // However, we don't support passing authorized revocation keys, nor
+        // verifying such revocation signatures. Instead, we indicate an error
+        // when parsing a key with an authorized revocation key, and ignore
+        // third-party revocation signatures here. (It could also be revoking a
+        // third-party key certification, which should only affect
+        // `verifyAllCertifications`.)
+        (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
+        !(config.revocations_expire && revocationSignature.isExpired(normDate)) &&
+        (revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify))
+      ) {
+        // TODO get an identifier of the revoked object instead
+        revocationKeyIds.push(revocationSignature.issuerKeyId);
+      }
+    } catch (e) {}
   }));
   // TODO further verify that this is the signature that should be revoked
   if (signature) {
@@ -287,7 +299,7 @@ export async function isAeadSupported(keys, date = new Date(), userIds = []) {
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i]);
-    if (!primaryUser || !primaryUser.selfCertification.features ||
+    if (!primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;
     }

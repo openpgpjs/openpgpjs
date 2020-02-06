@@ -2388,7 +2388,7 @@ describe('OpenPGP.js public api tests', function() {
           }).then(function(encrypted) {
             throw new Error('Should not encrypt with revoked key');
           }).catch(function(error) {
-            expect(error.message).to.match(/Could not find valid key packet for encryption/);
+            expect(error.message).to.match(/Error encrypting message: Primary key is revoked/);
           });
         });
       });
@@ -2405,7 +2405,7 @@ describe('OpenPGP.js public api tests', function() {
           }).then(function(encrypted) {
             throw new Error('Should not encrypt with revoked subkey');
           }).catch(function(error) {
-            expect(error.message).to.match(/Could not find valid key packet for encryption/);
+            expect(error.message).to.match(/Could not find valid encryption key packet/);
           });
         });
       });

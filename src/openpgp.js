@@ -683,7 +683,7 @@ async function prepareSignatures(signatures) {
     try {
       signature.valid = await signature.verified;
     } catch (e) {
-      signature.valid = null;
+      signature.valid = false;
       signature.error = e;
       util.print_debug_error(e);
     }

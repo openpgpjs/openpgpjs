@@ -210,5 +210,15 @@ export default {
    * @memberof module:config
    * @property {Object} indutny_elliptic_fetch_options Options object to pass to `fetch` when loading the indutny/elliptic library. Only has an effect if `config.external_indutny_elliptic` is true.
    */
-  indutny_elliptic_fetch_options: {}
+  indutny_elliptic_fetch_options: {},
+  /**
+   * @memberof module:config
+   * @property {Set<Integer>} reject_hash_algorithms Reject insecure hash algorithms {@link module:enums.hash}
+   */
+  reject_hash_algorithms: new Set([enums.hash.md5, enums.hash.ripemd]),
+  /**
+   * @memberof module:config
+   * @property {Set<Integer>} reject_message_hash_algorithms Reject insecure message hash algorithms {@link module:enums.hash}
+   */
+  reject_message_hash_algorithms: new Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1])
 };

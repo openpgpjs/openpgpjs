@@ -425,9 +425,9 @@ const input = require('./testInputs');
     expect(user.selfCertifications[0].verify(
       hi.primaryKey, {userId: user.userId, key: hi.primaryKey}
     )).to.eventually.be.true;
-    expect(user.verifyCertificate(
+    await user.verifyCertificate(
       hi.primaryKey, user.selfCertifications[0], [hi]
-    )).to.eventually.equal(openpgp.enums.keyStatus.valid);
+    );
   }); */
 });
 
@@ -460,9 +460,9 @@ function omnibus() {
       await expect(user.selfCertifications[0].verify(
         primaryKey, openpgp.enums.signature.cert_generic, { userId: user.userId, key: primaryKey }
       )).to.eventually.be.true;
-      await expect(user.verifyCertificate(
+      await user.verifyCertificate(
         primaryKey, user.selfCertifications[0], [hi.toPublic()]
-      )).to.eventually.equal(openpgp.enums.keyStatus.valid);
+      );
 
       const options = {
         userIds: { name: "Bye", email: "bye@good.bye" },
@@ -480,9 +480,9 @@ function omnibus() {
         await expect(user.selfCertifications[0].verify(
           bye.primaryKey, openpgp.enums.signature.cert_generic, { userId: user.userId, key: bye.primaryKey }
         )).to.eventually.be.true;
-        await expect(user.verifyCertificate(
+        await user.verifyCertificate(
           bye.primaryKey, user.selfCertifications[0], [bye.toPublic()]
-        )).to.eventually.equal(openpgp.enums.keyStatus.valid);
+        );
 
         return Promise.all([
           // Hi trusts Bye!
