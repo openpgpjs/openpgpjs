@@ -65,31 +65,25 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date = n
 
 /**
  * Verify subkey. Checks for revocation signatures, expiration time
- * and valid binding signature
+ * and valid binding signature. Throws if the subkey is invalid.
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey The primary key packet
  * @param  {Date}                     date       Use the given date instead of the current time
- * @returns {Promise<module:enums.keyStatus>}    The status of the subkey
+ * @returns {Promise<true>}                      The status of the subkey
  * @async
  */
 SubKey.prototype.verify = async function(primaryKey, date = new Date()) {
-  const that = this;
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
   // check subkey binding signatures
   const bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
-  // check binding signature is verified
-  if (!bindingSignature) {
-    return enums.keyStatus.invalid;
-  }
   // check binding signature is not revoked
-  if (bindingSignature.revoked || await that.isRevoked(primaryKey, bindingSignature, null, date)) {
-    return enums.keyStatus.revoked;
+  if (bindingSignature.revoked || await this.isRevoked(primaryKey, bindingSignature, null, date)) {
+    throw new Error('Subkey is revoked');
   }
   // check for expiration time
   if (helper.isDataExpired(this.keyPacket, bindingSignature, date)) {
-    return enums.keyStatus.expired;
+    throw new Error('Subkey is expired');
   }
-  return enums.keyStatus.valid; // binding signature passed all checks
 };
 
 /**
@@ -103,8 +97,12 @@ SubKey.prototype.verify = async function(primaryKey, date = new Date()) {
  */
 SubKey.prototype.getExpirationTime = async function(primaryKey, date = new Date()) {
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
-  const bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
-  if (!bindingSignature) return null;
+  let bindingSignature;
+  try {
+    bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
+  } catch (e) {
+    return null;
+  }
   const keyExpiry = helper.getExpirationTime(this.keyPacket, bindingSignature);
   const sigExpiry = bindingSignature.getExpirationTime();
   return keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
@@ -119,9 +117,6 @@ SubKey.prototype.getExpirationTime = async function(primaryKey, date = new Date(
  * @async
  */
 SubKey.prototype.update = async function(subKey, primaryKey) {
-  if (await subKey.verify(primaryKey) === enums.keyStatus.invalid) {
-    return;
-  }
   if (!this.hasSameFingerprintAs(subKey)) {
     throw new Error('SubKey update method: fingerprints of subkeys not equal');
   }
@@ -134,9 +129,6 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
   const that = this;
   const dataToVerify = { key: primaryKey, bind: that.keyPacket };
   await helper.mergeSignatures(subKey, this, 'bindingSignatures', async function(srcBindSig) {
-    if (!(srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkey_binding, dataToVerify))) {
-      return false;
-    }
     for (let i = 0; i < that.bindingSignatures.length; i++) {
       if (that.bindingSignatures[i].issuerKeyId.equals(srcBindSig.issuerKeyId)) {
         if (srcBindSig.created > that.bindingSignatures[i].created) {
@@ -145,7 +137,11 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
         return false;
       }
     }
-    return true;
+    try {
+      return srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkey_binding, dataToVerify);
+    } catch (e) {
+      return false;
+    }
   });
   // revocation signatures
   await helper.mergeSignatures(subKey, this, 'revocationSignatures', function(srcRevSig) {

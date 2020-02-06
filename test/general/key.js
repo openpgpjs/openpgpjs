@@ -2310,13 +2310,11 @@ function versionSpecificTests() {
     const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(original) {
-      return openpgp.revokeKey({key: original.key.toPublic(), revocationCertificate: original.revocationCertificate}).then(function(revKey) {
+      return openpgp.revokeKey({key: original.key.toPublic(), revocationCertificate: original.revocationCertificate}).then(async function(revKey) {
         revKey = revKey.publicKey;
         expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
         expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
-        return revKey.verifyPrimaryKey().then(function(status) {
-          expect(status).to.equal(openpgp.enums.keyStatus.revoked);
-        });
+        await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
       });
     });
   });
@@ -2326,13 +2324,11 @@ function versionSpecificTests() {
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(async function(original) {
       await original.key.decrypt('1234');
-      return openpgp.revokeKey({key: original.key, reasonForRevocation: {string: 'Testing key revocation'}}).then(function(revKey) {
+      return openpgp.revokeKey({key: original.key, reasonForRevocation: {string: 'Testing key revocation'}}).then(async function(revKey) {
         revKey = revKey.publicKey;
         expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
         expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
-        return revKey.verifyPrimaryKey().then(function(status) {
-          expect(status).to.equal(openpgp.enums.keyStatus.revoked);
-        });
+        await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
       });
     });
   });
@@ -2346,7 +2342,7 @@ function versionSpecificTests() {
     const { keys: [key] } = await openpgp.key.readArmored(v5_sample_key);
     expect(key.primaryKey.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
     expect(key.subKeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
-    expect(await key.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
+    await key.verifyPrimaryKey();
   });
 }
 
@@ -2480,7 +2476,7 @@ describe('Key', function() {
 
   it('Verify status of revoked primary key', async function() {
     const pubKey = (await openpgp.key.readArmored(pub_revoked_subkeys)).keys[0];
-    expect(pubKey.verifyPrimaryKey()).to.eventually.equal(openpgp.enums.keyStatus.revoked);
+    await expect(pubKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
   });
 
   it('Verify status of revoked subkey', async function() {
@@ -2496,7 +2492,7 @@ describe('Key', function() {
 
     await expect(pubKey.subKeys[0].verify(
       pubKey.primaryKey
-    )).to.eventually.equal(openpgp.enums.keyStatus.revoked);
+    )).to.be.rejectedWith('Subkey is revoked');
   });
 
   it('Verify status of key with non-self revocation signature', async function() {
@@ -2516,16 +2512,16 @@ describe('Key', function() {
     expect(signatures[1].valid).to.be.false;
 
     const { user } = await pubKey.getPrimaryUser();
-    expect(await user.verifyCertificate(pubKey.primaryKey, user.otherCertifications[0], [certifyingKey])).to.equal(openpgp.enums.keyStatus.revoked);
+    await expect(user.verifyCertificate(pubKey.primaryKey, user.otherCertifications[0], [certifyingKey])).to.be.rejectedWith('User certificate is revoked');
   });
 
   it('Verify certificate of key with future creation date', async function() {
     const { keys: [pubKey] } = await openpgp.key.readArmored(key_created_2030);
     const user = pubKey.users[0];
-    expect(await user.verifyCertificate(pubKey.primaryKey, user.selfCertifications[0], [pubKey], pubKey.primaryKey.created)).to.equal(openpgp.enums.keyStatus.valid);
+    await user.verifyCertificate(pubKey.primaryKey, user.selfCertifications[0], [pubKey], pubKey.primaryKey.created);
     const verifyAllResult = await user.verifyAllCertifications(pubKey.primaryKey, [pubKey], pubKey.primaryKey.created);
     expect(verifyAllResult[0].valid).to.be.true;
-    expect(await user.verify(pubKey.primaryKey, pubKey.primaryKey.created)).to.equal(openpgp.enums.keyStatus.valid);
+    await user.verify(pubKey.primaryKey, pubKey.primaryKey.created);
   });
 
   it('Evaluate key flags to find valid encryption key packet', async function() {
@@ -2538,8 +2534,7 @@ describe('Key', function() {
     // remove subkeys
     pubKey.subKeys = [];
     // primary key has only key flags for signing
-    const encryptionKey = await pubKey.getEncryptionKey();
-    expect(encryptionKey).to.not.exist;
+    await expect(pubKey.getEncryptionKey()).to.be.rejectedWith('Could not find valid encryption key packet in key c076e634d32b498d');
   });
 
   it('Method getExpirationTime V4 Key', async function() {
@@ -2587,15 +2582,15 @@ describe('Key', function() {
     expect(encryptExpirationTime).to.equal(Infinity);
   });
 
-  it('validate() - return true if key parameters correspond', async function() {
+  it("validate() - don't throw if key parameters correspond", async function() {
     const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519' });
-    expect(await key.validate()).to.be.true;
+    await key.validate();
   });
 
-  it('validate() - return false if key parameters do not correspond', async function() {
+  it("validate() - throw if key parameters don't correspond", async function() {
     const { keys: [key] } = await openpgp.key.readArmored(mismatchingKeyParams);
     await key.decrypt('userpass');
-    expect(await key.validate()).to.be.false;
+    await expect(key.validate()).to.be.rejectedWith('Signature verification failed');
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
@@ -2625,7 +2620,7 @@ describe('Key', function() {
     const use_nativeVal = openpgp.config.use_native;
     openpgp.config.use_native = false;
     try {
-      expect(await key.validate()).to.be.false;
+      await expect(key.validate()).to.be.rejectedWith('Signature verification failed');
     } finally {
       openpgp.config.use_native = use_nativeVal;
     }
@@ -2743,7 +2738,7 @@ describe('Key', function() {
     source.subKeys = [];
     expect(dest.subKeys).to.exist;
     expect(dest.isPublic()).to.be.true;
-    await expect(dest.update.bind(dest, source)())
+    await expect(dest.update(source))
       .to.be.rejectedWith('Cannot update public key with private key if subkey mismatch');
   });
 
@@ -2751,14 +2746,11 @@ describe('Key', function() {
     const source = (await openpgp.key.readArmored(pgp_desktop_pub)).keys[0];
     const dest = (await openpgp.key.readArmored(pgp_desktop_priv)).keys[0];
     expect(source.subKeys[0].bindingSignatures[0]).to.exist;
-    await expect(source.subKeys[0].verify(source.primaryKey))
-      .to.eventually.equal(openpgp.enums.keyStatus.valid);
+    await source.subKeys[0].verify(source.primaryKey);
     expect(dest.subKeys[0].bindingSignatures[0]).to.not.exist;
-    return dest.update(source).then(async () => {
-      expect(dest.subKeys[0].bindingSignatures[0]).to.exist;
-      await expect(dest.subKeys[0].verify(source.primaryKey))
-        .to.eventually.equal(openpgp.enums.keyStatus.valid);
-    });
+    await dest.update(source);
+    expect(dest.subKeys[0].bindingSignatures[0]).to.exist;
+    await dest.subKeys[0].verify(source.primaryKey);
   });
 
   it('update() - merge multiple subkey binding signatures', async function() {
@@ -2788,8 +2780,8 @@ describe('Key', function() {
       expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_retired);
       expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
 
-      expect(await privKey.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.valid);
-      expect(await revKey.verifyPrimaryKey()).to.equal(openpgp.enums.keyStatus.revoked);
+      await privKey.verifyPrimaryKey();
+      await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
     });
   });
 
@@ -2807,8 +2799,8 @@ describe('Key', function() {
       expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_superseded);
       expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
 
-      expect(await subKey.verify(pubKey.primaryKey)).to.equal(openpgp.enums.keyStatus.valid);
-      expect(await revKey.verify(pubKey.primaryKey)).to.equal(openpgp.enums.keyStatus.revoked);
+      await subKey.verify(pubKey.primaryKey);
+      await expect(revKey.verify(pubKey.primaryKey)).to.be.rejectedWith('Subkey is revoked');
     });
   });
 
@@ -2922,7 +2914,7 @@ describe('Key', function() {
     expect(primUser.selfCertification).to.be.an.instanceof(openpgp.packet.Signature);
   });
 
-  it('getPrimaryUser() should return null if no UserIDs are bound', async function() {
+  it('getPrimaryUser() should throw if no UserIDs are bound', async function() {
     const keyWithoutUserID = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xVgEWxpFkRYJKwYBBAHaRw8BAQdAYjjZLkp4qG7KAqJeVQlxQT6uCPq6rylV02nC
@@ -2936,8 +2928,7 @@ VYGdb3eNlV8CfoEC
 =FYbP
 -----END PGP PRIVATE KEY BLOCK-----`;
     const key = (await openpgp.key.readArmored(keyWithoutUserID)).keys[0];
-    const primUser = await key.getPrimaryUser();
-    expect(primUser).to.be.null;
+    await expect(key.getPrimaryUser()).to.be.rejectedWith('Could not find valid self-signature in key 3ce893915c44212f');
   });
 
   it('Encrypt - latest created user', async function() {
@@ -3025,12 +3016,23 @@ VYGdb3eNlV8CfoEC
     expect(await key.subKeys[0].getExpirationTime(key.primaryKey)).to.be.null;
   });
 
-  it('Reject encryption with revoked subkey', async function() {
+  it('Reject encryption with revoked primary user', async function() {
     const key = (await openpgp.key.readArmored(pub_revoked_subkeys)).keys[0];
     return openpgp.encrypt({publicKeys: [key], message: openpgp.message.fromText('random data')}).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(function(error) {
-      expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.getKeyId().toHex());
+      expect(error.message).to.equal('Error encrypting message: Primary user is revoked');
+    });
+  });
+
+  it('Reject encryption with revoked subkey', async function() {
+    const key = (await openpgp.key.readArmored(pub_revoked_subkeys)).keys[0];
+    key.revocationSignatures = [];
+    key.users[0].revocationSignatures = [];
+    return openpgp.encrypt({publicKeys: [key], message: openpgp.message.fromText('random data'), date: new Date(1386842743000)}).then(() => {
+      throw new Error('encryptSessionKey should not encrypt with revoked public key');
+    }).catch(function(error) {
+      expect(error.message).to.equal('Error encrypting message: Could not find valid encryption key packet in key ' + key.getKeyId().toHex() + ': Subkey is revoked');
     });
   });
 
@@ -3039,7 +3041,7 @@ VYGdb3eNlV8CfoEC
     return openpgp.encrypt({publicKeys: [key], message: openpgp.message.fromText('random data')}).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(function(error) {
-      expect(error.message).to.equal('Error encrypting message: Could not find valid key packet for encryption in key ' + key.getKeyId().toHex());
+      expect(error.message).to.equal('Error encrypting message: Primary key is revoked');
     });
   });
 
@@ -3090,7 +3092,7 @@ describe('addSubkey functionality testing', function(){
     expect(subkeyN.byteLength()).to.be.equal(rsaBits ? (rsaBits / 8) : pkN.byteLength());
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
     expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(rsaBits || privateKey.getAlgorithmInfo().rsaBits);
-    expect(await subKey.verify(newPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+    await subKey.verify(newPrivateKey.primaryKey);
   });
 
   it('should throw when trying to encrypt a subkey separately from key', async function() {
@@ -3113,7 +3115,7 @@ describe('addSubkey functionality testing', function(){
     const subKey = importedPrivateKey.subKeys[total];
     expect(subKey).to.exist;
     expect(importedPrivateKey.subKeys.length).to.be.equal(total+1);
-    expect(await subKey.verify(importedPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+    await subKey.verify(importedPrivateKey.primaryKey);
   });
 
   it('create and add a new ec subkey to a ec key', async function() {
@@ -3137,7 +3139,7 @@ describe('addSubkey functionality testing', function(){
     const pkOid = privateKey.primaryKey.params[0];
     expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
-    expect(await subKey.verify(privateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+    await subKey.verify(privateKey.primaryKey);
   });
 
   it('create and add a new ec subkey to a rsa key', async function() {
@@ -3153,7 +3155,7 @@ describe('addSubkey functionality testing', function(){
     expect(newPrivateKey.subKeys.length).to.be.equal(total+1);
     expect(subKey.keyPacket.params[0].getName()).to.be.equal(openpgp.enums.curve.curve25519);
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('ecdh');
-    expect(await subKey.verify(privateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+    await subKey.verify(privateKey.primaryKey);
   });
 
   it('sign/verify data with the new subkey correctly using curve25519', async function() {
@@ -3170,7 +3172,7 @@ describe('addSubkey functionality testing', function(){
     const pkOid = newPrivateKey.primaryKey.params[0];
     expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
-    expect(await subKey.verify(newPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+    await subKey.verify(newPrivateKey.primaryKey);
     expect(await newPrivateKey.getSigningKey()).to.be.equal(subKey);
     const signed = await openpgp.sign({message: openpgp.cleartext.fromText('the data to signed'), privateKeys: newPrivateKey, armor:false});
     const verified = await signed.message.verify([newPrivateKey.toPublic()]);
@@ -3191,7 +3193,7 @@ describe('addSubkey functionality testing', function(){
     newPrivateKey = (await openpgp.key.readArmored(armoredKey)).keys[0];
     const subKey = newPrivateKey.subKeys[total];
     const publicKey = newPrivateKey.toPublic();
-    expect(await subKey.verify(newPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+    await subKey.verify(newPrivateKey.primaryKey);
     expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subKey);
     const encrypted = await openpgp.encrypt({message: openpgp.message.fromText(vData), publicKeys: publicKey, armor:false});
     expect(encrypted.message).to.be.exist;
@@ -3214,7 +3216,7 @@ describe('addSubkey functionality testing', function(){
     newPrivateKey = (await openpgp.key.readArmored(armoredKey)).keys[0];
     const subKey = newPrivateKey.subKeys[total];
     expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
-    expect(await subKey.verify(newPrivateKey.primaryKey)).to.be.equal(openpgp.enums.keyStatus.valid);
+    await subKey.verify(newPrivateKey.primaryKey);
     expect(await newPrivateKey.getSigningKey()).to.be.equal(subKey);
     const signed = await openpgp.sign({message: openpgp.cleartext.fromText('the data to signed'), privateKeys: newPrivateKey, armor:false});
     const verified = await signed.message.verify([newPrivateKey.toPublic()]);

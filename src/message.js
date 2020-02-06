@@ -183,16 +183,18 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
     }
     await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
       await Promise.all(privateKeys.map(async function(privateKey) {
-        const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
         let algos = [
           enums.symmetric.aes256, // Old OpenPGP.js default fallback
           enums.symmetric.aes128, // RFC4880bis fallback
           enums.symmetric.tripledes, // RFC4880 fallback
           enums.symmetric.cast5 // Golang OpenPGP fallback
         ];
-        if (primaryUser && primaryUser.selfCertification.preferredSymmetricAlgorithms) {
-          algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
-        }
+        try {
+          const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
+          if (primaryUser.selfCertification.preferredSymmetricAlgorithms) {
+            algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
+          }
+        } catch (e) {}
 
         const privateKeyPackets = privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket);
         await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
@@ -358,10 +360,6 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
   if (publicKeys) {
     const results = await Promise.all(publicKeys.map(async function(publicKey) {
       const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userIds);
-      if (!encryptionKey) {
-        throw new Error('Could not find valid key packet for encryption in key ' +
-                        publicKey.getKeyId().toHex());
-      }
       const pkESKeyPacket = new packet.PublicKeyEncryptedSessionKey();
       pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.getKeyId();
       pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
@@ -457,10 +455,6 @@ Message.prototype.sign = async function(privateKeys = [], signature = null, date
       throw new Error('Need private key for signing');
     }
     const signingKey = await privateKey.getSigningKey(undefined, date, userIds);
-    if (!signingKey) {
-      throw new Error('Could not find valid key packet for signing in key ' +
-                      privateKey.getKeyId().toHex());
-    }
     const onePassSig = new packet.OnePassSignature();
     onePassSig.signatureType = signatureType;
     onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userIds);
@@ -543,10 +537,6 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
       throw new Error('Need private key for signing');
     }
     const signingKey = await privateKey.getSigningKey(undefined, date, userId);
-    if (!signingKey) {
-      throw new Error(`Could not find valid signing key packet in key ${
-        privateKey.getKeyId().toHex()}`);
-    }
     return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId, detached, streaming);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
@@ -646,11 +636,10 @@ async function createVerificationObject(signature, literalDataList, keys, date =
   let signingKey = null;
   await Promise.all(keys.map(async function(key) {
     // Look for the unique key that matches issuerKeyId of signature
-    const result = await key.getSigningKey(signature.issuerKeyId, null);
-    if (result) {
+    try {
+      signingKey = await key.getSigningKey(signature.issuerKeyId, null);
       primaryKey = key;
-      signingKey = result;
-    }
+    } catch (e) {}
   }));
 
   const signaturePacket = signature.correspondingSig || signature;
@@ -669,7 +658,7 @@ async function createVerificationObject(signature, literalDataList, keys, date =
           signingKey.getExpirationTime(primaryKey, date)
         )
       )) {
-        return null;
+        throw new Error('Signature is expired');
       }
       return verified;
     })(),

@@ -753,5 +753,18 @@ export default {
       result += ALPHABET[MASK & (buffer >> bitsLeft)];
     }
     return result;
+  },
+
+  wrapError: function(message, error) {
+    if (!error) {
+      return new Error(message);
+    }
+
+    // update error message
+    try {
+      error.message = message + ': ' + error.message;
+    } catch (e) {}
+
+    return error;
   }
 };

@@ -86,9 +86,11 @@ function verificationObjectToClone(verObject) {
       const packets = (await signature).packets;
       try {
         await verified;
+      } catch (e) {}
+      if (packets && packets[0]) {
         delete packets[0].signature;
         delete packets[0].hashed;
-      } catch (e) {}
+      }
       return packets;
     });
   } else {

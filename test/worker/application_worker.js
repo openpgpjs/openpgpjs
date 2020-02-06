@@ -12,7 +12,7 @@ function tests() {
 
   it('Should support loading OpenPGP.js from inside a Web Worker', async function() {
     try {
-      eval('async function() {}');
+      eval('(async function() {})');
     } catch (e) {
       console.error(e);
       this.skip();
