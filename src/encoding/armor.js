@@ -319,7 +319,7 @@ function dearmor(input) {
         });
         const writer = stream.getWriter(writable);
         try {
-          const checksumVerifiedString = await checksumVerified;
+          const checksumVerifiedString = (await checksumVerified).replace('\r\n', '');
           if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
             throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
                     checksumVerifiedString + "'");
@@ -362,14 +362,14 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
+      result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
       break;
     case enums.armor.multipart_last:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
+      result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE, PART " + partindex + "-----\r\n");
       break;
     case enums.armor.signed:
@@ -379,35 +379,35 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       result.push("\r\n-----BEGIN PGP SIGNATURE-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
+      result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP SIGNATURE-----\r\n");
       break;
     case enums.armor.message:
       result.push("-----BEGIN PGP MESSAGE-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
+      result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE-----\r\n");
       break;
     case enums.armor.public_key:
       result.push("-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
+      result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n");
       break;
     case enums.armor.private_key:
       result.push("-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
+      result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP PRIVATE KEY BLOCK-----\r\n");
       break;
     case enums.armor.signature:
       result.push("-----BEGIN PGP SIGNATURE-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
-      result.push("\r\n=", getCheckSum(bodyClone), "\r\n");
+      result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP SIGNATURE-----\r\n");
       break;
   }
