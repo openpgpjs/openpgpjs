@@ -13,121 +13,84 @@
 
 /**
  * @requires web-stream-tools
+ * @requires util
  * @module encoding/base64
  */
 
 import stream from 'web-stream-tools';
+import util from '../util';
 
-const b64s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Standard radix-64
-const b64u = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'; // URL-safe radix-64
+const Buffer = util.getNodeBuffer();
 
-const b64toByte = [];
-for (let i = 0; i < b64s.length; i++) {
-  b64toByte[b64s.charCodeAt(i)] = i;
+let encodeChunk;
+let decodeChunk;
+if (Buffer) {
+  encodeChunk = buf => Buffer.from(buf).toString('base64');
+  decodeChunk = str => {
+    const b = Buffer.from(str, 'base64');
+    return new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
+  };
+} else {
+  encodeChunk = buf => btoa(util.Uint8Array_to_str(buf));
+  decodeChunk = str => util.str_to_Uint8Array(atob(str));
 }
-b64toByte[b64u.charCodeAt(62)] = 62;
-b64toByte[b64u.charCodeAt(63)] = 63;
 
 /**
  * Convert binary array to radix-64
- * @param {Uint8Array | ReadableStream<Uint8Array>} t Uint8Array to convert
- * @param {bool} u if true, output is URL-safe
+ * @param {Uint8Array | ReadableStream<Uint8Array>} data Uint8Array to convert
  * @returns {String | ReadableStream<String>} radix-64 version of input string
  * @static
  */
-function s2r(t, u = false) {
-  // TODO check btoa alternative
-  const b64 = u ? b64u : b64s;
-  let a;
-  let c;
-
-  let l = 0;
-  let s = 0;
-
-  return stream.transform(t, value => {
+function encode(data) {
+  let buf = new Uint8Array();
+  return stream.transform(data, value => {
+    buf = util.concatUint8Array([buf, value]);
     const r = [];
-    const tl = value.length;
-    for (let n = 0; n < tl; n++) {
-      if (l && (l % 60) === 0 && !u) {
-        r.push("\r\n");
-      }
-      c = value[n];
-      if (s === 0) {
-        r.push(b64.charAt((c >> 2) & 63));
-        a = (c & 3) << 4;
-      } else if (s === 1) {
-        r.push(b64.charAt(a | ((c >> 4) & 15)));
-        a = (c & 15) << 2;
-      } else if (s === 2) {
-        r.push(b64.charAt(a | ((c >> 6) & 3)));
-        l += 1;
-        if ((l % 60) === 0 && !u) {
-          r.push("\r\n");
-        }
-        r.push(b64.charAt(c & 63));
-      }
-      l += 1;
-      s += 1;
-      if (s === 3) {
-        s = 0;
-      }
+    const bytesPerLine = 45; // 60 chars per line * (3 bytes / 4 chars of base64).
+    const lines = Math.floor(buf.length / bytesPerLine);
+    const bytes = lines * bytesPerLine;
+    const encoded = encodeChunk(buf.subarray(0, bytes));
+    for (let i = 0; i < lines; i++) {
+      r.push(encoded.substr(i * 60, 60));
+      r.push('\r\n');
     }
+    buf = buf.subarray(bytes);
     return r.join('');
-  }, () => {
-    const r = [];
-    if (s > 0) {
-      r.push(b64.charAt(a));
-      l += 1;
-      if ((l % 60) === 0 && !u) {
-        r.push("\r\n");
-      }
-      if (!u) {
-        r.push('=');
-        l += 1;
-      }
-    }
-    if (s === 1 && !u) {
-      if ((l % 60) === 0 && !u) {
-        r.push("\r\n");
-      }
-      r.push('=');
-    }
-    return r.join('');
-  });
+  }, () => (buf.length ? encodeChunk(buf) + '\r\n' : ''));
 }
 
 /**
  * Convert radix-64 to binary array
- * @param {String | ReadableStream<String>} t radix-64 string to convert
+ * @param {String | ReadableStream<String>} data radix-64 string to convert
  * @returns {Uint8Array | ReadableStream<Uint8Array>} binary array version of input string
  * @static
  */
-function r2s(t) {
-  // TODO check atob alternative
-  let c;
+function decode(data) {
+  let buf = '';
+  return stream.transform(data, value => {
+    buf += value;
 
-  let s = 0;
-  let a = 0;
-
-  return stream.transform(t, value => {
-    const tl = value.length;
-    const r = new Uint8Array(Math.ceil(0.75 * tl));
-    let index = 0;
-    for (let n = 0; n < tl; n++) {
-      c = b64toByte[value.charCodeAt(n)];
-      if (c >= 0) {
-        if (s) {
-          r[index++] = a | ((c >> (6 - s)) & 255);
-        }
-        s = (s + 2) & 7;
-        a = (c << s) & 255;
+    // Count how many whitespace characters there are in buf
+    let spaces = 0;
+    const spacechars = [' ', '\t', '\r', '\n'];
+    for (let i = 0; i < spacechars.length; i++) {
+      const spacechar = spacechars[i];
+      for (let pos = buf.indexOf(spacechar); pos !== -1; pos = buf.indexOf(spacechar, pos + 1)) {
+        spaces++;
       }
     }
-    return r.subarray(0, index);
-  });
+
+    // Backtrack until we have 4n non-whitespace characters
+    // that we can safely base64-decode
+    let length = buf.length;
+    for (; length > 0 && (length - spaces) % 4 !== 0; length--) {
+      if (spacechars.includes(buf[length])) spaces--;
+    }
+
+    const decoded = decodeChunk(buf.substr(0, length));
+    buf = buf.substr(length);
+    return decoded;
+  }, () => decodeChunk(buf));
 }
 
-export default {
-  encode: s2r,
-  decode: r2s
-};
+export default { encode, decode };
