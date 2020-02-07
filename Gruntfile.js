@@ -173,6 +173,13 @@ module.exports = function(grunt) {
           'dist/openpgp.worker.min.js' : ['dist/openpgp.worker.js']
         },
         options: {
+          output: {
+            comments: `/^!/`
+          },
+          sourceMap: dev ? {
+            content: 'inline',
+            url: 'inline'
+          } : {},
           safari10: true
         }
       }
@@ -185,8 +192,8 @@ module.exports = function(grunt) {
                 'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
         },
         files: {
-          'dist/openpgp.min.js': 'dist/openpgp.min.js',
-          'dist/openpgp.worker.min.js': 'dist/openpgp.worker.min.js'
+          'dist/openpgp.js': 'dist/openpgp.js',
+          'dist/openpgp.worker.js': 'dist/openpgp.worker.js'
         }
       }
     },
@@ -338,10 +345,10 @@ module.exports = function(grunt) {
   grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
   grunt.registerTask('build', function() {
     if (lightweight) {
-      grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'terser', 'header', 'replace_min']);
+      grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'header', 'terser', 'replace_min']);
       return;
     }
-    grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'terser', 'header', 'replace_min']);
+    grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'header', 'terser', 'replace_min']);
   }
   );
   grunt.registerTask('documentation', ['jsdoc']);
