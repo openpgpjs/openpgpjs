@@ -1218,7 +1218,7 @@ yYDnCgA=
 
       return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(function(cleartextSig) {
         expect(cleartextSig).to.exist;
-        expect(openpgp.util.Uint8Array_to_str(openpgp.util.nativeEOL(cleartextSig.data))).to.equal(plaintext);
+        expect(cleartextSig.data).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
         expect(cleartextSig.signatures[0].valid).to.equal(!openpgp.config.reject_message_hash_algorithms.has(openpgp.enums.hash.sha1));
         expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
@@ -1255,7 +1255,7 @@ yYDnCgA=
 
       return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(async function(cleartextSig) {
         expect(cleartextSig).to.exist;
-        expect(openpgp.util.Uint8Array_to_str(openpgp.util.nativeEOL(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
+        expect(await openpgp.stream.readToEnd(cleartextSig.data)).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
         if (!openpgp.config.reject_message_hash_algorithms.has(openpgp.enums.hash.sha1)) {
           expect(await cleartextSig.signatures[0].verified).to.be.true;
@@ -1288,7 +1288,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
       return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(async function(cleartextSig) {
         expect(cleartextSig).to.exist;
-        expect(openpgp.util.Uint8Array_to_str(openpgp.util.nativeEOL(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
+        expect(await openpgp.stream.readToEnd(cleartextSig.data)).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(0);
       });
     });
@@ -1321,7 +1321,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
       return openpgp.verify({ publicKeys: [pubKey], message: sMsg }).then(async function(cleartextSig) {
         expect(cleartextSig).to.exist;
-        expect(openpgp.util.Uint8Array_to_str(openpgp.util.nativeEOL(await openpgp.stream.readToEnd(cleartextSig.data)))).to.equal(plaintext);
+        expect(await openpgp.stream.readToEnd(cleartextSig.data)).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
         await expect(cleartextSig.signatures[0].verified).to.be.rejectedWith('Corresponding signature packet missing');
         expect((await cleartextSig.signatures[0].signature).packets.length).to.equal(0);
@@ -1422,7 +1422,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromBinary(plaintext) }).then(async function(signed) {
 
       const csMsg = await openpgp.message.readArmored(signed.data);
-      return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
+      return openpgp.verify({ publicKeys:[pubKey], message:csMsg, format: 'binary' });
 
     }).then(async function(cleartextSig) {
       expect(cleartextSig).to.exist;
@@ -1442,7 +1442,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromBinary(plaintext), armor:false }).then(async function(signed) {
 
       const csMsg = await openpgp.message.read(signed.data);
-      return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
+      return openpgp.verify({ publicKeys:[pubKey], message:csMsg, format: 'binary' });
 
     }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
