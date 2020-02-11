@@ -40,11 +40,19 @@ export function Signature(packetlist) {
 
 
 /**
+ * Returns binary encoded signature
+ * @returns {ReadableStream<Uint8Array>} binary signature
+ */
+Signature.prototype.write = function() {
+  return this.packets.write();
+};
+
+/**
  * Returns ASCII armored text of signature
  * @returns {ReadableStream<String>} ASCII armor
  */
 Signature.prototype.armor = function() {
-  return armor.encode(enums.armor.signature, this.packets.write());
+  return armor.encode(enums.armor.signature, this.write());
 };
 
 /**
