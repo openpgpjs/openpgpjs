@@ -2184,7 +2184,8 @@ describe('OpenPGP.js public api tests', function() {
           };
           const verifyOpt = {
             publicKeys: publicKey_2038_2045.keys,
-            date: future
+            date: future,
+            format: 'binary'
           };
           return openpgp.sign(signOpt).then(async function (signed) {
             verifyOpt.message = openpgp.message.fromBinary(data);
@@ -2208,7 +2209,8 @@ describe('OpenPGP.js public api tests', function() {
             armor: false
           };
           const verifyOpt = {
-            publicKeys: publicKey.keys
+            publicKeys: publicKey.keys,
+            format: 'binary'
           };
           return openpgp.sign(signOpt).then(async function (signed) {
             const message = await openpgp.message.read(signed.data);
@@ -2237,7 +2239,8 @@ describe('OpenPGP.js public api tests', function() {
           };
           const verifyOpt = {
             publicKeys: publicKey.keys,
-            streaming: 'web'
+            streaming: 'web',
+            format: 'binary'
           };
           return openpgp.sign(signOpt).then(async function (signed) {
             expect(openpgp.util.isStream(signed.data)).to.equal('web');
