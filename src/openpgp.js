@@ -461,6 +461,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
  * Verifies signatures of cleartext signed message
  * @param  {Key|Array<Key>} publicKeys         array of publicKeys or single key, to verify signatures
  * @param  {CleartextMessage|Message} message  (cleartext) message object with signatures
+ * @param  {'utf8'|'binary'} format            (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
  * @param  {'web'|'node'|false} streaming      (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Signature} signature               (optional) detached signature for verification
  * @param  {Date} date                         (optional) use the given date for verification instead of the current time
@@ -480,8 +481,9 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
  * @async
  * @static
  */
-export function verify({ message, publicKeys, streaming = message && message.fromStream, signature = null, date = new Date() }) {
+export function verify({ message, publicKeys, format = 'utf8', streaming = message && message.fromStream, signature = null, date = new Date() }) {
   checkCleartextOrMessage(message);
+  if (message instanceof CleartextMessage && format === 'binary') throw new Error("Can't return cleartext message data as binary");
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
@@ -491,7 +493,7 @@ export function verify({ message, publicKeys, streaming = message && message.fro
   return Promise.resolve().then(async function() {
     const result = {};
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming) : await message.verify(publicKeys, date, streaming);
-    result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
+    result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     if (streaming) linkStreams(result, message);
     result.data = await convertStream(result.data, streaming);
     if (!streaming) await prepareSignatures(result.signatures);
