@@ -1439,9 +1439,9 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const privKey = (await openpgp.key.readArmored(priv_key_arm2)).keys[0];
     await privKey.decrypt('hello world');
 
-    return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromBinary(plaintext), armor:false }).then(function(signed) {
+    return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromBinary(plaintext), armor:false }).then(async function(signed) {
 
-      const csMsg = signed.message;
+      const csMsg = await openpgp.message.read(signed.data);
       return openpgp.verify({ publicKeys:[pubKey], message:csMsg });
 
     }).then(function(cleartextSig) {

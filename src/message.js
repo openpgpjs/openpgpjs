@@ -722,11 +722,19 @@ Message.prototype.appendSignature = async function(detachedSignature) {
 };
 
 /**
+ * Returns binary encoded message
+ * @returns {ReadableStream<Uint8Array>} binary message
+ */
+Message.prototype.write = function() {
+  return this.packets.write();
+};
+
+/**
  * Returns ASCII armored text of message
  * @returns {ReadableStream<String>} ASCII armor
  */
 Message.prototype.armor = function() {
-  return armor.encode(enums.armor.message, this.packets.write());
+  return armor.encode(enums.armor.message, this.write());
 };
 
 /**
