@@ -904,10 +904,12 @@ describe('OpenPGP.js public api tests', function() {
           return openpgp.encryptSessionKey({
             data: sk,
             algorithm: 'aes128',
-            publicKeys: publicKey.keys
-          }).then(function(encrypted) {
+            publicKeys: publicKey.keys,
+            armor: false
+          }).then(async function(encrypted) {
+            const message = await openpgp.message.read(encrypted.data);
             return openpgp.decryptSessionKeys({
-              message: encrypted.message,
+              message,
               privateKeys: privateKey.keys[0]
             });
           }).then(function(decrypted) {
@@ -919,10 +921,12 @@ describe('OpenPGP.js public api tests', function() {
           return openpgp.encryptSessionKey({
             data: sk,
             algorithm: 'aes128',
-            passwords: password1
-          }).then(function(encrypted) {
+            passwords: password1,
+            armor: false
+          }).then(async function(encrypted) {
+            const message = await openpgp.message.read(encrypted.data);
             return openpgp.decryptSessionKeys({
-              message: encrypted.message,
+              message,
               passwords: password1
             });
           }).then(function(decrypted) {
