@@ -338,7 +338,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
     if (returnSessionKey) {
       result.sessionKey = encrypted.sessionKey;
     }
-    return convertStreams(result, streaming, ['signature', 'data']);
+    return convertStreams(result, streaming, armor ? 'utf8' : 'binary', ['signature', 'data']);
   }).catch(onError.bind(null, 'Error encrypting message'));
 }
 
@@ -388,7 +388,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.filename = decrypted.getFilename();
     if (streaming) linkStreams(result, message);
-    result.data = await convertStream(result.data, streaming);
+    result.data = await convertStream(result.data, streaming, format);
     if (!streaming) await prepareSignatures(result.signatures);
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
@@ -453,7 +453,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
       message = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream);
       result.data = armor ? message.armor() : message.write();
     }
-    return convertStreams(result, streaming, ['signature', 'data']);
+    return convertStreams(result, streaming, armor ? 'utf8' : 'binary', ['signature', 'data']);
   }).catch(onError.bind(null, 'Error signing message'));
 }
 
@@ -495,7 +495,7 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming) : await message.verify(publicKeys, date, streaming);
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     if (streaming) linkStreams(result, message);
-    result.data = await convertStream(result.data, streaming);
+    result.data = await convertStream(result.data, streaming, format);
     if (!streaming) await prepareSignatures(result.signatures);
     return result;
   }).catch(onError.bind(null, 'Error verifying signed message'));
@@ -616,9 +616,10 @@ function toArray(param) {
  * Convert data to or from Stream
  * @param  {Object} data                   the data to convert
  * @param  {'web'|'node'|false} streaming  (optional) whether to return a ReadableStream
+ * @param  {'utf8'|'binary'} encoding      (optional) how to return data in Node Readable streams
  * @returns {Object}                       the data in the respective format
  */
-async function convertStream(data, streaming) {
+async function convertStream(data, streaming, encoding = 'utf8') {
   if (!streaming && util.isStream(data)) {
     return stream.readToEnd(data);
   }
@@ -632,6 +633,7 @@ async function convertStream(data, streaming) {
   }
   if (streaming === 'node') {
     data = stream.webToNode(data);
+    if (encoding !== 'binary') data.setEncoding(encoding);
   }
   return data;
 }
@@ -640,16 +642,17 @@ async function convertStream(data, streaming) {
  * Convert object properties from Stream
  * @param  {Object} obj                    the data to convert
  * @param  {'web'|'node'|false} streaming  (optional) whether to return ReadableStreams
+ * @param  {'utf8'|'binary'} encoding      (optional) how to return data in Node Readable streams
  * @param  {Array<String>} keys            (optional) which keys to return as streams, if possible
  * @returns {Object}                       the data in the respective format
  */
-async function convertStreams(obj, streaming, keys = []) {
+async function convertStreams(obj, streaming, encoding = 'utf8', keys = []) {
   if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
     await Promise.all(Object.entries(obj).map(async ([key, value]) => { // recursively search all children
       if (util.isStream(value) || keys.includes(key)) {
-        obj[key] = await convertStream(value, streaming);
+        obj[key] = await convertStream(value, streaming, encoding);
       } else {
-        await convertStreams(obj[key], streaming);
+        await convertStreams(obj[key], streaming, encoding);
       }
     }));
   }
