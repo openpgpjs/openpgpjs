@@ -290,7 +290,7 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {String|Array<String>} passwords       (optional) array of passwords or a single password to encrypt the message
  * @param  {Object} sessionKey                    (optional) session key in the form: { data:Uint8Array, algorithm:String }
  * @param  {module:enums.compression} compression (optional) which compression algorithm to compress the message with, defaults to what is specified in config
- * @param  {Boolean} armor                        (optional) if the return values should be ascii armored or the message/signature objects
+ * @param  {Boolean} armor                        (optional) whether the return values should be ascii armored (true, the default) or binary (false)
  * @param  {'web'|'node'|false} streaming         (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Boolean} detached                     (optional) if the signature should be detached (if true, signature will be added to returned object)
  * @param  {Signature} signature                  (optional) a detached signature to add to the encrypted message
@@ -406,7 +406,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * Signs a cleartext message.
  * @param  {CleartextMessage|Message} message (cleartext) message to be signed
  * @param  {Key|Array<Key>} privateKeys       array of keys or single key with decrypted secret key data to sign cleartext
- * @param  {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
+ * @param  {Boolean} armor                    (optional) whether the return values should be ascii armored (true, the default) or binary (false)
  * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Boolean} detached                 (optional) if the return value should contain a detached signature
  * @param  {Date} date                        (optional) override the creation date of the signature
@@ -517,6 +517,7 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
  * @param  {String} aeadAlgorithm             (optional) aead algorithm, e.g. 'eax' or 'ocb'
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
+ * @param  {Boolean} armor                    (optional) whether the return values should be ascii armored (true, the default) or binary (false)
  * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                        (optional) override the date
  * @param  {Array} toUserIds                  (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
@@ -524,16 +525,19 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), toUserIds = [] }) {
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, armor = true, wildcard = false, date = new Date(), toUserIds = [] }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords); toUserIds = toArray(toUserIds);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, armor, wildcard, date, toUserIds });
   }
 
   return Promise.resolve().then(async function() {
 
-    return { message: await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds) };
+    const message = await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
+    const result = {};
+    result.data = armor ? message.armor() : message.write();
+    return result;
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
 }
