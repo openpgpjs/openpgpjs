@@ -892,31 +892,6 @@ function tests() {
     await openpgp.stream.cancel(signed.signature, new Error('canceled by test'));
     expect(canceled).to.be.true;
   });
-
-  if (openpgp.util.detectNode()) {
-    const fs = util.nodeRequire('fs');
-
-    it('Node: Encrypt and decrypt binary message roundtrip', async function() {
-      dataArrived(); // Do not wait until data arrived.
-      let plaintext = fs.readFileSync(__filename);
-      const data = fs.createReadStream(__filename);
-      const encrypted = await openpgp.encrypt({
-        message: openpgp.message.fromBinary(data),
-        passwords: ['test'],
-      });
-
-      const msgAsciiArmored = encrypted.data;
-      const message = await openpgp.message.readArmored(msgAsciiArmored);
-      const decrypted = await openpgp.decrypt({
-        passwords: ['test'],
-        message,
-        format: 'binary'
-      });
-      expect(util.isStream(decrypted.data)).to.equal('node');
-      expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(plaintext);
-    });
-
-  }
 }
 
 describe('Streaming', function() {
@@ -969,4 +944,48 @@ describe('Streaming', function() {
       expectedType = 'node';
     }
   });
+
+  if (openpgp.util.detectNode()) {
+    const fs = util.nodeRequire('fs');
+
+    it('Node: Encrypt and decrypt text message roundtrip', async function() {
+      dataArrived(); // Do not wait until data arrived.
+      const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js'), 'utf8');
+      const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'), { encoding: 'utf8' });
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromText(data),
+        passwords: ['test']
+      });
+      expect(util.isStream(encrypted.data)).to.equal('node');
+
+      const message = await openpgp.message.readArmored(encrypted.data);
+      const decrypted = await openpgp.decrypt({
+        passwords: ['test'],
+        message
+      });
+      expect(util.isStream(decrypted.data)).to.equal('node');
+      expect(await openpgp.stream.readToEnd(decrypted.data)).to.equal(plaintext);
+    });
+
+    it('Node: Encrypt and decrypt binary message roundtrip', async function() {
+      dataArrived(); // Do not wait until data arrived.
+      const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js'));
+      const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'));
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(data),
+        passwords: ['test'],
+        armor: false
+      });
+      expect(util.isStream(encrypted.data)).to.equal('node');
+
+      const message = await openpgp.message.read(encrypted.data);
+      const decrypted = await openpgp.decrypt({
+        passwords: ['test'],
+        message,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.equal('node');
+      expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(plaintext);
+    });
+  }
 });
