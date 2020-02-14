@@ -8959,8 +8959,8 @@
       }
     },
     "web-stream-tools": {
-      "version": "github:openpgpjs/web-stream-tools#dc4b05e8a272b45819233f3df735423432beacfc",
-      "from": "github:openpgpjs/web-stream-tools#dc4b05e8a272b45819233f3df735423432beacfc",
+      "version": "github:openpgpjs/web-stream-tools#619abcbe2d9115bb005047f609b72d71108edadb",
+      "from": "github:openpgpjs/web-stream-tools#619abcbe2d9115bb005047f609b72d71108edadb",
       "dev": true
     },
     "websocket-driver": {
