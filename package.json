@@ -79,7 +79,7 @@
     "pako": "^1.0.6",
     "seek-bzip": "github:openpgpjs/seek-bzip#6187fc025851d35c4e104a25ea15a10b9b8d6f7d",
     "tweetnacl": "github:openpgpjs/tweetnacl-js#3dae25bd3eaa77173f3405676b595721dde92eec",
-    "web-stream-tools": "github:openpgpjs/web-stream-tools#dc4b05e8a272b45819233f3df735423432beacfc",
+    "web-stream-tools": "github:openpgpjs/web-stream-tools#619abcbe2d9115bb005047f609b72d71108edadb",
     "email-addresses": "3.1.0"
   },
   "dependencies": {
