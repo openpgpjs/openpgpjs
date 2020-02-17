@@ -50,7 +50,12 @@ import './polyfills';
 import util from './util';
 import AsyncProxy from './worker/async_proxy';
 
-const toNativeReadable = global.ReadableStream && createReadableStreamWrapper(global.ReadableStream);
+let toNativeReadable;
+if (global.ReadableStream) {
+  try {
+    toNativeReadable = createReadableStreamWrapper(global.ReadableStream);
+  } catch (e) {}
+}
 
 //////////////////////////
 //                      //
