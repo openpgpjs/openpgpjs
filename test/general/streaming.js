@@ -9,7 +9,8 @@ const { expect } = chai;
 
 const { stream, util } = openpgp;
 
-const ReadableStream = global.ReadableStream || openpgp.stream.ReadableStream;
+const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })();
+const ReadableStream = useNativeStream ? global.ReadableStream : openpgp.stream.ReadableStream;
 
 const pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -936,7 +937,7 @@ describe('Streaming', function() {
   tryTests('WhatWG Streams', tests, {
     if: true,
     beforeEach: function() {
-      expectedType = global.ReadableStream ? 'web' : 'ponyfill';
+      expectedType = useNativeStream ? 'web' : 'ponyfill';
     }
   });
 
