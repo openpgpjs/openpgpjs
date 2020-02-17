@@ -997,7 +997,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
   it('Should verify cleartext message correctly when using a detached binary signature and text literal data', async function () {
     const plaintext = 'short message\nnext line \n한국어/조선말';
-    const plaintextArray = openpgp.util.str_to_Uint8Array(plaintext);
+    const plaintextArray = openpgp.util.encode_utf8(plaintext);
     const pubKey = (await openpgp.key.readArmored(pub_key_arm2)).keys[0];
     const privKey = (await openpgp.key.readArmored(priv_key_arm2)).keys[0];
     await privKey.decrypt('hello world');
