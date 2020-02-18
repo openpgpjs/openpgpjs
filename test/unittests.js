@@ -36,13 +36,6 @@ describe('Unit Tests', function () {
     openpgp.config.s2k_iteration_count_byte = 0;
     openpgp.config.indutny_elliptic_path = '../dist/elliptic.min.js';
 
-    afterEach(function () {
-      if (window.scrollY >= document.body.scrollHeight - window.innerHeight - 100
-        || openpgp.config.ci) {
-        window.scrollTo(0, document.body.scrollHeight);
-      }
-    });
-
     window.location.search.substr(1).split('&').forEach(param => {
       const [key, value] = param.split('=');
       if (key && key !== 'grep') {
