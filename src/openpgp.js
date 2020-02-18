@@ -146,14 +146,14 @@ export function generateKey({ userIds = [], passphrase = "", numBits = 2048, rsa
     const revocationCertificate = await key.getRevocationCertificate(date);
     key.revocationSignatures = [];
 
-    return convertStreams({
+    return {
 
       key: key,
       privateKeyArmored: key.armor(),
       publicKeyArmored: key.toPublic().armor(),
       revocationCertificate: revocationCertificate
 
-    });
+    };
   }).catch(onError.bind(null, 'Error generating keypair'));
 }
 
@@ -179,14 +179,14 @@ export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpi
     const revocationCertificate = await key.getRevocationCertificate(date);
     key.revocationSignatures = [];
 
-    return convertStreams({
+    return {
 
       key: key,
       privateKeyArmored: key.armor(),
       publicKeyArmored: key.toPublic().armor(),
       revocationCertificate: revocationCertificate
 
-    });
+    };
   }).catch(onError.bind(null, 'Error reformatting keypair'));
 }
 
@@ -221,7 +221,6 @@ export function revokeKey({
       return key.revoke(reasonForRevocation);
     }
   }).then(async key => {
-    await convertStreams(key);
     if (key.isPrivate()) {
       const publicKey = key.toPublic();
       return {
@@ -634,27 +633,6 @@ async function convertStream(data, streaming, encoding = 'utf8') {
     return toNativeReadable(data);
   }
   return data;
-}
-
-/**
- * Convert object properties from Stream
- * @param  {Object} obj                               the data to convert
- * @param  {'web'|'ponyfill'|'node'|false} streaming  (optional) whether to return ReadableStreams, and of what type
- * @param  {'utf8'|'binary'} encoding                 (optional) how to return data in Node Readable streams
- * @param  {Array<String>} keys                       (optional) which keys to return as streams, if possible
- * @returns {Object}                                  the data in the respective format
- */
-async function convertStreams(obj, streaming, encoding = 'utf8', keys = []) {
-  if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
-    await Promise.all(Object.entries(obj).map(async ([key, value]) => { // recursively search all children
-      if (util.isStream(value) || keys.includes(key)) {
-        obj[key] = await convertStream(value, streaming, encoding);
-      } else {
-        await convertStreams(obj[key], streaming, encoding);
-      }
-    }));
-  }
-  return obj;
 }
 
 /**
