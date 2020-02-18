@@ -49,8 +49,8 @@ describe('Decrypt and decompress message tests', function () {
           passwords: password,
           message
         };
-      return openpgp.decrypt(options).then(function (encrypted) {
-        expect(encrypted.data).to.equal(test.output + '\n');
+      return openpgp.decrypt(options).then(function (decrypted) {
+        expect(decrypted.data).to.equal(test.output + '\n');
       });
     });
   }
