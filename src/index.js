@@ -20,7 +20,7 @@ export default openpgp;
 export {
   encrypt, decrypt, sign, verify,
   generateKey, reformatKey, revokeKey, decryptKey,
-  encryptSessionKey, decryptSessionKeys,
+  generateSessionKey, encryptSessionKey, decryptSessionKeys,
   initWorker, getWorker, destroyWorker
 } from './openpgp';
 
