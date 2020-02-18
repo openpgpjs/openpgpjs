@@ -337,14 +337,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
 
   msg.packets.push(symEncryptedPacket);
   symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
-  return {
-    message: msg,
-    sessionKey: {
-      data: sessionKey,
-      algorithm: symAlgo,
-      aeadAlgorithm: aeadAlgo
-    }
-  };
+  return msg;
 };
 
 /**

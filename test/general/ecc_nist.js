@@ -29,7 +29,7 @@ describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightwe
             openpgp.sign(
               { message: openpgp.cleartext.fromText(testData), privateKeys: hi }
             ).then(async signed => {
-              const msg = await openpgp.cleartext.readArmored(signed.data);
+              const msg = await openpgp.cleartext.readArmored(signed);
               // Verifying signed message
               return Promise.all([
                 openpgp.verify(
@@ -39,7 +39,7 @@ describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightwe
                 openpgp.verify(
                   { message: openpgp.cleartext.fromText(testData),
                     publicKeys: pubHi,
-                    signature: await openpgp.signature.readArmored(signed.data) }
+                    signature: await openpgp.signature.readArmored(signed) }
                 ).then(output => expect(output.signatures[0].valid).to.be.true)
               ]);
             }),
@@ -49,7 +49,7 @@ describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightwe
                 publicKeys: [pubBye],
                 privateKeys: [hi] }
             ).then(async encrypted => {
-              const msg = await openpgp.message.readArmored(encrypted.data);
+              const msg = await openpgp.message.readArmored(encrypted);
               // Decrypting and verifying
               return openpgp.decrypt(
                 { message: msg,
@@ -73,7 +73,7 @@ describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightwe
     let options = { userIds: {name: "Hi", email: "hi@hel.lo"}, curve: "p256" };
     const firstKey = await openpgp.generateKey(options);
     const signature =  await openpgp.sign({ message: openpgp.cleartext.fromText(testData), privateKeys: firstKey.key });
-    const msg = await openpgp.cleartext.readArmored(signature.data);
+    const msg = await openpgp.cleartext.readArmored(signature);
     const result = await openpgp.verify({ message: msg, publicKeys: firstKey.key.toPublic()});
     expect(result.signatures[0].valid).to.be.true;
   });
@@ -89,7 +89,7 @@ describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightwe
         publicKeys: [secondKey.key.toPublic()],
         privateKeys: [firstKey.key] }
     );
-    const msg = await openpgp.message.readArmored(encrypted.data);
+    const msg = await openpgp.message.readArmored(encrypted);
     const result = await openpgp.decrypt(
       { message: msg,
         privateKeys: secondKey.key,

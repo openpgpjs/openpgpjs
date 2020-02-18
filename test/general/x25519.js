@@ -176,7 +176,7 @@ const input = require('./testInputs');
     const priv = await load_priv_key(name);
     const signed = await openpgp.sign({ privateKeys: [priv], message: openpgp.cleartext.fromText(randomData)});
     const pub = await load_pub_key(name);
-    const msg = await openpgp.cleartext.readArmored(signed.data);
+    const msg = await openpgp.cleartext.readArmored(signed);
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
 
     expect(result).to.exist;
@@ -203,7 +203,7 @@ const input = require('./testInputs');
     const randomData = input.createSomeMessage();
     const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], message: openpgp.message.fromText(randomData) });
 
-    const message = await openpgp.message.readArmored(encrypted.data);
+    const message = await openpgp.message.readArmored(encrypted);
     const lightPublic = await load_pub_key('light');
     const nightPrivate = await load_priv_key('night');
     const result = await openpgp.decrypt({ privateKeys: nightPrivate, publicKeys: [lightPublic], message: message });
@@ -495,7 +495,7 @@ function omnibus() {
           openpgp.sign(
             { message: openpgp.cleartext.fromText('Hi, this is me, Hi!'), privateKeys: hi }
           ).then(async signed => {
-            const msg = await openpgp.cleartext.readArmored(signed.data);
+            const msg = await openpgp.cleartext.readArmored(signed);
             // Verifying signed message
             return Promise.all([
               openpgp.verify(
@@ -506,7 +506,7 @@ function omnibus() {
                 {
                   message: openpgp.message.fromText('Hi, this is me, Hi!'),
                   publicKeys: hi.toPublic(),
-                  signature: await openpgp.signature.readArmored(signed.data)
+                  signature: await openpgp.signature.readArmored(signed)
                 }
               ).then(output => expect(output.signatures[0].valid).to.be.true)
             ]);
@@ -519,7 +519,7 @@ function omnibus() {
               privateKeys: [hi]
             }
           ).then(async encrypted => {
-            const msg = await openpgp.message.readArmored(encrypted.data);
+            const msg = await openpgp.message.readArmored(encrypted);
             // Decrypting and verifying
             return openpgp.decrypt(
               {
