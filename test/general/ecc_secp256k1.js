@@ -191,7 +191,7 @@ describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', functio
     const romeoPrivate = await load_priv_key('romeo');
     const signed = await openpgp.sign({privateKeys: [romeoPrivate], message: openpgp.cleartext.fromText(data.romeo.message)});
     const romeoPublic = await load_pub_key('romeo');
-    const msg = await openpgp.cleartext.readArmored(signed.data);
+    const msg = await openpgp.cleartext.readArmored(signed);
     const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
 
     expect(result).to.exist;
@@ -215,7 +215,7 @@ describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', functio
     const julietPublic = await load_pub_key('juliet');
     const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: openpgp.message.fromText(data.romeo.message)});
 
-    const message = await openpgp.message.readArmored(encrypted.data);
+    const message = await openpgp.message.readArmored(encrypted);
     const romeoPublic = await load_pub_key('romeo');
     const julietPrivate = await load_priv_key('juliet');
     const result = await openpgp.decrypt({privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message});
