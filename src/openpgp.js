@@ -131,7 +131,6 @@ export async function destroyWorker() {
  * @async
  * @static
  */
-
 export function generateKey({ userIds = [], passphrase = "", numBits = 2048, rsaBits = numBits, keyExpirationTime = 0, curve = "", date = new Date(), subkeys = [{}] }) {
   userIds = toArray(userIds);
   const options = { userIds, passphrase, rsaBits, keyExpirationTime, curve, date, subkeys };
@@ -516,6 +515,31 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
 //                                           //
 ///////////////////////////////////////////////
 
+/**
+ * Decrypt symmetric session keys with a private key or password. Either a private key or
+ *   a password must be specified.
+ * @param  {Message} message                 a message object containing the encrypted session key packets
+ * @param  {Key|Array<Key>} privateKeys     (optional) private keys with decrypted secret key data
+ * @param  {String|Array<String>} passwords (optional) passwords to decrypt the session key
+ * @returns {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
+ *                                          { data:Uint8Array, algorithm:String }
+ *                                          or 'undefined' if no key packets found
+ * @async
+ * @static
+ */
+export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = [] }) {
+  publicKeys = toArray(publicKeys); toUserIds = toArray(toUserIds);
+
+  if (asyncProxy) { // use web worker if available
+    return asyncProxy.delegate('generateSessionKey', { publicKeys, date, toUserIds });
+  }
+
+  return Promise.resolve().then(async function() {
+
+    return messageLib.generateSessionKey(publicKeys, date, toUserIds);
+
+  }).catch(onError.bind(null, 'Error generating session key'));
+}
 
 /**
  * Encrypt a symmetric session key with public keys, passwords, or both at once. At least either public keys
