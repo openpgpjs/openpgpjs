@@ -19,7 +19,23 @@
     <script src="lib/unittests-bundle.js"></script>
     <script>
       if (typeof openpgp !== 'undefined') {
-        mocha.run();
+        const runner = mocha.run();
+        var wasScrolledDown = true;
+        function beforeTestReport() {
+          wasScrolledDown = document.documentElement.scrollHeight - document.documentElement.scrollTop - document.documentElement.clientHeight < 50;
+        }
+        function afterTestReport() {
+          if (wasScrolledDown || openpgp.config.ci) {
+            window.scrollTo(0, document.documentElement.scrollHeight);
+          }
+        }
+        runner._events['suite'].unshift(beforeTestReport);
+        runner._events['pass'].unshift(beforeTestReport);
+        runner._events['fail'].unshift(beforeTestReport);
+        runner._events['pending'].unshift(beforeTestReport);
+        document.addEventListener('scroll', beforeTestReport);
+        runner.on('suite', afterTestReport);
+        runner.on('test end', afterTestReport);
       }
     </script>
   </body>
