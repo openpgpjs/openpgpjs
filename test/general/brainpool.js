@@ -216,7 +216,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     const romeoPrivate = await load_priv_key('romeo');
     const signed = await openpgp.sign({privateKeys: [romeoPrivate], message: openpgp.cleartext.fromText(data.romeo.message)});
     const romeoPublic = await load_pub_key('romeo');
-    const msg = await openpgp.cleartext.readArmored(signed.data);
+    const msg = await openpgp.cleartext.readArmored(signed);
     const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
 
     expect(result).to.exist;
@@ -266,7 +266,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     const julietPublic = await load_pub_key('juliet');
     const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: openpgp.message.fromText(data.romeo.message)});
 
-    const message = await openpgp.message.readArmored(encrypted.data);
+    const message = await openpgp.message.readArmored(encrypted);
     const romeoPublic = await load_pub_key('romeo');
     const julietPrivate = await load_priv_key('juliet');
     const result = await openpgp.decrypt({privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message});
@@ -297,7 +297,7 @@ function omnibus() {
           openpgp.sign(
             { message: openpgp.cleartext.fromText(testData), privateKeys: hi }
           ).then(async signed => {
-            const msg = await openpgp.cleartext.readArmored(signed.data);
+            const msg = await openpgp.cleartext.readArmored(signed);
             // Verifying signed message
             return Promise.all([
               openpgp.verify(
@@ -308,7 +308,7 @@ function omnibus() {
                 {
                   message: openpgp.cleartext.fromText(testData),
                   publicKeys: pubHi,
-                  signature: await openpgp.signature.readArmored(signed.data)
+                  signature: await openpgp.signature.readArmored(signed)
                 }
               ).then(output => expect(output.signatures[0].valid).to.be.true)
             ]);
@@ -321,7 +321,7 @@ function omnibus() {
               privateKeys: [hi]
             }
           ).then(async encrypted => {
-            const msg = await openpgp.message.readArmored(encrypted.data);
+            const msg = await openpgp.message.readArmored(encrypted);
             // Decrypting and verifying
             return openpgp.decrypt(
               {

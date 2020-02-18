@@ -45,7 +45,7 @@ onmessage = async function({ data: { action, message }, ports: [port] }) {
         const { keys: publicKeys } = await openpgp.key.readArmored(publicKeyArmored);
         const { keys: privateKeys } = await openpgp.key.readArmored(privateKeyArmored);
         await privateKeys[0].decrypt('test');
-        const { data } = await openpgp.encrypt({
+        const data = await openpgp.encrypt({
           message: openpgp.message.fromText(message),
           publicKeys,
           privateKeys
