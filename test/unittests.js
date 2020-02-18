@@ -51,7 +51,7 @@ describe('Unit Tests', function () {
       if (key && key !== 'grep') {
         openpgp.config[key] = decodeURIComponent(value);
         try {
-          openpgp.config[key] = JSON.parse(openpgp.config[key]);
+          openpgp.config[key] = eval(openpgp.config[key]);
         } catch(e) {}
       }
     });
