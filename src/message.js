@@ -277,6 +277,23 @@ Message.prototype.getText = function() {
 };
 
 /**
+ * Generate a new session key object, taking the algorithm preferences of the passed public keys into account, if any.
+ * @param  {Array<Key>} keys           (optional) public key(s) to select algorithm preferences for
+ * @param  {Date} date                 (optional) date to select algorithm preferences at
+ * @param  {Array} userIds             (optional) user IDs to select algorithm preferences for
+ * @returns {Promise<{ data: Uint8Array, algorithm: String }>} object with session key data and algorithm
+ * @async
+ */
+export async function generateSessionKey(keys = [], date = new Date(), userIds = []) {
+  const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
+  const aeadAlgorithm = config.aead_protect && await isAeadSupported(keys, date, userIds) ?
+    enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds)) :
+    undefined;
+  const sessionKeyData = await crypto.generateSessionKey(algorithm);
+  return { data: sessionKeyData, algorithm, aeadAlgorithm };
+}
+
+/**
  * Encrypt the message either with public keys, passwords, or both at once.
  * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) password(s) for message encryption
@@ -289,38 +306,26 @@ Message.prototype.getText = function() {
  * @async
  */
 Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard = false, date = new Date(), userIds = [], streaming) {
-  let symAlgo;
-  let aeadAlgo;
-  let symEncryptedPacket;
-
   if (sessionKey) {
     if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
       throw new Error('Invalid session key for encryption.');
     }
-    symAlgo = sessionKey.algorithm;
-    aeadAlgo = sessionKey.aeadAlgorithm;
-    sessionKey = sessionKey.data;
   } else if (keys && keys.length) {
-    symAlgo = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
-    if (config.aead_protect && await isAeadSupported(keys, date, userIds)) {
-      aeadAlgo = enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds));
-    }
+    sessionKey = await generateSessionKey(keys, date, userIds);
   } else if (passwords && passwords.length) {
-    symAlgo = enums.read(enums.symmetric, config.encryption_cipher);
-    aeadAlgo = enums.read(enums.aead, config.aead_mode);
+    sessionKey = await generateSessionKey();
   } else {
     throw new Error('No keys, passwords, or session key provided.');
   }
 
-  if (!sessionKey) {
-    sessionKey = await crypto.generateSessionKey(symAlgo);
-  }
+  const { data: sessionKeyData, algorithm, aeadAlgorithm } = sessionKey;
 
-  const msg = await encryptSessionKey(sessionKey, symAlgo, aeadAlgo, keys, passwords, wildcard, date, userIds);
+  const msg = await encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, keys, passwords, wildcard, date, userIds);
 
-  if (config.aead_protect && aeadAlgo) {
+  let symEncryptedPacket;
+  if (aeadAlgorithm) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
-    symEncryptedPacket.aeadAlgorithm = aeadAlgo;
+    symEncryptedPacket.aeadAlgorithm = aeadAlgorithm;
   } else if (config.integrity_protect) {
     symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
   } else {
@@ -328,7 +333,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
   }
   symEncryptedPacket.packets = this.packets;
 
-  await symEncryptedPacket.encrypt(symAlgo, sessionKey, streaming);
+  await symEncryptedPacket.encrypt(algorithm, sessionKeyData, streaming);
 
   msg.packets.push(symEncryptedPacket);
   symEncryptedPacket.packets = new packet.List(); // remove packets after encryption
@@ -345,8 +350,8 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
 /**
  * Encrypt a session key either with public keys, passwords, or both at once.
  * @param  {Uint8Array} sessionKey     session key for encryption
- * @param  {String} symAlgo            session key algorithm
- * @param  {String} aeadAlgo           (optional) aead algorithm, e.g. 'eax' or 'ocb'
+ * @param  {String} algorithm          session key algorithm
+ * @param  {String} aeadAlgorithm      (optional) aead algorithm, e.g. 'eax' or 'ocb'
  * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
  * @param  {Array<String>} passwords   (optional) for message encryption
  * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
@@ -355,7 +360,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
  * @returns {Promise<Message>}          new message with encrypted content
  * @async
  */
-export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKeys, passwords, wildcard = false, date = new Date(), userIds = []) {
+export async function encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), userIds = []) {
   const packetlist = new packet.List();
 
   if (publicKeys) {
@@ -365,7 +370,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
       pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.getKeyId();
       pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
       pkESKeyPacket.sessionKey = sessionKey;
-      pkESKeyPacket.sessionKeyAlgorithm = symAlgo;
+      pkESKeyPacket.sessionKeyAlgorithm = algorithm;
       await pkESKeyPacket.encrypt(encryptionKey.keyPacket);
       delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
       return pkESKeyPacket;
@@ -384,19 +389,19 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
 
     const sum = (accumulator, currentValue) => accumulator + currentValue;
 
-    const encryptPassword = async function(sessionKey, symAlgo, aeadAlgo, password) {
+    const encryptPassword = async function(sessionKey, algorithm, aeadAlgorithm, password) {
       const symEncryptedSessionKeyPacket = new packet.SymEncryptedSessionKey();
       symEncryptedSessionKeyPacket.sessionKey = sessionKey;
-      symEncryptedSessionKeyPacket.sessionKeyAlgorithm = symAlgo;
-      if (aeadAlgo) {
-        symEncryptedSessionKeyPacket.aeadAlgorithm = aeadAlgo;
+      symEncryptedSessionKeyPacket.sessionKeyAlgorithm = algorithm;
+      if (aeadAlgorithm) {
+        symEncryptedSessionKeyPacket.aeadAlgorithm = aeadAlgorithm;
       }
       await symEncryptedSessionKeyPacket.encrypt(password);
 
       if (config.password_collision_check) {
         const results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
         if (results.reduce(sum) !== 1) {
-          return encryptPassword(sessionKey, symAlgo, password);
+          return encryptPassword(sessionKey, algorithm, password);
         }
       }
 
@@ -404,7 +409,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
       return symEncryptedSessionKeyPacket;
     };
 
-    const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, symAlgo, aeadAlgo, pwd)));
+    const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, algorithm, aeadAlgorithm, pwd)));
     packetlist.concat(results);
   }
 
