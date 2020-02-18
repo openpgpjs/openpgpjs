@@ -158,7 +158,8 @@ function delegate(id, method, options) {
  * @param  {Object} event  Contains event type and data
  */
 function response(event) {
-  self.postMessage(event, openpgp.util.getTransferables(event.data, true));
+  const transferables = openpgp.util.getTransferables(event, true);
+  self.postMessage(event, transferables);
 }
 
 /**

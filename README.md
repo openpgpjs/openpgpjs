@@ -162,12 +162,12 @@ Encryption will use the algorithm specified in config.encryption_cipher (default
 
 ```js
 (async () => {
-    const { message } = await openpgp.encrypt({
+    const encrypted = await openpgp.encrypt({
         message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x01, 0x01])), // input as Message object
         passwords: ['secret stuff'],                                             // multiple passwords possible
         armor: false                                                             // don't ASCII armor (for Uint8Array output)
     });
-    const encrypted = message.packets.write(); // get raw encrypted packets as Uint8Array
+    console.log(encrypted); // Uint8Array
 
     const { data: decrypted } = await openpgp.decrypt({
         message: await openpgp.message.read(encrypted), // parse encrypted bytes
@@ -200,7 +200,7 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
     await privateKey.decrypt(passphrase);
 
-    const { data: encrypted } = await openpgp.encrypt({
+    const encrypted = await openpgp.encrypt({
         message: openpgp.message.fromText('Hello, World!'),                 // input as Message object
         publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys, // for encryption
         privateKeys: [privateKey]                                           // for signing (optional)
@@ -240,7 +240,7 @@ Encrypt with multiple public keys:
         return (await openpgp.key.readArmored(key)).keys[0];
     }));
 
-    const { data: encrypted } = await openpgp.encrypt({
+    const encrypted = await openpgp.encrypt({
         message: openpgp.message.fromText(message),   // input as Message object
         publicKeys,                                   // for encryption
         privateKeys: [privateKey]                     // for signing (optional)
@@ -343,14 +343,15 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
         publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys, // for encryption
         privateKeys: [privateKey]                                           // for signing (optional)
     });
-    const ciphertext = encrypted.data; // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+    console.log(encrypted); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
     const decrypted = await openpgp.decrypt({
-        message: await openpgp.message.readArmored(ciphertext),             // parse armored message
+        message: await openpgp.message.readArmored(encrypted),              // parse armored message
         publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys, // for verification (optional)
         privateKeys: [privateKey]                                           // for decryption
     });
-    const plaintext = await openpgp.stream.readToEnd(decrypted.data); // 'Hello, World!'
+    const plaintext = await openpgp.stream.readToEnd(decrypted.data);
+    console.log(plaintext); // 'Hello, World!'
 })();
 ```
 
@@ -454,7 +455,7 @@ Using the private key:
     const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
     await privateKey.decrypt(passphrase);
 
-    const { data: cleartext } = await openpgp.sign({
+    const cleartext = await openpgp.sign({
         message: openpgp.cleartext.fromText('Hello, World!'), // CleartextMessage or Message object
         privateKeys: [privateKey]                             // for signing
     });
@@ -531,7 +532,7 @@ Using the private key:
     const { keys: [privateKey] } = await openpgp.key.readArmored(privateKeyArmored);
     await privateKey.decrypt(passphrase);
 
-    const { data: signatureArmored } = await openpgp.sign({
+    const signatureArmored = await openpgp.sign({
         message: openpgp.message.fromBinary(readableStream),  // or .fromText(readableStream: ReadableStream<String>)
         privateKeys: [privateKey]                             // for signing
     });
