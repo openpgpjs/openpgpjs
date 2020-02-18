@@ -2055,7 +2055,7 @@ function versionSpecificTests() {
       key = newKey.key;
       return openpgp.message.fromText('hello').encrypt([key]);
     }).then(function(msg) {
-      return msg.message.decrypt([key]);
+      return msg.decrypt([key]);
     }).catch(function(err) {
       expect(err.message).to.equal('Private key is not decrypted.');
     });
@@ -2419,7 +2419,7 @@ function versionSpecificTests() {
       expect(newKey.isDecrypted()).to.be.true;
       return openpgp.sign({message: openpgp.cleartext.fromText('hello'), privateKeys: newKey, armor: true}).then(async function(signed) {
         return openpgp.verify(
-          {message: await openpgp.cleartext.readArmored(signed.data), publicKeys: newKey.toPublic()}
+          {message: await openpgp.cleartext.readArmored(signed), publicKeys: newKey.toPublic()}
         ).then(async function(verified) {
           expect(verified.signatures[0].valid).to.be.true;
           const newSigningKey = await newKey.getSigningKey();
@@ -2464,7 +2464,7 @@ function versionSpecificTests() {
       return openpgp.reformatKey(opt).then(function(newKey) {
         newKey = newKey.key;
         return openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true}).then(async function(encrypted) {
-          return openpgp.decrypt({message: await openpgp.message.readArmored(encrypted.data), privateKeys: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
+          return openpgp.decrypt({message: await openpgp.message.readArmored(encrypted), privateKeys: newKey, publicKeys: newKey.toPublic()}).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello');
             expect(decrypted.signatures[0].valid).to.be.true;
           });
@@ -3190,17 +3190,17 @@ VYGdb3eNlV8CfoEC
     await expect(key.getPrimaryUser()).to.be.rejectedWith('Could not find valid self-signature in key 3ce893915c44212f');
   });
 
-  it('Encrypt - latest created user', async function() {
+  it('Generate session key - latest created user', async function() {
     let publicKey = (await openpgp.key.readArmored(multi_uid_key)).keys[0];
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
     // Set second user to prefer aes128. We should select this user by default, since it was created later.
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
-    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, armor: false, returnSessionKey: true});
-    expect(encrypted.sessionKey.algorithm).to.equal('aes128');
+    const sessionKey = await openpgp.generateSessionKey({publicKeys: publicKey});
+    expect(sessionKey.algorithm).to.equal('aes128');
   });
 
-  it('Encrypt - primary user', async function() {
+  it('Generate session key - primary user', async function() {
     let publicKey = (await openpgp.key.readArmored(multi_uid_key)).keys[0];
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
@@ -3208,11 +3208,11 @@ VYGdb3eNlV8CfoEC
     publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
     // Set first user to prefer aes128.
     publicKey.users[0].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
-    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, armor: false, returnSessionKey: true});
-    expect(encrypted.sessionKey.algorithm).to.equal('aes128');
+    const sessionKey = await openpgp.generateSessionKey({publicKeys: publicKey});
+    expect(sessionKey.algorithm).to.equal('aes128');
   });
 
-  it('Encrypt - specific user', async function() {
+  it('Generate session key - specific user', async function() {
     let publicKey = (await openpgp.key.readArmored(multi_uid_key)).keys[0];
     const privateKey = (await openpgp.key.readArmored(priv_key_rsa)).keys[0];
     await privateKey.decrypt('hello world');
@@ -3220,8 +3220,9 @@ VYGdb3eNlV8CfoEC
     publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
     // Set second user to prefer aes128. We will select this user.
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
-    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: {name: 'Test User', email: 'b@c.com'}, armor: false, returnSessionKey: true});
-    expect(encrypted.sessionKey.algorithm).to.equal('aes128');
+    const sessionKey = await openpgp.generateSessionKey({publicKeys: publicKey, toUserIds: {name: 'Test User', email: 'b@c.com'}});
+    expect(sessionKey.algorithm).to.equal('aes128');
+    await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: {name: 'Test User', email: 'b@c.com'}, armor: false});
     await expect(openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: {name: 'Test User', email: 'c@c.com'}, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
@@ -3239,12 +3240,12 @@ VYGdb3eNlV8CfoEC
     // Set second user to prefer aes128. We will select this user.
     privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
     const signed = await openpgp.sign({message: openpgp.message.fromText('hello'), privateKeys: privateKey, fromUserIds: {name: 'Test McTestington', email: 'test@example.com'}, armor: false});
-    const signature = await openpgp.message.read(signed.data);
+    const signature = await openpgp.message.read(signed);
     expect(signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
-    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIds: {name: 'Test McTestington', email: 'test@example.com'}, detached: true, armor: false});
-    const signature2 = await openpgp.message.read(encrypted.signature);
-    expect(signature2.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
-    await expect(openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIds: {name: 'Not Test McTestington', email: 'test@example.com'}, detached: true, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
+    const encrypted = await openpgp.encrypt({message: openpgp.message.fromText('hello'), passwords: 'test', privateKeys: privateKey, fromUserIds: {name: 'Test McTestington', email: 'test@example.com'}, armor: false});
+    const { signatures } = await openpgp.decrypt({message: await openpgp.message.read(encrypted), passwords: 'test'});
+    expect(signatures[0].signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
+    await expect(openpgp.encrypt({message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIds: {name: 'Not Test McTestington', email: 'test@example.com'}, armor: false})).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
   it('Find a valid subkey binding signature among many invalid ones', async function() {
@@ -3436,7 +3437,7 @@ describe('addSubkey functionality testing', function(){
     await subKey.verify(newPrivateKey.primaryKey);
     expect(await newPrivateKey.getSigningKey()).to.be.equal(subKey);
     const signed = await openpgp.sign({message: openpgp.message.fromText('the data to signed'), privateKeys: newPrivateKey, armor:false});
-    const message = await openpgp.message.read(signed.data);
+    const message = await openpgp.message.read(signed);
     const { signatures } = await openpgp.verify({message, publicKeys: [newPrivateKey.toPublic()]});
     expect(signatures).to.exist;
     expect(signatures.length).to.be.equal(1);
@@ -3458,8 +3459,8 @@ describe('addSubkey functionality testing', function(){
     await subKey.verify(newPrivateKey.primaryKey);
     expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subKey);
     const encrypted = await openpgp.encrypt({message: openpgp.message.fromText(vData), publicKeys: publicKey, armor:false});
-    expect(encrypted.data).to.be.exist;
-    const message = await openpgp.message.read(encrypted.data);
+    expect(encrypted).to.be.exist;
+    const message = await openpgp.message.read(encrypted);
     const pkSessionKeys = message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
     expect(pkSessionKeys).to.exist;
     expect(pkSessionKeys.length).to.be.equal(1);
@@ -3482,7 +3483,7 @@ describe('addSubkey functionality testing', function(){
     await subKey.verify(newPrivateKey.primaryKey);
     expect(await newPrivateKey.getSigningKey()).to.be.equal(subKey);
     const signed = await openpgp.sign({message: openpgp.message.fromText('the data to signed'), privateKeys: newPrivateKey, armor:false});
-    const message = await openpgp.message.read(signed.data);
+    const message = await openpgp.message.read(signed);
     const { signatures } = await openpgp.verify({message, publicKeys: [newPrivateKey.toPublic()]});
     expect(signatures).to.exist;
     expect(signatures.length).to.be.equal(1);
@@ -3502,8 +3503,8 @@ describe('addSubkey functionality testing', function(){
     const vData = 'the data to encrypted!';
     expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subKey);
     const encrypted = await openpgp.encrypt({message: openpgp.message.fromText(vData), publicKeys: publicKey, armor:false});
-    expect(encrypted.data).to.be.exist;
-    const message = await openpgp.message.read(encrypted.data);
+    expect(encrypted).to.be.exist;
+    const message = await openpgp.message.read(encrypted);
     const pkSessionKeys = message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
     expect(pkSessionKeys).to.exist;
     expect(pkSessionKeys.length).to.be.equal(1);
