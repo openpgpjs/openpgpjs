@@ -114,36 +114,35 @@ export default {
    * @returns {Object}
    */
   restoreStreams: function(obj, streaming) {
+    if (Object.prototype.toString.call(obj) === '[object MessagePort]') {
+      return new (streaming === 'web' ? global.ReadableStream : stream.ReadableStream)({
+        pull(controller) {
+          return new Promise(resolve => {
+            obj.onmessage = evt => {
+              const { done, value, error } = evt.data;
+              if (error) {
+                controller.error(new Error(error));
+              } else if (!done) {
+                controller.enqueue(value);
+              } else {
+                controller.close();
+              }
+              resolve();
+            };
+            obj.postMessage({ action: 'read' });
+          });
+        },
+        cancel() {
+          return new Promise(resolve => {
+            obj.onmessage = resolve;
+            obj.postMessage({ action: 'cancel' });
+          });
+        }
+      }, { highWaterMark: 0 });
+    }
     if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
       Object.entries(obj).forEach(([key, value]) => { // recursively search all children
-        if (Object.prototype.toString.call(value) === '[object MessagePort]') {
-          obj[key] = new (streaming === 'web' ? global.ReadableStream : stream.ReadableStream)({
-            pull(controller) {
-              return new Promise(resolve => {
-                value.onmessage = evt => {
-                  const { done, value, error } = evt.data;
-                  if (error) {
-                    controller.error(new Error(error));
-                  } else if (!done) {
-                    controller.enqueue(value);
-                  } else {
-                    controller.close();
-                  }
-                  resolve();
-                };
-                value.postMessage({ action: 'read' });
-              });
-            },
-            cancel() {
-              return new Promise(resolve => {
-                value.onmessage = resolve;
-                value.postMessage({ action: 'cancel' });
-              });
-            }
-          }, { highWaterMark: 0 });
-          return;
-        }
-        util.restoreStreams(value, streaming);
+        obj[key] = util.restoreStreams(value, streaming);
       });
     }
     return obj;
