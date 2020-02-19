@@ -1284,7 +1284,11 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   tryTests('With Worker', tests, {
     if: typeof window !== 'undefined' && window.Worker,
     before: async function() {
-      await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+      try {
+        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      } catch (e) {
+        openpgp.util.print_debug_error(e);
+      }
     },
     after: function() {
       openpgp.destroyWorker();
