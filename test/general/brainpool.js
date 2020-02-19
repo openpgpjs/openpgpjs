@@ -347,7 +347,11 @@ tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
 tryTests('Brainpool Omnibus Tests - Worker @lightweight', omnibus, {
   if: typeof window !== 'undefined' && window.Worker && (openpgp.config.use_indutny_elliptic || openpgp.util.getNodeCrypto()),
   before: async function() {
-    await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+    try {
+      await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+    } catch (e) {
+      openpgp.util.print_debug_error(e);
+    }
   },
   beforeEach: function() {
     openpgp.config.use_native = true;
