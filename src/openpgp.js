@@ -76,14 +76,12 @@ let asyncProxy; // instance of the asyncproxy
  */
 export async function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
   if (workers.length || (typeof global !== 'undefined' && global.Worker && global.MessageChannel)) {
-    const proxy = new AsyncProxy({ path, n, workers, config });
-    const loaded = await proxy.loaded();
-    if (loaded) {
-      asyncProxy = proxy;
-      return true;
-    }
+    const proxy = new AsyncProxy();
+    await proxy.init({ path, n, workers, config });
+    asyncProxy = proxy;
+  } else {
+    throw new Error('Web Workers are not available');
   }
-  return false;
 }
 
 /**
