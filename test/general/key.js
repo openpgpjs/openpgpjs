@@ -2005,7 +2005,7 @@ function versionSpecificTests() {
     openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
     if (openpgp.getWorker()) {
       openpgp.getWorker().workers.forEach(worker => {
-        worker.postMessage({ event: 'configure', config: openpgp.config });
+        openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
       });
     }
 
@@ -2041,7 +2041,7 @@ function versionSpecificTests() {
       openpgp.config.aead_mode = aead_modeVal;
       if (openpgp.getWorker()) {
         openpgp.getWorker().workers.forEach(worker => {
-          worker.postMessage({ event: 'configure', config: openpgp.config });
+          openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
         });
       }
     }
@@ -2545,7 +2545,11 @@ describe('Key', function() {
   tryTests('V4 - With Worker', versionSpecificTests, {
     if: typeof window !== 'undefined' && window.Worker,
     before: async function() {
-      await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+      try {
+        await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
+      } catch (e) {
+        openpgp.util.print_debug_error(e);
+      }
     },
     after: function() {
       openpgp.destroyWorker();

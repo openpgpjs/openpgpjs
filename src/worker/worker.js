@@ -58,11 +58,7 @@ openpgp.crypto.random.randomBuffer.init(MAX_SIZE_RANDOM_BUFFER, randomCallback);
 self.onmessage = function(event) {
   var msg = event.data || {};
 
-  switch (msg.event) {
-    case 'configure':
-      configure(msg.config);
-      break;
-
+  switch (msg.method) {
     case 'seed-random':
       seedRandom(msg.buf);
 
@@ -75,7 +71,7 @@ self.onmessage = function(event) {
       break;
 
     default:
-      delegate(msg.id, msg.event, msg.options || {});
+      delegate(msg.id, msg.method, msg.options || {});
   }
 };
 
@@ -117,6 +113,11 @@ function getCachedKey(key) {
  * @param  {Object} options   The api function's options
  */
 function delegate(id, method, options) {
+  if (method === 'configure') {
+    configure(options);
+    response({ id, event: 'method-return' });
+    return;
+  }
   if (method === 'clear-key-cache') {
     Array.from(keyCache.values()).forEach(key => {
       if (key.isPrivate()) {
@@ -161,7 +162,3 @@ function response(event) {
   self.postMessage(event, openpgp.util.getTransferables(event.data, openpgp.config.zero_copy));
 }
 
-/**
- * Let the main window know the worker has loaded.
- */
-postMessage({ event: 'loaded' });
