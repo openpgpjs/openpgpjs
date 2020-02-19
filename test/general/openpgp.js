@@ -516,7 +516,7 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.initWorker({
           workers: [workerStub]
         }),
-        workerStub.onmessage({ data: { event: 'loaded' } })
+        workerStub.onmessage({ data: { id: 0, event: 'method-return' } })
       ]);
       expect(openpgp.getWorker()).to.exist;
       openpgp.destroyWorker();
@@ -671,7 +671,7 @@ describe('OpenPGP.js public api tests', function() {
         openpgp.initWorker({
           workers: [workerStub]
         }),
-        workerStub.onmessage({ data: { event: 'loaded' } })
+        workerStub.onmessage({ data: { id: 0, event: 'method-return' } })
       ]);
       const proxyGenStub = stub(openpgp.getWorker(), 'delegate');
       getWebCryptoAllStub.returns();
@@ -716,7 +716,11 @@ describe('OpenPGP.js public api tests', function() {
 
     it('should work in JS (with worker)', async function() {
       openpgp.config.use_native = false;
-      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      try {
+        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+      } catch (e) {
+        openpgp.util.print_debug_error(e);
+      }
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
         numBits: 512
@@ -821,7 +825,11 @@ describe('OpenPGP.js public api tests', function() {
       const { workers } = openpgp.getWorker();
       try {
         await privateKey.keys[0].decrypt(passphrase)
-        await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 2});
+        try {
+          await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 2});
+        } catch (e) {
+          openpgp.util.print_debug_error(e);
+        }
 
         const workerTest = (_, index) => {
           const plaintext = input.createSomeMessage() + index;
@@ -842,7 +850,11 @@ describe('OpenPGP.js public api tests', function() {
         };
         await Promise.all(Array(10).fill(null).map(workerTest));
       } finally {
-        await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 1 });
+        try {
+          await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 1 });
+        } catch (e) {
+          openpgp.util.print_debug_error(e);
+        }
       }
     });
 
@@ -900,7 +912,11 @@ describe('OpenPGP.js public api tests', function() {
     tryTests('CFB mode (asm.js, worker)', tests, {
       if: typeof window !== 'undefined' && window.Worker,
       before: async function() {
-        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+        try {
+          await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+        } catch (e) {
+          openpgp.util.print_debug_error(e);
+        }
       },
       beforeEach: function() {
         openpgp.config.aead_protect = false;
@@ -1641,7 +1657,7 @@ describe('OpenPGP.js public api tests', function() {
             openpgp.config.allow_unauthenticated_stream = !!allow_streaming;
             if (openpgp.getWorker()) {
               openpgp.getWorker().workers.forEach(worker => {
-                worker.postMessage({ event: 'configure', config: openpgp.config });
+                openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
               });
             }
             await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
@@ -1847,7 +1863,7 @@ describe('OpenPGP.js public api tests', function() {
             openpgp.config.zero_copy = false;
             if (openpgp.getWorker()) {
               openpgp.getWorker().workers.forEach(worker => {
-                worker.postMessage({ event: 'configure', config: openpgp.config });
+                openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
               });
             }
             return openpgp.decrypt(decOpt);
