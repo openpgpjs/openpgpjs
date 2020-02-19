@@ -37,7 +37,11 @@ let pubKey;
 tryTests('Async Proxy', tests, {
   if: typeof window !== 'undefined' && window.Worker && window.MessageChannel,
   before: async function() {
-    await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+    try {
+      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+    } catch (e) {
+      openpgp.util.print_debug_error(e);
+    }
     pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
   },
   after: async function() {
@@ -50,11 +54,14 @@ function tests() {
   describe('Random number pipeline', function() {
     it('Random number buffer automatically reseeded', async function() {
       const worker = new Worker('../dist/openpgp.worker.js');
-      const wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js', workers: [worker] });
-      const loaded = await wProxy.loaded();
-      if (loaded) {
-        return wProxy.delegate('encrypt', { publicKeys:[pubKey], message:openpgp.message.fromText(plaintext) });
+      const wProxy = new openpgp.AsyncProxy();
+      try {
+        await wProxy.init({ path:'../dist/openpgp.worker.js', workers: [worker] });
+      } catch (e) {
+        openpgp.util.print_debug_error(e);
+        return;
       }
+      return wProxy.delegate('encrypt', { publicKeys:[pubKey], message:openpgp.message.fromText(plaintext) });
     });
   });
 
