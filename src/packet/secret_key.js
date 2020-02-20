@@ -324,7 +324,7 @@ async function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @async
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
-  if (this.s2k.type === 'gnu-dummy') {
+  if (this.s2k && this.s2k.type === 'gnu-dummy') {
     this.isEncrypted = false;
     return false;
   }
@@ -336,8 +336,10 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   let key;
   if (this.s2k_usage === 254 || this.s2k_usage === 253) {
     key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
+  } else if (this.s2k_usage === 255) {
+    throw new Error('Encrypted private key is authenticated using an insecure two-byte hash');
   } else {
-    throw new Error('Unsupported legacy encrypted key');
+    throw new Error('Private key is encrypted using an insecure S2K function: unsalted MD5');
   }
 
   let cleartext;
