@@ -49,7 +49,7 @@ Dc2vwS83Aja9iWrIEg==
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 async function getInvalidKey() {
-  return (await key.readArmored(INVALID_KEY)).keys[0];
+  return await key.readArmored(INVALID_KEY);
 }
 async function makeKeyValid() {
   /**
@@ -85,8 +85,7 @@ async function makeKeyValid() {
   let modifiedkey = new key.Key(newlist);
   // re-read the message to eliminate any
   // behaviour due to cached values.
-  modifiedkey = (await key.readArmored(
-    await modifiedkey.armor())).keys[0];
+  modifiedkey = await key.readArmored(await modifiedkey.armor());
 
   expect(await encryptFails(invalidkey)).to.be.true;
   expect(await encryptFails(modifiedkey)).to.be.true;

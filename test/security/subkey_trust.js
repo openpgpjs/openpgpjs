@@ -63,7 +63,7 @@ async function testSubkeyTrust() {
     fakeBindingSignature // faked key binding
   ]);
   let fakeKey = new key.Key(newList);
-  fakeKey = (await key.readArmored(await fakeKey.toPublic().armor())).keys[0];
+  fakeKey = await key.readArmored(await fakeKey.toPublic().armor());
   const verifyAttackerIsBatman = await openpgp.verify({
     message: (await cleartext.readArmored(signed)),
     publicKeys: fakeKey,
