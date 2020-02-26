@@ -266,61 +266,67 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 }
 
 /**
- * Reads an unarmored OpenPGP key list and returns one or multiple key objects
+ * Reads an unarmored OpenPGP key and returns a key object
  * @param {Uint8Array} data to be parsed
- * @returns {Promise<{keys: Array<module:key.Key>,
- *            err: (Array<Error>|null)}>} result object with key and error arrays
+ * @returns {Promise<module:key.Key>} key object
  * @async
  * @static
  */
 export async function read(data) {
-  const result = {};
-  result.keys = [];
-  const err = [];
-  try {
-    const packetlist = new packet.List();
-    await packetlist.read(data);
-    const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
-    if (keyIndex.length === 0) {
-      throw new Error('No key packet found');
-    }
-    for (let i = 0; i < keyIndex.length; i++) {
-      const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
-      try {
-        const newKey = new Key(oneKeyList);
-        result.keys.push(newKey);
-      } catch (e) {
-        err.push(e);
-      }
-    }
-  } catch (e) {
-    err.push(e);
-  }
-  if (err.length) {
-    result.err = err;
-  }
-  return result;
+  const packetlist = new packet.List();
+  await packetlist.read(data);
+  return new Key(packetlist);
 }
 
-
 /**
- * Reads an OpenPGP armored text and returns one or multiple key objects
- * @param {String | ReadableStream<String>} armoredText text to be parsed
- * @returns {Promise<{keys: Array<module:key.Key>,
- *            err: (Array<Error>|null)}>} result object with key and error arrays
+ * Reads an OpenPGP armored key and returns a key object
+ * @param {String | ReadableStream<String>} armoredKey text to be parsed
+ * @returns {Promise<module:key.Key>} key object
  * @async
  * @static
  */
-export async function readArmored(armoredText) {
-  try {
-    const input = await armor.decode(armoredText);
-    if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
-      throw new Error('Armored text not of type key');
-    }
-    return read(input.data);
-  } catch (e) {
-    const result = { keys: [], err: [] };
-    result.err.push(e);
-    return result;
+export async function readArmored(armoredKey) {
+  const input = await armor.decode(armoredKey);
+  if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
+    throw new Error('Armored text not of type key');
   }
+  return read(input.data);
+}
+
+/**
+ * Reads an unarmored OpenPGP key block and returns a list of key objects
+ * @param {Uint8Array} data to be parsed
+ * @returns {Promise<Array<module:key.Key>>} key object
+ * @async
+ * @static
+ */
+export async function readAll(data) {
+  const keys = [];
+  const packetlist = new packet.List();
+  await packetlist.read(data);
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+  if (keyIndex.length === 0) {
+    throw new Error('No key packet found');
+  }
+  for (let i = 0; i < keyIndex.length; i++) {
+    const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
+    const newKey = new Key(oneKeyList);
+    keys.push(newKey);
+  }
+  return keys;
+}
+
+/**
+ * Reads an OpenPGP armored key block and returns a list of key objects
+ * @param {String | ReadableStream<String>} armoredKey text to be parsed
+ * @returns {Promise<Array<module:key.Key>>} key objects
+ * @async
+ * @static
+ */
+export async function readAllArmored(armoredKey) {
+  const input = await armor.decode(armoredKey);
+  if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
+    throw new Error('Armored text not of type key');
+  }
+  return readAll(input.data);
 }
