@@ -817,7 +817,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 =et/d
 -----END PGP PUBLIC KEY BLOCK-----`;
 
-    const key = (await openpgp.key.readArmored(pubkey)).keys[0];
+    const key = await openpgp.key.readArmored(pubkey);
 
     const { notations, rawNotations } = key.users[0].selfCertifications[0];
 
