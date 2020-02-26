@@ -167,15 +167,11 @@ describe("ASCII armor", function() {
       '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
     // try with default config
-    const result_1 = await openpgp.key.readArmored(privKey);
-    expect(result_1.err).to.exist;
-    expect(result_1.err[0].message).to.match(/Ascii armor integrity check on message failed/);
+    await expect(openpgp.key.readArmored(privKey)).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = await openpgp.key.readArmored(privKey);
-    expect(result_2.err).to.exist;
-    expect(result_2.err[0].message).to.match(/Ascii armor integrity check on message failed/);
+    await expect(openpgp.key.readArmored(privKey)).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
 
     // back to default
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
@@ -203,13 +199,11 @@ describe("ASCII armor", function() {
         '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
     // try with default config
-    const result_1 = await openpgp.key.readArmored(privKey);
-    expect(result_1.err).to.not.exist;
+    await openpgp.key.readArmored(privKey);
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = await openpgp.key.readArmored(privKey);
-    expect(result_2.err).to.not.exist;
+    await openpgp.key.readArmored(privKey);
 
     // back to default
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
@@ -236,22 +230,18 @@ describe("ASCII armor", function() {
         '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
     // try with default config
-    const result_1 = await openpgp.key.readArmored(privKeyNoCheckSum);
-    if(openpgp.config.checksum_required) {
-      expect(result_1.err).to.exist;
-      expect(result_1.err[0].message).to.match(/Ascii armor integrity check on message failed/);
+    if (openpgp.config.checksum_required) {
+      await expect(openpgp.key.readArmored(privKeyNoCheckSum)).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
     } else {
-      expect(result_1.err).to.not.exist;
+      await openpgp.key.readArmored(privKeyNoCheckSum);
     }
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = await openpgp.key.readArmored(privKeyNoCheckSum);
-    if(openpgp.config.checksum_required) {
-      expect(result_2.err).to.exist;
-      expect(result_2.err[0].message).to.match(/Ascii armor integrity check on message failed/);
+    if (openpgp.config.checksum_required) {
+      await expect(openpgp.key.readArmored(privKeyNoCheckSum)).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
     } else {
-      expect(result_2.err).to.not.exist;
+      await openpgp.key.readArmored(privKeyNoCheckSum);
     }
 
     // back to default
@@ -280,22 +270,18 @@ describe("ASCII armor", function() {
         ''].join('\n');
 
     // try with default config
-    const result_1 = await openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
-    if(openpgp.config.checksum_required) {
-      expect(result_1.err).to.exist;
-      expect(result_1.err[0].message).to.match(/Ascii armor integrity check on message failed/);
+    if (openpgp.config.checksum_required) {
+      await expect(openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline)).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
     } else {
-      expect(result_1.err).to.not.exist;
+      await openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
     }
 
     // try opposite config
     openpgp.config.checksum_required = !openpgp.config.checksum_required;
-    const result_2 = await openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
-    if(openpgp.config.checksum_required) {
-      expect(result_2.err).to.exist;
-      expect(result_2.err[0].message).to.match(/Ascii armor integrity check on message failed/);
+    if (openpgp.config.checksum_required) {
+      await expect(openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline)).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
     } else {
-      expect(result_2.err).to.not.exist;
+      await openpgp.key.readArmored(privKeyNoCheckSumWithTrailingNewline);
     }
 
     // back to default
@@ -325,8 +311,7 @@ describe("ASCII armor", function() {
       ''].join('\t \r\n');
 
     const result = await openpgp.key.readArmored(privKey);
-    expect(result.err).to.not.exist;
-    expect(result.keys[0]).to.be.an.instanceof(openpgp.key.Key);
+    expect(result).to.be.an.instanceof(openpgp.key.Key);
   });
 
   it('Do not filter blank lines after header', async function () {

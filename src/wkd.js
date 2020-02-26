@@ -78,7 +78,7 @@ WKD.prototype.lookup = async function(options) {
   if (options.rawBytes) {
     return rawBytes;
   }
-  return keyMod.read(rawBytes);
+  return keyMod.readAll(rawBytes);
 };
 
 export default WKD;
