@@ -124,11 +124,9 @@ const input = require('./testInputs');
     }
     const pub = await openpgp.key.readArmored(data[name].pub);
     expect(pub).to.exist;
-    expect(pub.err).to.not.exist;
-    expect(pub.keys).to.have.length(1);
-    expect(pub.keys[0].getKeyId().toHex()).to.equal(data[name].id);
-    data[name].pub_key = pub.keys[0];
-    return data[name].pub_key;
+    expect(pub.getKeyId().toHex()).to.equal(data[name].id);
+    data[name].pub_key = pub;
+    return pub;
   }
 
   async function load_priv_key(name) {
@@ -137,12 +135,10 @@ const input = require('./testInputs');
     }
     const pk = await openpgp.key.readArmored(data[name].priv);
     expect(pk).to.exist;
-    expect(pk.err).to.not.exist;
-    expect(pk.keys).to.have.length(1);
-    expect(pk.keys[0].getKeyId().toHex()).to.equal(data[name].id);
-    expect(await pk.keys[0].decrypt(data[name].pass)).to.be.true;
-    data[name].priv_key = pk.keys[0];
-    return data[name].priv_key;
+    expect(pk.getKeyId().toHex()).to.equal(data[name].id);
+    expect(await pk.decrypt(data[name].pass)).to.be.true;
+    data[name].priv_key = pk;
+    return pk;
   }
 
   it('Load public key', async function () {
@@ -417,7 +413,7 @@ const input = require('./testInputs');
       'Gbm1oe83ZB+0aSp5m34YkpHQNb80y8PGFy7nIexiAA==',
       '=xeG/',
       '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
-    const hi = (await openpgp.key.readArmored(pubKey)).keys[0];
+    const hi = await openpgp.key.readArmored(pubKey);
     const results = hi.getPrimaryUser();
     expect(results).to.exist;
     expect(results.user).to.exist;
