@@ -173,12 +173,9 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
       return data[name].pub_key;
     }
     const pub = await openpgp.key.readArmored(data[name].pub);
-    expect(pub).to.exist;
-    expect(pub.err).to.not.exist;
-    expect(pub.keys).to.have.length(1);
-    expect(pub.keys[0].getKeyId().toHex()).to.equal(data[name].id);
-    data[name].pub_key = pub.keys[0];
-    return data[name].pub_key;
+    expect(pub.getKeyId().toHex()).to.equal(data[name].id);
+    data[name].pub_key = pub;
+    return pub;
   }
   async function load_priv_key(name) {
     if (data[name].priv_key) {
@@ -186,12 +183,10 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     }
     const pk = await openpgp.key.readArmored(data[name].priv);
     expect(pk).to.exist;
-    expect(pk.err).to.not.exist;
-    expect(pk.keys).to.have.length(1);
-    expect(pk.keys[0].getKeyId().toHex()).to.equal(data[name].id);
-    expect(await pk.keys[0].decrypt(data[name].pass)).to.be.true;
-    data[name].priv_key = pk.keys[0];
-    return data[name].priv_key;
+    expect(pk.getKeyId().toHex()).to.equal(data[name].id);
+    expect(await pk.decrypt(data[name].pass)).to.be.true;
+    data[name].priv_key = pk;
+    return pk;
   }
   it('Load public key', async function () {
     await load_pub_key('romeo');
