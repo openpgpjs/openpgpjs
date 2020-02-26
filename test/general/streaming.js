@@ -316,8 +316,8 @@ function tests() {
   it('Encrypt and decrypt larger message roundtrip using curve x25519 (allow_unauthenticated_stream=true)', async function() {
     let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
     openpgp.config.allow_unauthenticated_stream = true;
-    const priv = (await openpgp.key.readArmored(xPriv)).keys[0];
-    const pub = (await openpgp.key.readArmored(xPub)).keys[0];
+    const priv = await openpgp.key.readArmored(xPriv);
+    const pub = await openpgp.key.readArmored(xPub);
     await priv.decrypt(xPass);
     try {
       const encrypted = await openpgp.encrypt({
@@ -348,8 +348,8 @@ function tests() {
   it('Encrypt and decrypt larger message roundtrip using curve brainpool (allow_unauthenticated_stream=true)', async function() {
     let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
     openpgp.config.allow_unauthenticated_stream = true;
-    const priv = (await openpgp.key.readArmored(brainpoolPriv)).keys[0];
-    const pub = (await openpgp.key.readArmored(brainpoolPub)).keys[0];
+    const priv = await openpgp.key.readArmored(brainpoolPriv);
+    const pub = await openpgp.key.readArmored(brainpoolPub);
     await priv.decrypt(brainpoolPass);
     try {
       const encrypted = await openpgp.encrypt({
@@ -806,8 +806,8 @@ function tests() {
         controller.close();
       }
     });
-    const priv = (await openpgp.key.readArmored(brainpoolPriv)).keys[0];
-    const pub = (await openpgp.key.readArmored(brainpoolPub)).keys[0];
+    const priv = await openpgp.key.readArmored(brainpoolPriv);
+    const pub = await openpgp.key.readArmored(brainpoolPub);
     await priv.decrypt(brainpoolPass);
     const signed = await openpgp.sign({
       message: openpgp.message.fromBinary(data),
@@ -837,8 +837,8 @@ function tests() {
         controller.close();
       }
     });
-    const priv = (await openpgp.key.readArmored(xPriv)).keys[0];
-    const pub = (await openpgp.key.readArmored(xPub)).keys[0];
+    const priv = await openpgp.key.readArmored(xPriv);
+    const pub = await openpgp.key.readArmored(xPub);
     await priv.decrypt(xPass);
     const signed = await openpgp.sign({
       message: openpgp.message.fromBinary(data),
@@ -893,8 +893,8 @@ describe('Streaming', function() {
   let currentTest = 0;
 
   before(async function() {
-    pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
-    privKey = (await openpgp.key.readArmored(priv_key)).keys[0];
+    pubKey = await openpgp.key.readArmored(pub_key);
+    privKey = await openpgp.key.readArmored(priv_key);
     await privKey.decrypt(passphrase);
   });
 
