@@ -20,14 +20,12 @@
  * @requires web-stream-tools
  * @requires config
  * @requires key
- * @requires util
  * @module keyring/localstore
  */
 
 import stream from 'web-stream-tools';
 import config from '../config';
 import { readArmored } from '../key';
-import util from '../util';
 
 /**
  * The class that deals with storage of the keyring.
@@ -77,11 +75,7 @@ async function loadKeys(storage, itemname) {
     let key;
     for (let i = 0; i < armoredKeys.length; i++) {
       key = await readArmored(armoredKeys[i]);
-      if (!key.err) {
-        keys.push(key.keys[0]);
-      } else {
-        util.print_debug("Error reading armored key from keyring index: " + i);
-      }
+      keys.push(key);
     }
   }
   return keys;

@@ -42,7 +42,7 @@ tryTests('Async Proxy', tests, {
     } catch (e) {
       openpgp.util.print_debug_error(e);
     }
-    pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
+    pubKey = await openpgp.key.readArmored(pub_key);
   },
   after: async function() {
     await openpgp.destroyWorker();

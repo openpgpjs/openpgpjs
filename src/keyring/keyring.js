@@ -22,7 +22,7 @@
  * @module keyring/keyring
  */
 
-import { readArmored } from '../key';
+import { readAllArmored } from '../key';
 import LocalStore from './localstore';
 
 /**
@@ -183,13 +183,12 @@ KeyArray.prototype.getForId = function (keyId, deep) {
 /**
  * Imports a key from an ascii armored message
  * @param {String} armored message to read the keys/key from
- * @returns {Promise<Array<Error>|null>} array of error objects or null
  * @async
  */
 KeyArray.prototype.importKey = async function (armored) {
-  const imported = await readArmored(armored);
-  for (let i = 0; i < imported.keys.length; i++) {
-    const key = imported.keys[i];
+  const imported = await readAllArmored(armored);
+  for (let i = 0; i < imported.length; i++) {
+    const key = imported[i];
     // check if key already in key array
     const keyidHex = key.getKeyId().toHex();
     const keyFound = this.getForId(keyidHex);
@@ -199,7 +198,6 @@ KeyArray.prototype.importKey = async function (armored) {
       this.push(key);
     }
   }
-  return imported.err ? imported.err : null;
 };
 
 /**
