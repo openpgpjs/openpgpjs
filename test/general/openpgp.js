@@ -1637,6 +1637,15 @@ describe('OpenPGP.js public api tests', function() {
             }));
           }
         });
+
+        it('should fail to decrypt unarmored message with garbage data appended', async function() {
+          const { key } = await openpgp.generateKey({ userIds: {} });
+          const message = await openpgp.encrypt({ message: openpgp.message.fromText('test'), publicKeys: key, privateKeys: key, armor: false });
+          const encrypted = openpgp.util.concat([message, new Uint8Array([11])]);
+          await expect(
+            openpgp.decrypt({ message: await openpgp.message.read(encrypted), privateKeys: key, publicKeys: key })
+          ).to.be.rejectedWith('Error during parsing. This message / key probably does not conform to a valid OpenPGP format.');
+        });
       });
 
       describe('ELG / DSA encrypt, decrypt, sign, verify', function() {

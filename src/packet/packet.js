@@ -249,13 +249,9 @@ export default {
       // entire remainder of the stream, in order to forward errors in the
       // remainder of the stream to the packet data. (Note that this means we
       // read/peek at all signature packets before closing the literal data
-      // packet, for example.) This forwards armor checksum errors to the
-      // encrypted data stream, for example, so that they don't get lost /
-      // forgotten on encryptedMessage.packets.stream, which we never look at.
-      //
-      // Note that subsequent packet parsing errors could still end up there if
-      // `config.tolerant` is set to false, or on malformed messages with
-      // multiple data packets, but usually it shouldn't happen.
+      // packet, for example.) This forwards MDC errors to the literal data
+      // stream, for example, so that they don't get lost / forgotten on
+      // decryptedMessage.packets.stream, which we never look at.
       //
       // An example of what we do when stream-parsing a message containing
       // [ one-pass signature packet, literal data packet, signature packet ]:
