@@ -4,9 +4,9 @@
  */
 
 import {
-  readArmored,
+  read, readArmored,
+  readAll, readAllArmored,
   generate,
-  read,
   reformat
 } from './factory';
 
@@ -20,9 +20,9 @@ import {
 import Key from './key.js';
 
 export {
-  readArmored,
+  read, readArmored,
+  readAll, readAllArmored,
   generate,
-  read,
   reformat,
   getPreferredAlgo,
   isAeadSupported,

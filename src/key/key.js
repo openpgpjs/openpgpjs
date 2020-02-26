@@ -81,6 +81,9 @@ Key.prototype.packetlist2structure = function(packetlist) {
     switch (packetlist[i].tag) {
       case enums.packet.publicKey:
       case enums.packet.secretKey:
+        if (this.keyPacket) {
+          throw new Error('Key block contains multiple keys');
+        }
         this.keyPacket = packetlist[i];
         primaryKeyId = this.getKeyId();
         break;
