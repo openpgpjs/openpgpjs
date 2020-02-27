@@ -156,20 +156,17 @@ export function generateKey({ userIds = [], passphrase = "", numBits = 2048, rsa
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @param  {Boolean} revocationCertificate (optional) Whether the returned object should include a revocation certificate to revoke the public key
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
  */
-export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpirationTime = 0, date, revocationCertificate = true }) {
+export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpirationTime = 0, date }) {
   userIds = toArray(userIds);
-  const options = { privateKey, userIds, passphrase, keyExpirationTime, date, revocationCertificate };
+  const options = { privateKey, userIds, passphrase, keyExpirationTime, date };
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
-
-  options.revoked = options.revocationCertificate;
 
   return reformat(options).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate(date);
