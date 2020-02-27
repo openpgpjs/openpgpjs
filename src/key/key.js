@@ -664,12 +664,13 @@ Key.prototype.revoke = async function({
 /**
  * Get revocation certificate from a revoked key.
  *   (To get a revocation certificate for an unrevoked key, call revoke() first.)
+ * @param  {Date} date Use the given date instead of the current time
  * @returns {Promise<String>} armored revocation certificate
  * @async
  */
-Key.prototype.getRevocationCertificate = async function() {
+Key.prototype.getRevocationCertificate = async function(date = new Date()) {
   const dataToVerify = { key: this.keyPacket };
-  const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.key_revocation, dataToVerify);
+  const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.key_revocation, dataToVerify, date);
   const packetlist = new packet.List();
   packetlist.push(revocationSignature);
   return armor.encode(enums.armor.public_key, packetlist.write(), null, null, 'This is a revocation certificate');

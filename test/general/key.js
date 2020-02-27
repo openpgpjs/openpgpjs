@@ -1972,7 +1972,25 @@ function versionSpecificTests() {
       expect(+newKey.key.subKeys[0].getCreationTime()).to.equal(+past);
       expect(+newKey.key.subKeys[0].bindingSignatures[0].created).to.equal(+past);
     });
-  })
+  });
+
+  it('Generate key - setting date to the future', function() {
+    const future = new Date(Math.ceil(Date.now() / 1000) * 1000 + 1000);
+    const opt = {
+      numBits: 512,
+      userIds: { name: 'Test User', email: 'text@example.com' },
+      passphrase: 'secret',
+      date: future
+    };
+    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
+    return openpgp.generateKey(opt).then(function(newKey) {
+      expect(newKey.key).to.exist;
+      expect(+newKey.key.getCreationTime()).to.equal(+future);
+      expect(+newKey.key.subKeys[0].getCreationTime()).to.equal(+future);
+      expect(+newKey.key.subKeys[0].bindingSignatures[0].created).to.equal(+future);
+    });
+  });
 
   it('Generate key - multi userid', function() {
     const userId1 = 'test <a@b.com>';
