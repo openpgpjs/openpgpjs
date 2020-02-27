@@ -18,8 +18,6 @@ matrix:
     - node_js: "10"
       env:  OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit' LIGHTWEIGHT=1
     - node_js: "9"
-      env: BROWSER='"firefox_26"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
       env: BROWSER='"firefox_61"' OPENPGPJSTEST='browserstack'
     - node_js: "10"
       env:  BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack' LIGHTWEIGHT=1
@@ -27,10 +25,6 @@ matrix:
       env: BROWSER='"chrome_49"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "10"
       env: BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
-      env: BROWSER='"ie_11"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='"edge_17"' OPENPGPJSTEST='browserstack'
     - node_js: "9"
       env: BROWSER='"safari_9_1"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
