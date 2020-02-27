@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.0 - 2020-02-25 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.1 - 2020-02-27 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(_dereq_,module,exports){
 (function (global){
 "use strict";
@@ -31493,7 +31493,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.0",
+  versionstring: "OpenPGP.js v4.10.1",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -45465,33 +45465,41 @@ Key.prototype.revoke = function () {
 /**
  * Get revocation certificate from a revoked key.
  *   (To get a revocation certificate for an unrevoked key, call revoke() first.)
+ * @param  {Date} date Use the given date instead of the current time
  * @returns {Promise<String>} armored revocation certificate
  * @async
  */
-Key.prototype.getRevocationCertificate = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20() {
-  var dataToVerify, revocationSignature, packetlist;
-  return _regenerator2.default.wrap(function _callee20$(_context20) {
-    while (1) {
-      switch (_context20.prev = _context20.next) {
-        case 0:
-          dataToVerify = { key: this.keyPacket };
-          _context20.next = 3;
-          return helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, _enums2.default.signature.key_revocation, dataToVerify);
+Key.prototype.getRevocationCertificate = function () {
+  var _ref23 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee20() {
+    var date = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : new Date();
+    var dataToVerify, revocationSignature, packetlist;
+    return _regenerator2.default.wrap(function _callee20$(_context20) {
+      while (1) {
+        switch (_context20.prev = _context20.next) {
+          case 0:
+            dataToVerify = { key: this.keyPacket };
+            _context20.next = 3;
+            return helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, _enums2.default.signature.key_revocation, dataToVerify, date);
 
-        case 3:
-          revocationSignature = _context20.sent;
-          packetlist = new _packet2.default.List();
+          case 3:
+            revocationSignature = _context20.sent;
+            packetlist = new _packet2.default.List();
 
-          packetlist.push(revocationSignature);
-          return _context20.abrupt('return', _armor2.default.encode(_enums2.default.armor.public_key, packetlist.write(), null, null, 'This is a revocation certificate'));
+            packetlist.push(revocationSignature);
+            return _context20.abrupt('return', _armor2.default.encode(_enums2.default.armor.public_key, packetlist.write(), null, null, 'This is a revocation certificate'));
 
-        case 7:
-        case 'end':
-          return _context20.stop();
+          case 7:
+          case 'end':
+            return _context20.stop();
+        }
       }
-    }
-  }, _callee20, this);
-}));
+    }, _callee20, this);
+  }));
+
+  return function () {
+    return _ref23.apply(this, arguments);
+  };
+}();
 
 /**
  * Applies a revocation certificate to a key
@@ -45571,7 +45579,7 @@ Key.prototype.applyRevocationCertificate = function () {
     }, _callee21, this, [[13, 18]]);
   }));
 
-  return function (_x35) {
+  return function (_x36) {
     return _ref24.apply(this, arguments);
   };
 }();
@@ -45617,7 +45625,7 @@ Key.prototype.signPrimaryUser = function () {
     }, _callee22, this);
   }));
 
-  return function (_x36, _x37, _x38) {
+  return function (_x37, _x38, _x39) {
     return _ref25.apply(this, arguments);
   };
 }();
@@ -45654,7 +45662,7 @@ Key.prototype.signAllUsers = function () {
     }, _callee23, this);
   }));
 
-  return function (_x39) {
+  return function (_x40) {
     return _ref27.apply(this, arguments);
   };
 }();
@@ -45726,7 +45734,7 @@ Key.prototype.verifyPrimaryUser = function () {
     }, _callee24, this);
   }));
 
-  return function (_x40, _x41, _x42) {
+  return function (_x41, _x42, _x43) {
     return _ref28.apply(this, arguments);
   };
 }();
@@ -45805,7 +45813,7 @@ Key.prototype.verifyAllUsers = function () {
                 }, _callee25, this);
               }));
 
-              return function (_x44) {
+              return function (_x45) {
                 return _ref31.apply(this, arguments);
               };
             }()));
@@ -45821,7 +45829,7 @@ Key.prototype.verifyAllUsers = function () {
     }, _callee26, this);
   }));
 
-  return function (_x43) {
+  return function (_x44) {
     return _ref30.apply(this, arguments);
   };
 }();
@@ -50100,7 +50108,7 @@ function getWorker() {
           switch (_context3.prev = _context3.next) {
             case 0:
               _context3.next = 2;
-              return key.getRevocationCertificate();
+              return key.getRevocationCertificate(date);
 
             case 2:
               revocationCertificate = _context3.sent;
@@ -50136,7 +50144,6 @@ function getWorker() {
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @param  {Boolean} revocationCertificate (optional) Whether the returned object should include a revocation certificate to revoke the public key
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
@@ -50152,17 +50159,13 @@ function reformatKey(_ref6) {
       passphrase = _ref6$passphrase === undefined ? "" : _ref6$passphrase,
       _ref6$keyExpirationTi = _ref6.keyExpirationTime,
       keyExpirationTime = _ref6$keyExpirationTi === undefined ? 0 : _ref6$keyExpirationTi,
-      date = _ref6.date,
-      _ref6$revocationCerti = _ref6.revocationCertificate,
-      revocationCertificate = _ref6$revocationCerti === undefined ? true : _ref6$revocationCerti;
+      date = _ref6.date;
 
   userIds = toArray(userIds);
-  var options = { privateKey: privateKey, userIds: userIds, passphrase: passphrase, keyExpirationTime: keyExpirationTime, date: date, revocationCertificate: revocationCertificate };
+  var options = { privateKey: privateKey, userIds: userIds, passphrase: passphrase, keyExpirationTime: keyExpirationTime, date: date };
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
-
-  options.revoked = options.revocationCertificate;
 
   return (0, _key.reformat)(options).then(function () {
     var _ref7 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(key) {
@@ -50172,7 +50175,7 @@ function reformatKey(_ref6) {
           switch (_context4.prev = _context4.next) {
             case 0:
               _context4.next = 2;
-              return key.getRevocationCertificate();
+              return key.getRevocationCertificate(date);
 
             case 2:
               revocationCertificate = _context4.sent;
