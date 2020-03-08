@@ -45,7 +45,7 @@ import config from '../config';
  * @constructor
  * @param {Date} date the creation date of the signature
  */
-function Signature(date = new Date()) {
+function Signature(date = new Date(), expirationTime = null) {
   this.tag = enums.packet.signature;
   this.version = 4; // This is set to 5 below if we sign with a V5 key.
   this.signatureType = null;
@@ -57,8 +57,8 @@ function Signature(date = new Date()) {
   this.signedHashValue = null;
 
   this.created = util.normalizeDate(date);
-  this.signatureExpirationTime = null;
-  this.signatureNeverExpires = true;
+  this.signatureExpirationTime = expirationTime;
+  this.signatureNeverExpires = !expirationTime;
   this.exportable = null;
   this.trustLevel = null;
   this.trustAmount = null;

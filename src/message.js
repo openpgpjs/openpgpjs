@@ -420,7 +420,7 @@ export async function encryptSessionKey(sessionKey, symAlgo, aeadAlgo, publicKey
  * @returns {Promise<Message>}             new message with signed content
  * @async
  */
-Message.prototype.sign = async function(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false) {
+Message.prototype.sign = async function(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false, expirationTime = null) {
   const packetlist = new packet.List();
 
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
@@ -469,7 +469,7 @@ Message.prototype.sign = async function(privateKeys = [], signature = null, date
   });
 
   packetlist.push(literalDataPacket);
-  packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, false, streaming));
+  packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, false, streaming, expirationTime));
 
   return new Message(packetlist);
 };
@@ -504,12 +504,12 @@ Message.prototype.compress = function(compression) {
  * @returns {Promise<module:signature.Signature>} new detached signature of message content
  * @async
  */
-Message.prototype.signDetached = async function(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false) {
+Message.prototype.signDetached = async function(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false, expirationTime = null) {
   const literalDataPacket = this.packets.findPacket(enums.packet.literal);
   if (!literalDataPacket) {
     throw new Error('No literal data packet to sign.');
   }
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true, streaming));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true, streaming, expirationTime));
 };
 
 /**
@@ -524,7 +524,7 @@ Message.prototype.signDetached = async function(privateKeys = [], signature = nu
  * @returns {Promise<module:packet.List>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userIds = [], detached = false, streaming = false) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userIds = [], detached = false, streaming = false, expirationTime = null) {
   const packetlist = new packet.List();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -537,7 +537,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
       throw new Error('Need private key for signing');
     }
     const signingKey = await privateKey.getSigningKey(undefined, date, userId);
-    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId, detached, streaming);
+    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userId, detached, streaming, expirationTime);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });

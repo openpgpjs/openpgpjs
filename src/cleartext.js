@@ -72,8 +72,8 @@ CleartextMessage.prototype.getSigningKeyIds = function() {
  * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
  * @async
  */
-CleartextMessage.prototype.sign = async function(privateKeys, signature = null, date = new Date(), userIds = []) {
-  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userIds));
+CleartextMessage.prototype.sign = async function(privateKeys, signature = null, date = new Date(), userIds = [], stream_ = null, expirationTime = null) {
+  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userIds, stream_, expirationTime));
 };
 
 /**
@@ -85,11 +85,11 @@ CleartextMessage.prototype.sign = async function(privateKeys, signature = null, 
  * @returns {Promise<module:signature.Signature>}      new detached signature of message content
  * @async
  */
-CleartextMessage.prototype.signDetached = async function(privateKeys, signature = null, date = new Date(), userIds = []) {
+CleartextMessage.prototype.signDetached = async function(privateKeys, signature = null, date = new Date(), userIds = [], stream_ = false, expirationTime = null) {
   const literalDataPacket = new packet.Literal();
   literalDataPacket.setText(this.text);
 
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true));
+  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true, stream_, expirationTime));
 };
 
 /**

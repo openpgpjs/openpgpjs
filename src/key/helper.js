@@ -191,11 +191,11 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
  * @param  {Boolean} streaming               (optional) whether to process data as a stream
  * @returns {module:packet/signature}         signature packet
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false, expirationTime) {
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
-  const signaturePacket = new packet.Signature(date);
+  const signaturePacket = new packet.Signature(date, expirationTime);
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
