@@ -460,7 +460,7 @@ Using the private key:
     });
     console.log(cleartext); // '-----BEGIN PGP SIGNED MESSAGE ... END PGP SIGNATURE-----'
 
-    const { signatures } = await openpgp.verify({
+    const verified = await openpgp.verify({
         message: await openpgp.cleartext.readArmored(cleartext),           // parse armored message
         publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys // for verification
     });
@@ -495,7 +495,7 @@ Using the private key:
     });
     console.log(detachedSignature);
 
-    const { signatures } = await openpgp.verify({
+    const verified = await openpgp.verify({
         message: openpgp.cleartext.fromText('Hello, World!'),              // CleartextMessage or Message object
         signature: await openpgp.signature.readArmored(detachedSignature), // parse detached signature
         publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys // for verification
@@ -537,7 +537,7 @@ Using the private key:
     });
     console.log(signatureArmored); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
-    const { signatures } = await openpgp.verify({
+    const verified = await openpgp.verify({
         message: await openpgp.message.readArmored(signatureArmored),       // parse armored signature
         publicKeys: (await openpgp.key.readArmored(publicKeyArmored)).keys  // for verification
     });
