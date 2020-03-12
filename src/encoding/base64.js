@@ -32,7 +32,7 @@ if (Buffer) {
   };
 } else {
   encodeChunk = buf => btoa(util.Uint8Array_to_str(buf));
-  decodeChunk = str => util.str_to_Uint8Array(atob(str));
+  decodeChunk = str => util.str_to_Uint8Array(atob(str.replace(/[\r\n \t]/g, '')));
 }
 
 /**
