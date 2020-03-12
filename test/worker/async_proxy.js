@@ -1,13 +1,12 @@
 /* globals tryTests: true */
 
-'use strict';
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const chai = require('chai');
 
-var chai = require('chai'),
-  expect = chai.expect;
+const { expect } = chai;
 
-var pub_key =
+const pub_key =
   ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
   '',
@@ -32,32 +31,30 @@ var pub_key =
   '=h/aX',
   '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
-var plaintext = 'short message\nnext line\n한국어/조선말';
-var pubKey;
+const plaintext = 'short message\nnext line\n한국어/조선말';
+let pubKey;
 
 tryTests('Async Proxy', tests, {
-  if: typeof window !== 'undefined' && window.Worker,
-  before: function() {
-    openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    pubKey = openpgp.key.readArmored(pub_key).keys[0];
+  if: typeof window !== 'undefined' && window.Worker && window.MessageChannel,
+  before: async function() {
+    await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
+    pubKey = (await openpgp.key.readArmored(pub_key)).keys[0];
   },
-  after: function() {
-    openpgp.destroyWorker();
+  after: async function() {
+    await openpgp.destroyWorker();
   }
 });
 
 function tests() {
 
-  describe('Error handling', function() {
-    it('Depleted random buffer in worker gives error', function (done) {
-      var wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js' });
-      wProxy.worker = new Worker('../dist/openpgp.worker.js');
-      wProxy.worker.onmessage = wProxy.onMessage.bind(wProxy);
-      wProxy.seedRandom(10);
-      wProxy.delegate('encrypt', { publicKeys:[pubKey], data:plaintext }).catch(function(err) {
-        expect(err.message).to.match(/Random number buffer depleted/);
-        done();
-      });
+  describe('Random number pipeline', function() {
+    it('Random number buffer automatically reseeded', async function() {
+      const worker = new Worker('../dist/openpgp.worker.js');
+      const wProxy = new openpgp.AsyncProxy({ path:'../dist/openpgp.worker.js', workers: [worker] });
+      const loaded = await wProxy.loaded();
+      if (loaded) {
+        return wProxy.delegate('encrypt', { publicKeys:[pubKey], message:openpgp.message.fromText(plaintext) });
+      }
     });
   });
 

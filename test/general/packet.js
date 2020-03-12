@@ -1,24 +1,30 @@
-'use strict';
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const stub = require('sinon/lib/sinon/stub');
+const chai = require('chai');
+chai.use(require('chai-as-promised'));
+
+const { expect } = chai;
+const input = require('./testInputs.js');
 
 function stringify(array) {
-  if(!Uint8Array.prototype.isPrototypeOf(array)) {
+  if (openpgp.util.isStream(array)) {
+    return openpgp.stream.readToEnd(array).then(stringify);
+  }
+
+  if (!openpgp.util.isUint8Array(array)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
 
-  var result = [];
-  for (var i = 0; i < array.length; i++) {
+  const result = [];
+  for (let i = 0; i < array.length; i++) {
     result[i] = String.fromCharCode(array[i]);
   }
   return result.join('');
 }
 
-var chai = require('chai'),
-  expect = chai.expect;
-
 describe("Packet", function() {
-  var armored_key =
+  const armored_key =
       '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
       'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
       '\n' +
@@ -55,97 +61,234 @@ describe("Packet", function() {
       '=KXkj\n' +
       '-----END PGP PRIVATE KEY BLOCK-----';
 
-  it('Symmetrically encrypted packet', function(done) {
-    var message = new openpgp.packet.List();
+  it('Symmetrically encrypted packet', async function() {
+    const message = new openpgp.packet.List();
+    const testText = input.createSomeMessage();
 
-    var literal = new openpgp.packet.Literal();
-    literal.setText('Hello world');
+    const literal = new openpgp.packet.Literal();
+    literal.setText(testText);
 
-    var enc = new openpgp.packet.SymmetricallyEncrypted();
+    const enc = new openpgp.packet.SymmetricallyEncrypted();
     message.push(enc);
     enc.packets.push(literal);
 
-    var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
-        algo = 'aes256';
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
 
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
-    var msg2 = new openpgp.packet.List();
-    msg2.read(message.write());
-    msg2[0].ignore_mdc_error = true;
-    msg2[0].decrypt(algo, key);
+    const msg2 = new openpgp.message.Message();
+    await msg2.packets.read(message.write());
+    msg2.packets[0].ignore_mdc_error = true;
+    const dec = await msg2.decrypt(null, null, [{ algorithm: algo, data: key }]);
 
-    expect(stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
-    done();
+    expect(await stringify(dec.packets[0].data)).to.equal(stringify(literal.data));
   });
 
-  it('Symmetrically encrypted packet - MDC error for modern cipher', function() {
-    var message = new openpgp.packet.List();
+  it('Symmetrically encrypted packet - MDC error for modern cipher', async function() {
+    const message = new openpgp.packet.List();
+    const testText = input.createSomeMessage();
 
-    var literal = new openpgp.packet.Literal();
-    literal.setText('Hello world');
+    const literal = new openpgp.packet.Literal();
+    literal.setText(testText);
 
-    var enc = new openpgp.packet.SymmetricallyEncrypted();
+    const enc = new openpgp.packet.SymmetricallyEncrypted();
     message.push(enc);
-    enc.packets.push(literal);
+    await enc.packets.push(literal);
 
-    var key = '12345678901234567890123456789012',
-        algo = 'aes256';
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
 
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
-    var msg2 = new openpgp.packet.List();
-    msg2.read(message.write());
-    expect(msg2[0].decrypt.bind(msg2[0], algo, key)).to.throw('Decryption failed due to missing MDC in combination with modern cipher.');
+    const msg2 = new openpgp.packet.List();
+    await msg2.read(message.write());
+    await expect(msg2[0].decrypt(algo, key)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC.');
   });
 
-  it('Sym. encrypted integrity protected packet', function(done) {
-    var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
-        algo = 'aes256';
+  it('Sym. encrypted integrity protected packet', async function() {
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
+    const testText = input.createSomeMessage();
 
-    var literal = new openpgp.packet.Literal(),
-        enc = new openpgp.packet.SymEncryptedIntegrityProtected(),
-        msg = new openpgp.packet.List();
+    const literal = new openpgp.packet.Literal();
+    const enc = new openpgp.packet.SymEncryptedIntegrityProtected();
+    const msg = new openpgp.packet.List();
 
     msg.push(enc);
-    literal.setText('Hello world!');
+    literal.setText(testText);
     enc.packets.push(literal);
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
-    var msg2 = new openpgp.packet.List();
-    msg2.read(msg.write());
+    const msg2 = new openpgp.packet.List();
+    await msg2.read(msg.write());
 
-    msg2[0].decrypt(algo, key);
+    await msg2[0].decrypt(algo, key);
 
-    expect(stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
-    done();
+    expect(await stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
   });
 
-  it('Sym. encrypted AEAD protected packet', function(done) {
-    var key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]),
-        algo = 'aes256';
-
-    var literal = new openpgp.packet.Literal(),
-        enc = new openpgp.packet.SymEncryptedAEADProtected(),
-        msg = new openpgp.packet.List();
+  it('Sym. encrypted AEAD protected packet', function() {
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
+    const testText = input.createSomeMessage();
+    const literal = new openpgp.packet.Literal();
+    const enc = new openpgp.packet.SymEncryptedAEADProtected();
+    const msg = new openpgp.packet.List();
 
     msg.push(enc);
-    literal.setText('Hello world!');
+    literal.setText(testText);
     enc.packets.push(literal);
 
-    var msg2 = new openpgp.packet.List();
+    const msg2 = new openpgp.packet.List();
 
-    enc.encrypt(algo, key).then(function() {
-      msg2.read(msg.write());
+    return enc.encrypt(algo, key).then(async function() {
+      await msg2.read(msg.write());
       return msg2[0].decrypt(algo, key);
-    }).then(function() {
-      expect(msg2[0].packets[0].data).to.deep.equal(literal.data);
-      done();
+    }).then(async function() {
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     });
   });
 
-  it('Sym encrypted session key with a compressed packet', function(done) {
-    var msg =
+  it('Sym. encrypted AEAD protected packet (AEAD)', async function() {
+    let aead_protectVal = openpgp.config.aead_protect;
+    openpgp.config.aead_protect = true;
+    const testText = input.createSomeMessage();
+
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
+
+    const literal = new openpgp.packet.Literal();
+    const enc = new openpgp.packet.SymEncryptedAEADProtected();
+    const msg = new openpgp.packet.List();
+
+    msg.push(enc);
+    literal.setText(testText);
+    enc.packets.push(literal);
+
+    const msg2 = new openpgp.packet.List();
+
+    try {
+      await enc.encrypt(algo, key);
+      await msg2.read(msg.write());
+      await msg2[0].decrypt(algo, key);
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+    } finally {
+      openpgp.config.aead_protect = aead_protectVal;
+    }
+  });
+
+  function cryptStub(webCrypto, method) {
+    const crypt = webCrypto[method];
+    const cryptStub = stub(webCrypto, method);
+    let cryptCallsActive = 0;
+    cryptStub.onCall(0).callsFake(async function() {
+      cryptCallsActive++;
+      try {
+        return await crypt.apply(this, arguments);
+      } finally {
+        cryptCallsActive--;
+      }
+    });
+    cryptStub.onCall(1).callsFake(function() {
+      expect(cryptCallsActive).to.equal(1);
+      return crypt.apply(this, arguments);
+    });
+    cryptStub.callThrough();
+    return cryptStub;
+  }
+
+  it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEAD, GCM)', async function() {
+    const webCrypto = openpgp.util.getWebCrypto();
+    if (!webCrypto) return;
+    const encryptStub = cryptStub(webCrypto, 'encrypt');
+    const decryptStub = cryptStub(webCrypto, 'decrypt');
+
+    let aead_protectVal = openpgp.config.aead_protect;
+    let aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_chunk_size_byte = 0;
+    const testText = input.createSomeMessage();
+
+    const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const algo = 'aes256';
+
+    const literal = new openpgp.packet.Literal();
+    const enc = new openpgp.packet.SymEncryptedAEADProtected();
+    const msg = new openpgp.packet.List();
+    enc.aeadAlgorithm = 'experimental_gcm';
+
+    msg.push(enc);
+    literal.setText(testText);
+    enc.packets.push(literal);
+
+    const msg2 = new openpgp.packet.List();
+
+    try {
+      await enc.encrypt(algo, key);
+      await msg2.read(msg.write());
+      await msg2[0].decrypt(algo, key);
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+      expect(encryptStub.callCount > 1).to.be.true;
+      expect(decryptStub.callCount > 1).to.be.true;
+    } finally {
+      openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      encryptStub.restore();
+      decryptStub.restore();
+    }
+  });
+
+  it('Sym. encrypted AEAD protected packet test vector (AEAD)', async function() {
+    // From https://gitlab.com/openpgp-wg/rfc4880bis/commit/00b20923e6233fb6ff1666ecd5acfefceb32907d
+
+    let packetBytes = openpgp.util.hex_to_Uint8Array(`
+      d4 4a 01 07 01 0e b7 32  37 9f 73 c4 92 8d e2 5f
+      ac fe 65 17 ec 10 5d c1  1a 81 dc 0c b8 a2 f6 f3
+      d9 00 16 38 4a 56 fc 82  1a e1 1a e8 db cb 49 86
+      26 55 de a8 8d 06 a8 14  86 80 1b 0f f3 87 bd 2e
+      ab 01 3d e1 25 95 86 90  6e ab 24 76
+    `.replace(/\s+/g, ''));
+
+    let aead_protectVal = openpgp.config.aead_protect;
+    let aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_chunk_size_byte = 14;
+
+    const iv = openpgp.util.hex_to_Uint8Array('b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10'.replace(/\s+/g, ''));
+    const key = openpgp.util.hex_to_Uint8Array('86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d'.replace(/\s+/g, ''));
+    const algo = 'aes128';
+
+    const literal = new openpgp.packet.Literal(0);
+    const enc = new openpgp.packet.SymEncryptedAEADProtected();
+    const msg = new openpgp.packet.List();
+
+    msg.push(enc);
+    literal.setBytes(openpgp.util.str_to_Uint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+    literal.filename = '';
+    enc.packets.push(literal);
+
+    const msg2 = new openpgp.packet.List();
+
+    let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
+    randomBytesStub.returns(resolves(iv));
+
+    try {
+      await enc.encrypt(algo, key);
+      const data = msg.write();
+      expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
+      await msg2.read(data);
+      await msg2[0].decrypt(algo, key);
+      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+    } finally {
+      openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Sym encrypted session key with a compressed packet', async function() {
+    const msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
@@ -154,60 +297,59 @@ describe("Packet", function() {
         '=VZ0/\n' +
         '-----END PGP MESSAGE-----';
 
-    var msgbytes = openpgp.armor.decode(msg).data;
+    const msgbytes = (await openpgp.armor.decode(msg)).data;
 
-    var parsed = new openpgp.packet.List();
-    parsed.read(msgbytes);
+    const parsed = new openpgp.packet.List();
+    await parsed.read(msgbytes);
 
-    parsed[0].decrypt('test');
+    return parsed[0].decrypt('test').then(() => {
+      const key = parsed[0].sessionKey;
+      return parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key).then(async () => {
+        const compressed = parsed[1].packets[0];
 
-    var key = parsed[0].sessionKey;
-    parsed[1].decrypt(parsed[0].sessionKeyAlgorithm, key);
-    var compressed = parsed[1].packets[0];
+        const result = await stringify(compressed.packets[0].data);
 
-    var result = stringify(compressed.packets[0].data);
-
-    expect(result).to.equal('Hello world!\n');
-    done();
+        expect(result).to.equal('Hello world!\n');
+      });
+    });
   });
 
-  it('Public key encrypted symmetric key packet', function(done) {
-    var rsa = new openpgp.crypto.publicKey.rsa();
-    var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+  it('Public key encrypted symmetric key packet', function() {
+    const rsa = openpgp.crypto.publicKey.rsa;
+    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    rsa.generate(keySize, "10001").then(function(mpiGen) {
+    return rsa.generate(keySize, "10001").then(function(mpiGen) {
 
-      var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
       mpi = mpi.map(function(k) {
-        var mpi = new openpgp.MPI();
-        mpi.fromBigInteger(k);
-        return mpi;
+        return new openpgp.MPI(k);
       });
 
-      var enc = new openpgp.packet.PublicKeyEncryptedSessionKey(),
-          msg = new openpgp.packet.List(),
-          msg2 = new openpgp.packet.List();
+      const enc = new openpgp.packet.PublicKeyEncryptedSessionKey();
+      const msg = new openpgp.packet.List();
+      const msg2 = new openpgp.packet.List();
 
       enc.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
       enc.publicKeyAlgorithm = 'rsa_encrypt';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
-      enc.encrypt({ mpi: mpi });
+      return enc.encrypt({ params: mpi, getFingerprintBytes() {} }).then(async () => {
 
-      msg.push(enc);
+        msg.push(enc);
 
-      msg2.read(msg.write());
+        await msg2.read(msg.write());
 
-      msg2[0].decrypt({ mpi: mpi });
+        return msg2[0].decrypt({ params: mpi, getFingerprintBytes() {} }).then(() => {
 
-      expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
-      expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
-      done();
+          expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
+          expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
+        });
+      });
     });
   });
 
-  it('Secret key packet (reading, unencrypted)', function(done) {
-    var armored_key =
+  it('Secret key packet (reading, unencrypted)', async function() {
+    const armored_key =
         '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
@@ -229,28 +371,27 @@ describe("Packet", function() {
         '=lKiS\n' +
         '-----END PGP PRIVATE KEY BLOCK-----';
 
-    var key = new openpgp.packet.List();
-    key.read(openpgp.armor.decode(armored_key).data);
+    let key = new openpgp.packet.List();
+    await key.read((await openpgp.armor.decode(armored_key)).data);
     key = key[0];
 
-    var enc = new openpgp.packet.PublicKeyEncryptedSessionKey(),
-        secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+    const enc = new openpgp.packet.PublicKeyEncryptedSessionKey();
+    const secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
 
     enc.sessionKey = secret;
     enc.publicKeyAlgorithm = 'rsa_encrypt';
     enc.sessionKeyAlgorithm = 'aes256';
     enc.publicKeyId.bytes = '12345678';
 
-    enc.encrypt(key);
-
-    enc.decrypt(key);
-
-    expect(stringify(enc.sessionKey)).to.equal(stringify(secret));
-    done();
+    return enc.encrypt(key).then(() => {
+      return enc.decrypt(key).then(() => {
+        expect(stringify(enc.sessionKey)).to.equal(stringify(secret));
+      });
+    });
   });
 
-  it('Public key encrypted packet (reading, GPG)', function(done) {
-    var armored_key =
+  it('Public key encrypted packet (reading, GPG)', async function() {
+    const armored_key =
         '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
@@ -285,7 +426,7 @@ describe("Packet", function() {
         '=FSwA\n' +
         '-----END PGP PRIVATE KEY BLOCK-----';
 
-    var armored_msg =
+    const armored_msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
@@ -297,57 +438,246 @@ describe("Packet", function() {
         '=iSaK\n' +
         '-----END PGP MESSAGE-----';
 
-    var key = new openpgp.packet.List();
-    key.read(openpgp.armor.decode(armored_key).data);
+    let key = new openpgp.packet.List();
+    await key.read((await openpgp.armor.decode(armored_key)).data);
     key = key[3];
 
-    var msg = new openpgp.packet.List();
-    msg.read(openpgp.armor.decode(armored_msg).data);
+    const msg = new openpgp.packet.List();
+    await msg.read((await openpgp.armor.decode(armored_msg)).data);
 
-    msg[0].decrypt(key);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key).then(async () => {
+      await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var text = stringify(msg[1].packets[0].packets[0].data);
+      const text = await stringify(msg[1].packets[0].packets[0].data);
 
-    expect(text).to.equal('Hello world!');
-    done();
+      expect(text).to.equal('Hello world!');
+    });
   });
 
-  it('Sym encrypted session key reading/writing', function(done) {
-    var passphrase = 'hello',
-        algo = 'aes256';
+  it('Sym. encrypted session key reading/writing', async function() {
+    const passphrase = 'hello';
+    const algo = 'aes256';
+    const testText = input.createSomeMessage();
 
-    var literal = new openpgp.packet.Literal(),
-        key_enc = new openpgp.packet.SymEncryptedSessionKey(),
-        enc = new openpgp.packet.SymEncryptedIntegrityProtected(),
-        msg = new openpgp.packet.List();
+    const literal = new openpgp.packet.Literal();
+    const key_enc = new openpgp.packet.SymEncryptedSessionKey();
+    const enc = new openpgp.packet.SymEncryptedIntegrityProtected();
+    const msg = new openpgp.packet.List();
 
     msg.push(key_enc);
     msg.push(enc);
 
     key_enc.sessionKeyAlgorithm = algo;
-    key_enc.decrypt(passphrase);
+    await key_enc.encrypt(passphrase);
 
-    var key = key_enc.sessionKey;
+    const key = key_enc.sessionKey;
 
-    literal.setText('Hello world!');
+    literal.setText(testText);
     enc.packets.push(literal);
-    enc.encrypt(algo, key);
+    await enc.encrypt(algo, key);
 
+    const msg2 = new openpgp.packet.List();
+    await msg2.read(msg.write());
 
-    var msg2 = new openpgp.packet.List();
-    msg2.read(msg.write());
+    await msg2[0].decrypt(passphrase);
+    const key2 = msg2[0].sessionKey;
+    await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
 
-    msg2[0].decrypt(passphrase);
-    var key2 = msg2[0].sessionKey;
-    msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
-
-    expect(stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
-    done();
+    expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
   });
 
-  it('Secret key encryption/decryption test', function(done) {
-    var armored_msg =
+  it('Sym. encrypted session key reading/writing (AEAD)', async function() {
+    let aead_protectVal = openpgp.config.aead_protect;
+    openpgp.config.aead_protect = true;
+
+    try {
+      const passphrase = 'hello';
+      const algo = 'aes256';
+      const testText = input.createSomeMessage();
+
+      const literal = new openpgp.packet.Literal();
+      const key_enc = new openpgp.packet.SymEncryptedSessionKey();
+      const enc = new openpgp.packet.SymEncryptedAEADProtected();
+      const msg = new openpgp.packet.List();
+
+      msg.push(key_enc);
+      msg.push(enc);
+
+      key_enc.sessionKeyAlgorithm = algo;
+      await key_enc.encrypt(passphrase);
+
+      const key = key_enc.sessionKey;
+
+      literal.setText(testText);
+      enc.packets.push(literal);
+      await enc.encrypt(algo, key);
+
+      const msg2 = new openpgp.packet.List();
+      await msg2.read(msg.write());
+
+      await msg2[0].decrypt(passphrase);
+      const key2 = msg2[0].sessionKey;
+      await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+
+      expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
+    } finally {
+      openpgp.config.aead_protect = aead_protectVal;
+    }
+  });
+
+  it('Sym. encrypted session key reading/writing test vector (EAX, AEAD)', async function() {
+    // From https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b20923/back.mkd#sample-aead-eax-encryption-and-decryption
+
+    let aead_protectVal = openpgp.config.aead_protect;
+    let aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+    let s2k_iteration_count_byteVal = openpgp.config.s2k_iteration_count_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_chunk_size_byte = 14;
+    openpgp.config.s2k_iteration_count_byte = 0x90;
+
+    let salt = openpgp.util.hex_to_Uint8Array(`cd5a9f70fbe0bc65`);
+    let sessionKey = openpgp.util.hex_to_Uint8Array(`86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d`.replace(/\s+/g, ''));
+    let sessionIV = openpgp.util.hex_to_Uint8Array(`bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35`.replace(/\s+/g, ''));
+    let dataIV = openpgp.util.hex_to_Uint8Array(`b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10`.replace(/\s+/g, ''));
+
+    let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
+    randomBytesStub.onCall(0).returns(resolves(salt));
+    randomBytesStub.onCall(1).returns(resolves(sessionKey));
+    randomBytesStub.onCall(2).returns(resolves(sessionIV));
+    randomBytesStub.onCall(3).returns(resolves(dataIV));
+
+    let packetBytes = openpgp.util.hex_to_Uint8Array(`
+      c3 3e 05 07 01 03 08 cd  5a 9f 70 fb e0 bc 65 90
+      bc 66 9e 34 e5 00 dc ae  dc 5b 32 aa 2d ab 02 35
+      9d ee 19 d0 7c 34 46 c4  31 2a 34 ae 19 67 a2 fb
+      7e 92 8e a5 b4 fa 80 12  bd 45 6d 17 38 c6 3c 36
+
+      d4 4a 01 07 01 0e b7 32  37 9f 73 c4 92 8d e2 5f
+      ac fe 65 17 ec 10 5d c1  1a 81 dc 0c b8 a2 f6 f3
+      d9 00 16 38 4a 56 fc 82  1a e1 1a e8 db cb 49 86
+      26 55 de a8 8d 06 a8 14  86 80 1b 0f f3 87 bd 2e
+      ab 01 3d e1 25 95 86 90  6e ab 24 76
+    `.replace(/\s+/g, ''));
+
+    try {
+      const passphrase = 'password';
+      const algo = 'aes128';
+
+      const literal = new openpgp.packet.Literal(0);
+      const key_enc = new openpgp.packet.SymEncryptedSessionKey();
+      const enc = new openpgp.packet.SymEncryptedAEADProtected();
+      const msg = new openpgp.packet.List();
+
+      msg.push(key_enc);
+      msg.push(enc);
+
+      key_enc.sessionKeyAlgorithm = algo;
+      await key_enc.encrypt(passphrase);
+
+      const key = key_enc.sessionKey;
+
+      literal.setBytes(openpgp.util.str_to_Uint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+      literal.filename = '';
+      enc.packets.push(literal);
+      await enc.encrypt(algo, key);
+
+      const data = msg.write();
+      expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
+
+      const msg2 = new openpgp.packet.List();
+      await msg2.read(data);
+
+      await msg2[0].decrypt(passphrase);
+      const key2 = msg2[0].sessionKey;
+      await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+
+      expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
+    } finally {
+      openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      openpgp.config.s2k_iteration_count_byte = s2k_iteration_count_byteVal;
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Sym. encrypted session key reading/writing test vector (AEAD, OCB)', async function() {
+    // From https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b20923/back.mkd#sample-aead-ocb-encryption-and-decryption
+
+    let aead_protectVal = openpgp.config.aead_protect;
+    let aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
+    let s2k_iteration_count_byteVal = openpgp.config.s2k_iteration_count_byte;
+    openpgp.config.aead_protect = true;
+    openpgp.config.aead_chunk_size_byte = 14;
+    openpgp.config.s2k_iteration_count_byte = 0x90;
+
+    let salt = openpgp.util.hex_to_Uint8Array(`9f0b7da3e5ea6477`);
+    let sessionKey = openpgp.util.hex_to_Uint8Array(`d1 f0 1b a3 0e 13 0a a7 d2 58 2c 16 e0 50 ae 44`.replace(/\s+/g, ''));
+    let sessionIV = openpgp.util.hex_to_Uint8Array(`99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c`.replace(/\s+/g, ''));
+    let dataIV = openpgp.util.hex_to_Uint8Array(`5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56`.replace(/\s+/g, ''));
+
+    let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
+    randomBytesStub.onCall(0).returns(resolves(salt));
+    randomBytesStub.onCall(1).returns(resolves(sessionKey));
+    randomBytesStub.onCall(2).returns(resolves(sessionIV));
+    randomBytesStub.onCall(3).returns(resolves(dataIV));
+
+    let packetBytes = openpgp.util.hex_to_Uint8Array(`
+      c3 3d 05 07 02 03 08 9f  0b 7d a3 e5 ea 64 77 90
+      99 e3 26 e5 40 0a 90 93  6c ef b4 e8 eb a0 8c 67
+      73 71 6d 1f 27 14 54 0a  38 fc ac 52 99 49 da c5
+      29 d3 de 31 e1 5b 4a eb  72 9e 33 00 33 db ed
+
+      d4 49 01 07 02 0e 5e d2  bc 1e 47 0a be 8f 1d 64
+      4c 7a 6c 8a 56 7b 0f 77  01 19 66 11 a1 54 ba 9c
+      25 74 cd 05 62 84 a8 ef  68 03 5c 62 3d 93 cc 70
+      8a 43 21 1b b6 ea f2 b2  7f 7c 18 d5 71 bc d8 3b
+      20 ad d3 a0 8b 73 af 15  b9 a0 98
+    `.replace(/\s+/g, ''));
+
+    try {
+      const passphrase = 'password';
+      const algo = 'aes128';
+
+      const literal = new openpgp.packet.Literal(0);
+      const key_enc = new openpgp.packet.SymEncryptedSessionKey();
+      const enc = new openpgp.packet.SymEncryptedAEADProtected();
+      const msg = new openpgp.packet.List();
+      enc.aeadAlgorithm = key_enc.aeadAlgorithm = 'ocb';
+
+      msg.push(key_enc);
+      msg.push(enc);
+
+      key_enc.sessionKeyAlgorithm = algo;
+      await key_enc.encrypt(passphrase);
+
+      const key = key_enc.sessionKey;
+
+      literal.setBytes(openpgp.util.str_to_Uint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+      literal.filename = '';
+      enc.packets.push(literal);
+      await enc.encrypt(algo, key);
+
+      const data = msg.write();
+      expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
+
+      const msg2 = new openpgp.packet.List();
+      await msg2.read(data);
+
+      await msg2[0].decrypt(passphrase);
+      const key2 = msg2[0].sessionKey;
+      await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+
+      expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
+    } finally {
+      openpgp.config.aead_protect = aead_protectVal;
+      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
+      openpgp.config.s2k_iteration_count_byte = s2k_iteration_count_byteVal;
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Secret key encryption/decryption test', async function() {
+    const armored_msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
@@ -359,46 +689,44 @@ describe("Packet", function() {
         '=pR+C\n' +
         '-----END PGP MESSAGE-----';
 
-    var key = new openpgp.packet.List();
-    key.read(openpgp.armor.decode(armored_key).data);
+    let key = new openpgp.packet.List();
+    await key.read((await openpgp.armor.decode(armored_key)).data);
     key = key[3];
-    key.decrypt('test');
+    await key.decrypt('test');
 
-    var msg = new openpgp.packet.List();
-    msg.read(openpgp.armor.decode(armored_msg).data);
+    const msg = new openpgp.packet.List();
+    await msg.read((await openpgp.armor.decode(armored_msg)).data);
 
-    msg[0].decrypt(key);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key).then(async () => {
+      await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var text = stringify(msg[1].packets[0].packets[0].data);
+      const text = await stringify(msg[1].packets[0].packets[0].data);
 
-    expect(text).to.equal('Hello world!');
-    done();
+      expect(text).to.equal('Hello world!');
+    });
   });
 
-  it('Secret key reading with signature verification.', function(done) {
-    var key = new openpgp.packet.List();
-    key.read(openpgp.armor.decode(armored_key).data);
-
-
-    var verified = key[2].verify(key[0],
+  it('Secret key reading with signature verification.', async function() {
+    const key = new openpgp.packet.List();
+    await key.read((await openpgp.armor.decode(armored_key)).data);
+    return Promise.all([
+      expect(key[2].verify(key[0],
+        openpgp.enums.signature.cert_generic,
         {
-            userid: key[1],
+            userId: key[1],
             key: key[0]
-        });
-
-    verified = verified && key[4].verify(key[0],
+        })).to.eventually.be.true,
+      expect(key[4].verify(key[0],
+        openpgp.enums.signature.key_binding,
         {
             key: key[0],
             bind: key[3]
-        });
-
-    expect(verified).to.be.true;
-    done();
+        })).to.eventually.be.true
+    ]);
   });
 
-  it('Reading a signed, encrypted message.', function(done) {
-    var armored_msg =
+  it('Reading a signed, encrypted message.', async function() {
+    const armored_msg =
         '-----BEGIN PGP MESSAGE-----\n' +
         'Version: GnuPG v2.0.19 (GNU/Linux)\n' +
         '\n' +
@@ -412,96 +740,198 @@ describe("Packet", function() {
         'UBGuHZzsGbTdyKvpVBuS3rnyHHBk6oCnsm1Nl7eLs64VkZUxjEUbq5pb4dlr1pw2\n' +
         'ztpmpAnRcmM=\n' +
         '=htrB\n' +
-        '-----END PGP MESSAGE-----'
+        '-----END PGP MESSAGE-----';
 
-    var key = new openpgp.packet.List();
-    key.read(openpgp.armor.decode(armored_key).data);
-    key[3].decrypt('test')
+    const key = new openpgp.packet.List();
+    await key.read((await openpgp.armor.decode(armored_key)).data);
+    await key[3].decrypt('test');
 
-    var msg = new openpgp.packet.List();
-    msg.read(openpgp.armor.decode(armored_msg).data);
+    const msg = new openpgp.packet.List();
+    await msg.read((await openpgp.armor.decode(armored_msg)).data);
 
-    msg[0].decrypt(key[3]);
-    msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
+    return msg[0].decrypt(key[3]).then(async () => {
+      await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
-    var payload = msg[1].packets[0].packets
+      const payload = msg[1].packets[0].packets;
+      payload.concat(await openpgp.stream.readToEnd(payload.stream, arr => arr));
 
-    var verified = payload[2].verify(key[0], payload[1]);
-
-    expect(verified).to.be.true;
-    done();
-  });
-
-  it('Writing and encryption of a secret key packet.', function(done) {
-    var key = new openpgp.packet.List();
-    key.push(new openpgp.packet.SecretKey());
-
-    var rsa = new openpgp.crypto.publicKey.rsa();
-    var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
-
-    rsa.generate(keySize, "10001").then(function(mipGen) {
-      var mpi = [mipGen.n, mipGen.ee, mipGen.d, mipGen.p, mipGen.q, mipGen.u];
-      mpi = mpi.map(function(k) {
-        var mpi = new openpgp.MPI();
-        mpi.fromBigInteger(k);
-        return mpi;
-      });
-
-      key[0].mpi = mpi;
-
-      key[0].encrypt('hello');
-
-      var raw = key.write();
-
-      var key2 = new openpgp.packet.List();
-      key2.read(raw);
-      key2[0].decrypt('hello');
-
-      expect(key[0].mpi.toString()).to.equal(key2[0].mpi.toString());
-      done();
+      await Promise.all([
+        expect(payload[2].verify(
+          key[0], openpgp.enums.signature.binary, payload[1]
+        )).to.eventually.be.true,
+        openpgp.stream.pipe(payload[1].getBytes(), new WritableStream())
+      ]);
     });
   });
 
-  it('Writing and verification of a signature packet.', function(done) {
-    var key = new openpgp.packet.SecretKey();
+  it('Reading signersUserId from armored signature', async function() {
+    const armored_sig =
+`-----BEGIN PGP SIGNATURE-----
 
-    var rsa = new openpgp.crypto.publicKey.rsa();
-    var keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
+QG1ldGFjb2RlLmJpegAKCRBrpV7YOrrhuw1PB/9KhFRR/M3OR6NmIent6ri1ekWn
+vlcnVqj6N4Xqi1ahRVw19/Jx36mGyijxNwqqGrziqRiPCdT0pKfCfv7nXQf2Up1Z
+LoR1StqpBMSDQfuF6JAJmJuB9T+mPQO8wYeUp+O63vQnm5CgqyoRlIoqX8MN6GTY
+xK5PdTRjw6IEIGr9uLgSoUwTd0ECY1F9ptyuLGD5ET5ZtyUenQSbX+cw5WCGLFzi
+7TwKTY+kGQpkwDJKZJSGpoP7ob6xdDfZx6dHV6IfIJg8/F9gtAXFp8uE51L90cV2
+kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
+=wEIR
+-----END PGP SIGNATURE-----`;
 
-    rsa.generate(keySize, "10001").then(function(mpiGen) {
-        var mpi = [mpiGen.n, mpiGen.ee, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+    const signature = await openpgp.signature.readArmored(armored_sig);
+
+    expect(signature.packets[0].signersUserId).to.equal('test-wkd@metacode.biz');
+  });
+
+  it('Reading notations from armored key', async function() {
+    const pubkey =
+`-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBFzQOToBCADd0Pwh8edZ6gR3x49L1PaBPtiAQUr1QDUDWeNes8co5MTFl5hG
+lHzptt+VD0JGucuIkvi34f5z2ZbInAV/xYDX3kSYefy6LB8XJD527I/o9bqY1P7T
+PjtTZ4emcqNGkGhV2hNGV+hFcTevUS9Ty4vGg6P7X6RjfjeTrClHelJT8+9IiH+4
+0h4X/Y1hwoijRWanYnZjuAUIrOXnG76iknXQRGc8th8iI0oIZfKQomfF0K5lXFhH
+SU8Yvmik3vCTLHC6Ce0GVRCTIcU0/Xi2MK/Yrg9bGzSblHxomLU0NT6pee+2UjqR
+BZXOAPLY66Lsh1oqxQ6ihVnOmbraU9glAGm1ABEBAAG0EFRlc3R0IDx0ZXN0QGV4
+YT6JAYoEEwEIAHQCGwMFCQPCZwAFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AWIQQZ
+jHIqS6wzbp2qrkRXnQGzq+FUDgUCXNA5VBoUgAAAAAAQAAF0ZXN0QGV4YW1wbGUu
+Y29tMhoUgAAAAAAQAAF0ZXN0QGV4YW1wbGUuY29tMwAKCRBXnQGzq+FUDoLiCACn
+ls1iy0hT59Xt3o3tmmxe1jLzkbQEprR6MMfZamtex5/BHViu2HPAu5i13mXyBRnJ
+4Zvd/HUxJukP3tdQyJIlZFe8XwloMoRAA37KOZ5QGyKH8Jxq3LcAcQOOkFtWgr+Z
+JbjUKF1IuqCsK6SYB8f7SVKgpZk/kqG3HE3gk72ONnqdvwOa9cIhAuZScdgZ+PLC
+6W/0+IrnQIasvKeEWeK4u6/NYT35HUsUE/9Z6WKF+qxJnp5Pi2Q5cio6bFlGDNQb
++MiuiEb3Mzb3ev2PVg7WELBRXOg8QlCxrghqfi1SH791mmiyGK+GIQgnjRwMejTh
+dNsnHYag/KAewag55AQvuQENBFzQOToBCADJD+auK+Opo1q3ZLxODMyw5//XHJH4
+0vQPNawyBiOdBuneWHF3jfDwGa+lOftUx1abSwsq+Qs955THgLVSiJvivHWVy8pN
+tPv0XLa9rMj2wh/OmckbcgzSMeJJIz09bTj095ONPGYW2D4AcpkOc+b5bkqV6r+N
+yk9nopPJNCNqYYJtecTClDT5haRKBP5XjXRVsIXva/nHZGXKQLX8iWG2D5DOJNDP
+ZkAEoIPg+7J85Q3u2iSFPnLPzKHlMAoQW8d9RAEYyJ6WqiILUIDShhvXg+RIkzri
+wY/WkvhB/Kpj0r1SRbNhWRpmOWCR+0a2uHaLz9X0KTP7WMqQbmIdpRgZABEBAAGJ
+ATwEGAEIACYWIQQZjHIqS6wzbp2qrkRXnQGzq+FUDgUCXNA5OgIbDAUJA8JnAAAK
+CRBXnQGzq+FUDgI6B/9Far0CUR6rWvUiviBY4P5oe44I9P9P7ilWmum1cIQWxMyF
+0sc5tRcVLpMomURlrDz0TR5GNs+nuGAHTRBfN7VO0Y+R/LyEd1Rf80ONObXOqzMp
+vF9CdW3a7W4WicZwnGgUOImTICazR2VmR+RREdZshqrOCaOnuKmN3QwGH1zzFwJA
+sTbLoNMdBv8SEARaRVOWPM1HwJ701mMYF48FqhHd5uinH/ZCeBhqrBfhmXa68FWx
+xuyJz6ttl5Fp4nsB3waQdgPGZJ9NUrGfopLUZ44xDuJjBONd7rbYOh71TWbHd8wG
+V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
+=et/d
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+    const key = (await openpgp.key.readArmored(pubkey)).keys[0];
+
+    const notations = key.users[0].selfCertifications[0].notations;
+
+    expect(notations.length).to.equal(2);
+    expect(notations[0][0]).to.equal('test@example.com');
+    expect(notations[0][1]).to.equal('2');
+    expect(notations[1][0]).to.equal('test@example.com');
+    expect(notations[1][1]).to.equal('3');
+  });
+
+  it('Writing and encryption of a secret key packet.', function() {
+    const key = new openpgp.packet.List();
+    key.push(new openpgp.packet.SecretKey());
+
+    const rsa = openpgp.crypto.publicKey.rsa;
+    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+
+    return rsa.generate(keySize, "10001").then(async function(mpiGen) {
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      mpi = mpi.map(function(k) {
+        return new openpgp.MPI(k);
+      });
+
+      key[0].params = mpi;
+      key[0].algorithm = "rsa_sign";
+      key[0].isEncrypted = false;
+      await key[0].encrypt('hello');
+
+      const raw = key.write();
+
+      const key2 = new openpgp.packet.List();
+      await key2.read(raw);
+      await key2[0].decrypt('hello');
+
+      expect(key[0].params.toString()).to.equal(key2[0].params.toString());
+    });
+  });
+
+  it('Writing and encryption of a secret key packet. (AEAD)', async function() {
+    let aead_protectVal = openpgp.config.aead_protect;
+    openpgp.config.aead_protect = true;
+
+    const key = new openpgp.packet.List();
+    key.push(new openpgp.packet.SecretKey());
+
+    const rsa = openpgp.crypto.publicKey.rsa;
+    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+
+    try {
+      const mpiGen = await rsa.generate(keySize, "10001");
+      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
+      mpi = mpi.map(function(k) {
+        return new openpgp.MPI(k);
+      });
+
+      key[0].params = mpi;
+      key[0].algorithm = "rsa_sign";
+      key[0].isEncrypted = false;
+      await key[0].encrypt('hello');
+
+      const raw = key.write();
+
+      const key2 = new openpgp.packet.List();
+      await key2.read(raw);
+      await key2[0].decrypt('hello');
+
+      expect(key[0].params.toString()).to.equal(key2[0].params.toString());
+    } finally {
+      openpgp.config.aead_protect = aead_protectVal;
+    }
+  });
+
+  it('Writing and verification of a signature packet.', function() {
+    const key = new openpgp.packet.SecretKey();
+
+    const rsa = openpgp.crypto.publicKey.rsa;
+    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+
+    return rsa.generate(keySize, "10001").then(function(mpiGen) {
+        let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
         mpi = mpi.map(function(k) {
-          var mpi = new openpgp.MPI();
-          mpi.fromBigInteger(k);
-          return mpi;
+          return new openpgp.MPI(k);
         });
+        const testText = input.createSomeMessage();
 
-        key.mpi = mpi;
+        key.params = mpi;
+        key.algorithm = "rsa_sign";
 
-        var signed = new openpgp.packet.List(),
-            literal = new openpgp.packet.Literal(),
-            signature = new openpgp.packet.Signature();
+        const signed = new openpgp.packet.List();
+        const literal = new openpgp.packet.Literal();
+        const signature = new openpgp.packet.Signature();
 
-        literal.setText('Hello world');
+        literal.setText(testText);
 
         signature.hashAlgorithm = 'sha256';
         signature.publicKeyAlgorithm = 'rsa_sign';
-        signature.signatureType = 'binary';
+        signature.signatureType = 'text';
 
-        signature.sign(key, literal);
+        return signature.sign(key, literal).then(async () => {
 
-        signed.push(literal);
-        signed.push(signature);
+          signed.push(literal);
+          signed.push(signature);
 
-        var raw = signed.write();
+          const raw = signed.write();
 
-        var signed2 = new openpgp.packet.List();
-        signed2.read(raw);
+          const signed2 = new openpgp.packet.List();
+          await signed2.read(raw);
+          signed2.concat(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
 
-        var verified = signed2[1].verify(key, signed2[0]);
-
-        expect(verified).to.be.true;
-        done();
+          await Promise.all([
+            expect(signed2[1].verify(key, openpgp.enums.signature.text, signed2[0])).to.eventually.be.true,
+            openpgp.stream.pipe(signed2[0].getBytes(), new WritableStream())
+          ]);
+        });
     });
   });
 });

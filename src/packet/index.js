@@ -1,18 +1,20 @@
-'use strict';
+/**
+ * @fileoverview OpenPGP packet types
+ * @see module:packet/all_packets
+ * @see module:packet/clone
+ * @see module:packet.List
+ * @module packet
+ */
 
-import * as packets from './all_packets.js';
-import * as clone from './clone.js';
-import List from './packetlist.js';
+import * as packets from './all_packets';
+import * as clone from './clone';
+import List from './packetlist';
 
 const mod = {
-  /** @see module:packet/packetlist */
-  List: List,
-  /** @see module:packet/clone */
-  clone: clone
+  List,
+  clone
 };
 
-for (let i in packets) {
-  mod[i] = packets[i];
-}
+Object.assign(mod, packets);
 
 export default mod;

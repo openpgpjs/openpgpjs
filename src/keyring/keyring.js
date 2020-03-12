@@ -16,36 +16,42 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
- * @requires enums
+ * @fileoverview Provides the Keyring class
  * @requires key
- * @requires util
+ * @requires keyring/localstore
  * @module keyring/keyring
  */
 
-'use strict';
-
-import * as keyModule from '../key.js';
-import LocalStore from './localstore.js';
+import { readArmored } from '../key';
+import LocalStore from './localstore';
 
 /**
- * Initialization routine for the keyring. This method reads the
- * keyring from HTML5 local storage and initializes this instance.
+ * Initialization routine for the keyring.
  * @constructor
- * @param {class} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
+ * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
  */
-export default function Keyring(storeHandler) {
+function Keyring(storeHandler) {
   this.storeHandler = storeHandler || new LocalStore();
-  this.publicKeys = new KeyArray(this.storeHandler.loadPublic());
-  this.privateKeys = new KeyArray(this.storeHandler.loadPrivate());
 }
 
 /**
- * Calls the storeHandler to save the keys
+ * Calls the storeHandler to load the keys
+ * @async
  */
-Keyring.prototype.store = function () {
-  this.storeHandler.storePublic(this.publicKeys.keys);
-  this.storeHandler.storePrivate(this.privateKeys.keys);
+Keyring.prototype.load = async function () {
+  this.publicKeys = new KeyArray(await this.storeHandler.loadPublic());
+  this.privateKeys = new KeyArray(await this.storeHandler.loadPrivate());
+};
+
+/**
+ * Calls the storeHandler to save the keys
+ * @async
+ */
+Keyring.prototype.store = async function () {
+  await Promise.all([
+    this.storeHandler.storePublic(this.publicKeys.keys),
+    this.storeHandler.storePrivate(this.privateKeys.keys)
+  ]);
 };
 
 /**
@@ -61,10 +67,10 @@ Keyring.prototype.clear = function() {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @return {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key.Key>|null} keys found or null
  */
 Keyring.prototype.getKeysForId = function (keyId, deep) {
-  var result = [];
+  let result = [];
   result = result.concat(this.publicKeys.getForId(keyId, deep) || []);
   result = result.concat(this.privateKeys.getForId(keyId, deep) || []);
   return result.length ? result : null;
@@ -74,10 +80,10 @@ Keyring.prototype.getKeysForId = function (keyId, deep) {
  * Removes keys having the specified key id from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @return {Array<module:key~Key>|null} keys found or null
+ * @returns {Array<module:key.Key>|null} keys found or null
  */
 Keyring.prototype.removeKeysForId = function (keyId) {
-  var result = [];
+  let result = [];
   result = result.concat(this.publicKeys.removeForId(keyId) || []);
   result = result.concat(this.privateKeys.removeForId(keyId) || []);
   return result.length ? result : null;
@@ -85,7 +91,7 @@ Keyring.prototype.removeKeysForId = function (keyId) {
 
 /**
  * Get all public and private keys
- * @return {Array<module:key~Key>} all keys
+ * @returns {Array<module:key.Key>} all keys
  */
 Keyring.prototype.getAllKeys = function () {
   return this.publicKeys.keys.concat(this.privateKeys.keys);
@@ -93,7 +99,7 @@ Keyring.prototype.getAllKeys = function () {
 
 /**
  * Array of keys
- * @param {Array<module:key~Key>} keys The keys to store in this array
+ * @param {Array<module:key.Key>} keys The keys to store in this array
  */
 function KeyArray(keys) {
   this.keys = keys;
@@ -102,11 +108,11 @@ function KeyArray(keys) {
 /**
  * Searches all keys in the KeyArray matching the address or address part of the user ids
  * @param {String} email email address to search for
- * @return {Array<module:key~Key>} The public keys associated with provided email address.
+ * @returns {Array<module:key.Key>} The public keys associated with provided email address.
  */
 KeyArray.prototype.getForAddress = function(email) {
-  var results = [];
-  for (var i = 0; i < this.keys.length; i++) {
+  const results = [];
+  for (let i = 0; i < this.keys.length; i++) {
     if (emailCheck(email, this.keys[i])) {
       results.push(this.keys[i]);
     }
@@ -118,17 +124,17 @@ KeyArray.prototype.getForAddress = function(email) {
  * Checks a key to see if it matches the specified email address
  * @private
  * @param {String} email email address to search for
- * @param {module:key~Key} key The key to be checked.
- * @return {Boolean} True if the email address is defined in the specified key
+ * @param {module:key.Key} key The key to be checked.
+ * @returns {Boolean} True if the email address is defined in the specified key
  */
 function emailCheck(email, key) {
   email = email.toLowerCase();
   // escape email before using in regular expression
-  var emailEsc = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  var emailRegex = new RegExp('<' + emailEsc + '>');
-  var userIds = key.getUserIds();
-  for (var i = 0; i < userIds.length; i++) {
-    var userId = userIds[i].toLowerCase();
+  const emailEsc = email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const emailRegex = new RegExp('<' + emailEsc + '>');
+  const userIds = key.getUserIds();
+  for (let i = 0; i < userIds.length; i++) {
+    const userId = userIds[i].toLowerCase();
     if (email === userId || emailRegex.test(userId)) {
       return true;
     }
@@ -141,15 +147,14 @@ function emailCheck(email, key) {
  * @private
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @param {module:packet/secret_key|public_key|public_subkey|secret_subkey} keypacket The keypacket to be checked
- * @return {Boolean} True if keypacket has the specified keyid
+ * @param {module:key.Key|module:key.SubKey} key The key to be checked
+ * @returns {Boolean} True if key has the specified keyid
  */
-function keyIdCheck(keyId, keypacket) {
+function keyIdCheck(keyId, key) {
   if (keyId.length === 16) {
-    return keyId === keypacket.getKeyId().toHex();
-  } else {
-    return keyId === keypacket.getFingerprint();
+    return keyId === key.getKeyId().toHex();
   }
+  return keyId === key.getFingerprint();
 }
 
 /**
@@ -157,16 +162,16 @@ function keyIdCheck(keyId, keypacket) {
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
  * @param  {Boolean} deep if true search also in subkeys
- * @return {module:key~Key|null} key found or null
+ * @returns {module:key.Key|null} key found or null
  */
 KeyArray.prototype.getForId = function (keyId, deep) {
-  for (var i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+  for (let i = 0; i < this.keys.length; i++) {
+    if (keyIdCheck(keyId, this.keys[i])) {
       return this.keys[i];
     }
-    if (deep && this.keys[i].subKeys) {
-      for (var j = 0; j < this.keys[i].subKeys.length; j++) {
-        if (keyIdCheck(keyId, this.keys[i].subKeys[j].subKey)) {
+    if (deep && this.keys[i].subKeys.length) {
+      for (let j = 0; j < this.keys[i].subKeys.length; j++) {
+        if (keyIdCheck(keyId, this.keys[i].subKeys[j])) {
           return this.keys[i];
         }
       }
@@ -178,28 +183,29 @@ KeyArray.prototype.getForId = function (keyId, deep) {
 /**
  * Imports a key from an ascii armored message
  * @param {String} armored message to read the keys/key from
- * @return {Array<Error>|null} array of error objects or null
+ * @returns {Promise<Array<Error>|null>} array of error objects or null
+ * @async
  */
-KeyArray.prototype.importKey = function (armored) {
-  var imported = keyModule.readArmored(armored);
-  var that = this;
-  imported.keys.forEach(function(key) {
+KeyArray.prototype.importKey = async function (armored) {
+  const imported = await readArmored(armored);
+  for (let i = 0; i < imported.keys.length; i++) {
+    const key = imported.keys[i];
     // check if key already in key array
-    var keyidHex = key.primaryKey.getKeyId().toHex();
-    var keyFound = that.getForId(keyidHex);
+    const keyidHex = key.getKeyId().toHex();
+    const keyFound = this.getForId(keyidHex);
     if (keyFound) {
-      keyFound.update(key);
+      await keyFound.update(key);
     } else {
-      that.push(key);
+      this.push(key);
     }
-  });
+  }
   return imported.err ? imported.err : null;
 };
 
 /**
  * Add key to KeyArray
- * @param {module:key~Key} key The key that will be added to the keyring
- * @return {Number} The new length of the KeyArray
+ * @param {module:key.Key} key The key that will be added to the keyring
+ * @returns {Number} The new length of the KeyArray
  */
 KeyArray.prototype.push = function (key) {
   return this.keys.push(key);
@@ -209,13 +215,15 @@ KeyArray.prototype.push = function (key) {
  * Removes a key with the specified keyid from the keyring
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @return {module:key~Key|null} The key object which has been removed or null
+ * @returns {module:key.Key|null} The key object which has been removed or null
  */
 KeyArray.prototype.removeForId = function (keyId) {
-  for (var i = 0; i < this.keys.length; i++) {
-    if (keyIdCheck(keyId, this.keys[i].primaryKey)) {
+  for (let i = 0; i < this.keys.length; i++) {
+    if (keyIdCheck(keyId, this.keys[i])) {
       return this.keys.splice(i, 1)[0];
     }
   }
   return null;
 };
+
+export default Keyring;

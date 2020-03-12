@@ -14,46 +14,55 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-// ElGamal implementation
 
 /**
- * @requires crypto/public_key/jsbn
+ * @fileoverview ElGamal implementation
+ * @requires bn.js
  * @requires crypto/random
- * @requires util
  * @module crypto/public_key/elgamal
  */
 
-'use strict';
+import BN from 'bn.js';
+import random from '../random';
 
-import BigInteger from './jsbn.js';
-import random from '../random.js';
-import util from '../../util.js';
+const zero = new BN(0);
 
-export default function Elgamal() {
+export default {
+  /**
+   * ElGamal Encryption function
+   * @param {BN} m
+   * @param {BN} p
+   * @param {BN} g
+   * @param {BN} y
+   * @returns {{ c1: BN, c2: BN }}
+   * @async
+   */
+  encrypt: async function(m, p, g, y) {
+    const redp = new BN.red(p);
+    const mred = m.toRed(redp);
+    const gred = g.toRed(redp);
+    const yred = y.toRed(redp);
+    // See Section 11.5 here: https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf
+    const k = await random.getRandomBN(zero, p); // returns in [0, p-1]
+    return {
+      c1: gred.redPow(k).fromRed(),
+      c2: yred.redPow(k).redMul(mred).fromRed()
+    };
+  },
 
-  function encrypt(m, g, p, y) {
-    //  choose k in {2,...,p-2}
-    var pMinus2 = p.subtract(BigInteger.TWO);
-    var k = random.getRandomBigIntegerInRange(BigInteger.ONE, pMinus2);
-    k = k.mod(pMinus2).add(BigInteger.ONE);
-    var c = [];
-    c[0] = g.modPow(k, p);
-    c[1] = y.modPow(k, p).multiply(m).mod(p);
-    return c;
+  /**
+   * ElGamal Encryption function
+   * @param {BN} c1
+   * @param {BN} c2
+   * @param {BN} p
+   * @param {BN} x
+   * @returns BN
+   * @async
+   */
+  decrypt: async function(c1, c2, p, x) {
+    const redp = new BN.red(p);
+    const c1red = c1.toRed(redp);
+    const c2red = c2.toRed(redp);
+    return c1red.redPow(x).redInvm().redMul(c2red).fromRed();
   }
-
-  function decrypt(c1, c2, p, x) {
-    util.print_debug("Elgamal Decrypt:\nc1:" + util.hexstrdump(c1.toMPI()) + "\n" +
-      "c2:" + util.hexstrdump(c2.toMPI()) + "\n" +
-      "p:" + util.hexstrdump(p.toMPI()) + "\n" +
-      "x:" + util.hexstrdump(x.toMPI()));
-    return (c1.modPow(x, p).modInverse(p)).multiply(c2).mod(p);
-    //var c = c1.pow(x).modInverse(p); // c0^-a mod p
-    //return c.multiply(c2).mod(p);
-  }
-
-  // signing and signature verification using Elgamal is not required by OpenPGP.
-  this.encrypt = encrypt;
-  this.decrypt = decrypt;
-}
+};

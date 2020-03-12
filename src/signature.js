@@ -16,26 +16,21 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @requires config
- * @requires crypto
  * @requires encoding/armor
- * @requires enums
  * @requires packet
+ * @requires enums
  * @module signature
  */
 
-'use strict';
-
+import armor from './encoding/armor';
 import packet from './packet';
-import enums from './enums.js';
-import armor from './encoding/armor.js';
+import enums from './enums';
 
 /**
  * @class
  * @classdesc Class that represents an OpenPGP signature.
- * @param  {module:packet/packetlist} packetlist The signature packets
+ * @param  {module:packet.List} packetlist The signature packets
  */
-
 export function Signature(packetlist) {
   if (!(this instanceof Signature)) {
     return new Signature(packetlist);
@@ -46,7 +41,7 @@ export function Signature(packetlist) {
 
 /**
  * Returns ASCII armored text of signature
- * @return {String} ASCII armor
+ * @returns {ReadableStream<String>} ASCII armor
  */
 Signature.prototype.armor = function() {
   return armor.encode(enums.armor.signature, this.packets.write());
@@ -54,23 +49,25 @@ Signature.prototype.armor = function() {
 
 /**
  * reads an OpenPGP armored signature and returns a signature object
- * @param {String} armoredText text to be parsed
- * @return {Signature} new signature object
+ * @param {String | ReadableStream<String>} armoredText text to be parsed
+ * @returns {Signature} new signature object
+ * @async
  * @static
  */
-export function readArmored(armoredText) {
-  var input = armor.decode(armoredText).data;
-  return read(input);
+export async function readArmored(armoredText) {
+  const input = await armor.decode(armoredText);
+  return read(input.data);
 }
 
 /**
  * reads an OpenPGP signature as byte array and returns a signature object
- * @param {Uint8Array} input   binary signature
- * @return {Signature}         new signature object
+ * @param {Uint8Array | ReadableStream<Uint8Array>} input   binary signature
+ * @returns {Signature}         new signature object
+ * @async
  * @static
  */
-export function read(input) {
-  var packetlist = new packet.List();
-  packetlist.read(input);
+export async function read(input) {
+  const packetlist = new packet.List();
+  await packetlist.read(input);
   return new Signature(packetlist);
 }

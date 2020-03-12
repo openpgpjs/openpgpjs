@@ -18,22 +18,27 @@
 /**
  * @requires packet/public_key
  * @requires enums
- * @module packet/public_subkey
  */
 
-'use strict';
-
-import publicKey from './public_key.js';
-import enums from '../enums.js';
+import PublicKey from './public_key';
+import enums from '../enums';
 
 /**
+ * A Public-Subkey packet (tag 14) has exactly the same format as a
+ * Public-Key packet, but denotes a subkey.  One or more subkeys may be
+ * associated with a top-level key.  By convention, the top-level key
+ * provides signature services, and the subkeys provide encryption
+ * services.
+ * @memberof module:packet
  * @constructor
- * @extends module:packet/public_key
+ * @extends module:packet.PublicKey
  */
-export default function PublicSubkey() {
-  publicKey.call(this);
+function PublicSubkey() {
+  PublicKey.call(this);
   this.tag = enums.packet.publicSubkey;
 }
 
-PublicSubkey.prototype = new publicKey();
+PublicSubkey.prototype = new PublicKey();
 PublicSubkey.prototype.constructor = PublicSubkey;
+
+export default PublicSubkey;

@@ -1,21 +1,28 @@
 /**
+ * @fileoverview Asymmetric cryptography functions
+ * @requires tweetnacl
  * @requires crypto/public_key/dsa
  * @requires crypto/public_key/elgamal
+ * @requires crypto/public_key/elliptic
  * @requires crypto/public_key/rsa
  * @module crypto/public_key
  */
 
-'use strict';
-
-/** @see module:crypto/public_key/rsa */
-import rsa from './rsa.js';
-/** @see module:crypto/public_key/elgamal */
-import elgamal from './elgamal.js';
-/** @see module:crypto/public_key/dsa */
-import dsa from './dsa.js';
+import nacl from 'tweetnacl/nacl-fast-light.js';
+import rsa from './rsa';
+import elgamal from './elgamal';
+import elliptic from './elliptic';
+import dsa from './dsa';
 
 export default {
+  /** @see module:crypto/public_key/rsa */
   rsa: rsa,
+  /** @see module:crypto/public_key/elgamal */
   elgamal: elgamal,
-  dsa: dsa
+  /** @see module:crypto/public_key/elliptic */
+  elliptic: elliptic,
+  /** @see module:crypto/public_key/dsa */
+  dsa: dsa,
+  /** @see tweetnacl */
+  nacl: nacl
 };

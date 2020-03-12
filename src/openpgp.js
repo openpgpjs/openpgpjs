@@ -16,31 +16,38 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
+ * @fileoverview The openpgp base module should provide all of the functionality
+ * to consume the openpgp.js library. All additional classes are documented
+ * for extending and developing on top of the base library.
+ * @requires web-stream-tools
  * @requires message
  * @requires cleartext
  * @requires key
  * @requires config
+ * @requires enums
  * @requires util
+ * @requires polyfills
+ * @requires worker/async_proxy
  * @module openpgp
  */
 
+// This file intentionally has two separate file overviews so that
+// a reference to this module appears at the end of doc/index.html.
+
 /**
- * @fileoverview The openpgp base module should provide all of the functionality
- * to consume the openpgp.js library. All additional classes are documented
- * for extending and developing on top of the base library.
+ * @fileoverview To view the full API documentation, start from
+ * {@link module:openpgp}
  */
 
-'use strict';
-
-import * as messageLib from './message.js';
-import * as cleartext from './cleartext.js';
-import * as key from './key.js';
-import config from './config/config.js';
+import stream from 'web-stream-tools';
+import * as messageLib from './message';
+import { CleartextMessage } from './cleartext';
+import { generate, reformat } from './key';
+import config from './config/config';
+import enums from './enums';
+import './polyfills';
 import util from './util';
-import AsyncProxy from './worker/async_proxy.js';
-import es6Promise from 'es6-promise';
-es6Promise.polyfill(); // load ES6 Promises polyfill
-
+import AsyncProxy from './worker/async_proxy';
 
 //////////////////////////
 //                      //
@@ -53,19 +60,27 @@ let asyncProxy; // instance of the asyncproxy
 
 /**
  * Set the path for the web worker script and create an instance of the async proxy
- * @param {String} path     relative path to the worker scripts, default: 'openpgp.worker.js'
- * @param {Object} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
+ * @param {String} path            relative path to the worker scripts, default: 'openpgp.worker.js'
+ * @param {Number} n               number of workers to initialize
+ * @param {Array<Object>} workers  alternative to path parameter: web workers initialized with 'openpgp.worker.js'
+ * @returns {Promise<Boolean>}     returns a promise that resolves to true if all workers have succesfully finished loading
+ * @async
  */
-export function initWorker({ path='openpgp.worker.js', worker } = {}) {
-  if (worker || typeof window !== 'undefined' && window.Worker) {
-    asyncProxy = new AsyncProxy({ path, worker, config });
-    return true;
+export async function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
+  if (workers.length || (typeof global !== 'undefined' && global.Worker && global.MessageChannel)) {
+    const proxy = new AsyncProxy({ path, n, workers, config });
+    const loaded = await proxy.loaded();
+    if (loaded) {
+      asyncProxy = proxy;
+      return true;
+    }
   }
+  return false;
 }
 
 /**
  * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
- * @return {module:worker/async_proxy~AsyncProxy|null} the async proxy or null if not initialized
+ * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
  */
 export function getWorker() {
   return asyncProxy;
@@ -74,8 +89,13 @@ export function getWorker() {
 /**
  * Cleanup the current instance of the web worker.
  */
-export function destroyWorker() {
+export async function destroyWorker() {
+  const proxy = asyncProxy;
   asyncProxy = undefined;
+  if (proxy) {
+    await proxy.clearKeyCache();
+    proxy.terminate();
+  }
 }
 
 
@@ -87,79 +107,170 @@ export function destroyWorker() {
 
 
 /**
- * Generates a new OpenPGP key pair. Currently only supports RSA keys. Primary and subkey will be of same type.
+ * Generates a new OpenPGP key pair. Supports RSA and ECC keys. Primary and subkey will be of same type.
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Number} numBits          (optional) number of bits for the key creation. (should be 2048 or 4096)
- * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
+ * @param  {Number} rsaBits          (optional) number of bits for RSA keys: 2048 or 4096.
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @return {Promise<Object>}         The generated key object in the form:
- *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ * @param  {String} curve            (optional) elliptic curve for ECC keys:
+ *                                              curve25519, p256, p384, p521, secp256k1,
+ *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
+ * @param  {Date} date               (optional) override the creation date of the key and the key signatures
+ * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @returns {Promise<Object>}         The generated key object in the form:
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
+ * @async
  * @static
  */
-export function generateKey({ userIds=[], passphrase, numBits=2048, unlocked=false, keyExpirationTime=0 } = {}) {
-  const options = formatUserIds({ userIds, passphrase, numBits, unlocked, keyExpirationTime });
+
+export function generateKey({ userIds = [], passphrase = "", numBits = 2048, rsaBits = numBits, keyExpirationTime = 0, curve = "", date = new Date(), subkeys = [{}] }) {
+  userIds = toArray(userIds);
+  const options = { userIds, passphrase, rsaBits, keyExpirationTime, curve, date, subkeys };
+  if (util.getWebCryptoAll() && rsaBits < 2048) {
+    throw new Error('rsaBits should be 2048 or 4096, found: ' + rsaBits);
+  }
 
   if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
     return asyncProxy.delegate('generateKey', options);
   }
 
-  return key.generate(options).then(newKey => ({
+  return generate(options).then(async key => {
+    const revocationCertificate = await key.getRevocationCertificate(date);
+    key.revocationSignatures = [];
 
-    key: newKey,
-    privateKeyArmored: newKey.armor(),
-    publicKeyArmored: newKey.toPublic().armor()
+    return convertStreams({
 
-  })).catch(onError.bind(null, 'Error generating keypair'));
+      key: key,
+      privateKeyArmored: key.armor(),
+      publicKeyArmored: key.toPublic().armor(),
+      revocationCertificate: revocationCertificate
+
+    });
+  }).catch(onError.bind(null, 'Error generating keypair'));
 }
 
 /**
  * Reformats signature packets for a key and rewraps key object.
+ * @param  {Key} privateKey          private key to reformat
  * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Boolean} unlocked        (optional) If the returned secret part of the generated key is unlocked
  * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @return {Promise<Object>}         The generated key object in the form:
- *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String }
+ * @returns {Promise<Object>}         The generated key object in the form:
+ *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
+ * @async
  * @static
  */
-export function reformatKey({ privateKey, userIds=[], passphrase="", unlocked=false, keyExpirationTime=0 } = {}) {
-  const options = formatUserIds({ privateKey, userIds, passphrase, unlocked, keyExpirationTime });
-
+export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpirationTime = 0, date }) {
+  userIds = toArray(userIds);
+  const options = { privateKey, userIds, passphrase, keyExpirationTime, date };
   if (asyncProxy) {
     return asyncProxy.delegate('reformatKey', options);
   }
 
-  return key.reformat(options).then(newKey => ({
+  return reformat(options).then(async key => {
+    const revocationCertificate = await key.getRevocationCertificate(date);
+    key.revocationSignatures = [];
 
-    key: newKey,
-    privateKeyArmored: newKey.armor(),
-    publicKeyArmored: newKey.toPublic().armor()
+    return convertStreams({
 
-  })).catch(onError.bind(null, 'Error reformatting keypair'));
+      key: key,
+      privateKeyArmored: key.armor(),
+      publicKeyArmored: key.toPublic().armor(),
+      revocationCertificate: revocationCertificate
+
+    });
+  }).catch(onError.bind(null, 'Error reformatting keypair'));
+}
+
+/**
+ * Revokes a key. Requires either a private key or a revocation certificate.
+ *   If a revocation certificate is passed, the reasonForRevocation parameters will be ignored.
+ * @param  {Key} key                 (optional) public or private key to revoke
+ * @param  {String} revocationCertificate (optional) revocation certificate to revoke the key with
+ * @param  {Object} reasonForRevocation (optional) object indicating the reason for revocation
+ * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag (optional) flag indicating the reason for revocation
+ * @param  {String} reasonForRevocation.string (optional) string explaining the reason for revocation
+ * @returns {Promise<Object>}         The revoked key object in the form:
+ *                                     { privateKey:Key, privateKeyArmored:String, publicKey:Key, publicKeyArmored:String }
+ *                                     (if private key is passed) or { publicKey:Key, publicKeyArmored:String } (otherwise)
+ * @static
+ */
+export function revokeKey({
+  key, revocationCertificate, reasonForRevocation
+} = {}) {
+  const options = {
+    key, revocationCertificate, reasonForRevocation
+  };
+
+  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
+    return asyncProxy.delegate('revokeKey', options);
+  }
+
+  return Promise.resolve().then(() => {
+    if (revocationCertificate) {
+      return key.applyRevocationCertificate(revocationCertificate);
+    } else {
+      return key.revoke(reasonForRevocation);
+    }
+  }).then(async key => {
+    await convertStreams(key);
+    if (key.isPrivate()) {
+      const publicKey = key.toPublic();
+      return {
+        privateKey: key,
+        privateKeyArmored: key.armor(),
+        publicKey: publicKey,
+        publicKeyArmored: publicKey.armor()
+      };
+    }
+    return {
+      publicKey: key,
+      publicKeyArmored: key.armor()
+    };
+  }).catch(onError.bind(null, 'Error revoking key'));
 }
 
 /**
  * Unlock a private key with your passphrase.
- * @param  {Key} privateKey      the private key that is to be decrypted
- * @param  {String} passphrase   the user's passphrase chosen during key generation
- * @return {Key}                 the unlocked private key
+ * @param  {Key} privateKey                    the private key that is to be decrypted
+ * @param  {String|Array<String>} passphrase   the user's passphrase(s) chosen during key generation
+ * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
+ * @async
  */
 export function decryptKey({ privateKey, passphrase }) {
   if (asyncProxy) { // use web worker if available
     return asyncProxy.delegate('decryptKey', { privateKey, passphrase });
   }
 
-  return execute(() => {
+  return Promise.resolve().then(async function() {
+    await privateKey.decrypt(passphrase);
 
-    if (!privateKey.decrypt(passphrase)) {
-      throw new Error('Invalid passphrase');
-    }
     return {
       key: privateKey
     };
+  }).catch(onError.bind(null, 'Error decrypting private key'));
+}
 
-  }, 'Error decrypting private key');
+/**
+ * Lock a private key with your passphrase.
+ * @param  {Key} privateKey                      the private key that is to be decrypted
+ * @param  {String|Array<String>} passphrase     the user's passphrase(s) chosen during key generation
+ * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
+ * @async
+ */
+export function encryptKey({ privateKey, passphrase }) {
+  if (asyncProxy) { // use web worker if available
+    return asyncProxy.delegate('encryptKey', { privateKey, passphrase });
+  }
+
+  return Promise.resolve().then(async function() {
+    await privateKey.encrypt(passphrase);
+
+    return {
+      key: privateKey
+    };
+  }).catch(onError.bind(null, 'Error decrypting private key'));
 }
 
 
@@ -173,93 +284,117 @@ export function decryptKey({ privateKey, passphrase }) {
 /**
  * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
  *   must be specified. If private keys are specified, those will be used to sign the message.
- * @param  {String|Uint8Array} data           text/data to be encrypted as JavaScript binary string or Uint8Array
- * @param  {Key|Array<Key>} publicKeys        (optional) array of keys or single key, used to encrypt the message
- * @param  {Key|Array<Key>} privateKeys       (optional) private keys for signing. If omitted message will not be signed
- * @param  {String|Array<String>} passwords   (optional) array of passwords or a single password to encrypt the message
- * @param  {String} filename                  (optional) a filename for the literal data packet
- * @param  {Boolean} armor                    (optional) if the return values should be ascii armored or the message/signature objects
- * @param  {Boolean} detached                 (optional) if the signature should be detached (if true, signature will be added to returned object)
- * @param  {Signature} signature              (optional) a detached signature to add to the encrypted message
- * @return {Promise<Object>}                  encrypted (and optionally signed message) in the form:
- *                                              {data: ASCII armored message if 'armor' is true,
- *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
+ * @param  {Message} message                      message to be encrypted as created by openpgp.message.fromText or openpgp.message.fromBinary
+ * @param  {Key|Array<Key>} publicKeys            (optional) array of keys or single key, used to encrypt the message
+ * @param  {Key|Array<Key>} privateKeys           (optional) private keys for signing. If omitted message will not be signed
+ * @param  {String|Array<String>} passwords       (optional) array of passwords or a single password to encrypt the message
+ * @param  {Object} sessionKey                    (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {module:enums.compression} compression (optional) which compression algorithm to compress the message with, defaults to what is specified in config
+ * @param  {Boolean} armor                        (optional) if the return values should be ascii armored or the message/signature objects
+ * @param  {'web'|'node'|false} streaming         (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
+ * @param  {Boolean} detached                     (optional) if the signature should be detached (if true, signature will be added to returned object)
+ * @param  {Signature} signature                  (optional) a detached signature to add to the encrypted message
+ * @param  {Boolean} returnSessionKey             (optional) if the unencrypted session key should be added to returned object
+ * @param  {Boolean} wildcard                     (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Date} date                            (optional) override the creation date of the message signature
+ * @param  {Array} fromUserIds                    (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Array} toUserIds                      (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+ * @returns {Promise<Object>}                     Object containing encrypted (and optionally signed) message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if `armor` was true, the default)
+ *       message: Message, (if `armor` was false)
+ *       signature: String|ReadableStream<String>|NodeStream, (if `detached` was true and `armor` was true)
+ *       signature: Signature (if `detached` was true and `armor` was false)
+ *       sessionKey: { data, algorithm, aeadAlgorithm } (if `returnSessionKey` was true)
+ *     }
+ * @async
  * @static
  */
-export function encrypt({ data, publicKeys, privateKeys, passwords, filename, armor=true, detached=false, signature=null }) {
-  checkData(data); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, returnSessionKey = false, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [] }) {
+  checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIds = toArray(fromUserIds); toUserIds = toArray(toUserIds);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { data, publicKeys, privateKeys, passwords, filename, armor, detached, signature });
+    return asyncProxy.delegate('encrypt', { message, publicKeys, privateKeys, passwords, sessionKey, compression, armor, streaming, detached, signature, returnSessionKey, wildcard, date, fromUserIds, toUserIds });
   }
-  var result = {};
-  return Promise.resolve().then(() => {
-
-    let message = createMessage(data, filename);
+  const result = {};
+  return Promise.resolve().then(async function() {
     if (!privateKeys) {
       privateKeys = [];
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       if (detached) {
-        var detachedSignature = message.signDetached(privateKeys, signature);
-        if (armor) {
-          result.signature = detachedSignature.armor();
-        } else {
-          result.signature = detachedSignature;
-        }
+        const detachedSignature = await message.signDetached(privateKeys, signature, date, fromUserIds, message.fromStream);
+        result.signature = armor ? detachedSignature.armor() : detachedSignature;
       } else {
-        message = message.sign(privateKeys, signature);
+        message = await message.sign(privateKeys, signature, date, fromUserIds, message.fromStream);
       }
     }
-    return message.encrypt(publicKeys, passwords);
+    message = message.compress(compression);
+    return message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserIds, streaming);
 
-  }).then(message => {
+  }).then(async encrypted => {
     if (armor) {
-      result.data = message.armor();
+      result.data = encrypted.message.armor();
     } else {
-      result.message = message;
+      result.message = encrypted.message;
     }
-    return result;
+    if (returnSessionKey) {
+      result.sessionKey = encrypted.sessionKey;
+    }
+    return convertStreams(result, streaming, armor ? ['signature', 'data'] : []);
   }).catch(onError.bind(null, 'Error encrypting message'));
 }
 
 /**
  * Decrypts a message with the user's private key, a session key or a password. Either a private key,
  *   a session key or a password must be specified.
- * @param  {Message} message             the message object with the encrypted data
- * @param  {Key} privateKey              (optional) private key with decrypted secret key data or session key
- * @param  {Key|Array<Key>} publicKeys   (optional) array of public keys or single key, to verify signatures
- * @param  {Object} sessionKey           (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param  {String} password             (optional) single password to decrypt the message
- * @param  {String} format               (optional) return data format either as 'utf8' or 'binary'
- * @param  {Signature} signature         (optional) detached signature for verification
- * @return {Promise<Object>}             decrypted and verified message in the form:
- *                                         { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
+ * @param  {Message} message                  the message object with the encrypted data
+ * @param  {Key|Array<Key>} privateKeys       (optional) private keys with decrypted secret key data or session key
+ * @param  {String|Array<String>} passwords   (optional) passwords to decrypt the message
+ * @param  {Object|Array<Object>} sessionKeys (optional) session keys in the form: { data:Uint8Array, algorithm:String }
+ * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, to verify signatures
+ * @param  {'utf8'|'binary'} format           (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
+ * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
+ * @param  {Signature} signature              (optional) detached signature for verification
+ * @param  {Date} date                        (optional) use the given date for verification instead of the current time
+ * @returns {Promise<Object>}                 Object containing decrypted and verified message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if format was 'utf8', the default)
+ *       data: Uint8Array|ReadableStream<Uint8Array>|NodeStream, (if format was 'binary')
+ *       filename: String,
+ *       signatures: [
+ *         {
+ *           keyid: module:type/keyid,
+ *           verified: Promise<Boolean>,
+ *           valid: Boolean (if streaming was false)
+ *         }, ...
+ *       ]
+ *     }
+ * @async
  * @static
  */
-export function decrypt({ message, privateKey, publicKeys, sessionKey, password, format='utf8', signature=null }) {
-  checkMessage(message); publicKeys = toArray(publicKeys);
+export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format = 'utf8', streaming = message && message.fromStream, signature = null, date = new Date() }) {
+  checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
   if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('decrypt', { message, privateKey, publicKeys, sessionKey, password, format, signature });
+    return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKeys, publicKeys, format, streaming, signature, date });
   }
 
-  return message.decrypt(privateKey, sessionKey, password).then(message => {
-
-    const result = parseMessage(message, format);
-    if (result.data) { // verify
-      if (!publicKeys) {
-        publicKeys = [];
-      }
-      if (signature) {
-        //detached signature
-        result.signatures = message.verifyDetached(signature, publicKeys);
-      } else {
-        result.signatures = message.verify(publicKeys);
-      }
+  return message.decrypt(privateKeys, passwords, sessionKeys, streaming).then(async function(decrypted) {
+    if (!publicKeys) {
+      publicKeys = [];
     }
-    return result;
 
+    const result = {};
+    result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date, streaming) : await decrypted.verify(publicKeys, date, streaming);
+    result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
+    result.filename = decrypted.getFilename();
+    if (streaming) linkStreams(result, message);
+    result.data = await convertStream(result.data, streaming);
+    if (!streaming) await prepareSignatures(result.signatures);
+    return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
 
@@ -273,87 +408,103 @@ export function decrypt({ message, privateKey, publicKeys, sessionKey, password,
 
 /**
  * Signs a cleartext message.
- * @param  {String | Uint8Array} data           cleartext input to be signed
- * @param  {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
- * @param  {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
- * @param  {Boolean} detached                   (optional) if the return value should contain a detached signature
- * @return {Promise<Object>}                    signed cleartext in the form:
- *                                                {data: ASCII armored message if 'armor' is true,
- *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
+ * @param  {CleartextMessage|Message} message (cleartext) message to be signed
+ * @param  {Key|Array<Key>} privateKeys       array of keys or single key with decrypted secret key data to sign cleartext
+ * @param  {Boolean} armor                    (optional) if the return value should be ascii armored or the message object
+ * @param  {'web'|'node'|false} streaming     (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
+ * @param  {Boolean} detached                 (optional) if the return value should contain a detached signature
+ * @param  {Date} date                        (optional) override the creation date of the signature
+ * @param  {Array} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @returns {Promise<Object>}                 Object containing signed message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if `armor` was true, the default)
+ *       message: Message (if `armor` was false)
+ *     }
+ *
+ * Or, if `detached` was true:
+ *
+ *     {
+ *       signature: String|ReadableStream<String>|NodeStream, (if `armor` was true, the default)
+ *       signature: Signature (if `armor` was false)
+ *     }
+ * @async
  * @static
  */
-export function sign({ data, privateKeys, armor=true, detached=false}) {
-  checkData(data);
-  privateKeys = toArray(privateKeys);
-
+export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [] }) {
+  checkCleartextOrMessage(message);
+  privateKeys = toArray(privateKeys); fromUserIds = toArray(fromUserIds);
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('sign', { data, privateKeys, armor, detached });
+    return asyncProxy.delegate('sign', {
+      message, privateKeys, armor, streaming, detached, date, fromUserIds
+    });
   }
 
-  var result = {};
-  return execute(() => {
-    var message;
-
-    if (util.isString(data)) {
-      message = new cleartext.CleartextMessage(data);
-    } else {
-      message = messageLib.fromBinary(data);
-    }
-
+  const result = {};
+  return Promise.resolve().then(async function() {
     if (detached) {
-      var signature = message.signDetached(privateKeys);
-      if (armor) {
-        result.signature = signature.armor();
-      } else {
-        result.signature = signature;
+      const signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, message.fromStream);
+      result.signature = armor ? signature.armor() : signature;
+      if (message.packets) {
+        result.signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
+          await Promise.all([
+            stream.pipe(result.signature, writable),
+            stream.readToEnd(readable).catch(() => {})
+          ]);
+        });
       }
     } else {
-      message = message.sign(privateKeys);
+      message = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream);
+      if (armor) {
+        result.data = message.armor();
+      } else {
+        result.message = message;
+      }
     }
-
-    if (armor) {
-      result.data = message.armor();
-    } else {
-      result.message = message;
-    }
-    return result;
-
-  }, 'Error signing cleartext message');
+    return convertStreams(result, streaming, armor ? ['signature', 'data'] : []);
+  }).catch(onError.bind(null, 'Error signing cleartext message'));
 }
 
 /**
  * Verifies signatures of cleartext signed message
- * @param  {Key|Array<Key>} publicKeys   array of publicKeys or single key, to verify signatures
- * @param  {CleartextMessage} message    cleartext message object with signatures
- * @param  {Signature} signature         (optional) detached signature for verification
- * @return {Promise<Object>}             cleartext with status of verified signatures in the form of:
- *                                         { data:String, signatures: [{ keyid:String, valid:Boolean }] }
+ * @param  {Key|Array<Key>} publicKeys         array of publicKeys or single key, to verify signatures
+ * @param  {CleartextMessage|Message} message  (cleartext) message object with signatures
+ * @param  {'web'|'node'|false} streaming      (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
+ * @param  {Signature} signature               (optional) detached signature for verification
+ * @param  {Date} date                         (optional) use the given date for verification instead of the current time
+ * @returns {Promise<Object>}                  Object containing verified message in the form:
+ *
+ *     {
+ *       data: String|ReadableStream<String>|NodeStream, (if `message` was a CleartextMessage)
+ *       data: Uint8Array|ReadableStream<Uint8Array>|NodeStream, (if `message` was a Message)
+ *       signatures: [
+ *         {
+ *           keyid: module:type/keyid,
+ *           verified: Promise<Boolean>,
+ *           valid: Boolean (if `streaming` was false)
+ *         }, ...
+ *       ]
+ *     }
+ * @async
  * @static
  */
-export function verify({ message, publicKeys, signature=null }) {
+export function verify({ message, publicKeys, streaming = message && message.fromStream, signature = null, date = new Date() }) {
   checkCleartextOrMessage(message);
   publicKeys = toArray(publicKeys);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('verify', { message, publicKeys, signature });
+    return asyncProxy.delegate('verify', { message, publicKeys, streaming, signature, date });
   }
 
-  var result = {};
-  return execute(() => {
-    if (cleartext.CleartextMessage.prototype.isPrototypeOf(message)) {
-      result.data = message.getText();
-    } else {
-      result.data = message.getLiteralData();
-    }
-    if (signature) {
-      //detached signature
-      result.signatures = message.verifyDetached(signature, publicKeys);
-    } else {
-      result.signatures = message.verify(publicKeys);
-    }
+  return Promise.resolve().then(async function() {
+    const result = {};
+    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming) : await message.verify(publicKeys, date, streaming);
+    result.data = message instanceof CleartextMessage ? message.getText() : message.getLiteralData();
+    if (streaming) linkStreams(result, message);
+    result.data = await convertStream(result.data, streaming);
+    if (!streaming) await prepareSignatures(result.signatures);
     return result;
-
-  }, 'Error verifying cleartext signed message');
+  }).catch(onError.bind(null, 'Error verifying cleartext signed message'));
 }
 
 
@@ -369,44 +520,54 @@ export function verify({ message, publicKeys, signature=null }) {
  *   or passwords must be specified.
  * @param  {Uint8Array} data                  the session key to be encrypted e.g. 16 random bytes (for aes128)
  * @param  {String} algorithm                 algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
+ * @param  {String} aeadAlgorithm             (optional) aead algorithm, e.g. 'eax' or 'ocb'
  * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
  * @param  {String|Array<String>} passwords   (optional) passwords for the message
- * @return {Promise<Message>}                 the encrypted session key packets contained in a message object
+ * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Date} date                        (optional) override the date
+ * @param  {Array} toUserIds                  (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
+ * @returns {Promise<Message>}                 the encrypted session key packets contained in a message object
+ * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, publicKeys, passwords }) {
-  checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords);
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), toUserIds = [] }) {
+  checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords); toUserIds = toArray(toUserIds);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, publicKeys, passwords });
+    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds });
   }
 
-  return execute(() => ({
+  return Promise.resolve().then(async function() {
 
-    message: messageLib.encryptSessionKey(data, algorithm, publicKeys, passwords)
+    return { message: await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds) };
 
-  }), 'Error encrypting session key');
+  }).catch(onError.bind(null, 'Error encrypting session key'));
 }
 
 /**
- * Decrypt a symmetric session key with a private key or password. Either a private key or
+ * Decrypt symmetric session keys with a private key or password. Either a private key or
  *   a password must be specified.
- * @param  {Message} message              a message object containing the encrypted session key packets
- * @param  {Key} privateKey               (optional) private key with decrypted secret key data
- * @param  {String} password              (optional) a single password to decrypt the session key
- * @return {Promise<Object|undefined>}    decrypted session key and algorithm in object form:
+ * @param  {Message} message                 a message object containing the encrypted session key packets
+ * @param  {Key|Array<Key>} privateKeys     (optional) private keys with decrypted secret key data
+ * @param  {String|Array<String>} passwords (optional) passwords to decrypt the session key
+ * @returns {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
  *                                          { data:Uint8Array, algorithm:String }
  *                                          or 'undefined' if no key packets found
+ * @async
  * @static
  */
-export function decryptSessionKey({ message, privateKey, password }) {
-  checkMessage(message);
+export function decryptSessionKeys({ message, privateKeys, passwords }) {
+  checkMessage(message); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
 
   if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('decryptSessionKey', { message, privateKey, password });
+    return asyncProxy.delegate('decryptSessionKeys', { message, privateKeys, passwords });
   }
 
-  return execute(() => message.decryptSessionKey(privateKey, password), 'Error decrypting session key');
+  return Promise.resolve().then(async function() {
+
+    return message.decryptSessionKeys(privateKeys, passwords);
+
+  }).catch(onError.bind(null, 'Error decrypting session keys'));
 }
 
 
@@ -430,56 +591,21 @@ function checkBinary(data, name) {
     throw new Error('Parameter [' + (name || 'data') + '] must be of type Uint8Array');
   }
 }
-function checkData(data, name) {
-  if (!util.isUint8Array(data) && !util.isString(data)) {
-    throw new Error('Parameter [' + (name || 'data') + '] must be of type String or Uint8Array');
-  }
-}
 function checkMessage(message) {
-  if (!messageLib.Message.prototype.isPrototypeOf(message)) {
+  if (!(message instanceof messageLib.Message)) {
     throw new Error('Parameter [message] needs to be of type Message');
   }
 }
 function checkCleartextOrMessage(message) {
-  if (!cleartext.CleartextMessage.prototype.isPrototypeOf(message) && !messageLib.Message.prototype.isPrototypeOf(message)) {
+  if (!(message instanceof CleartextMessage) && !(message instanceof messageLib.Message)) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }
 
 /**
- * Format user ids for internal use.
- */
-function formatUserIds(options) {
-  if (!options.userIds) {
-    return options;
-  }
-  options.userIds = toArray(options.userIds); // normalize to array
-  options.userIds = options.userIds.map(id => {
-    if (util.isString(id) && !util.isUserId(id)) {
-      throw new Error('Invalid user id format');
-    }
-    if (util.isUserId(id)) {
-      return id; // user id is already in correct format... no conversion necessary
-    }
-    // name and email address can be empty but must be of the correct type
-    id.name = id.name || '';
-    id.email = id.email || '';
-    if (!util.isString(id.name) || (id.email && !util.isEmailAddress(id.email))) {
-      throw new Error('Invalid user id format');
-    }
-    id.name = id.name.trim();
-    if (id.name.length > 0) {
-      id.name += ' ';
-    }
-    return id.name + '<' + id.email + '>';
-  });
-  return options;
-}
-
-/**
  * Normalize parameter to an array if it is not undefined.
  * @param  {Object} param              the parameter to be normalized
- * @return {Array<Object>|undefined}   the resulting array or undefined
+ * @returns {Array<Object>|undefined}   the resulting array or undefined
  */
 function toArray(param) {
   if (param && !util.isArray(param)) {
@@ -489,58 +615,78 @@ function toArray(param) {
 }
 
 /**
- * Creates a message obejct either from a Uint8Array or a string.
- * @param  {String|Uint8Array} data   the payload for the message
- * @param  {String} filename          the literal data packet's filename
- * @return {Message}                  a message object
+ * Convert data to or from Stream
+ * @param  {Object} data                   the data to convert
+ * @param  {'web'|'node'|false} streaming  (optional) whether to return a ReadableStream
+ * @returns {Object}                       the data in the respective format
  */
-function createMessage(data, filename) {
-  let msg;
-  if (util.isUint8Array(data)) {
-    msg = messageLib.fromBinary(data, filename);
-  } else if (util.isString(data)) {
-    msg = messageLib.fromText(data, filename);
-  } else {
-    throw new Error('Data must be of type String or Uint8Array');
+async function convertStream(data, streaming) {
+  if (!streaming && util.isStream(data)) {
+    return stream.readToEnd(data);
   }
-  return msg;
+  if (streaming && !util.isStream(data)) {
+    data = new ReadableStream({
+      start(controller) {
+        controller.enqueue(data);
+        controller.close();
+      }
+    });
+  }
+  if (streaming === 'node') {
+    data = stream.webToNode(data);
+  }
+  return data;
 }
 
 /**
- * Parse the message given a certain format.
- * @param  {Message} message   the message object to be parse
- * @param  {String} format     the output format e.g. 'utf8' or 'binary'
- * @return {Object}            the parse data in the respective format
+ * Convert object properties from Stream
+ * @param  {Object} obj                    the data to convert
+ * @param  {'web'|'node'|false} streaming  (optional) whether to return ReadableStreams
+ * @param  {Array<String>} keys            (optional) which keys to return as streams, if possible
+ * @returns {Object}                       the data in the respective format
  */
-function parseMessage(message, format) {
-  if (format === 'binary') {
-    return {
-      data: message.getLiteralData(),
-      filename: message.getFilename()
-    };
-  } else if (format === 'utf8') {
-    return {
-      data: message.getText(),
-      filename: message.getFilename()
-    };
-  } else {
-    throw new Error('Invalid format');
+async function convertStreams(obj, streaming, keys = []) {
+  if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
+    await Promise.all(Object.entries(obj).map(async ([key, value]) => { // recursively search all children
+      if (util.isStream(value) || keys.includes(key)) {
+        obj[key] = await convertStream(value, streaming);
+      } else {
+        await convertStreams(obj[key], streaming);
+      }
+    }));
   }
+  return obj;
 }
 
 /**
- * Command pattern that wraps synchronous code into a promise.
- * @param  {function} cmd     The synchronous function with a return value
- *                              to be wrapped in a promise
- * @param  {String} message   A human readable error Message
- * @return {Promise}          The promise wrapped around cmd
+ * Link result.data to the message stream for cancellation.
+ * @param  {Object} result                  the data to convert
+ * @param  {Message} message                message object
+ * @returns {Object}
  */
-function execute(cmd, message) {
-  // wrap the sync cmd in a promise
-  const promise = new Promise(resolve => resolve(cmd()));
-  // handler error globally
-  return promise.catch(onError.bind(null, message));
+function linkStreams(result, message) {
+  result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
+    await stream.pipe(result.data, writable);
+  });
 }
+
+/**
+ * Wait until signature objects have been verified
+ * @param  {Object} signatures              list of signatures
+ */
+async function prepareSignatures(signatures) {
+  await Promise.all(signatures.map(async signature => {
+    signature.signature = await signature.signature;
+    try {
+      signature.valid = await signature.verified;
+    } catch (e) {
+      signature.valid = false;
+      signature.error = e;
+      util.print_debug_error(e);
+    }
+  }));
+}
+
 
 /**
  * Global error handler that logs the stack trace and rethrows a high lvl error message.
@@ -549,16 +695,23 @@ function execute(cmd, message) {
  */
 function onError(message, error) {
   // log the stack trace
-  if (config.debug) { console.error(error.stack); }
-  // rethrow new high level error for api users
-  throw new Error(message + ': ' + error.message);
+  util.print_debug_error(error);
+
+  // update error message
+  try {
+    error.message = message + ': ' + error.message;
+  } catch (e) {}
+
+  throw error;
 }
 
 /**
- * Check for AES-GCM support and configuration by the user. Only browsers that
- * implement the current WebCrypto specification support native AES-GCM.
- * @return {Boolean}   If authenticated encryption should be used
+ * Check for native AEAD support and configuration by the user. Only
+ * browsers that implement the current WebCrypto specification support
+ * native GCM. Native EAX is built on CTR and CBC, which current
+ * browsers support. OCB and CFB are not natively supported.
+ * @returns {Boolean}   If authenticated encryption should be used
  */
 function nativeAEAD() {
-  return util.getWebCrypto() && config.aead_protect;
+  return config.aead_protect && (config.aead_mode === enums.aead.eax || config.aead_mode === enums.aead.experimental_gcm) && util.getWebCrypto();
 }

@@ -16,33 +16,50 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)<br/>
- * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}: The Symmetrically Encrypted Data packet contains data encrypted
- * with a symmetric-key algorithm. When it has been decrypted, it contains other
+ * @requires web-stream-tools
+ * @requires config
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ */
+
+import stream from 'web-stream-tools';
+import config from '../config';
+import crypto from '../crypto';
+import enums from '../enums';
+import util from '../util';
+
+/**
+ * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.7|RFC4880 5.7}:
+ * The Symmetrically Encrypted Data packet contains data encrypted with a
+ * symmetric-key algorithm. When it has been decrypted, it contains other
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
  * that form whole OpenPGP messages).
- * @requires crypto
- * @requires enums
- * @module packet/symmetrically_encrypted
- */
-
-'use strict';
-
-import crypto from '../crypto';
-import enums from '../enums.js';
-import config from '../config';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
-export default function SymmetricallyEncrypted() {
+function SymmetricallyEncrypted() {
+  /**
+   * Packet type
+   * @type {module:enums.packet}
+   */
   this.tag = enums.packet.symmetricallyEncrypted;
+  /**
+   * Encrypted secret-key data
+   */
   this.encrypted = null;
-  /** Decrypted packets contained within.
-   * @type {module:packet/packetlist} */
-  this.packets =  null;
+  /**
+   * Decrypted packets contained within.
+   * @type {module:packet.List}
+   */
+  this.packets = null;
+  /**
+   * When true, decrypt fails if message is not integrity protected
+   * @see module:config.ignore_mdc_error
+   */
   this.ignore_mdc_error = config.ignore_mdc_error;
 }
 
@@ -55,32 +72,47 @@ SymmetricallyEncrypted.prototype.write = function () {
 };
 
 /**
- * Symmetrically decrypt the packet data
- *
- * @param {module:enums.symmetric} sessionKeyAlgorithm
- *             Symmetric key algorithm to use // See {@link http://tools.ietf.org/html/rfc4880#section-9.2|RFC4880 9.2}
- * @param {String} key
- *             Key as string with the corresponding length to the
- *            algorithm
+ * Decrypt the symmetrically-encrypted packet data
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
+ * @param {Uint8Array} key    The key of cipher blocksize length to be used
+ * @returns {Promise<Boolean>}
+ * @async
  */
-SymmetricallyEncrypted.prototype.decrypt = function (sessionKeyAlgorithm, key) {
-  var decrypted = crypto.cfb.decrypt(sessionKeyAlgorithm, key, this.encrypted, true);
-  // for modern cipher (blocklength != 64 bit, except for Twofish) MDC is required
-  if (!this.ignore_mdc_error &&
-      (sessionKeyAlgorithm === 'aes128' ||
-       sessionKeyAlgorithm === 'aes192' ||
-       sessionKeyAlgorithm === 'aes256')) {
-    throw new Error('Decryption failed due to missing MDC in combination with modern cipher.');
+SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
+  // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
+  if (!this.ignore_mdc_error) {
+    throw new Error('Decryption failed due to missing MDC.');
   }
-  this.packets.read(decrypted);
 
-  return Promise.resolve();
+  this.encrypted = await stream.readToEnd(this.encrypted);
+  const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key,
+    this.encrypted.subarray(crypto.cipher[sessionKeyAlgorithm].blockSize + 2),
+    this.encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
+  );
+
+  await this.packets.read(decrypted);
+
+  return true;
 };
 
-SymmetricallyEncrypted.prototype.encrypt = function (algo, key) {
-  var data = this.packets.write();
+/**
+ * Encrypt the symmetrically-encrypted packet data
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
+ * @param {Uint8Array} key    The key of cipher blocksize length to be used
+ * @returns {Promise<Boolean>}
+ * @async
+ */
+SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
+  const data = this.packets.write();
 
-  this.encrypted = crypto.cfb.encrypt(crypto.getPrefixRandom(algo), algo, data, key, true);
+  const prefix = await crypto.getPrefixRandom(algo);
+  const FRE = await crypto.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize));
+  const ciphertext = await crypto.cfb.encrypt(algo, key, data, FRE.subarray(2));
+  this.encrypted = util.concat([FRE, ciphertext]);
 
-  return Promise.resolve();
+  return true;
 };
+
+export default SymmetricallyEncrypted;

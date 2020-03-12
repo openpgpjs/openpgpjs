@@ -18,76 +18,36 @@
 // The GPG4Browsers crypto interface
 
 /**
- * @requires type/mpi
+ * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
+ * @requires bn.js
  * @requires util
  * @module crypto/random
  */
 
-'use strict';
+import BN from 'bn.js';
+import util from '../util';
 
-import type_mpi from '../type/mpi.js';
-import util from '../util.js';
+// Do not use util.getNodeCrypto because we need this regardless of use_native setting
 const nodeCrypto = util.detectNode() && require('crypto');
 
 export default {
   /**
    * Retrieve secure random byte array of the specified length
    * @param {Integer} length Length in bytes to generate
-   * @return {Uint8Array} Random byte array
+   * @returns {Uint8Array} Random byte array
+   * @async
    */
-  getRandomBytes: function(length) {
-    var result = new Uint8Array(length);
-    for (var i = 0; i < length; i++) {
-      result[i] = this.getSecureRandomOctet();
-    }
-    return result;
-  },
-
-  /**
-   * Return a secure random number in the specified range
-   * @param {Integer} from Min of the random number
-   * @param {Integer} to Max of the random number (max 32bit)
-   * @return {Integer} A secure random number
-   */
-  getSecureRandom: function(from, to) {
-    var randUint = this.getSecureRandomUint();
-    var bits = ((to - from)).toString(2).length;
-    while ((randUint & (Math.pow(2, bits) - 1)) > (to - from)) {
-      randUint = this.getSecureRandomUint();
-    }
-    return from + (Math.abs(randUint & (Math.pow(2, bits) - 1)));
-  },
-
-  getSecureRandomOctet: function() {
-    var buf = new Uint8Array(1);
-    this.getRandomValues(buf);
-    return buf[0];
-  },
-
-  getSecureRandomUint: function() {
-    var buf = new Uint8Array(4);
-    var dv = new DataView(buf.buffer);
-    this.getRandomValues(buf);
-    return dv.getUint32(0);
-  },
-
-  /**
-   * Helper routine which calls platform specific crypto random generator
-   * @param {Uint8Array} buf
-   */
-  getRandomValues: function(buf) {
-    if (!(buf instanceof Uint8Array)) {
-      throw new Error('Invalid type: buf not an Uint8Array');
-    }
-    if (typeof window !== 'undefined' && window.crypto && window.crypto.getRandomValues) {
-      window.crypto.getRandomValues(buf);
-    } else if (typeof window !== 'undefined' && typeof window.msCrypto === 'object' && typeof window.msCrypto.getRandomValues === 'function') {
-      window.msCrypto.getRandomValues(buf);
+  getRandomBytes: async function(length) {
+    const buf = new Uint8Array(length);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(buf);
+    } else if (typeof global !== 'undefined' && typeof global.msCrypto === 'object' && typeof global.msCrypto.getRandomValues === 'function') {
+      global.msCrypto.getRandomValues(buf);
     } else if (nodeCrypto) {
-      var bytes = nodeCrypto.randomBytes(buf.length);
+      const bytes = nodeCrypto.randomBytes(buf.length);
       buf.set(bytes);
     } else if (this.randomBuffer.buffer) {
-      this.randomBuffer.get(buf);
+      await this.randomBuffer.get(buf);
     } else {
       throw new Error('No secure random number generator available.');
     }
@@ -95,44 +55,28 @@ export default {
   },
 
   /**
-   * Create a secure random big integer of bits length
-   * @param {Integer} bits Bit length of the MPI to create
-   * @return {BigInteger} Resulting big integer
+   * Create a secure random MPI that is greater than or equal to min and less than max.
+   * @param {module:type/mpi} min Lower bound, included
+   * @param {module:type/mpi} max Upper bound, excluded
+   * @returns {module:BN} Random MPI
+   * @async
    */
-  getRandomBigInteger: function(bits) {
-    if (bits < 1) {
-      throw new Error('Illegal parameter value: bits < 1');
-    }
-    var numBytes = Math.floor((bits + 7) / 8);
-
-    var randomBits = util.Uint8Array2str(this.getRandomBytes(numBytes));
-    if (bits % 8 > 0) {
-
-      randomBits = String.fromCharCode(
-      (Math.pow(2, bits % 8) - 1) &
-        randomBits.charCodeAt(0)) +
-        randomBits.substring(1);
-    }
-    var mpi = new type_mpi();
-    mpi.fromBytes(randomBits);
-    return mpi.toBigInteger();
-  },
-
-  getRandomBigIntegerInRange: function(min, max) {
-    if (max.compareTo(min) <= 0) {
+  getRandomBN: async function(min, max) {
+    if (max.cmp(min) <= 0) {
       throw new Error('Illegal parameter value: max <= min');
     }
 
-    var range = max.subtract(min);
-    var r = this.getRandomBigInteger(range.bitLength());
-    while (r.compareTo(range) > 0) {
-      r = this.getRandomBigInteger(range.bitLength());
-    }
-    return min.add(r);
+    const modulus = max.sub(min);
+    const bytes = modulus.byteLength();
+
+    // Using a while loop is necessary to avoid bias introduced by the mod operation.
+    // However, we request 64 extra random bits so that the bias is negligible.
+    // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
+    const r = new BN(await this.getRandomBytes(bytes + 8));
+    return r.mod(modulus).add(min);
   },
 
   randomBuffer: new RandomBuffer()
-
 };
 
 /**
@@ -141,15 +85,17 @@ export default {
 function RandomBuffer() {
   this.buffer = null;
   this.size = null;
+  this.callback = null;
 }
 
 /**
  * Initialize buffer
  * @param  {Integer} size size of buffer
  */
-RandomBuffer.prototype.init = function(size) {
+RandomBuffer.prototype.init = function(size, callback) {
   this.buffer = new Uint8Array(size);
   this.size = 0;
+  this.callback = callback;
 };
 
 /**
@@ -163,7 +109,7 @@ RandomBuffer.prototype.set = function(buf) {
   if (!(buf instanceof Uint8Array)) {
     throw new Error('Invalid type: buf not an Uint8Array');
   }
-  var freeSpace = this.buffer.length - this.size;
+  const freeSpace = this.buffer.length - this.size;
   if (buf.length > freeSpace) {
     buf = buf.subarray(0, freeSpace);
   }
@@ -176,7 +122,7 @@ RandomBuffer.prototype.set = function(buf) {
  * Take numbers out of buffer and copy to array
  * @param {Uint8Array} buf the destination array
  */
-RandomBuffer.prototype.get = function(buf) {
+RandomBuffer.prototype.get = async function(buf) {
   if (!this.buffer) {
     throw new Error('RandomBuffer is not initialized');
   }
@@ -184,9 +130,14 @@ RandomBuffer.prototype.get = function(buf) {
     throw new Error('Invalid type: buf not an Uint8Array');
   }
   if (this.size < buf.length) {
-    throw new Error('Random number buffer depleted');
+    if (!this.callback) {
+      throw new Error('Random number buffer depleted');
+    }
+    // Wait for random bytes from main context, then try again
+    await this.callback();
+    return this.get(buf);
   }
-  for (var i = 0; i < buf.length; i++) {
+  for (let i = 0; i < buf.length; i++) {
     buf[i] = this.buffer[--this.size];
     // clear buffer value
     this.buffer[this.size] = 0;

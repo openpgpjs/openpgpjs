@@ -14,115 +14,112 @@
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-//
-// A Digital signature algorithm implementation
 
 /**
- * @requires crypto/hash
- * @requires crypto/public_key/jsbn
+ * @fileoverview A Digital signature algorithm implementation
+ * @requires bn.js
  * @requires crypto/random
  * @requires util
  * @module crypto/public_key/dsa
  */
 
-'use strict';
+import BN from 'bn.js';
+import random from '../random';
+import util from '../../util';
 
-import BigInteger from './jsbn.js';
-import random from '../random.js';
-import hashModule from '../hash';
-import util from '../../util.js';
-import config from '../../config';
+const one = new BN(1);
+const zero = new BN(0);
 
-export default function DSA() {
-  // s1 = ((g**s) mod p) mod q
-  // s1 = ((s**-1)*(sha-1(m)+(s1*x) mod q)
-  function sign(hashalgo, m, g, p, q, x) {
+/*
+  TODO regarding the hash function, read:
+   https://tools.ietf.org/html/rfc4880#section-13.6
+   https://tools.ietf.org/html/rfc4880#section-14
+*/
+
+export default {
+  /**
+   * DSA Sign function
+   * @param {Integer} hash_algo
+   * @param {Uint8Array} hashed
+   * @param {BN} g
+   * @param {BN} p
+   * @param {BN} q
+   * @param {BN} x
+   * @returns {{ r: BN, s: BN }}
+   * @async
+   */
+  sign: async function(hash_algo, hashed, g, p, q, x) {
+    let k;
+    let r;
+    let s;
+    let t;
+    const redp = new BN.red(p);
+    const redq = new BN.red(q);
+    const gred = g.toRed(redp);
+    const xred = x.toRed(redq);
     // If the output size of the chosen hash is larger than the number of
     // bits of q, the hash result is truncated to fit by taking the number
     // of leftmost bits equal to the number of bits of q.  This (possibly
     // truncated) hash function result is treated as a number and used
     // directly in the DSA signature algorithm.
-    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
-    var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
+    const h = new BN(hashed.subarray(0, q.byteLength())).toRed(redq);
     // FIPS-186-4, section 4.6:
     // The values of r and s shall be checked to determine if r = 0 or s = 0.
     // If either r = 0 or s = 0, a new value of k shall be generated, and the
     // signature shall be recalculated. It is extremely unlikely that r = 0
     // or s = 0 if signatures are generated properly.
-    var k, s1, s2;
     while (true) {
-      k = random.getRandomBigIntegerInRange(BigInteger.ONE, q.subtract(BigInteger.ONE));
-      s1 = (g.modPow(k, p)).mod(q);
-      s2 = (k.modInverse(q).multiply(hash.add(x.multiply(s1)))).mod(q);
-      if (s1 !== 0 && s2 !== 0) {
-        break;
+      // See Appendix B here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
+      k = await random.getRandomBN(one, q); // returns in [1, q-1]
+      r = gred.redPow(k).fromRed().toRed(redq); // (g**k mod p) mod q
+      if (zero.cmp(r) === 0) {
+        continue;
       }
+      t = h.redAdd(xred.redMul(r)); // H(m) + x*r mod q
+      s = k.toRed(redq).redInvm().redMul(t); // k**-1 * (H(m) + x*r) mod q
+      if (zero.cmp(s) === 0) {
+        continue;
+      }
+      break;
     }
-    var result = [];
-    result[0] = s1.toMPI();
-    result[1] = s2.toMPI();
-    return result;
-  }
+    return {
+      r: r.toArrayLike(Uint8Array, 'be', q.byteLength()),
+      s: s.toArrayLike(Uint8Array, 'be', q.byteLength())
+    };
+  },
 
-  function select_hash_algorithm(q) {
-    var usersetting = config.prefer_hash_algorithm;
-    /*
-     * 1024-bit key, 160-bit q, SHA-1, SHA-224, SHA-256, SHA-384, or SHA-512 hash
-     * 2048-bit key, 224-bit q, SHA-224, SHA-256, SHA-384, or SHA-512 hash
-     * 2048-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
-     * 3072-bit key, 256-bit q, SHA-256, SHA-384, or SHA-512 hash
-     */
-    switch (Math.round(q.bitLength() / 8)) {
-      case 20:
-        // 1024 bit
-        if (usersetting !== 2 &&
-          usersetting > 11 &&
-          usersetting !== 10 &&
-          usersetting < 8) {
-          return 2; // prefer sha1
-        }
-        return usersetting;
-      case 28:
-        // 2048 bit
-        if (usersetting > 11 &&
-          usersetting < 8) {
-          return 11;
-        }
-        return usersetting;
-      case 32:
-        // 4096 bit // prefer sha224
-        if (usersetting > 10 &&
-          usersetting < 8) {
-          return 8; // prefer sha256
-        }
-        return usersetting;
-      default:
-        util.print_debug("DSA select hash algorithm: returning null for an unknown length of q");
-        return null;
-    }
-  }
-  this.select_hash_algorithm = select_hash_algorithm;
-
-  function verify(hashalgo, s1, s2, m, p, q, g, y) {
-    var hashed_data = util.getLeftNBits(util.Uint8Array2str(hashModule.digest(hashalgo, util.str2Uint8Array(m))), q.bitLength());
-    var hash = new BigInteger(util.hexstrdump(hashed_data), 16);
-    if (BigInteger.ZERO.compareTo(s1) >= 0 ||
-      s1.compareTo(q) >= 0 ||
-      BigInteger.ZERO.compareTo(s2) >= 0 ||
-      s2.compareTo(q) >= 0) {
+  /**
+   * DSA Verify function
+   * @param {Integer} hash_algo
+   * @param {BN} r
+   * @param {BN} s
+   * @param {Uint8Array} hashed
+   * @param {BN} g
+   * @param {BN} p
+   * @param {BN} q
+   * @param {BN} y
+   * @returns {boolean}
+   * @async
+   */
+  verify: async function(hash_algo, r, s, hashed, g, p, q, y) {
+    if (zero.ucmp(r) >= 0 || r.ucmp(q) >= 0 ||
+        zero.ucmp(s) >= 0 || s.ucmp(q) >= 0) {
       util.print_debug("invalid DSA Signature");
       return null;
     }
-    var w = s2.modInverse(q);
-    if (BigInteger.ZERO.compareTo(w) === 0) {
+    const redp = new BN.red(p);
+    const redq = new BN.red(q);
+    const h = new BN(hashed.subarray(0, q.byteLength()));
+    const w = s.toRed(redq).redInvm(); // s**-1 mod q
+    if (zero.cmp(w) === 0) {
       util.print_debug("invalid DSA Signature");
       return null;
     }
-    var u1 = hash.multiply(w).mod(q);
-    var u2 = s1.multiply(w).mod(q);
-    return g.modPow(u1, p).multiply(y.modPow(u2, p)).mod(p).mod(q);
+    const u1 = h.toRed(redq).redMul(w); // H(m) * w mod q
+    const u2 = r.toRed(redq).redMul(w); // r * w mod q
+    const t1 = g.toRed(redp).redPow(u1.fromRed()); // g**u1 mod p
+    const t2 = y.toRed(redp).redPow(u2.fromRed()); // y**u2 mod p
+    const v = t1.redMul(t2).fromRed().mod(q); // (g**u1 * y**u2 mod p) mod q
+    return v.cmp(r) === 0;
   }
-
-  this.sign = sign;
-  this.verify = verify;
-}
+};

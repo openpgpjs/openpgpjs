@@ -16,31 +16,32 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the Compressed Data Packet (Tag 8)<br/>
- * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}: The Compressed Data packet contains compressed data.  Typically,
- * this packet is found as the contents of an encrypted packet, or following
- * a Signature or One-Pass Signature packet, and contains a literal data packet.
- * @requires compression/zlib
- * @requires compression/rawinflate
- * @requires compression/rawdeflate
+ * @requires web-stream-tools
+ * @requires pako
+ * @requires config
  * @requires enums
  * @requires util
- * @module packet/compressed
+ * @requires compression/bzip2
  */
 
-'use strict';
-
-import enums from '../enums.js';
-import util from '../util.js';
-import Zlib from '../compression/zlib.min.js';
-import RawInflate from '../compression/rawinflate.min.js';
-import RawDeflate from '../compression/rawdeflate.min.js';
+import pako from 'pako';
+import Bunzip from 'seek-bzip';
+import stream from 'web-stream-tools';
+import config from '../config';
+import enums from '../enums';
+import util from '../util';
 
 /**
+ * Implementation of the Compressed Data Packet (Tag 8)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.6|RFC4880 5.6}:
+ * The Compressed Data packet contains compressed data.  Typically,
+ * this packet is found as the contents of an encrypted packet, or following
+ * a Signature or One-Pass Signature packet, and contains a literal data packet.
+ * @memberof module:packet
  * @constructor
  */
-export default function Compressed() {
+function Compressed() {
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -48,7 +49,7 @@ export default function Compressed() {
   this.tag = enums.packet.compressed;
   /**
    * List of packets
-   * @type {module:packet/packetlist}
+   * @type {module:packet.List}
    */
   this.packets = null;
   /**
@@ -59,37 +60,39 @@ export default function Compressed() {
 
   /**
    * Compressed packet data
-   * @type {String}
+   * @type {Uint8Array | ReadableStream<Uint8Array>}
    */
   this.compressed = null;
 }
 
 /**
  * Parsing function for the packet.
- * @param {String} bytes Payload of a tag 8 packet
+ * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
  */
-Compressed.prototype.read = function (bytes) {
-  // One octet that gives the algorithm used to compress the packet.
-  this.algorithm = enums.read(enums.compression, bytes[0]);
+Compressed.prototype.read = async function (bytes, streaming) {
+  await stream.parse(bytes, async reader => {
 
-  // Compressed data, which makes up the remainder of the packet.
-  this.compressed = bytes.subarray(1, bytes.length);
+    // One octet that gives the algorithm used to compress the packet.
+    this.algorithm = enums.read(enums.compression, await reader.readByte());
 
-  this.decompress();
+    // Compressed data, which makes up the remainder of the packet.
+    this.compressed = reader.remainder();
+
+    await this.decompress(streaming);
+  });
 };
-
 
 
 /**
  * Return the compressed packet.
- * @return {String} binary compressed packet
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} binary compressed packet
  */
 Compressed.prototype.write = function () {
   if (this.compressed === null) {
     this.compress();
   }
 
-  return util.concatUint8Array(new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed);
+  return util.concat([new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed]);
 };
 
 
@@ -97,67 +100,89 @@ Compressed.prototype.write = function () {
  * Decompression method for decompressing the compressed data
  * read by read_packet
  */
-Compressed.prototype.decompress = function () {
-  var decompressed, inflate;
+Compressed.prototype.decompress = async function (streaming) {
 
-  switch (this.algorithm) {
-    case 'uncompressed':
-      decompressed = this.compressed;
-      break;
-
-    case 'zip':
-      inflate = new RawInflate.Zlib.RawInflate(this.compressed);
-      decompressed = inflate.decompress();
-      break;
-
-    case 'zlib':
-      inflate = new Zlib.Zlib.Inflate(this.compressed);
-      decompressed = inflate.decompress();
-      break;
-
-    case 'bzip2':
-      // TODO: need to implement this
-      throw new Error('Compression algorithm BZip2 [BZ2] is not implemented.');
-
-    default:
-      throw new Error("Compression algorithm unknown :" + this.algorithm);
+  if (!decompress_fns[this.algorithm]) {
+    throw new Error(this.algorithm + ' decompression not supported');
   }
 
-  this.packets.read(decompressed);
+  await this.packets.read(decompress_fns[this.algorithm](this.compressed), streaming);
 };
 
 /**
  * Compress the packet data (member decompressedData)
  */
 Compressed.prototype.compress = function () {
-  var uncompressed, deflate;
-  uncompressed = this.packets.write();
 
-  switch (this.algorithm) {
-
-    case 'uncompressed':
-      // - Uncompressed
-      this.compressed = uncompressed;
-      break;
-
-    case 'zip':
-      // - ZIP [RFC1951]
-      deflate = new RawDeflate.Zlib.RawDeflate(uncompressed);
-      this.compressed = deflate.compress();
-      break;
-
-    case 'zlib':
-      // - ZLIB [RFC1950]
-      deflate = new Zlib.Zlib.Deflate(uncompressed);
-      this.compressed = deflate.compress();
-      break;
-
-    case 'bzip2':
-      //  - BZip2 [BZ2]
-      // TODO: need to implement this
-      throw new Error("Compression algorithm BZip2 [BZ2] is not implemented.");
-
-    default:
-      throw new Error("Compression algorithm unknown :" + this.type);
+  if (!compress_fns[this.algorithm]) {
+    throw new Error(this.algorithm + ' compression not supported');
   }
+
+  this.compressed = compress_fns[this.algorithm](this.packets.write());
 };
+
+export default Compressed;
+
+//////////////////////////
+//                      //
+//   Helper functions   //
+//                      //
+//////////////////////////
+
+
+const nodeZlib = util.getNodeZlib();
+
+function node_zlib(func, options = {}) {
+  return function (data) {
+    return stream.nodeToWeb(stream.webToNode(data).pipe(func(options)));
+  };
+}
+
+function pako_zlib(constructor, options = {}) {
+  return function(data) {
+    const obj = new constructor(options);
+    return stream.transform(data, value => {
+      if (value.length) {
+        obj.push(value, pako.Z_SYNC_FLUSH);
+        return obj.result;
+      }
+    }, () => {
+      if (constructor === pako.Deflate) {
+        obj.push([], pako.Z_FINISH);
+        return obj.result;
+      }
+    });
+  };
+}
+
+function bzip2(func) {
+  return function(data) {
+    return stream.fromAsync(async () => func(await stream.readToEnd(data)));
+  };
+}
+
+let compress_fns;
+let decompress_fns;
+if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
+  compress_fns = {
+    zip: node_zlib(nodeZlib.createDeflateRaw, { level: config.deflate_level }),
+    zlib: node_zlib(nodeZlib.createDeflate, { level: config.deflate_level })
+  };
+
+  decompress_fns = {
+    zip: node_zlib(nodeZlib.createInflateRaw),
+    zlib: node_zlib(nodeZlib.createInflate),
+    bzip2: bzip2(Bunzip.decode)
+  };
+} else { // Use JS fallbacks
+  compress_fns = {
+    zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflate_level }),
+    zlib: pako_zlib(pako.Deflate, { level: config.deflate_level })
+  };
+
+  decompress_fns = {
+    zip: pako_zlib(pako.Inflate, { raw: true }),
+    zlib: pako_zlib(pako.Inflate),
+    bzip2: bzip2(Bunzip.decode)
+  };
+}

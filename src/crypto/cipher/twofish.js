@@ -1,3 +1,6 @@
+/* eslint-disable no-mixed-operators, no-fallthrough */
+
+
 /* Modified by Recurity Labs GmbH
  *
  * Cipher.js
@@ -18,15 +21,11 @@
  *
  */
 
-/**
- * @module crypto/cipher/twofish
- */
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Math
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-var MAXINT = 0xFFFFFFFF;
+const MAXINT = 0xFFFFFFFF;
 
 function rotw(w, n) {
   return (w << n | w >>> (32 - n)) & MAXINT;
@@ -50,18 +49,15 @@ function getB(x, n) {
 
 function createTwofish() {
   //
-  var keyBytes = null;
-  var dataBytes = null;
-  var dataOffset = -1;
+  let keyBytes = null;
+  let dataBytes = null;
+  let dataOffset = -1;
   // var dataLength = -1;
-  var algorithmName = null;
   // var idx2 = -1;
   //
 
-  algorithmName = "twofish";
-
-  var tfsKey = [];
-  var tfsM = [
+  let tfsKey = [];
+  let tfsM = [
     [],
     [],
     [],
@@ -70,36 +66,43 @@ function createTwofish() {
 
   function tfsInit(key) {
     keyBytes = key;
-    var i, a, b, c, d, meKey = [],
-      moKey = [],
-      inKey = [];
-    var kLen;
-    var sKey = [];
-    var f01, f5b, fef;
+    let i;
+    let a;
+    let b;
+    let c;
+    let d;
+    const meKey = [];
+    const moKey = [];
+    const inKey = [];
+    let kLen;
+    const sKey = [];
+    let f01;
+    let f5b;
+    let fef;
 
-    var q0 = [
+    const q0 = [
       [8, 1, 7, 13, 6, 15, 3, 2, 0, 11, 5, 9, 14, 12, 10, 4],
       [2, 8, 11, 13, 15, 7, 6, 14, 3, 1, 9, 4, 0, 10, 12, 5]
     ];
-    var q1 = [
+    const q1 = [
       [14, 12, 11, 8, 1, 2, 3, 5, 15, 4, 10, 6, 7, 0, 9, 13],
       [1, 14, 2, 11, 4, 12, 3, 7, 6, 13, 10, 5, 15, 9, 0, 8]
     ];
-    var q2 = [
+    const q2 = [
       [11, 10, 5, 14, 6, 13, 9, 0, 12, 8, 15, 3, 2, 4, 7, 1],
       [4, 12, 7, 5, 1, 6, 9, 10, 0, 14, 13, 8, 2, 11, 3, 15]
     ];
-    var q3 = [
+    const q3 = [
       [13, 7, 15, 4, 1, 2, 6, 14, 9, 11, 3, 0, 8, 5, 12, 10],
       [11, 9, 5, 1, 12, 3, 13, 14, 6, 4, 7, 15, 2, 0, 8, 10]
     ];
-    var ror4 = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15];
-    var ashx = [0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12, 5, 14, 7];
-    var q = [
+    const ror4 = [0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15];
+    const ashx = [0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12, 5, 14, 7];
+    const q = [
       [],
       []
     ];
-    var m = [
+    const m = [
       [],
       [],
       [],
@@ -115,7 +118,9 @@ function createTwofish() {
     }
 
     function mdsRem(p, q) {
-      var i, t, u;
+      let i;
+      let t;
+      let u;
       for (i = 0; i < 8; i++) {
         t = q >>> 24;
         q = ((q << 8) & MAXINT) | p >>> 24;
@@ -135,19 +140,18 @@ function createTwofish() {
     }
 
     function qp(n, x) {
-      var a, b, c, d;
-      a = x >> 4;
-      b = x & 15;
-      c = q0[n][a ^ b];
-      d = q1[n][ror4[b] ^ ashx[a]];
+      const a = x >> 4;
+      const b = x & 15;
+      const c = q0[n][a ^ b];
+      const d = q1[n][ror4[b] ^ ashx[a]];
       return q3[n][ror4[d] ^ ashx[c]] << 4 | q2[n][c ^ d];
     }
 
     function hFun(x, key) {
-      var a = getB(x, 0),
-        b = getB(x, 1),
-        c = getB(x, 2),
-        d = getB(x, 3);
+      let a = getB(x, 0);
+      let b = getB(x, 1);
+      let c = getB(x, 2);
+      let d = getB(x, 3);
       switch (kLen) {
         case 4:
           a = q[1][a] ^ getB(key[3], 0);
@@ -241,8 +245,8 @@ function createTwofish() {
   }
 
   function tfsFrnd(r, blk) {
-    var a = tfsG0(blk[0]);
-    var b = tfsG1(blk[1]);
+    let a = tfsG0(blk[0]);
+    let b = tfsG1(blk[1]);
     blk[2] = rotw(blk[2] ^ (a + b + tfsKey[4 * r + 8]) & MAXINT, 31);
     blk[3] = rotw(blk[3], 1) ^ (a + 2 * b + tfsKey[4 * r + 9]) & MAXINT;
     a = tfsG0(blk[2]);
@@ -252,8 +256,8 @@ function createTwofish() {
   }
 
   function tfsIrnd(i, blk) {
-    var a = tfsG0(blk[0]);
-    var b = tfsG1(blk[1]);
+    let a = tfsG0(blk[0]);
+    let b = tfsG1(blk[1]);
     blk[2] = rotw(blk[2], 1) ^ (a + b + tfsKey[4 * i + 10]) & MAXINT;
     blk[3] = rotw(blk[3] ^ (a + 2 * b + tfsKey[4 * i + 11]) & MAXINT, 31);
     a = tfsG0(blk[2]);
@@ -275,12 +279,11 @@ function createTwofish() {
   function tfsEncrypt(data, offset) {
     dataBytes = data;
     dataOffset = offset;
-    var blk = [getW(dataBytes, dataOffset) ^ tfsKey[0],
-        getW(dataBytes, dataOffset + 4) ^ tfsKey[1],
-        getW(dataBytes, dataOffset + 8) ^ tfsKey[2],
-        getW(dataBytes, dataOffset + 12) ^ tfsKey[3]
-    ];
-    for (var j = 0; j < 8; j++) {
+    const blk = [getW(dataBytes, dataOffset) ^ tfsKey[0],
+      getW(dataBytes, dataOffset + 4) ^ tfsKey[1],
+      getW(dataBytes, dataOffset + 8) ^ tfsKey[2],
+      getW(dataBytes, dataOffset + 12) ^ tfsKey[3]];
+    for (let j = 0; j < 8; j++) {
       tfsFrnd(j, blk);
     }
     setW(dataBytes, dataOffset, blk[2] ^ tfsKey[4]);
@@ -294,12 +297,11 @@ function createTwofish() {
   function tfsDecrypt(data, offset) {
     dataBytes = data;
     dataOffset = offset;
-    var blk = [getW(dataBytes, dataOffset) ^ tfsKey[4],
-        getW(dataBytes, dataOffset + 4) ^ tfsKey[5],
-        getW(dataBytes, dataOffset + 8) ^ tfsKey[6],
-        getW(dataBytes, dataOffset + 12) ^ tfsKey[7]
-    ];
-    for (var j = 7; j >= 0; j--) {
+    const blk = [getW(dataBytes, dataOffset) ^ tfsKey[4],
+      getW(dataBytes, dataOffset + 4) ^ tfsKey[5],
+      getW(dataBytes, dataOffset + 8) ^ tfsKey[6],
+      getW(dataBytes, dataOffset + 12) ^ tfsKey[7]];
+    for (let j = 7; j >= 0; j--) {
       tfsIrnd(j, blk);
     }
     setW(dataBytes, dataOffset, blk[2] ^ tfsKey[0]);
@@ -329,23 +331,16 @@ function createTwofish() {
 
 // added by Recurity Labs
 
-export default function TF(key) {
+function TF(key) {
   this.tf = createTwofish();
-  this.tf.open(toArray(key), 0);
+  this.tf.open(Array.from(key), 0);
 
   this.encrypt = function(block) {
-    return this.tf.encrypt(toArray(block), 0);
+    return this.tf.encrypt(Array.from(block), 0);
   };
-}
-
-function toArray(typedArray) {
-  // Array.apply([], typedArray) does not work in PhantomJS 1.9
-  var result = [];
-  for (var i = 0; i < typedArray.length; i++) {
-    result[i] = typedArray[i];
-  }
-  return result;
 }
 
 TF.keySize = TF.prototype.keySize = 32;
 TF.blockSize = TF.prototype.blockSize = 16;
+
+export default TF;

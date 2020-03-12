@@ -15,103 +15,129 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-// Hint: We hold our MPIs as an array of octets in big endian format preceeding a two
+// Hint: We hold our MPIs as an array of octets in big endian format preceding a two
 // octet scalar: MPI: [a,b,c,d,e,f]
 // - MPI size: (a << 8) | b
 // - MPI = c | d << 8 | e << ((MPI.length -2)*8) | f ((MPI.length -2)*8)
 
 /**
- * Implementation of type MPI ({@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2})<br/>
- * <br/>
+ * Implementation of type MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2})
  * Multiprecision integers (also called MPIs) are unsigned integers used
  * to hold large integers such as the ones used in cryptographic
  * calculations.
  * An MPI consists of two pieces: a two-octet scalar that is the length
  * of the MPI in bits followed by a string of octets that contain the
  * actual integer.
- * @requires crypto/public_key/jsbn
+ * @requires bn.js
  * @requires util
  * @module type/mpi
  */
 
-'use strict';
-
-import BigInteger from '../crypto/public_key/jsbn.js';
-import util from '../util.js';
+import BN from 'bn.js';
+import util from '../util';
 
 /**
  * @constructor
  */
-export default function MPI() {
+function MPI(data) {
   /** An implementation dependent integer */
-  this.data = null;
+  if (data instanceof MPI) {
+    this.data = data.data;
+  } else if (BN.isBN(data)) {
+    this.fromBN(data);
+  } else if (util.isUint8Array(data)) {
+    this.fromUint8Array(data);
+  } else if (util.isString(data)) {
+    this.fromString(data);
+  } else {
+    this.data = null;
+  }
 }
 
 /**
- * Parsing function for a mpi ({@link http://tools.ietf.org/html/rfc4880#section3.2|RFC 4880 3.2}).
- * @param {String} input Payload of mpi data
- * @return {Integer} Length of data read
+ * Parsing function for a MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC 4880 3.2}).
+ * @param {Uint8Array} input  Payload of MPI data
+ * @param {String}     endian Endianness of the data; 'be' for big-endian or 'le' for little-endian
+ * @returns {Integer}          Length of data read
  */
-MPI.prototype.read = function (bytes) {
-
-  if(typeof bytes === 'string' || String.prototype.isPrototypeOf(bytes)) {
-    bytes = util.str2Uint8Array(bytes);
+MPI.prototype.read = function (bytes, endian = 'be') {
+  if (util.isString(bytes)) {
+    bytes = util.str_to_Uint8Array(bytes);
   }
 
-  var bits = (bytes[0] << 8) | bytes[1];
+  const bits = (bytes[0] << 8) | bytes[1];
+  const bytelen = (bits + 7) >>> 3;
+  const payload = bytes.subarray(2, 2 + bytelen);
 
-  // Additional rules:
-  //
-  //    The size of an MPI is ((MPI.length + 7) / 8) + 2 octets.
-  //
-  //    The length field of an MPI describes the length starting from its
-  //    most significant non-zero bit.  Thus, the MPI [00 02 01] is not
-  //    formed correctly.  It should be [00 01 01].
-
-  // TODO: Verification of this size method! This size calculation as
-  //      specified above is not applicable in JavaScript
-  var bytelen = Math.ceil(bits / 8);
-
-  var raw = util.Uint8Array2str(bytes.subarray(2, 2 + bytelen));
-  this.fromBytes(raw);
+  this.fromUint8Array(payload, endian);
 
   return 2 + bytelen;
 };
 
-MPI.prototype.fromBytes = function (bytes) {
-  this.data = new BigInteger(util.hexstrdump(bytes), 16);
+/**
+ * Converts the mpi object to a bytes as specified in
+ * {@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
+ * @param {String} endian Endianness of the payload; 'be' for big-endian or 'le' for little-endian
+ * @param {Integer} length Length of the data part of the MPI
+ * @returns {Uint8Aray} mpi Byte representation
+ */
+MPI.prototype.write = function (endian, length) {
+  return util.Uint8Array_to_MPI(this.toUint8Array(endian, length));
 };
 
-MPI.prototype.toBytes = function () {
-  var bytes = util.Uint8Array2str(this.write());
-  return bytes.substr(2);
+MPI.prototype.bitLength = function () {
+  return (this.data.length - 1) * 8 + util.nbits(this.data[0]);
 };
 
 MPI.prototype.byteLength = function () {
-  return this.toBytes().length;
+  return this.data.length;
 };
 
-/**
- * Converts the mpi object to a bytes as specified in {@link http://tools.ietf.org/html/rfc4880#section-3.2|RFC4880 3.2}
- * @return {Uint8Aray} mpi Byte representation
- */
-MPI.prototype.write = function () {
-  return util.str2Uint8Array(this.data.toMPI());
+MPI.prototype.toUint8Array = function (endian, length) {
+  endian = endian || 'be';
+  length = length || this.data.length;
+
+  const payload = new Uint8Array(length);
+  const start = length - this.data.length;
+  if (start < 0) {
+    throw new Error('Payload is too large.');
+  }
+
+  payload.set(this.data, start);
+  if (endian === 'le') {
+    payload.reverse();
+  }
+
+  return payload;
 };
 
-MPI.prototype.toBigInteger = function () {
-  return this.data.clone();
+MPI.prototype.fromUint8Array = function (bytes, endian = 'be') {
+  this.data = new Uint8Array(bytes.length);
+  this.data.set(bytes);
+
+  if (endian === 'le') {
+    this.data.reverse();
+  }
 };
 
-MPI.prototype.fromBigInteger = function (bn) {
-  this.data = bn.clone();
+MPI.prototype.toString = function () {
+  return util.Uint8Array_to_str(this.toUint8Array());
+};
+
+MPI.prototype.fromString = function (str, endian = 'be') {
+  this.fromUint8Array(util.str_to_Uint8Array(str), endian);
+};
+
+MPI.prototype.toBN = function () {
+  return new BN(this.toUint8Array());
+};
+
+MPI.prototype.fromBN = function (bn) {
+  this.data = bn.toArrayLike(Uint8Array);
 };
 
 MPI.fromClone = function (clone) {
-  clone.data.copyTo = BigInteger.prototype.copyTo;
-  var bn = new BigInteger();
-  clone.data.copyTo(bn);
-  var mpi = new MPI();
-  mpi.data = bn;
-  return mpi;
+  return new MPI(clone.data);
 };
+
+export default MPI;

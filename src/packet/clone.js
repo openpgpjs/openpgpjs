@@ -17,23 +17,24 @@
 
 /**
  * @fileoverview This module implements packet list cloning required to
- * pass certain object types beteen the web worker and main thread using
+ * pass certain object types between the web worker and main thread using
  * the structured cloning algorithm.
+ * @module packet/clone
  */
 
-'use strict';
-
-import * as key from '../key.js';
-import * as message from '../message.js';
-import * as cleartext from '../cleartext.js';
-import * as signature from '../signature.js'
-import Packetlist from './packetlist.js';
-import type_keyid from '../type/keyid.js';
+import stream from 'web-stream-tools';
+import { Key } from '../key';
+import { Message } from '../message';
+import { CleartextMessage } from '../cleartext';
+import { Signature } from '../signature';
+import List from './packetlist';
+import type_keyid from '../type/keyid';
+import util from '../util';
 
 
 //////////////////////////////
 //                          //
-//   Packetlist --> Clone   //
+//   List --> Clone   //
 //                          //
 //////////////////////////////
 
@@ -41,16 +42,19 @@ import type_keyid from '../type/keyid.js';
 /**
  * Create a packetlist from the correspoding object types.
  * @param  {Object} options   the object passed to and from the web worker
- * @return {Object}           a mutated version of the options optject
+ * @returns {Object}           a mutated version of the options optject
  */
 export function clonePackets(options) {
-  if(options.publicKeys) {
+  if (options.publicKeys) {
     options.publicKeys = options.publicKeys.map(key => key.toPacketlist());
   }
-  if(options.privateKeys) {
+  if (options.privateKeys) {
     options.privateKeys = options.privateKeys.map(key => key.toPacketlist());
   }
-  if(options.privateKey) {
+  if (options.publicKey) {
+    options.publicKey = options.publicKey.toPacketlist();
+  }
+  if (options.privateKey) {
     options.privateKey = options.privateKey.toPacketlist();
   }
   if (options.key) {
@@ -58,29 +62,49 @@ export function clonePackets(options) {
   }
   if (options.message) {
     //could be either a Message or CleartextMessage object
-    if (options.message instanceof message.Message) {
+    if (options.message instanceof Message) {
       options.message = options.message.packets;
-    } else if (options.message instanceof cleartext.CleartextMessage) {
-      options.message.signature = options.message.signature.packets;
+    } else if (options.message instanceof CleartextMessage) {
+      options.message = { text: options.message.text, signature: options.message.signature.packets };
     }
   }
-  if (options.signature && (options.signature instanceof signature.Signature)) {
+  if (options.signature && (options.signature instanceof Signature)) {
     options.signature = options.signature.packets;
   }
   if (options.signatures) {
-    options.signatures = options.signatures.map(sig => verificationObjectToClone(sig));
+    options.signatures.forEach(verificationObjectToClone);
   }
   return options;
 }
 
 function verificationObjectToClone(verObject) {
-  verObject.signature = verObject.signature.packets;
+  const verified = verObject.verified;
+  verObject.verified = stream.fromAsync(() => verified);
+  if (verObject.signature instanceof Promise) {
+    const signature = verObject.signature;
+    verObject.signature = stream.fromAsync(async () => {
+      const packets = (await signature).packets;
+      try {
+        await verified;
+      } catch (e) {}
+      if (packets && packets[0]) {
+        delete packets[0].signature;
+        delete packets[0].hashed;
+      }
+      return packets;
+    });
+  } else {
+    verObject.signature = verObject.signature.packets;
+  }
+  if (verObject.error) {
+    verObject.error = verObject.error.message;
+  }
   return verObject;
 }
 
 //////////////////////////////
 //                          //
-//   Clone --> Packetlist   //
+//   Clone --> List   //
 //                          //
 //////////////////////////////
 
@@ -89,22 +113,25 @@ function verificationObjectToClone(verObject) {
  * Creates an object with the correct prototype from a corresponding packetlist.
  * @param  {Object} options   the object passed to and from the web worker
  * @param  {String} method    the public api function name to be delegated to the worker
- * @return {Object}           a mutated version of the options optject
+ * @returns {Object}           a mutated version of the options optject
  */
-export function parseClonedPackets(options, method) {
-  if(options.publicKeys) {
+export function parseClonedPackets(options) {
+  if (options.publicKeys) {
     options.publicKeys = options.publicKeys.map(packetlistCloneToKey);
   }
-  if(options.privateKeys) {
+  if (options.privateKeys) {
     options.privateKeys = options.privateKeys.map(packetlistCloneToKey);
   }
-  if(options.privateKey) {
+  if (options.publicKey) {
+    options.publicKey = packetlistCloneToKey(options.publicKey);
+  }
+  if (options.privateKey) {
     options.privateKey = packetlistCloneToKey(options.privateKey);
   }
   if (options.key) {
     options.key = packetlistCloneToKey(options.key);
   }
-  if (options.message && (method === 'sign' || method === 'verify')) { // sign and verify support only CleartextMessage
+  if (options.message && options.message.signature) {
     options.message = packetlistCloneToCleartextMessage(options.message);
   } else if (options.message) {
     options.message = packetlistCloneToMessage(options.message);
@@ -119,32 +146,42 @@ export function parseClonedPackets(options, method) {
 }
 
 function packetlistCloneToKey(clone) {
-  const packetlist = Packetlist.fromStructuredClone(clone);
-  return new key.Key(packetlist);
+  const packetlist = List.fromStructuredClone(clone);
+  return new Key(packetlist);
 }
 
 function packetlistCloneToMessage(clone) {
-  const packetlist = Packetlist.fromStructuredClone(clone);
-  return new message.Message(packetlist);
+  const packetlist = List.fromStructuredClone(clone);
+  return new Message(packetlist);
 }
 
 function packetlistCloneToCleartextMessage(clone) {
-  var packetlist = Packetlist.fromStructuredClone(clone.signature);
-  return new cleartext.CleartextMessage(clone.text, new signature.Signature(packetlist));
+  const packetlist = List.fromStructuredClone(clone.signature);
+  return new CleartextMessage(clone.text, new Signature(packetlist));
 }
 
 //verification objects
 function packetlistCloneToSignatures(clone) {
   clone.keyid = type_keyid.fromClone(clone.keyid);
-  clone.signature = new signature.Signature(clone.signature);
+  if (util.isStream(clone.signature)) {
+    clone.signature = stream.readToEnd(clone.signature, ([signature]) => new Signature(List.fromStructuredClone(signature)));
+    clone.signature.catch(() => {});
+  } else {
+    clone.signature = new Signature(List.fromStructuredClone(clone.signature));
+  }
+  clone.verified = stream.readToEnd(clone.verified, ([verified]) => verified);
+  clone.verified.catch(() => {});
+  if (clone.error) {
+    clone.error = new Error(clone.error);
+  }
   return clone;
 }
 
 function packetlistCloneToSignature(clone) {
-  if (typeof clone === "string") {
+  if (util.isString(clone) || util.isStream(clone)) {
     //signature is armored
     return clone;
   }
-  var packetlist = Packetlist.fromStructuredClone(clone);
-  return new signature.Signature(packetlist);
+  const packetlist = List.fromStructuredClone(clone);
+  return new Signature(packetlist);
 }

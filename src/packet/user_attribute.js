@@ -16,36 +16,35 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Implementation of the User Attribute Packet (Tag 17)<br/>
- * <br/>
+ * @requires packet
+ * @requires enums
+ * @requires util
+ */
+
+import packet from './packet';
+import enums from '../enums';
+import util from '../util';
+
+/**
+ * Implementation of the User Attribute Packet (Tag 17)
+ *
  * The User Attribute packet is a variation of the User ID packet.  It
  * is capable of storing more types of data than the User ID packet,
  * which is limited to text.  Like the User ID packet, a User Attribute
  * packet may be certified by the key owner ("self-signed") or any other
  * key owner who cares to certify it.  Except as noted, a User Attribute
  * packet may be used anywhere that a User ID packet may be used.
- * <br/>
+ *
  * While User Attribute packets are not a required part of the OpenPGP
  * standard, implementations SHOULD provide at least enough
  * compatibility to properly handle a certification signature on the
  * User Attribute packet.  A simple way to do this is by treating the
  * User Attribute packet as a User ID packet with opaque contents, but
  * an implementation may use any method desired.
- * module packet/user_attribute
- * @requires enums
- * @module packet/user_attribute
- */
-
-'use strict';
-
-import util from '../util.js';
-import packet from './packet.js';
-import enums from '../enums.js';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
-export default function UserAttribute() {
+function UserAttribute() {
   this.tag = enums.packet.userAttribute;
   this.attributes = [];
 }
@@ -55,33 +54,33 @@ export default function UserAttribute() {
  * @param {Uint8Array} input payload of a tag 17 packet
  */
 UserAttribute.prototype.read = function(bytes) {
-  var i = 0;
+  let i = 0;
   while (i < bytes.length) {
-    var len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+    const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
     i += len.offset;
 
-    this.attributes.push(util.Uint8Array2str(bytes.subarray(i, i + len.len)));
+    this.attributes.push(util.Uint8Array_to_str(bytes.subarray(i, i + len.len)));
     i += len.len;
   }
 };
 
 /**
  * Creates a binary representation of the user attribute packet
- * @return {Uint8Array} string representation
+ * @returns {Uint8Array} string representation
  */
 UserAttribute.prototype.write = function() {
-  var arr = [];
-  for (var i = 0; i < this.attributes.length; i++) {
+  const arr = [];
+  for (let i = 0; i < this.attributes.length; i++) {
     arr.push(packet.writeSimpleLength(this.attributes[i].length));
-    arr.push(util.str2Uint8Array(this.attributes[i]));
+    arr.push(util.str_to_Uint8Array(this.attributes[i]));
   }
   return util.concatUint8Array(arr);
 };
 
 /**
  * Compare for equality
- * @param  {module:user_attribute~UserAttribute} usrAttr
- * @return {Boolean}         true if equal
+ * @param  {module:packet.UserAttribute} usrAttr
+ * @returns {Boolean}         true if equal
  */
 UserAttribute.prototype.equals = function(usrAttr) {
   if (!usrAttr || !(usrAttr instanceof UserAttribute)) {
@@ -91,3 +90,5 @@ UserAttribute.prototype.equals = function(usrAttr) {
     return attr === usrAttr.attributes[index];
   });
 };
+
+export default UserAttribute;

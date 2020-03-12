@@ -15,34 +15,92 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'use strict';
+/**
+ * @fileoverview Provides functions for maintaining browser workers
+ * @see module:openpgp.initWorker
+ * @see module:openpgp.getWorker
+ * @see module:openpgp.destroyWorker
+ * @see module:worker/worker
+ * @requires util
+ * @requires config
+ * @requires crypto
+ * @requires packet
+ * @module worker/async_proxy
+ */
 
 import util from '../util.js';
+import config from '../config';
 import crypto from '../crypto';
 import packet from '../packet';
 
-const INITIAL_RANDOM_SEED = 50000, // random bytes seeded to worker
-    RANDOM_SEED_REQUEST = 20000; // random bytes seeded after worker request
 
 /**
  * Initializes a new proxy and loads the web worker
+ * @param {String} path            The path to the worker or 'openpgp.worker.js' by default
+ * @param {Number} n               number of workers to initialize if path given
+ * @param {Object} config          config The worker configuration
+ * @param {Array<Object>} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
  * @constructor
- * @param {String} path     The path to the worker or 'openpgp.worker.js' by default
- * @param {Object} config   config The worker configuration
- * @param {Object} worker   alternative to path parameter: web worker initialized with 'openpgp.worker.js'
- * @return {Promise}
  */
-export default function AsyncProxy({ path='openpgp.worker.js', worker, config } = {}) {
-  this.worker = worker || new Worker(path);
-  this.worker.onmessage = this.onMessage.bind(this);
-  this.worker.onerror = e => {
-    throw new Error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+function AsyncProxy({ path = 'openpgp.worker.js', n = 1, workers = [], config } = {}) {
+  /**
+   * Message handling
+   */
+  const handleMessage = workerId => event => {
+    const msg = event.data;
+    switch (msg.event) {
+      case 'loaded':
+        this.workers[workerId].loadedResolve(true);
+        break;
+      case 'method-return':
+        if (msg.err) {
+          // fail
+          const err = new Error(msg.err);
+          // add worker stack
+          err.workerStack = msg.stack;
+          this.tasks[msg.id].reject(err);
+        } else {
+          // success
+          this.tasks[msg.id].resolve(msg.data);
+        }
+        delete this.tasks[msg.id];
+        this.workers[workerId].requests--;
+        break;
+      case 'request-seed':
+        this.seedRandom(workerId, msg.amount);
+        break;
+      default:
+        throw new Error('Unknown Worker Event.');
+    }
   };
-  this.seedRandom(INITIAL_RANDOM_SEED);
 
-  if (config) {
-    this.worker.postMessage({ event:'configure', config });
+  if (workers.length) {
+    this.workers = workers;
   }
+  else {
+    this.workers = [];
+    while (this.workers.length < n) {
+      this.workers.push(new Worker(path));
+    }
+  }
+
+  let workerId = 0;
+  this.workers.forEach(worker => {
+    worker.loadedPromise = new Promise(resolve => {
+      worker.loadedResolve = resolve;
+    });
+    worker.requests = 0;
+    worker.onmessage = handleMessage(workerId++);
+    worker.onerror = e => {
+      worker.loadedResolve(false);
+      console.error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
+      return false;
+    };
+
+    if (config) {
+      worker.postMessage({ event:'configure', config });
+    }
+  });
 
   // Cannot rely on task order being maintained, use object keyed by request ID to track tasks
   this.tasks = {};
@@ -50,81 +108,82 @@ export default function AsyncProxy({ path='openpgp.worker.js', worker, config } 
 }
 
 /**
+ * Returns a promise that resolves when all workers have finished loading
+ * @returns {Promise<Boolean>} Resolves to true if all workers have loaded succesfully; false otherwise
+*/
+AsyncProxy.prototype.loaded = async function() {
+  const loaded = await Promise.all(this.workers.map(worker => worker.loadedPromise));
+  return loaded.every(Boolean);
+};
+
+/**
  * Get new request ID
- * @return {integer}          New unique request ID
+ * @returns {integer}          New unique request ID
 */
 AsyncProxy.prototype.getID = function() {
   return this.currentID++;
 };
 
 /**
- * Message handling
- */
-AsyncProxy.prototype.onMessage = function(event) {
-  const msg = event.data;
-  switch (msg.event) {
-    case 'method-return':
-      if (msg.err) {
-        // fail
-        this.tasks[msg.id].reject(new Error(msg.err));
-      } else {
-        // success
-        this.tasks[msg.id].resolve(msg.data);
-      }
-      delete this.tasks[msg.id];
-      break;
-    case 'request-seed':
-      this.seedRandom(RANDOM_SEED_REQUEST);
-      break;
-    default:
-      throw new Error('Unknown Worker Event.');
-  }
-};
-
-/**
  * Send message to worker with random data
  * @param  {Integer} size Number of bytes to send
+ * @async
  */
-AsyncProxy.prototype.seedRandom = function(size) {
-  const buf = this.getRandomBuffer(size);
-  this.worker.postMessage({ event:'seed-random', buf }, util.getTransferables.call(util, buf));
+AsyncProxy.prototype.seedRandom = async function(workerId, size) {
+  const buf = await crypto.random.getRandomBytes(size);
+  this.workers[workerId].postMessage({ event:'seed-random', buf }, util.getTransferables(buf, true));
 };
 
 /**
- * Get Uint8Array with random numbers
- * @param  {Integer} size Length of buffer
- * @return {Uint8Array}
+ * Clear key caches
+ * @async
  */
-AsyncProxy.prototype.getRandomBuffer = function(size) {
-  if (!size) {
-    return null;
-  }
-  const buf = new Uint8Array(size);
-  crypto.random.getRandomValues(buf);
-  return buf;
+AsyncProxy.prototype.clearKeyCache = async function() {
+  await Promise.all(this.workers.map(worker => new Promise((resolve, reject) => {
+    const id = this.getID();
+
+    worker.postMessage({ id, event: 'clear-key-cache' });
+
+    this.tasks[id] = { resolve, reject };
+  })));
 };
 
 /**
- * Terminates the worker
+ * Terminates the workers
  */
 AsyncProxy.prototype.terminate = function() {
-  this.worker.terminate();
+  this.workers.forEach(worker => {
+    worker.terminate();
+  });
 };
 
 /**
  * Generic proxy function that handles all commands from the public api.
  * @param  {String} method    the public api function to be delegated to the worker thread
  * @param  {Object} options   the api function's options
- * @return {Promise}          see the corresponding public api functions for their return types
+ * @returns {Promise}          see the corresponding public api functions for their return types
+ * @async
  */
 AsyncProxy.prototype.delegate = function(method, options) {
+
   const id = this.getID();
+  const requests = this.workers.map(worker => worker.requests);
+  const minRequests = Math.min(...requests);
+  let workerId = 0;
+  for (; workerId < this.workers.length; workerId++) {
+    if (this.workers[workerId].requests === minRequests) {
+      break;
+    }
+  }
 
   return new Promise((resolve, reject) => {
     // clone packets (for web worker structured cloning algorithm)
-    this.worker.postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables.call(util, options));
+    this.workers[workerId].postMessage({ id:id, event:method, options:packet.clone.clonePackets(options) }, util.getTransferables(options, config.zero_copy));
+    this.workers[workerId].requests++;
 
     // remember to handle parsing cloned packets from worker
-    this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(data, method)), reject };
+    this.tasks[id] = { resolve: data => resolve(packet.clone.parseClonedPackets(util.restoreStreams(data), method)), reject };
   });
 };
+
+export default AsyncProxy;

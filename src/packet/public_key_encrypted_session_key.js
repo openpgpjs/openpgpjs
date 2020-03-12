@@ -16,9 +16,23 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)<br/>
- * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}: A Public-Key Encrypted Session Key packet holds the session key
+ * @requires type/keyid
+ * @requires type/mpi
+ * @requires crypto
+ * @requires enums
+ * @requires util
+ */
+
+import type_keyid from '../type/keyid';
+import crypto from '../crypto';
+import enums from '../enums';
+import util from '../util';
+
+/**
+ * Public-Key Encrypted Session Key Packets (Tag 1)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
+ * A Public-Key Encrypted Session Key packet holds the session key
  * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
  * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
  * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
@@ -29,34 +43,18 @@
  * The recipient of the message finds a session key that is encrypted to their
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
- * @requires crypto
- * @requires enums
- * @requires type/keyid
- * @requires type/mpi
- * @requires util
- * @module packet/public_key_encrypted_session_key
- */
-
-'use strict';
-
-import type_keyid from '../type/keyid.js';
-import util from '../util.js';
-import type_mpi from '../type/mpi.js';
-import enums from '../enums.js';
-import crypto from '../crypto';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
-export default function PublicKeyEncryptedSessionKey() {
+function PublicKeyEncryptedSessionKey() {
   this.tag = enums.packet.publicKeyEncryptedSessionKey;
   this.version = 3;
 
   this.publicKeyId = new type_keyid();
-  this.publicKeyAlgorithm = 'rsa_encrypt';
+  this.publicKeyAlgorithm = null;
 
   this.sessionKey = null;
-  this.sessionKeyAlgorithm = 'aes256';
+  this.sessionKeyAlgorithm = null;
 
   /** @type {Array<module:type/mpi>} */
   this.encrypted = [];
@@ -69,101 +67,78 @@ export default function PublicKeyEncryptedSessionKey() {
  * @param {Integer} position Position to start reading from the input string
  * @param {Integer} len Length of the packet or the remaining length of
  *            input at position
- * @return {module:packet/public_key_encrypted_session_key} Object representation
+ * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
  */
 PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
-
   this.version = bytes[0];
-  this.publicKeyId.read(bytes.subarray(1,bytes.length));
+  this.publicKeyId.read(bytes.subarray(1, bytes.length));
   this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
 
-  var i = 10;
+  let i = 10;
 
-  var integerCount = (function(algo) {
-    switch (algo) {
-      case 'rsa_encrypt':
-      case 'rsa_encrypt_sign':
-        return 1;
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  const types = crypto.getEncSessionKeyParamTypes(algo);
+  this.encrypted = crypto.constructParams(types);
 
-      case 'elgamal':
-        return 2;
-
-      default:
-        throw new Error("Invalid algorithm.");
-    }
-  })(this.publicKeyAlgorithm);
-
-  this.encrypted = [];
-
-  for (var j = 0; j < integerCount; j++) {
-    var mpi = new type_mpi();
-    i += mpi.read(bytes.subarray(i, bytes.length));
-    this.encrypted.push(mpi);
+  for (let j = 0; j < types.length; j++) {
+    i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
   }
 };
 
 /**
  * Create a string representation of a tag 1 packet
  *
- * @return {Uint8Array} The Uint8Array representation
+ * @returns {Uint8Array} The Uint8Array representation
  */
 PublicKeyEncryptedSessionKey.prototype.write = function () {
+  const arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
 
-  var arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
-
-  for (var i = 0; i < this.encrypted.length; i++) {
+  for (let i = 0; i < this.encrypted.length; i++) {
     arr.push(this.encrypted[i].write());
   }
 
   return util.concatUint8Array(arr);
 };
 
-PublicKeyEncryptedSessionKey.prototype.encrypt = function (key) {
-  var data = String.fromCharCode(
-    enums.write(enums.symmetric, this.sessionKeyAlgorithm));
+/**
+ * Encrypt session key packet
+ * @param {module:packet.PublicKey} key Public key
+ * @returns {Promise<Boolean>}
+ * @async
+ */
+PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
+  let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
-  data += util.Uint8Array2str(this.sessionKey);
-  var checksum = util.calc_checksum(this.sessionKey);
-  data += util.Uint8Array2str(util.writeNumber(checksum, 2));
-
-  var mpi = new type_mpi();
-  mpi.fromBytes(crypto.pkcs1.eme.encode(
-    data,
-    key.mpi[0].byteLength()));
-
-  this.encrypted = crypto.publicKeyEncrypt(
-    this.publicKeyAlgorithm,
-    key.mpi,
-    mpi);
+  data += util.Uint8Array_to_str(this.sessionKey);
+  data += util.Uint8Array_to_str(util.write_checksum(this.sessionKey));
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  this.encrypted = await crypto.publicKeyEncrypt(
+    algo, key.params, data, key.getFingerprintBytes());
+  return true;
 };
 
 /**
  * Decrypts the session key (only for public key encrypted session key
  * packets (tag 1)
  *
- * @param {module:packet/secret_key} key
- *            Private key with secMPIs unlocked
- * @return {String} The unencrypted session key
+ * @param {module:packet.SecretKey} key
+ *            Private key with secret params unlocked
+ * @returns {Promise<Boolean>}
+ * @async
  */
-PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
-  var result = crypto.publicKeyDecrypt(
-    this.publicKeyAlgorithm,
-    key.mpi,
-    this.encrypted).toBytes();
+PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
+  const checksum = util.str_to_Uint8Array(decoded.substr(decoded.length - 2));
+  key = util.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
 
-  var checksum = util.readNumber(util.str2Uint8Array(result.substr(result.length - 2)));
-
-  var decoded = crypto.pkcs1.eme.decode(result);
-
-  key = util.str2Uint8Array(decoded.substring(1, decoded.length - 2));
-
-  if (checksum !== util.calc_checksum(key)) {
-    throw new Error('Checksum mismatch');
+  if (!util.equalsUint8Array(checksum, util.write_checksum(key))) {
+    throw new Error('Decryption error');
   } else {
     this.sessionKey = key;
-    this.sessionKeyAlgorithm =
-      enums.read(enums.symmetric, decoded.charCodeAt(0));
+    this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded.charCodeAt(0));
   }
+  return true;
 };
 
 /**
@@ -171,7 +146,11 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
   this.publicKeyId = type_keyid.fromClone(this.publicKeyId);
-  for (var i = 0; i < this.encrypted.length; i++) {
-    this.encrypted[i] = type_mpi.fromClone(this.encrypted[i]);
+  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  const types = crypto.getEncSessionKeyParamTypes(algo);
+  for (let i = 0; i < this.encrypted.length; i++) {
+    this.encrypted[i] = types[i].fromClone(this.encrypted[i]);
   }
 };
+
+export default PublicKeyEncryptedSessionKey;

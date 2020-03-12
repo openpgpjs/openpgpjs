@@ -1,4 +1,4 @@
-'use strict';
+/* eslint-disable import/newline-after-import, import/first */
 
 /**
  * Export high level api as default.
@@ -11,13 +11,18 @@ import * as openpgp from './openpgp';
 export default openpgp;
 
 /**
- * Export each high level api function seperately.
+ * Export each high level api function separately.
  * Usage:
  *
  *   import { encryptMessage } from 'openpgp.js'
  *   encryptMessage(keys, text)
  */
-export * from './openpgp';
+export {
+  encrypt, decrypt, sign, verify,
+  generateKey, reformatKey, revokeKey, decryptKey,
+  encryptSessionKey, decryptSessionKeys,
+  initWorker, getWorker, destroyWorker
+} from './openpgp';
 
 /**
  * @see module:key
@@ -78,6 +83,30 @@ export { default as S2K } from './type/s2k';
 export { default as Keyid } from './type/keyid';
 
 /**
+ * @see module:type/ecdh_symkey
+ * @name module:openpgp.ECDHSymmetricKey
+ */
+export { default as ECDHSymmetricKey } from './type/ecdh_symkey';
+
+/**
+ * @see module:type/kdf_params
+ * @name module:openpgp.KDFParams
+ */
+export { default as KDFParams } from './type/kdf_params';
+
+/**
+ * @see module:type/oid
+ * @name module:openpgp.OID
+ */
+export { default as OID } from './type/oid';
+
+/**
+ * @see streams
+ * @name module:openpgp.stream
+ */
+export { default as stream } from 'web-stream-tools';
+
+/**
  * @see module:encoding/armor
  * @name module:openpgp.armor
  */
@@ -118,3 +147,15 @@ export { default as AsyncProxy } from './worker/async_proxy';
  * @name module:openpgp.HKP
  */
 export { default as HKP } from './hkp';
+
+/**
+ * @see module:wkd
+ * @name module:openpgp.WKD
+ */
+export { default as WKD } from './wkd';
+
+/**
+ * @see module:lightweight
+ */
+import * as lightweightMod from './lightweight_helper';
+export const lightweight = lightweightMod;

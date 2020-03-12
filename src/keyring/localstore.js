@@ -16,24 +16,31 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * The class that deals with storage of the keyring. Currently the only option is to use HTML5 local storage.
+ * @fileoverview Provides the LocalStore class
+ * @requires web-stream-tools
  * @requires config
+ * @requires key
+ * @requires util
  * @module keyring/localstore
- * @param {String} prefix prefix for itemnames in localstore
  */
 
-'use strict';
-
+import stream from 'web-stream-tools';
 import config from '../config';
-import * as keyModule from '../key.js';
-import util from '../util.js';
+import { readArmored } from '../key';
+import util from '../util';
 
-export default function LocalStore(prefix) {
+/**
+ * The class that deals with storage of the keyring.
+ * Currently the only option is to use HTML5 local storage.
+ * @constructor
+ * @param {String} prefix prefix for itemnames in localstore
+ */
+function LocalStore(prefix) {
   prefix = prefix || 'openpgp-';
   this.publicKeysItem = prefix + this.publicKeysItem;
   this.privateKeysItem = prefix + this.privateKeysItem;
-  if (typeof window !== 'undefined' && window.localStorage) {
-    this.storage = window.localStorage;
+  if (typeof global !== 'undefined' && global.localStorage) {
+    this.storage = global.localStorage;
   } else {
     this.storage = new (require('node-localstorage').LocalStorage)(config.node_store);
   }
@@ -47,27 +54,29 @@ LocalStore.prototype.privateKeysItem = 'private-keys';
 
 /**
  * Load the public keys from HTML5 local storage.
- * @return {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key.Key>} array of keys retrieved from localstore
+ * @async
  */
-LocalStore.prototype.loadPublic = function () {
+LocalStore.prototype.loadPublic = async function () {
   return loadKeys(this.storage, this.publicKeysItem);
 };
 
 /**
  * Load the private keys from HTML5 local storage.
- * @return {Array<module:key~Key>} array of keys retrieved from localstore
+ * @returns {Array<module:key.Key>} array of keys retrieved from localstore
+ * @async
  */
-LocalStore.prototype.loadPrivate = function () {
+LocalStore.prototype.loadPrivate = async function () {
   return loadKeys(this.storage, this.privateKeysItem);
 };
 
-function loadKeys(storage, itemname) {
-  var armoredKeys = JSON.parse(storage.getItem(itemname));
-  var keys = [];
+async function loadKeys(storage, itemname) {
+  const armoredKeys = JSON.parse(storage.getItem(itemname));
+  const keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
-    var key;
-    for (var i = 0; i < armoredKeys.length; i++) {
-      key = keyModule.readArmored(armoredKeys[i]);
+    let key;
+    for (let i = 0; i < armoredKeys.length; i++) {
+      key = await readArmored(armoredKeys[i]);
       if (!key.err) {
         keys.push(key.keys[0]);
       } else {
@@ -81,29 +90,30 @@ function loadKeys(storage, itemname) {
 /**
  * Saves the current state of the public keys to HTML5 local storage.
  * The key array gets stringified using JSON
- * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ * @param {Array<module:key.Key>} keys array of keys to save in localstore
+ * @async
  */
-LocalStore.prototype.storePublic = function (keys) {
-  storeKeys(this.storage, this.publicKeysItem, keys);
+LocalStore.prototype.storePublic = async function (keys) {
+  await storeKeys(this.storage, this.publicKeysItem, keys);
 };
 
 /**
  * Saves the current state of the private keys to HTML5 local storage.
  * The key array gets stringified using JSON
- * @param {Array<module:key~Key>} keys array of keys to save in localstore
+ * @param {Array<module:key.Key>} keys array of keys to save in localstore
+ * @async
  */
-LocalStore.prototype.storePrivate = function (keys) {
-  storeKeys(this.storage, this.privateKeysItem, keys);
+LocalStore.prototype.storePrivate = async function (keys) {
+  await storeKeys(this.storage, this.privateKeysItem, keys);
 };
 
-function storeKeys(storage, itemname, keys) {
-  var armoredKeys = [];
+async function storeKeys(storage, itemname, keys) {
   if (keys.length) {
-    for (var i = 0; i < keys.length; i++) {
-      armoredKeys.push(keys[i].armor());
-    }
+    const armoredKeys = await Promise.all(keys.map(key => stream.readToEnd(key.armor())));
     storage.setItem(itemname, JSON.stringify(armoredKeys));
   } else {
     storage.removeItem(itemname);
   }
 }
+
+export default LocalStore;

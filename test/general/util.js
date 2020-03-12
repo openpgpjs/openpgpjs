@@ -1,154 +1,141 @@
-'use strict';
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const chai = require('chai');
 
-var chai = require('chai'),
-  expect = chai.expect;
+const { expect } = chai;
 
 describe('Util unit tests', function() {
 
   describe('isString', function() {
     it('should return true for type "string"', function() {
-      var data = 'foo';
+      const data = 'foo';
       expect(openpgp.util.isString(data)).to.be.true;
     });
     it('should return true for type String', function() {
-      var data = String('foo');
+      const data = String('foo');
       expect(openpgp.util.isString(data)).to.be.true;
     });
     it('should return true for inherited type of String', function() {
       function MyString() {}
       MyString.prototype = Object.create(String.prototype);
-      var data = new MyString();
+      const data = new MyString();
       expect(openpgp.util.isString(data)).to.be.true;
     });
     it('should return true for empty string', function() {
-      var data = '';
+      const data = '';
       expect(openpgp.util.isString(data)).to.be.true;
     });
     it('should return false for undefined', function() {
-      var data;
+      let data;
       expect(openpgp.util.isString(data)).to.be.false;
     });
     it('should return false for Object', function() {
-      var data = {};
+      const data = {};
       expect(openpgp.util.isString(data)).to.be.false;
     });
   });
 
   describe('isArray', function() {
     it('should return true for []', function() {
-      var data = [];
+      const data = [];
       expect(openpgp.util.isArray(data)).to.be.true;
     });
     it('should return true for type Array', function() {
-      var data = Array();
+      const data = Array();
       expect(openpgp.util.isArray(data)).to.be.true;
     });
     it('should return true for inherited type of Array', function() {
       function MyArray() {}
       MyArray.prototype = Object.create(Array.prototype);
-      var data = new MyArray();
+      const data = new MyArray();
       expect(openpgp.util.isArray(data)).to.be.true;
     });
     it('should return false for undefined', function() {
-      var data;
+      let data;
       expect(openpgp.util.isArray(data)).to.be.false;
     });
     it('should return false for Object', function() {
-      var data = {};
+      const data = {};
       expect(openpgp.util.isArray(data)).to.be.false;
     });
   });
 
   describe('isUint8Array', function() {
     it('should return true for type Uint8Array', function() {
-      var data = new Uint8Array();
+      const data = new Uint8Array();
       expect(openpgp.util.isUint8Array(data)).to.be.true;
     });
     it('should return true for inherited type of Uint8Array', function() {
       function MyUint8Array() {}
       MyUint8Array.prototype = new Uint8Array();
-      var data = new MyUint8Array();
+      const data = new MyUint8Array();
       expect(openpgp.util.isUint8Array(data)).to.be.true;
     });
     it('should return false for undefined', function() {
-      var data;
+      let data;
       expect(openpgp.util.isUint8Array(data)).to.be.false;
     });
     it('should return false for Object', function() {
-      var data = {};
+      const data = {};
       expect(openpgp.util.isUint8Array(data)).to.be.false;
     });
   });
 
   describe('isEmailAddress', function() {
     it('should return true for valid email address', function() {
-      var data = 'test@example.com';
+      const data = 'test@example.com';
+      expect(openpgp.util.isEmailAddress(data)).to.be.true;
+    });
+    it('should return true for valid email address', function() {
+      const data = 'test@xn--wgv.xn--q9jyb4c';
       expect(openpgp.util.isEmailAddress(data)).to.be.true;
     });
     it('should return false for invalid email address', function() {
-      var data = 'Test User <test@example.com>';
+      const data = 'Test User <test@example.com>';
       expect(openpgp.util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for invalid email address', function() {
-      var data = 'test@examplecom';
+      const data = 'test@examplecom';
       expect(openpgp.util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for invalid email address', function() {
-      var data = 'testexamplecom';
+      const data = 'testexamplecom';
       expect(openpgp.util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for empty string', function() {
-      var data = '';
+      const data = '';
       expect(openpgp.util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for undefined', function() {
-      var data;
+      let data;
       expect(openpgp.util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for Object', function() {
-      var data = {};
+      const data = {};
       expect(openpgp.util.isEmailAddress(data)).to.be.false;
     });
   });
 
-  describe('isUserId', function() {
-    it('should return true for valid user id', function() {
-      var data = 'Test User <test@example.com>';
-      expect(openpgp.util.isUserId(data)).to.be.true;
+  describe('parseUserID', function() {
+    it('should parse email address', function() {
+      const email = "TestName Test  <test@example.com>";
+      const result = openpgp.util.parseUserId(email);
+      expect(result.name).to.equal('TestName Test');
+      expect(result.email).to.equal('test@example.com');
     });
-    it('should return false for invalid user id', function() {
-      var data = 'Test User test@example.com>';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for invalid user id', function() {
-      var data = 'Test User <test@example.com';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for invalid user id', function() {
-      var data = 'Test User test@example.com';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for empty string', function() {
-      var data = '';
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for undefined', function() {
-      var data;
-      expect(openpgp.util.isUserId(data)).to.be.false;
-    });
-    it('should return false for Object', function() {
-      var data = {};
-      expect(openpgp.util.isUserId(data)).to.be.false;
+    it('should parse email address with @ in display name and comment', function() {
+      const email = "Test@Name Test (a comment) <test@example.com>";
+      const result = openpgp.util.parseUserId(email);
+      expect(result.name).to.equal('Test@Name Test');
+      expect(result.email).to.equal('test@example.com');
+      expect(result.comment).to.equal('a comment');
     });
   });
 
   describe('getTransferables', function() {
-    var zero_copyVal,
-      buf1 = new Uint8Array(1),
-      buf2 = new Uint8Array(1),
-      obj = {
+    const buf1 = new Uint8Array(1);
+    const buf2 = new Uint8Array(1);
+    const obj = {
         data1: buf1,
         data2: buf1,
         data3: {
@@ -156,41 +143,41 @@ describe('Util unit tests', function() {
         }
       };
 
-    beforeEach(function() {
-      zero_copyVal = openpgp.config.zero_copy;
-      openpgp.config.zero_copy = true;
-    });
-
-    afterEach(function() {
-      openpgp.config.zero_copy = zero_copyVal;
-    });
-
     it('should return undefined when zero_copy is false', function() {
       openpgp.config.zero_copy = false;
-      expect(openpgp.util.getTransferables(obj)).to.be.undefined;
+      expect(openpgp.util.getTransferables(obj, false)).to.be.undefined;
     });
     it('should return undefined for no input', function() {
-      expect(openpgp.util.getTransferables()).to.be.undefined;
+      expect(openpgp.util.getTransferables(undefined, true)).to.be.undefined;
     });
     it('should return undefined for an empty oject', function() {
-      expect(openpgp.util.getTransferables({})).to.be.undefined;
+      expect(openpgp.util.getTransferables({}, true)).to.be.undefined;
     });
-    it('should return two buffers', function() {
-      expect(openpgp.util.getTransferables(obj)).to.deep.equal([buf1.buffer, buf2.buffer]);
-    });
+    if (typeof navigator !== 'undefined') {
+      it('should return two buffers', function() {
+        expect(openpgp.util.getTransferables(obj, true)).to.deep.equal(
+          navigator.userAgent.indexOf('Safari') !== -1 && (navigator.userAgent.indexOf('Version/11.1') !== -1 || (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56) ?
+          undefined :
+          [buf1.buffer, buf2.buffer]
+        );
+      });
+    }
   });
 
   describe("Misc.", function() {
-    it('util.decode_utf8 throws error if invalid parameter type', function () {
-      var test = openpgp.util.decode_utf8.bind(null, {chameleon: true});
-      expect(test).to.throw(Error, /Parameter "utf8" is not of type string/);
-    });
     it('util.readNumber should not overflow until full range of uint32', function () {
-      var ints = [Math.pow(2, 20), Math.pow(2, 25), Math.pow(2, 30), Math.pow(2, 32) - 1];
-      for(var i = 0; i < ints.length; i++) {
+      const ints = [Math.pow(2, 20), Math.pow(2, 25), Math.pow(2, 30), Math.pow(2, 32) - 1];
+      for(let i = 0; i < ints.length; i++) {
         expect(openpgp.util.readNumber(openpgp.util.writeNumber(ints[i], 4))).to.equal(ints[i]);
       }
     });
   });
+
+  describe("Zbase32", function() {
+    it('util.encodeZBase32 encodes correctly', function() {
+      const encoded = openpgp.util.encodeZBase32(openpgp.util.str_to_Uint8Array('test-wkd'));
+      expect(encoded).to.equal('qt1zg7bpq7ise');
+    })
+  })
 
 });

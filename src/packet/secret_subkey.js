@@ -18,22 +18,24 @@
 /**
  * @requires packet/secret_key
  * @requires enums
- * @module packet/secret_subkey
  */
 
-'use strict';
-
-import secretKey from './secret_key.js';
-import enums from '../enums.js';
+import SecretKey from './secret_key';
+import enums from '../enums';
 
 /**
+ * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
+ * Key packet and has exactly the same format.
+ * @memberof module:packet
  * @constructor
- * @extends module:packet/secret_key
+ * @extends module:packet.SecretKey
  */
-export default function SecretSubkey() {
-  secretKey.call(this);
+function SecretSubkey(date = new Date()) {
+  SecretKey.call(this, date);
   this.tag = enums.packet.secretSubkey;
 }
 
-SecretSubkey.prototype = new secretKey();
+SecretSubkey.prototype = new SecretKey();
 SecretSubkey.prototype.constructor = SecretSubkey;
+
+export default SecretSubkey;

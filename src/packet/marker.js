@@ -15,28 +15,26 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+/**
+ * @requires enums
+ */
+
+import enums from '../enums';
 
 /**
- * Implementation of the strange "Marker packet" (Tag 10)<br/>
- * <br/>
- * {@link http://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}: An experimental version of PGP used this packet as the Literal
+ * Implementation of the strange "Marker packet" (Tag 10)
+ *
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.8|RFC4880 5.8}:
+ * An experimental version of PGP used this packet as the Literal
  * packet, but no released version of PGP generated Literal packets with this
  * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
- * the Marker packet.<br/>
- * <br/>
+ * the Marker packet.
+ *
  * Such a packet MUST be ignored when received.
- * @requires enums
- * @module packet/marker
- */
-
-'use strict';
-
-import enums from '../enums.js';
-
-/**
+ * @memberof module:packet
  * @constructor
  */
-export default function Marker() {
+function Marker() {
   this.tag = enums.packet.marker;
 }
 
@@ -49,7 +47,7 @@ export default function Marker() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @return {module:packet/marker} Object representation
+ * @returns {module:packet.Marker} Object representation
  */
 Marker.prototype.read = function (bytes) {
   if (bytes[0] === 0x50 && // P
@@ -60,3 +58,5 @@ Marker.prototype.read = function (bytes) {
   // marker packet does not contain "PGP"
   return false;
 };
+
+export default Marker;

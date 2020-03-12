@@ -19,13 +19,14 @@ npm install
 grunt set_version --release=$1
 
 # build and test
-npm test
+rm -rf dist
+rm -f browserify-cache*
+npm run build
+grunt test
 
 # Add build files to git
-sed -i "" '/^dist\/$/d' .gitignore
-git add dist/ *.json
+git add --force dist/ bower.json npm-shrinkwrap.json package.json
 git commit -m "Release new version"
-git checkout .gitignore
 git tag v$1
 git push
 git push --tag

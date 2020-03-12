@@ -1,58 +1,92 @@
+/* eslint-disable callback-return */
+/**
+ * @requires web-stream-tools
+ * @requires packet/all_packets
+ * @requires packet/packet
+ * @requires config
+ * @requires enums
+ * @requires util
+ */
+
+import stream from 'web-stream-tools';
+import * as packets from './all_packets';
+import packetParser from './packet';
+import config from '../config';
+import enums from '../enums';
+import util from '../util';
+
 /**
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
  * are stored as numerical indices.
- * @requires util
- * @requires enums
- * @requires packet
- * @requires packet/packet
- * @module packet/packetlist
- */
-
-'use strict';
-
-import util from '../util';
-import packetParser from './packet.js';
-import * as packets from './all_packets.js';
-import enums from '../enums.js';
-import config from '../config';
-
-/**
+ * @memberof module:packet
  * @constructor
+ * @extends Array
  */
-export default function Packetlist() {
-  /** The number of packets contained within the list.
+function List() {
+  /**
+   * The number of packets contained within the list.
    * @readonly
-   * @type {Integer} */
+   * @type {Integer}
+   */
   this.length = 0;
 }
+
+List.prototype = [];
+
 /**
  * Reads a stream of binary data and interprents it as a list of packets.
- * @param {Uint8Array} A Uint8Array of bytes.
+ * @param {Uint8Array | ReadableStream<Uint8Array>} A Uint8Array of bytes.
  */
-Packetlist.prototype.read = function (bytes) {
-  var i = 0;
-
-  while (i < bytes.length) {
-    var parsed = packetParser.read(bytes, i, bytes.length - i);
-    i = parsed.offset;
-
-    var pushed = false;
+List.prototype.read = async function (bytes, streaming) {
+  this.stream = stream.transformPair(bytes, async (readable, writable) => {
+    const writer = stream.getWriter(writable);
     try {
-      var tag = enums.read(enums.packet, parsed.tag);
-      var packet = packets.newPacketFromTag(tag);
-      this.push(packet);
-      pushed = true;
-      packet.read(parsed.packet);
-    } catch(e) {
-      if (!config.tolerant || parsed.tag == enums.packet.symmetricallyEncrypted || parsed.tag == enums.packet.literal || parsed.tag == enums.packet.compressed) {
-        throw e;
+      while (true) {
+        await writer.ready;
+        const done = await packetParser.read(readable, streaming, async parsed => {
+          try {
+            const tag = enums.read(enums.packet, parsed.tag);
+            const packet = packets.newPacketFromTag(tag);
+            packet.packets = new List();
+            packet.fromStream = util.isStream(parsed.packet);
+            await packet.read(parsed.packet, streaming);
+            await writer.write(packet);
+          } catch (e) {
+            if (!config.tolerant || packetParser.supportsStreaming(parsed.tag)) {
+              // The packets that support streaming are the ones that contain
+              // message data. Those are also the ones we want to be more strict
+              // about and throw on parse errors for.
+              await writer.abort(e);
+            }
+            util.print_debug_error(e);
+          }
+        });
+        if (done) {
+          await writer.ready;
+          await writer.close();
+          return;
+        }
       }
-      if (pushed) {
-        this.pop(); // drop unsupported packet
-      }
+    } catch (e) {
+      await writer.abort(e);
+    }
+  });
+
+  // Wait until first few packets have been read
+  const reader = stream.getReader(this.stream);
+  while (true) {
+    const { done, value } = await reader.read();
+    if (!done) {
+      this.push(value);
+    } else {
+      this.stream = null;
+    }
+    if (done || packetParser.supportsStreaming(value.tag)) {
+      break;
     }
   }
+  reader.releaseLock();
 };
 
 /**
@@ -60,126 +94,97 @@ Packetlist.prototype.read = function (bytes) {
  * class instance.
  * @returns {Uint8Array} A Uint8Array containing valid openpgp packets.
  */
-Packetlist.prototype.write = function () {
-  var arr = [];
+List.prototype.write = function () {
+  const arr = [];
 
-  for (var i = 0; i < this.length; i++) {
-    var packetbytes = this[i].write();
-    arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
-    arr.push(packetbytes);
+  for (let i = 0; i < this.length; i++) {
+    const packetbytes = this[i].write();
+    if (util.isStream(packetbytes) && packetParser.supportsStreaming(this[i].tag)) {
+      let buffer = [];
+      let bufferLength = 0;
+      const minLength = 512;
+      arr.push(packetParser.writeTag(this[i].tag));
+      arr.push(stream.transform(packetbytes, value => {
+        buffer.push(value);
+        bufferLength += value.length;
+        if (bufferLength >= minLength) {
+          const powerOf2 = Math.min(Math.log(bufferLength) / Math.LN2 | 0, 30);
+          const chunkSize = 2 ** powerOf2;
+          const bufferConcat = util.concat([packetParser.writePartialLength(powerOf2)].concat(buffer));
+          buffer = [bufferConcat.subarray(1 + chunkSize)];
+          bufferLength = buffer[0].length;
+          return bufferConcat.subarray(0, 1 + chunkSize);
+        }
+      }, () => util.concat([packetParser.writeSimpleLength(bufferLength)].concat(buffer))));
+    } else {
+      if (util.isStream(packetbytes)) {
+        let length = 0;
+        arr.push(stream.transform(stream.clone(packetbytes), value => {
+          length += value.length;
+        }, () => packetParser.writeHeader(this[i].tag, length)));
+      } else {
+        arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
+      }
+      arr.push(packetbytes);
+    }
   }
 
-  return util.concatUint8Array(arr);
+  return util.concat(arr);
 };
 
 /**
  * Adds a packet to the list. This is the only supported method of doing so;
  * writing to packetlist[i] directly will result in an error.
+ * @param {Object} packet Packet to push
  */
-Packetlist.prototype.push = function (packet) {
+List.prototype.push = function (packet) {
   if (!packet) {
     return;
   }
 
-  packet.packets = packet.packets || new Packetlist();
+  packet.packets = packet.packets || new List();
 
   this[this.length] = packet;
   this.length++;
 };
 
 /**
- * Remove a packet from the list and return it.
- * @return {Object}   The packet that was removed
+ * Creates a new PacketList with all packets from the given types
  */
-Packetlist.prototype.pop = function() {
-  if (this.length === 0) {
-    return;
-  }
+List.prototype.filterByTag = function (...args) {
+  const filtered = new List();
 
-  var packet = this[this.length - 1];
-  delete this[this.length - 1];
-  this.length--;
+  const handle = tag => packetType => tag === packetType;
 
-  return packet;
-};
-
-/**
-* Creates a new PacketList with all packets that pass the test implemented by the provided function.
-*/
-Packetlist.prototype.filter = function (callback) {
-
-  var filtered = new Packetlist();
-
-  for (var i = 0; i < this.length; i++) {
-    if (callback(this[i], i, this)) {
+  for (let i = 0; i < this.length; i++) {
+    if (args.some(handle(this[i].tag))) {
       filtered.push(this[i]);
     }
   }
 
   return filtered;
-};
-
-/**
-* Creates a new PacketList with all packets from the given types
-*/
-Packetlist.prototype.filterByTag = function () {
-  var args = Array.prototype.slice.call(arguments);
-  var filtered = new Packetlist();
-  var that = this;
-
-  function handle(packetType) {return that[i].tag === packetType;}
-  for (var i = 0; i < this.length; i++) {
-    if (args.some(handle)) {
-      filtered.push(this[i]);
-    }
-  }
-
-  return filtered;
-};
-
-/**
-* Executes the provided callback once for each element
-*/
-Packetlist.prototype.forEach = function (callback) {
-  for (var i = 0; i < this.length; i++) {
-    callback(this[i]);
-  }
 };
 
 /**
  * Traverses packet tree and returns first matching packet
  * @param  {module:enums.packet} type The packet type
- * @return {module:packet/packet|null}
+ * @returns {module:packet/packet|undefined}
  */
-Packetlist.prototype.findPacket = function (type) {
-  var packetlist = this.filterByTag(type);
-  if (packetlist.length) {
-    return packetlist[0];
-  } else {
-    var found = null;
-    for (var i = 0; i < this.length; i++) {
-      if (this[i].packets.length) {
-        found = this[i].packets.findPacket(type);
-        if (found) {
-          return found;
-        }
-      }
-    }
-  }
-  return null;
+List.prototype.findPacket = function (type) {
+  return this.find(packet => packet.tag === type);
 };
 
 /**
  * Returns array of found indices by tag
  */
-Packetlist.prototype.indexOfTag = function () {
-  var args = Array.prototype.slice.call(arguments);
-  var tagIndex = [];
-  var that = this;
+List.prototype.indexOfTag = function (...args) {
+  const tagIndex = [];
+  const that = this;
 
-  function handle(packetType) {return that[i].tag === packetType;}
-  for (var i = 0; i < this.length; i++) {
-    if (args.some(handle)) {
+  const handle = tag => packetType => tag === packetType;
+
+  for (let i = 0; i < this.length; i++) {
+    if (args.some(handle(that[i].tag))) {
       tagIndex.push(i);
     }
   }
@@ -187,45 +192,41 @@ Packetlist.prototype.indexOfTag = function () {
 };
 
 /**
- * Returns slice of packetlist
- */
-Packetlist.prototype.slice = function (begin, end) {
-  if (!end) {
-    end = this.length;
-  }
-  var part = new Packetlist();
-  for (var i = begin; i < end; i++) {
-    part.push(this[i]);
-  }
-  return part;
-};
-
-/**
  * Concatenates packetlist or array of packets
  */
-Packetlist.prototype.concat = function (packetlist) {
+List.prototype.concat = function (packetlist) {
   if (packetlist) {
-    for (var i = 0; i < packetlist.length; i++) {
+    for (let i = 0; i < packetlist.length; i++) {
       this.push(packetlist[i]);
     }
   }
+  return this;
 };
 
 /**
  * Allocate a new packetlist from structured packetlist clone
- * See {@link http://www.w3.org/html/wg/drafts/html/master/infrastructure.html#safe-passing-of-structured-data}
+ * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
  * @param {Object} packetClone packetlist clone
  * @returns {Object} new packetlist object with data from packetlist clone
  */
-Packetlist.fromStructuredClone = function(packetlistClone) {
-  var packetlist = new Packetlist();
-  for (var i = 0; i < packetlistClone.length; i++) {
-    packetlist.push(packets.fromStructuredClone(packetlistClone[i]));
-    if (packetlist[i].packets.length !== 0) {
-      packetlist[i].packets = this.fromStructuredClone(packetlist[i].packets);
-    } else {
-      packetlist[i].packets = new Packetlist();
+List.fromStructuredClone = function(packetlistClone) {
+  const packetlist = new List();
+  for (let i = 0; i < packetlistClone.length; i++) {
+    const packet = packets.fromStructuredClone(packetlistClone[i]);
+    packetlist.push(packet);
+    if (packet.embeddedSignature) {
+      packet.embeddedSignature = packets.fromStructuredClone(packet.embeddedSignature);
     }
+    if (packet.packets.length !== 0) {
+      packet.packets = this.fromStructuredClone(packet.packets);
+    } else {
+      packet.packets = new List();
+    }
+  }
+  if (packetlistClone.stream) {
+    packetlist.stream = stream.transform(packetlistClone.stream, packet => packets.fromStructuredClone(packet));
   }
   return packetlist;
 };
+
+export default List;

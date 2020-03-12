@@ -1,16 +1,15 @@
-'use strict';
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
 
-var openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const chai = require('chai');
 
-var chai = require('chai'),
-  expect = chai.expect;
+const { expect } = chai;
 
-describe('HKP unit tests', function() {
+describe.skip('HKP unit tests', function() {
   this.timeout(60000);
 
-  var hkp;
+  let hkp;
 
-  var pub_key = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
+  const pub_key = '-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n' +
       'Version: SKS 1.1.5\r\n' +
       'Comment: Hostname: keyserver.ubuntu.com\r\n' +
       '\r\n' +
@@ -106,6 +105,19 @@ describe('HKP unit tests', function() {
       '=5obP\r\n' +
       '-----END PGP PUBLIC KEY BLOCK-----';
 
+      const revocation_certificate = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+      Comment: This is a revocation certificate
+
+      iQFFBCABCAAvFiEE6mWHlKTGvbGenE8BstiRuVIg7eYFAlxec9cRHQB0aGlzIGlz
+      IGEgdGVzdC4ACgkQstiRuVIg7eZkywf/QuHU6WaOGmI635xsV8GNyvOOHzDpVuzM
+      AYGIKOLf1l661aS1MIvbXGxI86a3CzLs3K9nqUS7uAZ89vhf6L8RDZSkpn2GzY3K
+      JQb0ZM+qf2TGkVDZ/wI8H/BMkJGCLbvbn6Ywk/o4GQIl/ISJPQTiC5VixayLEUQ3
+      6dnENegfEIptSOPNBOelRPfbT8tqcR6SxibjXYxlCqvdSgt7lui06vGcejl4qNgZ
+      oNMuvQNShV2G9KkPda3AZWCIWzUBuKN5UuE06u68iclH2ckEicQvnmxHnJU/BSC9
+      h3bdqlMa87hRGnWluKpJT+XRP0UGiN8UGWo8OEpdz8KbvVTCUVya4g==
+      =Wjv9
+      -----END PGP PUBLIC KEY BLOCK-----`
+
   beforeEach(function() {
     hkp = new openpgp.HKP(openpgp.config.keyserver);
   });
@@ -113,39 +125,40 @@ describe('HKP unit tests', function() {
   afterEach(function() {});
 
   describe('lookup', function() {
-    it('by email address should work', function(done) {
-      hkp.lookup({
+    it('by email address should work', function() {
+      return hkp.lookup({
         query: 'safewithme.testuser@gmail.com'
       }).then(function(key) {
         expect(key).to.exist;
-        done();
       });
     });
 
-    it('by email address should not find a key', function(done) {
-      hkp.lookup({
+    it('by email address should not find a key', function() {
+      return hkp.lookup({
         query: 'safewithme.testuse@gmail.com'
       }).then(function(key) {
         expect(key).to.be.undefined;
-        done();
       });
     });
 
-    it('by key id should work', function(done) {
-      hkp.lookup({
+    it('by key id should work', function() {
+      return hkp.lookup({
         keyId: 'D7FB93FCDFBFC23C'
       }).then(function(key) {
         expect(key).to.exist;
-        done();
       });
     });
   });
 
-  describe('upload', function() {
-    it('should work', function(done) {
-      hkp.upload(pub_key).then(function() {
-        done();
-      });
+  describe('upload public key', function() {
+    it('should work', function() {
+      return hkp.upload(pub_key);
+    });
+  });
+
+  describe('upload revocation certificate', function() {
+    it('should work', function() {
+      return hkp.upload(revocation_certificate);
     });
   });
 
