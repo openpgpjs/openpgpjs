@@ -345,7 +345,7 @@ function tests() {
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
       dataArrived();
-    expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
+      expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
     } finally {
       openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
@@ -424,32 +424,32 @@ function tests() {
     let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
     openpgp.config.allow_unauthenticated_stream = true;
     try {
-    const encrypted = await openpgp.encrypt({
-      message: openpgp.message.fromBinary(data),
-      publicKeys: pubKey,
-      privateKeys: privKey
-    });
-    expect(util.isStream(encrypted)).to.equal(expectedType);
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(data),
+        publicKeys: pubKey,
+        privateKeys: privKey
+      });
+      expect(util.isStream(encrypted)).to.equal(expectedType);
 
-    const message = await openpgp.message.readArmored(openpgp.stream.transform(encrypted, value => {
-      value += '';
-      const newlineIndex = value.indexOf('\r\n', 500);
-      if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-      return value;
-    }));
-    const decrypted = await openpgp.decrypt({
-      publicKeys: pubKey,
-      privateKeys: privKey,
-      message,
-      streaming: expectedType,
-      format: 'binary'
-    });
-    expect(util.isStream(decrypted.data)).to.equal(expectedType);
-    const reader = openpgp.stream.getReader(decrypted.data);
-    expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-    dataArrived();
-    await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
-    expect(decrypted.signatures).to.exist.and.have.length(1);
+      const message = await openpgp.message.readArmored(openpgp.stream.transform(encrypted, value => {
+        value += '';
+        const newlineIndex = value.indexOf('\r\n', 500);
+        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
+        return value;
+      }));
+      const decrypted = await openpgp.decrypt({
+        publicKeys: pubKey,
+        privateKeys: privKey,
+        message,
+        streaming: expectedType,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      const reader = openpgp.stream.getReader(decrypted.data);
+      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
+      dataArrived();
+      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      expect(decrypted.signatures).to.exist.and.have.length(1);
     } finally {
       openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
@@ -459,32 +459,32 @@ function tests() {
     let allow_unauthenticated_streamValue = openpgp.config.allow_unauthenticated_stream;
     openpgp.config.allow_unauthenticated_stream = true;
     try {
-    const encrypted = await openpgp.encrypt({
-      message: openpgp.message.fromBinary(data),
-      publicKeys: pubKey,
-      privateKeys: privKey
-    });
-    expect(util.isStream(encrypted)).to.equal(expectedType);
+      const encrypted = await openpgp.encrypt({
+        message: openpgp.message.fromBinary(data),
+        publicKeys: pubKey,
+        privateKeys: privKey
+      });
+      expect(util.isStream(encrypted)).to.equal(expectedType);
 
-    const message = await openpgp.message.readArmored(openpgp.stream.transform(encrypted, value => {
-      value += '';
-      const newlineIndex = value.indexOf('\r\n', 500);
-      if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-      return value;
-    }));
-    const decrypted = await openpgp.decrypt({
-      privateKeys: privKey,
-      message,
-      streaming: expectedType,
-      format: 'binary'
-    });
-    expect(util.isStream(decrypted.data)).to.equal(expectedType);
-    const reader = openpgp.stream.getReader(decrypted.data);
-    expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-    dataArrived();
-    await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
-    expect(decrypted.signatures).to.exist.and.have.length(1);
-    expect(await decrypted.signatures[0].verified).to.be.null;
+      const message = await openpgp.message.readArmored(openpgp.stream.transform(encrypted, value => {
+        value += '';
+        const newlineIndex = value.indexOf('\r\n', 500);
+        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
+        return value;
+      }));
+      const decrypted = await openpgp.decrypt({
+        privateKeys: privKey,
+        message,
+        streaming: expectedType,
+        format: 'binary'
+      });
+      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      const reader = openpgp.stream.getReader(decrypted.data);
+      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
+      dataArrived();
+      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      expect(decrypted.signatures).to.exist.and.have.length(1);
+      expect(await decrypted.signatures[0].verified).to.be.null;
     } finally {
       openpgp.config.allow_unauthenticated_stream = allow_unauthenticated_streamValue;
     }
