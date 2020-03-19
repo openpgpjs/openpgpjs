@@ -1825,8 +1825,8 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
       expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
     };
-    const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(async function(key) {
       testPref(key.key);
       testPref(await openpgp.key.readArmored(key.publicKeyArmored));
@@ -1867,8 +1867,8 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
       expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
     };
-    const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     try {
       const key = await openpgp.generateKey(opt);
       testPref(key.key);
@@ -1887,8 +1887,8 @@ function versionSpecificTests() {
   });
 
   it('Generated key is not unlocked by default', function() {
-    const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: '123'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: 'test <a@b.com>', passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     let key;
     return openpgp.generateKey(opt).then(function(newKey) {
       key = newKey.key;
@@ -1902,8 +1902,8 @@ function versionSpecificTests() {
 
   it('Generate key - single userid', function() {
     const userId = { name: 'test', email: 'a@b.com', comment: 'test comment' };
-    const opt = {numBits: 512, userIds: userId, passphrase: '123'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId, passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
@@ -1916,8 +1916,8 @@ function versionSpecificTests() {
 
   it('Generate key - single userid (all missing)', function() {
     const userId = { name: '', email: '', comment: '' };
-    const opt = {numBits: 512, userIds: userId, passphrase: '123'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId, passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
@@ -1930,8 +1930,8 @@ function versionSpecificTests() {
 
   it('Generate key - single userid (missing email)', function() {
     const userId = { name: 'test', email: '', comment: 'test comment' };
-    const opt = {numBits: 512, userIds: userId, passphrase: '123'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId, passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
@@ -1944,8 +1944,8 @@ function versionSpecificTests() {
 
   it('Generate key - single userid (missing comment)', function() {
     const userId = { name: 'test', email: 'a@b.com', comment: '' };
-    const opt = {numBits: 512, userIds: userId, passphrase: '123'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId, passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
@@ -1959,12 +1959,12 @@ function versionSpecificTests() {
   it('Generate key - setting date to the past', function() {
     const past = new Date(0);
     const opt = {
-      numBits: 512,
+      rsaBits: 512,
       userIds: { name: 'Test User', email: 'text@example.com' },
       passphrase: 'secret',
       date: past
     };
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
     return openpgp.generateKey(opt).then(function(newKey) {
       expect(newKey.key).to.exist;
@@ -1977,12 +1977,12 @@ function versionSpecificTests() {
   it('Generate key - setting date to the future', function() {
     const future = new Date(Math.ceil(Date.now() / 1000) * 1000 + 1000);
     const opt = {
-      numBits: 512,
+      rsaBits: 512,
       userIds: { name: 'Test User', email: 'text@example.com' },
       passphrase: 'secret',
       date: future
     };
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
     return openpgp.generateKey(opt).then(function(newKey) {
       expect(newKey.key).to.exist;
@@ -1995,8 +1995,8 @@ function versionSpecificTests() {
   it('Generate key - multi userid', function() {
     const userId1 = 'test <a@b.com>';
     const userId2 = 'test <b@c.com>';
-    const opt = {numBits: 512, userIds: [userId1, userId2], passphrase: '123'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: [userId1, userId2], passphrase: '123'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(2);
@@ -2058,15 +2058,15 @@ function versionSpecificTests() {
 
   it('Generate key - override main key options for subkey', function() {
     const userId = 'test <a@b.com>';
-    const opt = {numBits: 512, userIds: [userId], passphrase: '123', subkeys:[{curve: 'curve25519'}]};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: [userId], passphrase: '123', subkeys:[{curve: 'curve25519'}]};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.getAlgorithmInfo().algorithm).to.equal('rsa_encrypt_sign');
-      expect(key.getAlgorithmInfo().bits).to.equal(opt.numBits);
+      expect(key.getAlgorithmInfo().bits).to.equal(opt.rsaBits);
       expect(key.getAlgorithmInfo().rsaBits).to.equal(key.getAlgorithmInfo().bits);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
     });
@@ -2074,8 +2074,8 @@ function versionSpecificTests() {
 
   it('Encrypt key with new passphrase', async function() {
     const userId = 'test <a@b.com>';
-    const opt = {numBits: 512, userIds: userId, passphrase: 'passphrase'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId, passphrase: 'passphrase'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     const key = (await openpgp.generateKey(opt)).key;
     const armor1 = key.armor();
     const armor2 = key.armor();
@@ -2095,8 +2095,8 @@ function versionSpecificTests() {
   it('Generate key - ensure keyExpirationTime works', function() {
     const expect_delta = 365 * 24 * 60 * 60;
     const userId = 'test <a@b.com>';
-    const opt = {numBits: 512, userIds: userId, passphrase: '123', keyExpirationTime: expect_delta};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId, passphrase: '123', keyExpirationTime: expect_delta};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(async function(key) {
       key = key.key;
 
@@ -2195,8 +2195,8 @@ function versionSpecificTests() {
   it('Reformat key without passphrase', function() {
     const userId1 = 'test1 <a@b.com>';
     const userId2 = 'test2 <b@a.com>';
-    const opt = {numBits: 512, userIds: userId1};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId1};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
@@ -2273,8 +2273,8 @@ function versionSpecificTests() {
     const userId1 = 'test1 <a@b.com>';
     const userId2 = 'test2 <b@c.com>';
     const userId3 = 'test3 <c@d.com>';
-    const opt = {numBits: 512, userIds: userId1};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId1};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       opt.privateKey = key;
@@ -2294,8 +2294,8 @@ function versionSpecificTests() {
   it('Sign and encrypt with reformatted key', function() {
     const userId1 = 'test1 <a@b.com>';
     const userId2 = 'test2 <b@a.com>';
-    const opt = {numBits: 512, userIds: userId1};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: userId1};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       opt.privateKey = key;
@@ -2313,8 +2313,8 @@ function versionSpecificTests() {
   });
 
   it('Reject with user-friendly error when reformatting encrypted key', function() {
-    const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(original) {
       return openpgp.reformatKey({privateKey: original.key, userIds: 'test2 <b@a.com>', passphrase: '1234'}).then(function() {
         throw new Error('reformatKey should result in error when key not decrypted');
@@ -2325,8 +2325,8 @@ function versionSpecificTests() {
   });
 
   it('Revoke generated key with revocation certificate', function() {
-    const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(original) {
       return openpgp.revokeKey({key: original.key.toPublic(), revocationCertificate: original.revocationCertificate}).then(async function(revKey) {
         revKey = revKey.publicKey;
@@ -2338,8 +2338,8 @@ function versionSpecificTests() {
   });
 
   it('Revoke generated key with private key', function() {
-    const opt = {numBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: 'test1 <a@b.com>', passphrase: '1234'};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(async function(original) {
       await original.key.decrypt('1234');
       return openpgp.revokeKey({key: original.key, reasonForRevocation: {string: 'Testing key revocation'}}).then(async function(revKey) {
@@ -3067,7 +3067,7 @@ VYGdb3eNlV8CfoEC
 
   it("Should throw when trying to encrypt a key that's already encrypted", async function() {
     await expect((async function() {
-      let { privateKeyArmored } = await openpgp.generateKey({ userIds: [{ email: 'hello@user.com' }], passphrase: 'pass', numBits: openpgp.util.getWebCryptoAll() ? 2048 : 512 });
+      let { privateKeyArmored } = await openpgp.generateKey({ userIds: [{ email: 'hello@user.com' }], passphrase: 'pass', rsaBits: openpgp.util.getWebCryptoAll() ? 2048 : 512 });
       let k = await openpgp.key.readArmored(privateKeyArmored);
       await k.decrypt('pass');
       await k.encrypt('pass');
