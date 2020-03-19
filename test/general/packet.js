@@ -891,12 +891,16 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   });
 
   it('Writing and verification of a signature packet.', function() {
+    const v5_keysVal = openpgp.config.v5_keys;
+    openpgp.config.v5_keys = false;
+
     const key = new openpgp.packet.SecretKey();
 
     const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    return rsa.generate(keySize, "10001").then(function(mpiGen) {
+    try {
+      return rsa.generate(keySize, "10001").then(function(mpiGen) {
         let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
         mpi = mpi.map(function(k) {
           return new openpgp.MPI(k);
@@ -932,6 +936,9 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
             openpgp.stream.pipe(signed2[0].getBytes(), new openpgp.stream.WritableStream())
           ]);
         });
-    });
+      });
+    } finally {
+      openpgp.config.v5_keys = v5_keysVal;
+    }
   });
 });
