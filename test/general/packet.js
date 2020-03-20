@@ -912,8 +912,8 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       literal.setText(testText);
 
-      signature.hashAlgorithm = 'sha256';
-      signature.publicKeyAlgorithm = 'rsa_sign';
+      signature.hashAlgorithm = openpgp.enums.hash.sha256;
+      signature.publicKeyAlgorithm = openpgp.enums.publicKey.rsa_sign;
       signature.signatureType = openpgp.enums.signature.text;
 
       return signature.sign(key, literal).then(async () => {
