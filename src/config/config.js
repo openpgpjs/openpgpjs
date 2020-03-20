@@ -70,7 +70,7 @@ export default {
   aead_chunk_size_byte:     12,
   /**
    * Use V5 keys.
-   * **NOT INTEROPERABLE WITH OTHER OPENPGP IMPLEMENTATIONS**
+   * Note: not all OpenPGP implementations are compatible with this option
    * @memberof module:config
    * @property {Boolean} v5_keys
    */
