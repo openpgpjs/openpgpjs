@@ -641,7 +641,6 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.destroyWorker();
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
-        rsaBits: 512
       };
 
       return openpgp.generateKey(opt).then(function(newKey) {
@@ -660,7 +659,6 @@ describe('OpenPGP.js public api tests', function() {
       }
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
-        rsaBits: 512
       };
 
       return openpgp.generateKey(opt).then(function(newKey) {
@@ -674,9 +672,7 @@ describe('OpenPGP.js public api tests', function() {
       openpgp.config.use_native = true;
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
-        rsaBits: 512
       };
-      if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
       return openpgp.generateKey(opt).then(function(newKey) {
         expect(newKey.key.getUserIds()[0]).to.equal('Test User <text@example.com>');
@@ -1246,9 +1242,7 @@ describe('OpenPGP.js public api tests', function() {
         it('should encrypt/sign and decrypt/verify with generated key', function () {
           const genOpt = {
             userIds: [{ name: 'Test User', email: 'text@example.com' }],
-            rsaBits: 512
           };
-          if (openpgp.util.getWebCryptoAll()) { genOpt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
           return openpgp.generateKey(genOpt).then(async function(newKey) {
             const newPublicKey = await openpgp.key.readArmored(newKey.publicKeyArmored);
@@ -1280,7 +1274,6 @@ describe('OpenPGP.js public api tests', function() {
         it('should encrypt/sign and decrypt/verify with generated key and detached signatures', async function () {
           const newKey = await openpgp.generateKey({
             userIds: [{ name: 'Test User', email: 'text@example.com' }],
-            rsaBits: openpgp.util.getWebCryptoAll() ? 2048 : 512 // webkit webcrypto accepts minimum 2048 bit keys
           });
           const newPublicKey = await openpgp.key.readArmored(newKey.publicKeyArmored);
           const newPrivateKey = await openpgp.key.readArmored(newKey.privateKeyArmored);
