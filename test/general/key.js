@@ -1823,7 +1823,16 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
+
+      let expectedFeatures;
+      if (openpgp.config.v5_keys) {
+        expectedFeatures = [7]; // v5 + aead + mdc
+      } else if (openpgp.config.aead_protect) {
+        expectedFeatures = [3]; // aead + mdc
+      } else {
+        expectedFeatures = [1]; // mdc
+      }
+      expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -1865,7 +1874,16 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512, hash.sha1]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
-      expect(key.users[0].selfCertifications[0].features).to.eql(openpgp.config.v5_keys ? [7] : [1]);
+
+      let expectedFeatures;
+      if (openpgp.config.v5_keys) {
+        expectedFeatures = [7]; // v5 + aead + mdc
+      } else if (openpgp.config.aead_protect) {
+        expectedFeatures = [3]; // aead + mdc
+      } else {
+        expectedFeatures = [1]; // mdc
+      }
+      expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
     };
     const opt = {numBits: 512, userIds: 'test <a@b.com>', passphrase: 'hello'};
     if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
