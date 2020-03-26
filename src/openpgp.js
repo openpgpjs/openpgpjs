@@ -129,10 +129,11 @@ export async function destroyWorker() {
  * @async
  * @static
  */
-export function generateKey({ userIds = [], passphrase = "", numBits = 2048, rsaBits = numBits, keyExpirationTime = 0, curve = "", date = new Date(), subkeys = [{}] }) {
+export function generateKey({ userIds = [], passphrase = "", rsaBits = null, keyExpirationTime = 0, curve = "curve25519", date = new Date(), subkeys = [{}] }) {
   userIds = toArray(userIds);
+  curve = rsaBits ? "" : curve;
   const options = { userIds, passphrase, rsaBits, keyExpirationTime, curve, date, subkeys };
-  if (util.getWebCryptoAll() && rsaBits < 2048) {
+  if (util.getWebCryptoAll() && rsaBits && rsaBits < 2048) {
     throw new Error('rsaBits should be 2048 or 4096, found: ' + rsaBits);
   }
 
