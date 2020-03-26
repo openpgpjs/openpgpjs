@@ -2545,6 +2545,8 @@ function versionSpecificTests() {
 
 describe('Key', function() {
   let rsaGenStub;
+  let v5_keysVal;
+  let aead_protectVal;
   let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
 
   beforeEach(function() {
@@ -2557,11 +2559,25 @@ describe('Key', function() {
   });
 
   tryTests('V4', versionSpecificTests, {
-    if: !openpgp.config.ci
+    if: !openpgp.config.ci,
+    beforeEach: function() {
+      v5_keysVal = openpgp.config.v5_keys;
+      openpgp.config.v5_keys = false;
+    },
+    afterEach: function() {
+      openpgp.config.v5_keys = v5_keysVal;
+    }
   });
 
   tryTests('V4 - With Worker', versionSpecificTests, {
     if: typeof window !== 'undefined' && window.Worker,
+    beforeEach: function() {
+      v5_keysVal = openpgp.config.v5_keys;
+      openpgp.config.v5_keys = false;
+    },
+    afterEach: function() {
+      openpgp.config.v5_keys = v5_keysVal;
+    },
     before: async function() {
       try {
         await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
@@ -2574,8 +2590,6 @@ describe('Key', function() {
     }
   });
 
-  let v5_keysVal;
-  let aead_protectVal;
   tryTests('V5', versionSpecificTests, {
     if: !openpgp.config.ci,
     beforeEach: function() {
