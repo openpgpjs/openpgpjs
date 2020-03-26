@@ -41,7 +41,7 @@ import armor from '../encoding/armor';
  * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
  *                             To indicate what type of key to make.
  *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
- * @param {Integer} options.numBits    number of bits for the key creation.
+ * @param {Integer} options.rsaBits    number of bits for the key creation.
  * @param {String|Array<String>}  options.userIds
  *                             Assumes already in form of "User Name <username@email.com>"
  *                             If array is used, the first userId is set as primary user Id
