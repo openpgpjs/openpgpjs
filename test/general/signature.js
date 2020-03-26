@@ -1623,8 +1623,8 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const privKey2 = await openpgp.key.readArmored(priv_key_arm2);
     await privKey2.decrypt('hello world');
 
-    const opt = {numBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {rsaBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
+    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(gen) {
       const generatedKey = gen.key;
       return msg.signDetached([generatedKey, privKey2]).then(detachedSig => {
@@ -1637,8 +1637,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   });
 
   it('Sign message with key without password', function() {
-    const opt = {numBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
-    if (openpgp.util.getWebCryptoAll()) { opt.numBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = {userIds: { name:'test', email:'a@b.com' }, passphrase: null};
     return openpgp.generateKey(opt).then(function(gen) {
       const key = gen.key;
       let message = openpgp.message.fromText('hello world');
