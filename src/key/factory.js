@@ -180,9 +180,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       enums.symmetric.aes256,
       enums.symmetric.aes128,
-      enums.symmetric.aes192,
-      enums.symmetric.cast5,
-      enums.symmetric.tripledes
+      enums.symmetric.aes192
     ], config.encryption_cipher);
     if (config.aead_protect) {
       signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
