@@ -571,19 +571,21 @@ Signature.prototype.toSign = function (type, data) {
 
   switch (type) {
     case t.binary:
+      console.log('bin');
       if (data.text !== null) {
         return util.encode_utf8(data.getText(true));
       }
       return data.getBytes(true);
 
     case t.text: {
-      let text = data.getText(true);
+      let bytes = data.getBytes(true);
       // normalize EOL to \r\n
-      text = util.canonicalizeEOL(text);
-      // encode UTF8
-      return util.encode_utf8(text);
+      bytes = util.canonicalizeEOL(bytes, true);
+
+      return util.canonicalizeEOL(bytes, true);
     }
     case t.standalone:
+
       return new Uint8Array(0);
 
     case t.cert_generic:
