@@ -191,10 +191,9 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       ], config.aead_mode);
     }
     signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
-      // prefer fast asm.js implementations (SHA-256). SHA-1 will not be secure much longer...move to bottom of list
+      // prefer fast asm.js implementations (SHA-256)
       enums.hash.sha256,
-      enums.hash.sha512,
-      enums.hash.sha1
+      enums.hash.sha512
     ], config.prefer_hash_algorithm);
     signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
       enums.compression.zlib,
