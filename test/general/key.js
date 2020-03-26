@@ -1820,7 +1820,7 @@ function versionSpecificTests() {
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.eax, aead.ocb]);
       }
       const hash = openpgp.enums.hash;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha1]);
+      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
 
@@ -1870,7 +1870,7 @@ function versionSpecificTests() {
         expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.experimental_gcm, aead.eax, aead.ocb]);
       }
       const hash = openpgp.enums.hash;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512, hash.sha1]);
+      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
       const compr = openpgp.enums.compression;
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
 

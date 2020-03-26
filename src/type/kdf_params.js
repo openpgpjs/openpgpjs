@@ -27,8 +27,6 @@
  * @module type/kdf_params
  */
 
-import enums from '../enums.js';
-
 /**
  * @constructor
  * @param  {enums.hash}       hash    Hash algorithm
@@ -39,8 +37,8 @@ function KDFParams(data) {
     this.hash = data[0];
     this.cipher = data[1];
   } else {
-    this.hash = enums.hash.sha1;
-    this.cipher = enums.symmetric.aes128;
+    this.hash = null;
+    this.cipher = null;
   }
 }
 
