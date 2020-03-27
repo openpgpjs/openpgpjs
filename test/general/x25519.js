@@ -538,19 +538,3 @@ tryTests('X25519 Omnibus Tests', omnibus, {
   if: !openpgp.config.ci
 });
 
-tryTests('X25519 Omnibus Tests - Worker', omnibus, {
-  if: typeof window !== 'undefined' && window.Worker,
-  before: async function() {
-    try {
-      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    } catch (e) {
-      openpgp.util.print_debug_error(e);
-    }
-  },
-  beforeEach: function() {
-    openpgp.config.use_native = true;
-  },
-  after: function() {
-    openpgp.destroyWorker();
-  }
-});
