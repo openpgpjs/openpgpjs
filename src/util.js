@@ -698,14 +698,14 @@ export default {
 
     return stream.transform(util.nativeEOL(data, true), bytes => {
       const normalized = [];
-      bytes.forEach(x => {
+      for (let i = 0; i < bytes.length; i++){
+        const x = bytes[i];
         if (x === LF || x === CR) {
-          normalized.push(CR);
-          normalized.push(LF);
+          normalized.push(CR, LF);
         } else {
           normalized.push(x);
         }
-      });
+      }
       return new Uint8Array(normalized);
     });
   },
