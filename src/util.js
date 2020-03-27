@@ -689,52 +689,48 @@ export default {
   },
 
   /**
-   * Normalize line endings to \r\n
+   * Normalize line endings to <CR><LF>
+   * Support any encoding where CR=0x0D, LF=0x0A
    */
-  canonicalizeEOL: function(data, isBytes = false) {
-    if (isBytes) {
-      const CR = 13;
-      const LF = 10;
+  canonicalizeEOL: function(data) {
+    const CR = 13;
+    const LF = 10;
 
-      return stream.transform(util.nativeEOL(data, true), bytes => new Uint8Array(Array.from(bytes).map(x => ((x === LF) ? [CR, LF] : [x])).flat()));
-    } else {
-      return stream.transform(util.nativeEOL(data), value => value.replace(/\r/g, "\n").replace(/\n/g, "\r\n"));
-    }
+    return stream.transform(util.nativeEOL(data, true), bytes => {
+      const normalized = [];
+      bytes.forEach(x => {
+        if (x === LF || x === CR) {
+          normalized.push(CR);
+          normalized.push(LF);
+        } else {
+          normalized.push(x);
+        }
+      });
+      return new Uint8Array(normalized);
+    });
   },
 
   /**
-   * Convert line endings from canonicalized \r\n to native \n
+   * Convert line endings from canonicalized <CR><LF> to native <LF>
+   * Support any encoding where CR=0x0D, LF=0x0A
    */
-  nativeEOL: function(text, isBytes = false) {
-    if (isBytes) {
-      const CR = 13;
-      const LF = 10;
-      const data = text;
-      let carryOverCR = false;
-      return stream.transform(data, bytes => {
-        bytes = carryOverCR ? [CR].concat(Array.from(bytes)) : Array.from(bytes);
-        if (bytes.slice(-1) === CR) {
-          carryOverCR = true;
-          bytes.pop();
-        } else {
-          carryOverCR = false;
-        }
+  nativeEOL: function(data) {
+    const CR = 13;
+    const LF = 10;
+    let carryOverCR = false;
 
-        return new Uint8Array(bytes.filter((x, i, xs) => (x !== CR || (i < xs.length - 1 && xs[i + 1] !== LF))));
-      }, () => new Uint8Array(carryOverCR ? CR : []));
-    } else {
-      let lastChar = '';
-      return stream.transform(text, value => {
-        value = lastChar + value;
-        if (value[value.length - 1] === '\r') {
-          lastChar = '\r';
-          value = value.slice(0, -1);
-        } else {
-          lastChar = '';
-        }
-        return value.replace(/\r\n/g, '\n');
-      }, () => lastChar);
-    }
+    return stream.transform(data, bytes => {
+      bytes = carryOverCR ? [CR].concat(Array.from(bytes)) : Array.from(bytes);
+
+      if (bytes[bytes.length - 1] === CR) {
+        carryOverCR = true;
+        bytes.pop();
+      } else {
+        carryOverCR = false;
+      }
+
+      return new Uint8Array(bytes.filter((x, i, xs) => (x !== CR || (i < xs.length - 1 && xs[i + 1] !== LF))));
+    }, () => new Uint8Array(carryOverCR ? [CR] : []));
   },
 
   /**

@@ -43,7 +43,7 @@ export function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = util.canonicalizeEOL(util.removeTrailingSpaces(text));
+  this.text = normalizeEOL(util.removeTrailingSpaces(text), true);
   if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -124,7 +124,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys, date = new
  */
 CleartextMessage.prototype.getText = function() {
   // normalize end of line to \n
-  return util.nativeEOL(this.text);
+  return normalizeEOL(this.text);
 };
 
 /**
@@ -217,4 +217,19 @@ function verifyHeaders(headers, packetlist) {
  */
 export function fromText(text) {
   return new CleartextMessage(text);
+}
+
+/**
+ * Normalize line endings to either native \n or canonical \r\n
+ * @param {String}  text
+ * @param {Boolean} canonical
+ * @private
+ */
+function normalizeEOL(text, canonical = false) {
+  let normalized = text.replace(/\r\n/g, '\n');
+  if (canonical) {
+    normalized = normalized.replace(/\r/g, "\n").replace(/\n/g, "\r\n");
+  }
+
+  return normalized;
 }
