@@ -132,38 +132,6 @@ describe('Util unit tests', function() {
     });
   });
 
-  describe('getTransferables', function() {
-    const buf1 = new Uint8Array(1);
-    const buf2 = new Uint8Array(1);
-    const obj = {
-        data1: buf1,
-        data2: buf1,
-        data3: {
-          data4: buf2
-        }
-      };
-
-    it('should return undefined when zero_copy is false', function() {
-      openpgp.config.zero_copy = false;
-      expect(openpgp.util.getTransferables(obj, false)).to.be.undefined;
-    });
-    it('should return undefined for no input', function() {
-      expect(openpgp.util.getTransferables(undefined, true)).to.be.undefined;
-    });
-    it('should return undefined for an empty oject', function() {
-      expect(openpgp.util.getTransferables({}, true)).to.be.undefined;
-    });
-    if (typeof navigator !== 'undefined') {
-      it('should return two buffers', function() {
-        expect(openpgp.util.getTransferables(obj, true)).to.deep.equal(
-          navigator.userAgent.indexOf('Safari') !== -1 && (navigator.userAgent.indexOf('Version/11.1') !== -1 || (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56) ?
-          undefined :
-          [buf1.buffer, buf2.buffer]
-        );
-      });
-    }
-  });
-
   describe("Misc.", function() {
     it('util.readNumber should not overflow until full range of uint32', function () {
       const ints = [Math.pow(2, 20), Math.pow(2, 25), Math.pow(2, 30), Math.pow(2, 32) - 1];

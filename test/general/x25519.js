@@ -220,7 +220,7 @@ const input = require('./testInputs');
       expect(publicKey).to.deep.equal(openpgp.util.hex_to_Uint8Array(vector.PUBLIC_KEY));
       const data = util.str_to_Uint8Array(vector.MESSAGE);
       const keyIntegers = [
-        openpgp.OID.fromClone(curve),
+        new openpgp.OID(curve.oid),
         new openpgp.MPI(util.hex_to_str('40'+vector.PUBLIC_KEY)),
         new openpgp.MPI(util.hex_to_str(vector.SECRET_KEY))
       ];

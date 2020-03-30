@@ -620,7 +620,6 @@ describe('OpenPGP.js public api tests', function() {
     let privateKey;
     let publicKey;
     let publicKeyNoAEAD;
-    let zero_copyVal;
     let use_nativeVal;
     let aead_protectVal;
     let aead_modeVal;
@@ -637,7 +636,6 @@ describe('OpenPGP.js public api tests', function() {
       publicKey_2038_2045 = privateKey_2038_2045.toPublic();
       privateKey_1337 = await openpgp.key.readArmored(priv_key_expires_1337);
       publicKey_1337 = privateKey_1337.toPublic();
-      zero_copyVal = openpgp.config.zero_copy;
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
       aead_modeVal = openpgp.config.aead_mode;
@@ -646,7 +644,6 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     afterEach(function() {
-      openpgp.config.zero_copy = zero_copyVal;
       openpgp.config.use_native = use_nativeVal;
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_mode = aead_modeVal;
@@ -1623,8 +1620,7 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt and decrypt with binary data and transferable objects', function () {
-          openpgp.config.zero_copy = true; // activate transferable objects
+        it('should encrypt and decrypt with binary data', function () {
           const encOpt = {
             message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01])),
             passwords: password1,
@@ -1636,7 +1632,6 @@ describe('OpenPGP.js public api tests', function() {
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.message.read(encrypted);
-            openpgp.config.zero_copy = false;
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             expect(decrypted.data).to.deep.equal(new Uint8Array([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01]));

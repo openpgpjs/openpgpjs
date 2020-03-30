@@ -177,9 +177,9 @@ export function revokeKey({
  * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
  * @async
  */
-export function decryptKey({ privateKey, passphrase }, fromWorker = false) {
+export function decryptKey({ privateKey, passphrase }) {
   return Promise.resolve().then(async function() {
-    const key = fromWorker ? privateKey : await privateKey.clone(true);
+    const key = await privateKey.clone(true);
     await key.decrypt(passphrase);
     return key;
   }).catch(onError.bind(null, 'Error decrypting private key'));
@@ -192,9 +192,9 @@ export function decryptKey({ privateKey, passphrase }, fromWorker = false) {
  * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
  * @async
  */
-export function encryptKey({ privateKey, passphrase }, fromWorker = false) {
+export function encryptKey({ privateKey, passphrase }) {
   return Promise.resolve().then(async function() {
-    const key = fromWorker ? privateKey : await privateKey.clone(true);
+    const key = await privateKey.clone(true);
     await key.encrypt(passphrase);
     return key;
   }).catch(onError.bind(null, 'Error encrypting private key'));

@@ -262,19 +262,4 @@ PublicKey.prototype.getAlgorithmInfo = function () {
   return result;
 };
 
-/**
- * Fix custom types after cloning
- */
-PublicKey.prototype.postCloneTypeFix = function() {
-  const algo = enums.write(enums.publicKey, this.algorithm);
-  const types = crypto.getPubKeyParamTypes(algo);
-  for (let i = 0; i < types.length; i++) {
-    const param = this.params[i];
-    this.params[i] = types[i].fromClone(param);
-  }
-  if (this.keyid) {
-    this.keyid = type_keyid.fromClone(this.keyid);
-  }
-};
-
 export default PublicKey;
