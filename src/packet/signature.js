@@ -582,7 +582,6 @@ Signature.prototype.toSign = function (type, data) {
       return util.canonicalizeEOL(bytes);
     }
     case t.standalone:
-
       return new Uint8Array(0);
 
     case t.cert_generic:
