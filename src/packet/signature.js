@@ -577,11 +577,9 @@ Signature.prototype.toSign = function (type, data) {
       return data.getBytes(true);
 
     case t.text: {
-      let text = data.getText(true);
+      const bytes = data.getBytes(true);
       // normalize EOL to \r\n
-      text = util.canonicalizeEOL(text);
-      // encode UTF8
-      return util.encode_utf8(text);
+      return util.canonicalizeEOL(bytes);
     }
     case t.standalone:
       return new Uint8Array(0);

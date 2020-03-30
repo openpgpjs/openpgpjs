@@ -64,7 +64,7 @@ Literal.prototype.setText = function(text, format = 'utf8') {
  */
 Literal.prototype.getText = function(clone = false) {
   if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
-    this.text = util.nativeEOL(util.decode_utf8(this.getBytes(clone)));
+    this.text = util.decode_utf8(util.nativeEOL(this.getBytes(clone)));
   }
   return this.text;
 };
@@ -88,8 +88,8 @@ Literal.prototype.setBytes = function(bytes, format) {
  */
 Literal.prototype.getBytes = function(clone = false) {
   if (this.data === null) {
-    // normalize EOL to \r\n and encode UTF8
-    this.data = util.encode_utf8(util.canonicalizeEOL(this.text));
+    // encode UTF8 and normalize EOL to \r\n
+    this.data = util.canonicalizeEOL(util.encode_utf8(this.text));
   }
   if (clone) {
     return stream.passiveClone(this.data);

@@ -43,7 +43,7 @@ export function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = util.canonicalizeEOL(util.removeTrailingSpaces(text));
+  this.text = util.removeTrailingSpaces(text).replace(/\r\n/g, '\n').replace(/[\r\n]/g, '\r\n');
   if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -124,7 +124,7 @@ CleartextMessage.prototype.verifyDetached = function(signature, keys, date = new
  */
 CleartextMessage.prototype.getText = function() {
   // normalize end of line to \n
-  return util.nativeEOL(this.text);
+  return this.text.replace(/\r\n/g, '\n');
 };
 
 /**
