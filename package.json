@@ -28,7 +28,8 @@
     "build": "grunt build --compat copy:openpgp_compat && grunt build --lightweight copy:openpgp_lightweight clean:js && grunt build",
     "pretest": "grunt",
     "test": "grunt test",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "postinstall": "rm -f browserify-cache*"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
