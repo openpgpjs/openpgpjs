@@ -37,7 +37,7 @@ function node_hash(type) {
 
 function hashjs_hash(hash, webCryptoHash) {
   return async function(data) {
-    if (!util.isStream(data) && webCrypto && webCryptoHash && data.length >= config.min_bytes_for_web_crypto) {
+    if (!util.isStream(data) && webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     }
     const hashInstance = hash();
@@ -54,7 +54,7 @@ function asmcrypto_hash(hash, webCryptoHash) {
       return stream.transform(data, value => {
         hashInstance.process(value);
       }, () => hashInstance.finish().result);
-    } else if (webCrypto && webCryptoHash && data.length >= config.min_bytes_for_web_crypto) {
+    } else if (webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     } else {
       return hash.bytes(data);

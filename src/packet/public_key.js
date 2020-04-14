@@ -56,7 +56,7 @@ function PublicKey(date = new Date()) {
    * Packet version
    * @type {Integer}
    */
-  this.version = config.v5_keys ? 5 : 4;
+  this.version = config.v5Keys ? 5 : 4;
   /**
    * Key creation date.
    * @type {Date}

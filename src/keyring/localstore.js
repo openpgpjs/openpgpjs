@@ -40,7 +40,7 @@ function LocalStore(prefix) {
   if (typeof global !== 'undefined' && global.localStorage) {
     this.storage = global.localStorage;
   } else {
-    this.storage = new (require('node-localstorage').LocalStorage)(config.node_store);
+    this.storage = new (require('node-localstorage').LocalStorage)(config.nodeStore);
   }
 }
 

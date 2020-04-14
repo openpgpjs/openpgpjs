@@ -573,18 +573,18 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - integration tests', function() {
-    let use_nativeVal;
+    let useNativeVal;
 
     beforeEach(function() {
-      use_nativeVal = openpgp.config.use_native;
+      useNativeVal = openpgp.config.useNative;
     });
 
     afterEach(function() {
-      openpgp.config.use_native = use_nativeVal;
+      openpgp.config.useNative = useNativeVal;
     });
 
     it('should work in JS', function() {
-      openpgp.config.use_native = false;
+      openpgp.config.useNative = false;
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
       };
@@ -597,7 +597,7 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     it('should work in with native crypto', function() {
-      openpgp.config.use_native = true;
+      openpgp.config.useNative = true;
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
       };
@@ -620,10 +620,10 @@ describe('OpenPGP.js public api tests', function() {
     let privateKey;
     let publicKey;
     let publicKeyNoAEAD;
-    let use_nativeVal;
-    let aead_protectVal;
-    let aead_modeVal;
-    let aead_chunk_size_byteVal;
+    let useNativeVal;
+    let aeadProtectVal;
+    let aeadModeVal;
+    let aeadChunkSizeByteVal;
     let v5_keysVal;
 
     beforeEach(async function() {
@@ -636,24 +636,24 @@ describe('OpenPGP.js public api tests', function() {
       publicKey_2038_2045 = privateKey_2038_2045.toPublic();
       privateKey_1337 = await openpgp.key.readArmored(priv_key_expires_1337);
       publicKey_1337 = privateKey_1337.toPublic();
-      use_nativeVal = openpgp.config.use_native;
-      aead_protectVal = openpgp.config.aead_protect;
-      aead_modeVal = openpgp.config.aead_mode;
-      aead_chunk_size_byteVal = openpgp.config.aead_chunk_size_byte;
-      v5_keysVal = openpgp.config.v5_keys;
+      useNativeVal = openpgp.config.useNative;
+      aeadProtectVal = openpgp.config.aeadProtect;
+      aeadModeVal = openpgp.config.aeadMode;
+      aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+      v5KeysVal = openpgp.config.v5Keys;
     });
 
     afterEach(function() {
-      openpgp.config.use_native = use_nativeVal;
-      openpgp.config.aead_protect = aead_protectVal;
-      openpgp.config.aead_mode = aead_modeVal;
-      openpgp.config.aead_chunk_size_byte = aead_chunk_size_byteVal;
-      openpgp.config.v5_keys = v5_keysVal;
+      openpgp.config.useNative = useNativeVal;
+      openpgp.config.aeadProtect = aeadProtectVal;
+      openpgp.config.aeadMode = aeadModeVal;
+      openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
+      openpgp.config.v5Keys = v5KeysVal;
     });
 
     it('Configuration', async function() {
-      openpgp.config.show_version = false;
-      openpgp.config.commentstring = 'different';
+      openpgp.config.showVersion = false;
+      openpgp.config.commentString = 'different';
 
       return openpgp.encrypt({ publicKeys:publicKey, message:openpgp.message.fromText(plaintext) }).then(function(encrypted) {
         expect(encrypted).to.exist;
@@ -713,16 +713,16 @@ describe('OpenPGP.js public api tests', function() {
     tryTests('CFB mode (asm.js)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.aead_protect = false;
+        openpgp.config.aeadProtect = false;
       }
     });
 
     tryTests('GCM mode (V5 keys)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.aead_protect = true;
-        openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
-        openpgp.config.v5_keys = true;
+        openpgp.config.aeadProtect = true;
+        openpgp.config.aeadMode = openpgp.enums.aead.experimental_gcm;
+        openpgp.config.v5Keys = true;
 
         // Monkey-patch AEAD feature flag
         publicKey.users[0].selfCertifications[0].features = [7];
@@ -734,8 +734,8 @@ describe('OpenPGP.js public api tests', function() {
     tryTests('EAX mode (small chunk size)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.aead_protect = true;
-        openpgp.config.aead_chunk_size_byte = 0;
+        openpgp.config.aeadProtect = true;
+        openpgp.config.aeadChunkSizeByte = 0;
 
         // Monkey-patch AEAD feature flag
         publicKey.users[0].selfCertifications[0].features = [7];
@@ -747,8 +747,8 @@ describe('OpenPGP.js public api tests', function() {
     tryTests('OCB mode', tests, {
       if: !openpgp.config.ci,
       beforeEach: function() {
-        openpgp.config.aead_protect = true;
-        openpgp.config.aead_mode = openpgp.enums.aead.ocb;
+        openpgp.config.aeadProtect = true;
+        openpgp.config.aeadMode = openpgp.enums.aead.ocb;
 
         // Monkey-patch AEAD feature flag
         publicKey.users[0].selfCertifications[0].features = [7];
@@ -1069,7 +1069,7 @@ describe('OpenPGP.js public api tests', function() {
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.message.readArmored(encrypted);
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect);
+            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aeadProtect);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -1123,7 +1123,7 @@ describe('OpenPGP.js public api tests', function() {
             };
             return openpgp.encrypt(encOpt).then(async function (encrypted) {
               decOpt.message = await openpgp.message.readArmored(encrypted);
-              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect);
+              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aeadProtect);
               return openpgp.decrypt(decOpt);
             }).then(async function (decrypted) {
               expect(decrypted.data).to.equal(plaintext);
@@ -1152,7 +1152,7 @@ describe('OpenPGP.js public api tests', function() {
             detached: true
           });
           const message = await openpgp.message.readArmored(encrypted);
-          expect(!!message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aead_protect);
+          expect(!!message.packets.findPacket(openpgp.enums.packet.symEncryptedAEADProtected)).to.equal(openpgp.config.aeadProtect);
           const decrypted = await openpgp.decrypt({
             message,
             signature: await openpgp.signature.readArmored(signed),
@@ -1453,7 +1453,7 @@ describe('OpenPGP.js public api tests', function() {
                   expect(e.message).to.match(/Ascii armor integrity check on message failed/);
                   expect(stepReached).to.equal(
                     j === 0 ? 0 :
-                      (openpgp.config.aead_chunk_size_byte === 0 && (j === 2 || openpgp.util.detectNode() || openpgp.util.getHardwareConcurrency() < 8)) || (!openpgp.config.aead_protect && openpgp.config.allow_unauthenticated_stream) ? 2 :
+                      (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || openpgp.util.detectNode() || openpgp.util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
                       1
                   );
                   return;
@@ -2210,8 +2210,8 @@ describe('OpenPGP.js public api tests', function() {
       it('should decrypt broken Blowfish message from old OpenPGP.js', async function() {
         openpgp.crypto.cipher.blowfish.blockSize = 16;
         openpgp.crypto.cipher.blowfish.prototype.blockSize = 16;
-        const use_nativeVal = openpgp.config.use_native;
-        openpgp.config.use_native = false;
+        const useNativeVal = openpgp.config.useNative;
+        openpgp.config.useNative = false;
         try {
           const { data } = await openpgp.decrypt({
             passwords: 'test',
@@ -2229,7 +2229,7 @@ YCXOZwd3z5lxcj/M
         } finally {
           openpgp.crypto.cipher.blowfish.blockSize = 8;
           openpgp.crypto.cipher.blowfish.prototype.blockSize = 8;
-          openpgp.config.use_native = use_nativeVal;
+          openpgp.config.useNative = useNativeVal;
         }
       });
 

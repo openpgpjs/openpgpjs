@@ -474,7 +474,7 @@ export default {
 
     let blinder;
     let unblinder;
-    if (config.rsa_blinding) {
+    if (config.rsaBlinding) {
       unblinder = (await random.getRandomBN(new BN(2), n)).toRed(nred);
       blinder = unblinder.redInvm().redPow(e);
       data = data.toRed(nred).redMul(blinder).fromRed();
@@ -487,7 +487,7 @@ export default {
 
     let result = h.mul(p).add(mp).toRed(nred);
 
-    if (config.rsa_blinding) {
+    if (config.rsaBlinding) {
       result = result.redMul(unblinder);
     }
 

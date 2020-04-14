@@ -455,7 +455,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
 
         this.notations.push([name, value]);
 
-        if (critical && (config.known_notations.indexOf(name) === -1)) {
+        if (critical && (config.knownNotations.indexOf(name) === -1)) {
           throw new Error("Unknown critical notation: " + name);
         }
       } else {
@@ -739,10 +739,10 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
   if (!verified) {
     throw new Error('Signature verification failed');
   }
-  if (config.reject_hash_algorithms.has(hashAlgorithm)) {
+  if (config.rejectHashAlgorithms.has(hashAlgorithm)) {
     throw new Error('Insecure hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
   }
-  if (config.reject_message_hash_algorithms.has(hashAlgorithm) &&
+  if (config.rejectMessageHashAlgorithms.has(hashAlgorithm) &&
     [enums.signature.binary, enums.signature.text].includes(this.signatureType)) {
     throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
   }
