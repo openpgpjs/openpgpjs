@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.1 - 2020-02-27 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.2 - 2020-04-15 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -24722,7 +24722,7 @@ function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = _util2.default.canonicalizeEOL(_util2.default.removeTrailingSpaces(text));
+  this.text = _util2.default.removeTrailingSpaces(text).replace(/\r\n/g, '\n').replace(/[\r\n]/g, '\r\n');
   if (signature && !(signature instanceof _signature.Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -24803,7 +24803,7 @@ CleartextMessage.prototype.verifyDetached = function (signature, keys, date = ne
  */
 CleartextMessage.prototype.getText = function () {
   // normalize end of line to \n
-  return _util2.default.nativeEOL(this.text);
+  return this.text.replace(/\r\n/g, '\n');
 };
 
 /**
@@ -25052,7 +25052,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.1",
+  versionstring: "OpenPGP.js v4.10.2",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -32533,7 +32533,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  */
 function HKP(keyServerBaseUrl) {
   this._baseUrl = keyServerBaseUrl || _config2.default.keyserver;
-  this._fetch = typeof global !== 'undefined' ? global.fetch : require('node-fetch');
+  this._fetch = typeof global.fetch === 'function' ? global.fetch : require('node-fetch');
 }
 
 /**
@@ -37824,7 +37824,7 @@ Literal.prototype.setText = function (text, format = 'utf8') {
 Literal.prototype.getText = function (clone = false) {
   if (this.text === null || _util2.default.isStream(this.text)) {
     // Assume that this.text has been read
-    this.text = _util2.default.nativeEOL(_util2.default.decode_utf8(this.getBytes(clone)));
+    this.text = _util2.default.decode_utf8(_util2.default.nativeEOL(this.getBytes(clone)));
   }
   return this.text;
 };
@@ -37847,8 +37847,8 @@ Literal.prototype.setBytes = function (bytes, format) {
  */
 Literal.prototype.getBytes = function (clone = false) {
   if (this.data === null) {
-    // normalize EOL to \r\n and encode UTF8
-    this.data = _util2.default.encode_utf8(_util2.default.canonicalizeEOL(this.text));
+    // encode UTF8 and normalize EOL to \r\n
+    this.data = _util2.default.canonicalizeEOL(_util2.default.encode_utf8(this.text));
   }
   if (clone) {
     return _webStreamTools2.default.passiveClone(this.data);
@@ -40396,11 +40396,9 @@ Signature.prototype.toSign = function (type, data) {
 
     case t.text:
       {
-        let text = data.getText(true);
+        const bytes = data.getBytes(true);
         // normalize EOL to \r\n
-        text = _util2.default.canonicalizeEOL(text);
-        // encode UTF8
-        return _util2.default.encode_utf8(text);
+        return _util2.default.canonicalizeEOL(bytes);
       }
     case t.standalone:
       return new Uint8Array(0);
@@ -43233,27 +43231,48 @@ exports.default = {
   },
 
   /**
-   * Normalize line endings to \r\n
+   * Normalize line endings to <CR><LF>
+   * Support any encoding where CR=0x0D, LF=0x0A
    */
-  canonicalizeEOL: function canonicalizeEOL(text) {
-    return _webStreamTools2.default.transform(_util2.default.nativeEOL(text), value => value.replace(/\r/g, "\n").replace(/\n/g, "\r\n"));
+  canonicalizeEOL: function canonicalizeEOL(data) {
+    const CR = 13;
+    const LF = 10;
+
+    return _webStreamTools2.default.transform(_util2.default.nativeEOL(data, true), bytes => {
+      const normalized = [];
+      for (let i = 0; i < bytes.length; i++) {
+        const x = bytes[i];
+        if (x === LF || x === CR) {
+          normalized.push(CR, LF);
+        } else {
+          normalized.push(x);
+        }
+      }
+      return new Uint8Array(normalized);
+    });
   },
 
   /**
-   * Convert line endings from canonicalized \r\n to native \n
+   * Convert line endings from canonicalized <CR><LF> to native <LF>
+   * Support any encoding where CR=0x0D, LF=0x0A
    */
-  nativeEOL: function nativeEOL(text) {
-    let lastChar = '';
-    return _webStreamTools2.default.transform(text, value => {
-      value = lastChar + value;
-      if (value[value.length - 1] === '\r') {
-        lastChar = '\r';
-        value = value.slice(0, -1);
+  nativeEOL: function nativeEOL(data) {
+    const CR = 13;
+    const LF = 10;
+    let carryOverCR = false;
+
+    return _webStreamTools2.default.transform(data, bytes => {
+      bytes = carryOverCR ? [CR].concat(Array.from(bytes)) : Array.from(bytes);
+
+      if (bytes[bytes.length - 1] === CR) {
+        carryOverCR = true;
+        bytes.pop();
       } else {
-        lastChar = '';
+        carryOverCR = false;
       }
-      return value.replace(/\r\n/g, '\n');
-    }, () => lastChar);
+
+      return new Uint8Array(bytes.filter((x, i, xs) => x !== CR || i < xs.length - 1 && xs[i + 1] !== LF));
+    }, () => new Uint8Array(carryOverCR ? [CR] : []));
   },
 
   /**
