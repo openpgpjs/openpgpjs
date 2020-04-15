@@ -41,7 +41,7 @@ function decode(msg) {
   const len = msg.length;
   if (len > 0) {
     const c = msg.charCodeAt(len - 1);
-    if (c >= 1 && c <= 8) {
+    if (c >= 1) {
       const provided = msg.substr(len - c);
       const computed = String.fromCharCode(c).repeat(c);
       if (provided === computed) {
