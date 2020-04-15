@@ -25,7 +25,7 @@ npm run build
 grunt test
 
 # Add build files to git
-git add --force dist/ bower.json npm-shrinkwrap.json package.json
+git add --force dist/ bower.json package-lock.json package.json
 git commit -m "Release new version"
 git tag v$1
 git push

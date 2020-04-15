@@ -318,7 +318,7 @@ module.exports = function(grunt) {
     });
 
     patchFile({
-      fileName: 'npm-shrinkwrap.json',
+      fileName: 'package-lock.json',
       version: version
     });
 
