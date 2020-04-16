@@ -43,7 +43,7 @@ export function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = util.removeTrailingSpaces(text).replace(/\r\n/g, '\n').replace(/[\r\n]/g, '\r\n');
+  this.text = util.removeTrailingSpaces(text).replace(/\r?\n/g, '\r\n');
   if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }

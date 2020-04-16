@@ -695,19 +695,29 @@ export default {
   canonicalizeEOL: function(data) {
     const CR = 13;
     const LF = 10;
+    let carryOverCR = false;
 
-    return stream.transform(util.nativeEOL(data, true), bytes => {
+    return stream.transform(data, bytes => {
+      bytes = carryOverCR ? [CR].concat(Array.from(bytes)) : Array.from(bytes);
+
+      if (bytes[bytes.length - 1] === CR) {
+        carryOverCR = true;
+        bytes.pop();
+      } else {
+        carryOverCR = false;
+      }
+
       const normalized = [];
       for (let i = 0; i < bytes.length; i++){
         const x = bytes[i];
-        if (x === LF || x === CR) {
+        if (x === LF && i > 0 && bytes[i - 1] !== CR) {
           normalized.push(CR, LF);
         } else {
           normalized.push(x);
         }
       }
       return new Uint8Array(normalized);
-    });
+    }, () => new Uint8Array(carryOverCR ? [CR] : []));
   },
 
   /**
