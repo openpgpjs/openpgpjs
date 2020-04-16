@@ -770,11 +770,4 @@ Signature.prototype.getExpirationTime = function () {
   return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime * 1000) : Infinity;
 };
 
-/**
- * Fix custom types after cloning
- */
-Signature.prototype.postCloneTypeFix = function() {
-  this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
-};
-
 export default Signature;

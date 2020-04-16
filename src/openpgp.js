@@ -27,7 +27,6 @@
  * @requires enums
  * @requires util
  * @requires polyfills
- * @requires worker/async_proxy
  * @module openpgp
  */
 
@@ -45,10 +44,8 @@ import * as messageLib from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import config from './config/config';
-import enums from './enums';
 import './polyfills';
 import util from './util';
-import AsyncProxy from './worker/async_proxy';
 
 let toNativeReadable;
 if (global.ReadableStream) {
@@ -56,54 +53,6 @@ if (global.ReadableStream) {
     toNativeReadable = createReadableStreamWrapper(global.ReadableStream);
   } catch (e) {}
 }
-
-//////////////////////////
-//                      //
-//   Web Worker setup   //
-//                      //
-//////////////////////////
-
-
-let asyncProxy; // instance of the asyncproxy
-
-/**
- * Set the path for the web worker script and create an instance of the async proxy
- * @param {String} path            relative path to the worker scripts, default: 'openpgp.worker.js'
- * @param {Number} n               number of workers to initialize
- * @param {Array<Object>} workers  alternative to path parameter: web workers initialized with 'openpgp.worker.js'
- * @returns {Promise<Boolean>}     returns a promise that resolves to true if all workers have succesfully finished loading
- * @async
- */
-export async function initWorker({ path = 'openpgp.worker.js', n = 1, workers = [] } = {}) {
-  if (workers.length || (typeof global !== 'undefined' && global.Worker && global.MessageChannel)) {
-    const proxy = new AsyncProxy();
-    await proxy.init({ path, n, workers, config });
-    asyncProxy = proxy;
-  } else {
-    throw new Error('Web Workers are not available');
-  }
-}
-
-/**
- * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
- * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
- */
-export function getWorker() {
-  return asyncProxy;
-}
-
-/**
- * Cleanup the current instance of the web worker.
- */
-export async function destroyWorker() {
-  const proxy = asyncProxy;
-  asyncProxy = undefined;
-  if (proxy) {
-    await proxy.clearKeyCache();
-    proxy.terminate();
-  }
-}
-
 
 //////////////////////
 //                  //
@@ -137,10 +86,6 @@ export function generateKey({ userIds = [], passphrase = "", rsaBits = null, key
     throw new Error('rsaBits should be 2048 or 4096, found: ' + rsaBits);
   }
 
-  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('generateKey', options);
-  }
-
   return generate(options).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate(date);
     key.revocationSignatures = [];
@@ -170,9 +115,6 @@ export function generateKey({ userIds = [], passphrase = "", rsaBits = null, key
 export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpirationTime = 0, date }) {
   userIds = toArray(userIds);
   const options = { privateKey, userIds, passphrase, keyExpirationTime, date };
-  if (asyncProxy) {
-    return asyncProxy.delegate('reformatKey', options);
-  }
 
   return reformat(options).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate(date);
@@ -205,14 +147,6 @@ export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpi
 export function revokeKey({
   key, revocationCertificate, reasonForRevocation
 } = {}) {
-  const options = {
-    key, revocationCertificate, reasonForRevocation
-  };
-
-  if (!util.getWebCryptoAll() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('revokeKey', options);
-  }
-
   return Promise.resolve().then(() => {
     if (revocationCertificate) {
       return key.applyRevocationCertificate(revocationCertificate);
@@ -243,13 +177,9 @@ export function revokeKey({
  * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
  * @async
  */
-export function decryptKey({ privateKey, passphrase }, fromWorker = false) {
-  if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('decryptKey', { privateKey, passphrase });
-  }
-
+export function decryptKey({ privateKey, passphrase }) {
   return Promise.resolve().then(async function() {
-    const key = fromWorker ? privateKey : await privateKey.clone(true);
+    const key = await privateKey.clone(true);
     await key.decrypt(passphrase);
     return key;
   }).catch(onError.bind(null, 'Error decrypting private key'));
@@ -262,13 +192,9 @@ export function decryptKey({ privateKey, passphrase }, fromWorker = false) {
  * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
  * @async
  */
-export function encryptKey({ privateKey, passphrase }, fromWorker = false) {
-  if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptKey', { privateKey, passphrase });
-  }
-
+export function encryptKey({ privateKey, passphrase }) {
   return Promise.resolve().then(async function() {
-    const key = fromWorker ? privateKey : await privateKey.clone(true);
+    const key = await privateKey.clone(true);
     await key.encrypt(passphrase);
     return key;
   }).catch(onError.bind(null, 'Error encrypting private key'));
@@ -308,9 +234,6 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
     throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");
   }
 
-  if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('encrypt', { message, publicKeys, privateKeys, passwords, sessionKey, compression, armor, streaming, detached, signature, wildcard, date, fromUserIds, toUserIds });
-  }
   return Promise.resolve().then(async function() {
     if (!privateKeys) {
       privateKeys = [];
@@ -357,10 +280,6 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
 export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format = 'utf8', streaming = message && message.fromStream, signature = null, date = new Date() }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
-  if (!nativeAEAD() && asyncProxy) { // use web worker if web crypto apis are not supported
-    return asyncProxy.delegate('decrypt', { message, privateKeys, passwords, sessionKeys, publicKeys, format, streaming, signature, date });
-  }
-
   return message.decrypt(privateKeys, passwords, sessionKeys, streaming).then(async function(decrypted) {
     if (!publicKeys) {
       publicKeys = [];
@@ -403,11 +322,6 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
   if (message instanceof CleartextMessage && detached) throw new Error("Can't sign detached cleartext message");
   privateKeys = toArray(privateKeys); fromUserIds = toArray(fromUserIds);
-  if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('sign', {
-      message, privateKeys, armor, streaming, detached, date, fromUserIds
-    });
-  }
 
   return Promise.resolve().then(async function() {
     let signature;
@@ -458,10 +372,6 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
   if (message instanceof CleartextMessage && format === 'binary') throw new Error("Can't return cleartext message data as binary");
   publicKeys = toArray(publicKeys);
 
-  if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('verify', { message, publicKeys, streaming, signature, date });
-  }
-
   return Promise.resolve().then(async function() {
     const result = {};
     result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming) : await message.verify(publicKeys, date, streaming);
@@ -495,10 +405,6 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
 export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = [] }) {
   publicKeys = toArray(publicKeys); toUserIds = toArray(toUserIds);
 
-  if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('generateSessionKey', { publicKeys, date, toUserIds });
-  }
-
   return Promise.resolve().then(async function() {
 
     return messageLib.generateSessionKey(publicKeys, date, toUserIds);
@@ -525,10 +431,6 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = 
 export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, armor = true, wildcard = false, date = new Date(), toUserIds = [] }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords); toUserIds = toArray(toUserIds);
 
-  if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('encryptSessionKey', { data, algorithm, aeadAlgorithm, publicKeys, passwords, armor, wildcard, date, toUserIds });
-  }
-
   return Promise.resolve().then(async function() {
 
     const message = await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
@@ -551,10 +453,6 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, 
  */
 export function decryptSessionKeys({ message, privateKeys, passwords }) {
   checkMessage(message); privateKeys = toArray(privateKeys); passwords = toArray(passwords);
-
-  if (asyncProxy) { // use web worker if available
-    return asyncProxy.delegate('decryptSessionKeys', { message, privateKeys, passwords });
-  }
 
   return Promise.resolve().then(async function() {
 
@@ -690,15 +588,4 @@ function onError(message, error) {
   } catch (e) {}
 
   throw error;
-}
-
-/**
- * Check for native AEAD support and configuration by the user. Only
- * browsers that implement the current WebCrypto specification support
- * native GCM. Native EAX is built on CTR and CBC, which current
- * browsers support. OCB and CFB are not natively supported.
- * @returns {Boolean}   If authenticated encryption should be used
- */
-function nativeAEAD() {
-  return config.aead_protect && (config.aead_mode === enums.aead.eax || config.aead_mode === enums.aead.experimental_gcm) && util.getWebCrypto();
 }

@@ -62,8 +62,4 @@ ECDHSymmetricKey.prototype.write = function () {
   return util.concatUint8Array([new Uint8Array([this.data.length]), this.data]);
 };
 
-ECDHSymmetricKey.fromClone = function (clone) {
-  return new ECDHSymmetricKey(clone.data);
-};
-
 export default ECDHSymmetricKey;

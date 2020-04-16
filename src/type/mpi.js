@@ -131,8 +131,4 @@ MPI.prototype.fromBN = function (bn) {
   this.data = bn.toArrayLike(Uint8Array);
 };
 
-MPI.fromClone = function (clone) {
-  return new MPI(clone.data);
-};
-
 export default MPI;

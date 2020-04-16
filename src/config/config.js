@@ -131,11 +131,6 @@ export default {
   min_bytes_for_web_crypto: 1000,
   /**
    * @memberof module:config
-   * @property {Boolean} Use transferable objects between the Web Worker and main thread
-   */
-  zero_copy:                false,
-  /**
-   * @memberof module:config
    * @property {Boolean} debug If enabled, debug messages will be printed
    */
   debug:                    false,
