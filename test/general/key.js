@@ -1850,11 +1850,6 @@ function versionSpecificTests() {
     openpgp.config.prefer_hash_algorithm = openpgp.enums.hash.sha224;
     openpgp.config.compression = openpgp.enums.compression.zlib;
     openpgp.config.aead_mode = openpgp.enums.aead.experimental_gcm;
-    if (openpgp.getWorker()) {
-      openpgp.getWorker().workers.forEach(worker => {
-        openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
-      });
-    }
 
     const testPref = function(key) {
       // key flags
@@ -1894,11 +1889,6 @@ function versionSpecificTests() {
       openpgp.config.prefer_hash_algorithm = prefer_hash_algorithmVal;
       openpgp.config.compression = compressionVal;
       openpgp.config.aead_mode = aead_modeVal;
-      if (openpgp.getWorker()) {
-        openpgp.getWorker().workers.forEach(worker => {
-          openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
-        });
-      }
     }
   });
 
@@ -2401,27 +2391,6 @@ describe('Key', function() {
     },
     afterEach: function() {
       openpgp.config.v5_keys = v5_keysVal;
-    }
-  });
-
-  tryTests('V4 - With Worker', versionSpecificTests, {
-    if: typeof window !== 'undefined' && window.Worker,
-    beforeEach: function() {
-      v5_keysVal = openpgp.config.v5_keys;
-      openpgp.config.v5_keys = false;
-    },
-    afterEach: function() {
-      openpgp.config.v5_keys = v5_keysVal;
-    },
-    before: async function() {
-      try {
-        await openpgp.initWorker({ path: '../dist/openpgp.worker.js' });
-      } catch (e) {
-        openpgp.util.print_debug_error(e);
-      }
-    },
-    after: function() {
-      openpgp.destroyWorker();
     }
   });
 

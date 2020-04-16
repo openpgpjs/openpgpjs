@@ -98,22 +98,5 @@ describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightwe
     expect(result.signatures[0].valid).to.be.true;
   });
 
-  tryTests('ECC Worker Tests', omnibus, {
-    if: typeof window !== 'undefined' && window.Worker,
-    before: async function() {
-      try {
-        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-      } catch (e) {
-        openpgp.util.print_debug_error(e);
-      }
-    },
-    beforeEach: function() {
-      openpgp.config.use_native = true;
-    },
-    after: function() {
-      openpgp.destroyWorker();
-    }
-  });
-
   // TODO find test vectors
 });

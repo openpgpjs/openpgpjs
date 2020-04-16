@@ -220,7 +220,7 @@ const input = require('./testInputs');
       expect(publicKey).to.deep.equal(openpgp.util.hex_to_Uint8Array(vector.PUBLIC_KEY));
       const data = util.str_to_Uint8Array(vector.MESSAGE);
       const keyIntegers = [
-        openpgp.OID.fromClone(curve),
+        new openpgp.OID(curve.oid),
         new openpgp.MPI(util.hex_to_str('40'+vector.PUBLIC_KEY)),
         new openpgp.MPI(util.hex_to_str(vector.SECRET_KEY))
       ];
@@ -538,19 +538,3 @@ tryTests('X25519 Omnibus Tests', omnibus, {
   if: !openpgp.config.ci
 });
 
-tryTests('X25519 Omnibus Tests - Worker', omnibus, {
-  if: typeof window !== 'undefined' && window.Worker,
-  before: async function() {
-    try {
-      await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-    } catch (e) {
-      openpgp.util.print_debug_error(e);
-    }
-  },
-  beforeEach: function() {
-    openpgp.config.use_native = true;
-  },
-  after: function() {
-    openpgp.destroyWorker();
-  }
-});
