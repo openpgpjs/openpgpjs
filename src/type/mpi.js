@@ -98,16 +98,11 @@ MPI.prototype.toUint8Array = function (endian, length) {
   length = length || this.data.length;
 
   const payload = new Uint8Array(length);
-  const start = length - this.data.length;
-  if (start < 0) {
-    throw new Error('Payload is too large.');
-  }
-
+  const start = endian === 'le' ? 0 : length - this.data.length;
   payload.set(this.data, start);
   if (endian === 'le') {
     payload.reverse();
   }
-
   return payload;
 };
 
