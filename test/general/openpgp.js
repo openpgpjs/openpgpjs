@@ -404,11 +404,6 @@ function withCompression(tests) {
           return options;
         },
         function() {
-          // Disable the call expectations when using the web worker because it's not possible to spy on what functions get called.
-          if (openpgp.getWorker()) {
-            return;
-          }
-
           if (compression === openpgp.enums.compression.uncompressed) {
             expect(compressSpy.called).to.be.false;
             expect(decompressSpy.called).to.be.false;
@@ -437,28 +432,6 @@ describe('OpenPGP.js public api tests', function() {
 
   afterEach(function() {
     rsaGenStub.restore();
-  });
-
-  describe('initWorker, getWorker, destroyWorker - unit tests', function() {
-    afterEach(function() {
-      openpgp.destroyWorker(); // cleanup worker in case of failure
-    });
-
-    it('should work', async function() {
-      const workerStub = {
-        postMessage: function() {},
-        terminate: function() {}
-      };
-      await Promise.all([
-        openpgp.initWorker({
-          workers: [workerStub]
-        }),
-        workerStub.onmessage({ data: { id: 0, event: 'method-return' } })
-      ]);
-      expect(openpgp.getWorker()).to.exist;
-      openpgp.destroyWorker();
-      expect(openpgp.getWorker()).to.not.exist;
-    });
   });
 
   describe('generateKey - validate user ids', function() {
@@ -571,7 +544,6 @@ describe('OpenPGP.js public api tests', function() {
 
     afterEach(function() {
       keyGenStub.restore();
-      openpgp.destroyWorker();
       getWebCryptoAllStub.restore();
     });
 
@@ -598,30 +570,6 @@ describe('OpenPGP.js public api tests', function() {
         expect(newKey.publicKeyArmored).to.exist;
       });
     });
-
-    it('should delegate to async proxy', async function() {
-      const workerStub = {
-        postMessage: function() {},
-        terminate: function() {}
-      };
-      await Promise.all([
-        openpgp.initWorker({
-          workers: [workerStub]
-        }),
-        workerStub.onmessage({ data: { id: 0, event: 'method-return' } })
-      ]);
-      const proxyGenStub = stub(openpgp.getWorker(), 'delegate');
-      getWebCryptoAllStub.returns();
-
-      const opt = {
-        userIds: { name: 'Test User', email: 'text@example.com' },
-        passphrase: 'secret',
-        subkeys: []
-      };
-      openpgp.generateKey(opt);
-      expect(proxyGenStub.calledOnce).to.be.true;
-      expect(keyGenStub.calledOnce).to.be.false;
-    });
   });
 
   describe('generateKey - integration tests', function() {
@@ -633,30 +581,10 @@ describe('OpenPGP.js public api tests', function() {
 
     afterEach(function() {
       openpgp.config.use_native = use_nativeVal;
-      openpgp.destroyWorker();
     });
 
-    it('should work in JS (without worker)', function() {
+    it('should work in JS', function() {
       openpgp.config.use_native = false;
-      openpgp.destroyWorker();
-      const opt = {
-        userIds: [{ name: 'Test User', email: 'text@example.com' }],
-      };
-
-      return openpgp.generateKey(opt).then(function(newKey) {
-        expect(newKey.key.getUserIds()[0]).to.equal('Test User <text@example.com>');
-        expect(newKey.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
-        expect(newKey.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
-      });
-    });
-
-    it('should work in JS (with worker)', async function() {
-      openpgp.config.use_native = false;
-      try {
-        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-      } catch (e) {
-        openpgp.util.print_debug_error(e);
-      }
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }],
       };
@@ -692,7 +620,6 @@ describe('OpenPGP.js public api tests', function() {
     let privateKey;
     let publicKey;
     let publicKeyNoAEAD;
-    let zero_copyVal;
     let use_nativeVal;
     let aead_protectVal;
     let aead_modeVal;
@@ -709,7 +636,6 @@ describe('OpenPGP.js public api tests', function() {
       publicKey_2038_2045 = privateKey_2038_2045.toPublic();
       privateKey_1337 = await openpgp.key.readArmored(priv_key_expires_1337);
       publicKey_1337 = privateKey_1337.toPublic();
-      zero_copyVal = openpgp.config.zero_copy;
       use_nativeVal = openpgp.config.use_native;
       aead_protectVal = openpgp.config.aead_protect;
       aead_modeVal = openpgp.config.aead_mode;
@@ -718,7 +644,6 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     afterEach(function() {
-      openpgp.config.zero_copy = zero_copyVal;
       openpgp.config.use_native = use_nativeVal;
       openpgp.config.aead_protect = aead_protectVal;
       openpgp.config.aead_mode = aead_modeVal;
@@ -729,56 +654,12 @@ describe('OpenPGP.js public api tests', function() {
     it('Configuration', async function() {
       openpgp.config.show_version = false;
       openpgp.config.commentstring = 'different';
-      if (openpgp.getWorker()) { // init again to trigger config event
-        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-      }
+
       return openpgp.encrypt({ publicKeys:publicKey, message:openpgp.message.fromText(plaintext) }).then(function(encrypted) {
         expect(encrypted).to.exist;
         expect(encrypted).not.to.match(/^Version:/);
         expect(encrypted).to.match(/Comment: different/);
       });
-    });
-
-    it('Test multiple workers', async function() {
-      openpgp.config.show_version = false;
-      openpgp.config.commentstring = 'different';
-      if (!openpgp.getWorker()) {
-        return;
-      }
-      const { workers } = openpgp.getWorker();
-      try {
-        await privateKey.decrypt(passphrase)
-        try {
-          await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 2});
-        } catch (e) {
-          openpgp.util.print_debug_error(e);
-        }
-
-        const workerTest = (_, index) => {
-          const plaintext = input.createSomeMessage() + index;
-          return openpgp.encrypt({
-            publicKeys: publicKey,
-            data: plaintext
-          }).then(function (encrypted) {
-            expect(encrypted).to.exist;
-            expect(encrypted).not.to.match(/^Version:/);
-            expect(encrypted).to.match(/Comment: different/);
-            return openpgp.decrypt({
-              privateKeys: privateKey,
-              message: openpgp.message.readArmored(encrypted)
-            });
-          }).then(function (decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-          });
-        };
-        await Promise.all(Array(10).fill(null).map(workerTest));
-      } finally {
-        try {
-          await openpgp.initWorker({path: '../dist/openpgp.worker.js', workers, n: 1 });
-        } catch (e) {
-          openpgp.util.print_debug_error(e);
-        }
-      }
     });
 
     it('Decrypting key with wrong passphrase rejected', async function () {
@@ -827,26 +708,9 @@ describe('OpenPGP.js public api tests', function() {
     });
 
     tryTests('CFB mode (asm.js)', tests, {
-      if: !(typeof window !== 'undefined' && window.Worker),
+      if: true,
       beforeEach: function() {
         openpgp.config.aead_protect = false;
-      }
-    });
-
-    tryTests('CFB mode (asm.js, worker)', tests, {
-      if: typeof window !== 'undefined' && window.Worker,
-      before: async function() {
-        try {
-          await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-        } catch (e) {
-          openpgp.util.print_debug_error(e);
-        }
-      },
-      beforeEach: function() {
-        openpgp.config.aead_protect = false;
-      },
-      after: function() {
-        openpgp.destroyWorker();
       }
     });
 
@@ -1576,11 +1440,6 @@ describe('OpenPGP.js public api tests', function() {
           const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
           for (let allow_streaming = 1; allow_streaming >= 0; allow_streaming--) {
             openpgp.config.allow_unauthenticated_stream = !!allow_streaming;
-            if (openpgp.getWorker()) {
-              openpgp.getWorker().workers.forEach(worker => {
-                openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
-              });
-            }
             await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
               await Promise.all([
                 encrypted,
@@ -1777,8 +1636,7 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt and decrypt with binary data and transferable objects', function () {
-          openpgp.config.zero_copy = true; // activate transferable objects
+        it('should encrypt and decrypt with binary data', function () {
           const encOpt = {
             message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01])),
             passwords: password1,
@@ -1790,21 +1648,8 @@ describe('OpenPGP.js public api tests', function() {
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.message.read(encrypted);
-            openpgp.config.zero_copy = false;
-            if (openpgp.getWorker()) {
-              openpgp.getWorker().workers.forEach(worker => {
-                openpgp.getWorker().callWorker(worker, 'configure', openpgp.config);
-              });
-            }
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
-            if (openpgp.getWorker()) {
-              if (navigator.userAgent.indexOf('Safari') !== -1 && (navigator.userAgent.indexOf('Version/11.1') !== -1 || (navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56)) {
-                expect(encOpt.message.packets[0].data.byteLength).to.equal(8); // browser doesn't support transfering buffers
-              } else {
-                expect(encOpt.message.packets[0].data.byteLength).to.equal(0); // transferred buffer should be empty
-              }
-            }
             expect(decrypted.data).to.deep.equal(new Uint8Array([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01]));
             expect(decrypted.signatures.length).to.equal(0);
           });
