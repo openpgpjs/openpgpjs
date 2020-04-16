@@ -191,13 +191,4 @@ S2K.prototype.produce_key = async function (passphrase, numBytes) {
   return util.concatUint8Array(arr).subarray(0, numBytes);
 };
 
-S2K.fromClone = function (clone) {
-  const s2k = new S2K();
-  s2k.algorithm = clone.algorithm;
-  s2k.type = clone.type;
-  s2k.c = clone.c;
-  s2k.salt = clone.salt;
-  return s2k;
-};
-
 export default S2K;

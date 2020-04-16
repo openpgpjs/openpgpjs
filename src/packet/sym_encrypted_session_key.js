@@ -194,11 +194,4 @@ SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   return true;
 };
 
-/**
- * Fix custom types after cloning
- */
-SymEncryptedSessionKey.prototype.postCloneTypeFix = function() {
-  this.s2k = type_s2k.fromClone(this.s2k);
-};
-
 export default SymEncryptedSessionKey;

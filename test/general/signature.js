@@ -1331,20 +1331,6 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
   tests();
 
-  tryTests('With Worker', tests, {
-    if: typeof window !== 'undefined' && window.Worker,
-    before: async function() {
-      try {
-        await openpgp.initWorker({ path:'../dist/openpgp.worker.js' });
-      } catch (e) {
-        openpgp.util.print_debug_error(e);
-      }
-    },
-    after: function() {
-      openpgp.destroyWorker();
-    }
-  });
-
   let reject_message_hash_algorithms;
   tryTests('Accept SHA-1 signatures', tests, {
     if: true,

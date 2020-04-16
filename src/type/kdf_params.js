@@ -65,9 +65,4 @@ KDFParams.prototype.write = function () {
   return new Uint8Array([3, 1, this.hash, this.cipher]);
 };
 
-KDFParams.fromClone = function (clone) {
-  const { hash, cipher } = clone;
-  return new KDFParams({ hash, cipher });
-};
-
 export default KDFParams;

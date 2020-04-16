@@ -203,30 +203,4 @@ List.prototype.concat = function (packetlist) {
   return this;
 };
 
-/**
- * Allocate a new packetlist from structured packetlist clone
- * See {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
- * @param {Object} packetClone packetlist clone
- * @returns {Object} new packetlist object with data from packetlist clone
- */
-List.fromStructuredClone = function(packetlistClone) {
-  const packetlist = new List();
-  for (let i = 0; i < packetlistClone.length; i++) {
-    const packet = packets.fromStructuredClone(packetlistClone[i]);
-    packetlist.push(packet);
-    if (packet.embeddedSignature) {
-      packet.embeddedSignature = packets.fromStructuredClone(packet.embeddedSignature);
-    }
-    if (packet.packets.length !== 0) {
-      packet.packets = this.fromStructuredClone(packet.packets);
-    } else {
-      packet.packets = new List();
-    }
-  }
-  if (packetlistClone.stream) {
-    packetlist.stream = stream.transform(packetlistClone.stream, packet => packets.fromStructuredClone(packet));
-  }
-  return packetlist;
-};
-
 export default List;

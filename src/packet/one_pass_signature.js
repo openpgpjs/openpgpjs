@@ -122,13 +122,6 @@ OnePassSignature.prototype.write = function () {
   return util.concatUint8Array([start, this.issuerKeyId.write(), end]);
 };
 
-/**
- * Fix custom types after cloning
- */
-OnePassSignature.prototype.postCloneTypeFix = function() {
-  this.issuerKeyId = type_keyid.fromClone(this.issuerKeyId);
-};
-
 OnePassSignature.prototype.hash = Signature.prototype.hash;
 OnePassSignature.prototype.toHash = Signature.prototype.toHash;
 OnePassSignature.prototype.toSign = Signature.prototype.toSign;

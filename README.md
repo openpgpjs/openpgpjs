@@ -42,7 +42,7 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 * The `dist/compat/openpgp.min.js` bundle also works with Internet Explorer 11 and old versions of Safari. Please note that this bundle overwrites the global `Promise` with a polyfill version even in some cases where it already exists, which may cause issues. It also adds some built-in prototype functions if they don't exist, such as `Array.prototype.includes`.
 
-* If you wish, you could even load one or the other depending on which browser the user is using. However, if you're using the Web Worker, keep in mind that you also need to pass `{ path: 'compat/openpgp.worker.min.js' }` to `initWorker` whenever you load `compat/openpgp.min.js`.
+* If you wish, you could even load one or the other depending on which browser the user is using.
 
 * Currently, Chrome, Safari and Edge have partial implementations of the
 [Streams specification](https://streams.spec.whatwg.org/), and Firefox
@@ -107,7 +107,7 @@ Or just fetch a minified build under [dist](https://github.com/openpgpjs/openpgp
 
 ### Examples
 
-Here are some examples of how to use the v2.x+ API. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/master/test/general/openpgp.js). If you're upgrading from v1.x it might help to check out the [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
+Here are some examples of how to use the v5.x+ API. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/master/test/general/openpgp.js). If you're upgrading from v4.x it might help to check out the [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
 
 #### Set up
 
@@ -125,19 +125,7 @@ Copy `dist/openpgp.min.js` or `dist/compat/openpgp.min.js` (depending on the bro
 <script src="openpgp.min.js"></script>
 ```
 
-If you want to use the built-in Web Worker, to offload cryptographic operations off the main thread:
-
-```js
-await openpgp.initWorker({ path: 'openpgp.worker.js' }); // set the relative web worker path
-```
-
-On logout, be sure to destroy the worker again, to clear private keys from memory:
-
-```js
-await openpgp.destroyWorker();
-```
-
-Alternatively, you can also implement a Web Worker in your application and load OpenPGP.js from there. This can be more performant if you store or fetch keys and messages directly inside the Worker, so that they don't have to be `postMessage`d there.
+To offload cryptographic operations off the main thread, you can implement a Web Worker in your application and load OpenPGP.js from there. This can be more performant if you store or fetch keys and messages directly inside the Worker, so that they don't have to be `postMessage`d there. For an example Worker implementation, see `test/worker/worker_example.js`.
 
 If you want to use the lightweight build (which is smaller, and lazily loads non-default curves on demand), copy `dist/lightweight/openpgp.min.js` and `dist/lightweight/elliptic.min.js`, load the former in a script tag, and point `openpgp.config.indutny_elliptic_path` to the latter:
 
@@ -186,8 +174,6 @@ Encryption will use the algorithm preferred by the public key (defaults to aes25
 const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via window.openpgp
 
 (async () => {
-    await openpgp.initWorker({ path: 'openpgp.worker.js' }); // set the relative web worker path
-
     // put keys in backtick (``) to avoid errors caused by spaces or tabs
     const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 ...

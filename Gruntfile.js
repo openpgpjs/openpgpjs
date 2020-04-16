@@ -75,14 +75,6 @@ module.exports = function(grunt) {
           plugin: ['browserify-derequire']
         }
       },
-      worker: {
-        files: {
-          'dist/openpgp.worker.js': ['./src/worker/worker.js']
-        },
-        options: {
-          cacheFile: 'browserify-cache-worker.json'
-        }
-      },
       unittests: {
         files: {
           'test/lib/unittests-bundle.js': ['./test/unittests.js']
@@ -129,22 +121,6 @@ module.exports = function(grunt) {
           to: 'OpenPGP.js v<%= pkg.version %>'
         }]
       },
-      openpgp_min: {
-        src: ['dist/openpgp.min.js'],
-        dest: ['dist/openpgp.min.js'],
-        replacements: [{
-          from: "openpgp.worker.js",
-          to: "openpgp.worker.min.js"
-        }]
-      },
-      worker_min: {
-        src: ['dist/openpgp.worker.min.js'],
-        dest: ['dist/openpgp.worker.min.js'],
-        replacements: [{
-          from: "openpgp.js",
-          to: "openpgp.min.js"
-        }]
-      },
       lightweight_build: {
         src: ['dist/openpgp.js'],
         overwrite: true,
@@ -169,8 +145,7 @@ module.exports = function(grunt) {
     terser: {
       openpgp: {
         files: {
-          'dist/openpgp.min.js' : ['dist/openpgp.js'],
-          'dist/openpgp.worker.min.js' : ['dist/openpgp.worker.js']
+          'dist/openpgp.min.js' : ['dist/openpgp.js']
         },
         options: {
           output: {
@@ -192,8 +167,7 @@ module.exports = function(grunt) {
                 'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
         },
         files: {
-          'dist/openpgp.js': 'dist/openpgp.js',
-          'dist/openpgp.worker.js': 'dist/openpgp.worker.js'
+          'dist/openpgp.js': 'dist/openpgp.js'
         }
       }
     },
@@ -283,7 +257,7 @@ module.exports = function(grunt) {
     watch: {
       src: {
         files: ['src/**/*.js'],
-        tasks: lightweight ? ['browserify:openpgp', 'browserify:worker', 'replace:lightweight_build'] : ['browserify:openpgp', 'browserify:worker']
+        tasks: lightweight ? ['browserify:openpgp', 'replace:lightweight_build'] : ['browserify:openpgp']
       },
       test: {
         files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
@@ -342,13 +316,12 @@ module.exports = function(grunt) {
 
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
-  grunt.registerTask('replace_min', ['replace:openpgp_min', 'replace:worker_min']);
   grunt.registerTask('build', function() {
     if (lightweight) {
-      grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'browserify:worker', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'header', 'terser', 'replace_min']);
+      grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'header', 'terser']);
       return;
     }
-    grunt.task.run(['browserify:openpgp', 'browserify:worker', 'version', 'header', 'terser', 'replace_min']);
+    grunt.task.run(['browserify:openpgp', 'version', 'header', 'terser']);
   }
   );
   grunt.registerTask('documentation', ['jsdoc']);
