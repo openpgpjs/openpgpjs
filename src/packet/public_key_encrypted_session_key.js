@@ -146,16 +146,4 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   return true;
 };
 
-/**
- * Fix custom types after cloning
- */
-PublicKeyEncryptedSessionKey.prototype.postCloneTypeFix = function() {
-  this.publicKeyId = type_keyid.fromClone(this.publicKeyId);
-  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  const types = crypto.getEncSessionKeyParamTypes(algo);
-  for (let i = 0; i < this.encrypted.length; i++) {
-    this.encrypted[i] = types[i].fromClone(this.encrypted[i]);
-  }
-};
-
 export default PublicKeyEncryptedSessionKey;

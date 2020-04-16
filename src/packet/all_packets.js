@@ -4,7 +4,6 @@
  * @module packet/all_packets
  */
 
-import enums from '../enums.js';
 import * as packets from './all_packets.js'; // re-import module to parse packets from tag
 
 export {
@@ -85,24 +84,6 @@ export {
  */
 export function newPacketFromTag(tag) {
   return new packets[packetClassFromTagName(tag)]();
-}
-
-/**
- * Allocate a new packet from structured packet clone
- * @see {@link https://w3c.github.io/html/infrastructure.html#safe-passing-of-structured-data}
- * @function fromStructuredClone
- * @memberof module:packet
- * @param {Object} packetClone packet clone
- * @returns {Object} new packet object with data from packet clone
- */
-export function fromStructuredClone(packetClone) {
-  const tagName = enums.read(enums.packet, packetClone.tag);
-  const packet = newPacketFromTag(tagName);
-  Object.assign(packet, packetClone);
-  if (packet.postCloneTypeFix) {
-    packet.postCloneTypeFix();
-  }
-  return packet;
 }
 
 /**

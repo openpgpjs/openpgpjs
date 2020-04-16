@@ -46,69 +46,6 @@ export default {
   isStream: stream.isStream,
 
   /**
-   * Get transferable objects to pass buffers with zero copy (similar to "pass by reference" in C++)
-   *   See: https://developer.mozilla.org/en-US/docs/Web/API/Worker/postMessage
-   * Also, convert ReadableStreams to MessagePorts
-   * @param  {Object} obj           the options object to be passed to the web worker
-   * @returns {Array<ArrayBuffer>}   an array of binary data to be passed
-   */
-  getTransferables: function(obj, zero_copy) {
-    const transferables = [];
-    util.collectTransferables(obj, transferables, zero_copy);
-    return transferables.length ? transferables : undefined;
-  },
-
-  collectTransferables: function(obj, collection, zero_copy) {
-    if (!obj) {
-      return;
-    }
-
-    if (util.isUint8Array(obj)) {
-      if (zero_copy && collection.indexOf(obj.buffer) === -1 && !(
-        navigator.userAgent.indexOf('Version/11.1') !== -1 || // Safari 11.1
-        ((navigator.userAgent.match(/Chrome\/(\d+)/) || [])[1] < 56 && navigator.userAgent.indexOf('Edge') === -1) // Chrome < 56
-      )) {
-        collection.push(obj.buffer);
-      }
-      return;
-    }
-    if (Object.prototype.isPrototypeOf(obj)) {
-      Object.entries(obj).forEach(([key, value]) => { // recursively search all children
-        if (util.isStream(value)) {
-          if (value.locked) {
-            obj[key] = null;
-          } else {
-            const transformed = stream.transformPair(value, async readable => {
-              const reader = stream.getReader(readable);
-              const { port1, port2 } = new MessageChannel();
-              port1.onmessage = async function({ data: { action } }) {
-                if (action === 'read') {
-                  try {
-                    const result = await reader.read();
-                    port1.postMessage(result, util.getTransferables(result));
-                  } catch (e) {
-                    port1.postMessage({ error: e.message });
-                  }
-                } else if (action === 'cancel') {
-                  await transformed.cancel();
-                  port1.postMessage();
-                }
-              };
-              obj[key] = port2;
-              collection.push(port2);
-            });
-          }
-          return;
-        }
-        if (Object.prototype.toString.call(value) === '[object MessagePort]') {
-          throw new Error("Can't transfer the same stream twice.");
-        }
-        util.collectTransferables(value, collection, zero_copy);
-      });
-    }
-  },
-
-  /**
    * Convert MessagePorts back to ReadableStreams
    * @param  {Object} obj
    * @returns {Object}

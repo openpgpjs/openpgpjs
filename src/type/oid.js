@@ -103,8 +103,4 @@ OID.prototype.getName = function() {
   }
 };
 
-OID.fromClone = function (clone) {
-  return new OID(clone.oid);
-};
-
 export default OID;
