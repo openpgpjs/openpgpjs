@@ -89,12 +89,6 @@ Keyid.mapToHex = function (keyId) {
   return keyId.toHex();
 };
 
-Keyid.fromClone = function (clone) {
-  const keyid = new Keyid();
-  keyid.bytes = clone.bytes;
-  return keyid;
-};
-
 Keyid.fromId = function (hex) {
   const keyid = new Keyid();
   keyid.read(util.hex_to_Uint8Array(hex));

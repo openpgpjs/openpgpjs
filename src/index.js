@@ -20,8 +20,7 @@ export default openpgp;
 export {
   encrypt, decrypt, sign, verify,
   generateKey, reformatKey, revokeKey, decryptKey,
-  generateSessionKey, encryptSessionKey, decryptSessionKeys,
-  initWorker, getWorker, destroyWorker
+  generateSessionKey, encryptSessionKey, decryptSessionKeys
 } from './openpgp';
 
 /**
@@ -135,12 +134,6 @@ export { default as crypto } from './crypto';
  * @name module:openpgp.Keyring
  */
 export { default as Keyring } from './keyring';
-
-/**
- * @see module:worker/async_proxy
- * @name module:openpgp.AsyncProxy
- */
-export { default as AsyncProxy } from './worker/async_proxy';
 
 /**
  * @see module:hkp

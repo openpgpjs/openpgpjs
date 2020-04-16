@@ -25,7 +25,6 @@
  */
 
 import PublicKey from './public_key';
-import type_keyid from '../type/keyid.js';
 import type_s2k from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -448,24 +447,6 @@ SecretKey.prototype.clearPrivateParams = function () {
   });
   this.params.length = publicParamCount;
   this.isEncrypted = true;
-};
-
-/**
- * Fix custom types after cloning
- */
-SecretKey.prototype.postCloneTypeFix = function() {
-  const algo = enums.write(enums.publicKey, this.algorithm);
-  const types = [].concat(crypto.getPubKeyParamTypes(algo), crypto.getPrivKeyParamTypes(algo));
-  for (let i = 0; i < this.params.length; i++) {
-    const param = this.params[i];
-    this.params[i] = types[i].fromClone(param);
-  }
-  if (this.keyid) {
-    this.keyid = type_keyid.fromClone(this.keyid);
-  }
-  if (this.s2k) {
-    this.s2k = type_s2k.fromClone(this.s2k);
-  }
 };
 
 export default SecretKey;
