@@ -698,26 +698,41 @@ export default {
     let carryOverCR = false;
 
     return stream.transform(data, bytes => {
-      bytes = carryOverCR ? [CR].concat(Array.from(bytes)) : Array.from(bytes);
+      if (carryOverCR) {
+        bytes = util.concatUint8Array([new Uint8Array([CR]), bytes]);
+      }
 
       if (bytes[bytes.length - 1] === CR) {
         carryOverCR = true;
-        bytes.pop();
+        bytes = bytes.subarray(0, -1);
       } else {
         carryOverCR = false;
       }
 
-      const normalized = [];
-      for (let i = 0; i < bytes.length; i++){
-        const x = bytes[i];
-        if (x === LF && i > 0 && bytes[i - 1] !== CR) {
-          normalized.push(CR, LF);
-        } else {
-          normalized.push(x);
-        }
+      let index;
+      const indices = [];
+      for (let i = 0; ; i = index) {
+        index = bytes.indexOf(LF, i) + 1;
+        if (index && bytes[index - 2] !== CR) indices.push(index);
+        else break;
       }
-      return new Uint8Array(normalized);
-    }, () => new Uint8Array(carryOverCR ? [CR] : []));
+      if (!indices.length) {
+        return bytes;
+      }
+
+      const normalized = new Uint8Array(bytes.length + indices.length);
+      let j = 0;
+      for (let i = 0; i < indices.length; i++) {
+        const sub = bytes.subarray(indices[i - 1] || 0, indices[i]);
+        normalized.set(sub, j);
+        j += sub.length;
+        normalized[j - 1] = CR;
+        normalized[j] = LF;
+        j++;
+      }
+      normalized.set(bytes.subarray(indices[indices.length - 1] || 0), j);
+      return normalized;
+    }, () => (carryOverCR ? new Uint8Array([CR]) : undefined));
   },
 
   /**
@@ -730,17 +745,30 @@ export default {
     let carryOverCR = false;
 
     return stream.transform(data, bytes => {
-      bytes = carryOverCR ? [CR].concat(Array.from(bytes)) : Array.from(bytes);
+      if (carryOverCR && bytes[0] !== LF) {
+        bytes = util.concatUint8Array([new Uint8Array([CR]), bytes]);
+      } else {
+        bytes = new Uint8Array(bytes); // Don't mutate passed bytes
+      }
 
       if (bytes[bytes.length - 1] === CR) {
         carryOverCR = true;
-        bytes.pop();
+        bytes = bytes.subarray(0, -1);
       } else {
         carryOverCR = false;
       }
 
-      return new Uint8Array(bytes.filter((x, i, xs) => (x !== CR || (i < xs.length - 1 && xs[i + 1] !== LF))));
-    }, () => new Uint8Array(carryOverCR ? [CR] : []));
+      let index;
+      let j = 0;
+      for (let i = 0; i !== bytes.length; i = index) {
+        index = bytes.indexOf(CR, i) + 1;
+        if (!index) index = bytes.length;
+        const last = index - (bytes[index] === LF ? 1 : 0);
+        if (i) bytes.copyWithin(j, i, last);
+        j += last - i;
+      }
+      return bytes.subarray(0, j);
+    }, () => (carryOverCR ? new Uint8Array([CR]) : undefined));
   },
 
   /**
