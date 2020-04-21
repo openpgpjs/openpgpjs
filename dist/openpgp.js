@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.2 - 2020-04-15 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.3 - 2020-04-21 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -24722,7 +24722,7 @@ function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = _util2.default.removeTrailingSpaces(text).replace(/\r\n/g, '\n').replace(/[\r\n]/g, '\r\n');
+  this.text = _util2.default.removeTrailingSpaces(text).replace(/\r?\n/g, '\r\n');
   if (signature && !(signature instanceof _signature.Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -25052,7 +25052,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.2",
+  versionstring: "OpenPGP.js v4.10.3",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -28768,7 +28768,7 @@ function decode(msg) {
   const len = msg.length;
   if (len > 0) {
     const c = msg.charCodeAt(len - 1);
-    if (c >= 1 && c <= 8) {
+    if (c >= 1) {
       const provided = msg.substr(len - c);
       const computed = String.fromCharCode(c).repeat(c);
       if (provided === computed) {
@@ -37645,6 +37645,10 @@ exports.default = Compressed;
 
 const nodeZlib = _util2.default.getNodeZlib();
 
+function uncompressed(data) {
+  return data;
+}
+
 function node_zlib(func, options = {}) {
   return function (data) {
     return _webStreamTools2.default.nodeToWeb(_webStreamTools2.default.webToNode(data).pipe(func(options)));
@@ -37684,6 +37688,7 @@ if (nodeZlib) {
   };
 
   decompress_fns = {
+    uncompressed: uncompressed,
     zip: node_zlib(nodeZlib.createInflateRaw),
     zlib: node_zlib(nodeZlib.createInflate),
     bzip2: bzip2(_seekBzip2.default.decode)
@@ -37696,6 +37701,7 @@ if (nodeZlib) {
   };
 
   decompress_fns = {
+    uncompressed: uncompressed,
     zip: pako_zlib(_pako2.default.Inflate, { raw: true }),
     zlib: pako_zlib(_pako2.default.Inflate),
     bzip2: bzip2(_seekBzip2.default.decode)
@@ -42139,16 +42145,11 @@ MPI.prototype.toUint8Array = function (endian, length) {
   length = length || this.data.length;
 
   const payload = new Uint8Array(length);
-  const start = length - this.data.length;
-  if (start < 0) {
-    throw new Error('Payload is too large.');
-  }
-
+  const start = endian === 'le' ? 0 : length - this.data.length;
   payload.set(this.data, start);
   if (endian === 'le') {
     payload.reverse();
   }
-
   return payload;
 };
 
@@ -43237,19 +43238,43 @@ exports.default = {
   canonicalizeEOL: function canonicalizeEOL(data) {
     const CR = 13;
     const LF = 10;
+    let carryOverCR = false;
 
-    return _webStreamTools2.default.transform(_util2.default.nativeEOL(data, true), bytes => {
-      const normalized = [];
-      for (let i = 0; i < bytes.length; i++) {
-        const x = bytes[i];
-        if (x === LF || x === CR) {
-          normalized.push(CR, LF);
-        } else {
-          normalized.push(x);
-        }
+    return _webStreamTools2.default.transform(data, bytes => {
+      if (carryOverCR) {
+        bytes = _util2.default.concatUint8Array([new Uint8Array([CR]), bytes]);
       }
-      return new Uint8Array(normalized);
-    });
+
+      if (bytes[bytes.length - 1] === CR) {
+        carryOverCR = true;
+        bytes = bytes.subarray(0, -1);
+      } else {
+        carryOverCR = false;
+      }
+
+      let index;
+      const indices = [];
+      for (let i = 0;; i = index) {
+        index = bytes.indexOf(LF, i) + 1;
+        if (index && bytes[index - 2] !== CR) indices.push(index);else break;
+      }
+      if (!indices.length) {
+        return bytes;
+      }
+
+      const normalized = new Uint8Array(bytes.length + indices.length);
+      let j = 0;
+      for (let i = 0; i < indices.length; i++) {
+        const sub = bytes.subarray(indices[i - 1] || 0, indices[i]);
+        normalized.set(sub, j);
+        j += sub.length;
+        normalized[j - 1] = CR;
+        normalized[j] = LF;
+        j++;
+      }
+      normalized.set(bytes.subarray(indices[indices.length - 1] || 0), j);
+      return normalized;
+    }, () => carryOverCR ? new Uint8Array([CR]) : undefined);
   },
 
   /**
@@ -43262,17 +43287,30 @@ exports.default = {
     let carryOverCR = false;
 
     return _webStreamTools2.default.transform(data, bytes => {
-      bytes = carryOverCR ? [CR].concat(Array.from(bytes)) : Array.from(bytes);
+      if (carryOverCR && bytes[0] !== LF) {
+        bytes = _util2.default.concatUint8Array([new Uint8Array([CR]), bytes]);
+      } else {
+        bytes = new Uint8Array(bytes); // Don't mutate passed bytes
+      }
 
       if (bytes[bytes.length - 1] === CR) {
         carryOverCR = true;
-        bytes.pop();
+        bytes = bytes.subarray(0, -1);
       } else {
         carryOverCR = false;
       }
 
-      return new Uint8Array(bytes.filter((x, i, xs) => x !== CR || i < xs.length - 1 && xs[i + 1] !== LF));
-    }, () => new Uint8Array(carryOverCR ? [CR] : []));
+      let index;
+      let j = 0;
+      for (let i = 0; i !== bytes.length; i = index) {
+        index = bytes.indexOf(CR, i) + 1;
+        if (!index) index = bytes.length;
+        const last = index - (bytes[index] === LF ? 1 : 0);
+        if (i) bytes.copyWithin(j, i, last);
+        j += last - i;
+      }
+      return bytes.subarray(0, j);
+    }, () => carryOverCR ? new Uint8Array([CR]) : undefined);
   },
 
   /**

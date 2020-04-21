@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.2 - 2020-04-15 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.3 - 2020-04-21 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(_dereq_,module,exports){
 (function (global){
 "use strict";
@@ -31127,7 +31127,7 @@ function CleartextMessage(text, signature) {
     return new CleartextMessage(text, signature);
   }
   // normalize EOL to canonical form <CR><LF>
-  this.text = _util2.default.removeTrailingSpaces(text).replace(/\r\n/g, '\n').replace(/[\r\n]/g, '\r\n');
+  this.text = _util2.default.removeTrailingSpaces(text).replace(/\r?\n/g, '\r\n');
   if (signature && !(signature instanceof _signature.Signature)) {
     throw new Error('Invalid signature input');
   }
@@ -31493,7 +31493,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.2",
+  versionstring: "OpenPGP.js v4.10.3",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -36246,7 +36246,7 @@ function decode(msg) {
   var len = msg.length;
   if (len > 0) {
     var c = msg.charCodeAt(len - 1);
-    if (c >= 1 && c <= 8) {
+    if (c >= 1) {
       var provided = msg.substr(len - c);
       var computed = String.fromCharCode(c).repeat(c);
       if (provided === computed) {
@@ -51776,6 +51776,10 @@ exports.default = Compressed;
 
 var nodeZlib = _util2.default.getNodeZlib();
 
+function uncompressed(data) {
+  return data;
+}
+
 function node_zlib(func) {
   var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
 
@@ -51840,6 +51844,7 @@ if (nodeZlib) {
   };
 
   decompress_fns = {
+    uncompressed: uncompressed,
     zip: node_zlib(nodeZlib.createInflateRaw),
     zlib: node_zlib(nodeZlib.createInflate),
     bzip2: bzip2(_seekBzip2.default.decode)
@@ -51852,6 +51857,7 @@ if (nodeZlib) {
   };
 
   decompress_fns = {
+    uncompressed: uncompressed,
     zip: pako_zlib(_pako2.default.Inflate, { raw: true }),
     zlib: pako_zlib(_pako2.default.Inflate),
     bzip2: bzip2(_seekBzip2.default.decode)
@@ -58066,16 +58072,11 @@ MPI.prototype.toUint8Array = function (endian, length) {
   length = length || this.data.length;
 
   var payload = new Uint8Array(length);
-  var start = length - this.data.length;
-  if (start < 0) {
-    throw new Error('Payload is too large.');
-  }
-
+  var start = endian === 'le' ? 0 : length - this.data.length;
   payload.set(this.data, start);
   if (endian === 'le') {
     payload.reverse();
   }
-
   return payload;
 };
 
@@ -58518,10 +58519,6 @@ exports.default = S2K;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _from = _dereq_('babel-runtime/core-js/array/from');
-
-var _from2 = _interopRequireDefault(_from);
 
 var _typeof2 = _dereq_('babel-runtime/helpers/typeof');
 
@@ -59323,18 +59320,44 @@ exports.default = {
   canonicalizeEOL: function canonicalizeEOL(data) {
     var CR = 13;
     var LF = 10;
+    var carryOverCR = false;
 
-    return _webStreamTools2.default.transform(_util2.default.nativeEOL(data, true), function (bytes) {
-      var normalized = [];
-      for (var i = 0; i < bytes.length; i++) {
-        var x = bytes[i];
-        if (x === LF || x === CR) {
-          normalized.push(CR, LF);
-        } else {
-          normalized.push(x);
-        }
+    return _webStreamTools2.default.transform(data, function (bytes) {
+      if (carryOverCR) {
+        bytes = _util2.default.concatUint8Array([new Uint8Array([CR]), bytes]);
       }
-      return new Uint8Array(normalized);
+
+      if (bytes[bytes.length - 1] === CR) {
+        carryOverCR = true;
+        bytes = bytes.subarray(0, -1);
+      } else {
+        carryOverCR = false;
+      }
+
+      var index = void 0;
+      var indices = [];
+      for (var i = 0;; i = index) {
+        index = bytes.indexOf(LF, i) + 1;
+        if (index && bytes[index - 2] !== CR) indices.push(index);else break;
+      }
+      if (!indices.length) {
+        return bytes;
+      }
+
+      var normalized = new Uint8Array(bytes.length + indices.length);
+      var j = 0;
+      for (var _i = 0; _i < indices.length; _i++) {
+        var sub = bytes.subarray(indices[_i - 1] || 0, indices[_i]);
+        normalized.set(sub, j);
+        j += sub.length;
+        normalized[j - 1] = CR;
+        normalized[j] = LF;
+        j++;
+      }
+      normalized.set(bytes.subarray(indices[indices.length - 1] || 0), j);
+      return normalized;
+    }, function () {
+      return carryOverCR ? new Uint8Array([CR]) : undefined;
     });
   },
 
@@ -59348,20 +59371,31 @@ exports.default = {
     var carryOverCR = false;
 
     return _webStreamTools2.default.transform(data, function (bytes) {
-      bytes = carryOverCR ? [CR].concat((0, _from2.default)(bytes)) : (0, _from2.default)(bytes);
+      if (carryOverCR && bytes[0] !== LF) {
+        bytes = _util2.default.concatUint8Array([new Uint8Array([CR]), bytes]);
+      } else {
+        bytes = new Uint8Array(bytes); // Don't mutate passed bytes
+      }
 
       if (bytes[bytes.length - 1] === CR) {
         carryOverCR = true;
-        bytes.pop();
+        bytes = bytes.subarray(0, -1);
       } else {
         carryOverCR = false;
       }
 
-      return new Uint8Array(bytes.filter(function (x, i, xs) {
-        return x !== CR || i < xs.length - 1 && xs[i + 1] !== LF;
-      }));
+      var index = void 0;
+      var j = 0;
+      for (var i = 0; i !== bytes.length; i = index) {
+        index = bytes.indexOf(CR, i) + 1;
+        if (!index) index = bytes.length;
+        var last = index - (bytes[index] === LF ? 1 : 0);
+        if (i) bytes.copyWithin(j, i, last);
+        j += last - i;
+      }
+      return bytes.subarray(0, j);
     }, function () {
-      return new Uint8Array(carryOverCR ? [CR] : []);
+      return carryOverCR ? new Uint8Array([CR]) : undefined;
     });
   },
 
@@ -59454,7 +59488,7 @@ exports.default = {
  */
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./config":350,"./encoding/base64":383,"./util":429,"babel-runtime/core-js/array/from":16,"babel-runtime/core-js/object/entries":25,"babel-runtime/core-js/promise":31,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/helpers/slicedToArray":40,"babel-runtime/helpers/typeof":42,"babel-runtime/regenerator":43,"email-addresses":302,"web-stream-tools":345}],430:[function(_dereq_,module,exports){
+},{"./config":350,"./encoding/base64":383,"./util":429,"babel-runtime/core-js/object/entries":25,"babel-runtime/core-js/promise":31,"babel-runtime/helpers/asyncToGenerator":35,"babel-runtime/helpers/slicedToArray":40,"babel-runtime/helpers/typeof":42,"babel-runtime/regenerator":43,"email-addresses":302,"web-stream-tools":345}],430:[function(_dereq_,module,exports){
 (function (global){
 'use strict';
 
