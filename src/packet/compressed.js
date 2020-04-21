@@ -132,10 +132,8 @@ export default Compressed;
 
 const nodeZlib = util.getNodeZlib();
 
-function uncompressed() {
-  return function (data) {
-    return data;
-  };
+function uncompressed(data) {
+  return data;
 }
 
 function node_zlib(func, options = {}) {
@@ -176,7 +174,7 @@ if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
   };
 
   decompress_fns = {
-    uncompressed: uncompressed(),
+    uncompressed: uncompressed,
     zip: node_zlib(nodeZlib.createInflateRaw),
     zlib: node_zlib(nodeZlib.createInflate),
     bzip2: bzip2(Bunzip.decode)
@@ -188,7 +186,7 @@ if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
   };
 
   decompress_fns = {
-    uncompressed: uncompressed(),
+    uncompressed: uncompressed,
     zip: pako_zlib(pako.Inflate, { raw: true }),
     zlib: pako_zlib(pako.Inflate),
     bzip2: bzip2(Bunzip.decode)
