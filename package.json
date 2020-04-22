@@ -26,7 +26,7 @@
   ],
   "scripts": {
     "build": "grunt build --compat copy:openpgp_compat && grunt build --lightweight copy:openpgp_lightweight clean:js && grunt build",
-    "pretest": "grunt",
+    "prepare": "grunt clean:cache && npm run build",
     "test": "grunt test",
     "lint": "eslint src"
   },
