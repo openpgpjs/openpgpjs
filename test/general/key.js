@@ -2603,20 +2603,22 @@ describe('Key', function() {
   it('clearPrivateParams() - check that private key parameters were removed', async function() {
     const key = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
-    const params = key.primaryKey.params;
+    const signingKeyPacket = key.subKeys[0].keyPacket;
+    const params = signingKeyPacket.params;
     await key.clearPrivateParams();
-    key.primaryKey.isEncrypted = false;
-    key.primaryKey.params = params;
+    signingKeyPacket.isEncrypted = false;
+    signingKeyPacket.params = params;
     await expect(key.validate()).to.be.rejectedWith('Missing private key parameters');
   });
 
   it('clearPrivateParams() - check that private key parameters were zeroed out', async function() {
     const key = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
-    const params = key.primaryKey.params.slice();
+    const signingKeyPacket = key.subKeys[0].keyPacket;
+    const params = signingKeyPacket.params.slice();
     await key.clearPrivateParams();
-    key.primaryKey.isEncrypted = false;
-    key.primaryKey.params = params;
+    signingKeyPacket.isEncrypted = false;
+    signingKeyPacket.params = params;
     const use_nativeVal = openpgp.config.use_native;
     openpgp.config.use_native = false;
     try {

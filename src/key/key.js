@@ -417,14 +417,16 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
 
 /**
  * Check whether the private and public key parameters of the primary key match
+ * @param  {Date} date (optional) use the given date for validation instead of the current time
  * @returns {Promise<Boolean>} true if the primary key parameters correspond
  * @async
  */
-Key.prototype.validate = async function() {
+Key.prototype.validate = async function(date = new Date()) {
   if (!this.isPrivate()) {
     throw new Error("Can't validate a public key");
   }
-  const signingKeyPacket = this.primaryKey;
+  const signingKey = await this.getSigningKey(null, date);
+  const signingKeyPacket = signingKey.keyPacket;
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error("Key is not decrypted");
   }
