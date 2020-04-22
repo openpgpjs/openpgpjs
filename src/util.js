@@ -713,8 +713,11 @@ export default {
       const indices = [];
       for (let i = 0; ; i = index) {
         index = bytes.indexOf(LF, i) + 1;
-        if (index && bytes[index - 2] !== CR) indices.push(index);
-        else break;
+        if (index) {
+          if (bytes[index - 2] !== CR) indices.push(index);
+        } else {
+          break;
+        }
       }
       if (!indices.length) {
         return bytes;

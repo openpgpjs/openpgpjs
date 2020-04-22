@@ -2487,6 +2487,20 @@ amnR6g==
         expect(data).to.equal('Hello World!');
       });
 
+      it('should normalize newlines in encrypted text message', async function() {
+        const message = openpgp.message.fromText('"BEGIN:VCALENDAR\nVERSION:2.0\nBEGIN:VEVENT\r\nUID:123\r\nDTSTART:20191211T121212Z\r\nDTEND:20191212T121212Z\r\nEND:VEVENT\nEND:VCALENDAR"');
+        const encrypted = await openpgp.encrypt({
+          passwords: 'test',
+          message
+        });
+        const decrypted = await openpgp.decrypt({
+          passwords: 'test',
+          message: await openpgp.message.readArmored(encrypted.data),
+          format: 'binary'
+        });
+        expect(openpgp.util.decode_utf8(decrypted.data)).to.equal('"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:123\r\nDTSTART:20191211T121212Z\r\nDTEND:20191212T121212Z\r\nEND:VEVENT\r\nEND:VCALENDAR"');
+      });
+
     });
 
     describe('Errors', function() {
