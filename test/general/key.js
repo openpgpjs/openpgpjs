@@ -2759,7 +2759,8 @@ describe('Key', function() {
   it('clearPrivateParams() - detect that private key parameters were removed', async function() {
     const key = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
-    const params = key.primaryKey.params;
+    const signingKeyPacket = key.subKeys[0].keyPacket;
+    const params = signingKeyPacket.params;
     await key.clearPrivateParams();
     key.primaryKey.isEncrypted = false;
     key.primaryKey.params = params;
@@ -2771,7 +2772,8 @@ describe('Key', function() {
   it('clearPrivateParams() - detect that private key parameters were zeroed out', async function() {
     const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
-    const params = key.primaryKey.params.slice();
+    const signingKeyPacket = key.subKeys[0].keyPacket;
+    const params = signingKeyPacket.params.slice();
     await key.clearPrivateParams();
     key.primaryKey.isEncrypted = false;
     key.primaryKey.params = params;
