@@ -2590,7 +2590,7 @@ describe('Key', function() {
   it("validate() - throw if key parameters don't correspond", async function() {
     const key = await openpgp.key.readArmored(mismatchingKeyParams);
     await key.decrypt('userpass');
-    await expect(key.validate()).to.be.rejectedWith('Signature verification failed');
+    await expect(key.validate()).to.be.rejectedWith('Public key parameter does not match private key parameter');
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
@@ -2620,12 +2620,7 @@ describe('Key', function() {
     signingKeyPacket.isEncrypted = false;
     signingKeyPacket.params = params;
     const use_nativeVal = openpgp.config.use_native;
-    openpgp.config.use_native = false;
-    try {
-      await expect(key.validate()).to.be.rejectedWith('Signature verification failed');
-    } finally {
-      openpgp.config.use_native = use_nativeVal;
-    }
+    await expect(key.validate()).to.be.rejectedWith('Public key parameter does not match private key parameter');
   });
 
   it('update() - throw error if fingerprints not equal', async function() {
