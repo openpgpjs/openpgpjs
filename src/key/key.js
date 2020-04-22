@@ -437,8 +437,12 @@ Key.prototype.validate = async function(date = new Date()) {
   signature.hashAlgorithm = enums.hash.sha256;
   const signatureType = enums.signature.binary;
   signature.signatureType = signatureType;
-  await signature.sign(signingKeyPacket, data);
-  await signature.verify(signingKeyPacket, signatureType, data);
+  try {
+    await signature.sign(signingKeyPacket, data);
+    await signature.verify(signingKeyPacket, signatureType, data);
+  } catch (e) {
+    throw new Error('Public key parameter does not match private key parameter: ' + e.message);
+  }
 };
 
 /**
