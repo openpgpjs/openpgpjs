@@ -131,14 +131,6 @@ export default {
   minBytesForWebCrypto: 1000,
   /**
    * @memberof module:config
-<<<<<<< HEAD
-=======
-   * @property {Boolean} Use transferable objects between the Web Worker and main thread
-   */
-  zeroCopy:                false,
-  /**
-   * @memberof module:config
->>>>>>> 5685585f... WIP: rename config properties to camelCase
    * @property {Boolean} debug If enabled, debug messages will be printed
    */
   debug:                    false,
