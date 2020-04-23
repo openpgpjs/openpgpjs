@@ -67,7 +67,7 @@ describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(Error, /Not valid curve/).notify(done);
   });
   it('Invalid ephemeral key', function (done) {
-    if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
+    if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
       this.skip();
     }
     expect(decrypt_message(
@@ -75,7 +75,7 @@ describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(Error, /Private key is not valid for specified curve|Unknown point format/).notify(done);
   });
   it('Invalid elliptic public key', function (done) {
-    if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
+    if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
       this.skip();
     }
     expect(decrypt_message(
@@ -83,7 +83,7 @@ describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Invalid elliptic public key/).notify(done);
   });
   it('Invalid key data integrity', function (done) {
-    if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
+    if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
       this.skip();
     }
     expect(decrypt_message(
@@ -200,7 +200,7 @@ describe('ECDH key exchange @lightweight', function () {
 
   describe('ECDHE key generation', function () {
     it('Invalid curve', function (done) {
-      if (!openpgp.config.use_indutny_elliptic && !openpgp.util.getNodeCrypto()) {
+      if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
         this.skip();
       }
       expect(genPublicEphemeralKey("secp256k1", Q1, fingerprint1)
@@ -245,7 +245,7 @@ describe('ECDH key exchange @lightweight', function () {
 
     it('Comparing keys derived using webCrypto and elliptic', async function () {
       const names = ["p256", "p384", "p521"];
-      if (!openpgp.util.getWebCrypto() || !openpgp.config.use_indutny_elliptic) {
+      if (!openpgp.util.getWebCrypto() || !openpgp.config.useIndutnyElliptic) {
         // eslint-disable-next-line no-invalid-this
         this.skip();
       }
@@ -269,7 +269,7 @@ describe('ECDH key exchange @lightweight', function () {
     });
     it('Comparing keys derived using nodeCrypto and elliptic', async function () {
       const names = ["p256", "p384", "p521"];
-      if (!openpgp.util.getNodeCrypto() || !openpgp.config.use_indutny_elliptic) {
+      if (!openpgp.util.getNodeCrypto() || !openpgp.config.useIndutnyElliptic) {
         // eslint-disable-next-line no-invalid-this
         this.skip();
       }

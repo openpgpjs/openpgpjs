@@ -102,11 +102,11 @@ function getType(text) {
  */
 function addheader(customComment) {
   let result = "";
-  if (config.show_version) {
-    result += "Version: " + config.versionstring + '\r\n';
+  if (config.showVersion) {
+    result += "Version: " + config.versionString + '\r\n';
   }
-  if (config.show_comment) {
-    result += "Comment: " + config.commentstring + '\r\n';
+  if (config.showComment) {
+    result += "Comment: " + config.commentString + '\r\n';
   }
   if (customComment) {
     result += "Comment: " + customComment + '\r\n';
@@ -332,7 +332,7 @@ function dearmor(input) {
         const writer = stream.getWriter(writable);
         try {
           const checksumVerifiedString = (await checksumVerified).replace('\r\n', '');
-          if (checksum !== checksumVerifiedString && (checksum || config.checksum_required)) {
+          if (checksum !== checksumVerifiedString && (checksum || config.checksumRequired)) {
             throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
                     checksumVerifiedString + "'");
           }

@@ -114,7 +114,7 @@ export async function createBindingSignature(subkey, primaryKey, options) {
  * @async
  */
 export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = {}) {
-  let hash_algo = config.prefer_hash_algorithm;
+  let hash_algo = config.preferHashAlgorithm;
   let pref_algo = hash_algo;
   if (key) {
     const primaryUser = await key.getPrimaryUser(date, userId);
@@ -260,7 +260,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // third-party key certification, which should only affect
         // `verifyAllCertifications`.)
         (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
-        !(config.revocations_expire && revocationSignature.isExpired(normDate)) &&
+        !(config.revocationsExpire && revocationSignature.isExpired(normDate)) &&
         (revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify))
       ) {
         // TODO get an identifier of the revoked object instead
@@ -367,7 +367,7 @@ export function isValidDecryptionKeyPacket(signature) {
     throw new Error('Signature not verified');
   }
 
-  if (config.allow_insecure_decryption_with_signing_keys) {
+  if (config.allowInsecureDecryptionWithSigningKeys) {
     // This is only relevant for RSA keys, all other signing ciphers cannot decrypt
     return true;
   }
