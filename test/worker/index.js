@@ -1,4 +1,4 @@
-describe('Web Worker', function () {
-  require('./application_worker.js');
+module.exports = () => describe('Web Worker', function () {
+  require('./application_worker.js')();
 });
 

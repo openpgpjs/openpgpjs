@@ -1,8 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const expect = require('chai').expect;
 
-describe('Oid tests', function() {
+module.exports = () => describe('Oid tests', function() {
   const OID = openpgp.OID;
   const util = openpgp.util;
   const p256_oid = new Uint8Array([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]);

@@ -1,10 +1,10 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
 
 const chai = require('chai');
 
 const { expect } = chai;
 
-describe('AES Rijndael cipher test with test vectors from ecb_tbl.txt', function() {
+module.exports = () => describe('AES Rijndael cipher test with test vectors from ecb_tbl.txt', function() {
   function test_aes(input, key, output) {
     const aes = new openpgp.crypto.cipher.aes128(new Uint8Array(key));
 

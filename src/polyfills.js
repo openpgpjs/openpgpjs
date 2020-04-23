@@ -2,11 +2,8 @@
  * @fileoverview Old browser polyfills
  * All are listed as dev dependencies because Node does not need them
  * and for browser babel will take care of it
- * @requires util
  * @module polyfills
  */
-
-import util from './util';
 
 if (typeof global !== 'undefined') {
   /********************************************************************
@@ -50,7 +47,7 @@ if (typeof global !== 'undefined') {
 }
 
 if (typeof TextEncoder === 'undefined') {
-  const nodeUtil = util.nodeRequire('util') || {};
+  const nodeUtil = require('util') || {};
   global.TextEncoder = nodeUtil.TextEncoder;
   global.TextDecoder = nodeUtil.TextDecoder;
 }
