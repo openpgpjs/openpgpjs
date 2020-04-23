@@ -1,10 +1,10 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 
 const { expect } = chai;
 
-describe('Util unit tests', function() {
+module.exports = () => describe('Util unit tests', function() {
 
   describe('isString', function() {
     it('should return true for type "string"', function() {

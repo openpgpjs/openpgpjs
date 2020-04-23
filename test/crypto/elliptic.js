@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const chai = require('chai');
 
 const elliptic_data = require('./elliptic_data');
@@ -8,7 +8,7 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
-describe('Elliptic Curve Cryptography @lightweight', function () {
+module.exports = () => describe('Elliptic Curve Cryptography @lightweight', function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
 
   const signature_data = {

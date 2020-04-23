@@ -1,10 +1,10 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 
 const { expect } = chai;
 
-describe('Random Buffer', function() {
+module.exports = () => describe('Random Buffer', function() {
   let randomBuffer;
 
   before(function() {

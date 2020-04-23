@@ -24,7 +24,6 @@
 
 import { loadScript, dl } from '../../../lightweight_helper';
 import config from '../../../config';
-import util from '../../../util';
 
 export function keyFromPrivate(indutnyCurve, priv) {
   const keyPair = indutnyCurve.keyPair({ priv: priv });
@@ -62,10 +61,6 @@ let ellipticPromise;
 function loadElliptic() {
   if (!config.externalIndutnyElliptic) {
     return require('elliptic');
-  }
-  if (util.detectNode()) {
-    // eslint-disable-next-line
-    return require(config.indutnyEllipticPath);
   }
   if (!ellipticPromise) {
     ellipticPromise = loadEllipticPromise().catch(e => {

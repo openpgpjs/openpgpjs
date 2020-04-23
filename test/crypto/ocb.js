@@ -2,14 +2,14 @@
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-describe('Symmetric AES-OCB', function() {
+module.exports = () => describe('Symmetric AES-OCB', function() {
   it('Passes all test vectors', async function() {
     const K = '000102030405060708090A0B0C0D0E0F';
     const keyBytes = openpgp.util.hexToUint8Array(K);

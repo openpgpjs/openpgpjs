@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const elliptic = openpgp.crypto.publicKey.elliptic;
 
@@ -8,7 +8,7 @@ chai.use(require('chai-as-promised'));
 const { expect } = chai;
 const input = require('./testInputs');
 
-(openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography', function () {
+module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography', function () {
   const data = {
     light: {
       id: '1ecdf026c0245830',
@@ -425,6 +425,8 @@ const input = require('./testInputs');
       hi.primaryKey, user.selfCertifications[0], [hi]
     );
   }); */
+
+  describe('X25519 Omnibus Tests', omnibus);
 });
 
 // TODO export, then reimport key and validate
@@ -533,7 +535,3 @@ function omnibus() {
     });
   });
 }
-
-tryTests('X25519 Omnibus Tests', omnibus, {
-  if: !openpgp.config.ci
-});

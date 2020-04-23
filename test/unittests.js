@@ -34,21 +34,21 @@ describe('Unit Tests', function () {
 
   if (typeof window !== 'undefined') {
     openpgp.config.s2kIterationCountByte = 0;
-    openpgp.config.indutnyEllipticPath = '../dist/elliptic.min.js';
+    openpgp.config.indutnyEllipticPath = '../dist/lightweight/elliptic.min.js';
 
     window.location.search.substr(1).split('&').forEach(param => {
       const [key, value] = param.split('=');
       if (key && key !== 'grep') {
         openpgp.config[key] = decodeURIComponent(value);
         try {
-          openpgp.config[key] = eval(openpgp.config[key]);
+          openpgp.config[key] = window.eval(openpgp.config[key]);
         } catch(e) {}
       }
     });
   }
 
-  require('./crypto');
-  require('./general');
-  require('./worker');
-  require('./security');
+  require('./crypto')();
+  require('./general')();
+  require('./worker')();
+  require('./security')();
 });

@@ -1,10 +1,10 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 
 const { expect } = chai;
 
-describe("ASCII armor", function() {
+module.exports = () => describe("ASCII armor", function() {
 
   function getArmor(headers, signatureHeaders) {
     return ['-----BEGIN PGP SIGNED MESSAGE-----']

@@ -1,6 +1,6 @@
 /* globals tryTests: true */
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -8,7 +8,7 @@ const input = require('./testInputs.js');
 
 const expect = chai.expect;
 
-(openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
+module.exports = () => (openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
   //only x25519 crypto is fully functional in lightbuild
   if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
     before(function() {
@@ -271,6 +271,10 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result.signatures).to.have.length(1);
     expect(result.signatures[0].valid).to.be.true;
   });
+
+  tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
+    if: openpgp.config.useIndutnyElliptic || openpgp.util.getNodeCrypto()
+  });
 });
 
 function omnibus() {
@@ -334,9 +338,5 @@ function omnibus() {
     });
   });
 }
-
-tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
-  if: !openpgp.config.ci && (openpgp.config.useIndutnyElliptic || openpgp.util.getNodeCrypto())
-});
 
 // TODO find test vectors
