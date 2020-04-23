@@ -1,11 +1,11 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-describe("Signature", function() {
+module.exports = () => describe("Signature", function() {
   const priv_key_arm1 =
     ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: GnuPG v1.4.11 (GNU/Linux)',
