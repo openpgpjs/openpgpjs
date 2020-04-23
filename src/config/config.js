@@ -51,7 +51,7 @@ export default {
    * @memberof module:config
    * @property {Boolean} aeadProtect
    */
-  aeadProtect:             true,
+  aeadProtect: true,
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aeadProtect is set to true.
@@ -66,14 +66,14 @@ export default {
    * @memberof module:config
    * @property {Integer} aeadChunkSizeByte
    */
-  aeadChunkSizeByte:     12,
+  aeadChunkSizeByte: 12,
   /**
    * Use V5 keys.
    * Note: not all OpenPGP implementations are compatible with this option
    * @memberof module:config
    * @property {Boolean} v5Keys
    */
-  v5Keys:                  true,
+  v5Keys: true,
   /**
    * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
    * Iteration Count Byte for S2K (String to Key)
@@ -85,12 +85,12 @@ export default {
    * @memberof module:config
    * @property {Boolean} integrityProtect
    */
-  integrityProtect:        true,
+  integrityProtect: true,
   /**
    * @memberof module:config
    * @property {Boolean} ignoreMdcError Fail on decrypt if message is not integrity protected
    */
-  ignoreMdcError:         false,
+  ignoreMdcError: false,
   /**
    * @memberof module:config
    * @property {Boolean} allowUnauthenticatedStream Stream unauthenticated data before integrity has been checked
@@ -100,12 +100,12 @@ export default {
    * @memberof module:config
    * @property {Boolean} checksumRequired Do not throw error when armor is missing a checksum
    */
-  checksumRequired:        false,
+  checksumRequired: false,
   /**
    * @memberof module:config
    * @property {Boolean} rsaBlinding
    */
-  rsaBlinding:             true,
+  rsaBlinding: true,
   /**
    * Work-around for rare GPG decryption bug when encrypting with multiple passwords.
    * **Slower and slightly less secure**
@@ -117,13 +117,13 @@ export default {
    * @memberof module:config
    * @property {Boolean} revocationsExpire If true, expired revocation signatures are ignored
    */
-  revocationsExpire:       false,
+  revocationsExpire: false,
 
   /**
    * @memberof module:config
    * @property {Boolean} useNative Use native Node.js crypto/zlib and WebCrypto APIs when available
    */
-  useNative:               true,
+  useNative: true,
   /**
    * @memberof module:config
    * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
@@ -133,12 +133,12 @@ export default {
    * @memberof module:config
    * @property {Boolean} debug If enabled, debug messages will be printed
    */
-  debug:                    false,
+  debug: false,
   /**
    * @memberof module:config
    * @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error
    */
-  tolerant:                 true,
+  tolerant: true,
 
   /**
    * @memberof module:config
@@ -165,12 +165,12 @@ export default {
    * @memberof module:config
    * @property {String} keyserver
    */
-  keyserver:     "https://keyserver.ubuntu.com",
+  keyserver: "https://keyserver.ubuntu.com",
   /**
    * @memberof module:config
    * @property {String} nodeStore
    */
-  nodeStore:    "./openpgp.store",
+  nodeStore: "./openpgp.store",
   /**
    * Max userid string length (used for parsing)
    * @memberof module:config
