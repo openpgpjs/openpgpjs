@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const { key, cleartext, enums, packet: { List, Signature } } = openpgp;
 
@@ -73,4 +73,4 @@ async function testSubkeyTrust() {
   expect(verifyAttackerIsBatman.signatures[0].valid).to.be.null;
 }
 
-it('Does not trust subkeys without Primary Key Binding Signature', testSubkeyTrust);
+module.exports = () => it('Does not trust subkeys without Primary Key Binding Signature', testSubkeyTrust);

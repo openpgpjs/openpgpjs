@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const { key, cleartext, util, packet: { Signature } } = openpgp;
 
@@ -109,4 +109,4 @@ async function fakeSignature() {
   expect(signatures).to.have.length(0);
 }
 
-it('Does not accept non-binary/text signatures', fakeSignature);
+module.exports = () => it('Does not accept non-binary/text signatures', fakeSignature);

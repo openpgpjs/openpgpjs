@@ -1,11 +1,11 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
 
 const chai = require('chai');
 
 const { util } = openpgp;
 const { expect } = chai;
 
-it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', function(done) {
+module.exports = () => it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', function(done) {
   function tfencrypt(block, key) {
     const tf = new openpgp.crypto.cipher.twofish(util.strToUint8Array(key));
 
