@@ -129,7 +129,7 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   const bytes = stream.slice(tohash, crypto.cipher[sessionKeyAlgorithm].blockSize + 2); // Remove random prefix
   let packetbytes = stream.slice(bytes, 0, -2); // Remove MDC packet
   packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
-  if (!util.isStream(encrypted) || !config.allow_unauthenticated_stream) {
+  if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
     packetbytes = await stream.readToEnd(packetbytes);
   }
   await this.packets.read(packetbytes, streaming);

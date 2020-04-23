@@ -446,7 +446,7 @@ export default {
     aead: 2,
     /** 0x04 - Version 5 Public-Key Packet format and corresponding new
       *        fingerprint format */
-    v5_keys: 4
+    v5Keys: 4
   },
 
   /** Asserts validity and converts from string/integer to integer. */
