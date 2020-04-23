@@ -841,8 +841,8 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 `;
 
   it('Testing signature checking on CAST5-enciphered message', async function() {
-    const { reject_message_hash_algorithms } = openpgp.config;
-    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    const { rejectMessageHashAlgorithms } = openpgp.config;
+    Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
     try {
       const priv_key = await openpgp.key.readArmored(priv_key_arm1);
       const pub_key = await openpgp.key.readArmored(pub_key_arm1);
@@ -853,13 +853,13 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       expect(decrypted.signatures[0].valid).to.be.true;
       expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
     } finally {
-      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+      Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
     }
   });
 
   it('Supports decrypting with GnuPG stripped-key extension', async function() {
-    const { reject_message_hash_algorithms } = openpgp.config;
-    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    const { rejectMessageHashAlgorithms } = openpgp.config;
+    Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
     try {
       // exercises the GnuPG s2k type 1001 extension:
       // the secrets on the primary key have been stripped.
@@ -885,7 +885,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();
       expect(primaryKey_packet).to.deep.equal(primaryKey_packet2);
     } finally {
-      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+      Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
     }
   });
 
@@ -938,8 +938,8 @@ bwM=
   });
 
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', async function() {
-    const { reject_message_hash_algorithms } = openpgp.config;
-    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    const { rejectMessageHashAlgorithms } = openpgp.config;
+    Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
     try {
       const signedArmor =
         ['-----BEGIN PGP MESSAGE-----',
@@ -962,7 +962,7 @@ bwM=
       expect(await verified[0].verified).to.be.true;
       expect((await verified[0].signature).packets.length).to.equal(1);
     } finally {
-      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+      Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
     }
   });
 
@@ -1059,7 +1059,7 @@ bwM=
 
   it('Verify succeeds with known signed message with critical notations', async function() {
     openpgp.config.tolerant = false;
-    openpgp.config.known_notations.push('test@example.com');
+    openpgp.config.knownNotations.push('test@example.com');
     try {
       const sMsg = await openpgp.message.readArmored(signature_with_critical_notation);
       const pub_key = await openpgp.key.readArmored(pub_key_arm2);
@@ -1067,7 +1067,7 @@ bwM=
       openpgp.stream.pipe(sMsg.getLiteralData(), new openpgp.stream.WritableStream());
       expect(await verified[0].verified).to.be.true;
     } finally {
-      openpgp.config.known_notations.pop();
+      openpgp.config.knownNotations.pop();
       openpgp.config.tolerant = true;
     }
   });
@@ -1151,8 +1151,8 @@ PAAeuQTUrcJdZeJ86eQ9cCUB216HCwSKOWTQRzL+hBWKXij4WD4=
 
 
   it('Verify cleartext signed message with trailing spaces from GPG', async function() {
-    const { reject_message_hash_algorithms } = openpgp.config;
-    Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+    const { rejectMessageHashAlgorithms } = openpgp.config;
+    Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
     try {
       const msg_armor =
         `-----BEGIN PGP SIGNED MESSAGE-----
@@ -1189,7 +1189,7 @@ zmuVOdNuWQqxT9Sqa84=
       expect(cleartextSig.signatures[0].valid).to.be.true;
       expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
     } finally {
-      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+      Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
     }
   });
 
@@ -1220,7 +1220,7 @@ yYDnCgA=
         expect(cleartextSig).to.exist;
         expect(cleartextSig.data).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
-        expect(cleartextSig.signatures[0].valid).to.equal(!openpgp.config.reject_message_hash_algorithms.has(openpgp.enums.hash.sha1));
+        expect(cleartextSig.signatures[0].valid).to.equal(!openpgp.config.rejectMessageHashAlgorithms.has(openpgp.enums.hash.sha1));
         expect(cleartextSig.signatures[0].signature.packets.length).to.equal(1);
       });
     });
@@ -1257,7 +1257,7 @@ yYDnCgA=
         expect(cleartextSig).to.exist;
         expect(await openpgp.stream.readToEnd(cleartextSig.data)).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
-        if (!openpgp.config.reject_message_hash_algorithms.has(openpgp.enums.hash.sha1)) {
+        if (!openpgp.config.rejectMessageHashAlgorithms.has(openpgp.enums.hash.sha1)) {
           expect(await cleartextSig.signatures[0].verified).to.be.true;
         } else {
           await expect(cleartextSig.signatures[0].verified).to.be.rejectedWith('Insecure message hash algorithm: SHA1');
@@ -1331,15 +1331,15 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
   tests();
 
-  let reject_message_hash_algorithms;
+  let rejectMessageHashAlgorithms;
   tryTests('Accept SHA-1 signatures', tests, {
     if: true,
     before: function() {
-      ({ reject_message_hash_algorithms } = openpgp.config);
-      Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+      ({ rejectMessageHashAlgorithms } = openpgp.config);
+      Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
     },
     after: function() {
-      Object.assign(openpgp.config, { reject_message_hash_algorithms });
+      Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
     }
   });
 
