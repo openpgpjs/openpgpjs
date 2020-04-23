@@ -105,7 +105,7 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
   this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
-  this.chunkSizeByte = config.aead_chunk_size_byte;
+  this.chunkSizeByte = config.aeadChunkSizeByte;
   const data = this.packets.write();
   this.encrypted = await this.crypt('encrypt', key, data, streaming);
 };
