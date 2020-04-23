@@ -1,8 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const expect = require('chai').expect;
 
-describe('AES Key Wrap and Unwrap', function () {
+module.exports = () => describe('AES Key Wrap and Unwrap', function () {
   const test_vectors = [
     [
       "128 bits of Key Data with a 128-bit KEK",

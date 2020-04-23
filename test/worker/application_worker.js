@@ -4,7 +4,7 @@ const chai = require('chai');
 
 const { expect } = chai;
 
-tryTests('Application Worker', tests, {
+module.exports = () => tryTests('Application Worker', tests, {
   if: typeof window !== 'undefined' && window.Worker && window.MessageChannel
 });
 
@@ -15,7 +15,7 @@ function tests() {
       this.skip(); // Old Edge doesn't support crypto.getRandomValues inside a Worker.
     }
     try {
-      eval('(async function() {})');
+      globalThis.eval('(async function() {})');
     } catch (e) {
       console.error(e);
       this.skip();

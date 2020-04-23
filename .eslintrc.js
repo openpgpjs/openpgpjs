@@ -13,6 +13,7 @@ module.exports = {
   ],
 
   "globals": { // TODO are all these necessary?
+    "globalThis": true,
     "console": true,
     "Promise": true,
     "importScripts": true,
