@@ -124,26 +124,26 @@ function testAESEAX() {
 }
 
 describe('Symmetric AES-EAX (native)', function() {
-  let use_nativeVal;
+  let useNativeVal;
   beforeEach(function() {
-    use_nativeVal = openpgp.config.use_native;
-    openpgp.config.use_native = true;
+    useNativeVal = openpgp.config.useNative;
+    openpgp.config.useNative = true;
   });
   afterEach(function() {
-    openpgp.config.use_native = use_nativeVal;
+    openpgp.config.useNative = useNativeVal;
   });
 
   testAESEAX();
 });
 
 describe('Symmetric AES-EAX (asm.js fallback)', function() {
-  let use_nativeVal;
+  let useNativeVal;
   beforeEach(function() {
-    use_nativeVal = openpgp.config.use_native;
-    openpgp.config.use_native = false;
+    useNativeVal = openpgp.config.useNative;
+    openpgp.config.useNative = false;
   });
   afterEach(function() {
-    openpgp.config.use_native = use_nativeVal;
+    openpgp.config.useNative = useNativeVal;
   });
 
   testAESEAX();

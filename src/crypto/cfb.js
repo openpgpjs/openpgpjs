@@ -121,7 +121,7 @@ function aesEncrypt(algo, key, pt, iv) {
     util.getWebCrypto() &&
     key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support
     !util.isStream(pt) &&
-    pt.length >= 3000 * config.min_bytes_for_web_crypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
+    pt.length >= 3000 * config.minBytesForWebCrypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
   ) { // Web Crypto
     return webEncrypt(algo, key, pt, iv);
   }

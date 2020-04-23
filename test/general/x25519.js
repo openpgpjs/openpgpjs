@@ -537,4 +537,3 @@ function omnibus() {
 tryTests('X25519 Omnibus Tests', omnibus, {
   if: !openpgp.config.ci
 });
-

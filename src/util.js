@@ -478,11 +478,11 @@ export default {
   /**
    * Get native Web Cryptography api, only the current version of the spec.
    * The default configuration is to use the api when available. But it can
-   * be deactivated with config.use_native
+   * be deactivated with config.useNative
    * @returns {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
-    if (!config.use_native) {
+    if (!config.useNative) {
       return;
     }
 
@@ -493,11 +493,11 @@ export default {
    * Get native Web Cryptography api for all browsers, including legacy
    * implementations of the spec e.g IE11 and Safari 8/9. The default
    * configuration is to use the api when available. But it can be deactivated
-   * with config.use_native
+   * with config.useNative
    * @returns {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCryptoAll: function() {
-    if (!config.use_native) {
+    if (!config.useNative) {
       return;
     }
 
@@ -537,11 +537,11 @@ export default {
 
   /**
    * Get native Node.js crypto api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.use_native
+   * the api when available. But it can also be deactivated with config.useNative
    * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!config.use_native) {
+    if (!config.useNative) {
       return;
     }
 
@@ -549,7 +549,7 @@ export default {
   },
 
   getNodeZlib: function() {
-    if (!config.use_native) {
+    if (!config.useNative) {
       return;
     }
 
@@ -613,7 +613,7 @@ export default {
    * Parse user id.
    */
   parseUserId: function(userid) {
-    if (userid.length > config.max_userid_length) {
+    if (userid.length > config.maxUseridLength) {
       throw new Error('User id string is too long');
     }
     try {

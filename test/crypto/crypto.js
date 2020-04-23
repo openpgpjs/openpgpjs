@@ -297,7 +297,7 @@ describe('API functional testing', function() {
 
             const ciphertext = await modeInstance.encrypt(util.str_to_Uint8Array(plaintext), iv);
 
-            openpgp.config.use_native = nativeDecrypt;
+            openpgp.config.useNative = nativeDecrypt;
             modeInstance = await crypto.gcm(algo, key);
 
             const decrypted = await modeInstance.decrypt(util.str_to_Uint8Array(util.Uint8Array_to_str(ciphertext)), iv);
@@ -316,39 +316,39 @@ describe('API functional testing', function() {
     });
 
     describe('Symmetric AES-GCM (native)', function() {
-      let use_nativeVal;
+      let useNativeVal;
       beforeEach(function() {
-        use_nativeVal = openpgp.config.use_native;
-        openpgp.config.use_native = true;
+        useNativeVal = openpgp.config.useNative;
+        openpgp.config.useNative = true;
       });
       afterEach(function() {
-        openpgp.config.use_native = use_nativeVal;
+        openpgp.config.useNative = useNativeVal;
       });
 
       testAESGCM("12345678901234567890123456789012345678901234567890", true);
     });
 
     describe('Symmetric AES-GCM (asm.js fallback)', function() {
-      let use_nativeVal;
+      let useNativeVal;
       beforeEach(function() {
-        use_nativeVal = openpgp.config.use_native;
-        openpgp.config.use_native = false;
+        useNativeVal = openpgp.config.useNative;
+        openpgp.config.useNative = false;
       });
       afterEach(function() {
-        openpgp.config.use_native = use_nativeVal;
+        openpgp.config.useNative = useNativeVal;
       });
 
       testAESGCM("12345678901234567890123456789012345678901234567890", false);
     });
 
     describe('Symmetric AES-GCM (native encrypt, asm.js decrypt)', function() {
-      let use_nativeVal;
+      let useNativeVal;
       beforeEach(function() {
-        use_nativeVal = openpgp.config.use_native;
-        openpgp.config.use_native = true;
+        useNativeVal = openpgp.config.useNative;
+        openpgp.config.useNative = true;
       });
       afterEach(function() {
-        openpgp.config.use_native = use_nativeVal;
+        openpgp.config.useNative = useNativeVal;
       });
 
       testAESGCM("12345678901234567890123456789012345678901234567890", false);
