@@ -58,9 +58,9 @@ function SymmetricallyEncrypted() {
   this.packets = null;
   /**
    * When true, decrypt fails if message is not integrity protected
-   * @see module:config.ignore_mdc_error
+   * @see module:config.ignoreMdcError
    */
-  this.ignore_mdc_error = config.ignore_mdc_error;
+  this.ignoreMdcError = config.ignoreMdcError;
 }
 
 SymmetricallyEncrypted.prototype.read = function (bytes) {
@@ -81,7 +81,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  */
 SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
   // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
-  if (!this.ignore_mdc_error) {
+  if (!this.ignoreMdcError) {
     throw new Error('Decryption failed due to missing MDC.');
   }
 

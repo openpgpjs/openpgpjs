@@ -44,8 +44,8 @@ export function keyFromPublic(indutnyCurve, pub) {
  * @returns {Promise<elliptic>}
  */
 async function loadEllipticPromise() {
-  const path = config.indutny_elliptic_path;
-  const options = config.indutny_elliptic_fetch_options;
+  const path = config.indutnyEllipticPath;
+  const options = config.indutnyEllipticFetchOptions;
   const ellipticDlPromise = dl(path, options).catch(() => dl(path, options));
   const ellipticContents = await ellipticDlPromise;
   const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
@@ -60,12 +60,12 @@ async function loadEllipticPromise() {
 let ellipticPromise;
 
 function loadElliptic() {
-  if (!config.external_indutny_elliptic) {
+  if (!config.externalIndutnyElliptic) {
     return require('elliptic');
   }
   if (util.detectNode()) {
     // eslint-disable-next-line
-    return require(config.indutny_elliptic_path);
+    return require(config.indutnyEllipticPath);
   }
   if (!ellipticPromise) {
     ellipticPromise = loadEllipticPromise().catch(e => {
@@ -77,7 +77,7 @@ function loadElliptic() {
 }
 
 export async function getIndutnyCurve(name) {
-  if (!config.use_indutny_elliptic) {
+  if (!config.useIndutnyElliptic) {
     throw new Error('This curve is only supported in the full build of OpenPGP.js');
   }
   const elliptic = await loadElliptic();

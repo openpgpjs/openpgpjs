@@ -25,14 +25,14 @@ import enums from '../enums';
 export default {
   /**
    * @memberof module:config
-   * @property {Integer} prefer_hash_algorithm Default hash algorithm {@link module:enums.hash}
+   * @property {Integer} preferHashAlgorithm Default hash algorithm {@link module:enums.hash}
    */
-  prefer_hash_algorithm: enums.hash.sha256,
+  preferHashAlgorithm: enums.hash.sha256,
   /**
    * @memberof module:config
-   * @property {Integer} encryption_cipher Default encryption cipher {@link module:enums.symmetric}
+   * @property {Integer} encryptionCipher Default encryption cipher {@link module:enums.symmetric}
    */
-  encryption_cipher: enums.symmetric.aes256,
+  encryptionCipher: enums.symmetric.aes256,
   /**
    * @memberof module:config
    * @property {Integer} compression Default compression algorithm {@link module:enums.compression}
@@ -40,178 +40,178 @@ export default {
   compression: enums.compression.uncompressed,
   /**
    * @memberof module:config
-   * @property {Integer} deflate_level Default zip/zlib compression level, between 1 and 9
+   * @property {Integer} deflateLevel Default zip/zlib compression level, between 1 and 9
    */
-  deflate_level: 6,
+  deflateLevel: 6,
 
   /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
    * Note: not all OpenPGP implementations are compatible with this option.
    * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-07|RFC4880bis-07}
    * @memberof module:config
-   * @property {Boolean} aead_protect
+   * @property {Boolean} aeadProtect
    */
-  aead_protect:             true,
+  aeadProtect: true,
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
-   * Only has an effect when aead_protect is set to true.
+   * Only has an effect when aeadProtect is set to true.
    * @memberof module:config
-   * @property {Integer} aead_mode Default AEAD mode {@link module:enums.aead}
+   * @property {Integer} aeadMode Default AEAD mode {@link module:enums.aead}
    */
-  aead_mode: enums.aead.eax,
+  aeadMode: enums.aead.eax,
   /**
    * Chunk Size Byte for Authenticated Encryption with Additional Data (AEAD) mode
-   * Only has an effect when aead_protect is set to true.
+   * Only has an effect when aeadProtect is set to true.
    * Must be an integer value from 0 to 56.
    * @memberof module:config
-   * @property {Integer} aead_chunk_size_byte
+   * @property {Integer} aeadChunkSizeByte
    */
-  aead_chunk_size_byte:     12,
+  aeadChunkSizeByte: 12,
   /**
    * Use V5 keys.
    * Note: not all OpenPGP implementations are compatible with this option
    * @memberof module:config
-   * @property {Boolean} v5_keys
+   * @property {Boolean} v5Keys
    */
-  v5_keys:                  true,
+  v5Keys: true,
   /**
    * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
    * Iteration Count Byte for S2K (String to Key)
    * @memberof module:config
-   * @property {Integer} s2k_iteration_count_byte
+   * @property {Integer} s2kIterationCountByte
    */
-  s2k_iteration_count_byte: 224,
+  s2kIterationCountByte: 224,
   /** Use integrity protection for symmetric encryption
    * @memberof module:config
-   * @property {Boolean} integrity_protect
+   * @property {Boolean} integrityProtect
    */
-  integrity_protect:        true,
+  integrityProtect: true,
   /**
    * @memberof module:config
-   * @property {Boolean} ignore_mdc_error Fail on decrypt if message is not integrity protected
+   * @property {Boolean} ignoreMdcError Fail on decrypt if message is not integrity protected
    */
-  ignore_mdc_error:         false,
+  ignoreMdcError: false,
   /**
    * @memberof module:config
-   * @property {Boolean} allow_unauthenticated_stream Stream unauthenticated data before integrity has been checked
+   * @property {Boolean} allowUnauthenticatedStream Stream unauthenticated data before integrity has been checked
    */
-  allow_unauthenticated_stream: false,
+  allowUnauthenticatedStream: false,
   /**
    * @memberof module:config
-   * @property {Boolean} checksum_required Do not throw error when armor is missing a checksum
+   * @property {Boolean} checksumRequired Do not throw error when armor is missing a checksum
    */
-  checksum_required:        false,
+  checksumRequired: false,
   /**
    * @memberof module:config
-   * @property {Boolean} rsa_blinding
+   * @property {Boolean} rsaBlinding
    */
-  rsa_blinding:             true,
+  rsaBlinding: true,
   /**
    * Work-around for rare GPG decryption bug when encrypting with multiple passwords.
    * **Slower and slightly less secure**
    * @memberof module:config
-   * @property {Boolean} password_collision_check
+   * @property {Boolean} passwordCollisionCheck
    */
-  password_collision_check: false,
+  passwordCollisionCheck: false,
   /**
    * @memberof module:config
-   * @property {Boolean} revocations_expire If true, expired revocation signatures are ignored
+   * @property {Boolean} revocationsExpire If true, expired revocation signatures are ignored
    */
-  revocations_expire:       false,
+  revocationsExpire: false,
 
   /**
    * @memberof module:config
-   * @property {Boolean} use_native Use native Node.js crypto/zlib and WebCrypto APIs when available
+   * @property {Boolean} useNative Use native Node.js crypto/zlib and WebCrypto APIs when available
    */
-  use_native:               true,
+  useNative: true,
   /**
    * @memberof module:config
-   * @property {Integer} min_bytes_for_web_crypto The minimum amount of bytes for which to use native WebCrypto APIs when available
+   * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
    */
-  min_bytes_for_web_crypto: 1000,
+  minBytesForWebCrypto: 1000,
   /**
    * @memberof module:config
    * @property {Boolean} debug If enabled, debug messages will be printed
    */
-  debug:                    false,
+  debug: false,
   /**
    * @memberof module:config
    * @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error
    */
-  tolerant:                 true,
+  tolerant: true,
 
   /**
    * @memberof module:config
-   * @property {Boolean} show_version Whether to include {@link module:config/config.versionstring} in armored messages
+   * @property {Boolean} showVersion Whether to include {@link module:config/config.versionString} in armored messages
    */
-  show_version: true,
+  showVersion: true,
   /**
    * @memberof module:config
-   * @property {Boolean} show_comment Whether to include {@link module:config/config.commentstring} in armored messages
+   * @property {Boolean} showComment Whether to include {@link module:config/config.commentString} in armored messages
    */
-  show_comment: true,
+  showComment: true,
   /**
    * @memberof module:config
-   * @property {String} versionstring A version string to be included in armored messages
+   * @property {String} versionString A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js VERSION",
+  versionString: "OpenPGP.js VERSION",
   /**
    * @memberof module:config
-   * @property {String} commentstring A comment string to be included in armored messages
+   * @property {String} commentString A comment string to be included in armored messages
    */
-  commentstring: "https://openpgpjs.org",
+  commentString: "https://openpgpjs.org",
 
   /**
    * @memberof module:config
    * @property {String} keyserver
    */
-  keyserver:     "https://keyserver.ubuntu.com",
+  keyserver: "https://keyserver.ubuntu.com",
   /**
    * @memberof module:config
-   * @property {String} node_store
+   * @property {String} nodeStore
    */
-  node_store:    "./openpgp.store",
+  nodeStore: "./openpgp.store",
   /**
    * Max userid string length (used for parsing)
    * @memberof module:config
-   * @property {Integer} max_userid_length
+   * @property {Integer} maxUseridLength
    */
-  max_userid_length: 1024 * 5,
+  maxUseridLength: 1024 * 5,
   /**
    * Contains notatations that are considered "known". Known notations do not trigger
    * validation error when the notation is marked as critical.
    * @memberof module:config
-   * @property {Array} known_notations
+   * @property {Array} knownNotations
    */
-  known_notations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"],
+  knownNotations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"],
   /**
    * @memberof module:config
-   * @property {Boolean} use_indutny_elliptic Whether to use the indutny/elliptic library. When false, certain curves will not be supported.
+   * @property {Boolean} useIndutnyElliptic Whether to use the indutny/elliptic library. When false, certain curves will not be supported.
    */
-  use_indutny_elliptic: true,
+  useIndutnyElliptic: true,
   /**
    * @memberof module:config
-   * @property {Boolean} external_indutny_elliptic Whether to lazily load the indutny/elliptic library from an external path on demand.
+   * @property {Boolean} externalIndutnyElliptic Whether to lazily load the indutny/elliptic library from an external path on demand.
    */
-  external_indutny_elliptic: false,
+  externalIndutnyElliptic: false,
   /**
    * @memberof module:config
-   * @property {String} indutny_elliptic_path The path to load the indutny/elliptic library from. Only has an effect if `config.external_indutny_elliptic` is true.
+   * @property {String} indutnyEllipticPath The path to load the indutny/elliptic library from. Only has an effect if `config.externalIndutnyElliptic` is true.
    */
-  indutny_elliptic_path: './elliptic.min.js',
+  indutnyEllipticPath: './elliptic.min.js',
   /**
    * @memberof module:config
-   * @property {Object} indutny_elliptic_fetch_options Options object to pass to `fetch` when loading the indutny/elliptic library. Only has an effect if `config.external_indutny_elliptic` is true.
+   * @property {Object} indutnyEllipticFetchOptions Options object to pass to `fetch` when loading the indutny/elliptic library. Only has an effect if `config.externalIndutnyElliptic` is true.
    */
-  indutny_elliptic_fetch_options: {},
+  indutnyEllipticFetchOptions: {},
   /**
    * @memberof module:config
    * @property {Set<Integer>} reject_hash_algorithms Reject insecure hash algorithms {@link module:enums.hash}
    */
-  reject_hash_algorithms: new global.Set([enums.hash.md5, enums.hash.ripemd]),
+  rejectHashAlgorithms: new global.Set([enums.hash.md5, enums.hash.ripemd]),
   /**
    * @memberof module:config
    * @property {Set<Integer>} reject_message_hash_algorithms Reject insecure message hash algorithms {@link module:enums.hash}
    */
-  reject_message_hash_algorithms: new global.Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1])
+  rejectMessageHashAlgorithms: new global.Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1])
 };
