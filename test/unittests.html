@@ -6,11 +6,17 @@
     <link rel="stylesheet" href="lib/mocha.css" />
 
     <!-- libs -->
-    <script src="../dist/openpgp.js"></script>
+    <script>
+      if (window.location.search.includes('lightweight=')) {
+        document.write('<script src="../dist/lightweight/openpgp.js"><\/script>');
+      } else {
+        document.write('<script src="../dist/openpgp.js"><\/script>');
+      }
+    </script>
     <script src="lib/mocha.js"></script>
     <script>
-        mocha.setup('bdd');
-        mocha.timeout(240000);
+      mocha.setup('bdd');
+      mocha.timeout(240000);
     </script>
   </head>
   <body>

@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 
@@ -6,7 +6,7 @@ const { expect } = chai;
 
 const keyring = new openpgp.Keyring();
 
-describe("Keyring", async function() {
+module.exports = () => describe("Keyring", async function() {
   const user = 'whiteout.test@t-online.de';
   const passphrase = 'asdf';
   const keySize = 512;

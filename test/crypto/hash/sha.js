@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
 
 const chai = require('chai');
 
@@ -6,7 +6,7 @@ const { util } = openpgp;
 const { hash } = openpgp.crypto;
 const { expect } = chai;
 
-it('SHA* with test vectors from NIST FIPS 180-2', async function() {
+module.exports = () => it('SHA* with test vectors from NIST FIPS 180-2', async function() {
   expect(util.strToHex(util.uint8ArrayToStr(await hash.sha1(util.strToUint8Array('abc'))), 'hash.sha1("abc") = a9993e364706816aba3e25717850c26c9cd0d89d')).to.equal('a9993e364706816aba3e25717850c26c9cd0d89d');
   expect(util.strToHex(util.uint8ArrayToStr(await hash.sha1(util.strToUint8Array('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq'))), 'hash.sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq") = 84983e441c3bd26ebaae4aa1f95129e5e54670f1')).to.equal('84983e441c3bd26ebaae4aa1f95129e5e54670f1');
   expect(util.strToHex(util.uint8ArrayToStr(await hash.sha224(util.strToUint8Array('abc'))), 'hash.sha224("abc") = 23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7')).to.equal('23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7');

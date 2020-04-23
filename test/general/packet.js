@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
@@ -23,7 +23,7 @@ function stringify(array) {
   return result.join('');
 }
 
-describe("Packet", function() {
+module.exports = () => describe("Packet", function() {
   const armored_key =
       '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
       'Version: GnuPG v2.0.19 (GNU/Linux)\n' +

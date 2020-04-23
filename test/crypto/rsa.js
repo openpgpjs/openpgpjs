@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const chai = require('chai');
 
 chai.use(require('chai-as-promised'));
@@ -8,7 +8,7 @@ const expect = chai.expect;
 /* eslint-disable no-unused-expressions */
 /* eslint-disable no-invalid-this */
 const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
-(!native ? describe.skip : describe)('basic RSA cryptography with native crypto', function () {
+module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptography with native crypto', function () {
   it('generate rsa key', async function() {
     const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
     const keyObject = await openpgp.crypto.publicKey.rsa.generate(bits, "10001");

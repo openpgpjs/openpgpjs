@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
@@ -870,7 +870,7 @@ function tests() {
   });
 }
 
-describe('Streaming', function() {
+module.exports = () => describe('Streaming', function() {
   let currentTest = 0;
   const aeadChunkSizeByteValue = openpgp.config.aeadChunkSizeByte;
 
@@ -929,7 +929,7 @@ describe('Streaming', function() {
   });
 
   if (openpgp.util.detectNode()) {
-    const fs = util.nodeRequire('fs');
+    const fs = require('fs');
 
     it('Node: Encrypt and decrypt text message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.

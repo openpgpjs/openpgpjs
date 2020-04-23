@@ -1,6 +1,6 @@
 /* globals tryTests: true */
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const spy = require('sinon/lib/sinon/spy');
 const stub = require('sinon/lib/sinon/stub');
@@ -420,7 +420,7 @@ function withCompression(tests) {
   });
 }
 
-describe('OpenPGP.js public api tests', function() {
+module.exports = () => describe('OpenPGP.js public api tests', function() {
 
   let rsaGenStub;
   let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
@@ -519,53 +519,27 @@ describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - unit tests', function() {
-    let keyGenStub;
-    let keyObjStub;
-    let getWebCryptoAllStub;
-
-    beforeEach(function() {
-      keyObjStub = {
-        armor: function() {
-          return 'priv_key';
-        },
-        toPublic: function() {
-          return {
-            armor: function() {
-              return 'pub_key';
-            }
-          };
-        },
-        getRevocationCertificate: function() {}
-      };
-      keyGenStub = stub(openpgp.key, 'generate');
-      keyGenStub.returns(resolves(keyObjStub));
-      getWebCryptoAllStub = stub(openpgp.util, 'getWebCryptoAll');
-    });
-
-    afterEach(function() {
-      keyGenStub.restore();
-      getWebCryptoAllStub.restore();
-    });
-
     it('should have default params set', function() {
       const now = openpgp.util.normalizeDate(new Date());
       const opt = {
         userIds: { name: 'Test User', email: 'text@example.com' },
         passphrase: 'secret',
-        date: now,
-        subkeys: []
+        date: now
       };
-      return openpgp.generateKey(opt).then(function(newKey) {
-        expect(keyGenStub.withArgs({
-          userIds: [{ name: 'Test User', email: 'text@example.com' }],
-          passphrase: 'secret',
-          rsaBits: null,
-          keyExpirationTime: 0,
-          curve: "curve25519",
-          date: now,
-          subkeys: []
-        }).calledOnce).to.be.true;
+      return openpgp.generateKey(opt).then(async function(newKey) {
         expect(newKey.key).to.exist;
+        expect(newKey.key.users.length).to.equal(1);
+        expect(newKey.key.users[0].userId.name).to.equal('Test User');
+        expect(newKey.key.users[0].userId.email).to.equal('text@example.com');
+        expect(newKey.key.getAlgorithmInfo().rsaBits).to.equal(undefined);
+        expect(newKey.key.getAlgorithmInfo().curve).to.equal('ed25519');
+        expect(+newKey.key.getCreationTime()).to.equal(+now);
+        expect(await newKey.key.getExpirationTime()).to.equal(Infinity);
+        expect(newKey.key.subKeys.length).to.equal(1);
+        expect(newKey.key.subKeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
+        expect(newKey.key.subKeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+        expect(+newKey.key.subKeys[0].getCreationTime()).to.equal(+now);
+        expect(await newKey.key.subKeys[0].getExpirationTime()).to.equal(Infinity);
         expect(newKey.privateKeyArmored).to.exist;
         expect(newKey.publicKeyArmored).to.exist;
       });

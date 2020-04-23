@@ -1,5 +1,5 @@
-describe('Hash', function () {
-  require('./md5.js');
-  require('./ripemd.js');
-  require('./sha.js');
+module.exports = () => describe('Hash', function () {
+  require('./md5.js')();
+  require('./ripemd.js')();
+  require('./sha.js')();
 });
