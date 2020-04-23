@@ -1,8 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const expect = require('chai').expect;
 
-describe('PKCS5 padding', function() {
+module.exports = () => describe('PKCS5 padding', function() {
   function repeat(pattern, count) {
     let result = '';
     for (let k = 0; k < count; ++k) {
