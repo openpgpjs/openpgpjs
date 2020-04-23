@@ -286,7 +286,7 @@ Message.prototype.getText = function() {
  */
 export async function generateSessionKey(keys = [], date = new Date(), userIds = []) {
   const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
-  const aeadAlgorithm = config.aead_protect && await isAeadSupported(keys, date, userIds) ?
+  const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIds) ?
     enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds)) :
     undefined;
   const sessionKeyData = await crypto.generateSessionKey(algorithm);
@@ -326,7 +326,7 @@ Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard
   if (aeadAlgorithm) {
     symEncryptedPacket = new packet.SymEncryptedAEADProtected();
     symEncryptedPacket.aeadAlgorithm = aeadAlgorithm;
-  } else if (config.integrity_protect) {
+  } else if (config.integrityProtect) {
     symEncryptedPacket = new packet.SymEncryptedIntegrityProtected();
   } else {
     symEncryptedPacket = new packet.SymmetricallyEncrypted();
@@ -391,7 +391,7 @@ export async function encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, pu
       }
       await symEncryptedSessionKeyPacket.encrypt(password);
 
-      if (config.password_collision_check) {
+      if (config.passwordCollisionCheck) {
         const results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
         if (results.reduce(sum) !== 1) {
           return encryptPassword(sessionKey, algorithm, password);

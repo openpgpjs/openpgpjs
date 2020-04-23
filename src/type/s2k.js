@@ -45,7 +45,7 @@ function S2K() {
   /** @type {module:enums.s2k} */
   this.type = 'iterated';
   /** @type {Integer} */
-  this.c = config.s2k_iteration_count_byte;
+  this.c = config.s2kIterationCountByte;
   /** Eight bytes of salt in a binary string.
    * @type {String}
    */
