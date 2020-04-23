@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const { key, message, enums, packet: { List, Signature } } = openpgp;
 
@@ -91,4 +91,4 @@ async function makeKeyValid() {
   expect(await encryptFails(modifiedkey)).to.be.true;
 }
 
-it('Does not accept unsigned subpackets', makeKeyValid);
+module.exports = () => it('Does not accept unsigned subpackets', makeKeyValid);

@@ -1,6 +1,6 @@
 /* globals tryTests: true */
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -8,7 +8,7 @@ const input = require('./testInputs.js');
 
 const expect = chai.expect;
 
-describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightweight', function () {
+module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightweight', function () {
   function omnibus() {
     it('Omnibus NIST P-256 Test', function () {
       const options = { userIds: {name: "Hi", email: "hi@hel.lo"}, curve: "p256" };

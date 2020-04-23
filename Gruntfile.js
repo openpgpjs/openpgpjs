@@ -3,98 +3,8 @@ module.exports = function(grunt) {
   const version = grunt.option('release');
   const fs = require('fs');
 
-  // Project configuration.
-  const dev = !!grunt.option('dev');
-  const compat = !!grunt.option('compat');
-  const lightweight = !!grunt.option('lightweight');
-  const plugins = compat ? [
-    "transform-async-to-generator",
-    "syntax-async-functions",
-    "transform-regenerator",
-    "transform-runtime"
-  ] : [];
-  const presets = [[require.resolve('babel-preset-env'), {
-    targets: {
-      browsers: compat ? [
-        'IE >= 11',
-        'Safari >= 9',
-        'Last 2 Chrome versions',
-        'Last 2 Firefox versions',
-        'Last 2 Edge versions'
-      ] : [
-        'Last 2 Chrome versions',
-        'Last 2 Firefox versions',
-        'Last 2 Safari versions',
-        'Last 2 Edge versions'
-      ]
-    }
-  }]];
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
-    browserify: {
-      openpgp: {
-        files: {
-          'dist/openpgp.js': ['./src/index.js']
-        },
-        options: {
-          browserifyOptions: {
-            fullPaths: dev,
-            debug: dev,
-            standalone: 'openpgp'
-          },
-          cacheFile: 'browserify-cache' + (compat ? '-compat' : '') + (lightweight ? '-lightweight' : '') + '.json',
-          // Don't bundle these packages with openpgp.js
-          external: ['crypto', 'zlib', 'node-localstorage', 'node-fetch', 'asn1.js', 'stream', 'buffer'].concat(
-            compat ? [] : [
-              'whatwg-fetch',
-              'core-js/fn/array/fill',
-              'core-js/fn/array/find',
-              'core-js/fn/array/includes',
-              'core-js/fn/array/from',
-              'core-js/fn/promise',
-              'core-js/fn/typed/uint8-array',
-              'core-js/fn/string/repeat',
-              'core-js/fn/symbol',
-              'core-js/fn/object/assign'
-            ],
-            lightweight ? [
-              'elliptic',
-              'elliptic.min.js'
-            ] : []
-          ),
-          transform: [
-            ["babelify", {
-              global: true,
-              // Only babelify web-streams-polyfill, web-stream-tools, asmcrypto, email-addresses and seek-bzip in node_modules
-              only: /^(?:.*\/node_modules\/web-streams-polyfill\/|.*\/node_modules\/web-stream-tools\/|.*\/node_modules\/asmcrypto\.js\/|.*\/node_modules\/email-addresses\/|.*\/node_modules\/seek-bzip\/|(?!.*\/node_modules\/)).*$/,
-              ignore: ['*.min.js'],
-              plugins,
-              presets
-            }]
-          ],
-          plugin: ['browserify-derequire']
-        }
-      },
-      unittests: {
-        files: {
-          'test/lib/unittests-bundle.js': ['./test/unittests.js']
-        },
-        options: {
-          cacheFile: 'browserify-cache-unittests.json',
-          external: ['buffer', 'openpgp', '../../dist/openpgp', '../../../dist/openpgp'],
-          transform: [
-            ["babelify", {
-              global: true,
-              // Only babelify chai-as-promised in node_modules
-              only: /^(?:.*\/node_modules\/chai-as-promised\/|(?!.*\/node_modules\/)).*$/,
-              ignore: ['*.min.js'],
-              plugins,
-              presets
-            }]
-          ]
-        }
-      }
-    },
     nyc: {
       cover: {
         options: {
@@ -109,65 +19,6 @@ module.exports = function(grunt) {
       report: {
         options: {
           reporter: 'text'
-        }
-      }
-    },
-    replace: {
-      openpgp: {
-        src: ['dist/openpgp.js'],
-        dest: ['dist/openpgp.js'],
-        replacements: [{
-          from: /OpenPGP.js VERSION/g,
-          to: 'OpenPGP.js v<%= pkg.version %>'
-        }]
-      },
-      lightweight_build: {
-        src: ['dist/openpgp.js'],
-        overwrite: true,
-        replacements: [
-          {
-            from: "externalIndutnyElliptic: false",
-            to: "externalIndutnyElliptic: true"
-          }
-        ]
-      },
-      indutny_global: {
-        src: ['dist/elliptic.min.js'],
-        overwrite: true,
-        replacements: [
-          {
-            from: 'b.elliptic=a()',
-            to: 'b.openpgp.elliptic=a()'
-          }
-        ]
-      }
-    },
-    terser: {
-      openpgp: {
-        files: {
-          'dist/openpgp.min.js' : ['dist/openpgp.js']
-        },
-        options: {
-          output: {
-            comments: `/^!/`
-          },
-          sourceMap: dev ? {
-            content: 'inline',
-            url: 'inline'
-          } : {},
-          safari10: true
-        }
-      }
-    },
-    header: {
-      openpgp: {
-        options: {
-          text: '/*! OpenPGP.js v<%= pkg.version %> - ' +
-                '<%= grunt.template.today("yyyy-mm-dd") %> - ' +
-                'this is LGPL licensed code, see LICENSE/our website <%= pkg.homepage %> for more information. */'
-        },
-        files: {
-          'dist/openpgp.js': 'dist/openpgp.js'
         }
       }
     },
@@ -232,7 +83,7 @@ module.exports = function(grunt) {
         expand: true,
         flatten: true,
         src: ['./node_modules/elliptic/dist/elliptic.min.js'],
-        dest: 'dist/'
+        dest: 'dist/lightweight/'
       }
     },
     clean: {
@@ -253,23 +104,10 @@ module.exports = function(grunt) {
           base: '.'
         }
       }
-    },
-    watch: {
-      src: {
-        files: ['src/**/*.js'],
-        tasks: lightweight ? ['browserify:openpgp', 'replace:lightweight_build'] : ['browserify:openpgp']
-      },
-      test: {
-        files: ['test/*.js', 'test/crypto/**/*.js', 'test/general/**/*.js', 'test/worker/**/*.js'],
-        tasks: ['browserify:unittests']
-      }
     }
   });
 
   // Load the plugin(s)
-  grunt.loadNpmTasks('grunt-browserify');
-  grunt.loadNpmTasks('grunt-terser');
-  grunt.loadNpmTasks('grunt-header');
   grunt.loadNpmTasks('grunt-text-replace');
   grunt.loadNpmTasks('grunt-jsbeautifier');
   grunt.loadNpmTasks('grunt-jsdoc');
@@ -316,14 +154,6 @@ module.exports = function(grunt) {
 
   // Build tasks
   grunt.registerTask('version', ['replace:openpgp']);
-  grunt.registerTask('build', function() {
-    if (lightweight) {
-      grunt.task.run(['copy:indutny_elliptic', 'browserify:openpgp', 'replace:lightweight_build', 'replace:indutny_global', 'version', 'header', 'terser']);
-      return;
-    }
-    grunt.task.run(['browserify:openpgp', 'version', 'header', 'terser']);
-  }
-  );
   grunt.registerTask('documentation', ['jsdoc']);
   grunt.registerTask('default', ['build']);
   // Test/Dev tasks

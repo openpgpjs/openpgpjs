@@ -1,11 +1,11 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../../dist/openpgp');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
 
 const chai = require('chai');
 
 const { util } = openpgp;
 const { expect } = chai;
 
-it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
+module.exports = () => it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
   function test_bf(input, key, output) {
     const blowfish = new openpgp.crypto.cipher.blowfish(util.uint8ArrayToStr(key));
     const result = util.uint8ArrayToStr(blowfish.encrypt(input));
