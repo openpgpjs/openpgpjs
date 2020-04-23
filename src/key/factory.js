@@ -181,18 +181,18 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       enums.symmetric.aes256,
       enums.symmetric.aes128,
       enums.symmetric.aes192
-    ], config.encryption_cipher);
-    if (config.aead_protect) {
+    ], config.encryptionCipher);
+    if (config.aeadProtect) {
       signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
-      ], config.aead_mode);
+      ], config.aeadMode);
     }
     signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
       enums.hash.sha256,
       enums.hash.sha512
-    ], config.prefer_hash_algorithm);
+    ], config.preferHashAlgorithm);
     signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
       enums.compression.zlib,
       enums.compression.zip,
@@ -201,17 +201,17 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
     }
-    if (config.integrity_protect) {
+    if (config.integrityProtect) {
       signaturePacket.features = [0];
       signaturePacket.features[0] |= enums.features.modification_detection;
     }
-    if (config.aead_protect) {
+    if (config.aeadProtect) {
       signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.aead;
     }
-    if (config.v5_keys) {
+    if (config.v5Keys) {
       signaturePacket.features || (signaturePacket.features = [0]);
-      signaturePacket.features[0] |= enums.features.v5_keys;
+      signaturePacket.features[0] |= enums.features.v5Keys;
     }
     if (options.keyExpirationTime > 0) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;

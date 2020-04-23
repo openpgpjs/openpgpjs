@@ -169,8 +169,8 @@ let compress_fns;
 let decompress_fns;
 if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
   compress_fns = {
-    zip: node_zlib(nodeZlib.createDeflateRaw, { level: config.deflate_level }),
-    zlib: node_zlib(nodeZlib.createDeflate, { level: config.deflate_level })
+    zip: node_zlib(nodeZlib.createDeflateRaw, { level: config.deflateLevel }),
+    zlib: node_zlib(nodeZlib.createDeflate, { level: config.deflateLevel })
   };
 
   decompress_fns = {
@@ -181,8 +181,8 @@ if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
   };
 } else { // Use JS fallbacks
   compress_fns = {
-    zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflate_level }),
-    zlib: pako_zlib(pako.Deflate, { level: config.deflate_level })
+    zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflateLevel }),
+    zlib: pako_zlib(pako.Deflate, { level: config.deflateLevel })
   };
 
   decompress_fns = {
