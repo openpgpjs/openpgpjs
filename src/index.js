@@ -1,21 +1,11 @@
 /* eslint-disable import/newline-after-import, import/first */
 
 /**
- * Export high level api as default.
+ * Export high level API functions.
  * Usage:
  *
- *   import openpgp from 'openpgp.js'
- *   openpgp.encryptMessage(keys, text)
- */
-import * as openpgp from './openpgp';
-export default openpgp;
-
-/**
- * Export each high level api function separately.
- * Usage:
- *
- *   import { encryptMessage } from 'openpgp.js'
- *   encryptMessage(keys, text)
+ *   import { encrypt } from 'openpgp'
+ *   encrypt({ message, publicKeys })
  */
 export {
   encrypt, decrypt, sign, verify,
