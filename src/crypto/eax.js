@@ -24,7 +24,7 @@
  * @module crypto/eax
  */
 
-import { AES_CTR } from 'asmcrypto.js/dist_es5/aes/ctr';
+import { AES_CTR } from 'asmcrypto.js/dist_es8/aes/ctr';
 import CMAC from './cmac';
 import util from '../util';
 

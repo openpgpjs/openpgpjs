@@ -23,7 +23,7 @@
  * @module crypto/gcm
  */
 
-import { AES_GCM } from 'asmcrypto.js/dist_es5/aes/gcm';
+import { AES_GCM } from 'asmcrypto.js/dist_es8/aes/gcm';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
