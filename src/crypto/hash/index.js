@@ -11,8 +11,8 @@
  * @module crypto/hash
  */
 
-import { Sha1 } from 'asmcrypto.js/dist_es5/hash/sha1/sha1';
-import { Sha256 } from 'asmcrypto.js/dist_es5/hash/sha256/sha256';
+import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
+import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';

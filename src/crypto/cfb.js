@@ -24,7 +24,7 @@
  * @module crypto/cfb
  */
 
-import { AES_CFB } from 'asmcrypto.js/dist_es5/aes/cfb';
+import { AES_CFB } from 'asmcrypto.js/dist_es8/aes/cfb';
 
 import stream from 'web-stream-tools';
 import cipher from './cipher';
