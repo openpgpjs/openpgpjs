@@ -5,14 +5,14 @@
  * @module polyfills
  */
 
-if (typeof global !== 'undefined') {
+if (typeof globalThis !== 'undefined') {
   /********************************************************************
    * NOTE: This list is duplicated in Gruntfile.js,                   *
    * so that these polyfills are only included in the compat bundle.  *
    ********************************************************************/
 
   try {
-    if (typeof global.fetch === 'undefined') {
+    if (typeof globalThis.fetch === 'undefined') {
       require('whatwg-fetch');
     }
     if (typeof Array.prototype.fill === 'undefined') {
@@ -48,11 +48,11 @@ if (typeof global !== 'undefined') {
 
 if (typeof TextEncoder === 'undefined') {
   const nodeUtil = require('util') || {};
-  global.TextEncoder = nodeUtil.TextEncoder;
-  global.TextDecoder = nodeUtil.TextDecoder;
+  globalThis.TextEncoder = nodeUtil.TextEncoder;
+  globalThis.TextDecoder = nodeUtil.TextDecoder;
 }
 if (typeof TextEncoder === 'undefined') {
   const textEncoding = require('text-encoding-utf-8');
-  global.TextEncoder = textEncoding.TextEncoder;
-  global.TextDecoder = textEncoding.TextDecoder;
+  globalThis.TextEncoder = textEncoding.TextEncoder;
+  globalThis.TextDecoder = textEncoding.TextDecoder;
 }

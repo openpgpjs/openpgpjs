@@ -31,7 +31,7 @@ import * as keyMod from './key';
  * @constructor
  */
 function WKD() {
-  this._fetch = typeof global !== 'undefined' ? global.fetch : require('node-fetch');
+  this._fetch = typeof globalThis !== 'undefined' ? globalThis.fetch : require('node-fetch');
 }
 
 /**
