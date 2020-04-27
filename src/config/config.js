@@ -216,10 +216,10 @@ export default {
    * @memberof module:config
    * @property {Set<Integer>} reject_hash_algorithms Reject insecure hash algorithms {@link module:enums.hash}
    */
-  rejectHashAlgorithms: new global.Set([enums.hash.md5, enums.hash.ripemd]),
+  rejectHashAlgorithms: new globalThis.Set([enums.hash.md5, enums.hash.ripemd]),
   /**
    * @memberof module:config
    * @property {Set<Integer>} reject_message_hash_algorithms Reject insecure message hash algorithms {@link module:enums.hash}
    */
-  rejectMessageHashAlgorithms: new global.Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1])
+  rejectMessageHashAlgorithms: new globalThis.Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1])
 };

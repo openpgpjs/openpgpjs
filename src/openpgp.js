@@ -48,9 +48,9 @@ import './polyfills';
 import util from './util';
 
 let toNativeReadable;
-if (global.ReadableStream) {
+if (globalThis.ReadableStream) {
   try {
-    toNativeReadable = createReadableStreamWrapper(global.ReadableStream);
+    toNativeReadable = createReadableStreamWrapper(globalThis.ReadableStream);
   } catch (e) {}
 }
 
