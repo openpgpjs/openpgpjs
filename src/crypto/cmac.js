@@ -6,7 +6,7 @@
  * @module crypto/cmac
  */
 
-import { AES_CBC } from 'asmcrypto.js/dist_es5/aes/cbc';
+import { AES_CBC } from 'asmcrypto.js/dist_es8/aes/cbc';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto();

@@ -2,7 +2,7 @@
  * @requires asmcrypto.js
  */
 
-import { AES_ECB } from 'asmcrypto.js/dist_es5/aes/ecb';
+import { AES_ECB } from 'asmcrypto.js/dist_es8/aes/ecb';
 
 // TODO use webCrypto or nodeCrypto when possible.
 function aes(length) {
