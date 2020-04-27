@@ -186,7 +186,7 @@ export default {
     if (util.getWebCrypto()) {
       let keyPair;
       let keyGenOpt;
-      if ((global.crypto && global.crypto.subtle) || global.msCrypto) {
+      if ((globalThis.crypto && globalThis.crypto.subtle) || globalThis.msCrypto) {
         // current standard spec
         keyGenOpt = {
           name: 'RSASSA-PKCS1-v1_5',
@@ -198,7 +198,7 @@ export default {
         };
         keyPair = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
         keyPair = await promisifyIE11Op(keyPair, 'Error generating RSA key pair.');
-      } else if (global.crypto && global.crypto.webkitSubtle) {
+      } else if (globalThis.crypto && globalThis.crypto.webkitSubtle) {
         // outdated spec implemented by old Webkit
         keyGenOpt = {
           name: 'RSA-OAEP',

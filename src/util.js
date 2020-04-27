@@ -52,7 +52,7 @@ export default {
    */
   restoreStreams: function(obj, streaming) {
     if (Object.prototype.toString.call(obj) === '[object MessagePort]') {
-      return new (streaming === 'web' ? global.ReadableStream : stream.ReadableStream)({
+      return new (streaming === 'web' ? globalThis.ReadableStream : stream.ReadableStream)({
         pull(controller) {
           return new Promise(resolve => {
             obj.onmessage = evt => {
@@ -486,7 +486,7 @@ export default {
       return;
     }
 
-    return typeof global !== 'undefined' && global.crypto && global.crypto.subtle;
+    return typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
   },
 
   /**
@@ -501,12 +501,12 @@ export default {
       return;
     }
 
-    if (typeof global !== 'undefined') {
-      if (global.crypto) {
-        return global.crypto.subtle || global.crypto.webkitSubtle;
+    if (typeof globalThis !== 'undefined') {
+      if (globalThis.crypto) {
+        return globalThis.crypto.subtle || globalThis.crypto.webkitSubtle;
       }
-      if (global.msCrypto) {
-        return global.msCrypto.subtle;
+      if (globalThis.msCrypto) {
+        return globalThis.msCrypto.subtle;
       }
     }
   },
@@ -515,8 +515,8 @@ export default {
    * Detect Node.js runtime.
    */
   detectNode: function() {
-    return typeof global.process === 'object' &&
-      typeof global.process.versions === 'object';
+    return typeof globalThis.process === 'object' &&
+      typeof globalThis.process.versions === 'object';
   },
 
   /**
