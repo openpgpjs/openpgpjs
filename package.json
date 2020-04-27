@@ -74,7 +74,7 @@
     "sinon": "^4.3.0",
     "text-encoding-utf-8": "^1.0.2",
     "tweetnacl": "github:openpgpjs/tweetnacl-js#1ef755f2b252a3e328ac739848d00e0dad76be2d",
-    "web-stream-tools": "github:openpgpjs/web-stream-tools#b70529205ecaa41139311e874bdab0f8a9358a94",
+    "web-stream-tools": "github:openpgpjs/web-stream-tools#5e6cb1a976d50c421091907615cf7cce77ac4f2a",
     "whatwg-fetch": "^2.0.3"
   },
   "dependencies": {
