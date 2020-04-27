@@ -3,53 +3,6 @@ language: node_js
 cache:
   directories:
     - node_modules
-addons:
-    code_climate:
-        repo_token: $CODECLIMATE_REPO_TOKEN
-matrix:
-  fast_finish: true
-  include:
-    - node_js: "8"
-      env: OPENPGP_NODE_JS='8' OPENPGPJSTEST='unit'
-    - node_js: "10"
-      env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
-    - node_js: "12"
-      env: OPENPGP_NODE_JS='12' OPENPGPJSTEST='unit'
-    - node_js: "10"
-      env:  OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit' LIGHTWEIGHT=1
-    - node_js: "9"
-      env: BROWSER='"firefox_26"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='"firefox_61"' OPENPGPJSTEST='browserstack'
-    - node_js: "10"
-      env:  BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack' LIGHTWEIGHT=1
-    - node_js: "9"
-      env: BROWSER='"chrome_49"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "10"
-      env: BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
-      env: BROWSER='"ie_11"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='"edge_17"' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
-      env: BROWSER='"safari_9_1"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='"safari_10_1"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='"safari_11_1"' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
-      env: BROWSER='{"os":"ios", "os_version":"10.3", "device":"iPhone 7 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='{"os":"ios", "os_version":"11.3", "device":"iPhone 8 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack'
-  allow_failures:
-    - node_js: "9"
-
-before_script:
-  - npm install -g grunt-cli codeclimate-test-reporter browserstack-runner
 script:
-  - $TRAVIS_BUILD_DIR/travis.sh
+  - $TRAVIS_BUILD_DIR/install-sop.sh
 install: npm install
-env:
-  global:
-    - BROWSERSTACK_USERNAME=danielhuigens2
-    - BROWSERSTACK_KEY=aW2q1ms393QRorwBnfmW
