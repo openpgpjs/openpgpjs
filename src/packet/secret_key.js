@@ -185,7 +185,7 @@ SecretKey.prototype.read = function (bytes) {
 
   if (!this.isEncrypted) {
     const cleartext = this.keyMaterial.subarray(0, -2);
-    if (!util.equalsUint8Array(util.write_checksum(cleartext), this.keyMaterial.subarray(-2))) {
+    if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
       throw new Error('Key checksum mismatch');
     }
     const privParams = parse_cleartext_params(cleartext, this.algorithm);
@@ -237,7 +237,7 @@ SecretKey.prototype.write = function () {
       const cleartextParams = write_cleartext_params(this.params, this.algorithm);
       this.keyMaterial = util.concatUint8Array([
         cleartextParams,
-        util.write_checksum(cleartextParams)
+        util.writeChecksum(cleartextParams)
       ]);
     }
 

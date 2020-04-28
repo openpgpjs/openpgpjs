@@ -15,7 +15,7 @@ describe('Oid tests', function() {
       expect(oid).to.exist;
       expect(oid.oid).to.exist;
       expect(oid.oid).to.have.length(data.length);
-      expect(oid.toHex()).to.equal(util.Uint8Array_to_hex(data));
+      expect(oid.toHex()).to.equal(util.uint8ArrayToHex(data));
     });
   });
   it('Reading and writing', function() {
@@ -26,14 +26,14 @@ describe('Oid tests', function() {
       expect(oid.read(data)).to.equal(data.length);
       expect(oid.oid).to.exist;
       expect(oid.oid).to.have.length(data.length-1);
-      expect(oid.toHex()).to.equal(util.Uint8Array_to_hex(data.subarray(1)));
+      expect(oid.toHex()).to.equal(util.uint8ArrayToHex(data.subarray(1)));
       const result = oid.write();
       expect(result).to.exist;
       expect(result).to.have.length(data.length);
       expect(result[0]).to.equal(data.length-1);
       expect(
-        util.Uint8Array_to_hex(result.subarray(1))
-      ).to.equal(util.Uint8Array_to_hex(data.subarray(1)));
+        util.uint8ArrayToHex(result.subarray(1))
+      ).to.equal(util.uint8ArrayToHex(data.subarray(1)));
     });
   });
 });

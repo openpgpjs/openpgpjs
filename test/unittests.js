@@ -33,8 +33,8 @@ if (typeof Promise === 'undefined') {
 describe('Unit Tests', function () {
 
   if (typeof window !== 'undefined') {
-    openpgp.config.s2k_iteration_count_byte = 0;
-    openpgp.config.indutny_elliptic_path = '../dist/elliptic.min.js';
+    openpgp.config.s2kIterationCountByte = 0;
+    openpgp.config.indutnyEllipticPath = '../dist/elliptic.min.js';
 
     window.location.search.substr(1).split('&').forEach(param => {
       const [key, value] = param.split('=');
