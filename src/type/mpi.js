@@ -62,7 +62,7 @@ function MPI(data) {
  */
 MPI.prototype.read = function (bytes, endian = 'be') {
   if (util.isString(bytes)) {
-    bytes = util.str_to_Uint8Array(bytes);
+    bytes = util.strToUint8Array(bytes);
   }
 
   const bits = (bytes[0] << 8) | bytes[1];
@@ -82,7 +82,7 @@ MPI.prototype.read = function (bytes, endian = 'be') {
  * @returns {Uint8Aray} mpi Byte representation
  */
 MPI.prototype.write = function (endian, length) {
-  return util.Uint8Array_to_MPI(this.toUint8Array(endian, length));
+  return util.uint8ArrayToMpi(this.toUint8Array(endian, length));
 };
 
 MPI.prototype.bitLength = function () {
@@ -116,11 +116,11 @@ MPI.prototype.fromUint8Array = function (bytes, endian = 'be') {
 };
 
 MPI.prototype.toString = function () {
-  return util.Uint8Array_to_str(this.toUint8Array());
+  return util.uint8ArrayToStr(this.toUint8Array());
 };
 
 MPI.prototype.fromString = function (str, endian = 'be') {
-  this.fromUint8Array(util.str_to_Uint8Array(str), endian);
+  this.fromUint8Array(util.strToUint8Array(str), endian);
 };
 
 MPI.prototype.toBN = function () {
