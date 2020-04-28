@@ -206,9 +206,9 @@ PublicKey.prototype.getKeyId = function () {
   }
   this.keyid = new type_keyid();
   if (this.version === 5) {
-    this.keyid.read(util.hex_to_Uint8Array(this.getFingerprint()).subarray(0, 8));
+    this.keyid.read(util.hexToUint8Array(this.getFingerprint()).subarray(0, 8));
   } else if (this.version === 4) {
-    this.keyid.read(util.hex_to_Uint8Array(this.getFingerprint()).subarray(12, 20));
+    this.keyid.read(util.hexToUint8Array(this.getFingerprint()).subarray(12, 20));
   }
   return this.keyid;
 };
@@ -235,7 +235,7 @@ PublicKey.prototype.getFingerprintBytes = function () {
  * @returns {String} A string containing the fingerprint in lowercase hex
  */
 PublicKey.prototype.getFingerprint = function() {
-  return util.Uint8Array_to_hex(this.getFingerprintBytes());
+  return util.uint8ArrayToHex(this.getFingerprintBytes());
 };
 
 /**

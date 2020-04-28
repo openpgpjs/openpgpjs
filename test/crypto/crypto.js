@@ -231,7 +231,7 @@ describe('API functional testing', function() {
     ElgamalpubMPIs[i].read(ElgamalpubMPIstrs[i]);
   }
 
-  const data = util.str_to_Uint8Array("foobar");
+  const data = util.strToUint8Array("foobar");
 
   describe('Sign and verify', function () {
     it('RSA', async function () {
@@ -256,7 +256,7 @@ describe('API functional testing', function() {
       return crypto.signature.sign(
         17, 2, DSApubMPIs.concat(DSAsecMPIs), data, await crypto.hash.digest(2, data)
       ).then(async DSAsignedData => {
-        DSAsignedData = util.Uint8Array_to_str(DSAsignedData);
+        DSAsignedData = util.uint8ArrayToStr(DSAsignedData);
         const DSAmsgMPIs = [];
         DSAmsgMPIs[0] = new openpgp.MPI();
         DSAmsgMPIs[1] = new openpgp.MPI();
@@ -281,8 +281,8 @@ describe('API functional testing', function() {
       await Promise.all(symmAlgos.map(async function(algo) {
         const symmKey = await crypto.generateSessionKey(algo);
         const IV = new Uint8Array(crypto.cipher[algo].blockSize);
-        const symmencData = await crypto.cfb.encrypt(algo, symmKey, util.str_to_Uint8Array(plaintext), IV);
-        const text = util.Uint8Array_to_str(await crypto.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(crypto.cipher[algo].blockSize)));
+        const symmencData = await crypto.cfb.encrypt(algo, symmKey, util.strToUint8Array(plaintext), IV);
+        const text = util.uint8ArrayToStr(await crypto.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(crypto.cipher[algo].blockSize)));
         expect(text).to.equal(plaintext);
       }));
     }
@@ -295,13 +295,13 @@ describe('API functional testing', function() {
             const iv = await crypto.random.getRandomBytes(crypto.gcm.ivLength);
             let modeInstance = await crypto.gcm(algo, key);
 
-            const ciphertext = await modeInstance.encrypt(util.str_to_Uint8Array(plaintext), iv);
+            const ciphertext = await modeInstance.encrypt(util.strToUint8Array(plaintext), iv);
 
             openpgp.config.useNative = nativeDecrypt;
             modeInstance = await crypto.gcm(algo, key);
 
-            const decrypted = await modeInstance.decrypt(util.str_to_Uint8Array(util.Uint8Array_to_str(ciphertext)), iv);
-            const decryptedStr = util.Uint8Array_to_str(decrypted);
+            const decrypted = await modeInstance.decrypt(util.strToUint8Array(util.uint8ArrayToStr(ciphertext)), iv);
+            const decryptedStr = util.uint8ArrayToStr(decrypted);
             expect(decryptedStr).to.equal(plaintext);
           });
         }
@@ -355,26 +355,26 @@ describe('API functional testing', function() {
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {
-      const symmKey = util.Uint8Array_to_str(crypto.generateSessionKey('aes256'));
+      const symmKey = util.uint8ArrayToStr(crypto.generateSessionKey('aes256'));
       crypto.publicKeyEncrypt(1, RSApubMPIs, symmKey).then(RSAEncryptedData => {
         return crypto.publicKeyDecrypt(
           1, RSApubMPIs.concat(RSAsecMPIs), RSAEncryptedData
         ).then(data => {
           data = new openpgp.MPI(data).write();
-          data = util.Uint8Array_to_str(data.subarray(2, data.length));
+          data = util.uint8ArrayToStr(data.subarray(2, data.length));
           expect(data).to.equal(symmKey);
         });
       });
     });
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', function () {
-      const symmKey = util.Uint8Array_to_str(crypto.generateSessionKey('aes256'));
+      const symmKey = util.uint8ArrayToStr(crypto.generateSessionKey('aes256'));
       crypto.publicKeyEncrypt(16, ElgamalpubMPIs, symmKey).then(ElgamalEncryptedData => {
         return crypto.publicKeyDecrypt(
           16, ElgamalpubMPIs.concat(ElgamalsecMPIs), ElgamalEncryptedData
         ).then(data => {
           data = new openpgp.MPI(data).write();
-          data = util.Uint8Array_to_str(data.subarray(2, data.length));
+          data = util.uint8ArrayToStr(data.subarray(2, data.length));
           expect(data).to.equal(symmKey);
         });
       });

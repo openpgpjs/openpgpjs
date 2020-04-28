@@ -41,15 +41,15 @@ function Keyid() {
  * @param {Uint8Array} input Input to read the key id from
  */
 Keyid.prototype.read = function(bytes) {
-  this.bytes = util.Uint8Array_to_str(bytes.subarray(0, 8));
+  this.bytes = util.uint8ArrayToStr(bytes.subarray(0, 8));
 };
 
 Keyid.prototype.write = function() {
-  return util.str_to_Uint8Array(this.bytes);
+  return util.strToUint8Array(this.bytes);
 };
 
 Keyid.prototype.toHex = function() {
-  return util.str_to_hex(this.bytes);
+  return util.strToHex(this.bytes);
 };
 
 /**
@@ -75,7 +75,7 @@ Keyid.mapToHex = function (keyId) {
 
 Keyid.fromId = function (hex) {
   const keyid = new Keyid();
-  keyid.read(util.hex_to_Uint8Array(hex));
+  keyid.read(util.hexToUint8Array(hex));
   return keyid;
 };
 

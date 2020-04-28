@@ -72,7 +72,7 @@ export default {
     switch (algo) {
       case enums.publicKey.rsa_encrypt:
       case enums.publicKey.rsa_encrypt_sign: {
-        data = util.str_to_Uint8Array(data);
+        data = util.strToUint8Array(data);
         const n = pub_params[0].toUint8Array();
         const e = pub_params[1].toUint8Array();
         const res = await publicKey.rsa.encrypt(data, n, e);
