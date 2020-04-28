@@ -2598,7 +2598,7 @@ describe('Key', function() {
 
   it('Parsing V5 public key packet', async function() {
     // Manually modified from https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b2092/back.mkd#sample-eddsa-key
-    let packetBytes = openpgp.util.hex_to_Uint8Array(`
+    let packetBytes = openpgp.util.hexToUint8Array(`
       98 37 05 53 f3 5f 0b 16  00 00 00 2d  09 2b 06 01 04 01 da 47
       0f 01 01 07 40 3f 09 89  94 bd d9 16 ed 40 53 19
       79 34 e4 a8 7c 80 73 3a  12 80 d6 2f 80 10 99 2e

@@ -123,7 +123,7 @@ export default {
    * @param {String} str String to convert
    * @returns {String} String containing the hexadecimal values
    */
-  str_to_hex: function (str) {
+  strToHex: function (str) {
     if (str === null) {
       return "";
     }
@@ -146,7 +146,7 @@ export default {
    * @param {String} str Hex string to convert
    * @returns {String}
    */
-  hex_to_str: function (hex) {
+  hexToStr: function (hex) {
     let str = '';
     for (let i = 0; i < hex.length; i += 2) {
       str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
@@ -162,7 +162,7 @@ export default {
    * @param {Uint8Array} bin An array of 8-bit integers to convert
    * @returns {Uint8Array} MPI-formatted Uint8Array
    */
-  Uint8Array_to_MPI: function (bin) {
+  uint8ArrayToMpi: function (bin) {
     const size = (bin.length - 1) * 8 + util.nbits(bin[0]);
     const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
     return util.concatUint8Array([prefix, bin]);
@@ -175,7 +175,7 @@ export default {
    * @param {String} base64 Base-64 encoded string to convert
    * @returns {Uint8Array} An array of 8-bit integers
    */
-  b64_to_Uint8Array: function (base64) {
+  b64ToUint8Array: function (base64) {
     return b64.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
   },
 
@@ -185,7 +185,7 @@ export default {
    * @param {bool}       url   If true, output is URL-safe
    * @returns {String}          Base-64 encoded string
    */
-  Uint8Array_to_b64: function (bytes, url) {
+  uint8ArrayToB64: function (bytes, url) {
     let encoded = b64.encode(bytes).replace(/[\r\n]/g, '');
     if (url) {
       encoded = encoded.replace(/[+]/g, '-').replace(/[/]/g, '_').replace(/[=]/g, '');
@@ -198,7 +198,7 @@ export default {
    * @param {String} hex  A hex string to convert
    * @returns {Uint8Array} An array of 8-bit integers
    */
-  hex_to_Uint8Array: function (hex) {
+  hexToUint8Array: function (hex) {
     const result = new Uint8Array(hex.length >> 1);
     for (let k = 0; k < hex.length >> 1; k++) {
       result[k] = parseInt(hex.substr(k << 1, 2), 16);
@@ -211,7 +211,7 @@ export default {
    * @param {Uint8Array} bytes Array of 8-bit integers to convert
    * @returns {String} Hexadecimal representation of the array
    */
-  Uint8Array_to_hex: function (bytes) {
+  uint8ArrayToHex: function (bytes) {
     const r = [];
     const e = bytes.length;
     let c = 0;
@@ -231,10 +231,10 @@ export default {
    * @param {String} str String to convert
    * @returns {Uint8Array} An array of 8-bit integers
    */
-  str_to_Uint8Array: function (str) {
+  strToUint8Array: function (str) {
     return stream.transform(str, str => {
       if (!util.isString(str)) {
-        throw new Error('str_to_Uint8Array: Data must be in the form of a string');
+        throw new Error('strToUint8Array: Data must be in the form of a string');
       }
 
       const result = new Uint8Array(str.length);
@@ -250,7 +250,7 @@ export default {
    * @param {Uint8Array} bytes An array of 8-bit integers to convert
    * @returns {String} String representation of the array
    */
-  Uint8Array_to_str: function (bytes) {
+  uint8ArrayToStr: function (bytes) {
     bytes = new Uint8Array(bytes);
     const result = [];
     const bs = 1 << 14;
@@ -267,7 +267,7 @@ export default {
    * @param {String|ReadableStream} str The string to convert
    * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes
    */
-  encode_utf8: function (str) {
+  encodeUtf8: function (str) {
     const encoder = new TextEncoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
@@ -281,7 +281,7 @@ export default {
    * @param {Uint8Array|ReadableStream} utf8 A valid squence of utf8 bytes
    * @returns {String|ReadableStream} A native javascript string
    */
-  decode_utf8: function (utf8) {
+  decodeUtf8: function (utf8) {
     const decoder = new TextDecoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
@@ -334,7 +334,7 @@ export default {
    * @param {Uint8Array} Uint8Array to create a sum of
    * @returns {Uint8Array} 2 bytes containing the sum of all charcodes % 65535
    */
-  write_checksum: function (text) {
+  writeChecksum: function (text) {
     let s = 0;
     for (let i = 0; i < text.length; i++) {
       s = (s + text[i]) & 0xFFFF;
@@ -348,7 +348,7 @@ export default {
    * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
    */
-  print_debug: function (str) {
+  printDebug: function (str) {
     if (config.debug) {
       console.log(str);
     }
@@ -358,12 +358,12 @@ export default {
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
-   * Different than print_debug because will call Uint8Array_to_hex iff necessary.
+   * Different than print_debug because will call Uint8ArrayToHex iff necessary.
    * @param {String} str String of the debug message
    */
-  print_debug_hexarray_dump: function (str, arrToHex) {
+  printDebugHexArrayDump: function (str, arrToHex) {
     if (config.debug) {
-      str += ': ' + util.Uint8Array_to_hex(arrToHex);
+      str += ': ' + util.uint8ArrayToHex(arrToHex);
       console.log(str);
     }
   },
@@ -372,12 +372,12 @@ export default {
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * @link module:config/config.debug is set to true.
-   * Different than print_debug because will call str_to_hex iff necessary.
+   * Different than print_debug because will call strToHex iff necessary.
    * @param {String} str String of the debug message
    */
-  print_debug_hexstr_dump: function (str, strToHex) {
+  printDebugHexStrDump: function (str, strToHex) {
     if (config.debug) {
-      str += util.str_to_hex(strToHex);
+      str += util.strToHex(strToHex);
       console.log(str);
     }
   },
@@ -388,7 +388,7 @@ export default {
    * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
    */
-  print_debug_error: function (error) {
+  printDebugError: function (error) {
     if (config.debug) {
       console.error(error);
     }
@@ -400,7 +400,7 @@ export default {
    * @param {ReadableStream|Uint8array|String} input Stream to print
    * @param {Function} concat Function to concatenate chunks of the stream (defaults to util.concat).
    */
-  print_entire_stream: function (str, input, concat) {
+  printEntireStream: function (str, input, concat) {
     stream.readToEnd(stream.clone(input), concat).then(result => {
       console.log(str + ': ', result);
     });
