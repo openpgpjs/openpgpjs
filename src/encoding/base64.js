@@ -31,8 +31,8 @@ if (Buffer) {
     return new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
   };
 } else {
-  encodeChunk = buf => btoa(util.Uint8Array_to_str(buf));
-  decodeChunk = str => util.str_to_Uint8Array(atob(str));
+  encodeChunk = buf => btoa(util.uint8ArrayToStr(buf));
+  decodeChunk = str => util.strToUint8Array(atob(str));
 }
 
 /**

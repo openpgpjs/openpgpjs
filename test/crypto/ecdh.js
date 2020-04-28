@@ -11,7 +11,7 @@ describe('ECDH key exchange @lightweight', function () {
   const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const decrypt_message = function (oid, hash, cipher, priv, pub, ephemeral, data, fingerprint) {
     if (openpgp.util.isString(data)) {
-      data = openpgp.util.str_to_Uint8Array(data);
+      data = openpgp.util.strToUint8Array(data);
     } else {
       data = new Uint8Array(data);
     }
@@ -257,7 +257,7 @@ describe('ECDH key exchange @lightweight', function () {
             namedCurve: curve.web.web
           }, false, ["sign", "verify"]);
         } catch (err) {
-          openpgp.util.print_debug_error(err);
+          openpgp.util.printDebugError(err);
           return;
         }
         const ECDHE_VZ1 = await genPublicEphemeralKey(name, key_data[name].pub, fingerprint1);

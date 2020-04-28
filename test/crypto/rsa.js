@@ -47,8 +47,8 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
     const p = keyParams[3].toUint8Array();
     const q = keyParams[4].toUint8Array();
     const u = keyParams[5].toUint8Array();
-    const message = openpgp.util.Uint8Array_to_str(await openpgp.crypto.generateSessionKey('aes256'));
-    const encrypted = await openpgp.crypto.publicKey.rsa.encrypt(openpgp.util.str_to_Uint8Array(message), n, e);
+    const message = openpgp.util.uint8ArrayToStr(await openpgp.crypto.generateSessionKey('aes256'));
+    const encrypted = await openpgp.crypto.publicKey.rsa.encrypt(openpgp.util.strToUint8Array(message), n, e);
     const result = new openpgp.MPI(encrypted);
     const decrypted = await openpgp.crypto.publicKey.rsa.decrypt(result.toUint8Array(), n, e, d, p, q, u);
     expect(decrypted).to.be.equal(message);
@@ -66,12 +66,12 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
     const p = keyParams[3].toUint8Array();
     const q = keyParams[4].toUint8Array();
     const u = keyParams[5].toUint8Array();
-    const message = openpgp.util.Uint8Array_to_str(await openpgp.crypto.generateSessionKey('aes256'));
-    const encryptedBn = await openpgp.crypto.publicKey.rsa.bnEncrypt(openpgp.util.str_to_Uint8Array(message), n, e);
+    const message = openpgp.util.uint8ArrayToStr(await openpgp.crypto.generateSessionKey('aes256'));
+    const encryptedBn = await openpgp.crypto.publicKey.rsa.bnEncrypt(openpgp.util.strToUint8Array(message), n, e);
     const resultBN = new openpgp.MPI(encryptedBn);
     const decrypted1 = await openpgp.crypto.publicKey.rsa.nodeDecrypt(resultBN.toUint8Array(), n, e, d, p, q, u);
     expect(decrypted1).to.be.equal(message);
-    const encryptedNode = await openpgp.crypto.publicKey.rsa.nodeEncrypt(openpgp.util.str_to_Uint8Array(message), n, e);
+    const encryptedNode = await openpgp.crypto.publicKey.rsa.nodeEncrypt(openpgp.util.strToUint8Array(message), n, e);
     const resultNode = new openpgp.MPI(encryptedNode);
     const decrypted2 = await openpgp.crypto.publicKey.rsa.bnDecrypt(resultNode.toUint8Array(), n, e, d, p, q, u);
     expect(decrypted2).to.be.equal(message);
@@ -97,11 +97,11 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
     try {
       signatureWeb = await openpgp.crypto.publicKey.rsa.webSign('SHA-256', message, n, e, d, p, q, u, hashed);
     } catch (error) {
-      openpgp.util.print_debug_error('web crypto error');
+      openpgp.util.printDebugError('web crypto error');
       this.skip();
     }
     const signatureBN = await openpgp.crypto.publicKey.rsa.bnSign(hash_algo, n, d, hashed);
-    expect(openpgp.util.Uint8Array_to_hex(signatureWeb)).to.be.equal(openpgp.util.Uint8Array_to_hex(signatureBN));
+    expect(openpgp.util.uint8ArrayToHex(signatureWeb)).to.be.equal(openpgp.util.uint8ArrayToHex(signatureBN));
   });
 
   it('compare webCrypto and bn math verify', async function() {
@@ -126,7 +126,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
       signature = await openpgp.crypto.publicKey.rsa.webSign('SHA-256', message, n, e, d, p, q, u, hashed);
       verifyWeb = await openpgp.crypto.publicKey.rsa.webVerify('SHA-256', message, signature, n, e);
     } catch (error) {
-      openpgp.util.print_debug_error('web crypto error');
+      openpgp.util.printDebugError('web crypto error');
       this.skip();
     }
     const verifyBN = await openpgp.crypto.publicKey.rsa.bnVerify(hash_algo, signature, n, e, hashed);
@@ -152,7 +152,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
     const signatureNode = await openpgp.crypto.publicKey.rsa.nodeSign(hash_algo, message, n, e, d, p, q, u);
     const signatureBN = await openpgp.crypto.publicKey.rsa.bnSign(hash_algo, n, d, hashed);
-    expect(openpgp.util.Uint8Array_to_hex(signatureNode)).to.be.equal(openpgp.util.Uint8Array_to_hex(signatureBN));
+    expect(openpgp.util.uint8ArrayToHex(signatureNode)).to.be.equal(openpgp.util.uint8ArrayToHex(signatureBN));
   });
 
   it('compare nodeCrypto and bn math verify', async function() {

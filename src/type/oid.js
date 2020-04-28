@@ -87,7 +87,7 @@ OID.prototype.write = function () {
  * @returns {string} String with the hex value of the OID
  */
 OID.prototype.toHex = function() {
-  return util.Uint8Array_to_hex(this.oid);
+  return util.uint8ArrayToHex(this.oid);
 };
 
 /**

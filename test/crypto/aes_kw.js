@@ -44,13 +44,13 @@ describe('AES Key Wrap and Unwrap', function () {
 
   test_vectors.forEach(function(test) {
     it(test[0], function(done) {
-      const kek = openpgp.util.hex_to_Uint8Array(test[1]);
+      const kek = openpgp.util.hexToUint8Array(test[1]);
       const input = test[2].replace(/\s/g, "");
-      const input_bin = openpgp.util.hex_to_str(input);
+      const input_bin = openpgp.util.hexToStr(input);
       const output = test[3].replace(/\s/g, "");
-      const output_bin = openpgp.util.hex_to_str(output);
-      expect(openpgp.util.Uint8Array_to_hex(openpgp.crypto.aes_kw.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
-      expect(openpgp.util.Uint8Array_to_hex(openpgp.crypto.aes_kw.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
+      const output_bin = openpgp.util.hexToStr(output);
+      expect(openpgp.util.uint8ArrayToHex(openpgp.crypto.aes_kw.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
+      expect(openpgp.util.uint8ArrayToHex(openpgp.crypto.aes_kw.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
       done();
     });
   });

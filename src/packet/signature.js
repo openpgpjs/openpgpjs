@@ -223,7 +223,7 @@ Signature.prototype.write_hashed_sub_packets = function () {
     arr.push(write_sub_packet(sub.key_expiration_time, util.writeNumber(this.keyExpirationTime, 4)));
   }
   if (this.preferredSymmetricAlgorithms !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredSymmetricAlgorithms));
+    bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredSymmetricAlgorithms));
     arr.push(write_sub_packet(sub.preferred_symmetric_algorithms, bytes));
   }
   if (this.revocationKeyClass !== null) {
@@ -237,54 +237,54 @@ Signature.prototype.write_hashed_sub_packets = function () {
     bytes.push(util.writeNumber(name.length, 2));
     // 2 octets of value length
     bytes.push(util.writeNumber(value.length, 2));
-    bytes.push(util.str_to_Uint8Array(name + value));
+    bytes.push(util.strToUint8Array(name + value));
     bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.notation_data, bytes));
   });
   if (this.preferredHashAlgorithms !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredHashAlgorithms));
+    bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredHashAlgorithms));
     arr.push(write_sub_packet(sub.preferred_hash_algorithms, bytes));
   }
   if (this.preferredCompressionAlgorithms !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredCompressionAlgorithms));
+    bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredCompressionAlgorithms));
     arr.push(write_sub_packet(sub.preferred_compression_algorithms, bytes));
   }
   if (this.keyServerPreferences !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.keyServerPreferences));
+    bytes = util.strToUint8Array(util.uint8ArrayToStr(this.keyServerPreferences));
     arr.push(write_sub_packet(sub.key_server_preferences, bytes));
   }
   if (this.preferredKeyServer !== null) {
-    arr.push(write_sub_packet(sub.preferred_key_server, util.str_to_Uint8Array(this.preferredKeyServer)));
+    arr.push(write_sub_packet(sub.preferred_key_server, util.strToUint8Array(this.preferredKeyServer)));
   }
   if (this.isPrimaryUserID !== null) {
     arr.push(write_sub_packet(sub.primary_user_id, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
   }
   if (this.policyURI !== null) {
-    arr.push(write_sub_packet(sub.policy_uri, util.str_to_Uint8Array(this.policyURI)));
+    arr.push(write_sub_packet(sub.policy_uri, util.strToUint8Array(this.policyURI)));
   }
   if (this.keyFlags !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.keyFlags));
+    bytes = util.strToUint8Array(util.uint8ArrayToStr(this.keyFlags));
     arr.push(write_sub_packet(sub.key_flags, bytes));
   }
   if (this.signersUserId !== null) {
-    arr.push(write_sub_packet(sub.signers_user_id, util.str_to_Uint8Array(this.signersUserId)));
+    arr.push(write_sub_packet(sub.signers_user_id, util.strToUint8Array(this.signersUserId)));
   }
   if (this.reasonForRevocationFlag !== null) {
-    bytes = util.str_to_Uint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
+    bytes = util.strToUint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
     arr.push(write_sub_packet(sub.reason_for_revocation, bytes));
   }
   if (this.features !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.features));
+    bytes = util.strToUint8Array(util.uint8ArrayToStr(this.features));
     arr.push(write_sub_packet(sub.features, bytes));
   }
   if (this.signatureTargetPublicKeyAlgorithm !== null) {
     bytes = [new Uint8Array([this.signatureTargetPublicKeyAlgorithm, this.signatureTargetHashAlgorithm])];
-    bytes.push(util.str_to_Uint8Array(this.signatureTargetHash));
+    bytes.push(util.strToUint8Array(this.signatureTargetHash));
     bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.signature_target, bytes));
   }
   if (this.preferredAeadAlgorithms !== null) {
-    bytes = util.str_to_Uint8Array(util.Uint8Array_to_str(this.preferredAeadAlgorithms));
+    bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredAeadAlgorithms));
     arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
   }
 
@@ -445,8 +445,8 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
         const n = util.readNumber(bytes.subarray(mypos, mypos + 2));
         mypos += 2;
 
-        const name = util.Uint8Array_to_str(bytes.subarray(mypos, mypos + m));
-        const value = util.Uint8Array_to_str(bytes.subarray(mypos + m, mypos + m + n));
+        const name = util.uint8ArrayToStr(bytes.subarray(mypos, mypos + m));
+        const value = util.uint8ArrayToStr(bytes.subarray(mypos + m, mypos + m + n));
 
         this.notations.push([name, value]);
 
@@ -454,7 +454,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
           throw new Error("Unknown critical notation: " + name);
         }
       } else {
-        util.print_debug("Unsupported notation flag " + bytes[mypos]);
+        util.printDebug("Unsupported notation flag " + bytes[mypos]);
       }
       break;
     case 21:
@@ -471,7 +471,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
       break;
     case 24:
       // Preferred Key Server
-      this.preferredKeyServer = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
+      this.preferredKeyServer = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
       break;
     case 25:
       // Primary User ID
@@ -479,7 +479,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
       break;
     case 26:
       // Policy URI
-      this.policyURI = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
+      this.policyURI = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
       break;
     case 27:
       // Key Flags
@@ -487,12 +487,12 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
       break;
     case 28:
       // Signer's User ID
-      this.signersUserId = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
+      this.signersUserId = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
       break;
     case 29:
       // Reason for Revocation
       this.reasonForRevocationFlag = bytes[mypos++];
-      this.reasonForRevocationString = util.Uint8Array_to_str(bytes.subarray(mypos, bytes.length));
+      this.reasonForRevocationString = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
       break;
     case 30:
       // Features
@@ -506,7 +506,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
 
       const len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
 
-      this.signatureTargetHash = util.Uint8Array_to_str(bytes.subarray(mypos, mypos + len));
+      this.signatureTargetHash = util.uint8ArrayToStr(bytes.subarray(mypos, mypos + len));
       break;
     }
     case 32:
@@ -533,7 +533,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
       if (critical) {
         throw err;
       } else {
-        util.print_debug(err);
+        util.printDebug(err);
       }
     }
   }
@@ -565,7 +565,7 @@ Signature.prototype.toSign = function (type, data) {
   switch (type) {
     case t.binary:
       if (data.text !== null) {
-        return util.encode_utf8(data.getText(true));
+        return util.encodeUtf8(data.getText(true));
       }
       return data.getBytes(true);
 

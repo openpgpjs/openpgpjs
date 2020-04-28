@@ -105,7 +105,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
           case enums.signature.cert_casual:
           case enums.signature.cert_positive:
             if (!user) {
-              util.print_debug('Dropping certification signatures without preceding user packet');
+              util.printDebug('Dropping certification signatures without preceding user packet');
               continue;
             }
             if (packetlist[i].issuerKeyId.equals(primaryKeyId)) {
@@ -126,7 +126,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
             break;
           case enums.signature.subkey_binding:
             if (!subKey) {
-              util.print_debug('Dropping subkey binding signature without preceding subkey packet');
+              util.printDebug('Dropping subkey binding signature without preceding subkey packet');
               continue;
             }
             subKey.bindingSignatures.push(packetlist[i]);
@@ -136,7 +136,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
             break;
           case enums.signature.subkey_revocation:
             if (!subKey) {
-              util.print_debug('Dropping subkey revocation signature without preceding subkey packet');
+              util.printDebug('Dropping subkey revocation signature without preceding subkey packet');
               continue;
             }
             subKey.revocationSignatures.push(packetlist[i]);

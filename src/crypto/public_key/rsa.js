@@ -96,7 +96,7 @@ export default {
         try {
           return await this.webSign(enums.read(enums.webHash, hash_algo), data, n, e, d, p, q, u);
         } catch (err) {
-          util.print_debug_error(err);
+          util.printDebugError(err);
         }
       } else if (util.getNodeCrypto()) {
         return this.nodeSign(hash_algo, data, n, e, d, p, q, u);
@@ -122,7 +122,7 @@ export default {
         try {
           return await this.webVerify(enums.read(enums.webHash, hash_algo), data, s, n, e);
         } catch (err) {
-          util.print_debug_error(err);
+          util.printDebugError(err);
         }
       } else if (util.getNodeCrypto()) {
         return this.nodeVerify(hash_algo, data, s, n, e);
@@ -224,14 +224,14 @@ export default {
       }
       // map JWK parameters to BN
       key = {};
-      key.n = new BN(util.b64_to_Uint8Array(jwk.n));
+      key.n = new BN(util.b64ToUint8Array(jwk.n));
       key.e = E;
-      key.d = new BN(util.b64_to_Uint8Array(jwk.d));
+      key.d = new BN(util.b64ToUint8Array(jwk.d));
       // switch p and q
-      key.p = new BN(util.b64_to_Uint8Array(jwk.q));
-      key.q = new BN(util.b64_to_Uint8Array(jwk.p));
+      key.p = new BN(util.b64ToUint8Array(jwk.q));
+      key.q = new BN(util.b64ToUint8Array(jwk.p));
       // Since p and q are switched in places, we could keep u
-      key.u = new BN(util.b64_to_Uint8Array(jwk.qi));
+      key.u = new BN(util.b64ToUint8Array(jwk.qi));
       return key;
     } else if (util.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
@@ -405,7 +405,7 @@ export default {
     const nred = new BN.red(n);
     const EM1 = s.toRed(nred).redPow(e).toArrayLike(Uint8Array, 'be', n.byteLength());
     const EM2 = await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength());
-    return util.Uint8Array_to_hex(EM1) === EM2;
+    return util.uint8ArrayToHex(EM1) === EM2;
   },
 
   webVerify: async function (hash_name, data, s, n, e) {
@@ -462,7 +462,7 @@ export default {
 
   bnEncrypt: async function (data, n, e) {
     n = new BN(n);
-    data = new type_mpi(await pkcs1.eme.encode(util.Uint8Array_to_str(data), n.byteLength()));
+    data = new type_mpi(await pkcs1.eme.encode(util.uint8ArrayToStr(data), n.byteLength()));
     data = data.toBN();
     e = new BN(e);
     if (n.cmp(data) <= 0) {
@@ -501,7 +501,7 @@ export default {
       });
       key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     }
-    return util.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
+    return util.uint8ArrayToStr(nodeCrypto.privateDecrypt(key, data));
   },
 
   bnDecrypt: async function(data, n, e, d, p, q, u) {
@@ -567,16 +567,16 @@ function privateToJwk(n, e, d, p, q, u) {
   dq = dq.toArrayLike(Uint8Array);
   return {
     kty: 'RSA',
-    n: util.Uint8Array_to_b64(n, true),
-    e: util.Uint8Array_to_b64(e, true),
-    d: util.Uint8Array_to_b64(d, true),
+    n: util.uint8ArrayToB64(n, true),
+    e: util.uint8ArrayToB64(e, true),
+    d: util.uint8ArrayToB64(d, true),
     // switch p and q
-    p: util.Uint8Array_to_b64(q, true),
-    q: util.Uint8Array_to_b64(p, true),
+    p: util.uint8ArrayToB64(q, true),
+    q: util.uint8ArrayToB64(p, true),
     // switch dp and dq
-    dp: util.Uint8Array_to_b64(dq, true),
-    dq: util.Uint8Array_to_b64(dp, true),
-    qi: util.Uint8Array_to_b64(u, true),
+    dp: util.uint8ArrayToB64(dq, true),
+    dq: util.uint8ArrayToB64(dp, true),
+    qi: util.uint8ArrayToB64(u, true),
     ext: true
   };
 }
@@ -590,8 +590,8 @@ function privateToJwk(n, e, d, p, q, u) {
 function publicToJwk(n, e) {
   return {
     kty: 'RSA',
-    n: util.Uint8Array_to_b64(n, true),
-    e: util.Uint8Array_to_b64(e, true),
+    n: util.uint8ArrayToB64(n, true),
+    e: util.uint8ArrayToB64(e, true),
     ext: true
   };
 }
