@@ -73,7 +73,7 @@ async function getOtherPubKey() {
 /**
 * The "standalone" signature signed by the victim.
 */
-const STANDALONE_PKT = util.b64_to_Uint8Array(`
+const STANDALONE_PKT = util.b64ToUint8Array(`
 BAIBCAAQBQJbq3MKCRBVIIstGKzjzgAAWdoIALgj7OuhuuAWr6WEvGfvkx3e
 Fn/mg76lh2Hawxq6ryI6+kzUH+YJsG94CfLgGuh5LghZFBnlkdZS11gK87fN
 +ifmPdSDj8fsKqSFdX1sHGwzvzBcuPt+qhtHrACCWwiiBgajIOmIczKUlX4D

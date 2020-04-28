@@ -59,7 +59,7 @@ List.prototype.read = async function (bytes, streaming) {
               // about and throw on parse errors for.
               await writer.abort(e);
             }
-            util.print_debug_error(e);
+            util.printDebugError(e);
           }
         });
         if (done) {

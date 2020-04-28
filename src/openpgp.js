@@ -567,7 +567,7 @@ async function prepareSignatures(signatures) {
     } catch (e) {
       signature.valid = false;
       signature.error = e;
-      util.print_debug_error(e);
+      util.printDebugError(e);
     }
   }));
 }
@@ -580,7 +580,7 @@ async function prepareSignatures(signatures) {
  */
 function onError(message, error) {
   // log the stack trace
-  util.print_debug_error(error);
+  util.printDebugError(error);
 
   // update error message
   try {

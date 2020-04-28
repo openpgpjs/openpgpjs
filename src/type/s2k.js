@@ -90,7 +90,7 @@ S2K.prototype.read = function (bytes) {
       break;
 
     case 'gnu':
-      if (util.Uint8Array_to_str(bytes.subarray(i, i + 3)) === "GNU") {
+      if (util.uint8ArrayToStr(bytes.subarray(i, i + 3)) === "GNU") {
         i += 3; // GNU
         const gnuExtType = 1000 + bytes[i++];
         if (gnuExtType === 1001) {
@@ -118,7 +118,7 @@ S2K.prototype.read = function (bytes) {
  */
 S2K.prototype.write = function () {
   if (this.type === 'gnu-dummy') {
-    return new Uint8Array([101, 0, ...util.str_to_Uint8Array('GNU'), 1]);
+    return new Uint8Array([101, 0, ...util.strToUint8Array('GNU'), 1]);
   }
 
   const arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
@@ -150,7 +150,7 @@ S2K.prototype.write = function () {
  * hashAlgorithm hash length
  */
 S2K.prototype.produce_key = async function (passphrase, numBytes) {
-  passphrase = util.encode_utf8(passphrase);
+  passphrase = util.encodeUtf8(passphrase);
   const algorithm = enums.write(enums.hash, this.algorithm);
 
   const arr = [];

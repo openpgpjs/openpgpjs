@@ -105,7 +105,7 @@ export default {
   verify: async function(hash_algo, r, s, hashed, g, p, q, y) {
     if (zero.ucmp(r) >= 0 || r.ucmp(q) >= 0 ||
         zero.ucmp(s) >= 0 || s.ucmp(q) >= 0) {
-      util.print_debug("invalid DSA Signature");
+      util.printDebug("invalid DSA Signature");
       return null;
     }
     const redp = new BN.red(p);
@@ -113,7 +113,7 @@ export default {
     const h = new BN(hashed.subarray(0, q.byteLength()));
     const w = s.toRed(redq).redInvm(); // s**-1 mod q
     if (zero.cmp(w) === 0) {
-      util.print_debug("invalid DSA Signature");
+      util.printDebug("invalid DSA Signature");
       return null;
     }
     const u1 = h.toRed(redq).redMul(w); // H(m) * w mod q

@@ -143,7 +143,7 @@ describe('Util unit tests', function() {
 
   describe("Zbase32", function() {
     it('util.encodeZBase32 encodes correctly', function() {
-      const encoded = openpgp.util.encodeZBase32(openpgp.util.str_to_Uint8Array('test-wkd'));
+      const encoded = openpgp.util.encodeZBase32(openpgp.util.strToUint8Array('test-wkd'));
       expect(encoded).to.equal('qt1zg7bpq7ise');
     })
   })

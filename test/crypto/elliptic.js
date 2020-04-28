@@ -104,7 +104,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
   describe('ECDSA signature', function () {
     const verify_signature = async function (oid, hash, r, s, message, pub) {
       if (openpgp.util.isString(message)) {
-        message = openpgp.util.str_to_Uint8Array(message);
+        message = openpgp.util.strToUint8Array(message);
       } else if (!openpgp.util.isUint8Array(message)) {
         message = new Uint8Array(message);
       }
@@ -115,7 +115,7 @@ describe('Elliptic Curve Cryptography @lightweight', function () {
     };
     const verify_signature_elliptic = async function (oid, hash, r, s, message, pub) {
       if (openpgp.util.isString(message)) {
-        message = openpgp.util.str_to_Uint8Array(message);
+        message = openpgp.util.strToUint8Array(message);
       } else if (!openpgp.util.isUint8Array(message)) {
         message = new Uint8Array(message);
       }
