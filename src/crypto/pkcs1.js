@@ -134,7 +134,7 @@ eme.decode = function(EM) {
  */
 emsa.encode = async function(algo, hashed, emLen) {
   let i;
-  const H = util.Uint8Array_to_str(hashed);
+  const H = util.uint8ArrayToStr(hashed);
   if (H.length !== hash.getHashByteLength(algo)) {
     throw new Error('Invalid hash length');
   }
@@ -164,7 +164,7 @@ emsa.encode = async function(algo, hashed, emLen) {
         PS +
         String.fromCharCode(0x00) +
         T;
-  return util.str_to_hex(EM);
+  return util.strToHex(EM);
 };
 
 export default { eme, emsa };

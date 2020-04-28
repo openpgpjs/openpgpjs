@@ -1118,7 +1118,7 @@ bwM=
   });
 
   it('Verify latin-1 signed message', async function() {
-    const latin1Binary = openpgp.util.hex_to_Uint8Array('48e46c6cf62057e86c74');
+    const latin1Binary = openpgp.util.hexToUint8Array('48e46c6cf62057e86c74');
     const message = openpgp.message.fromBinary(latin1Binary);
 
     message.appendSignature(`-----BEGIN PGP SIGNATURE-----
@@ -1404,7 +1404,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', async function() {
-    const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line \n한국어/조선말');
+    const plaintext = openpgp.util.strToUint8Array('short message\nnext line \n한국어/조선말');
     const pubKey = await openpgp.key.readArmored(pub_key_arm2);
     const privKey = await openpgp.key.readArmored(priv_key_arm2);
     await privKey.decrypt('hello world');
@@ -1424,7 +1424,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', async function() {
-    const plaintext = openpgp.util.str_to_Uint8Array('short message\nnext line \n한국어/조선말');
+    const plaintext = openpgp.util.strToUint8Array('short message\nnext line \n한국어/조선말');
     const pubKey = await openpgp.key.readArmored(pub_key_arm2);
     const privKey = await openpgp.key.readArmored(priv_key_arm2);
     await privKey.decrypt('hello world');
@@ -1450,7 +1450,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     await privKey.decrypt('hello world');
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromText(plaintext), detached: true}).then(async function(signed) {
       const signature = await openpgp.signature.readArmored(signed);
-      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.message.fromBinary(openpgp.util.encode_utf8(plaintext)), signature: signature });
+      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.message.fromBinary(openpgp.util.encodeUtf8(plaintext)), signature: signature });
     }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(cleartextSig.signatures).to.have.length(1);
@@ -1461,7 +1461,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
   it('Should verify cleartext message correctly when using a detached binary signature and text literal data', async function () {
     const plaintext = 'short message\nnext line \n한국어/조선말';
-    const plaintextArray = openpgp.util.encode_utf8(plaintext);
+    const plaintextArray = openpgp.util.encodeUtf8(plaintext);
     const pubKey = await openpgp.key.readArmored(pub_key_arm2);
     const privKey = await openpgp.key.readArmored(priv_key_arm2);
     await privKey.decrypt('hello world');
@@ -1483,7 +1483,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     await Promise.all([privKey.primaryKey.decrypt('hello world'), privKey.subKeys[0].keyPacket.decrypt('hello world')]);
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.message.fromText(plaintext), detached: true}).then(async function(signed) {
       const signature = await openpgp.signature.readArmored(signed);
-      return openpgp.encrypt({ message: openpgp.message.fromBinary(openpgp.util.encode_utf8(plaintext)), publicKeys: [pubKey], signature })
+      return openpgp.encrypt({ message: openpgp.message.fromBinary(openpgp.util.encodeUtf8(plaintext)), publicKeys: [pubKey], signature })
     }).then(async data => {
       const csMsg = await openpgp.message.readArmored(data);
       return openpgp.decrypt({ message: csMsg, privateKeys: [ privKey ], publicKeys: [ pubKey ] });

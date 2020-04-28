@@ -109,8 +109,8 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
 PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
   let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
-  data += util.Uint8Array_to_str(this.sessionKey);
-  data += util.Uint8Array_to_str(util.write_checksum(this.sessionKey));
+  data += util.uint8ArrayToStr(this.sessionKey);
+  data += util.uint8ArrayToStr(util.writeChecksum(this.sessionKey));
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   this.encrypted = await crypto.publicKeyEncrypt(
     algo, key.params, data, key.getFingerprintBytes());
@@ -134,10 +134,10 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
     throw new Error('Decryption error');
   }
   const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
-  const checksum = util.str_to_Uint8Array(decoded.substr(decoded.length - 2));
-  key = util.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
+  const checksum = util.strToUint8Array(decoded.substr(decoded.length - 2));
+  key = util.strToUint8Array(decoded.substring(1, decoded.length - 2));
 
-  if (!util.equalsUint8Array(checksum, util.write_checksum(key))) {
+  if (!util.equalsUint8Array(checksum, util.writeChecksum(key))) {
     throw new Error('Decryption error');
   } else {
     this.sessionKey = key;

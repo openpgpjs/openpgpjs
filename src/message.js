@@ -123,7 +123,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, 
     try {
       await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, streaming);
     } catch (e) {
-      util.print_debug_error(e);
+      util.printDebugError(e);
       exception = e;
     }
   }));
@@ -172,7 +172,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           await keyPacket.decrypt(password);
           keyPackets.push(keyPacket);
         } catch (err) {
-          util.print_debug_error(err);
+          util.printDebugError(err);
         }
       }));
     }));
@@ -212,7 +212,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
             }
             keyPackets.push(keyPacket);
           } catch (err) {
-            util.print_debug_error(err);
+            util.printDebugError(err);
             exception = err;
           }
         }));
@@ -229,7 +229,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
     if (keyPackets.length > 1) {
       const seen = {};
       keyPackets = keyPackets.filter(function(item) {
-        const k = item.sessionKeyAlgorithm + util.Uint8Array_to_str(item.sessionKey);
+        const k = item.sessionKeyAlgorithm + util.uint8ArrayToStr(item.sessionKey);
         if (seen.hasOwnProperty(k)) {
           return false;
         }

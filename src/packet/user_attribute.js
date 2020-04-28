@@ -59,7 +59,7 @@ UserAttribute.prototype.read = function(bytes) {
     const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
     i += len.offset;
 
-    this.attributes.push(util.Uint8Array_to_str(bytes.subarray(i, i + len.len)));
+    this.attributes.push(util.uint8ArrayToStr(bytes.subarray(i, i + len.len)));
     i += len.len;
   }
 };
@@ -72,7 +72,7 @@ UserAttribute.prototype.write = function() {
   const arr = [];
   for (let i = 0; i < this.attributes.length; i++) {
     arr.push(packet.writeSimpleLength(this.attributes[i].length));
-    arr.push(util.str_to_Uint8Array(this.attributes[i]));
+    arr.push(util.strToUint8Array(this.attributes[i]));
   }
   return util.concatUint8Array(arr);
 };
