@@ -1423,7 +1423,7 @@ describe('OpenPGP.js public api tests', function() {
           }
           const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
           for (let allow_streaming = 1; allow_streaming >= 0; allow_streaming--) {
-            openpgp.config.allow_unauthenticated_stream = !!allow_streaming;
+            openpgp.config.allowUnauthenticatedStream = !!allow_streaming;
             await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
               await Promise.all([
                 encrypted,
@@ -2184,7 +2184,7 @@ describe('OpenPGP.js public api tests', function() {
       });
 
       it('should decrypt with three passwords', async function() {
-        const messageBinary = openpgp.util.b64_to_Uint8Array('wy4ECQMIElIx/jiwJV9gp/MZ/ElZwUfHrzOBfOtM8VmgDy76F7eSGWH26tAlx3WI0kMBZv6Tlc1Y6baaZ6MEcOLTG/C7uzHH7KMfuQFd3fcMaVcDawk9EEy/CybiGBE+acT6id2pemHQy6Nk76d9UUTFubcB');
+        const messageBinary = openpgp.util.b64ToUint8Array('wy4ECQMIElIx/jiwJV9gp/MZ/ElZwUfHrzOBfOtM8VmgDy76F7eSGWH26tAlx3WI0kMBZv6Tlc1Y6baaZ6MEcOLTG/C7uzHH7KMfuQFd3fcMaVcDawk9EEy/CybiGBE+acT6id2pemHQy6Nk76d9UUTFubcB');
         const message = await openpgp.message.read(messageBinary);
         const passwords = ['Test', 'Pinata', 'a'];
         const decrypted = await openpgp.decrypt({ message, passwords });
@@ -2260,7 +2260,7 @@ amnR6g==
           message: await openpgp.message.readArmored(encrypted),
           format: 'binary'
         });
-        expect(openpgp.util.decode_utf8(decrypted.data)).to.equal('"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:123\r\nDTSTART:20191211T121212Z\r\nDTEND:20191212T121212Z\r\nEND:VEVENT\r\nEND:VCALENDAR"');
+        expect(openpgp.util.decodeUtf8(decrypted.data)).to.equal('"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:123\r\nDTSTART:20191211T121212Z\r\nDTEND:20191212T121212Z\r\nEND:VEVENT\r\nEND:VCALENDAR"');
       });
 
     });

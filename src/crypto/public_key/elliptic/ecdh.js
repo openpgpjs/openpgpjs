@@ -52,7 +52,7 @@ function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
     oid.write(),
     new Uint8Array([public_algo]),
     kdf_params.write(),
-    util.str_to_Uint8Array("Anonymous Sender    "),
+    util.strToUint8Array("Anonymous Sender    "),
     fingerprint.subarray(0, 20)
   ]);
 }
@@ -103,7 +103,7 @@ async function genPublicEphemeralKey(curve, Q) {
         try {
           return await webPublicEphemeralKey(curve, Q);
         } catch (err) {
-          util.print_debug_error(err);
+          util.printDebugError(err);
         }
       }
       break;
@@ -162,7 +162,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
         try {
           return await webPrivateEphemeralKey(curve, V, Q, d);
         } catch (err) {
-          util.print_debug_error(err);
+          util.printDebugError(err);
         }
       }
       break;
@@ -253,7 +253,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
   );
   [S, secret] = await Promise.all([S, secret]);
   const sharedKey = new Uint8Array(S);
-  const secretKey = util.b64_to_Uint8Array(secret.d, true);
+  const secretKey = util.b64ToUint8Array(secret.d, true);
   return { secretKey, sharedKey };
 }
 
