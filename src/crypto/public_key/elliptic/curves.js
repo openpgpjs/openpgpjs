@@ -184,7 +184,7 @@ Curve.prototype.genKeyPair = async function () {
       try {
         return await webGenKeyPair(this.name);
       } catch (err) {
-        util.print_debug_error("Browser did not support generating ec key " + err.message);
+        util.printDebugError("Browser did not support generating ec key " + err.message);
         break;
       }
     case 'node':
@@ -207,7 +207,7 @@ Curve.prototype.genKeyPair = async function () {
   }
   const indutnyCurve = await getIndutnyCurve(this.name);
   keyPair = await indutnyCurve.genKeyPair({
-    entropy: util.Uint8Array_to_str(await random.getRandomBytes(32))
+    entropy: util.uint8ArrayToStr(await random.getRandomBytes(32))
   });
   return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
 };
@@ -313,7 +313,7 @@ async function webGenKeyPair(name) {
 
   return {
     publicKey: jwkToRawPublic(publicKey),
-    privateKey: util.b64_to_Uint8Array(privateKey.d, true)
+    privateKey: util.b64ToUint8Array(privateKey.d, true)
   };
 }
 
@@ -339,8 +339,8 @@ async function nodeGenKeyPair(name) {
  * @returns {Uint8Array}                    raw public key
  */
 function jwkToRawPublic(jwk) {
-  const bufX = util.b64_to_Uint8Array(jwk.x);
-  const bufY = util.b64_to_Uint8Array(jwk.y);
+  const bufX = util.b64ToUint8Array(jwk.x);
+  const bufY = util.b64ToUint8Array(jwk.y);
   const publicKey = new Uint8Array(bufX.length + bufY.length + 1);
   publicKey[0] = 0x04;
   publicKey.set(bufX, 1);
@@ -363,8 +363,8 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
   const jwk = {
     kty: "EC",
     crv: name,
-    x: util.Uint8Array_to_b64(bufX, true),
-    y: util.Uint8Array_to_b64(bufY, true),
+    x: util.uint8ArrayToB64(bufX, true),
+    y: util.uint8ArrayToB64(bufY, true),
     ext: true
   };
   return jwk;
@@ -380,6 +380,6 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
  */
 function privateToJwk(payloadSize, name, publicKey, privateKey) {
   const jwk = rawPublicToJwk(payloadSize, name, publicKey);
-  jwk.d = util.Uint8Array_to_b64(privateKey, true);
+  jwk.d = util.uint8ArrayToB64(privateKey, true);
   return jwk;
 }

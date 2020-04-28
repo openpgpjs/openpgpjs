@@ -77,12 +77,12 @@ describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', fu
     for (let i = 0; i < testvectors.length; i++) {
       const des = new openpgp.crypto.cipher.tripledes(key);
 
-      const encr = util.Uint8Array_to_str(des.encrypt(testvectors[i][0], key));
+      const encr = util.uint8ArrayToStr(des.encrypt(testvectors[i][0], key));
 
-      expect(encr, 'vector with block ' + util.Uint8Array_to_hex(testvectors[i][0]) +
-                   ' and key ' + util.str_to_hex(util.Uint8Array_to_str(key)) +
-                   ' should be ' + util.Uint8Array_to_hex(testvectors[i][1]) +
-                   ' != ' + util.Uint8Array_to_hex(encr)).to.be.equal(util.Uint8Array_to_str(testvectors[i][1]));
+      expect(encr, 'vector with block ' + util.uint8ArrayToHex(testvectors[i][0]) +
+                   ' and key ' + util.strToHex(util.uint8ArrayToStr(key)) +
+                   ' should be ' + util.uint8ArrayToHex(testvectors[i][1]) +
+                   ' != ' + util.uint8ArrayToHex(encr)).to.be.equal(util.uint8ArrayToStr(testvectors[i][1]));
     }
     done();
   });
@@ -124,18 +124,18 @@ describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', fu
         const encrypted = des.encrypt(thisVectorSet[i][0], padding);
         const decrypted = des.decrypt(encrypted, padding);
 
-        expect(util.Uint8Array_to_str(encrypted), 'vector with block [' + util.Uint8Array_to_hex(thisVectorSet[i][0]) +
-          '] and key [' + util.str_to_hex(util.Uint8Array_to_str(key)) +
+        expect(util.uint8ArrayToStr(encrypted), 'vector with block [' + util.uint8ArrayToHex(thisVectorSet[i][0]) +
+          '] and key [' + util.strToHex(util.uint8ArrayToStr(key)) +
           '] and padding [' + padding +
-          '] should be ' + util.Uint8Array_to_hex(thisVectorSet[i][1]) +
-          ' - Actually [' + util.Uint8Array_to_hex(encrypted) +
-          ']').to.equal(util.Uint8Array_to_str(thisVectorSet[i][1]));
-        expect(util.Uint8Array_to_str(decrypted), 'vector with block [' + util.Uint8Array_to_hex(thisVectorSet[i][0]) +
-          '] and key [' + util.str_to_hex(util.Uint8Array_to_str(key)) +
+          '] should be ' + util.uint8ArrayToHex(thisVectorSet[i][1]) +
+          ' - Actually [' + util.uint8ArrayToHex(encrypted) +
+          ']').to.equal(util.uint8ArrayToStr(thisVectorSet[i][1]));
+        expect(util.uint8ArrayToStr(decrypted), 'vector with block [' + util.uint8ArrayToHex(thisVectorSet[i][0]) +
+          '] and key [' + util.strToHex(util.uint8ArrayToStr(key)) +
           '] and padding [' + padding +
-          '] should be ' + util.Uint8Array_to_hex(thisVectorSet[i][0]) +
-          ' - Actually [' + util.Uint8Array_to_hex(decrypted) +
-          ']').to.equal(util.Uint8Array_to_str(thisVectorSet[i][0]));
+          '] should be ' + util.uint8ArrayToHex(thisVectorSet[i][0]) +
+          ' - Actually [' + util.uint8ArrayToHex(decrypted) +
+          ']').to.equal(util.uint8ArrayToStr(thisVectorSet[i][0]));
       }
     }
     done();
