@@ -1,17 +1,31 @@
 sudo: false
-language: node_js
+language: rust
+rust: nightly
 node_js:
   - 12.16
 cache:
   directories:
     - node_modules
-install:
-  - npm install
-  - npm link
-  - cd ..
-  - git clone https://gitlab.com/sequoia-pgp/sop-openpgp-js.git
-  - cd sop-openpgp-js
-  - npm install yargs
-  - npm link openpgp
-script:
-  - ./test/run
+jobs:
+  include:
+    - stage: install-sop
+    install:
+      - nvm install 12.16
+      - npm install
+      - npm link
+      - cd ..
+      - git clone https://gitlab.com/sequoia-pgp/sop-openpgp-js.git
+      - cd sop-openpgp-js
+      - npm install yargs
+      - npm link openpgp
+    script:
+      - ./test/run
+    - stage: install-test-suite
+    install:
+      - cd ..
+      - git clone https://gitlab.com/sequoia-pgp/openpgp-interoperability-test-suite
+      - cd openpgp-interoperability-test-suite
+      - cargo build
+      - cp ../openpgpjs/config-test-suite.json config.json
+    script:
+      - target/debug/openpgp-interoperability-test-suite > ../openpgpjs/report.html

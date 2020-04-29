@@ -1,0 +1,8 @@
+{
+  "drivers": [
+    {
+      "driver": "sop",
+      "path": "/home/ilya/protonmail/sop-openpgp-js/sop-openpgp"
+    }
+  ]
+}
