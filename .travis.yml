@@ -1,10 +1,17 @@
 sudo: false
 language: node_js
 node_js:
-  - 10.16
+  - 12.16
 cache:
   directories:
     - node_modules
+install:
+  - npm install
+  - npm link
+  - cd ..
+  - git clone https://gitlab.com/sequoia-pgp/sop-openpgp-js.git
+  - cd sop-openpgp-js
+  - npm install yargs
+  - npm link openpgp
 script:
-  - $TRAVIS_BUILD_DIR/install-sop.sh
-install: npm install
+  - ./test/run
