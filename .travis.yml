@@ -39,7 +39,7 @@ matrix:
     - node_js: "9"
 
 before_script:
-  - npm install -g grunt-cli codeclimate-test-reporter browserstack-runner
+  - npm install -g codeclimate-test-reporter browserstack-runner
 script:
   - $TRAVIS_BUILD_DIR/travis.sh
 install: npm install

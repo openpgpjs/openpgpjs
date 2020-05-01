@@ -4,7 +4,7 @@ set -e
 
 if [ $OPENPGPJSTEST = "coverage" ]; then
   echo "Running OpenPGP.js unit tests on node.js with code coverage."
-  grunt coverage
+  npm run coverage
   codeclimate-test-reporter < coverage/lcov.info
 
 elif [ $OPENPGPJSTEST = "unit" ]; then
