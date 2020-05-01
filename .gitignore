@@ -4,5 +4,4 @@ npm*
 test/lib/
 dist/
 openpgp.store/
-doc/
 .nyc_output/

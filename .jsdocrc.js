@@ -1,3 +1,6 @@
 module.exports = {
-    plugins: ['plugins/markdown']
+    plugins: ['plugins/markdown'],
+    markdown: {
+        idInHeadings: true
+    }
 };
