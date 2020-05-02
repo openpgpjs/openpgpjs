@@ -37,7 +37,10 @@
     "browsertest": "npm start -- -o test/unittests.html",
     "coverage": "nyc npm test",
     "lint": "eslint 'src/**/*.js' 'test/crypto/**/*.js'",
-    "docs": "jsdoc --configure .jsdocrc.js --destination docs --recurse README.md src"
+    "docs": "jsdoc --configure .jsdocrc.js --destination docs --recurse README.md src",
+    "preversion": "rm -rf dist docs node_modules && npm install && npm test",
+    "version": "npm run docs && git add -A docs",
+    "postversion": "git push && git push --tags && npm publish"
   },
   "devDependencies": {
     "@mattiasbuelens/web-streams-adapter": "0.1.0-alpha.5",
