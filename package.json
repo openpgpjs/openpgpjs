@@ -52,7 +52,6 @@
     "buffer": "^5.0.8",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
-    "core-js": "^2.5.3",
     "elliptic": "github:openpgpjs/elliptic#ab7d8268c60b6abeb175841c578c224ac5b2d279",
     "email-addresses": "3.1.0",
     "eslint": "^4.17.0",

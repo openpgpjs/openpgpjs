@@ -21,18 +21,10 @@ matrix:
       env: BROWSER='"firefox_61"' OPENPGPJSTEST='browserstack'
     - node_js: "10"
       env:  BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack' LIGHTWEIGHT=1
-    - node_js: "9"
-      env: BROWSER='"chrome_49"' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "10"
       env: BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack'
     - node_js: "9"
-      env: BROWSER='"safari_9_1"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
-      env: BROWSER='"safari_10_1"' OPENPGPJSTEST='browserstack' COMPAT=1
-    - node_js: "9"
       env: BROWSER='"safari_11_1"' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
-      env: BROWSER='{"os":"ios", "os_version":"10.3", "device":"iPhone 7 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack' COMPAT=1
     - node_js: "9"
       env: BROWSER='{"os":"ios", "os_version":"11.3", "device":"iPhone 8 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack'
   allow_failures:
