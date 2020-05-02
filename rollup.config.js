@@ -9,19 +9,6 @@ import pkg from './package.json';
 
 const nodeDependencies = Object.keys(pkg.dependencies);
 
-const compat = [
-  'whatwg-fetch',
-  'core-js/fn/array/fill',
-  'core-js/fn/array/find',
-  'core-js/fn/array/includes',
-  'core-js/fn/array/from',
-  'core-js/fn/promise',
-  'core-js/fn/typed/uint8-array',
-  'core-js/fn/string/repeat',
-  'core-js/fn/symbol',
-  'core-js/fn/object/assign'
-];
-
 const banner =
   `/*! OpenPGP.js v${pkg.version} - ` +
   `${new Date().toISOString().split('T')[0]} - ` +
@@ -48,7 +35,7 @@ export default [
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies).concat(compat)
+        ignore: builtinModules.concat(nodeDependencies)
       }),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
@@ -68,9 +55,7 @@ export default [
     ],
     plugins: [
       resolve(),
-      commonjs({
-        ignore: compat
-      }),
+      commonjs(),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
       })
@@ -89,7 +74,7 @@ export default [
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies).concat(compat).concat('elliptic')
+        ignore: builtinModules.concat(nodeDependencies).concat('elliptic')
       }),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
@@ -121,7 +106,7 @@ export default [
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies).concat(compat).concat(['../..', '../../..'])
+        ignore: builtinModules.concat(nodeDependencies).concat(['../..', '../../..'])
       })
     ]
   }
