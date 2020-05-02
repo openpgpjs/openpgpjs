@@ -1,11 +1,3 @@
-// Old browser polyfills
-if (typeof Symbol === 'undefined') {
-  require('core-js/fn/symbol');
-}
-if (typeof Promise === 'undefined') {
-  require('core-js/fn/promise');
-}
-
 (typeof window !== 'undefined' ? window : global).resolves = function(val) {
   return new Promise(function(res) { res(val); });
 };
