@@ -40,10 +40,6 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 * The `dist/openpgp.min.js` bundle works well with recent versions of Chrome, Firefox, Safari and Edge. It also works in Node.js 8+.
 
-* The `dist/compat/openpgp.min.js` bundle also works with Internet Explorer 11 and old versions of Safari. Please note that this bundle overwrites the global `Promise` with a polyfill version even in some cases where it already exists, which may cause issues. It also adds some built-in prototype functions if they don't exist, such as `Array.prototype.includes`.
-
-* If you wish, you could even load one or the other depending on which browser the user is using.
-
 * Currently, Chrome, Safari and Edge have partial implementations of the
 [Streams specification](https://streams.spec.whatwg.org/), and Firefox
 has a partial implementation behind feature flags. Chrome is the only
