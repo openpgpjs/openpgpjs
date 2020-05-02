@@ -59,7 +59,7 @@
     "eslint-plugin-import": "^2.8.0",
     "hash.js": "^1.1.3",
     "http-server": "^0.12.3",
-    "jsdoc": "^3.6.4",
+    "jsdoc": "github:openpgpjs/jsdoc#0f1816eb4553856647b4ca9561b9307b11ec4f9e",
     "mocha": "^5.0.0",
     "nyc": "^14.1.1",
     "pako": "^1.0.6",
