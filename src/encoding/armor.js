@@ -55,14 +55,14 @@ function getType(text) {
   // Used for multi-part messages, where the armor is split amongst Y
   // parts, and this is the Xth part out of Y.
   if (/MESSAGE, PART \d+\/\d+/.test(header[1])) {
-    return enums.armor.multipart_section;
+    return enums.armor.multipartSection;
   } else
   // BEGIN PGP MESSAGE, PART X
   // Used for multi-part messages, where this is the Xth part of an
   // unspecified number of parts. Requires the MESSAGE-ID Armor
   // Header to be used.
   if (/MESSAGE, PART \d+/.test(header[1])) {
-    return enums.armor.multipart_last;
+    return enums.armor.multipartLast;
   } else
   // BEGIN PGP SIGNED MESSAGE
   if (/SIGNED MESSAGE/.test(header[1])) {
@@ -76,12 +76,12 @@ function getType(text) {
   // BEGIN PGP PUBLIC KEY BLOCK
   // Used for armoring public keys.
   if (/PUBLIC KEY BLOCK/.test(header[1])) {
-    return enums.armor.public_key;
+    return enums.armor.publicKey;
   } else
   // BEGIN PGP PRIVATE KEY BLOCK
   // Used for armoring private keys.
   if (/PRIVATE KEY BLOCK/.test(header[1])) {
-    return enums.armor.private_key;
+    return enums.armor.privateKey;
   } else
   // BEGIN PGP SIGNATURE
   // Used for detached signatures, OpenPGP/MIME signatures, and
@@ -370,14 +370,14 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
   const bodyClone = stream.passiveClone(body);
   const result = [];
   switch (messagetype) {
-    case enums.armor.multipart_section:
+    case enums.armor.multipartSection:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\r\n");
       break;
-    case enums.armor.multipart_last:
+    case enums.armor.multipartLast:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
@@ -401,14 +401,14 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE-----\r\n");
       break;
-    case enums.armor.public_key:
+    case enums.armor.publicKey:
       result.push("-----BEGIN PGP PUBLIC KEY BLOCK-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP PUBLIC KEY BLOCK-----\r\n");
       break;
-    case enums.armor.private_key:
+    case enums.armor.privateKey:
       result.push("-----BEGIN PGP PRIVATE KEY BLOCK-----\r\n");
       result.push(addheader(customComment));
       result.push(base64.encode(body));

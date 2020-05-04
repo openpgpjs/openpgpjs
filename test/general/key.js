@@ -1809,10 +1809,10 @@ function versionSpecificTests() {
     const testPref = function(key) {
       // key flags
       const keyFlags = openpgp.enums.keyFlags;
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certify_keys).to.equal(keyFlags.certify_keys);
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.sign_data).to.equal(keyFlags.sign_data);
-      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_communication).to.equal(keyFlags.encrypt_communication);
-      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
+      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
+      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
+      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptCommunication).to.equal(keyFlags.encryptCommunication);
+      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192]);
       if (openpgp.config.aeadProtect) {
@@ -1849,20 +1849,20 @@ function versionSpecificTests() {
     openpgp.config.encryptionCipher = openpgp.enums.symmetric.aes192;
     openpgp.config.preferHashAlgorithm = openpgp.enums.hash.sha224;
     openpgp.config.compression = openpgp.enums.compression.zlib;
-    openpgp.config.aeadMode = openpgp.enums.aead.experimental_gcm;
+    openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm;
 
     const testPref = function(key) {
       // key flags
       const keyFlags = openpgp.enums.keyFlags;
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certify_keys).to.equal(keyFlags.certify_keys);
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.sign_data).to.equal(keyFlags.sign_data);
-      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_communication).to.equal(keyFlags.encrypt_communication);
-      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encrypt_storage).to.equal(keyFlags.encrypt_storage);
+      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
+      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
+      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptCommunication).to.equal(keyFlags.encryptCommunication);
+      expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128]);
       if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
-        expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.experimental_gcm, aead.eax, aead.ocb]);
+        expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.experimentalGcm, aead.eax, aead.ocb]);
       }
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
@@ -2028,8 +2028,8 @@ function versionSpecificTests() {
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.length(2);
-      expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('rsa_encrypt_sign');
-      expect(key.subKeys[1].getAlgorithmInfo().algorithm).to.equal('rsa_encrypt_sign');
+      expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
+      expect(key.subKeys[1].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
     });
   });
 
@@ -2077,7 +2077,7 @@ function versionSpecificTests() {
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal(userId);
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
-      expect(key.getAlgorithmInfo().algorithm).to.equal('rsa_encrypt_sign');
+      expect(key.getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
       expect(key.getAlgorithmInfo().bits).to.equal(opt.rsaBits);
       expect(key.getAlgorithmInfo().rsaBits).to.equal(key.getAlgorithmInfo().bits);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
@@ -2335,7 +2335,7 @@ function versionSpecificTests() {
     return openpgp.generateKey(opt).then(function(original) {
       return openpgp.revokeKey({key: original.key.toPublic(), revocationCertificate: original.revocationCertificate}).then(async function(revKey) {
         revKey = revKey.publicKey;
-        expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
+        expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.noReason);
         expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
         await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
       });
@@ -2348,7 +2348,7 @@ function versionSpecificTests() {
       await original.key.decrypt('1234');
       return openpgp.revokeKey({key: original.key, reasonForRevocation: {string: 'Testing key revocation'}}).then(async function(revKey) {
         revKey = revKey.publicKey;
-        expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.no_reason);
+        expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.noReason);
         expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
         await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
       });
@@ -2768,12 +2768,12 @@ describe('Key', function() {
     await privKey.decrypt('hello world');
 
     await privKey.revoke({
-      flag: openpgp.enums.reasonForRevocation.key_retired,
+      flag: openpgp.enums.reasonForRevocation.keyRetired,
       string: 'Testing key revocation'
     }).then(async revKey => {
       expect(revKey.revocationSignatures).to.exist.and.have.length(1);
-      expect(revKey.revocationSignatures[0].signatureType).to.equal(openpgp.enums.signature.key_revocation);
-      expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_retired);
+      expect(revKey.revocationSignatures[0].signatureType).to.equal(openpgp.enums.signature.keyRevocation);
+      expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.keyRetired);
       expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
 
       await privKey.verifyPrimaryKey();
@@ -2788,11 +2788,11 @@ describe('Key', function() {
 
     const subKey = pubKey.subKeys[0];
     await subKey.revoke(privKey.primaryKey, {
-      flag: openpgp.enums.reasonForRevocation.key_superseded
+      flag: openpgp.enums.reasonForRevocation.keySuperseded
     }).then(async revKey => {
       expect(revKey.revocationSignatures).to.exist.and.have.length(1);
-      expect(revKey.revocationSignatures[0].signatureType).to.equal(openpgp.enums.signature.subkey_revocation);
-      expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.key_superseded);
+      expect(revKey.revocationSignatures[0].signatureType).to.equal(openpgp.enums.signature.subkeyRevocation);
+      expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.keySuperseded);
       expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
 
       await subKey.verify(pubKey.primaryKey);
@@ -2815,7 +2815,7 @@ describe('Key', function() {
     const input = await openpgp.armor.decode(revocation_certificate_arm4);
     const packetlist = new openpgp.packet.List();
     await packetlist.read(input.data);
-    const armored = openpgp.armor.encode(openpgp.enums.armor.public_key, packetlist.write());
+    const armored = openpgp.armor.encode(openpgp.enums.armor.publicKey, packetlist.write());
 
     expect(revocationCertificate.replace(/^Comment: .*$\r\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\r\n/mg, ''));
   });
@@ -3089,7 +3089,7 @@ describe('addSubkey functionality testing', function(){
     const subkeyN = subKey.keyPacket.params[0];
     const pkN = privateKey.primaryKey.params[0];
     expect(subkeyN.byteLength()).to.be.equal(rsaBits ? (rsaBits / 8) : pkN.byteLength());
-    expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
+    expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsaEncryptSign');
     expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(rsaBits || privateKey.getAlgorithmInfo().rsaBits);
     await subKey.verify(newPrivateKey.primaryKey);
   });
@@ -3216,7 +3216,7 @@ describe('addSubkey functionality testing', function(){
     const armoredKey = newPrivateKey.armor();
     newPrivateKey = await openpgp.key.readArmored(armoredKey);
     const subKey = newPrivateKey.subKeys[total];
-    expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsa_encrypt_sign');
+    expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsaEncryptSign');
     await subKey.verify(newPrivateKey.primaryKey);
     expect(await newPrivateKey.getSigningKey()).to.be.equal(subKey);
     const signed = await openpgp.sign({message: openpgp.message.fromText('the data to signed'), privateKeys: newPrivateKey, armor:false});
