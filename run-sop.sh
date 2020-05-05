@@ -1,4 +1,4 @@
 cd ../openpgp-interoperability-test-suite-binary
 touch config.json
 echo '{"drivers": [{"driver": "sop", "path": "../sop-openpgp-js/sop-openpgp"}]}' > config.json
-./target/release/openpgp-interoperability-test-suite > report.html
+./target/release/openpgp-interoperability-test-suite > $TRAVIS_BUILD_DIR/report.html
