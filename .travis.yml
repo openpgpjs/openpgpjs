@@ -14,7 +14,7 @@ install:
   - npm install yargs
   - npm link openpgp
   - cd ..
-  - curl https://gitlab.com/ilya_y_chesnokov/openpgp-interoperability-test-suite/-/archive/binary/openpgp-interoperability-test-suite-binary.tar.gz
+  - curl https://gitlab.com/ilya_y_chesnokov/openpgp-interoperability-test-suite/-/archive/binary/openpgp-interoperability-test-suite-binary.tar.gz -O
   - tar -zxvf openpgp-interoperability-test-suite-binary.tar.gz
   - cd openpgpjs
 script:
