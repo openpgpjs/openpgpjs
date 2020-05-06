@@ -7,28 +7,25 @@ addons:
     code_climate:
         repo_token: $CODECLIMATE_REPO_TOKEN
 matrix:
-  fast_finish: true
   include:
-    - node_js: "8"
-      env: OPENPGP_NODE_JS='8' OPENPGPJSTEST='unit'
     - node_js: "10"
       env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
     - node_js: "12"
       env: OPENPGP_NODE_JS='12' OPENPGPJSTEST='unit'
-    - node_js: "10"
-      env:  OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit' LIGHTWEIGHT=1
-    - node_js: "9"
+    - node_js: "14"
+      env: OPENPGP_NODE_JS='14' OPENPGPJSTEST='unit'
+    - node_js: "14"
+      env:  OPENPGP_NODE_JS='14' OPENPGPJSTEST='unit' LIGHTWEIGHT=1
+    - node_js: "14"
       env: BROWSER='"firefox_61"' OPENPGPJSTEST='browserstack'
-    - node_js: "10"
+    - node_js: "14"
       env:  BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack' LIGHTWEIGHT=1
-    - node_js: "10"
+    - node_js: "14"
       env: BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
+    - node_js: "14"
       env: BROWSER='"safari_11_1"' OPENPGPJSTEST='browserstack'
-    - node_js: "9"
+    - node_js: "14"
       env: BROWSER='{"os":"ios", "os_version":"11.3", "device":"iPhone 8 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack'
-  allow_failures:
-    - node_js: "9"
 
 before_script:
   - npm install -g codeclimate-test-reporter browserstack-runner
