@@ -38,7 +38,9 @@ OpenPGP.js [![Build Status](https://travis-ci.org/openpgpjs/openpgpjs.svg?branch
 
 ### Platform Support
 
-* The `dist/openpgp.min.js` bundle works well with recent versions of Chrome, Firefox, Safari and Edge. It also works in Node.js 8+.
+* The `dist/openpgp.min.js` bundle works well with recent versions of Chrome, Firefox, Safari and Edge.
+
+* The `dist/node/openpgp.min.js` bundle works well in Node.js. It is used by default when you `require('openpgp')` in Node.js.
 
 * Currently, Chrome, Safari and Edge have partial implementations of the
 [Streams specification](https://streams.spec.whatwg.org/), and Firefox
