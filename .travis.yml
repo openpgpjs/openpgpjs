@@ -1,5 +1,6 @@
-sudo: false
 language: node_js
+dist: bionic
+language: generic
 node_js:
   - 12.16
 cache:
