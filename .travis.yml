@@ -16,6 +16,7 @@ install:
   - cd ..
   - curl https://gitlab.com/ilya_y_chesnokov/openpgp-interoperability-test-suite/-/archive/binary/openpgp-interoperability-test-suite-binary.tar.gz -O
   - tar -zxvf openpgp-interoperability-test-suite-binary.tar.gz
+  - sudo apt-get -y install nettle-dev
   - cd openpgpjs
 script:
   - $TRAVIS_BUILD_DIR/run-sop.sh
