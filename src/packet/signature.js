@@ -201,35 +201,35 @@ Signature.prototype.write_hashed_sub_packets = function () {
   const arr = [];
   let bytes;
   if (this.created !== null) {
-    arr.push(write_sub_packet(sub.signature_creation_time, util.writeDate(this.created)));
+    arr.push(write_sub_packet(sub.signatureCreationTime, util.writeDate(this.created)));
   }
   if (this.signatureExpirationTime !== null) {
-    arr.push(write_sub_packet(sub.signature_expiration_time, util.writeNumber(this.signatureExpirationTime, 4)));
+    arr.push(write_sub_packet(sub.signatureExpirationTime, util.writeNumber(this.signatureExpirationTime, 4)));
   }
   if (this.exportable !== null) {
-    arr.push(write_sub_packet(sub.exportable_certification, new Uint8Array([this.exportable ? 1 : 0])));
+    arr.push(write_sub_packet(sub.exportableCertification, new Uint8Array([this.exportable ? 1 : 0])));
   }
   if (this.trustLevel !== null) {
     bytes = new Uint8Array([this.trustLevel, this.trustAmount]);
-    arr.push(write_sub_packet(sub.trust_signature, bytes));
+    arr.push(write_sub_packet(sub.trustSignature, bytes));
   }
   if (this.regularExpression !== null) {
-    arr.push(write_sub_packet(sub.regular_expression, this.regularExpression));
+    arr.push(write_sub_packet(sub.regularExpression, this.regularExpression));
   }
   if (this.revocable !== null) {
     arr.push(write_sub_packet(sub.revocable, new Uint8Array([this.revocable ? 1 : 0])));
   }
   if (this.keyExpirationTime !== null) {
-    arr.push(write_sub_packet(sub.key_expiration_time, util.writeNumber(this.keyExpirationTime, 4)));
+    arr.push(write_sub_packet(sub.keyExpirationTime, util.writeNumber(this.keyExpirationTime, 4)));
   }
   if (this.preferredSymmetricAlgorithms !== null) {
     bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredSymmetricAlgorithms));
-    arr.push(write_sub_packet(sub.preferred_symmetric_algorithms, bytes));
+    arr.push(write_sub_packet(sub.preferredSymmetricAlgorithms, bytes));
   }
   if (this.revocationKeyClass !== null) {
     bytes = new Uint8Array([this.revocationKeyClass, this.revocationKeyAlgorithm]);
     bytes = util.concat([bytes, this.revocationKeyFingerprint]);
-    arr.push(write_sub_packet(sub.revocation_key, bytes));
+    arr.push(write_sub_packet(sub.revocationKey, bytes));
   }
   this.notations.forEach(([name, value]) => {
     bytes = [new Uint8Array([0x80, 0, 0, 0])];
@@ -239,39 +239,39 @@ Signature.prototype.write_hashed_sub_packets = function () {
     bytes.push(util.writeNumber(value.length, 2));
     bytes.push(util.strToUint8Array(name + value));
     bytes = util.concat(bytes);
-    arr.push(write_sub_packet(sub.notation_data, bytes));
+    arr.push(write_sub_packet(sub.notationData, bytes));
   });
   if (this.preferredHashAlgorithms !== null) {
     bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredHashAlgorithms));
-    arr.push(write_sub_packet(sub.preferred_hash_algorithms, bytes));
+    arr.push(write_sub_packet(sub.preferredHashAlgorithms, bytes));
   }
   if (this.preferredCompressionAlgorithms !== null) {
     bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredCompressionAlgorithms));
-    arr.push(write_sub_packet(sub.preferred_compression_algorithms, bytes));
+    arr.push(write_sub_packet(sub.preferredCompressionAlgorithms, bytes));
   }
   if (this.keyServerPreferences !== null) {
     bytes = util.strToUint8Array(util.uint8ArrayToStr(this.keyServerPreferences));
-    arr.push(write_sub_packet(sub.key_server_preferences, bytes));
+    arr.push(write_sub_packet(sub.keyServerPreferences, bytes));
   }
   if (this.preferredKeyServer !== null) {
-    arr.push(write_sub_packet(sub.preferred_key_server, util.strToUint8Array(this.preferredKeyServer)));
+    arr.push(write_sub_packet(sub.preferredKeyServer, util.strToUint8Array(this.preferredKeyServer)));
   }
   if (this.isPrimaryUserID !== null) {
-    arr.push(write_sub_packet(sub.primary_user_id, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
+    arr.push(write_sub_packet(sub.primaryUserId, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
   }
   if (this.policyURI !== null) {
-    arr.push(write_sub_packet(sub.policy_uri, util.strToUint8Array(this.policyURI)));
+    arr.push(write_sub_packet(sub.policyUri, util.strToUint8Array(this.policyURI)));
   }
   if (this.keyFlags !== null) {
     bytes = util.strToUint8Array(util.uint8ArrayToStr(this.keyFlags));
-    arr.push(write_sub_packet(sub.key_flags, bytes));
+    arr.push(write_sub_packet(sub.keyFlags, bytes));
   }
   if (this.signersUserId !== null) {
-    arr.push(write_sub_packet(sub.signers_user_id, util.strToUint8Array(this.signersUserId)));
+    arr.push(write_sub_packet(sub.signersUserId, util.strToUint8Array(this.signersUserId)));
   }
   if (this.reasonForRevocationFlag !== null) {
     bytes = util.strToUint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
-    arr.push(write_sub_packet(sub.reason_for_revocation, bytes));
+    arr.push(write_sub_packet(sub.reasonForRevocation, bytes));
   }
   if (this.features !== null) {
     bytes = util.strToUint8Array(util.uint8ArrayToStr(this.features));
@@ -281,11 +281,11 @@ Signature.prototype.write_hashed_sub_packets = function () {
     bytes = [new Uint8Array([this.signatureTargetPublicKeyAlgorithm, this.signatureTargetHashAlgorithm])];
     bytes.push(util.strToUint8Array(this.signatureTargetHash));
     bytes = util.concat(bytes);
-    arr.push(write_sub_packet(sub.signature_target, bytes));
+    arr.push(write_sub_packet(sub.signatureTarget, bytes));
   }
   if (this.preferredAeadAlgorithms !== null) {
     bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredAeadAlgorithms));
-    arr.push(write_sub_packet(sub.preferred_aead_algorithms, bytes));
+    arr.push(write_sub_packet(sub.preferredAeadAlgorithms, bytes));
   }
 
   const result = util.concat(arr);
@@ -308,12 +308,12 @@ Signature.prototype.write_unhashed_sub_packets = function() {
     arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
   }
   if (this.embeddedSignature !== null) {
-    arr.push(write_sub_packet(sub.embedded_signature, this.embeddedSignature.write()));
+    arr.push(write_sub_packet(sub.embeddedSignature, this.embeddedSignature.write()));
   }
   if (this.issuerFingerprint !== null) {
     bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
     bytes = util.concat(bytes);
-    arr.push(write_sub_packet(sub.issuer_fingerprint, bytes));
+    arr.push(write_sub_packet(sub.issuerFingerprint, bytes));
   }
   this.unhashedSubpackets.forEach(data => {
     arr.push(packet.writeSimpleLength(data.length));
@@ -365,8 +365,8 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
   // Ignore all other unhashed subpackets.
   if (!trusted && ![
     enums.signatureSubpacket.issuer,
-    enums.signatureSubpacket.issuer_fingerprint,
-    enums.signatureSubpacket.embedded_signature
+    enums.signatureSubpacket.issuerFingerprint,
+    enums.signatureSubpacket.embeddedSignature
   ].includes(type)) {
     this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
     return;
@@ -577,11 +577,11 @@ Signature.prototype.toSign = function (type, data) {
     case t.standalone:
       return new Uint8Array(0);
 
-    case t.cert_generic:
-    case t.cert_persona:
-    case t.cert_casual:
-    case t.cert_positive:
-    case t.cert_revocation: {
+    case t.certGeneric:
+    case t.certPersona:
+    case t.certCasual:
+    case t.certPositive:
+    case t.certRevocation: {
       let packet;
       let tag;
 
@@ -603,9 +603,9 @@ Signature.prototype.toSign = function (type, data) {
         util.writeNumber(bytes.length, 4),
         bytes]);
     }
-    case t.subkey_binding:
-    case t.subkey_revocation:
-    case t.key_binding:
+    case t.subkeyBinding:
+    case t.subkeyRevocation:
+    case t.keyBinding:
       return util.concat([this.toSign(t.key, data), this.toSign(t.key, {
         key: data.bind
       })]);
@@ -616,11 +616,11 @@ Signature.prototype.toSign = function (type, data) {
       }
       return data.key.writeForHash(this.version);
 
-    case t.key_revocation:
+    case t.keyRevocation:
       return this.toSign(t.key, data);
     case t.timestamp:
       return new Uint8Array(0);
-    case t.third_party:
+    case t.thirdParty:
       throw new Error('Not implemented');
     default:
       throw new Error('Unknown signature type.');
