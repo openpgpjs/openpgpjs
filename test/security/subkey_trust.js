@@ -49,10 +49,10 @@ async function testSubkeyTrust() {
     bind: pktPubVictim[3] // victim subkey
   };
   const fakeBindingSignature = new Signature();
-  fakeBindingSignature.signatureType = enums.signature.subkey_binding;
+  fakeBindingSignature.signatureType = enums.signature.subkeyBinding;
   fakeBindingSignature.publicKeyAlgorithm = attackerPrivKey.keyPacket.algorithm;
   fakeBindingSignature.hashAlgorithm = enums.hash.sha256;
-  fakeBindingSignature.keyFlags = [enums.keyFlags.sign_data];
+  fakeBindingSignature.keyFlags = [enums.keyFlags.signData];
   await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign);
   const newList = new List();
   newList.concat([

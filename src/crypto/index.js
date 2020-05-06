@@ -33,7 +33,7 @@ const mod = {
   cfb: cfb,
   /** @see module:crypto/gcm */
   gcm: gcm,
-  experimental_gcm: gcm,
+  experimentalGcm: gcm,
   /** @see module:crypto/eax */
   eax: eax,
   /** @see module:crypto/ocb */

@@ -64,8 +64,8 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
     const signingKey = await privateKey.getSigningKey();
     return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
       // Most OpenPGP implementations use generic certification (0x10)
-      signatureType: enums.signature.cert_generic,
-      keyFlags: [enums.keyFlags.certify_keys | enums.keyFlags.sign_data]
+      signatureType: enums.signature.certGeneric,
+      keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
     });
   }));
   await user.update(this, primaryKey);
@@ -87,7 +87,7 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
  */
 User.prototype.isRevoked = async function(primaryKey, certificate, key, date = new Date()) {
   return isDataRevoked(
-    primaryKey, enums.signature.cert_revocation, {
+    primaryKey, enums.signature.certRevocation, {
       key: primaryKey,
       userId: this.userId,
       userAttribute: this.userAttribute
@@ -123,7 +123,7 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
       throw new Error('User certificate is revoked');
     }
     try {
-      certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.cert_generic, dataToVerify);
+      certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify);
     } catch (e) {
       throw util.wrapError('User certificate is invalid', e);
     }
@@ -184,7 +184,7 @@ User.prototype.verify = async function(primaryKey, date = new Date()) {
         throw new Error('Self-certification is revoked');
       }
       try {
-        selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.cert_generic, dataToVerify);
+        selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify);
       } catch (e) {
         throw util.wrapError('Self-certification is invalid', e);
       }
@@ -216,7 +216,7 @@ User.prototype.update = async function(user, primaryKey) {
   // self signatures
   await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
     try {
-      return srcSelfSig.verified || srcSelfSig.verify(primaryKey, enums.signature.cert_generic, dataToVerify);
+      return srcSelfSig.verified || srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify);
     } catch (e) {
       return false;
     }
@@ -225,6 +225,6 @@ User.prototype.update = async function(user, primaryKey) {
   await mergeSignatures(user, this, 'otherCertifications');
   // revocation signatures
   await mergeSignatures(user, this, 'revocationSignatures', function(srcRevSig) {
-    return isDataRevoked(primaryKey, enums.signature.cert_revocation, dataToVerify, [srcRevSig]);
+    return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig]);
   });
 };

@@ -22,7 +22,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
 
   it('sign and verify using generated key params', async function() {
     const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
-    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const message = await openpgp.crypto.random.getRandomBytes(64);
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, 'sha256');
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
@@ -40,7 +40,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
 
   it('encrypt and decrypt using generated key params', async function() {
     const bits = openpgp.util.getWebCryptoAll() ? 2048 : 1024;
-    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
     const d = keyParams[2].toUint8Array();
@@ -59,7 +59,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
       this.skip();
     }
     const bits = 1024;
-    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
     const d = keyParams[2].toUint8Array();
@@ -82,7 +82,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
       this.skip();
     }
     const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
-    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
     const d = keyParams[2].toUint8Array();
@@ -109,7 +109,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
       this.skip();
     }
     const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
-    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
     const d = keyParams[2].toUint8Array();
@@ -139,7 +139,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
       this.skip();
     }
     const bits = 1024;
-    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
     const d = keyParams[2].toUint8Array();
@@ -160,7 +160,7 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
       this.skip();
     }
     const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
-    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsa_sign, bits);
+    const keyParams = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const n = keyParams[0].toUint8Array();
     const e = keyParams[1].toUint8Array();
     const d = keyParams[2].toUint8Array();
