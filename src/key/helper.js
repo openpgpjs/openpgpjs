@@ -57,8 +57,8 @@ export async function getLatestValidSignature(signatures, primaryKey, signatureT
   if (!signature) {
     throw util.wrapError(
       `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyId().toHex()}`
-        .replace('cert_generic ', 'self-')
-        .replace('_', ' ')
+        .replace('certGeneric ', 'self-')
+        .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase())
       , exception);
   }
   return signature;
@@ -85,16 +85,16 @@ export async function createBindingSignature(subkey, primaryKey, options) {
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
   const subkeySignaturePacket = new packet.Signature(options.date);
-  subkeySignaturePacket.signatureType = enums.signature.subkey_binding;
+  subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
   subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
   subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey);
   if (options.sign) {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.sign_data];
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
     subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
-      signatureType: enums.signature.key_binding
+      signatureType: enums.signature.keyBinding
     }, options.date);
   } else {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.encrypt_communication | enums.keyFlags.encrypt_storage];
+    subkeySignaturePacket.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
   }
   if (options.keyExpirationTime > 0) {
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
@@ -331,7 +331,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       options.algorithm = enums.publicKey.ecdh;
     }
   } else if (options.rsaBits) {
-    options.algorithm = enums.publicKey.rsa_encrypt_sign;
+    options.algorithm = enums.publicKey.rsaEncryptSign;
   } else {
     throw new Error('Unrecognized key type');
   }
@@ -342,11 +342,11 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
   if (!signature.verified || signature.revoked !== false) { // Sanity check
     throw new Error('Signature not verified');
   }
-  return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_encrypt) &&
+  return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsaEncrypt) &&
     keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.elgamal) &&
     keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdh) &&
     (!signature.keyFlags ||
-      (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
+      (signature.keyFlags[0] & enums.keyFlags.signData) !== 0);
 }
 
 export function isValidEncryptionKeyPacket(keyPacket, signature) {
@@ -354,12 +354,12 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
     throw new Error('Signature not verified');
   }
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
-    keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsa_sign) &&
+    keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsaSign) &&
     keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdsa) &&
     keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.eddsa) &&
     (!signature.keyFlags ||
-      (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
-      (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0);
+      (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
+      (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0);
 }
 
 export function isValidDecryptionKeyPacket(signature) {
@@ -373,6 +373,6 @@ export function isValidDecryptionKeyPacket(signature) {
   }
 
   return !signature.keyFlags ||
-    (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
-    (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0;
+    (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
+    (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
 }

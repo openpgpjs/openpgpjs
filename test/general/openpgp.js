@@ -718,7 +718,7 @@ describe('OpenPGP.js public api tests', function() {
       if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
-        openpgp.config.aeadMode = openpgp.enums.aead.experimental_gcm;
+        openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm;
         openpgp.config.v5Keys = true;
 
         // Monkey-patch AEAD feature flag

@@ -86,7 +86,7 @@ library to convert back and forth between them.
   ```
   openpgp.config.aeadMode = openpgp.enums.aead.eax // Default, native
   openpgp.config.aeadMode = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.aeadMode = openpgp.enums.aead.experimental_gcm // **Non-standard**, fastest
+  openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
   ```
 
 * For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256. We use [Rusha](https://github.com/srijs/rusha) and [asmCrypto Lite](https://github.com/openpgpjs/asmcrypto-lite) (a minimal subset of asmCrypto.js built specifically for OpenPGP.js).
