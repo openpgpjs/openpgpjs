@@ -55,7 +55,7 @@ SubKey.prototype.toPacketlist = function() {
  */
 SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date = new Date()) {
   return helper.isDataRevoked(
-    primaryKey, enums.signature.subkey_revocation, {
+    primaryKey, enums.signature.subkeyRevocation, {
       key: primaryKey,
       bind: this.keyPacket
     }, this.revocationSignatures, signature, key, date
@@ -75,7 +75,7 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date = n
 SubKey.prototype.verify = async function(primaryKey, date = new Date()) {
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
   // check subkey binding signatures
-  const bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
+  const bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
   // check binding signature is not revoked
   if (bindingSignature.revoked || await this.isRevoked(primaryKey, bindingSignature, null, date)) {
     throw new Error('Subkey is revoked');
@@ -99,7 +99,7 @@ SubKey.prototype.getExpirationTime = async function(primaryKey, date = new Date(
   const dataToVerify = { key: primaryKey, bind: this.keyPacket };
   let bindingSignature;
   try {
-    bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
+    bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
   } catch (e) {
     return null;
   }
@@ -138,14 +138,14 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
       }
     }
     try {
-      return srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkey_binding, dataToVerify);
+      return srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify);
     } catch (e) {
       return false;
     }
   });
   // revocation signatures
   await helper.mergeSignatures(subKey, this, 'revocationSignatures', function(srcRevSig) {
-    return helper.isDataRevoked(primaryKey, enums.signature.subkey_revocation, dataToVerify, [srcRevSig]);
+    return helper.isDataRevoked(primaryKey, enums.signature.subkeyRevocation, dataToVerify, [srcRevSig]);
   });
 };
 
@@ -160,13 +160,13 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
  * @async
  */
 SubKey.prototype.revoke = async function(primaryKey, {
-  flag: reasonForRevocationFlag = enums.reasonForRevocation.no_reason,
+  flag: reasonForRevocationFlag = enums.reasonForRevocation.noReason,
   string: reasonForRevocationString = ''
 } = {}, date = new Date()) {
   const dataToSign = { key: primaryKey, bind: this.keyPacket };
   const subKey = new SubKey(this.keyPacket);
   subKey.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, primaryKey, {
-    signatureType: enums.signature.subkey_revocation,
+    signatureType: enums.signature.subkeyRevocation,
     reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
     reasonForRevocationString
   }, date));

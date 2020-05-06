@@ -38,7 +38,7 @@ import armor from '../encoding/armor';
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
  * Primary and subkey will be of same type.
- * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsaEncryptSign]
  *                             To indicate what type of key to make.
  *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
  * @param {Integer} options.rsaBits    number of bits for the key creation.
@@ -69,7 +69,7 @@ export async function generate(options) {
 /**
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
  * @param {module:key.Key} options.privateKey   The private key to reformat
- * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsa_encrypt_sign]
+ * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsaEncryptSign]
  * @param {String|Array<String>}  options.userIds
  *                             Assumes already in form of "User Name <username@email.com>"
  *                             If array is used, the first userId is set as primary user Id
@@ -172,10 +172,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     dataToSign.userId = userIdPacket;
     dataToSign.key = secretKeyPacket;
     const signaturePacket = new packet.Signature(options.date);
-    signaturePacket.signatureType = enums.signature.cert_generic;
+    signaturePacket.signatureType = enums.signature.certGeneric;
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket);
-    signaturePacket.keyFlags = [enums.keyFlags.certify_keys | enums.keyFlags.sign_data];
+    signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
     signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       enums.symmetric.aes256,
@@ -203,7 +203,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     }
     if (config.integrityProtect) {
       signaturePacket.features = [0];
-      signaturePacket.features[0] |= enums.features.modification_detection;
+      signaturePacket.features[0] |= enums.features.modificationDetection;
     }
     if (config.aeadProtect) {
       signaturePacket.features || (signaturePacket.features = [0]);
@@ -242,8 +242,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
   // This packet should be removed before returning the key.
   const dataToSign = { key: secretKeyPacket };
   packetlist.push(await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, {
-    signatureType: enums.signature.key_revocation,
-    reasonForRevocationFlag: enums.reasonForRevocation.no_reason,
+    signatureType: enums.signature.keyRevocation,
+    reasonForRevocationFlag: enums.reasonForRevocation.noReason,
     reasonForRevocationString: ''
   }, options.date));
 
@@ -284,7 +284,7 @@ export async function read(data) {
  */
 export async function readArmored(armoredKey) {
   const input = await armor.decode(armoredKey);
-  if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
+  if (!(input.type === enums.armor.publicKey || input.type === enums.armor.privateKey)) {
     throw new Error('Armored text not of type key');
   }
   return read(input.data);
@@ -322,7 +322,7 @@ export async function readAll(data) {
  */
 export async function readAllArmored(armoredKey) {
   const input = await armor.decode(armoredKey);
-  if (!(input.type === enums.armor.public_key || input.type === enums.armor.private_key)) {
+  if (!(input.type === enums.armor.publicKey || input.type === enums.armor.privateKey)) {
     throw new Error('Armored text not of type key');
   }
   return readAll(input.data);
