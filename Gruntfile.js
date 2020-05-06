@@ -126,8 +126,8 @@ module.exports = function(grunt) {
         overwrite: true,
         replacements: [
           {
-            from: "external_indutny_elliptic: false",
-            to: "external_indutny_elliptic: true"
+            from: "externalIndutnyElliptic: false",
+            to: "externalIndutnyElliptic: true"
           }
         ]
       },
