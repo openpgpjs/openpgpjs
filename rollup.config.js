@@ -14,6 +14,8 @@ const banner =
   `${new Date().toISOString().split('T')[0]} - ` +
   `this is LGPL licensed code, see LICENSE/our website ${pkg.homepage} for more information. */`;
 
+const intro = `const globalThis = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};`;
+
 const terserOptions = {
   ecma: 2017,
   compress: {
@@ -25,10 +27,10 @@ export default [
   {
     input: 'src/index.js',
     output: [
-      { file: 'dist/openpgp.js', format: 'iife', name: pkg.name, banner },
-      { file: 'dist/openpgp.min.js', format: 'iife', name: pkg.name, banner, plugins: [terser(terserOptions)] },
-      { file: 'dist/openpgp.mjs', format: 'es', banner },
-      { file: 'dist/openpgp.min.mjs', format: 'es', banner, plugins: [terser(terserOptions)] }
+      { file: 'dist/openpgp.js', format: 'iife', name: pkg.name, banner, intro },
+      { file: 'dist/openpgp.min.js', format: 'iife', name: pkg.name, banner, intro, plugins: [terser(terserOptions)] },
+      { file: 'dist/openpgp.mjs', format: 'es', banner, intro },
+      { file: 'dist/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
     ],
     plugins: [
       resolve({
@@ -48,10 +50,10 @@ export default [
     input: 'src/index.js',
     external: builtinModules.concat(nodeDependencies),
     output: [
-      { file: 'dist/node/openpgp.js', format: 'cjs', name: pkg.name, banner },
-      { file: 'dist/node/openpgp.min.js', format: 'cjs', name: pkg.name, banner, plugins: [terser(terserOptions)] },
-      { file: 'dist/node/openpgp.mjs', format: 'es', banner },
-      { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, plugins: [terser(terserOptions)] }
+      { file: 'dist/node/openpgp.js', format: 'cjs', name: pkg.name, banner, intro },
+      { file: 'dist/node/openpgp.min.js', format: 'cjs', name: pkg.name, banner, intro, plugins: [terser(terserOptions)] },
+      { file: 'dist/node/openpgp.mjs', format: 'es', banner, intro },
+      { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
     ],
     plugins: [
       resolve(),
@@ -64,10 +66,10 @@ export default [
   {
     input: 'src/index.js',
     output: [
-      { file: 'dist/lightweight/openpgp.js', format: 'iife', name: pkg.name, banner },
-      { file: 'dist/lightweight/openpgp.min.js', format: 'iife', name: pkg.name, banner, plugins: [terser(terserOptions)] },
-      { file: 'dist/lightweight/openpgp.mjs', format: 'es', banner },
-      { file: 'dist/lightweight/openpgp.min.mjs', format: 'es', banner, plugins: [terser(terserOptions)] }
+      { file: 'dist/lightweight/openpgp.js', format: 'iife', name: pkg.name, banner, intro },
+      { file: 'dist/lightweight/openpgp.min.js', format: 'iife', name: pkg.name, banner, intro, plugins: [terser(terserOptions)] },
+      { file: 'dist/lightweight/openpgp.mjs', format: 'es', banner, intro },
+      { file: 'dist/lightweight/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
     ],
     plugins: [
       resolve({
