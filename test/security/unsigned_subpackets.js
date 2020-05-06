@@ -76,7 +76,7 @@ async function makeKeyValid() {
   fake.keyExpirationTime = 0x7FFFFFFF;
   fake.signatureExpirationTime = 0x7FFFFFFF;
   // add key capability
-  fake.keyFlags[0] |= enums.keyFlags.encrypt_communication;
+  fake.keyFlags[0] |= enums.keyFlags.encryptCommunication;
   // create modified subpacket data
   pusersig.read_sub_packets(fake.write_hashed_sub_packets(), false);
   // reconstruct the modified key

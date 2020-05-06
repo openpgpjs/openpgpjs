@@ -33,9 +33,9 @@ export default {
       throw new Error('Missing public key parameters');
     }
     switch (algo) {
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_sign: {
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaSign: {
         const n = pub_MPIs[0].toUint8Array();
         const e = pub_MPIs[1].toUint8Array();
         const m = msg_MPIs[0].toUint8Array('be', n.length);
@@ -88,9 +88,9 @@ export default {
       throw new Error('Missing private key parameters');
     }
     switch (algo) {
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_sign: {
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaSign: {
         const n = key_params[0].toUint8Array();
         const e = key_params[1].toUint8Array();
         const d = key_params[2].toUint8Array();

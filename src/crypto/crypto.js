@@ -70,8 +70,8 @@ export default {
   publicKeyEncrypt: async function(algo, pub_params, data, fingerprint) {
     const types = this.getEncSessionKeyParamTypes(algo);
     switch (algo) {
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_encrypt_sign: {
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaEncryptSign: {
         data = util.strToUint8Array(data);
         const n = pub_params[0].toUint8Array();
         const e = pub_params[1].toUint8Array();
@@ -117,8 +117,8 @@ export default {
    */
   publicKeyDecrypt: async function(algo, key_params, data_params, fingerprint) {
     switch (algo) {
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_encrypt: {
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaEncrypt: {
         const c = data_params[0].toUint8Array();
         const n = key_params[0].toUint8Array(); // n = pq
         const e = key_params[1].toUint8Array();
@@ -163,9 +163,9 @@ export default {
       //       - MPI of RSA secret prime value p.
       //       - MPI of RSA secret prime value q (p < q).
       //       - MPI of u, the multiplicative inverse of p, mod q.
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_sign:
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaSign:
         return [type_mpi, type_mpi, type_mpi, type_mpi];
       //   Algorithm-Specific Fields for Elgamal secret keys:
       //        - MPI of Elgamal secret exponent x.
@@ -195,9 +195,9 @@ export default {
       //   Algorithm-Specific Fields for RSA public keys:
       //       - a multiprecision integer (MPI) of RSA public modulus n;
       //       - an MPI of RSA public encryption exponent e.
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_sign:
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaSign:
         return [type_mpi, type_mpi];
       //   Algorithm-Specific Fields for Elgamal public keys:
       //       - MPI of Elgamal prime p;
@@ -237,8 +237,8 @@ export default {
     switch (algo) {
       //   Algorithm-Specific Fields for RSA encrypted session keys:
       //       - MPI of RSA encrypted value m**e mod n.
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_encrypt_sign:
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaEncryptSign:
         return [type_mpi];
 
       //   Algorithm-Specific Fields for Elgamal encrypted session keys:
@@ -266,9 +266,9 @@ export default {
   generateParams: function(algo, bits, oid) {
     const types = [].concat(this.getPubKeyParamTypes(algo), this.getPrivKeyParamTypes(algo));
     switch (algo) {
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_sign: {
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaSign: {
         return publicKey.rsa.generate(bits, "10001").then(function(keyObject) {
           return constructParams(
             types, [keyObject.n, keyObject.e, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
@@ -306,9 +306,9 @@ export default {
    */
   validateParams: async function(algo, params) {
     switch (algo) {
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_sign: {
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaSign: {
         if (params.length < 6) {
           throw new Error('Missing key parameters');
         }
