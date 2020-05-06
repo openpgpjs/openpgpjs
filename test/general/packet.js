@@ -216,7 +216,7 @@ describe("Packet", function() {
     const literal = new openpgp.packet.Literal();
     const enc = new openpgp.packet.SymEncryptedAEADProtected();
     const msg = new openpgp.packet.List();
-    enc.aeadAlgorithm = 'experimental_gcm';
+    enc.aeadAlgorithm = 'experimentalGcm';
 
     msg.push(enc);
     literal.setText(testText);
@@ -330,7 +330,7 @@ describe("Packet", function() {
       const msg2 = new openpgp.packet.List();
 
       enc.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
-      enc.publicKeyAlgorithm = 'rsa_encrypt_sign';
+      enc.publicKeyAlgorithm = 'rsaEncryptSign';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
       return enc.encrypt({ params: mpi, getFingerprintBytes() {} }).then(async () => {
@@ -339,7 +339,7 @@ describe("Packet", function() {
 
         await msg2.read(msg.write());
 
-        return msg2[0].decrypt({ algorithm: 'rsa_encrypt_sign', params: mpi, getFingerprintBytes() {} }).then(() => {
+        return msg2[0].decrypt({ algorithm: 'rsaEncryptSign', params: mpi, getFingerprintBytes() {} }).then(() => {
 
           expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
           expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
@@ -379,7 +379,7 @@ describe("Packet", function() {
     const secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
 
     enc.sessionKey = secret;
-    enc.publicKeyAlgorithm = 'rsa_encrypt_sign';
+    enc.publicKeyAlgorithm = 'rsaEncryptSign';
     enc.sessionKeyAlgorithm = 'aes256';
     enc.publicKeyId.bytes = '12345678';
 
@@ -711,13 +711,13 @@ describe("Packet", function() {
     await key.read((await openpgp.armor.decode(armored_key)).data);
     return Promise.all([
       expect(key[2].verify(key[0],
-        openpgp.enums.signature.cert_generic,
+        openpgp.enums.signature.certGeneric,
         {
             userId: key[1],
             key: key[0]
         })).to.eventually.be.true,
       expect(key[4].verify(key[0],
-        openpgp.enums.signature.key_binding,
+        openpgp.enums.signature.keyBinding,
         {
             key: key[0],
             bind: key[3]
@@ -855,7 +855,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       });
 
       key[0].params = mpi;
-      key[0].algorithm = "rsa_sign";
+      key[0].algorithm = "rsaSign";
       key[0].isEncrypted = false;
       await key[0].encrypt('hello');
 
@@ -887,7 +887,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       });
 
       key[0].params = mpi;
-      key[0].algorithm = "rsa_sign";
+      key[0].algorithm = "rsaSign";
       key[0].isEncrypted = false;
       await key[0].encrypt('hello');
 
@@ -917,7 +917,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       const testText = input.createSomeMessage();
 
       key.params = mpi;
-      key.algorithm = "rsa_sign";
+      key.algorithm = "rsaSign";
 
       const signed = new openpgp.packet.List();
       const literal = new openpgp.packet.Literal();
@@ -926,7 +926,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       literal.setText(testText);
 
       signature.hashAlgorithm = openpgp.enums.hash.sha256;
-      signature.publicKeyAlgorithm = openpgp.enums.publicKey.rsa_sign;
+      signature.publicKeyAlgorithm = openpgp.enums.publicKey.rsaSign;
       signature.signatureType = openpgp.enums.signature.text;
 
       return signature.sign(key, literal).then(async () => {

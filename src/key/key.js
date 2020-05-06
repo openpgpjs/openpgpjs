@@ -100,10 +100,10 @@ Key.prototype.packetlist2structure = function(packetlist) {
         break;
       case enums.packet.signature:
         switch (packetlist[i].signatureType) {
-          case enums.signature.cert_generic:
-          case enums.signature.cert_persona:
-          case enums.signature.cert_casual:
-          case enums.signature.cert_positive:
+          case enums.signature.certGeneric:
+          case enums.signature.certPersona:
+          case enums.signature.certCasual:
+          case enums.signature.certPositive:
             if (!user) {
               util.printDebug('Dropping certification signatures without preceding user packet');
               continue;
@@ -114,7 +114,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
               user.otherCertifications.push(packetlist[i]);
             }
             break;
-          case enums.signature.cert_revocation:
+          case enums.signature.certRevocation:
             if (user) {
               user.revocationSignatures.push(packetlist[i]);
             } else {
@@ -124,17 +124,17 @@ Key.prototype.packetlist2structure = function(packetlist) {
           case enums.signature.key:
             this.directSignatures.push(packetlist[i]);
             break;
-          case enums.signature.subkey_binding:
+          case enums.signature.subkeyBinding:
             if (!subKey) {
               util.printDebug('Dropping subkey binding signature without preceding subkey packet');
               continue;
             }
             subKey.bindingSignatures.push(packetlist[i]);
             break;
-          case enums.signature.key_revocation:
+          case enums.signature.keyRevocation:
             this.revocationSignatures.push(packetlist[i]);
             break;
-          case enums.signature.subkey_revocation:
+          case enums.signature.subkeyRevocation:
             if (!subKey) {
               util.printDebug('Dropping subkey revocation signature without preceding subkey packet');
               continue;
@@ -276,7 +276,7 @@ Key.prototype.toPublic = function() {
  * @returns {ReadableStream<String>} ASCII armor
  */
 Key.prototype.armor = function() {
-  const type = this.isPublic() ? enums.armor.public_key : enums.armor.private_key;
+  const type = this.isPublic() ? enums.armor.publicKey : enums.armor.privateKey;
   return armor.encode(type, this.toPacketlist().write());
 };
 
@@ -298,12 +298,12 @@ Key.prototype.getSigningKey = async function (keyId = null, date = new Date(), u
       try {
         await subKeys[i].verify(primaryKey, date);
         const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
-        const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
+        const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
         if (
           bindingSignature &&
           bindingSignature.embeddedSignature &&
           helper.isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature) &&
-          await helper.getLatestValidSignature([bindingSignature.embeddedSignature], subKeys[i].keyPacket, enums.signature.key_binding, dataToVerify, date)
+          await helper.getLatestValidSignature([bindingSignature.embeddedSignature], subKeys[i].keyPacket, enums.signature.keyBinding, dataToVerify, date)
         ) {
           return subKeys[i];
         }
@@ -339,7 +339,7 @@ Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId
       try {
         await subKeys[i].verify(primaryKey, date);
         const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
-        const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
+        const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
         if (bindingSignature && helper.isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature)) {
           return subKeys[i];
         }
@@ -373,7 +373,7 @@ Key.prototype.getDecryptionKeys = async function(keyId, date = new Date(), userI
     if (!keyId || this.subKeys[i].getKeyId().equals(keyId, true)) {
       try {
         const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
-        const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
+        const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
         if (bindingSignature && helper.isValidDecryptionKeyPacket(bindingSignature)) {
           keys.push(this.subKeys[i]);
         }
@@ -528,7 +528,7 @@ Key.prototype.clearPrivateParams = function () {
  */
 Key.prototype.isRevoked = async function(signature, key, date = new Date()) {
   return helper.isDataRevoked(
-    this.keyPacket, enums.signature.key_revocation, { key: this.keyPacket }, this.revocationSignatures, signature, key, date
+    this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, this.revocationSignatures, signature, key, date
   );
 };
 
@@ -623,7 +623,7 @@ Key.prototype.getPrimaryUser = async function(date = new Date(), userId = {}) {
         throw new Error('Could not find user that matches that user ID');
       }
       const dataToVerify = { userId: user.userId, key: primaryKey };
-      const selfCertification = await helper.getLatestValidSignature(user.selfCertifications, primaryKey, enums.signature.cert_generic, dataToVerify, date);
+      const selfCertification = await helper.getLatestValidSignature(user.selfCertifications, primaryKey, enums.signature.certGeneric, dataToVerify, date);
       users.push({ index: i, user, selfCertification });
     } catch (e) {
       exception = e;
@@ -678,7 +678,7 @@ Key.prototype.update = async function(key) {
   }
   // revocation signatures
   await helper.mergeSignatures(key, this, 'revocationSignatures', srcRevSig => {
-    return helper.isDataRevoked(this.keyPacket, enums.signature.key_revocation, this, [srcRevSig], null, key.keyPacket);
+    return helper.isDataRevoked(this.keyPacket, enums.signature.keyRevocation, this, [srcRevSig], null, key.keyPacket);
   });
   // direct signatures
   await helper.mergeSignatures(key, this, 'directSignatures');
@@ -724,7 +724,7 @@ Key.prototype.update = async function(key) {
  * @async
  */
 Key.prototype.revoke = async function({
-  flag: reasonForRevocationFlag = enums.reasonForRevocation.no_reason,
+  flag: reasonForRevocationFlag = enums.reasonForRevocation.noReason,
   string: reasonForRevocationString = ''
 } = {}, date = new Date()) {
   if (this.isPublic()) {
@@ -733,7 +733,7 @@ Key.prototype.revoke = async function({
   const dataToSign = { key: this.keyPacket };
   const key = await this.clone();
   key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, this.keyPacket, {
-    signatureType: enums.signature.key_revocation,
+    signatureType: enums.signature.keyRevocation,
     reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
     reasonForRevocationString
   }, date));
@@ -749,10 +749,10 @@ Key.prototype.revoke = async function({
  */
 Key.prototype.getRevocationCertificate = async function(date = new Date()) {
   const dataToVerify = { key: this.keyPacket };
-  const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.key_revocation, dataToVerify, date);
+  const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.keyRevocation, dataToVerify, date);
   const packetlist = new packet.List();
   packetlist.push(revocationSignature);
-  return armor.encode(enums.armor.public_key, packetlist.write(), null, null, 'This is a revocation certificate');
+  return armor.encode(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate');
 };
 
 /**
@@ -768,7 +768,7 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
   const packetlist = new packet.List();
   await packetlist.read(input.data);
   const revocationSignature = packetlist.findPacket(enums.packet.signature);
-  if (!revocationSignature || revocationSignature.signatureType !== enums.signature.key_revocation) {
+  if (!revocationSignature || revocationSignature.signatureType !== enums.signature.keyRevocation) {
     throw new Error('Could not find revocation signature packet');
   }
   if (!revocationSignature.issuerKeyId.equals(this.getKeyId())) {
@@ -778,7 +778,7 @@ Key.prototype.applyRevocationCertificate = async function(revocationCertificate)
     throw new Error('Revocation signature is expired');
   }
   try {
-    await revocationSignature.verify(this.keyPacket, enums.signature.key_revocation, { key: this.keyPacket });
+    await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket });
   } catch (e) {
     throw util.wrapError('Could not verify revocation signature', e);
   }
