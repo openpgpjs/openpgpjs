@@ -25,7 +25,7 @@ matrix:
     - node_js: "14"
       env: BROWSER='"safari_11_1"' OPENPGPJSTEST='browserstack'
     - node_js: "14"
-      env: BROWSER='{"os":"ios", "os_version":"11.3", "device":"iPhone 8 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack'
+      env: BROWSER='{"os":"ios", "os_version":"12", "device":"iPhone 8 Plus", "real_mobile":true}' OPENPGPJSTEST='browserstack'
 
 before_script:
   - npm install -g codeclimate-test-reporter browserstack-runner
