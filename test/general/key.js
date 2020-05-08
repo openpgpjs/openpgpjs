@@ -1804,6 +1804,118 @@ AxMSJy5Dv9gcVPq6V8fuPw05ODSpbieoIF3d3WuaI39lAZpfuhNaSNAQmzA7
 -----END PGP PRIVATE KEY BLOCK-----
 `;
 
+const gnuDummyKeySigningSubkey = `
+-----BEGIN PGP PRIVATE KEY BLOCK-----
+Version: OpenPGP.js VERSION
+Comment: https://openpgpjs.org
+
+xZUEWCC+hwEEALu8GwefswqZLoiKJk1Nd1yKmVWBL1ypV35FN0gCjI1NyyJX
+UfQZDdC2h0494OVAM2iqKepqht3tH2DebeFLnc2ivvIFmQJZDnH2/0nFG2gC
+rSySWHUjVfbMSpmTaXpit8EX/rjNauGOdbePbezOSsAhW7R9pBdtDjPnq2Zm
+vDXXABEBAAH+B2UAR05VAc0JR05VIER1bW15wrgEEwECACIFAlggvocCGwMG
+CwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEJ3XHFanUJgCeMYD/2zKefpl
+clQoBdDPJKCYJm8IhuWuoF8SnHAsbhD+U42Gbm+2EATTPj0jyGPkZzl7a0th
+S2rSjQ4JF0Ktgdr9585haknpGwr31t486KxXOY4AEsiBmRyvTbaQegwKaQ+C
+/0JQYo/XKpsaX7PMDBB9SNFSa8NkhxYseLaB7gbM8w+Lx8EYBFggvpwBBADF
+YeeJwp6MAVwVwXX/eBRKBIft6LC4E9czu8N2AbOW97WjWNtXi3OuM32OwKXq
+vSck8Mx8FLOAuvVq41NEboeknhptw7HzoQMB35q8NxA9lvvPd0+Ef+BvaVB6
+NmweHttt45LxYxLMdXdGoIt3wn/HBY81HnMqfV/KnggZ+imJ0wARAQABAAP7
+BA56WdHzb53HIzYgWZl04H3BJdB4JU6/FJo0yHpjeWRQ46Q7w2WJzjHS6eBB
+G+OhGzjAGYK7AUr8wgjqMq6LQHt2f80N/nWLusZ00a4lcMd7rvoHLWwRj80a
+RzviOvvhP7kZY1TrhbS+Sl+BWaNIDOxS2maEkxexztt4GEl2dWUCAMoJvyFm
+qPVqVx2Yug29vuJsDcr9XwnjrYI8PtszJI8Fr+5rKgWE3GJumheaXaug60dr
+mLMXdvT/0lj3sXquqR0CAPoZ1Mn7GaUKjPVJ7CiJ/UjqSurrGhruA5ikhehQ
+vUB+v4uIl7ICcX8zfiP+SMhWY9qdkmOvLSSSMcTkguMfe68B/j/qf2en5OHy
+6NJgMIjMrBHvrf34f6pxw5p10J6nxjooZQxV0P+9MoTHWsy0r6Er8IOSSTGc
+WyWJ8wmSqiq/dZSoJcLAfQQYAQIACQUCWCC+nAIbAgCoCRCd1xxWp1CYAp0g
+BBkBAgAGBQJYIL6cAAoJEOYZSGiVA/C9CT4D/2Vq2dKxHmzn/UD1MWSLXUbN
+ISd8tvHjoVg52RafdgHFmg9AbE0DW8ifwaai7FkifD0IXiN04nER3MuVhAn1
+gtMu03m1AQyX/X39tHz+otpwBn0g57NhFbHFmzKfr/+N+XsDRj4VXn13hhqM
+qQR8i1wgiWBUFJbpP5M1BPdH4Qfkcn8D/j8A3QKYGGETa8bNOdVTRU+sThXr
+imOfWu58V1yWCmLE1kK66qkqmgRVUefqacF/ieMqNmsAY+zmR9D4fg2wzu/d
+nPjJXp1670Vlzg7oT5XVYnfys7x4GLHsbaOSjXToILq+3GwI9UjNjtpobcfm
+mNG2ibD6lftLOtDsVSDY8a6a
+=KjxQ
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+
+const gnuDummyKey = `
+-----BEGIN PGP PRIVATE KEY BLOCK-----
+Version: OpenPGP.js VERSION
+Comment: https://openpgpjs.org
+
+xZUEWCC+hwEEALu8GwefswqZLoiKJk1Nd1yKmVWBL1ypV35FN0gCjI1NyyJX
+UfQZDdC2h0494OVAM2iqKepqht3tH2DebeFLnc2ivvIFmQJZDnH2/0nFG2gC
+rSySWHUjVfbMSpmTaXpit8EX/rjNauGOdbePbezOSsAhW7R9pBdtDjPnq2Zm
+vDXXABEBAAH+B2UAR05VAc0JR05VIER1bW15wrgEEwECACIFAlggvocCGwMG
+CwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEJ3XHFanUJgCeMYD/2zKefpl
+clQoBdDPJKCYJm8IhuWuoF8SnHAsbhD+U42Gbm+2EATTPj0jyGPkZzl7a0th
+S2rSjQ4JF0Ktgdr9585haknpGwr31t486KxXOY4AEsiBmRyvTbaQegwKaQ+C
+/0JQYo/XKpsaX7PMDBB9SNFSa8NkhxYseLaB7gbM8w+L
+=yGSn
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+
+const eddsaKeyAsEcdsa = `
+-----BEGIN PGP PRIVATE KEY BLOCK-----
+Version: OpenPGP.js VERSION
+Comment: https://openpgpjs.org
+
+xVgEXseu0BMJKwYBBAHaRw8BAQdA7MOW/AQa3aDGJJw9upY2Qv4cxv4MQHr5
+81xmFwvyf+EAAQC0bOQsFDKCdAQ4cACKqbSDO2st+V9s3bEmSZV+fVR6ww44
+zRFib2IgPGJvYkBib2IuY29tPsJ3BBATCgAgBQJex69xBgsJBwgDAgQVCAoC
+BBYCAQACGQECGwMCHgEACgkQInpzQil4KrkPrQD7BkYxgDzyrfynM8mUSEdr
+4iOivzbGo9zmn7cwluO2LI4A9iCJG4Xao9VFlyOAizVzNWlhfptwWVH5awh4
+YFDlUSbHXQRex67QEgorBgEEAZdVAQUBAQdAI5fo7gn4y8IybTJ1m+xn90Xs
+uqlIEDirKMx7WVJ/2QcDAQgHAAD/cPduuCXzoLkEI6Po4kTfoWXC6w6AEyGg
+LA+BABNTPIAPp8JhBBgTCAAJBQJex69xAhsMAAoJECJ6c0IpeCq5D7EA/Ajk
+xCrUtYPsmEDcr+1TFQCoOFGEKiYG6wNeuTaLqvPjAPsH8p3BnYBqlELdHU2I
+9RFfjwPHLd+fZMQC6+mEaRJ4AA==
+=2b6I
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+
+const dsaGnuDummyKeyWithElGamalSubkey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+lQM2BF7H/4ARCADCP4YLpUkRgnU/GJ3lbOUyA7yGLus0XkS7/bpbFsd/myTr4ZkD
+hhZjSOpxP2DuuFpBVbZwmCKKe9RSo13pUuFfXzspMHiyThCLWZCRZrfrxD/QZzi9
+X3fYlSJ0FJsdgI1mzVhKS5zNAufSOnBPAY21OJpmMKaCSy/p4FcbARXeuYsEuWeJ
+2JVfNqB3eAlVrcG8CqROvvVNpryaxmwB9QZnVM2H+e1nFaU/qcZNu2wQtfGIwmvR
+Bw94okvNvFPQht2IGI5JLhsCppr2XcSrmDzmJbOpfvS9kyy67Lw7/FhyNmplTomL
+f6ep+tk6dlLaFxXQv2zPCzmCb28LHo2KDJDLAQC86pc1bkq/n2wycc98hOH8ejGQ
+xzyVHWfmi0YsyVgogwf/U1BIp01tmmEv15dHN0aMITRBhysMPVw1JaWRsbRlwaXy
+hSkfrHSEKjRKz5peskLCT8PpDhEcy2sbbQNUZJYQ8G+qDC+F3/Uj+COh1tM4skqx
+7u8c5JT4cIoTZ8D8OI1xPs2NdMimesXv0bv8M3hbTjbMvrjXAeockUcOXLwDgFmY
+QhBvlo8CO6Is+AfQGK5Qp6c6A+Mi9deaufpQ1uI+cIW2LWuYtepSTHexJhxQ8sjp
+AJRiUSQlm9Gv+LKFkFAOhgOqsQcUImVivXCg1/rJVEvbzMRgPV+RwK4EFTk9qCi1
+D+5IiKJ3SGhb6Q0r/pdIv77xMm9cq2grG8BmM742Awf/RG0g9K3iDDL5B/M3gTAa
+HrNrqGJ/yGC7XTGoldzy+AoNxg4gNp0DGBmUxMxRaCYXJit7qPAsbqGRGOIFkAM+
+muMbqY8GlV5RmSlIRF4ctPVtfrTF6KYrkgFC3ChlWdaqrmTAfaXlwp58oZb834jv
+2fZ5BTty3ItFpzGm+jE2rESEbXEBphHzbY+V9Vm5VvFJdHM2tsZyHle9wOLr0sDd
+g6iO/TFU+chnob/Bg4PwtCnUAt0XHRZG8ZyBn/sBCU5JnpakTfKY6m45fQ0DV4BD
+bZDhcSX8f/8IqxJIm6Pml4Bu5gRi4Qrjii0jO8W7dPO3Plj/DkG0FX+uO1XpgYbT
+fP8AZQBHTlUBtBFCb2IgPGJvYkBib2IuY29tPoiUBBMRCAA8FiEE54DAVxxoTRoG
+9WYwfIV1VPa5rzAFAl7H/4ACGwMFCwkIBwIDIgIBBhUKCQgLAgQWAgMBAh4HAheA
+AAoJEHyFdVT2ua8w1cIA/RZDTn/OMlwXQ5/ezDUPl0AWAbUFkaUVNz3mmuCT7mEp
+APsHguiDpPEa6j/ps7C4xT4FIjhfje0wbYyzJ7r5YEYJW50CPQRex/+AEAgA+B3A
+PZgASX5raXdA+GXYljqAB12mmYDb0kDJe1zwpJtqGiO9Q+ze3fju3OIpn7SJIqmA
+nCCvmuuEsKzdA7ulw9idsPRYudwuaJK57jpLvZMTyXPt+3RYgBO4VBRzZuzti2rl
+HAiHh7mxip7q45r6tJW8fOqimlbEF0RYwb1Ux7bJdAJm3uDbq0HlPZaYwM2jTR5Z
+PNtW7NG89KhF4CiXTqxQO6jEha+lnZfFFMkKZsBrm++rESQ7zzsYLne180LJhHmr
+I2PTc8KtUR/u8u9Goz8KqgtE2IUKWKAmZnwV9/6tN0zJmW896CLY3v45SU9o2Pxz
+xCEuy097noPo5OTPWwADBggAul4tTya9RqRylzBFJTVrAvWXaOWHDpV2wfjwwiAw
+oYiLXPD0bJ4EOWKosRCKVWI6mBQ7Qda/2rNHGMahG6nEpe1/rsc7fprdynnEk08K
+GwWHvG1+gKJygl6PJpifKwkh6oIzqmXl0Xm+oohmGfbQRlMwbIc6BbZAyPNXmFEa
+cLX45qzLtheFRUcrFpS+MH8wzDxEHMsPPJox0l6/v09OWZwAtdidlTvAqfL7FNAK
+lZmoRfZt4JQzpYzKMa6ilC5pa413TbLfGmMZPTlOG6iQOPCycqtowX21U7JwqUDW
+70nuyUyrcVPAfve7yAsgrR2/g0jvoOp/tIJHz0HR1XuRAgABVArINvTyU1hn8d8m
+ucKUFmD6xfz5K1cxl6/jddz8aTsDvxj4t44uPXJpsKEX/4h4BBgRCAAgFiEE54DA
+VxxoTRoG9WYwfIV1VPa5rzAFAl7H/4ACGwwACgkQfIV1VPa5rzCzxAD9Ekc0rmvS
+O/oyRu0zeX+qySgJyNtOJ2rJ3V52VrwSPUAA/26s21WNs8M6Ryse7sEYcqAmk5QQ
+vqBGKJzmO5q3cECw
+=X9kJ
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2602,13 +2714,32 @@ describe('Key', function() {
 
   it("validate() - don't throw if key parameters correspond", async function() {
     const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519' });
-    await key.validate();
+    expect(await key.validate()).to.be.true;
   });
 
   it("validate() - throw if key parameters don't correspond", async function() {
     const { keys: [key] } = await openpgp.key.readArmored(mismatchingKeyParams);
-    await key.decrypt('userpass');
-    await expect(key.validate()).to.be.rejectedWith('Signature verification failed');
+    await expect(key.decrypt('userpass')).to.be.rejectedWith('Key is invalid');
+  });
+
+  it("validate() - throw if all-gnu-dummy key", async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(gnuDummyKey);
+    await expect(key.validate()).to.be.rejectedWith('Cannot validate an all-gnu-dummy key');
+  });
+
+  it("validate() - gnu-dummy primary key with signing subkey", async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(gnuDummyKeySigningSubkey);
+    expect(await key.validate()).to.be.true;
+  });
+
+  it("validate() - gnu-dummy primary key with encryption subkey", async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(dsaGnuDummyKeyWithElGamalSubkey);
+    expect(await key.validate()).to.be.true;
+  });
+
+  it("validate() - curve ed25519 (eddsa) cannot be used for ecdsa", async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(eddsaKeyAsEcdsa);
+    expect(await key.validate()).to.be.false;
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
@@ -2625,7 +2756,7 @@ describe('Key', function() {
     await key.clearPrivateParams();
     key.primaryKey.isEncrypted = false;
     key.primaryKey.params = params;
-    await expect(key.validate()).to.be.rejectedWith('Missing private key parameters');
+    await expect(key.validate()).to.be.rejectedWith('Missing key parameters');
   });
 
   it('clearPrivateParams() - check that private key parameters were zeroed out', async function() {
@@ -2637,11 +2768,8 @@ describe('Key', function() {
     key.primaryKey.params = params;
     const use_nativeVal = openpgp.config.use_native;
     openpgp.config.use_native = false;
-    try {
-      await expect(key.validate()).to.be.rejectedWith('Signature verification failed');
-    } finally {
-      openpgp.config.use_native = use_nativeVal;
-    }
+    expect(await key.validate()).to.be.false;
+    openpgp.config.use_native = use_nativeVal;
   });
 
   it('update() - throw error if fingerprints not equal', async function() {

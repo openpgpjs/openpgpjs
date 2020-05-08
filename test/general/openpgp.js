@@ -931,6 +931,23 @@ describe('OpenPGP.js public api tests', function() {
           });
         });
 
+        it('should not decrypt with a key without binding signatures', function() {
+          return openpgp.encryptSessionKey({
+            data: sk,
+            algorithm: 'aes128',
+            publicKeys: publicKey.keys
+          }).then(async function(encrypted) {
+            const invalidPrivateKey = (await openpgp.key.readArmored(priv_key)).keys[0];
+            invalidPrivateKey.subKeys[0].bindingSignatures = [];
+            return openpgp.decryptSessionKeys({
+              message: encrypted.message,
+              privateKeys: invalidPrivateKey
+            }).catch(error => {
+              expect(error.message).to.match(/Error decrypting session keys: Session key decryption failed./);
+            });
+          });
+        });
+
         it('roundtrip workflow: encrypt, decryptSessionKeys, decrypt with pgp key pair', function () {
           let msgAsciiArmored;
           return openpgp.encrypt({

@@ -340,6 +340,42 @@ Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId
 };
 
 /**
+ * Returns all keys that are available for decryption, matching the keyId when given
+ * This is useful to retrieve keys for session key decryption
+ * @param  {module:type/keyid} keyId, optional
+ * @param  {Date}              date, optional
+ * @param  {String}            userId, optional
+ * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no encryption keys has been found
+ * @async
+ */
+Key.prototype.getDecryptionKeys = async function(keyId, date = new Date(), userId = {}) {
+  await this.verifyPrimaryKey(date, userId);
+  const primaryKey = this.keyPacket;
+  const keys = [];
+  for (let i = 0; i < this.subKeys.length; i++) {
+    if (!keyId || this.subKeys[i].getKeyId().equals(keyId, true)) {
+      try {
+        await this.subKeys[i].verify(primaryKey, date);
+        const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
+        const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
+        if (bindingSignature && helper.isValidEncryptionKeyPacket(this.subKeys[i].keyPacket, bindingSignature)) {
+          keys.push(this.subKeys[i]);
+        }
+      } catch (e) {}
+    }
+  }
+
+  // evaluate primary key
+  const primaryUser = await this.getPrimaryUser(date, userId);
+  if ((!keyId || primaryKey.getKeyId().equals(keyId, true)) &&
+      helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+    keys.push(this);
+  }
+
+  return keys;
+};
+
+/**
  * Encrypts all secret key and subkey packets matching keyId
  * @param  {String|Array<String>} passphrases - if multiple passphrases, then should be in same order as packets each should encrypt
  * @param  {module:type/keyid} keyId
@@ -384,7 +420,8 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
     await Promise.all(passphrases.map(async function(passphrase) {
       try {
         await key.keyPacket.decrypt(passphrase);
-        decrypted = true;
+        // If we are decrypting a single key packet, we also validate it
+        decrypted = keyId ? await key.keyPacket.validate() : true;
       } catch (e) {
         error = e;
       }
@@ -394,31 +431,66 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
     }
     return decrypted;
   }));
+
+  if (!keyId) {
+    // The full key should be decrypted and we can validate it all
+    const valid = await this.validate();
+    if (!valid) {
+      throw new Error("Key is invalid");
+    }
+  }
+
   return results.every(result => result === true);
 };
 
 /**
- * Check whether the private and public key parameters of the primary key match
+ * Check whether the private and public primary key parameters correspond
+ * Together with verification of binding signatures, this guarantees key integrity
+ * In case of gnu-dummy primary key, it is enough to validate any signing subkeys
+ *   otherwise all encryption subkeys are validated
+ * If only gnu-dummy keys are found, we cannot properly validate so we throw an error
  * @returns {Promise<Boolean>} true if the primary key parameters correspond
  * @async
  */
 Key.prototype.validate = async function() {
   if (!this.isPrivate()) {
-    throw new Error("Can't validate a public key");
+    throw new Error("Cannot validate a public key");
   }
-  const signingKeyPacket = this.primaryKey;
-  if (!signingKeyPacket.isDecrypted()) {
-    throw new Error("Key is not decrypted");
+
+  let signingKeyPacket;
+  if (this.primaryKey.isGnuDummy()) {
+    /**
+     * It is enough to validate any signing keys
+     * since its binding signatures are also checked
+     */
+    const signingKey = await this.getSigningKey(null, null);
+    // This could again be a dummy key
+    if (signingKey && !signingKey.keyPacket.isGnuDummy()) {
+      signingKeyPacket = signingKey.keyPacket;
+    }
+  } else {
+    signingKeyPacket = this.primaryKey;
   }
-  const data = new packet.Literal();
-  data.setBytes(new Uint8Array(), 'binary');
-  const signature = new packet.Signature();
-  signature.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signature.hashAlgorithm = enums.hash.sha256;
-  const signatureType = enums.signature.binary;
-  signature.signatureType = signatureType;
-  await signature.sign(signingKeyPacket, data);
-  await signature.verify(signingKeyPacket, signatureType, data);
+
+  if (signingKeyPacket) {
+    return signingKeyPacket.validate();
+  } else {
+    const results = await Promise.all(this.getKeys().map(async key => [
+      key.keyPacket.isGnuDummy(),
+      await key.keyPacket.validate()
+    ]));
+
+    let allDummies = true;
+    const allValid = results.every(([isDummy, isValid]) => {
+      allDummies &= isDummy;
+      return isValid;
+    });
+
+    if (allDummies) {
+      throw new Error("Cannot validate an all-gnu-dummy key");
+    }
+    return allValid;
+  }
 };
 
 /**

@@ -34,7 +34,7 @@ import random from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
-import { getIndutnyCurve } from './indutnyKey';
+import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -105,7 +105,7 @@ const curves = {
   },
   curve25519: {
     oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
-    keyType: enums.publicKey.ecdsa,
+    keyType: enums.publicKey.ecdh,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: false, // nodeCurves.curve25519 TODO
@@ -228,10 +228,73 @@ function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
 }
 
+/**
+ * Validate ECDH and EcDSA parameters
+ * Not suitable for EdDSA (different secret key format)
+ * @param {module:enums.publicKey}  algo EC algorithm, to filter supported curves
+ * @param {module:type/oid}         oid  EC object identifier
+ * @param {Uint8Array}              Q    EC public point
+ * @param {Uint8Array}              d    EC secret scalar
+ * @returns {Promise<Boolean>}      whether params are valid
+ * @async
+ */
+async function validateStandardParams(algo, oid, Q, d) {
+  const supportedCurves = {
+    p256: true,
+    p384: true,
+    p521: true,
+    secp256k1: true,
+    curve25519: algo === enums.publicKey.ecdh,
+    brainpoolP256r1: true,
+    brainpoolP384r1: true,
+    brainpoolP512r1: true
+  };
+
+  // Check whether the given curve is supported
+  const curveName = oid.getName();
+  if (!supportedCurves[curveName]) {
+    return false;
+  }
+
+  if (curveName === 'curve25519') {
+    d = d.slice().reverse();
+    // Re-derive public point Q'
+    const { publicKey } = nacl.box.keyPair.fromSecretKey(d);
+
+    Q = new BN(Q);
+    const dG = new BN([0x40, ...publicKey]); // Add public key prefix
+    if (!dG.eq(Q)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  const curve = await getIndutnyCurve(curveName);
+  try {
+    // Parse Q and check that it is on the curve but not at infinity
+    Q = keyFromPublic(curve, Q).getPublic();
+  } catch (validationErrors) {
+    return false;
+  }
+
+  /**
+   * Re-derive public point Q' = dG from private key
+   * Expect Q == Q'
+   */
+  d = new BN(d);
+  const dG = keyFromPrivate(curve, d).getPublic();
+  if (!dG.eq(Q)) {
+    return false;
+  }
+
+  return true;
+}
+
 export default Curve;
 
 export {
-  curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJwk, privateToJwk
+  curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams
 };
 
 //////////////////////////

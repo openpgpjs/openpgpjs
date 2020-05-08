@@ -69,4 +69,51 @@ async function verify(oid, hash_algo, { R, S }, m, publicKey, hashed) {
   return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
 }
 
-export default { sign, verify };
+/**
+ * Validate EdDSA parameters
+ * @param {module:type/oid}    oid Elliptic curve object identifier
+ * @param {Uint8Array}         Q   EdDSA public point
+ * @param {Uint8Array}         k   EdDSA secret seed
+ * @returns {Promise<Boolean>} whether params are valid
+ * @async
+ */
+async function validateParams(oid, Q, k) {
+  // Check whether the given curve is supported
+  if (oid.getName() !== 'ed25519') {
+    return false;
+  }
+
+  /**
+   * Derive public point Q' = dG from private key
+   * and expect Q == Q'
+   */
+  const { publicKey } = nacl.sign.keyPair.fromSeed(k);
+  const dG = [0x40, ...publicKey]; // Add public key prefix
+  return util.equalsArray(Q, dG);
+}
+
+/**
+ * Parses MPI params and returns them as byte arrays of fixed length
+ * @param {Array} params key parameters
+ * @returns {Object} parameters in the form
+ *  { oid, seed: Uint8Array, Q: Uint8Array }
+ */
+function parseParams(params) {
+  if (params.length < 2 || params.length > 3) {
+    throw new Error('Unexpected number of parameters');
+  }
+
+  const parsedParams = {
+    oid: params[0],
+    Q: params[1].toUint8Array('be', 33)
+  };
+
+  if (params.length === 3) {
+    parsedParams.seed = params[2].toUint8Array('be', 32);
+  }
+
+  return parsedParams;
+}
+
+
+export default { sign, verify, validateParams, parseParams };

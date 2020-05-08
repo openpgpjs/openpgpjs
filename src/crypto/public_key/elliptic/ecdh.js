@@ -32,7 +32,7 @@
 
 import BN from 'bn.js';
 import nacl from 'tweetnacl/nacl-fast-light.js';
-import Curve, { jwkToRawPublic, rawPublicToJwk, privateToJwk } from './curves';
+import Curve, { jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams } from './curves';
 import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
 import random from '../../random';
@@ -44,6 +44,18 @@ import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
+/**
+ * Validate ECDH parameters
+ * @param {module:type/oid}    oid Elliptic curve object identifier
+ * @param {Uint8Array}         Q   ECDH public point
+ * @param {Uint8Array}         d   ECDH secret scalar
+ * @returns {Promise<Boolean>} whether params are valid
+ * @async
+ */
+async function validateParams(oid, Q, d) {
+  return validateStandardParams(enums.publicKey.ecdh, oid, Q, d);
+}
+
 // Build Param for ECDH algorithm (RFC 6637)
 function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
   return util.concatUint8Array([
@@ -53,6 +65,31 @@ function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
     util.str_to_Uint8Array("Anonymous Sender    "),
     fingerprint.subarray(0, 20)
   ]);
+}
+
+/**
+ * Parses MPI params and returns them as byte arrays of fixed length
+ * @param {Array} params key parameters
+ * @returns {Object} parameters in the form
+ *  { oid, kdfParams, d: Uint8Array, Q: Uint8Array }
+ */
+function parseParams(params) {
+  if (params.length < 3 || params.length > 4) {
+    throw new Error('Unexpected number of parameters');
+  }
+
+  const oid = params[0];
+  const curve = new Curve(oid);
+  const parsedParams = { oid };
+  // The public point never has leading zeros, as it is prefixed by 0x40 or 0x04
+  parsedParams.Q = params[1].toUint8Array();
+  parsedParams.kdfParams = params[2];
+
+  if (params.length === 4) {
+    parsedParams.d = params[3].toUint8Array('be', curve.payloadSize);
+  }
+
+  return parsedParams;
 }
 
 // Key Derivation Function (RFC 6637)
@@ -374,4 +411,4 @@ async function nodePublicEphemeralKey(curve, Q) {
   return { publicKey, sharedKey };
 }
 
-export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey };
+export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey, validateParams, parseParams };

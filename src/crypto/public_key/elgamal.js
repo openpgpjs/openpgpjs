@@ -64,5 +64,74 @@ export default {
     const c1red = c1.toRed(redp);
     const c2red = c2.toRed(redp);
     return c1red.redPow(x).redInvm().redMul(c2red).fromRed();
+  },
+
+  /**
+   * Validate ElGamal parameters
+   * @param {Uint8Array}         p ElGamal prime
+   * @param {Uint8Array}         g ElGamal group generator
+   * @param {Uint8Array}         y ElGamal public key
+   * @param {Uint8Array}         x ElGamal private exponent
+   * @returns {Promise<Boolean>} whether params are valid
+   * @async
+   */
+  validateParams: async function (p, g, y, x) {
+    p = new BN(p);
+    g = new BN(g);
+    y = new BN(y);
+
+    const one = new BN(1);
+    // Check that 1 < g < p
+    if (g.lte(one) || g.gte(p)) {
+      return false;
+    }
+
+    // Expect p-1 to be large
+    const pSize = p.subn(1).bitLength();
+    if (pSize < 1023) {
+      return false;
+    }
+
+    const pred = new BN.red(p);
+    const gModP = g.toRed(pred);
+    /**
+     * g should have order p-1
+     * Check that g ** (p-1) = 1 mod p
+     */
+    if (!gModP.redPow(p.subn(1)).eq(one)) {
+      return false;
+    }
+
+    /**
+     * Since p-1 is not prime, g might have a smaller order that divides p-1
+     * We want to make sure that the order is large enough to hinder a small subgroup attack
+     *
+     * We just check g**i != 1 for all i up to a threshold
+     */
+    let res = g;
+    const i = new BN(1);
+    const threshold = new BN(2).shln(17); // we want order > threshold
+    while (i.lt(threshold)) {
+      res = res.mul(g).mod(p);
+      if (res.eqn(1)) {
+        return false;
+      }
+      i.iaddn(1);
+    }
+
+    /**
+     * Re-derive public key y' = g ** x mod p
+     * Expect y == y'
+     *
+     * Blinded exponentiation computes g**{r(p-1) + x} to compare to y
+     */
+    x = new BN(x);
+    const r = (await random.getRandomBN(new BN(2).shln(pSize - 1), new BN(2).shln(pSize))); // draw r of same size as p-1
+    const rqx = p.subn(1).mul(r).add(x);
+    if (!y.eq(gModP.redPow(rqx))) {
+      return false;
+    }
+
+    return true;
   }
 };

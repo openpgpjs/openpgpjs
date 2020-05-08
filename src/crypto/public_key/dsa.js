@@ -26,6 +26,7 @@
 import BN from 'bn.js';
 import random from '../random';
 import util from '../../util';
+import prime from './prime';
 
 const one = new BN(1);
 const zero = new BN(0);
@@ -121,5 +122,67 @@ export default {
     const t2 = y.toRed(redp).redPow(u2.fromRed()); // y**u2 mod p
     const v = t1.redMul(t2).fromRed().mod(q); // (g**u1 * y**u2 mod p) mod q
     return v.cmp(r) === 0;
+  },
+
+  /**
+   * Validate DSA parameters
+   * @param {Uint8Array}         p DSA prime
+   * @param {Uint8Array}         q DSA group order
+   * @param {Uint8Array}         g DSA sub-group generator
+   * @param {Uint8Array}         y DSA public key
+   * @param {Uint8Array}         x DSA private key
+   * @returns {Promise<Boolean>} whether params are valid
+   * @async
+   */
+  validateParams: async function (p, q, g, y, x) {
+    p = new BN(p);
+    q = new BN(q);
+    g = new BN(g);
+    y = new BN(y);
+    const one = new BN(1);
+    // Check that 1 < g < p
+    if (g.lte(one) || g.gte(p)) {
+      return false;
+    }
+
+    /**
+     * Check that subgroup order q divides p-1
+     */
+    if (!p.sub(one).mod(q).isZero()) {
+      return false;
+    }
+
+    const pred = new BN.red(p);
+    const gModP = g.toRed(pred);
+    /**
+     * g has order q
+     * Check that g ** q = 1 mod p
+     */
+    if (!gModP.redPow(q).eq(one)) {
+      return false;
+    }
+
+    /**
+     * Check q is large and probably prime (we mainly want to avoid small factors)
+     */
+    const qSize = q.bitLength();
+    if (qSize < 150 || !(await prime.isProbablePrime(q, null, 32))) {
+      return false;
+    }
+
+    /**
+     * Re-derive public key y' = g ** x mod p
+     * Expect y == y'
+     *
+     * Blinded exponentiation computes g**{rq + x} to compare to y
+     */
+    x = new BN(x);
+    const r = (await random.getRandomBN(new BN(2).shln(qSize - 1), new BN(2).shln(qSize))); // draw r of same size as q
+    const rqx = q.mul(r).add(x);
+    if (!y.eq(gModP.redPow(rqx))) {
+      return false;
+    }
+
+    return true;
   }
 };

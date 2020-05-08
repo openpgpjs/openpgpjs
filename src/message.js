@@ -196,7 +196,8 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
           }
         } catch (e) {}
 
-        const privateKeyPackets = privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket);
+        // do not check key expiration to allow decryption of old messages
+        const privateKeyPackets = (await privateKey.getDecryptionKeys(keyPacket.publicKeyId, null)).map(key => key.keyPacket);
         await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
           if (!privateKeyPacket) {
             return;

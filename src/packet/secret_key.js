@@ -233,7 +233,7 @@ SecretKey.prototype.write = function () {
   }
   arr.push(new Uint8Array(optionalFieldsArr));
 
-  if (!this.s2k || this.s2k.type !== 'gnu-dummy') {
+  if (!this.isGnuDummy()) {
     if (!this.s2k_usage) {
       const cleartextParams = write_cleartext_params(this.params, this.algorithm);
       this.keyMaterial = util.concatUint8Array([
@@ -260,6 +260,14 @@ SecretKey.prototype.isDecrypted = function() {
 };
 
 /**
+ * Check whether this is a gnu-dummy key
+ * @returns {Boolean}
+ */
+SecretKey.prototype.isGnuDummy = function() {
+  return !!(this.s2k && this.s2k.type === 'gnu-dummy');
+};
+
+/**
  * Encrypt the payload. By default, we use aes256 and iterated, salted string
  * to key specifier. If the key is in a decrypted state (isEncrypted === false)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
@@ -269,7 +277,7 @@ SecretKey.prototype.isDecrypted = function() {
  * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
-  if (this.s2k && this.s2k.type === 'gnu-dummy') {
+  if (this.isGnuDummy()) {
     return false;
   }
 
@@ -324,7 +332,7 @@ async function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @async
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
-  if (this.s2k && this.s2k.type === 'gnu-dummy') {
+  if (this.isGnuDummy()) {
     this.isEncrypted = false;
     return false;
   }
@@ -378,6 +386,24 @@ SecretKey.prototype.generate = async function (bits, curve) {
   const algo = enums.write(enums.publicKey, this.algorithm);
   this.params = await crypto.generateParams(algo, bits, curve);
   this.isEncrypted = false;
+};
+
+/**
+ * Checks that the key parameters are consistent
+ * @returns {Promise<Boolean>}  whether the parameters are valid
+ * @async
+ */
+SecretKey.prototype.validate = async function () {
+  if (this.isGnuDummy()) {
+    return true;
+  }
+
+  if (!this.isDecrypted()) {
+    throw new Error('Key is not decrypted');
+  }
+
+  const algo = enums.write(enums.publicKey, this.algorithm);
+  return crypto.validateParams(algo, this.params);
 };
 
 /**

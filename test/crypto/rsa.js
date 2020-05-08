@@ -178,3 +178,4 @@ const native = openpgp.util.getWebCrypto() || openpgp.util.getNodeCrypto();
     expect(verifyBN).to.be.true;
   });
 });
+

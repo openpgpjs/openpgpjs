@@ -286,6 +286,55 @@ export default {
     };
   },
 
+  /**
+   * Validate RSA parameters
+   * @param {Uint8Array}         n RSA public modulus
+   * @param {Uint8Array}         e RSA public exponent
+   * @param {Uint8Array}         d RSA private exponent
+   * @param {Uint8Array}         p RSA private prime p
+   * @param {Uint8Array}         q RSA private prime q
+   * @param {Uint8Array}         u RSA inverse of p w.r.t. q
+   * @returns {Promise<Boolean>} whether params are valid
+   * @async
+   */
+  validateParams: async function (n, e, d, p, q, u) {
+    n = new BN(n);
+    p = new BN(p);
+    q = new BN(q);
+
+    // expect pq = n
+    if (!p.mul(q).eq(n)) {
+      return false;
+    }
+
+    const one = new BN(1);
+    const two = new BN(2);
+    // expect p*u = 1 mod q
+    u = new BN(u);
+    if (!p.mul(u).umod(q).eq(one)) {
+      return false;
+    }
+
+    e = new BN(e);
+    d = new BN(d);
+    /**
+     * In RSA pkcs#1 the exponents (d, e) are inverses modulo lcm(p-1, q-1)
+     * We check that [de = 1 mod (p-1)] and [de = 1 mod (q-1)]
+     * By CRT on coprime factors of (p-1, q-1) it follows that [de = 1 mod lcm(p-1, q-1)]
+     *
+     * We blind the multiplication with r, and check that rde = r mod lcm(p-1, q-1)
+     */
+    const r = (await random.getRandomBN(two, two.shln(n.bitLength() / 3))); // r in [ 2, 2^{|n|/3} ) < p and q
+    const rde = r.mul(d).mul(e);
+
+    const areInverses = rde.umod(p.sub(one)).eq(r) && rde.umod(q.sub(one)).eq(r);
+    if (!areInverses) {
+      return false;
+    }
+
+    return true;
+  },
+
   bnSign: async function (hash_algo, n, d, hashed) {
     n = new BN(n);
     const m = new BN(await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength()), 16);
