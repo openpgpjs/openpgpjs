@@ -136,9 +136,3 @@ export { default as HKP } from './hkp';
  * @name module:openpgp.WKD
  */
 export { default as WKD } from './wkd';
-
-/**
- * @see module:lightweight
- */
-import * as lightweightMod from './lightweight_helper';
-export const lightweight = lightweightMod;
