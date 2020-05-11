@@ -125,12 +125,11 @@ Copy `dist/openpgp.min.js` or `dist/compat/openpgp.min.js` (depending on the bro
 
 To offload cryptographic operations off the main thread, you can implement a Web Worker in your application and load OpenPGP.js from there. This can be more performant if you store or fetch keys and messages directly inside the Worker, so that they don't have to be `postMessage`d there. For an example Worker implementation, see `test/worker/worker_example.js`.
 
-If you want to use the lightweight build (which is smaller, and lazily loads non-default curves on demand), copy `dist/lightweight/openpgp.min.js` and `dist/lightweight/elliptic.min.js`, load the former in a script tag, and point `openpgp.config.indutnyEllipticPath` to the latter:
+If you want to use the lightweight build (which is smaller, and lazily loads non-default curves on demand), copy `dist/lightweight/openpgp.min.mjs` and `dist/lightweight/elliptic.min.mjs`, and import the former:
 
 ```html
-<script src="lightweight/openpgp.min.js"></script>
-<script>
-openpgp.config.indutnyEllipticPath = 'lightweight/elliptic.min.js';
+<script type="module">
+import * as openpgp from 'openpgp/dist/lightweight/openpgp.min.mjs';
 </script>
 ```
 
