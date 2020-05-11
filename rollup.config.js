@@ -32,6 +32,7 @@ export default [
       { file: 'dist/openpgp.mjs', format: 'es', banner, intro },
       { file: 'dist/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
     ],
+    inlineDynamicImports: true,
     plugins: [
       resolve({
         browser: true
@@ -48,6 +49,7 @@ export default [
   },
   {
     input: 'src/index.js',
+    inlineDynamicImports: true,
     external: builtinModules.concat(nodeDependencies),
     output: [
       { file: 'dist/node/openpgp.js', format: 'cjs', name: pkg.name, banner, intro },
@@ -66,34 +68,20 @@ export default [
   {
     input: 'src/index.js',
     output: [
-      { file: 'dist/lightweight/openpgp.js', format: 'iife', name: pkg.name, banner, intro },
-      { file: 'dist/lightweight/openpgp.min.js', format: 'iife', name: pkg.name, banner, intro, plugins: [terser(terserOptions)] },
-      { file: 'dist/lightweight/openpgp.mjs', format: 'es', banner, intro },
-      { file: 'dist/lightweight/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
+      { dir: 'dist/lightweight', entryFileNames: 'openpgp.mjs', chunkFileNames: '[name].mjs', format: 'es', banner, intro },
+      { dir: 'dist/lightweight', entryFileNames: 'openpgp.min.mjs', chunkFileNames: '[name].min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
     ],
+    preserveEntrySignatures: 'allow-extension',
     plugins: [
       resolve({
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies).concat('elliptic')
+        ignore: builtinModules.concat(nodeDependencies)
       }),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
-        'externalIndutnyElliptic: false': 'externalIndutnyElliptic: true',
         'require(': 'void(',
-        delimiters: ['', '']
-      })
-    ]
-  },
-  {
-    input: 'node_modules/elliptic/dist/elliptic.min.js',
-    output: [
-      { file: 'dist/lightweight/elliptic.min.js', format: 'es' }
-    ],
-    plugins: [
-      replace({
-        'b.elliptic=a()': 'b.openpgp.elliptic=a()',
         delimiters: ['', '']
       })
     ]
@@ -101,7 +89,7 @@ export default [
   {
     input: 'test/unittests.js',
     output: [
-      { file: 'test/lib/unittests-bundle.js', format: 'iife' },
+      { file: 'test/lib/unittests-bundle.js', format: 'es' },
     ],
     plugins: [
       resolve({

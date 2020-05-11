@@ -17,7 +17,7 @@ matrix:
     - node_js: "14"
       env:  OPENPGP_NODE_JS='14' OPENPGPJSTEST='unit' LIGHTWEIGHT=1
     - node_js: "14"
-      env: BROWSER='"firefox_61"' OPENPGPJSTEST='browserstack'
+      env: BROWSER='"firefox_68"' OPENPGPJSTEST='browserstack'
     - node_js: "14"
       env:  BROWSER='"chrome_68"' OPENPGPJSTEST='browserstack' LIGHTWEIGHT=1
     - node_js: "14"

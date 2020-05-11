@@ -26,7 +26,6 @@ describe('Unit Tests', function () {
 
   if (typeof window !== 'undefined') {
     openpgp.config.s2kIterationCountByte = 0;
-    openpgp.config.indutnyEllipticPath = '../dist/lightweight/elliptic.min.js';
 
     window.location.search.substr(1).split('&').forEach(param => {
       const [key, value] = param.split('=');
