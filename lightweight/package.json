@@ -1,0 +1,4 @@
+{
+  "name": "openpgp-lightweight",
+  "main": "../dist/lightweight/openpgp.min.mjs"
+}
