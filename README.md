@@ -129,7 +129,7 @@ If you want to use the lightweight build (which is smaller, and lazily loads non
 
 ```html
 <script type="module">
-import * as openpgp from 'openpgp/dist/lightweight/openpgp.min.mjs';
+import * as openpgp from 'openpgp/lightweight';
 </script>
 ```
 
