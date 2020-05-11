@@ -22,7 +22,6 @@
  * @module crypto/public_key/elliptic/indutnyKey
  */
 
-import { loadScript, dl } from '../../../lightweight_helper';
 import config from '../../../config';
 
 export function keyFromPrivate(indutnyCurve, priv) {
@@ -38,43 +37,10 @@ export function keyFromPublic(indutnyCurve, pub) {
   return keyPair;
 }
 
-/**
- * Load elliptic on demand to globalThis.openpgp.elliptic
- * @returns {Promise<elliptic>}
- */
-async function loadEllipticPromise() {
-  const path = config.indutnyEllipticPath;
-  const options = config.indutnyEllipticFetchOptions;
-  const ellipticDlPromise = dl(path, options).catch(() => dl(path, options));
-  const ellipticContents = await ellipticDlPromise;
-  const mainUrl = URL.createObjectURL(new Blob([ellipticContents], { type: 'text/javascript' }));
-  await loadScript(mainUrl);
-  URL.revokeObjectURL(mainUrl);
-  if (!globalThis.openpgp.elliptic) {
-    throw new Error('Elliptic library failed to load correctly');
-  }
-  return globalThis.openpgp.elliptic;
-}
-
-let ellipticPromise;
-
-function loadElliptic() {
-  if (!config.externalIndutnyElliptic) {
-    return require('elliptic');
-  }
-  if (!ellipticPromise) {
-    ellipticPromise = loadEllipticPromise().catch(e => {
-      ellipticPromise = undefined;
-      throw e;
-    });
-  }
-  return ellipticPromise;
-}
-
 export async function getIndutnyCurve(name) {
   if (!config.useIndutnyElliptic) {
     throw new Error('This curve is only supported in the full build of OpenPGP.js');
   }
-  const elliptic = await loadElliptic();
+  const { default: elliptic } = await import('elliptic');
   return new elliptic.ec(name);
 }

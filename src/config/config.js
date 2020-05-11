@@ -191,21 +191,6 @@ export default {
   useIndutnyElliptic: true,
   /**
    * @memberof module:config
-   * @property {Boolean} externalIndutnyElliptic Whether to lazily load the indutny/elliptic library from an external path on demand.
-   */
-  externalIndutnyElliptic: false,
-  /**
-   * @memberof module:config
-   * @property {String} indutnyEllipticPath The path to load the indutny/elliptic library from. Only has an effect if `config.externalIndutnyElliptic` is true.
-   */
-  indutnyEllipticPath: './elliptic.min.js',
-  /**
-   * @memberof module:config
-   * @property {Object} indutnyEllipticFetchOptions Options object to pass to `fetch` when loading the indutny/elliptic library. Only has an effect if `config.externalIndutnyElliptic` is true.
-   */
-  indutnyEllipticFetchOptions: {},
-  /**
-   * @memberof module:config
    * @property {Set<Integer>} reject_hash_algorithms Reject insecure hash algorithms {@link module:enums.hash}
    */
   rejectHashAlgorithms: new globalThis.Set([enums.hash.md5, enums.hash.ripemd]),
