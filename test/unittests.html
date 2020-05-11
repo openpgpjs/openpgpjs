@@ -6,13 +6,6 @@
     <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
 
     <!-- libs -->
-    <script>
-      if (window.location.search.includes('lightweight=')) {
-        document.write('<script src="../dist/lightweight/openpgp.js"><\/script>');
-      } else {
-        document.write('<script src="../dist/openpgp.js"><\/script>');
-      }
-    </script>
     <script src="../node_modules/mocha/mocha.js"></script>
     <script>
       mocha.setup('bdd');
@@ -22,8 +15,16 @@
   <body>
     <div id="mocha"></div>
 
-    <script src="lib/unittests-bundle.js"></script>
-    <script>
+    <script type="module">
+    (async () => {
+      const openpgp = await import(
+        window.location.search.includes('lightweight=') ?
+          '../dist/lightweight/openpgp.mjs' :
+          '../dist/openpgp.mjs'
+      );
+      window.openpgp = openpgp;
+      await import('./lib/unittests-bundle.js');
+
       if (typeof openpgp !== 'undefined') {
         const runner = mocha.run();
         var wasScrolledDown = true;
@@ -43,6 +44,7 @@
         runner.on('suite', afterTestReport);
         runner.on('test end', afterTestReport);
       }
+    })();
     </script>
   </body>
 </html>
