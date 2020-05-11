@@ -163,13 +163,8 @@ Signature.prototype.sign = async function (key, data, detached = false, streamin
   }
   const arr = [new Uint8Array([this.version, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
-  if (key.version === 5) {
-    // We could also generate this subpacket for version 4 keys, but for
-    // now we don't.
-    this.issuerKeyVersion = key.version;
-    this.issuerFingerprint = key.getFingerprintBytes();
-  }
-
+  this.issuerKeyVersion = key.version;
+  this.issuerFingerprint = key.getFingerprintBytes();
   this.issuerKeyId = key.getKeyId();
 
   // Add hashed subpackets
