@@ -27,9 +27,11 @@
   ],
   "scripts": {
     "build": "rollup --config",
+    "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
     "test": "mocha --timeout 120000 test/unittests.js",
     "start": "http-server",
+    "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
     "coverage": "nyc npm test",
     "lint": "eslint 'src/**/*.js' 'test/crypto/**/*.js'",
