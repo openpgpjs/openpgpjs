@@ -23,7 +23,7 @@ const terserOptions = {
   }
 };
 
-export default [
+export default Object.assign([
   {
     input: 'src/index.js',
     output: [
@@ -100,4 +100,14 @@ export default [
       })
     ]
   }
-];
+].filter(config => {
+  config.output = config.output.filter(output => {
+    return (output.file || output.dir + '/' + output.entryFileNames).includes(
+      process.env.npm_config_build_only || // E.g. `npm install --build-only=lightweight`.
+      'dist' // Don't build test bundle by default.
+    );
+  });
+  return config.output.length;
+}), {
+  allow_empty: true // Fake option to trick rollup into accepting empty config array when filtered above.
+});
