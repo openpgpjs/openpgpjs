@@ -28,9 +28,9 @@ export default [
     input: 'src/index.js',
     output: [
       { file: 'dist/openpgp.js', format: 'iife', name: pkg.name, banner, intro },
-      { file: 'dist/openpgp.min.js', format: 'iife', name: pkg.name, banner, intro, plugins: [terser(terserOptions)] },
+      { file: 'dist/openpgp.min.js', format: 'iife', name: pkg.name, banner, intro, plugins: [terser(terserOptions)], sourcemap: true },
       { file: 'dist/openpgp.mjs', format: 'es', banner, intro },
-      { file: 'dist/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
+      { file: 'dist/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
     ],
     inlineDynamicImports: true,
     plugins: [
@@ -53,9 +53,9 @@ export default [
     external: builtinModules.concat(nodeDependencies),
     output: [
       { file: 'dist/node/openpgp.js', format: 'cjs', name: pkg.name, banner, intro },
-      { file: 'dist/node/openpgp.min.js', format: 'cjs', name: pkg.name, banner, intro, plugins: [terser(terserOptions)] },
+      { file: 'dist/node/openpgp.min.js', format: 'cjs', name: pkg.name, banner, intro, plugins: [terser(terserOptions)], sourcemap: true },
       { file: 'dist/node/openpgp.mjs', format: 'es', banner, intro },
-      { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
+      { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
     ],
     plugins: [
       resolve(),
@@ -69,7 +69,7 @@ export default [
     input: 'src/index.js',
     output: [
       { dir: 'dist/lightweight', entryFileNames: 'openpgp.mjs', chunkFileNames: '[name].mjs', format: 'es', banner, intro },
-      { dir: 'dist/lightweight', entryFileNames: 'openpgp.min.mjs', chunkFileNames: '[name].min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)] }
+      { dir: 'dist/lightweight', entryFileNames: 'openpgp.min.mjs', chunkFileNames: '[name].min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
     ],
     preserveEntrySignatures: 'allow-extension',
     plugins: [
@@ -89,7 +89,7 @@ export default [
   {
     input: 'test/unittests.js',
     output: [
-      { file: 'test/lib/unittests-bundle.js', format: 'es' },
+      { file: 'test/lib/unittests-bundle.js', format: 'es', sourcemap: true },
     ],
     plugins: [
       resolve({
