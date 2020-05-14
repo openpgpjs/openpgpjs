@@ -8,7 +8,7 @@
 
 import enums from '../enums';
 import util from '../util';
-import packet from '../packet';
+import { PacketList } from '../packet';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper';
 
 /**
@@ -19,7 +19,7 @@ export default function User(userPacket) {
   if (!(this instanceof User)) {
     return new User(userPacket);
   }
-  this.userId = userPacket.tag === enums.packet.userid ? userPacket : null;
+  this.userId = userPacket.tag === enums.packet.userID ? userPacket : null;
   this.userAttribute = userPacket.tag === enums.packet.userAttribute ? userPacket : null;
   this.selfCertifications = [];
   this.otherCertifications = [];
@@ -28,10 +28,10 @@ export default function User(userPacket) {
 
 /**
  * Transforms structured user data to packetlist
- * @returns {module:packet.List}
+ * @returns {PacketList}
  */
 User.prototype.toPacketlist = function() {
-  const packetlist = new packet.List();
+  const packetlist = new PacketList();
   packetlist.push(this.userId || this.userAttribute);
   packetlist.concat(this.revocationSignatures);
   packetlist.concat(this.selfCertifications);
@@ -41,8 +41,8 @@ User.prototype.toPacketlist = function() {
 
 /**
  * Signs user
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket}          primaryKey  The primary key packet
  * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
  * @returns {Promise<module:key.Key>}             New user with new certificate signatures
  * @async
@@ -74,13 +74,13 @@ User.prototype.sign = async function(primaryKey, privateKeys) {
 
 /**
  * Checks if a given certificate of the user is revoked
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey    The primary key packet
- * @param  {module:packet.Signature}  certificate   The certificate to verify
- * @param  {module:packet.PublicSubkey|
- *          module:packet.SecretSubkey|
- *          module:packet.PublicKey|
- *          module:packet.SecretKey} key, optional The key to verify the signature
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket} primaryKey    The primary key packet
+ * @param  {SignaturePacket}  certificate   The certificate to verify
+ * @param  {PublicSubkeyPacket|
+ *          SecretSubkeyPacket|
+ *          PublicKeyPacket|
+ *          SecretKeyPacket} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
@@ -98,9 +98,9 @@ User.prototype.isRevoked = async function(primaryKey, certificate, key, date = n
 
 /**
  * Verifies the user certificate. Throws if the user certificate is invalid.
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey  The primary key packet
- * @param  {module:packet.Signature}  certificate A certificate of this user
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket} primaryKey  The primary key packet
+ * @param  {SignaturePacket}  certificate A certificate of this user
  * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
  * @param  {Date}                     date        Use the given date instead of the current time
  * @returns {Promise<true>}                       status of the certificate
@@ -137,8 +137,8 @@ User.prototype.verifyCertificate = async function(primaryKey, certificate, keys,
 
 /**
  * Verifies all user certificates
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey The primary key packet
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket} primaryKey The primary key packet
  * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
  * @param  {Date}                     date        Use the given date instead of the current time
  * @returns {Promise<Array<{keyid: module:type/keyid,
@@ -159,10 +159,10 @@ User.prototype.verifyAllCertifications = async function(primaryKey, keys, date =
 /**
  * Verify User. Checks for existence of self signatures, revocation signatures
  * and validity of self signature. Throws when there are no valid self signatures.
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey The primary key packet
- * @param  {Date}                    date       Use the given date instead of the current time
- * @returns {Promise<true>}                     Status of user
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket} primaryKey The primary key packet
+ * @param  {Date}            date       Use the given date instead of the current time
+ * @returns {Promise<true>}             Status of user
  * @async
  */
 User.prototype.verify = async function(primaryKey, date = new Date()) {
@@ -201,9 +201,9 @@ User.prototype.verify = async function(primaryKey, date = new Date()) {
 
 /**
  * Update user with new components from specified user
- * @param  {module:key.User}             user       Source user to merge
- * @param  {module:packet.SecretKey|
- *          module:packet.SecretSubkey} primaryKey primary key used for validation
+ * @param  {module:key.User}    user       Source user to merge
+ * @param  {SecretKeyPacket|
+ *          SecretSubkeyPacket} primaryKey primary key used for validation
  * @returns {Promise<undefined>}
  * @async
  */

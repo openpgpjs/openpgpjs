@@ -46,7 +46,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function PublicKey(date = new Date()) {
+function PublicKeyPacket(date = new Date()) {
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -95,7 +95,7 @@ function PublicKey(date = new Date()) {
  * @param {Uint8Array} bytes Input array to read the packet from
  * @returns {Object} This object with attributes set by the parser
  */
-PublicKey.prototype.read = function (bytes) {
+PublicKeyPacket.prototype.read = function (bytes) {
   let pos = 0;
   // A one-octet version number (3, 4 or 5).
   this.version = bytes[pos++];
@@ -133,16 +133,16 @@ PublicKey.prototype.read = function (bytes) {
 
 /**
  * Alias of read()
- * @see module:packet.PublicKey#read
+ * @see PublicKeyPacket#read
  */
-PublicKey.prototype.readPublicKey = PublicKey.prototype.read;
+PublicKeyPacket.prototype.readPublicKey = PublicKeyPacket.prototype.read;
 
 /**
  * Same as write_private_key, but has less information because of
  * public key.
  * @returns {Uint8Array} OpenPGP packet body contents,
  */
-PublicKey.prototype.write = function () {
+PublicKeyPacket.prototype.write = function () {
   const arr = [];
   // Version
   arr.push(new Uint8Array([this.version]));
@@ -164,14 +164,14 @@ PublicKey.prototype.write = function () {
 
 /**
  * Alias of write()
- * @see module:packet.PublicKey#write
+ * @see PublicKeyPacket#write
  */
-PublicKey.prototype.writePublicKey = PublicKey.prototype.write;
+PublicKeyPacket.prototype.writePublicKey = PublicKeyPacket.prototype.write;
 
 /**
  * Write packet in order to be hashed; either for a signature or a fingerprint.
  */
-PublicKey.prototype.writeForHash = function (version) {
+PublicKeyPacket.prototype.writeForHash = function (version) {
   const bytes = this.writePublicKey();
 
   if (version === 5) {
@@ -184,7 +184,7 @@ PublicKey.prototype.writeForHash = function (version) {
  * Check whether secret-key data is available in decrypted form. Returns null for public keys.
  * @returns {Boolean|null}
  */
-PublicKey.prototype.isDecrypted = function() {
+PublicKeyPacket.prototype.isDecrypted = function() {
   return null;
 };
 
@@ -192,7 +192,7 @@ PublicKey.prototype.isDecrypted = function() {
  * Returns the creation time of the key
  * @returns {Date}
  */
-PublicKey.prototype.getCreationTime = function() {
+PublicKeyPacket.prototype.getCreationTime = function() {
   return this.created;
 };
 
@@ -200,7 +200,7 @@ PublicKey.prototype.getCreationTime = function() {
  * Calculates the key id of the key
  * @returns {String} A 8 byte key id
  */
-PublicKey.prototype.getKeyId = function () {
+PublicKeyPacket.prototype.getKeyId = function () {
   if (this.keyid) {
     return this.keyid;
   }
@@ -217,7 +217,7 @@ PublicKey.prototype.getKeyId = function () {
  * Calculates the fingerprint of the key
  * @returns {Uint8Array} A Uint8Array containing the fingerprint
  */
-PublicKey.prototype.getFingerprintBytes = function () {
+PublicKeyPacket.prototype.getFingerprintBytes = function () {
   if (this.fingerprint) {
     return this.fingerprint;
   }
@@ -234,7 +234,7 @@ PublicKey.prototype.getFingerprintBytes = function () {
  * Calculates the fingerprint of the key
  * @returns {String} A string containing the fingerprint in lowercase hex
  */
-PublicKey.prototype.getFingerprint = function() {
+PublicKeyPacket.prototype.getFingerprint = function() {
   return util.uint8ArrayToHex(this.getFingerprintBytes());
 };
 
@@ -242,7 +242,7 @@ PublicKey.prototype.getFingerprint = function() {
  * Calculates whether two keys have the same fingerprint without actually calculating the fingerprint
  * @returns {Boolean} Whether the two keys have the same version and public key data
  */
-PublicKey.prototype.hasSameFingerprintAs = function(other) {
+PublicKeyPacket.prototype.hasSameFingerprintAs = function(other) {
   return this.version === other.version && util.equalsUint8Array(this.writePublicKey(), other.writePublicKey());
 };
 
@@ -250,7 +250,7 @@ PublicKey.prototype.hasSameFingerprintAs = function(other) {
  * Returns algorithm information
  * @returns {Object} An object of the form {algorithm: String, rsaBits:int, curve:String}
  */
-PublicKey.prototype.getAlgorithmInfo = function () {
+PublicKeyPacket.prototype.getAlgorithmInfo = function () {
   const result = {};
   result.algorithm = this.algorithm;
   if (this.params[0] instanceof type_mpi) {
@@ -262,4 +262,4 @@ PublicKey.prototype.getAlgorithmInfo = function () {
   return result;
 };
 
-export default PublicKey;
+export default PublicKeyPacket;

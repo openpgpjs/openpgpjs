@@ -51,7 +51,7 @@ export { default as util } from './util';
  * @see module:packet
  * @name module:openpgp.packet
  */
-export { default as packet } from './packet';
+export * from './packet';
 
 /**
  * @see module:type/mpi

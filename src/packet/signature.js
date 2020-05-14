@@ -45,7 +45,7 @@ import config from '../config';
  * @constructor
  * @param {Date} date the creation date of the signature
  */
-function Signature(date = new Date()) {
+function SignaturePacket(date = new Date()) {
   this.tag = enums.packet.signature;
   this.version = 4; // This is set to 5 below if we sign with a V5 key.
   this.signatureType = null;
@@ -98,9 +98,9 @@ function Signature(date = new Date()) {
 /**
  * parsing function for a signature packet (tag 2).
  * @param {String} bytes payload of a tag 2 packet
- * @returns {module:packet.Signature} object representation
+ * @returns {SignaturePacket} object representation
  */
-Signature.prototype.read = function (bytes) {
+SignaturePacket.prototype.read = function (bytes) {
   let i = 0;
   this.version = bytes[i++];
 
@@ -133,7 +133,7 @@ Signature.prototype.read = function (bytes) {
   this.signature = bytes.subarray(i, bytes.length);
 };
 
-Signature.prototype.write = function () {
+SignaturePacket.prototype.write = function () {
   const arr = [];
   arr.push(this.signatureData);
   arr.push(this.write_unhashed_sub_packets());
@@ -144,14 +144,14 @@ Signature.prototype.write = function () {
 
 /**
  * Signs provided data. This needs to be done prior to serialization.
- * @param {module:packet.SecretKey} key private key used to sign the message.
+ * @param {SecretKeyPacket} key private key used to sign the message.
  * @param {Object} data Contains packets to be signed.
  * @param {Boolean} detached (optional) whether to create a detached signature
  * @param {Boolean} streaming (optional) whether to process data as a stream
  * @returns {Promise<Boolean>}
  * @async
  */
-Signature.prototype.sign = async function (key, data, detached = false, streaming = false) {
+SignaturePacket.prototype.sign = async function (key, data, detached = false, streaming = false) {
   const signatureType = enums.write(enums.signature, this.signatureType);
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -201,7 +201,7 @@ Signature.prototype.sign = async function (key, data, detached = false, streamin
  * Creates Uint8Array of bytes of all subpacket data except Issuer and Embedded Signature subpackets
  * @returns {Uint8Array} subpacket data
  */
-Signature.prototype.write_hashed_sub_packets = function () {
+SignaturePacket.prototype.write_hashed_sub_packets = function () {
   const sub = enums.signatureSubpacket;
   const arr = [];
   let bytes;
@@ -303,7 +303,7 @@ Signature.prototype.write_hashed_sub_packets = function () {
  * Creates Uint8Array of bytes of Issuer and Embedded Signature subpackets
  * @returns {Uint8Array} subpacket data
  */
-Signature.prototype.write_unhashed_sub_packets = function() {
+SignaturePacket.prototype.write_unhashed_sub_packets = function() {
   const sub = enums.signatureSubpacket;
   const arr = [];
   let bytes;
@@ -350,7 +350,7 @@ function write_sub_packet(type, data) {
 
 // V4 signature sub packets
 
-Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
+SignaturePacket.prototype.read_sub_packet = function (bytes, trusted = true) {
   let mypos = 0;
 
   const read_array = (prop, bytes) => {
@@ -516,7 +516,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
     }
     case 32:
       // Embedded Signature
-      this.embeddedSignature = new Signature();
+      this.embeddedSignature = new SignaturePacket();
       this.embeddedSignature.read(bytes.subarray(mypos, bytes.length));
       break;
     case 33:
@@ -544,7 +544,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
   }
 };
 
-Signature.prototype.read_sub_packets = function(bytes, trusted = true) {
+SignaturePacket.prototype.read_sub_packets = function(bytes, trusted = true) {
   // Two-octet scalar octet count for following subpacket data.
   const subpacket_length = util.readNumber(bytes.subarray(0, 2));
 
@@ -564,7 +564,7 @@ Signature.prototype.read_sub_packets = function(bytes, trusted = true) {
 };
 
 // Produces data to produce signature on
-Signature.prototype.toSign = function (type, data) {
+SignaturePacket.prototype.toSign = function (type, data) {
   const t = enums.signature;
 
   switch (type) {
@@ -633,7 +633,7 @@ Signature.prototype.toSign = function (type, data) {
 };
 
 
-Signature.prototype.calculateTrailer = function (data, detached) {
+SignaturePacket.prototype.calculateTrailer = function (data, detached) {
   let length = 0;
   return stream.transform(stream.clone(this.signatureData), value => {
     length += value.length;
@@ -658,13 +658,13 @@ Signature.prototype.calculateTrailer = function (data, detached) {
 };
 
 
-Signature.prototype.toHash = function(signatureType, data, detached = false) {
+SignaturePacket.prototype.toHash = function(signatureType, data, detached = false) {
   const bytes = this.toSign(signatureType, data);
 
   return util.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
 };
 
-Signature.prototype.hash = async function(signatureType, data, toHash, detached = false, streaming = true) {
+SignaturePacket.prototype.hash = async function(signatureType, data, toHash, detached = false, streaming = true) {
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
   if (!toHash) toHash = this.toHash(signatureType, data, detached);
   if (!streaming && util.isStream(toHash)) {
@@ -676,15 +676,15 @@ Signature.prototype.hash = async function(signatureType, data, toHash, detached 
 
 /**
  * verifies the signature packet. Note: not all signature types are implemented
- * @param {module:packet.PublicSubkey|module:packet.PublicKey|
- *         module:packet.SecretSubkey|module:packet.SecretKey} key the public key to verify the signature
+ * @param {PublicSubkeyPacket|PublicKeyPacket|
+ *         SecretSubkeyPacket|SecretKeyPacket} key the public key to verify the signature
  * @param {module:enums.signature} signatureType expected signature type
  * @param {String|Object} data data which on the signature applies
  * @param {Boolean} detached (optional) whether to verify a detached signature
  * @returns {Promise<Boolean>} True if message is verified, else false.
  * @async
  */
-Signature.prototype.verify = async function (key, signatureType, data, detached = false, streaming = false) {
+SignaturePacket.prototype.verify = async function (key, signatureType, data, detached = false, streaming = false) {
   const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
@@ -758,7 +758,7 @@ Signature.prototype.verify = async function (key, signatureType, data, detached 
  * @param {Date} date (optional) use the given date for verification instead of the current time
  * @returns {Boolean} true if expired
  */
-Signature.prototype.isExpired = function (date = new Date()) {
+SignaturePacket.prototype.isExpired = function (date = new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = this.getExpirationTime();
@@ -771,8 +771,8 @@ Signature.prototype.isExpired = function (date = new Date()) {
  * Returns the expiration time of the signature or Infinity if signature does not expire
  * @returns {Date} expiration time
  */
-Signature.prototype.getExpirationTime = function () {
+SignaturePacket.prototype.getExpirationTime = function () {
   return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime * 1000) : Infinity;
 };
 
-export default Signature;
+export default SignaturePacket;
