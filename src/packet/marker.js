@@ -34,7 +34,7 @@ import enums from '../enums';
  * @memberof module:packet
  * @constructor
  */
-function Marker() {
+function MarkerPacket() {
   this.tag = enums.packet.marker;
 }
 
@@ -47,9 +47,9 @@ function Marker() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet.Marker} Object representation
+ * @returns {MarkerPacket} Object representation
  */
-Marker.prototype.read = function (bytes) {
+MarkerPacket.prototype.read = function (bytes) {
   if (bytes[0] === 0x50 && // P
       bytes[1] === 0x47 && // G
       bytes[2] === 0x50) { // P
@@ -59,4 +59,4 @@ Marker.prototype.read = function (bytes) {
   return false;
 };
 
-export default Marker;
+export default MarkerPacket;
