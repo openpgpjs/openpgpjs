@@ -27,7 +27,7 @@
 import armor from './encoding/armor';
 import enums from './enums';
 import util from './util';
-import packet from './packet';
+import { PacketList, LiteralDataPacket, SignaturePacket } from './packet';
 import { Signature } from './signature';
 import { createVerificationObjects, createSignaturePackets } from './message';
 
@@ -47,7 +47,7 @@ export function CleartextMessage(text, signature) {
   if (signature && !(signature instanceof Signature)) {
     throw new Error('Invalid signature input');
   }
-  this.signature = signature || new Signature(new packet.List());
+  this.signature = signature || new Signature(new PacketList());
 }
 
 /**
@@ -86,7 +86,7 @@ CleartextMessage.prototype.sign = async function(privateKeys, signature = null, 
  * @async
  */
 CleartextMessage.prototype.signDetached = async function(privateKeys, signature = null, date = new Date(), userIds = []) {
-  const literalDataPacket = new packet.Literal();
+  const literalDataPacket = new LiteralDataPacket();
   literalDataPacket.setText(this.text);
 
   return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true));
@@ -112,7 +112,7 @@ CleartextMessage.prototype.verify = function(keys, date = new Date()) {
  */
 CleartextMessage.prototype.verifyDetached = function(signature, keys, date = new Date()) {
   const signatureList = signature.packets;
-  const literalDataPacket = new packet.Literal();
+  const literalDataPacket = new LiteralDataPacket();
   // we assume that cleartext signature is generated based on UTF8 cleartext
   literalDataPacket.setText(this.text);
   return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true);
@@ -157,8 +157,8 @@ export async function readArmored(armoredText) {
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }
-  const packetlist = new packet.List();
-  await packetlist.read(input.data);
+  const packetlist = new PacketList();
+  await packetlist.read(input.data, { SignaturePacket });
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
   return new CleartextMessage(input.text, signature);
@@ -167,7 +167,7 @@ export async function readArmored(armoredText) {
 /**
  * Compare hash algorithm specified in the armor header with signatures
  * @param  {Array<String>} headers    Armor headers
- * @param  {module:packet.List} packetlist The packetlist with signature packets
+ * @param  {PacketList} packetlist    The packetlist with signature packets
  * @private
  */
 function verifyHeaders(headers, packetlist) {

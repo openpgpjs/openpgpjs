@@ -21,6 +21,7 @@
  * @requires crypto
  * @requires enums
  * @requires util
+ * @requires packet
  */
 
 import stream from 'web-stream-tools';
@@ -28,6 +29,12 @@ import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import {
+  LiteralDataPacket,
+  CompressedDataPacket,
+  OnePassSignaturePacket,
+  SignaturePacket
+} from '../packet';
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -40,8 +47,8 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * @memberof module:packet
  * @constructor
  */
-function SymEncryptedAEADProtected() {
-  this.tag = enums.packet.symEncryptedAEADProtected;
+function SymEncryptedAEADProtectedDataPacket() {
+  this.tag = enums.packet.symEncryptedAEADProtectedData;
   this.version = VERSION;
   this.cipherAlgo = null;
   this.aeadAlgorithm = 'eax';
@@ -52,13 +59,13 @@ function SymEncryptedAEADProtected() {
   this.packets = null;
 }
 
-export default SymEncryptedAEADProtected;
+export default SymEncryptedAEADProtectedDataPacket;
 
 /**
  * Parse an encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
  * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
  */
-SymEncryptedAEADProtected.prototype.read = async function (bytes) {
+SymEncryptedAEADProtectedDataPacket.prototype.read = async function (bytes) {
   await stream.parse(bytes, async reader => {
     if (await reader.readByte() !== VERSION) { // The only currently defined value is 1.
       throw new Error('Invalid packet version.');
@@ -76,7 +83,7 @@ SymEncryptedAEADProtected.prototype.read = async function (bytes) {
  * Write the encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
  * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload
  */
-SymEncryptedAEADProtected.prototype.write = function () {
+SymEncryptedAEADProtectedDataPacket.prototype.write = function () {
   return util.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
 };
 
@@ -88,8 +95,13 @@ SymEncryptedAEADProtected.prototype.write = function () {
  * @returns {Boolean}
  * @async
  */
-SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
-  await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), streaming);
+SymEncryptedAEADProtectedDataPacket.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
+  await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), {
+    LiteralDataPacket,
+    CompressedDataPacket,
+    OnePassSignaturePacket,
+    SignaturePacket
+  }, streaming);
   return true;
 };
 
@@ -100,7 +112,7 @@ SymEncryptedAEADProtected.prototype.decrypt = async function (sessionKeyAlgorith
  * @param  {Boolean} streaming            Whether the top-level function will return a stream
  * @async
  */
-SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
+SymEncryptedAEADProtectedDataPacket.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
   this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
@@ -119,7 +131,7 @@ SymEncryptedAEADProtected.prototype.encrypt = async function (sessionKeyAlgorith
  * @returns {Uint8Array | ReadableStream<Uint8Array>}
  * @async
  */
-SymEncryptedAEADProtected.prototype.crypt = async function (fn, key, data, streaming) {
+SymEncryptedAEADProtectedDataPacket.prototype.crypt = async function (fn, key, data, streaming) {
   const cipher = enums.read(enums.symmetric, this.cipherAlgo);
   const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
   const modeInstance = await mode(cipher, key);
