@@ -17,7 +17,7 @@
 
 /**
  * @fileoverview Functions to add and remove PKCS5 padding
- * @see module:packet.PublicKeyEncryptedSessionKey
+ * @see PublicKeyEncryptedSessionKeyPacket
  * @module crypto/pkcs5
  */
 

@@ -24,7 +24,7 @@
  * @requires util
  */
 
-import PublicKey from './public_key';
+import PublicKeyPacket from './public_key';
 import type_s2k from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -36,10 +36,10 @@ import util from '../util';
  * includes the secret-key material after all the public-key fields.
  * @memberof module:packet
  * @constructor
- * @extends module:packet.PublicKey
+ * @extends PublicKeyPacket
  */
-function SecretKey(date = new Date()) {
-  PublicKey.call(this, date);
+function SecretKeyPacket(date = new Date()) {
+  PublicKeyPacket.call(this, date);
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -75,8 +75,8 @@ function SecretKey(date = new Date()) {
   this.aead = null;
 }
 
-SecretKey.prototype = new PublicKey();
-SecretKey.prototype.constructor = SecretKey;
+SecretKeyPacket.prototype = new PublicKeyPacket();
+SecretKeyPacket.prototype.constructor = SecretKeyPacket;
 
 // Helper function
 
@@ -116,7 +116,7 @@ function write_cleartext_params(params, algorithm) {
  * {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.5.3|RFC4880bis-04 section 5.5.3}
  * @param {String} bytes Input string to read the packet from
  */
-SecretKey.prototype.read = function (bytes) {
+SecretKeyPacket.prototype.read = function (bytes) {
   // - A Public-Key or Public-Subkey packet, as described above.
   let i = this.readPublicKey(bytes);
 
@@ -197,7 +197,7 @@ SecretKey.prototype.read = function (bytes) {
  * Creates an OpenPGP key packet for the given key.
  * @returns {String} A string of bytes containing the secret key OpenPGP packet
  */
-SecretKey.prototype.write = function () {
+SecretKeyPacket.prototype.write = function () {
   const arr = [this.writePublicKey()];
 
   arr.push(new Uint8Array([this.s2k_usage]));
@@ -254,7 +254,7 @@ SecretKey.prototype.write = function () {
  * Check whether secret-key data is available in decrypted form. Returns null for public keys.
  * @returns {Boolean|null}
  */
-SecretKey.prototype.isDecrypted = function() {
+SecretKeyPacket.prototype.isDecrypted = function() {
   return this.isEncrypted === false;
 };
 
@@ -262,7 +262,7 @@ SecretKey.prototype.isDecrypted = function() {
  * Check whether this is a gnu-dummy key
  * @returns {Boolean}
  */
-SecretKey.prototype.isDummy = function() {
+SecretKeyPacket.prototype.isDummy = function() {
   return !!(this.s2k && this.s2k.type === 'gnu-dummy');
 };
 
@@ -298,7 +298,7 @@ SecretKey.prototype.makeDummy = function () {
  * @returns {Promise<Boolean>}
  * @async
  */
-SecretKey.prototype.encrypt = async function (passphrase) {
+SecretKeyPacket.prototype.encrypt = async function (passphrase) {
   if (this.isDummy()) {
     return false;
   }
@@ -347,13 +347,13 @@ async function produceEncryptionKey(s2k, passphrase, algorithm) {
 
 /**
  * Decrypts the private key params which are needed to use the key.
- * {@link module:packet.SecretKey.isDecrypted} should be false, as
+ * {@link SecretKeyPacket.isDecrypted} should be false, as
  * otherwise calls to this function will throw an error.
  * @param {String} passphrase The passphrase for this private key as string
  * @returns {Promise<Boolean>}
  * @async
  */
-SecretKey.prototype.decrypt = async function (passphrase) {
+SecretKeyPacket.prototype.decrypt = async function (passphrase) {
   if (this.isDummy()) {
     this.isEncrypted = false;
     return false;
@@ -404,7 +404,7 @@ SecretKey.prototype.decrypt = async function (passphrase) {
   return true;
 };
 
-SecretKey.prototype.generate = async function (bits, curve) {
+SecretKeyPacket.prototype.generate = async function (bits, curve) {
   const algo = enums.write(enums.publicKey, this.algorithm);
   this.params = await crypto.generateParams(algo, bits, curve);
   this.isEncrypted = false;
@@ -415,7 +415,7 @@ SecretKey.prototype.generate = async function (bits, curve) {
  * @throws {Error} if validation was not successful
  * @async
  */
-SecretKey.prototype.validate = async function () {
+SecretKeyPacket.prototype.validate = async function () {
   if (this.isDummy()) {
     return;
   }
@@ -434,7 +434,7 @@ SecretKey.prototype.validate = async function () {
 /**
  * Clear private key parameters
  */
-SecretKey.prototype.clearPrivateParams = function () {
+SecretKeyPacket.prototype.clearPrivateParams = function () {
   if (this.s2k && this.s2k.type === 'gnu-dummy') {
     this.isEncrypted = true;
     return;
@@ -449,4 +449,4 @@ SecretKey.prototype.clearPrivateParams = function () {
   this.isEncrypted = true;
 };
 
-export default SecretKey;
+export default SecretKeyPacket;

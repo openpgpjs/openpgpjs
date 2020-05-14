@@ -26,7 +26,12 @@
  */
 
 import armor from '../encoding/armor';
-import packet from '../packet';
+import {
+  PacketList,
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SignaturePacket
+} from '../packet';
 import enums from '../enums';
 import util from '../util';
 import User from './user';
@@ -37,13 +42,13 @@ import * as helper from './helper';
  * @class
  * @classdesc Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
- * @param  {module:packet.List} packetlist The packets that form this key
- * @borrows module:packet.PublicKey#getKeyId as Key#getKeyId
- * @borrows module:packet.PublicKey#getFingerprint as Key#getFingerprint
- * @borrows module:packet.PublicKey#hasSameFingerprintAs as Key#hasSameFingerprintAs
- * @borrows module:packet.PublicKey#getAlgorithmInfo as Key#getAlgorithmInfo
- * @borrows module:packet.PublicKey#getCreationTime as Key#getCreationTime
- * @borrows module:packet.PublicKey#isDecrypted as Key#isDecrypted
+ * @param  {PacketList} packetlist The packets that form this key
+ * @borrows PublicKeyPacket#getKeyId as Key#getKeyId
+ * @borrows PublicKeyPacket#getFingerprint as Key#getFingerprint
+ * @borrows PublicKeyPacket#hasSameFingerprintAs as Key#hasSameFingerprintAs
+ * @borrows PublicKeyPacket#getAlgorithmInfo as Key#getAlgorithmInfo
+ * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
+ * @borrows PublicKeyPacket#isDecrypted as Key#isDecrypted
  */
 export default function Key(packetlist) {
   if (!(this instanceof Key)) {
@@ -71,7 +76,7 @@ Object.defineProperty(Key.prototype, 'primaryKey', {
 
 /**
  * Transforms packetlist to structured key data
- * @param  {module:packet.List} packetlist The packets that form a key
+ * @param  {PacketList} packetlist The packets that form a key
  */
 Key.prototype.packetlist2structure = function(packetlist) {
   let user;
@@ -87,7 +92,7 @@ Key.prototype.packetlist2structure = function(packetlist) {
         this.keyPacket = packetlist[i];
         primaryKeyId = this.getKeyId();
         break;
-      case enums.packet.userid:
+      case enums.packet.userID:
       case enums.packet.userAttribute:
         user = new User(packetlist[i]);
         this.users.push(user);
@@ -149,10 +154,10 @@ Key.prototype.packetlist2structure = function(packetlist) {
 
 /**
  * Transforms structured key data to packetlist
- * @returns {module:packet.List} The packets that form a key
+ * @returns {PacketList} The packets that form a key
  */
 Key.prototype.toPacketlist = function() {
-  const packetlist = new packet.List();
+  const packetlist = new PacketList();
   packetlist.push(this.keyPacket);
   packetlist.concat(this.revocationSignatures);
   packetlist.concat(this.directSignatures);
@@ -169,8 +174,8 @@ Key.prototype.toPacketlist = function() {
  */
 Key.prototype.clone = async function(deep = false) {
   if (deep) {
-    const packetlist = new packet.List();
-    await packetlist.read(this.toPacketlist().write());
+    const packetlist = new PacketList();
+    await packetlist.read(this.toPacketlist().write(), helper.allowedKeyPackets);
     return new Key(packetlist);
   }
   return new Key(this.toPacketlist());
@@ -245,7 +250,7 @@ Key.prototype.isPrivate = function() {
  * @returns {module:key.Key} new public Key
  */
 Key.prototype.toPublic = function() {
-  const packetlist = new packet.List();
+  const packetlist = new PacketList();
   const keyPackets = this.toPacketlist();
   let bytes;
   let pubKeyPacket;
@@ -254,13 +259,13 @@ Key.prototype.toPublic = function() {
     switch (keyPackets[i].tag) {
       case enums.packet.secretKey:
         bytes = keyPackets[i].writePublicKey();
-        pubKeyPacket = new packet.PublicKey();
+        pubKeyPacket = new PublicKeyPacket();
         pubKeyPacket.read(bytes);
         packetlist.push(pubKeyPacket);
         break;
       case enums.packet.secretSubkey:
         bytes = keyPackets[i].writePublicKey();
-        pubSubkeyPacket = new packet.PublicSubkey();
+        pubSubkeyPacket = new PublicSubkeyPacket();
         pubSubkeyPacket.read(bytes);
         packetlist.push(pubSubkeyPacket);
         break;
@@ -395,7 +400,7 @@ Key.prototype.getDecryptionKeys = async function(keyId, date = new Date(), userI
  * Encrypts all secret key and subkey packets matching keyId
  * @param  {String|Array<String>} passphrases - if multiple passphrases, then should be in same order as packets each should encrypt
  * @param  {module:type/keyid} keyId
- * @returns {Promise<Array<module:packet.SecretKey|module:packet.SecretSubkey>>}
+ * @returns {Promise<Array<SecretKeyPacket|SecretSubkeyPacket>>}
  * @async
  */
 Key.prototype.encrypt = async function(passphrases, keyId = null) {
@@ -516,12 +521,11 @@ Key.prototype.clearPrivateParams = function () {
 
 /**
  * Checks if a signature on a key is revoked
- * @param  {module:packet.SecretKey|
- * @param  {module:packet.Signature}  signature    The signature to verify
- * @param  {module:packet.PublicSubkey|
- *          module:packet.SecretSubkey|
- *          module:packet.PublicKey|
- *          module:packet.SecretKey} key, optional The key to verify the signature
+ * @param  {SignaturePacket}  signature    The signature to verify
+ * @param  {PublicSubkeyPacket|
+ *          SecretSubkeyPacket|
+ *          PublicKeyPacket|
+ *          SecretKeyPacket} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the certificate is revoked
  * @async
@@ -602,7 +606,7 @@ Key.prototype.getExpirationTime = async function(capabilities, keyId, userId) {
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
  * @returns {Promise<{user: module:key.User,
- *                    selfCertification: module:packet.Signature}>} The primary user and the self signature
+ *                    selfCertification: SignaturePacket}>} The primary user and the self signature
  * @async
  */
 Key.prototype.getPrimaryUser = async function(date = new Date(), userId = {}) {
@@ -750,7 +754,7 @@ Key.prototype.revoke = async function({
 Key.prototype.getRevocationCertificate = async function(date = new Date()) {
   const dataToVerify = { key: this.keyPacket };
   const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.keyRevocation, dataToVerify, date);
-  const packetlist = new packet.List();
+  const packetlist = new PacketList();
   packetlist.push(revocationSignature);
   return armor.encode(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate');
 };
@@ -765,8 +769,8 @@ Key.prototype.getRevocationCertificate = async function(date = new Date()) {
  */
 Key.prototype.applyRevocationCertificate = async function(revocationCertificate) {
   const input = await armor.decode(revocationCertificate);
-  const packetlist = new packet.List();
-  await packetlist.read(input.data);
+  const packetlist = new PacketList();
+  await packetlist.read(input.data, { SignaturePacket });
   const revocationSignature = packetlist.findPacket(enums.packet.signature);
   if (!revocationSignature || revocationSignature.signatureType !== enums.signature.keyRevocation) {
     throw new Error('Could not find revocation signature packet');

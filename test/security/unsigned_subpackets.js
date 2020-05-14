@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { key, message, enums, packet: { List, Signature } } = openpgp;
+const { key, message, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -70,7 +70,7 @@ async function makeKeyValid() {
   // deconstruct invalid key
   const [pubkey, puser, pusersig] = invalidkey.toPacketlist().map(i => i);
   // create a fake signature
-  const fake = new Signature();
+  const fake = new SignaturePacket();
   Object.assign(fake, pusersig);
   // extend expiration times
   fake.keyExpirationTime = 0x7FFFFFFF;
@@ -80,7 +80,7 @@ async function makeKeyValid() {
   // create modified subpacket data
   pusersig.read_sub_packets(fake.write_hashed_sub_packets(), false);
   // reconstruct the modified key
-  const newlist = new List();
+  const newlist = new PacketList();
   newlist.concat([pubkey, puser, pusersig]);
   let modifiedkey = new key.Key(newlist);
   // re-read the message to eliminate any

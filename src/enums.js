@@ -196,17 +196,17 @@ export default {
     secretKey: 5,
     publicKey: 6,
     secretSubkey: 7,
-    compressed: 8,
-    symmetricallyEncrypted: 9,
+    compressedData: 8,
+    symmetricallyEncryptedData: 9,
     marker: 10,
-    literal: 11,
+    literalData: 11,
     trust: 12,
-    userid: 13,
+    userID: 13,
     publicSubkey: 14,
     userAttribute: 17,
-    symEncryptedIntegrityProtected: 18,
+    symEncryptedIntegrityProtectedData: 18,
     modificationDetectionCode: 19,
-    symEncryptedAEADProtected: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
+    symEncryptedAEADProtectedData: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
   },
 
   /** Data types in the literal packet

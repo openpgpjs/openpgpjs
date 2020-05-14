@@ -22,6 +22,7 @@
  * @requires crypto
  * @requires enums
  * @requires util
+ * @requires packet
  */
 
 import stream from 'web-stream-tools';
@@ -29,6 +30,12 @@ import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import {
+  LiteralDataPacket,
+  CompressedDataPacket,
+  OnePassSignaturePacket,
+  SignaturePacket
+} from '../packet';
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -44,8 +51,8 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * @memberof module:packet
  * @constructor
  */
-function SymEncryptedIntegrityProtected() {
-  this.tag = enums.packet.symEncryptedIntegrityProtected;
+function SymEncryptedIntegrityProtectedDataPacket() {
+  this.tag = enums.packet.symEncryptedIntegrityProtectedData;
   this.version = VERSION;
   /** The encrypted payload. */
   this.encrypted = null; // string
@@ -59,7 +66,7 @@ function SymEncryptedIntegrityProtected() {
   this.packets = null;
 }
 
-SymEncryptedIntegrityProtected.prototype.read = async function (bytes) {
+SymEncryptedIntegrityProtectedDataPacket.prototype.read = async function (bytes) {
   await stream.parse(bytes, async reader => {
 
     // - A one-octet version number. The only currently defined value is 1.
@@ -74,7 +81,7 @@ SymEncryptedIntegrityProtected.prototype.read = async function (bytes) {
   });
 };
 
-SymEncryptedIntegrityProtected.prototype.write = function () {
+SymEncryptedIntegrityProtectedDataPacket.prototype.write = function () {
   return util.concat([new Uint8Array([VERSION]), this.encrypted]);
 };
 
@@ -86,7 +93,7 @@ SymEncryptedIntegrityProtected.prototype.write = function () {
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
+SymEncryptedIntegrityProtectedDataPacket.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
   let bytes = this.packets.write();
   if (!streaming) bytes = await stream.readToEnd(bytes);
   const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
@@ -108,7 +115,7 @@ SymEncryptedIntegrityProtected.prototype.encrypt = async function (sessionKeyAlg
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
+SymEncryptedIntegrityProtectedDataPacket.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
   let encrypted = stream.clone(this.encrypted);
   if (!streaming) encrypted = await stream.readToEnd(encrypted);
   const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
@@ -132,8 +139,13 @@ SymEncryptedIntegrityProtected.prototype.decrypt = async function (sessionKeyAlg
   if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
     packetbytes = await stream.readToEnd(packetbytes);
   }
-  await this.packets.read(packetbytes, streaming);
+  await this.packets.read(packetbytes, {
+    LiteralDataPacket,
+    CompressedDataPacket,
+    OnePassSignaturePacket,
+    SignaturePacket
+  }, streaming);
   return true;
 };
 
-export default SymEncryptedIntegrityProtected;
+export default SymEncryptedIntegrityProtectedDataPacket;

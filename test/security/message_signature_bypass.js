@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { key, cleartext, util, packet: { Signature } } = openpgp;
+const { key, cleartext, util, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -89,7 +89,7 @@ async function fakeSignature() {
       'You owe me',
       'I owe you'));
   // read the standalone signature packet
-  const tmp = new Signature();
+  const tmp = new SignaturePacket();
   await tmp.read(STANDALONE_PKT);
 
   // replace the "text" signature with the

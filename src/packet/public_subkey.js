@@ -20,7 +20,7 @@
  * @requires enums
  */
 
-import PublicKey from './public_key';
+import PublicKeyPacket from './public_key';
 import enums from '../enums';
 
 /**
@@ -31,14 +31,14 @@ import enums from '../enums';
  * services.
  * @memberof module:packet
  * @constructor
- * @extends module:packet.PublicKey
+ * @extends PublicKeyPacket
  */
-function PublicSubkey() {
-  PublicKey.call(this);
+function PublicSubkeyPacket() {
+  PublicKeyPacket.call(this);
   this.tag = enums.packet.publicSubkey;
 }
 
-PublicSubkey.prototype = new PublicKey();
-PublicSubkey.prototype.constructor = PublicSubkey;
+PublicSubkeyPacket.prototype = new PublicKeyPacket();
+PublicSubkeyPacket.prototype.constructor = PublicSubkeyPacket;
 
-export default PublicSubkey;
+export default PublicSubkeyPacket;
