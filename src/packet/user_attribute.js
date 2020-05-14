@@ -44,7 +44,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function UserAttribute() {
+function UserAttributePacket() {
   this.tag = enums.packet.userAttribute;
   this.attributes = [];
 }
@@ -53,7 +53,7 @@ function UserAttribute() {
  * parsing function for a user attribute packet (tag 17).
  * @param {Uint8Array} input payload of a tag 17 packet
  */
-UserAttribute.prototype.read = function(bytes) {
+UserAttributePacket.prototype.read = function(bytes) {
   let i = 0;
   while (i < bytes.length) {
     const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
@@ -68,7 +68,7 @@ UserAttribute.prototype.read = function(bytes) {
  * Creates a binary representation of the user attribute packet
  * @returns {Uint8Array} string representation
  */
-UserAttribute.prototype.write = function() {
+UserAttributePacket.prototype.write = function() {
   const arr = [];
   for (let i = 0; i < this.attributes.length; i++) {
     arr.push(packet.writeSimpleLength(this.attributes[i].length));
@@ -79,11 +79,11 @@ UserAttribute.prototype.write = function() {
 
 /**
  * Compare for equality
- * @param  {module:packet.UserAttribute} usrAttr
+ * @param  {UserAttributePacket} usrAttr
  * @returns {Boolean}         true if equal
  */
-UserAttribute.prototype.equals = function(usrAttr) {
-  if (!usrAttr || !(usrAttr instanceof UserAttribute)) {
+UserAttributePacket.prototype.equals = function(usrAttr) {
+  if (!usrAttr || !(usrAttr instanceof UserAttributePacket)) {
     return false;
   }
   return this.attributes.every(function(attr, index) {
@@ -91,4 +91,4 @@ UserAttribute.prototype.equals = function(usrAttr) {
   });
 };
 
-export default UserAttribute;
+export default UserAttributePacket;

@@ -20,6 +20,10 @@ const terserOptions = {
   ecma: 2017,
   compress: {
     unsafe: true
+  },
+  output: {
+    comments: '/^(?:!|#__)/',
+    preserve_annotations: true
   }
 };
 

@@ -40,7 +40,11 @@
 
 import stream from 'web-stream-tools';
 import { createReadableStreamWrapper } from '@mattiasbuelens/web-streams-adapter';
-import * as messageLib from './message';
+import {
+  Message,
+  generateSessionKey as messageGenerateSessionKey,
+  encryptSessionKey as messageEncryptSessionKey
+} from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import config from './config/config';
@@ -407,7 +411,7 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = 
 
   return Promise.resolve().then(async function() {
 
-    return messageLib.generateSessionKey(publicKeys, date, toUserIds);
+    return messageGenerateSessionKey(publicKeys, date, toUserIds);
 
   }).catch(onError.bind(null, 'Error generating session key'));
 }
@@ -433,7 +437,7 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, 
 
   return Promise.resolve().then(async function() {
 
-    const message = await messageLib.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
+    const message = await messageEncryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
     return armor ? message.armor() : message.write();
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
@@ -483,12 +487,12 @@ function checkBinary(data, name) {
   }
 }
 function checkMessage(message) {
-  if (!(message instanceof messageLib.Message)) {
+  if (!(message instanceof Message)) {
     throw new Error('Parameter [message] needs to be of type Message');
   }
 }
 function checkCleartextOrMessage(message) {
-  if (!(message instanceof CleartextMessage) && !(message instanceof messageLib.Message)) {
+  if (!(message instanceof CleartextMessage) && !(message instanceof Message)) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }
