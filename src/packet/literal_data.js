@@ -35,8 +35,8 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function Literal(date = new Date()) {
-  this.tag = enums.packet.literal;
+function LiteralDataPacket(date = new Date()) {
+  this.tag = enums.packet.literalData;
   this.format = 'utf8'; // default format for literal data packets
   this.date = util.normalizeDate(date);
   this.text = null; // textual data representation
@@ -50,7 +50,7 @@ function Literal(date = new Date()) {
  * @param {String | ReadableStream<String>} text Any native javascript string
  * @param {utf8|binary|text|mime} format (optional) The format of the string of bytes
  */
-Literal.prototype.setText = function(text, format = 'utf8') {
+LiteralDataPacket.prototype.setText = function(text, format = 'utf8') {
   this.format = format;
   this.text = text;
   this.data = null;
@@ -62,7 +62,7 @@ Literal.prototype.setText = function(text, format = 'utf8') {
  * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
  * @returns {String | ReadableStream<String>} literal data as text
  */
-Literal.prototype.getText = function(clone = false) {
+LiteralDataPacket.prototype.getText = function(clone = false) {
   if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
     this.text = util.decodeUtf8(util.nativeEOL(this.getBytes(clone)));
   }
@@ -74,7 +74,7 @@ Literal.prototype.getText = function(clone = false) {
  * @param {Uint8Array | ReadableStream<Uint8Array>} bytes The string of bytes
  * @param {utf8|binary|text|mime} format The format of the string of bytes
  */
-Literal.prototype.setBytes = function(bytes, format) {
+LiteralDataPacket.prototype.setBytes = function(bytes, format) {
   this.format = format;
   this.data = bytes;
   this.text = null;
@@ -86,7 +86,7 @@ Literal.prototype.setBytes = function(bytes, format) {
  * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
  * @returns {Uint8Array | ReadableStream<Uint8Array>} A sequence of bytes
  */
-Literal.prototype.getBytes = function(clone = false) {
+LiteralDataPacket.prototype.getBytes = function(clone = false) {
   if (this.data === null) {
     // encode UTF8 and normalize EOL to \r\n
     this.data = util.canonicalizeEOL(util.encodeUtf8(this.text));
@@ -102,7 +102,7 @@ Literal.prototype.getBytes = function(clone = false) {
  * Sets the filename of the literal packet data
  * @param {String} filename Any native javascript string
  */
-Literal.prototype.setFilename = function(filename) {
+LiteralDataPacket.prototype.setFilename = function(filename) {
   this.filename = filename;
 };
 
@@ -111,7 +111,7 @@ Literal.prototype.setFilename = function(filename) {
  * Get the filename of the literal packet data
  * @returns {String} filename
  */
-Literal.prototype.getFilename = function() {
+LiteralDataPacket.prototype.getFilename = function() {
   return this.filename;
 };
 
@@ -120,9 +120,9 @@ Literal.prototype.getFilename = function() {
  * Parsing function for a literal data packet (tag 11).
  *
  * @param {Uint8Array | ReadableStream<Uint8Array>} input Payload of a tag 11 packet
- * @returns {module:packet.Literal} object representation
+ * @returns {LiteralDataPacket} object representation
  */
-Literal.prototype.read = async function(bytes) {
+LiteralDataPacket.prototype.read = async function(bytes) {
   await stream.parse(bytes, async reader => {
     // - A one-octet field that describes how the data is formatted.
     const format = enums.read(enums.literal, await reader.readByte());
@@ -143,7 +143,7 @@ Literal.prototype.read = async function(bytes) {
  *
  * @returns {Uint8Array} Uint8Array representation of the packet
  */
-Literal.prototype.writeHeader = function() {
+LiteralDataPacket.prototype.writeHeader = function() {
   const filename = util.encodeUtf8(this.filename);
   const filename_length = new Uint8Array([filename.length]);
 
@@ -158,11 +158,11 @@ Literal.prototype.writeHeader = function() {
  *
  * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
  */
-Literal.prototype.write = function() {
+LiteralDataPacket.prototype.write = function() {
   const header = this.writeHeader();
   const data = this.getBytes();
 
   return util.concat([header, data]);
 };
 
-export default Literal;
+export default LiteralDataPacket;

@@ -2560,8 +2560,8 @@ module.exports = () => describe('Key', function() {
       43 ee 3b 24 06
     `.replace(/\s+/g, ''));
 
-    let packetlist = new openpgp.packet.List();
-    await packetlist.read(packetBytes);
+    let packetlist = new openpgp.PacketList();
+    await packetlist.read(packetBytes, { PublicKeyPacket: openpgp.PublicKeyPacket });
     let key = packetlist[0];
     expect(key).to.exist;
   });
@@ -2589,9 +2589,9 @@ module.exports = () => describe('Key', function() {
     const pubKey = await openpgp.key.readArmored(pub_sig_test);
     expect(pubKey).to.exist;
 
-    const packetlist = new openpgp.packet.List();
+    const packetlist = new openpgp.PacketList();
 
-    await packetlist.read((await openpgp.armor.decode(pub_sig_test)).data);
+    await packetlist.read((await openpgp.armor.decode(pub_sig_test)).data, openpgp);
 
     const subkeys = pubKey.getSubkeys();
     expect(subkeys).to.exist;
@@ -2780,7 +2780,7 @@ module.exports = () => describe('Key', function() {
     expect(source.revocationSignatures).to.exist;
     dest.revocationSignatures = [];
     return dest.update(source).then(() => {
-      expect(dest.revocationSignatures[0]).to.exist.and.be.an.instanceof(openpgp.packet.Signature);
+      expect(dest.revocationSignatures[0]).to.exist.and.be.an.instanceof(openpgp.SignaturePacket);
     });
   });
 
@@ -2958,8 +2958,8 @@ module.exports = () => describe('Key', function() {
     const revocationCertificate = await revKey.getRevocationCertificate();
 
     const input = await openpgp.armor.decode(revocation_certificate_arm4);
-    const packetlist = new openpgp.packet.List();
-    await packetlist.read(input.data);
+    const packetlist = new openpgp.PacketList();
+    await packetlist.read(input.data, { SignaturePacket: openpgp.SignaturePacket });
     const armored = openpgp.armor.encode(openpgp.enums.armor.publicKey, packetlist.write());
 
     expect(revocationCertificate.replace(/^Comment: .*$\r\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\r\n/mg, ''));
@@ -3052,7 +3052,7 @@ module.exports = () => describe('Key', function() {
     expect(primUser.user.userId.name).to.equal('Signature Test');
     expect(primUser.user.userId.email).to.equal('signature@test.com');
     expect(primUser.user.userId.comment).to.equal('');
-    expect(primUser.selfCertification).to.be.an.instanceof(openpgp.packet.Signature);
+    expect(primUser.selfCertification).to.be.an.instanceof(openpgp.SignaturePacket);
   });
 
   it('getPrimaryUser() should throw if no UserIDs are bound', async function() {

@@ -105,11 +105,11 @@ export default {
    */
   supportsStreaming: function(tag_type) {
     return [
-      enums.packet.literal,
-      enums.packet.compressed,
-      enums.packet.symmetricallyEncrypted,
-      enums.packet.symEncryptedIntegrityProtected,
-      enums.packet.symEncryptedAEADProtected
+      enums.packet.literalData,
+      enums.packet.compressedData,
+      enums.packet.symmetricallyEncryptedData,
+      enums.packet.symEncryptedIntegrityProtectedData,
+      enums.packet.symEncryptedAEADProtectedData
     ].includes(tag_type);
   },
 

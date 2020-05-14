@@ -21,6 +21,7 @@
  * @requires crypto
  * @requires enums
  * @requires util
+ * @requires packet
  */
 
 import stream from 'web-stream-tools';
@@ -28,6 +29,12 @@ import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import {
+  LiteralDataPacket,
+  CompressedDataPacket,
+  OnePassSignaturePacket,
+  SignaturePacket
+} from '../packet';
 
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
@@ -41,19 +48,19 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function SymmetricallyEncrypted() {
+function SymmetricallyEncryptedDataPacket() {
   /**
    * Packet type
    * @type {module:enums.packet}
    */
-  this.tag = enums.packet.symmetricallyEncrypted;
+  this.tag = enums.packet.symmetricallyEncryptedData;
   /**
    * Encrypted secret-key data
    */
   this.encrypted = null;
   /**
    * Decrypted packets contained within.
-   * @type {module:packet.List}
+   * @type {PacketList}
    */
   this.packets = null;
   /**
@@ -63,11 +70,11 @@ function SymmetricallyEncrypted() {
   this.ignoreMdcError = config.ignoreMdcError;
 }
 
-SymmetricallyEncrypted.prototype.read = function (bytes) {
+SymmetricallyEncryptedDataPacket.prototype.read = function (bytes) {
   this.encrypted = bytes;
 };
 
-SymmetricallyEncrypted.prototype.write = function () {
+SymmetricallyEncryptedDataPacket.prototype.write = function () {
   return this.encrypted;
 };
 
@@ -79,7 +86,7 @@ SymmetricallyEncrypted.prototype.write = function () {
  * @returns {Promise<Boolean>}
  * @async
  */
-SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, key) {
+SymmetricallyEncryptedDataPacket.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
   // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
   if (!this.ignoreMdcError) {
     throw new Error('Decryption failed due to missing MDC.');
@@ -91,7 +98,12 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
     this.encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
   );
 
-  await this.packets.read(decrypted);
+  await this.packets.read(decrypted, {
+    LiteralDataPacket,
+    CompressedDataPacket,
+    OnePassSignaturePacket,
+    SignaturePacket
+  }, streaming);
 
   return true;
 };
@@ -104,7 +116,7 @@ SymmetricallyEncrypted.prototype.decrypt = async function (sessionKeyAlgorithm, 
  * @returns {Promise<Boolean>}
  * @async
  */
-SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
+SymmetricallyEncryptedDataPacket.prototype.encrypt = async function (algo, key) {
   const data = this.packets.write();
 
   const prefix = await crypto.getPrefixRandom(algo);
@@ -115,4 +127,4 @@ SymmetricallyEncrypted.prototype.encrypt = async function (algo, key) {
   return true;
 };
 
-export default SymmetricallyEncrypted;
+export default SymmetricallyEncryptedDataPacket;

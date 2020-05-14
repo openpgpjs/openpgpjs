@@ -21,7 +21,7 @@ import enums from '../enums';
  * @memberof module:packet
  * @constructor
  */
-function Trust() {
+function TrustPacket() {
   this.tag = enums.packet.trust;
 }
 
@@ -30,6 +30,6 @@ function Trust() {
  * Currently not implemented as we ignore trust packets
  * @param {String} byptes payload of a tag 12 packet
  */
-Trust.prototype.read = function () {}; // TODO
+TrustPacket.prototype.read = function () {}; // TODO
 
-export default Trust;
+export default TrustPacket;

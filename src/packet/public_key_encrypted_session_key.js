@@ -46,7 +46,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function PublicKeyEncryptedSessionKey() {
+function PublicKeyEncryptedSessionKeyPacket() {
   this.tag = enums.packet.publicKeyEncryptedSessionKey;
   this.version = 3;
 
@@ -67,9 +67,9 @@ function PublicKeyEncryptedSessionKey() {
  * @param {Integer} position Position to start reading from the input string
  * @param {Integer} len Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet.PublicKeyEncryptedSessionKey} Object representation
+ * @returns {PublicKeyEncryptedSessionKeyPacket} Object representation
  */
-PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
+PublicKeyEncryptedSessionKeyPacket.prototype.read = function (bytes) {
   this.version = bytes[0];
   this.publicKeyId.read(bytes.subarray(1, bytes.length));
   this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
@@ -90,7 +90,7 @@ PublicKeyEncryptedSessionKey.prototype.read = function (bytes) {
  *
  * @returns {Uint8Array} The Uint8Array representation
  */
-PublicKeyEncryptedSessionKey.prototype.write = function () {
+PublicKeyEncryptedSessionKeyPacket.prototype.write = function () {
   const arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
 
   for (let i = 0; i < this.encrypted.length; i++) {
@@ -102,11 +102,11 @@ PublicKeyEncryptedSessionKey.prototype.write = function () {
 
 /**
  * Encrypt session key packet
- * @param {module:packet.PublicKey} key Public key
+ * @param {PublicKeyPacket} key Public key
  * @returns {Promise<Boolean>}
  * @async
  */
-PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
+PublicKeyEncryptedSessionKeyPacket.prototype.encrypt = async function (key) {
   let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
 
   data += util.uint8ArrayToStr(this.sessionKey);
@@ -121,12 +121,12 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  * Decrypts the session key (only for public key encrypted session key
  * packets (tag 1)
  *
- * @param {module:packet.SecretKey} key
+ * @param {SecretKeyPacket} key
  *            Private key with secret params unlocked
  * @returns {Promise<Boolean>}
  * @async
  */
-PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
+PublicKeyEncryptedSessionKeyPacket.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
   const checksum = util.strToUint8Array(decoded.substr(decoded.length - 2));
@@ -141,4 +141,4 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   return true;
 };
 
-export default PublicKeyEncryptedSessionKey;
+export default PublicKeyEncryptedSessionKeyPacket;

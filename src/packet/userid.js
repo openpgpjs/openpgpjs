@@ -34,8 +34,8 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function Userid() {
-  this.tag = enums.packet.userid;
+function UserIDPacket() {
+  this.tag = enums.packet.userID;
   /** A string containing the user id. Usually in the form
    * John Doe <john@example.com>
    * @type {String}
@@ -51,14 +51,14 @@ function Userid() {
  * Parsing function for a user id packet (tag 13).
  * @param {Uint8Array} input payload of a tag 13 packet
  */
-Userid.prototype.read = function (bytes) {
+UserIDPacket.prototype.read = function (bytes) {
   this.parse(util.decodeUtf8(bytes));
 };
 
 /**
  * Parse userid string, e.g. 'John Doe <john@example.com>'
  */
-Userid.prototype.parse = function (userid) {
+UserIDPacket.prototype.parse = function (userid) {
   try {
     Object.assign(this, util.parseUserId(userid));
   } catch (e) {}
@@ -69,14 +69,14 @@ Userid.prototype.parse = function (userid) {
  * Creates a binary representation of the user id packet
  * @returns {Uint8Array} binary representation
  */
-Userid.prototype.write = function () {
+UserIDPacket.prototype.write = function () {
   return util.encodeUtf8(this.userid);
 };
 
 /**
  * Set userid string from object, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
  */
-Userid.prototype.format = function (userid) {
+UserIDPacket.prototype.format = function (userid) {
   if (util.isString(userid)) {
     userid = util.parseUserId(userid);
   }
@@ -84,4 +84,4 @@ Userid.prototype.format = function (userid) {
   this.userid = util.formatUserId(userid);
 };
 
-export default Userid;
+export default UserIDPacket;

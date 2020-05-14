@@ -20,7 +20,7 @@
  * @requires enums
  */
 
-import SecretKey from './secret_key';
+import SecretKeyPacket from './secret_key';
 import enums from '../enums';
 
 /**
@@ -28,14 +28,14 @@ import enums from '../enums';
  * Key packet and has exactly the same format.
  * @memberof module:packet
  * @constructor
- * @extends module:packet.SecretKey
+ * @extends SecretKeyPacket
  */
-function SecretSubkey(date = new Date()) {
-  SecretKey.call(this, date);
+function SecretSubkeyPacket(date = new Date()) {
+  SecretKeyPacket.call(this, date);
   this.tag = enums.packet.secretSubkey;
 }
 
-SecretSubkey.prototype = new SecretKey();
-SecretSubkey.prototype.constructor = SecretSubkey;
+SecretSubkeyPacket.prototype = new SecretKeyPacket();
+SecretSubkeyPacket.prototype.constructor = SecretSubkeyPacket;
 
-export default SecretSubkey;
+export default SecretSubkeyPacket;

@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { key, cleartext, enums, packet: { List, Signature } } = openpgp;
+const { key, cleartext, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -48,13 +48,13 @@ async function testSubkeyTrust() {
     key: attackerPrivKey.toPublic().keyPacket,
     bind: pktPubVictim[3] // victim subkey
   };
-  const fakeBindingSignature = new Signature();
+  const fakeBindingSignature = new SignaturePacket();
   fakeBindingSignature.signatureType = enums.signature.subkeyBinding;
   fakeBindingSignature.publicKeyAlgorithm = attackerPrivKey.keyPacket.algorithm;
   fakeBindingSignature.hashAlgorithm = enums.hash.sha256;
   fakeBindingSignature.keyFlags = [enums.keyFlags.signData];
   await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign);
-  const newList = new List();
+  const newList = new PacketList();
   newList.concat([
     pktPrivAttacker[0], // attacker private key
     pktPrivAttacker[1], // attacker user
