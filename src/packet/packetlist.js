@@ -23,7 +23,7 @@ import util from '../util';
  * @constructor
  * @extends Array
  */
-function List() {
+function PacketList() {
   /**
    * The number of packets contained within the list.
    * @readonly
@@ -32,13 +32,13 @@ function List() {
   this.length = 0;
 }
 
-List.prototype = [];
+PacketList.prototype = [];
 
 /**
  * Reads a stream of binary data and interprents it as a list of packets.
  * @param {Uint8Array | ReadableStream<Uint8Array>} A Uint8Array of bytes.
  */
-List.prototype.read = async function (bytes, streaming) {
+PacketList.prototype.read = async function (bytes, allowedPackets, streaming) {
   this.stream = stream.transformPair(bytes, async (readable, writable) => {
     const writer = stream.getWriter(writable);
     try {
@@ -47,8 +47,8 @@ List.prototype.read = async function (bytes, streaming) {
         const done = await packetParser.read(readable, streaming, async parsed => {
           try {
             const tag = enums.read(enums.packet, parsed.tag);
-            const packet = packets.newPacketFromTag(tag);
-            packet.packets = new List();
+            const packet = packets.newPacketFromTag(tag, allowedPackets);
+            packet.packets = new PacketList();
             packet.fromStream = util.isStream(parsed.packet);
             await packet.read(parsed.packet, streaming);
             await writer.write(packet);
@@ -94,7 +94,7 @@ List.prototype.read = async function (bytes, streaming) {
  * class instance.
  * @returns {Uint8Array} A Uint8Array containing valid openpgp packets.
  */
-List.prototype.write = function () {
+PacketList.prototype.write = function () {
   const arr = [];
 
   for (let i = 0; i < this.length; i++) {
@@ -137,12 +137,12 @@ List.prototype.write = function () {
  * writing to packetlist[i] directly will result in an error.
  * @param {Object} packet Packet to push
  */
-List.prototype.push = function (packet) {
+PacketList.prototype.push = function (packet) {
   if (!packet) {
     return;
   }
 
-  packet.packets = packet.packets || new List();
+  packet.packets = packet.packets || new PacketList();
 
   this[this.length] = packet;
   this.length++;
@@ -151,8 +151,8 @@ List.prototype.push = function (packet) {
 /**
  * Creates a new PacketList with all packets from the given types
  */
-List.prototype.filterByTag = function (...args) {
-  const filtered = new List();
+PacketList.prototype.filterByTag = function (...args) {
+  const filtered = new PacketList();
 
   const handle = tag => packetType => tag === packetType;
 
@@ -170,14 +170,14 @@ List.prototype.filterByTag = function (...args) {
  * @param  {module:enums.packet} type The packet type
  * @returns {module:packet/packet|undefined}
  */
-List.prototype.findPacket = function (type) {
+PacketList.prototype.findPacket = function (type) {
   return this.find(packet => packet.tag === type);
 };
 
 /**
  * Returns array of found indices by tag
  */
-List.prototype.indexOfTag = function (...args) {
+PacketList.prototype.indexOfTag = function (...args) {
   const tagIndex = [];
   const that = this;
 
@@ -194,7 +194,7 @@ List.prototype.indexOfTag = function (...args) {
 /**
  * Concatenates packetlist or array of packets
  */
-List.prototype.concat = function (packetlist) {
+PacketList.prototype.concat = function (packetlist) {
   if (packetlist) {
     for (let i = 0; i < packetlist.length; i++) {
       this.push(packetlist[i]);
@@ -203,4 +203,4 @@ List.prototype.concat = function (packetlist) {
   return this;
 };
 
-export default List;
+export default PacketList;

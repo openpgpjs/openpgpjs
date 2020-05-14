@@ -27,7 +27,7 @@
  * @module key/factory
  */
 
-import packet from '../packet';
+import { PacketList, UserIDPacket, SignaturePacket } from '../packet';
 import Key from './key';
 import * as helper from './helper';
 import enums from '../enums';
@@ -147,7 +147,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     }
   }));
 
-  const packetlist = new packet.List();
+  const packetlist = new PacketList();
 
   packetlist.push(secretKeyPacket);
 
@@ -165,13 +165,13 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       return algos;
     }
 
-    const userIdPacket = new packet.Userid();
+    const userIdPacket = new UserIDPacket();
     userIdPacket.format(userId);
 
     const dataToSign = {};
     dataToSign.userId = userIdPacket;
     dataToSign.key = secretKeyPacket;
-    const signaturePacket = new packet.Signature(options.date);
+    const signaturePacket = new SignaturePacket(options.date);
     signaturePacket.signatureType = enums.signature.certGeneric;
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket);
@@ -270,8 +270,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
  * @static
  */
 export async function read(data) {
-  const packetlist = new packet.List();
-  await packetlist.read(data);
+  const packetlist = new PacketList();
+  await packetlist.read(data, helper.allowedKeyPackets);
   return new Key(packetlist);
 }
 
@@ -299,8 +299,8 @@ export async function readArmored(armoredKey) {
  */
 export async function readAll(data) {
   const keys = [];
-  const packetlist = new packet.List();
-  await packetlist.read(data);
+  const packetlist = new PacketList();
+  await packetlist.read(data, helper.allowedKeyPackets);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');

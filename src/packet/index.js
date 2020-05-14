@@ -2,17 +2,9 @@
  * @fileoverview OpenPGP packet types
  * @see module:packet/all_packets
  * @see module:packet/clone
- * @see module:packet.List
+ * @see PacketList
  * @module packet
  */
 
-import * as packets from './all_packets';
-import List from './packetlist';
-
-const mod = {
-  List
-};
-
-Object.assign(mod, packets);
-
-export default mod;
+export * from './all_packets';
+export { default as PacketList } from './packetlist';

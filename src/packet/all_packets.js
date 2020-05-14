@@ -4,75 +4,73 @@
  * @module packet/all_packets
  */
 
-import * as packets from './all_packets.js'; // re-import module to parse packets from tag
-
 export {
-  /** @see module:packet.Compressed */
-  default as Compressed
-} from './compressed.js';
+  /** @see CompressedDataPacket */
+  default as CompressedDataPacket
+} from './compressed_data.js';
 export {
-  /** @see module:packet.SymEncryptedIntegrityProtected */
-  default as SymEncryptedIntegrityProtected
-} from './sym_encrypted_integrity_protected.js';
+  /** @see SymEncryptedIntegrityProtectedDataPacket */
+  default as SymEncryptedIntegrityProtectedDataPacket
+} from './sym_encrypted_integrity_protected_data.js';
 export {
-  /** @see module:packet.SymEncryptedAEADProtected */
-  default as SymEncryptedAEADProtected
-} from './sym_encrypted_aead_protected.js';
+  /** @see SymEncryptedAEADProtectedDataPacket */
+  default as SymEncryptedAEADProtectedDataPacket
+} from './sym_encrypted_aead_protected_data.js';
 export {
-  /** @see module:packet.PublicKeyEncryptedSessionKey */
-  default as PublicKeyEncryptedSessionKey
+  /** @see PublicKeyEncryptedSessionKeyPacket */
+  default as PublicKeyEncryptedSessionKeyPacket
 } from './public_key_encrypted_session_key.js';
 export {
-  /** @see module:packet.SymEncryptedSessionKey */
-  default as SymEncryptedSessionKey
+  /** @see SymEncryptedSessionKeyPacket */
+  default as SymEncryptedSessionKeyPacket
 } from './sym_encrypted_session_key.js';
 export {
-  /** @see module:packet.Literal */
-  default as Literal
-} from './literal.js';
+  /** @see LiteralDataPacket */
+  default as LiteralDataPacket
+} from './literal_data.js';
 export {
-  /** @see module:packet.PublicKey */
-  default as PublicKey
+  /** @see PublicKeyPacket */
+  default as PublicKeyPacket
 } from './public_key.js';
 export {
-  /** @see module:packet.SymmetricallyEncrypted */
-  default as SymmetricallyEncrypted
-} from './symmetrically_encrypted.js';
+  /** @see SymmetricallyEncryptedDataPacket */
+  default as SymmetricallyEncryptedDataPacket
+} from './symmetrically_encrypted_data.js';
 export {
-  /** @see module:packet.Marker */
-  default as Marker
+  /** @see MarkerPacket */
+  default as MarkerPacket
 } from './marker.js';
 export {
-  /** @see module:packet.PublicSubkey */
-  default as PublicSubkey
+  /** @see PublicSubkeyPacket */
+  default as PublicSubkeyPacket
 } from './public_subkey.js';
 export {
-  /** @see module:packet.UserAttribute */
-  default as UserAttribute
+  /** @see UserAttributePacket */
+  default as UserAttributePacket
 } from './user_attribute.js';
 export {
-  /** @see module:packet.OnePassSignature */
-  default as OnePassSignature
+  /** @see OnePassSignaturePacket */
+  default as OnePassSignaturePacket
 } from './one_pass_signature.js';
 export {
-  /** @see module:packet.SecretKey */
-  default as SecretKey
+  /** @see SecretKeyPacket */
+  default as SecretKeyPacket
 } from './secret_key.js';
 export {
-  /** @see module:packet.Userid */
-  default as Userid
+  /** @see UserIDPacket */
+  default as UserIDPacket
 } from './userid.js';
 export {
-  /** @see module:packet.SecretSubkey */
-  default as SecretSubkey
+  /** @see SecretSubkeyPacket */
+  default as SecretSubkeyPacket
 } from './secret_subkey.js';
 export {
-  /** @see module:packet.Signature */
-  default as Signature
+  /** @see SignaturePacket */
+  default as SignaturePacket
 } from './signature.js';
 export {
-  /** @see module:packet.Trust */
-  default as Trust
+  /** @see TrustPacket */
+  default as TrustPacket
 } from './trust.js';
 
 /**
@@ -82,8 +80,12 @@ export {
  * @param {String} tag property name from {@link module:enums.packet}
  * @returns {Object} new packet object with type based on tag
  */
-export function newPacketFromTag(tag) {
-  return new packets[packetClassFromTagName(tag)]();
+export function newPacketFromTag(tag, allowedPackets) {
+  const className = packetClassFromTagName(tag);
+  if (!allowedPackets[className]) {
+    throw new Error('Packet not allowed in this context: ' + className);
+  }
+  return new allowedPackets[className]();
 }
 
 /**
@@ -93,5 +95,5 @@ export function newPacketFromTag(tag) {
  * @private
  */
 function packetClassFromTagName(tag) {
-  return tag.substr(0, 1).toUpperCase() + tag.substr(1);
+  return tag.substr(0, 1).toUpperCase() + tag.substr(1) + 'Packet';
 }

@@ -24,7 +24,7 @@
  */
 
 import stream from 'web-stream-tools';
-import Signature from './signature';
+import SignaturePacket from './signature';
 import type_keyid from '../type/keyid';
 import enums from '../enums';
 import util from '../util';
@@ -41,7 +41,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function OnePassSignature() {
+function OnePassSignaturePacket() {
   /**
    * Packet type
    * @type {module:enums.packet}
@@ -78,9 +78,9 @@ function OnePassSignature() {
 /**
  * parsing function for a one-pass signature packet (tag 4).
  * @param {Uint8Array} bytes payload of a tag 4 packet
- * @returns {module:packet.OnePassSignature} object representation
+ * @returns {OnePassSignaturePacket} object representation
  */
-OnePassSignature.prototype.read = function (bytes) {
+OnePassSignaturePacket.prototype.read = function (bytes) {
   let mypos = 0;
   // A one-octet version number.  The current version is 3.
   this.version = bytes[mypos++];
@@ -112,7 +112,7 @@ OnePassSignature.prototype.read = function (bytes) {
  * creates a string representation of a one-pass signature packet
  * @returns {Uint8Array} a Uint8Array representation of a one-pass signature packet
  */
-OnePassSignature.prototype.write = function () {
+OnePassSignaturePacket.prototype.write = function () {
   const start = new Uint8Array([3, enums.write(enums.signature, this.signatureType),
     enums.write(enums.hash, this.hashAlgorithm),
     enums.write(enums.publicKey, this.publicKeyAlgorithm)]);
@@ -122,14 +122,14 @@ OnePassSignature.prototype.write = function () {
   return util.concatUint8Array([start, this.issuerKeyId.write(), end]);
 };
 
-OnePassSignature.prototype.hash = Signature.prototype.hash;
-OnePassSignature.prototype.toHash = Signature.prototype.toHash;
-OnePassSignature.prototype.toSign = Signature.prototype.toSign;
-OnePassSignature.prototype.calculateTrailer = function(...args) {
-  return stream.fromAsync(async () => Signature.prototype.calculateTrailer.apply(await this.correspondingSig, args));
+OnePassSignaturePacket.prototype.hash = SignaturePacket.prototype.hash;
+OnePassSignaturePacket.prototype.toHash = SignaturePacket.prototype.toHash;
+OnePassSignaturePacket.prototype.toSign = SignaturePacket.prototype.toSign;
+OnePassSignaturePacket.prototype.calculateTrailer = function(...args) {
+  return stream.fromAsync(async () => SignaturePacket.prototype.calculateTrailer.apply(await this.correspondingSig, args));
 };
 
-OnePassSignature.prototype.verify = async function() {
+OnePassSignaturePacket.prototype.verify = async function() {
   const correspondingSig = await this.correspondingSig;
   if (!correspondingSig || correspondingSig.tag !== enums.packet.signature) {
     throw new Error('Corresponding signature packet missing');
@@ -146,4 +146,4 @@ OnePassSignature.prototype.verify = async function() {
   return correspondingSig.verify.apply(correspondingSig, arguments);
 };
 
-export default OnePassSignature;
+export default OnePassSignaturePacket;

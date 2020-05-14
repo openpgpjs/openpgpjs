@@ -18,18 +18,26 @@
 /**
  * @requires web-stream-tools
  * @requires pako
+ * @requires seek-bzip
  * @requires config
  * @requires enums
  * @requires util
- * @requires compression/bzip2
+ * @requires packet
  */
 
-import pako from 'pako';
-import Bunzip from 'seek-bzip';
+import { Deflate } from 'pako/lib/deflate';
+import { Inflate } from 'pako/lib/inflate';
+import { Z_SYNC_FLUSH, Z_FINISH } from 'pako/lib/zlib/constants';
+import { decode as BunzipDecode } from 'seek-bzip';
 import stream from 'web-stream-tools';
 import config from '../config';
 import enums from '../enums';
 import util from '../util';
+import {
+  LiteralDataPacket,
+  OnePassSignaturePacket,
+  SignaturePacket
+} from '../packet';
 
 /**
  * Implementation of the Compressed Data Packet (Tag 8)
@@ -41,15 +49,15 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function Compressed() {
+function CompressedDataPacket() {
   /**
    * Packet type
    * @type {module:enums.packet}
    */
-  this.tag = enums.packet.compressed;
+  this.tag = enums.packet.compressedData;
   /**
    * List of packets
-   * @type {module:packet.List}
+   * @type {PacketList}
    */
   this.packets = null;
   /**
@@ -69,7 +77,7 @@ function Compressed() {
  * Parsing function for the packet.
  * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
  */
-Compressed.prototype.read = async function (bytes, streaming) {
+CompressedDataPacket.prototype.read = async function (bytes, streaming) {
   await stream.parse(bytes, async reader => {
 
     // One octet that gives the algorithm used to compress the packet.
@@ -87,7 +95,7 @@ Compressed.prototype.read = async function (bytes, streaming) {
  * Return the compressed packet.
  * @returns {Uint8Array | ReadableStream<Uint8Array>} binary compressed packet
  */
-Compressed.prototype.write = function () {
+CompressedDataPacket.prototype.write = function () {
   if (this.compressed === null) {
     this.compress();
   }
@@ -100,19 +108,23 @@ Compressed.prototype.write = function () {
  * Decompression method for decompressing the compressed data
  * read by read_packet
  */
-Compressed.prototype.decompress = async function (streaming) {
+CompressedDataPacket.prototype.decompress = async function (streaming) {
 
   if (!decompress_fns[this.algorithm]) {
     throw new Error(this.algorithm + ' decompression not supported');
   }
 
-  await this.packets.read(decompress_fns[this.algorithm](this.compressed), streaming);
+  await this.packets.read(decompress_fns[this.algorithm](this.compressed), {
+    LiteralDataPacket,
+    OnePassSignaturePacket,
+    SignaturePacket
+  }, streaming);
 };
 
 /**
  * Compress the packet data (member decompressedData)
  */
-Compressed.prototype.compress = function () {
+CompressedDataPacket.prototype.compress = function () {
 
   if (!compress_fns[this.algorithm]) {
     throw new Error(this.algorithm + ' compression not supported');
@@ -121,7 +133,7 @@ Compressed.prototype.compress = function () {
   this.compressed = compress_fns[this.algorithm](this.packets.write());
 };
 
-export default Compressed;
+export default CompressedDataPacket;
 
 //////////////////////////
 //                      //
@@ -147,12 +159,12 @@ function pako_zlib(constructor, options = {}) {
     const obj = new constructor(options);
     return stream.transform(data, value => {
       if (value.length) {
-        obj.push(value, pako.Z_SYNC_FLUSH);
+        obj.push(value, Z_SYNC_FLUSH);
         return obj.result;
       }
     }, () => {
-      if (constructor === pako.Deflate) {
-        obj.push([], pako.Z_FINISH);
+      if (constructor === Deflate) {
+        obj.push([], Z_FINISH);
         return obj.result;
       }
     });
@@ -165,30 +177,22 @@ function bzip2(func) {
   };
 }
 
-let compress_fns;
-let decompress_fns;
-if (nodeZlib) { // Use Node native zlib for DEFLATE compression/decompression
-  compress_fns = {
-    zip: node_zlib(nodeZlib.createDeflateRaw, { level: config.deflateLevel }),
-    zlib: node_zlib(nodeZlib.createDeflate, { level: config.deflateLevel })
-  };
+const compress_fns = nodeZlib ? {
+  zip: /*#__PURE__*/ node_zlib(nodeZlib.createDeflateRaw, { level: config.deflateLevel }),
+  zlib: /*#__PURE__*/ node_zlib(nodeZlib.createDeflate, { level: config.deflateLevel })
+} : {
+  zip: /*#__PURE__*/ pako_zlib(Deflate, { raw: true, level: config.deflateLevel }),
+  zlib: /*#__PURE__*/ pako_zlib(Deflate, { level: config.deflateLevel })
+};
 
-  decompress_fns = {
-    uncompressed: uncompressed,
-    zip: node_zlib(nodeZlib.createInflateRaw),
-    zlib: node_zlib(nodeZlib.createInflate),
-    bzip2: bzip2(Bunzip.decode)
-  };
-} else { // Use JS fallbacks
-  compress_fns = {
-    zip: pako_zlib(pako.Deflate, { raw: true, level: config.deflateLevel }),
-    zlib: pako_zlib(pako.Deflate, { level: config.deflateLevel })
-  };
-
-  decompress_fns = {
-    uncompressed: uncompressed,
-    zip: pako_zlib(pako.Inflate, { raw: true }),
-    zlib: pako_zlib(pako.Inflate),
-    bzip2: bzip2(Bunzip.decode)
-  };
-}
+const decompress_fns = nodeZlib ? {
+  uncompressed: uncompressed,
+  zip: /*#__PURE__*/ node_zlib(nodeZlib.createInflateRaw),
+  zlib: /*#__PURE__*/ node_zlib(nodeZlib.createInflate),
+  bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
+} : {
+  uncompressed: uncompressed,
+  zip: /*#__PURE__*/ pako_zlib(Inflate, { raw: true }),
+  zlib: /*#__PURE__*/ pako_zlib(Inflate),
+  bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
+};
