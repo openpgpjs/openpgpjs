@@ -23,19 +23,19 @@
  */
 
 import armor from './encoding/armor';
-import packet from './packet';
+import { PacketList, SignaturePacket } from './packet';
 import enums from './enums';
 
 /**
  * @class
  * @classdesc Class that represents an OpenPGP signature.
- * @param  {module:packet.List} packetlist The signature packets
+ * @param  {PacketList} packetlist The signature packets
  */
 export function Signature(packetlist) {
   if (!(this instanceof Signature)) {
     return new Signature(packetlist);
   }
-  this.packets = packetlist || new packet.List();
+  this.packets = packetlist || new PacketList();
 }
 
 
@@ -75,7 +75,7 @@ export async function readArmored(armoredText) {
  * @static
  */
 export async function read(input) {
-  const packetlist = new packet.List();
-  await packetlist.read(input);
+  const packetlist = new PacketList();
+  await packetlist.read(input, { SignaturePacket });
   return new Signature(packetlist);
 }

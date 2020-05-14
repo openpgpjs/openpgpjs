@@ -7,17 +7,17 @@
 
 import enums from '../enums';
 import * as helper from './helper';
-import packet from '../packet';
+import { PacketList } from '../packet';
 
 /**
  * @class
  * @classdesc Class that represents a subkey packet and the relevant signatures.
- * @borrows module:packet.PublicSubkey#getKeyId as SubKey#getKeyId
- * @borrows module:packet.PublicSubkey#getFingerprint as SubKey#getFingerprint
- * @borrows module:packet.PublicSubkey#hasSameFingerprintAs as SubKey#hasSameFingerprintAs
- * @borrows module:packet.PublicSubkey#getAlgorithmInfo as SubKey#getAlgorithmInfo
- * @borrows module:packet.PublicSubkey#getCreationTime as SubKey#getCreationTime
- * @borrows module:packet.PublicSubkey#isDecrypted as SubKey#isDecrypted
+ * @borrows PublicSubkeyPacket#getKeyId as SubKey#getKeyId
+ * @borrows PublicSubkeyPacket#getFingerprint as SubKey#getFingerprint
+ * @borrows PublicSubkeyPacket#hasSameFingerprintAs as SubKey#hasSameFingerprintAs
+ * @borrows PublicSubkeyPacket#getAlgorithmInfo as SubKey#getAlgorithmInfo
+ * @borrows PublicSubkeyPacket#getCreationTime as SubKey#getCreationTime
+ * @borrows PublicSubkeyPacket#isDecrypted as SubKey#isDecrypted
  */
 export default function SubKey(subKeyPacket) {
   if (!(this instanceof SubKey)) {
@@ -30,10 +30,10 @@ export default function SubKey(subKeyPacket) {
 
 /**
  * Transforms structured subkey data to packetlist
- * @returns {module:packet.List}
+ * @returns {PacketListPacket}
  */
 SubKey.prototype.toPacketlist = function() {
-  const packetlist = new packet.List();
+  const packetlist = new PacketList();
   packetlist.push(this.keyPacket);
   packetlist.concat(this.revocationSignatures);
   packetlist.concat(this.bindingSignatures);
@@ -42,13 +42,13 @@ SubKey.prototype.toPacketlist = function() {
 
 /**
  * Checks if a binding signature of a subkey is revoked
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey    The primary key packet
- * @param  {module:packet.Signature}  signature     The binding signature to verify
- * @param  {module:packet.PublicSubkey|
- *          module:packet.SecretSubkey|
- *          module:packet.PublicKey|
- *          module:packet.SecretKey} key, optional The key to verify the signature
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket} primaryKey    The primary key packet
+ * @param  {SignaturePacket}  signature     The binding signature to verify
+ * @param  {PublicSubkeyPacket|
+ *          SecretSubkeyPacket|
+ *          PublicKeyPacket|
+ *          SecretKeyPacket} key, optional The key to verify the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the binding signature is revoked
  * @async
@@ -66,10 +66,10 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date = n
 /**
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature. Throws if the subkey is invalid.
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey The primary key packet
- * @param  {Date}                     date       Use the given date instead of the current time
- * @returns {Promise<true>}                      The status of the subkey
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket} primaryKey The primary key packet
+ * @param  {Date}            date       Use the given date instead of the current time
+ * @returns {Promise<true>}             The status of the subkey
  * @async
  */
 SubKey.prototype.verify = async function(primaryKey, date = new Date()) {
@@ -89,9 +89,9 @@ SubKey.prototype.verify = async function(primaryKey, date = new Date()) {
 /**
  * Returns the expiration time of the subkey or Infinity if key does not expire
  * Returns null if the subkey is invalid.
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey  The primary key packet
- * @param  {Date}                     date       Use the given date instead of the current time
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket} primaryKey  The primary key packet
+ * @param  {Date}            date        Use the given date instead of the current time
  * @returns {Promise<Date | Infinity | null>}
  * @async
  */
@@ -110,9 +110,9 @@ SubKey.prototype.getExpirationTime = async function(primaryKey, date = new Date(
 
 /**
  * Update subkey with new components from specified subkey
- * @param  {module:key~SubKey}           subKey     Source subkey to merge
- * @param  {module:packet.SecretKey|
-            module:packet.SecretSubkey} primaryKey primary key used for validation
+ * @param  {module:key~SubKey}  subKey     Source subkey to merge
+ * @param  {SecretKeyPacket|
+            SecretSubkeyPacket} primaryKey primary key used for validation
  * @returns {Promise<undefined>}
  * @async
  */
@@ -151,7 +151,7 @@ SubKey.prototype.update = async function(subKey, primaryKey) {
 
 /**
  * Revokes the subkey
- * @param  {module:packet.SecretKey} primaryKey decrypted private primary key for revocation
+ * @param  {SecretKeyPacket} primaryKey decrypted private primary key for revocation
  * @param  {Object} reasonForRevocation optional, object indicating the reason for revocation
  * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
  * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation

@@ -62,13 +62,13 @@ module.exports = () => describe("Packet", function() {
       '-----END PGP PRIVATE KEY BLOCK-----';
 
   it('Symmetrically encrypted packet', async function() {
-    const message = new openpgp.packet.List();
+    const message = new openpgp.PacketList();
     const testText = input.createSomeMessage();
 
-    const literal = new openpgp.packet.Literal();
+    const literal = new openpgp.LiteralDataPacket();
     literal.setText(testText);
 
-    const enc = new openpgp.packet.SymmetricallyEncrypted();
+    const enc = new openpgp.SymmetricallyEncryptedDataPacket();
     message.push(enc);
     enc.packets.push(literal);
 
@@ -78,7 +78,7 @@ module.exports = () => describe("Packet", function() {
     await enc.encrypt(algo, key);
 
     const msg2 = new openpgp.message.Message();
-    await msg2.packets.read(message.write());
+    await msg2.packets.read(message.write(), { SymmetricallyEncryptedDataPacket: openpgp.SymmetricallyEncryptedDataPacket });
     msg2.packets[0].ignoreMdcError = true;
     const dec = await msg2.decrypt(null, null, [{ algorithm: algo, data: key }]);
 
@@ -86,13 +86,13 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Symmetrically encrypted packet - MDC error for modern cipher', async function() {
-    const message = new openpgp.packet.List();
+    const message = new openpgp.PacketList();
     const testText = input.createSomeMessage();
 
-    const literal = new openpgp.packet.Literal();
+    const literal = new openpgp.LiteralDataPacket();
     literal.setText(testText);
 
-    const enc = new openpgp.packet.SymmetricallyEncrypted();
+    const enc = new openpgp.SymmetricallyEncryptedDataPacket();
     message.push(enc);
     await enc.packets.push(literal);
 
@@ -101,8 +101,8 @@ module.exports = () => describe("Packet", function() {
 
     await enc.encrypt(algo, key);
 
-    const msg2 = new openpgp.packet.List();
-    await msg2.read(message.write());
+    const msg2 = new openpgp.PacketList();
+    await msg2.read(message.write(), { SymmetricallyEncryptedDataPacket: openpgp.SymmetricallyEncryptedDataPacket });
     await expect(msg2[0].decrypt(algo, key)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC.');
   });
 
@@ -111,17 +111,17 @@ module.exports = () => describe("Packet", function() {
     const algo = 'aes256';
     const testText = input.createSomeMessage();
 
-    const literal = new openpgp.packet.Literal();
-    const enc = new openpgp.packet.SymEncryptedIntegrityProtected();
-    const msg = new openpgp.packet.List();
+    const literal = new openpgp.LiteralDataPacket();
+    const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+    const msg = new openpgp.PacketList();
 
     msg.push(enc);
     literal.setText(testText);
     enc.packets.push(literal);
     await enc.encrypt(algo, key);
 
-    const msg2 = new openpgp.packet.List();
-    await msg2.read(msg.write());
+    const msg2 = new openpgp.PacketList();
+    await msg2.read(msg.write(), openpgp);
 
     await msg2[0].decrypt(algo, key);
 
@@ -132,18 +132,18 @@ module.exports = () => describe("Packet", function() {
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
     const testText = input.createSomeMessage();
-    const literal = new openpgp.packet.Literal();
-    const enc = new openpgp.packet.SymEncryptedAEADProtected();
-    const msg = new openpgp.packet.List();
+    const literal = new openpgp.LiteralDataPacket();
+    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const msg = new openpgp.PacketList();
 
     msg.push(enc);
     literal.setText(testText);
     enc.packets.push(literal);
 
-    const msg2 = new openpgp.packet.List();
+    const msg2 = new openpgp.PacketList();
 
     return enc.encrypt(algo, key).then(async function() {
-      await msg2.read(msg.write());
+      await msg2.read(msg.write(), openpgp);
       return msg2[0].decrypt(algo, key);
     }).then(async function() {
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
@@ -158,19 +158,19 @@ module.exports = () => describe("Packet", function() {
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
 
-    const literal = new openpgp.packet.Literal();
-    const enc = new openpgp.packet.SymEncryptedAEADProtected();
-    const msg = new openpgp.packet.List();
+    const literal = new openpgp.LiteralDataPacket();
+    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const msg = new openpgp.PacketList();
 
     msg.push(enc);
     literal.setText(testText);
     enc.packets.push(literal);
 
-    const msg2 = new openpgp.packet.List();
+    const msg2 = new openpgp.PacketList();
 
     try {
       await enc.encrypt(algo, key);
-      await msg2.read(msg.write());
+      await msg2.read(msg.write(), openpgp);
       await msg2[0].decrypt(algo, key);
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     } finally {
@@ -213,20 +213,20 @@ module.exports = () => describe("Packet", function() {
     const key = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
     const algo = 'aes256';
 
-    const literal = new openpgp.packet.Literal();
-    const enc = new openpgp.packet.SymEncryptedAEADProtected();
-    const msg = new openpgp.packet.List();
+    const literal = new openpgp.LiteralDataPacket();
+    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const msg = new openpgp.PacketList();
     enc.aeadAlgorithm = 'experimentalGcm';
 
     msg.push(enc);
     literal.setText(testText);
     enc.packets.push(literal);
 
-    const msg2 = new openpgp.packet.List();
+    const msg2 = new openpgp.PacketList();
 
     try {
       await enc.encrypt(algo, key);
-      await msg2.read(msg.write());
+      await msg2.read(msg.write(), openpgp);
       await msg2[0].decrypt(algo, key);
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
       expect(encryptStub.callCount > 1).to.be.true;
@@ -259,16 +259,16 @@ module.exports = () => describe("Packet", function() {
     const key = openpgp.util.hexToUint8Array('86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d'.replace(/\s+/g, ''));
     const algo = 'aes128';
 
-    const literal = new openpgp.packet.Literal(0);
-    const enc = new openpgp.packet.SymEncryptedAEADProtected();
-    const msg = new openpgp.packet.List();
+    const literal = new openpgp.LiteralDataPacket(0);
+    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const msg = new openpgp.PacketList();
 
     msg.push(enc);
     literal.setBytes(openpgp.util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
     literal.filename = '';
     enc.packets.push(literal);
 
-    const msg2 = new openpgp.packet.List();
+    const msg2 = new openpgp.PacketList();
 
     let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
     randomBytesStub.returns(resolves(iv));
@@ -277,7 +277,7 @@ module.exports = () => describe("Packet", function() {
       await enc.encrypt(algo, key);
       const data = msg.write();
       expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
-      await msg2.read(data);
+      await msg2.read(data, openpgp);
       await msg2[0].decrypt(algo, key);
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     } finally {
@@ -299,8 +299,8 @@ module.exports = () => describe("Packet", function() {
 
     const msgbytes = (await openpgp.armor.decode(msg)).data;
 
-    const parsed = new openpgp.packet.List();
-    await parsed.read(msgbytes);
+    const parsed = new openpgp.PacketList();
+    await parsed.read(msgbytes, openpgp);
 
     return parsed[0].decrypt('test').then(() => {
       const key = parsed[0].sessionKey;
@@ -325,9 +325,9 @@ module.exports = () => describe("Packet", function() {
         return new openpgp.MPI(k);
       });
 
-      const enc = new openpgp.packet.PublicKeyEncryptedSessionKey();
-      const msg = new openpgp.packet.List();
-      const msg2 = new openpgp.packet.List();
+      const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
+      const msg = new openpgp.PacketList();
+      const msg2 = new openpgp.PacketList();
 
       enc.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
       enc.publicKeyAlgorithm = 'rsaEncrypt';
@@ -337,7 +337,7 @@ module.exports = () => describe("Packet", function() {
 
         msg.push(enc);
 
-        await msg2.read(msg.write());
+        await msg2.read(msg.write(), openpgp);
 
         return msg2[0].decrypt({ params: mpi, getFingerprintBytes() {} }).then(() => {
 
@@ -371,11 +371,11 @@ module.exports = () => describe("Packet", function() {
         '=lKiS\n' +
         '-----END PGP PRIVATE KEY BLOCK-----';
 
-    let key = new openpgp.packet.List();
-    await key.read((await openpgp.armor.decode(armored_key)).data);
+    let key = new openpgp.PacketList();
+    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
     key = key[0];
 
-    const enc = new openpgp.packet.PublicKeyEncryptedSessionKey();
+    const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
     const secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
 
     enc.sessionKey = secret;
@@ -438,12 +438,12 @@ module.exports = () => describe("Packet", function() {
         '=iSaK\n' +
         '-----END PGP MESSAGE-----';
 
-    let key = new openpgp.packet.List();
-    await key.read((await openpgp.armor.decode(armored_key)).data);
+    let key = new openpgp.PacketList();
+    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
     key = key[3];
 
-    const msg = new openpgp.packet.List();
-    await msg.read((await openpgp.armor.decode(armored_msg)).data);
+    const msg = new openpgp.PacketList();
+    await msg.read((await openpgp.armor.decode(armored_msg)).data, openpgp);
 
     return msg[0].decrypt(key).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -459,10 +459,10 @@ module.exports = () => describe("Packet", function() {
     const algo = 'aes256';
     const testText = input.createSomeMessage();
 
-    const literal = new openpgp.packet.Literal();
-    const key_enc = new openpgp.packet.SymEncryptedSessionKey();
-    const enc = new openpgp.packet.SymEncryptedIntegrityProtected();
-    const msg = new openpgp.packet.List();
+    const literal = new openpgp.LiteralDataPacket();
+    const key_enc = new openpgp.SymEncryptedSessionKeyPacket();
+    const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+    const msg = new openpgp.PacketList();
 
     msg.push(key_enc);
     msg.push(enc);
@@ -476,8 +476,8 @@ module.exports = () => describe("Packet", function() {
     enc.packets.push(literal);
     await enc.encrypt(algo, key);
 
-    const msg2 = new openpgp.packet.List();
-    await msg2.read(msg.write());
+    const msg2 = new openpgp.PacketList();
+    await msg2.read(msg.write(), openpgp);
 
     await msg2[0].decrypt(passphrase);
     const key2 = msg2[0].sessionKey;
@@ -495,10 +495,10 @@ module.exports = () => describe("Packet", function() {
       const algo = 'aes256';
       const testText = input.createSomeMessage();
 
-      const literal = new openpgp.packet.Literal();
-      const key_enc = new openpgp.packet.SymEncryptedSessionKey();
-      const enc = new openpgp.packet.SymEncryptedAEADProtected();
-      const msg = new openpgp.packet.List();
+      const literal = new openpgp.LiteralDataPacket();
+      const key_enc = new openpgp.SymEncryptedSessionKeyPacket();
+      const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+      const msg = new openpgp.PacketList();
 
       msg.push(key_enc);
       msg.push(enc);
@@ -512,8 +512,8 @@ module.exports = () => describe("Packet", function() {
       enc.packets.push(literal);
       await enc.encrypt(algo, key);
 
-      const msg2 = new openpgp.packet.List();
-      await msg2.read(msg.write());
+      const msg2 = new openpgp.PacketList();
+      await msg2.read(msg.write(), openpgp);
 
       await msg2[0].decrypt(passphrase);
       const key2 = msg2[0].sessionKey;
@@ -563,10 +563,10 @@ module.exports = () => describe("Packet", function() {
       const passphrase = 'password';
       const algo = 'aes128';
 
-      const literal = new openpgp.packet.Literal(0);
-      const key_enc = new openpgp.packet.SymEncryptedSessionKey();
-      const enc = new openpgp.packet.SymEncryptedAEADProtected();
-      const msg = new openpgp.packet.List();
+      const literal = new openpgp.LiteralDataPacket(0);
+      const key_enc = new openpgp.SymEncryptedSessionKeyPacket();
+      const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+      const msg = new openpgp.PacketList();
 
       msg.push(key_enc);
       msg.push(enc);
@@ -584,8 +584,8 @@ module.exports = () => describe("Packet", function() {
       const data = msg.write();
       expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
 
-      const msg2 = new openpgp.packet.List();
-      await msg2.read(data);
+      const msg2 = new openpgp.PacketList();
+      await msg2.read(data, openpgp);
 
       await msg2[0].decrypt(passphrase);
       const key2 = msg2[0].sessionKey;
@@ -638,10 +638,10 @@ module.exports = () => describe("Packet", function() {
       const passphrase = 'password';
       const algo = 'aes128';
 
-      const literal = new openpgp.packet.Literal(0);
-      const key_enc = new openpgp.packet.SymEncryptedSessionKey();
-      const enc = new openpgp.packet.SymEncryptedAEADProtected();
-      const msg = new openpgp.packet.List();
+      const literal = new openpgp.LiteralDataPacket(0);
+      const key_enc = new openpgp.SymEncryptedSessionKeyPacket();
+      const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+      const msg = new openpgp.PacketList();
       enc.aeadAlgorithm = key_enc.aeadAlgorithm = 'ocb';
 
       msg.push(key_enc);
@@ -660,8 +660,8 @@ module.exports = () => describe("Packet", function() {
       const data = msg.write();
       expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
 
-      const msg2 = new openpgp.packet.List();
-      await msg2.read(data);
+      const msg2 = new openpgp.PacketList();
+      await msg2.read(data, openpgp);
 
       await msg2[0].decrypt(passphrase);
       const key2 = msg2[0].sessionKey;
@@ -689,13 +689,13 @@ module.exports = () => describe("Packet", function() {
         '=pR+C\n' +
         '-----END PGP MESSAGE-----';
 
-    let key = new openpgp.packet.List();
-    await key.read((await openpgp.armor.decode(armored_key)).data);
+    let key = new openpgp.PacketList();
+    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
     key = key[3];
     await key.decrypt('test');
 
-    const msg = new openpgp.packet.List();
-    await msg.read((await openpgp.armor.decode(armored_msg)).data);
+    const msg = new openpgp.PacketList();
+    await msg.read((await openpgp.armor.decode(armored_msg)).data, openpgp);
 
     return msg[0].decrypt(key).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -707,8 +707,8 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Secret key reading with signature verification.', async function() {
-    const key = new openpgp.packet.List();
-    await key.read((await openpgp.armor.decode(armored_key)).data);
+    const key = new openpgp.PacketList();
+    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
     return Promise.all([
       expect(key[2].verify(key[0],
         openpgp.enums.signature.certGeneric,
@@ -742,12 +742,12 @@ module.exports = () => describe("Packet", function() {
         '=htrB\n' +
         '-----END PGP MESSAGE-----';
 
-    const key = new openpgp.packet.List();
-    await key.read((await openpgp.armor.decode(armored_key)).data);
+    const key = new openpgp.PacketList();
+    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
     await key[3].decrypt('test');
 
-    const msg = new openpgp.packet.List();
-    await msg.read((await openpgp.armor.decode(armored_msg)).data);
+    const msg = new openpgp.PacketList();
+    await msg.read((await openpgp.armor.decode(armored_msg)).data, openpgp);
 
     return msg[0].decrypt(key[3]).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -829,8 +829,8 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   });
 
   it('Writing and encryption of a secret key packet.', function() {
-    const key = new openpgp.packet.List();
-    key.push(new openpgp.packet.SecretKey());
+    const key = new openpgp.PacketList();
+    key.push(new openpgp.SecretKeyPacket());
 
     const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
@@ -848,8 +848,8 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       const raw = key.write();
 
-      const key2 = new openpgp.packet.List();
-      await key2.read(raw);
+      const key2 = new openpgp.PacketList();
+      await key2.read(raw, openpgp);
       await key2[0].decrypt('hello');
 
       expect(key[0].params.toString()).to.equal(key2[0].params.toString());
@@ -860,8 +860,8 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     let aeadProtectVal = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = true;
 
-    const key = new openpgp.packet.List();
-    key.push(new openpgp.packet.SecretKey());
+    const key = new openpgp.PacketList();
+    key.push(new openpgp.SecretKeyPacket());
 
     const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
@@ -880,8 +880,8 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       const raw = key.write();
 
-      const key2 = new openpgp.packet.List();
-      await key2.read(raw);
+      const key2 = new openpgp.PacketList();
+      await key2.read(raw, openpgp);
       await key2[0].decrypt('hello');
 
       expect(key[0].params.toString()).to.equal(key2[0].params.toString());
@@ -891,7 +891,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   });
 
   it('Writing and verification of a signature packet.', function() {
-    const key = new openpgp.packet.SecretKey();
+    const key = new openpgp.SecretKeyPacket();
 
     const rsa = openpgp.crypto.publicKey.rsa;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
@@ -906,9 +906,9 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       key.params = mpi;
       key.algorithm = "rsaSign";
 
-      const signed = new openpgp.packet.List();
-      const literal = new openpgp.packet.Literal();
-      const signature = new openpgp.packet.Signature();
+      const signed = new openpgp.PacketList();
+      const literal = new openpgp.LiteralDataPacket();
+      const signature = new openpgp.SignaturePacket();
 
       literal.setText(testText);
 
@@ -923,8 +923,8 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
         const raw = signed.write();
 
-        const signed2 = new openpgp.packet.List();
-        await signed2.read(raw);
+        const signed2 = new openpgp.PacketList();
+        await signed2.read(raw, openpgp);
         signed2.concat(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
 
         await Promise.all([

@@ -7,14 +7,32 @@
  * @module key/helper
  */
 
-import packet from '../packet';
+import {
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserIDPacket,
+  UserAttributePacket,
+  SignaturePacket
+} from '../packet';
 import enums from '../enums';
 import config from '../config';
 import crypto from '../crypto';
 import util from '../util';
 
+export const allowedKeyPackets = {
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserIDPacket,
+  UserAttributePacket,
+  SignaturePacket
+};
+
 export async function generateSecretSubkey(options) {
-  const secretSubkeyPacket = new packet.SecretSubkey(options.date);
+  const secretSubkeyPacket = new SecretSubkeyPacket(options.date);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
   await secretSubkeyPacket.generate(options.rsaBits, options.curve);
@@ -22,7 +40,7 @@ export async function generateSecretSubkey(options) {
 }
 
 export async function generateSecretKey(options) {
-  const secretKeyPacket = new packet.SecretKey(options.date);
+  const secretKeyPacket = new SecretKeyPacket(options.date);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
   await secretKeyPacket.generate(options.rsaBits, options.curve);
@@ -31,9 +49,9 @@ export async function generateSecretKey(options) {
 
 /**
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
- * @param  {Array<module:packet.Signature>} signatures  List of signatures
+ * @param  {Array<SignaturePacket>}         signatures  List of signatures
  * @param  {Date}                           date        Use the given date instead of the current time
- * @returns {Promise<module:packet.Signature>} The latest valid signature
+ * @returns {Promise<SignaturePacket>} The latest valid signature
  * @async
  */
 export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date()) {
@@ -76,15 +94,15 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
 
 /**
  * Create Binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
- * @param {module:packet.SecretSubkey} subkey Subkey key packet
- * @param {module:packet.SecretKey} primaryKey Primary key packet
+ * @param {SecretSubkeyPacket} subkey Subkey key packet
+ * @param {SecretKeyPacket} primaryKey Primary key packet
  * @param {Object} options
  */
 export async function createBindingSignature(subkey, primaryKey, options) {
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
-  const subkeySignaturePacket = new packet.Signature(options.date);
+  const subkeySignaturePacket = new SignaturePacket(options.date);
   subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
   subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
   subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey);
@@ -107,7 +125,7 @@ export async function createBindingSignature(subkey, primaryKey, options) {
 /**
  * Returns the preferred signature hash algorithm of a key
  * @param  {module:key.Key} key (optional) the key to get preferences from
- * @param  {module:packet.SecretKey|module:packet.SecretSubkey} keyPacket key packet used for signing
+ * @param  {SecretKeyPacket|SecretSubkeyPacket} keyPacket key packet used for signing
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID
  * @returns {Promise<String>}
@@ -125,10 +143,10 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
     }
   }
   switch (Object.getPrototypeOf(keyPacket)) {
-    case packet.SecretKey.prototype:
-    case packet.PublicKey.prototype:
-    case packet.SecretSubkey.prototype:
-    case packet.PublicSubkey.prototype:
+    case SecretKeyPacket.prototype:
+    case PublicKeyPacket.prototype:
+    case SecretSubkeyPacket.prototype:
+    case PublicSubkeyPacket.prototype:
       switch (keyPacket.algorithm) {
         case 'ecdh':
         case 'ecdsa':
@@ -182,8 +200,8 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
 /**
  * Create signature packet
  * @param  {Object}                          dataToSign Contains packets to be signed
- * @param  {module:packet.SecretKey|
- *          module:packet.SecretSubkey}      signingKeyPacket secret key packet for signing
+ * @param  {SecretKeyPacket|
+ *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
  * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
  * @param  {Date} date                       (optional) override the creationtime of the signature
  * @param  {Object} userId                   (optional) user ID
@@ -195,7 +213,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
-  const signaturePacket = new packet.Signature(date);
+  const signaturePacket = new SignaturePacket(date);
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
@@ -231,15 +249,15 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
 
 /**
  * Checks if a given certificate or binding signature is revoked
- * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey}       primaryKey   The primary key packet
- * @param  {Object}                         dataToVerify The data to check
- * @param  {Array<module:packet.Signature>} revocations  The revocation signatures to check
- * @param  {module:packet.Signature}        signature    The certificate or signature to check
- * @param  {module:packet.PublicSubkey|
- *          module:packet.SecretSubkey|
- *          module:packet.PublicKey|
- *          module:packet.SecretKey} key, optional The key packet to check the signature
+ * @param  {SecretKeyPacket|
+ *          PublicKeyPacket}        primaryKey   The primary key packet
+ * @param  {Object}                 dataToVerify The data to check
+ * @param  {Array<SignaturePacket>} revocations  The revocation signatures to check
+ * @param  {SignaturePacket}        signature    The certificate or signature to check
+ * @param  {PublicSubkeyPacket|
+ *          SecretSubkeyPacket|
+ *          PublicKeyPacket|
+ *          SecretKeyPacket} key, optional The key packet to check the signature
  * @param  {Date}                     date          Use the given date instead of the current time
  * @returns {Promise<Boolean>}                      True if the signature revokes the data
  * @async

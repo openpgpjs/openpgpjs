@@ -47,7 +47,7 @@ import util from '../util';
  * @memberof module:packet
  * @constructor
  */
-function SymEncryptedSessionKey() {
+function SymEncryptedSessionKeyPacket() {
   this.tag = enums.packet.symEncryptedSessionKey;
   this.version = config.aeadProtect ? 5 : 4;
   this.sessionKey = null;
@@ -67,9 +67,9 @@ function SymEncryptedSessionKey() {
  * @param {Integer} len
  *            Length of the packet or the remaining length of
  *            input at position
- * @returns {module:packet.SymEncryptedSessionKey} Object representation
+ * @returns {SymEncryptedSessionKeyPacket} Object representation
  */
-SymEncryptedSessionKey.prototype.read = function(bytes) {
+SymEncryptedSessionKeyPacket.prototype.read = function(bytes) {
   let offset = 0;
 
   // A one-octet version number. The only currently defined version is 4.
@@ -105,7 +105,7 @@ SymEncryptedSessionKey.prototype.read = function(bytes) {
   }
 };
 
-SymEncryptedSessionKey.prototype.write = function() {
+SymEncryptedSessionKeyPacket.prototype.write = function() {
   const algo = this.encrypted === null ?
     this.sessionKeyAlgorithm :
     this.sessionKeyEncryptionAlgorithm;
@@ -131,7 +131,7 @@ SymEncryptedSessionKey.prototype.write = function() {
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
+SymEncryptedSessionKeyPacket.prototype.decrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
     this.sessionKeyEncryptionAlgorithm :
     this.sessionKeyAlgorithm;
@@ -162,7 +162,7 @@ SymEncryptedSessionKey.prototype.decrypt = async function(passphrase) {
  * @returns {Promise<Boolean>}
  * @async
  */
-SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
+SymEncryptedSessionKeyPacket.prototype.encrypt = async function(passphrase) {
   const algo = this.sessionKeyEncryptionAlgorithm !== null ?
     this.sessionKeyEncryptionAlgorithm :
     this.sessionKeyAlgorithm;
@@ -194,4 +194,4 @@ SymEncryptedSessionKey.prototype.encrypt = async function(passphrase) {
   return true;
 };
 
-export default SymEncryptedSessionKey;
+export default SymEncryptedSessionKeyPacket;
