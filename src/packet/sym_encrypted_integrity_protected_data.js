@@ -49,103 +49,104 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * encrypted data. It is used in combination with a Modification Detection Code
  * packet.
  * @memberof module:packet
- * @constructor
  */
-function SymEncryptedIntegrityProtectedDataPacket() {
-  this.tag = enums.packet.symEncryptedIntegrityProtectedData;
-  this.version = VERSION;
-  /** The encrypted payload. */
-  this.encrypted = null; // string
-  /**
-   * If after decrypting the packet this is set to true,
-   * a modification has been detected and thus the contents
-   * should be discarded.
-   * @type {Boolean}
-   */
-  this.modification = false;
-  this.packets = null;
-}
-
-SymEncryptedIntegrityProtectedDataPacket.prototype.read = async function (bytes) {
-  await stream.parse(bytes, async reader => {
-
-    // - A one-octet version number. The only currently defined value is 1.
-    if (await reader.readByte() !== VERSION) {
-      throw new Error('Invalid packet version.');
-    }
-
-    // - Encrypted data, the output of the selected symmetric-key cipher
-    //   operating in Cipher Feedback mode with shift amount equal to the
-    //   block size of the cipher (CFB-n where n is the block size).
-    this.encrypted = reader.remainder();
-  });
-};
-
-SymEncryptedIntegrityProtectedDataPacket.prototype.write = function () {
-  return util.concat([new Uint8Array([VERSION]), this.encrypted]);
-};
-
-/**
- * Encrypt the payload in the packet.
- * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
- * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @param  {Boolean} streaming            Whether to set this.encrypted to a stream
- * @returns {Promise<Boolean>}
- * @async
- */
-SymEncryptedIntegrityProtectedDataPacket.prototype.encrypt = async function (sessionKeyAlgorithm, key, streaming) {
-  let bytes = this.packets.write();
-  if (!streaming) bytes = await stream.readToEnd(bytes);
-  const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
-  const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
-
-  const tohash = util.concat([prefix, bytes, mdc]);
-  const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
-  const plaintext = util.concat([tohash, hash]);
-
-  this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
-  return true;
-};
-
-/**
- * Decrypts the encrypted data contained in the packet.
- * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
- * @param  {Uint8Array} key               The key of cipher blocksize length to be used
- * @param  {Boolean} streaming            Whether to read this.encrypted as a stream
- * @returns {Promise<Boolean>}
- * @async
- */
-SymEncryptedIntegrityProtectedDataPacket.prototype.decrypt = async function (sessionKeyAlgorithm, key, streaming) {
-  let encrypted = stream.clone(this.encrypted);
-  if (!streaming) encrypted = await stream.readToEnd(encrypted);
-  const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
-
-  // there must be a modification detection code packet as the
-  // last packet and everything gets hashed except the hash itself
-  const realHash = stream.slice(stream.passiveClone(decrypted), -20);
-  const tohash = stream.slice(decrypted, 0, -20);
-  const verifyHash = Promise.all([
-    stream.readToEnd(await crypto.hash.sha1(stream.passiveClone(tohash))),
-    stream.readToEnd(realHash)
-  ]).then(([hash, mdc]) => {
-    if (!util.equalsUint8Array(hash, mdc)) {
-      throw new Error('Modification detected.');
-    }
-    return new Uint8Array();
-  });
-  const bytes = stream.slice(tohash, crypto.cipher[sessionKeyAlgorithm].blockSize + 2); // Remove random prefix
-  let packetbytes = stream.slice(bytes, 0, -2); // Remove MDC packet
-  packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
-  if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
-    packetbytes = await stream.readToEnd(packetbytes);
+class SymEncryptedIntegrityProtectedDataPacket {
+  constructor() {
+    this.tag = enums.packet.symEncryptedIntegrityProtectedData;
+    this.version = VERSION;
+    /** The encrypted payload. */
+    this.encrypted = null; // string
+    /**
+     * If after decrypting the packet this is set to true,
+     * a modification has been detected and thus the contents
+     * should be discarded.
+     * @type {Boolean}
+     */
+    this.modification = false;
+    this.packets = null;
   }
-  await this.packets.read(packetbytes, {
-    LiteralDataPacket,
-    CompressedDataPacket,
-    OnePassSignaturePacket,
-    SignaturePacket
-  }, streaming);
-  return true;
-};
+
+  async read(bytes) {
+    await stream.parse(bytes, async reader => {
+
+      // - A one-octet version number. The only currently defined value is 1.
+      if (await reader.readByte() !== VERSION) {
+        throw new Error('Invalid packet version.');
+      }
+
+      // - Encrypted data, the output of the selected symmetric-key cipher
+      //   operating in Cipher Feedback mode with shift amount equal to the
+      //   block size of the cipher (CFB-n where n is the block size).
+      this.encrypted = reader.remainder();
+    });
+  }
+
+  write() {
+    return util.concat([new Uint8Array([VERSION]), this.encrypted]);
+  }
+
+  /**
+   * Encrypt the payload in the packet.
+   * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
+   * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+   * @param  {Boolean} streaming            Whether to set this.encrypted to a stream
+   * @returns {Promise<Boolean>}
+   * @async
+   */
+  async encrypt(sessionKeyAlgorithm, key, streaming) {
+    let bytes = this.packets.write();
+    if (!streaming) bytes = await stream.readToEnd(bytes);
+    const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
+    const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
+
+    const tohash = util.concat([prefix, bytes, mdc]);
+    const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
+    const plaintext = util.concat([tohash, hash]);
+
+    this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+    return true;
+  }
+
+  /**
+   * Decrypts the encrypted data contained in the packet.
+   * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
+   * @param  {Uint8Array} key               The key of cipher blocksize length to be used
+   * @param  {Boolean} streaming            Whether to read this.encrypted as a stream
+   * @returns {Promise<Boolean>}
+   * @async
+   */
+  async decrypt(sessionKeyAlgorithm, key, streaming) {
+    let encrypted = stream.clone(this.encrypted);
+    if (!streaming) encrypted = await stream.readToEnd(encrypted);
+    const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+
+    // there must be a modification detection code packet as the
+    // last packet and everything gets hashed except the hash itself
+    const realHash = stream.slice(stream.passiveClone(decrypted), -20);
+    const tohash = stream.slice(decrypted, 0, -20);
+    const verifyHash = Promise.all([
+      stream.readToEnd(await crypto.hash.sha1(stream.passiveClone(tohash))),
+      stream.readToEnd(realHash)
+    ]).then(([hash, mdc]) => {
+      if (!util.equalsUint8Array(hash, mdc)) {
+        throw new Error('Modification detected.');
+      }
+      return new Uint8Array();
+    });
+    const bytes = stream.slice(tohash, crypto.cipher[sessionKeyAlgorithm].blockSize + 2); // Remove random prefix
+    let packetbytes = stream.slice(bytes, 0, -2); // Remove MDC packet
+    packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
+    if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
+      packetbytes = await stream.readToEnd(packetbytes);
+    }
+    await this.packets.read(packetbytes, {
+      LiteralDataPacket,
+      CompressedDataPacket,
+      OnePassSignaturePacket,
+      SignaturePacket
+    }, streaming);
+    return true;
+  }
+}
 
 export default SymEncryptedIntegrityProtectedDataPacket;

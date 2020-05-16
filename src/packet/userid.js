@@ -32,56 +32,57 @@ import util from '../util';
  * restrictions on its content.  The packet length in the header
  * specifies the length of the User ID.
  * @memberof module:packet
- * @constructor
  */
-function UserIDPacket() {
-  this.tag = enums.packet.userID;
-  /** A string containing the user id. Usually in the form
-   * John Doe <john@example.com>
-   * @type {String}
-   */
-  this.userid = '';
+class UserIDPacket {
+  constructor() {
+    this.tag = enums.packet.userID;
+    /** A string containing the user id. Usually in the form
+     * John Doe <john@example.com>
+     * @type {String}
+     */
+    this.userid = '';
 
-  this.name = '';
-  this.email = '';
-  this.comment = '';
-}
-
-/**
- * Parsing function for a user id packet (tag 13).
- * @param {Uint8Array} input payload of a tag 13 packet
- */
-UserIDPacket.prototype.read = function (bytes) {
-  this.parse(util.decodeUtf8(bytes));
-};
-
-/**
- * Parse userid string, e.g. 'John Doe <john@example.com>'
- */
-UserIDPacket.prototype.parse = function (userid) {
-  try {
-    Object.assign(this, util.parseUserId(userid));
-  } catch (e) {}
-  this.userid = userid;
-};
-
-/**
- * Creates a binary representation of the user id packet
- * @returns {Uint8Array} binary representation
- */
-UserIDPacket.prototype.write = function () {
-  return util.encodeUtf8(this.userid);
-};
-
-/**
- * Set userid string from object, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
- */
-UserIDPacket.prototype.format = function (userid) {
-  if (util.isString(userid)) {
-    userid = util.parseUserId(userid);
+    this.name = '';
+    this.email = '';
+    this.comment = '';
   }
-  Object.assign(this, userid);
-  this.userid = util.formatUserId(userid);
-};
+
+  /**
+   * Parsing function for a user id packet (tag 13).
+   * @param {Uint8Array} input payload of a tag 13 packet
+   */
+  read(bytes) {
+    this.parse(util.decodeUtf8(bytes));
+  }
+
+  /**
+   * Parse userid string, e.g. 'John Doe <john@example.com>'
+   */
+  parse(userid) {
+    try {
+      Object.assign(this, util.parseUserId(userid));
+    } catch (e) {}
+    this.userid = userid;
+  }
+
+  /**
+   * Creates a binary representation of the user id packet
+   * @returns {Uint8Array} binary representation
+   */
+  write() {
+    return util.encodeUtf8(this.userid);
+  }
+
+  /**
+   * Set userid string from object, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
+   */
+  format(userid) {
+    if (util.isString(userid)) {
+      userid = util.parseUserId(userid);
+    }
+    Object.assign(this, userid);
+    this.userid = util.formatUserId(userid);
+  }
+}
 
 export default UserIDPacket;

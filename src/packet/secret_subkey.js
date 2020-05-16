@@ -27,15 +27,13 @@ import enums from '../enums';
  * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
  * Key packet and has exactly the same format.
  * @memberof module:packet
- * @constructor
  * @extends SecretKeyPacket
  */
-function SecretSubkeyPacket(date = new Date()) {
-  SecretKeyPacket.call(this, date);
-  this.tag = enums.packet.secretSubkey;
+class SecretSubkeyPacket extends SecretKeyPacket {
+  constructor(date = new Date()) {
+    super(date);
+    this.tag = enums.packet.secretSubkey;
+  }
 }
-
-SecretSubkeyPacket.prototype = new SecretKeyPacket();
-SecretSubkeyPacket.prototype.constructor = SecretSubkeyPacket;
 
 export default SecretSubkeyPacket;
