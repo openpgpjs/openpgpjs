@@ -30,15 +30,13 @@ import enums from '../enums';
  * provides signature services, and the subkeys provide encryption
  * services.
  * @memberof module:packet
- * @constructor
  * @extends PublicKeyPacket
  */
-function PublicSubkeyPacket() {
-  PublicKeyPacket.call(this);
-  this.tag = enums.packet.publicSubkey;
+class PublicSubkeyPacket extends PublicKeyPacket {
+  constructor() {
+    super();
+    this.tag = enums.packet.publicSubkey;
+  }
 }
-
-PublicSubkeyPacket.prototype = new PublicKeyPacket();
-PublicSubkeyPacket.prototype.constructor = PublicSubkeyPacket;
 
 export default PublicSubkeyPacket;
