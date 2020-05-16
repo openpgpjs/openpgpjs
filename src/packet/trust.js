@@ -19,17 +19,18 @@ import enums from '../enums';
  * transferred to other users, and they SHOULD be ignored on any input
  * other than local keyring files.
  * @memberof module:packet
- * @constructor
  */
-function TrustPacket() {
-  this.tag = enums.packet.trust;
-}
+class TrustPacket {
+  constructor() {
+    this.tag = enums.packet.trust;
+  }
 
-/**
- * Parsing function for a trust packet (tag 12).
- * Currently not implemented as we ignore trust packets
- * @param {String} byptes payload of a tag 12 packet
- */
-TrustPacket.prototype.read = function () {}; // TODO
+  /**
+   * Parsing function for a trust packet (tag 12).
+   * Currently not implemented as we ignore trust packets
+   * @param {String} byptes payload of a tag 12 packet
+   */
+  read() {} // TODO
+}
 
 export default TrustPacket;

@@ -82,64 +82,66 @@ export default {
 /**
  * Buffer for secure random numbers
  */
-function RandomBuffer() {
-  this.buffer = null;
-  this.size = null;
-  this.callback = null;
-}
+class RandomBuffer {
+  constructor() {
+    this.buffer = null;
+    this.size = null;
+    this.callback = null;
+  }
 
-/**
- * Initialize buffer
- * @param  {Integer} size size of buffer
- */
-RandomBuffer.prototype.init = function(size, callback) {
-  this.buffer = new Uint8Array(size);
-  this.size = 0;
-  this.callback = callback;
-};
+  /**
+   * Initialize buffer
+   * @param  {Integer} size size of buffer
+   */
+  init(size, callback) {
+    this.buffer = new Uint8Array(size);
+    this.size = 0;
+    this.callback = callback;
+  }
 
-/**
- * Concat array of secure random numbers to buffer
- * @param {Uint8Array} buf
- */
-RandomBuffer.prototype.set = function(buf) {
-  if (!this.buffer) {
-    throw new Error('RandomBuffer is not initialized');
-  }
-  if (!(buf instanceof Uint8Array)) {
-    throw new Error('Invalid type: buf not an Uint8Array');
-  }
-  const freeSpace = this.buffer.length - this.size;
-  if (buf.length > freeSpace) {
-    buf = buf.subarray(0, freeSpace);
-  }
-  // set buf with offset old size of buffer
-  this.buffer.set(buf, this.size);
-  this.size += buf.length;
-};
-
-/**
- * Take numbers out of buffer and copy to array
- * @param {Uint8Array} buf the destination array
- */
-RandomBuffer.prototype.get = async function(buf) {
-  if (!this.buffer) {
-    throw new Error('RandomBuffer is not initialized');
-  }
-  if (!(buf instanceof Uint8Array)) {
-    throw new Error('Invalid type: buf not an Uint8Array');
-  }
-  if (this.size < buf.length) {
-    if (!this.callback) {
-      throw new Error('Random number buffer depleted');
+  /**
+   * Concat array of secure random numbers to buffer
+   * @param {Uint8Array} buf
+   */
+  set(buf) {
+    if (!this.buffer) {
+      throw new Error('RandomBuffer is not initialized');
     }
-    // Wait for random bytes from main context, then try again
-    await this.callback();
-    return this.get(buf);
+    if (!(buf instanceof Uint8Array)) {
+      throw new Error('Invalid type: buf not an Uint8Array');
+    }
+    const freeSpace = this.buffer.length - this.size;
+    if (buf.length > freeSpace) {
+      buf = buf.subarray(0, freeSpace);
+    }
+    // set buf with offset old size of buffer
+    this.buffer.set(buf, this.size);
+    this.size += buf.length;
   }
-  for (let i = 0; i < buf.length; i++) {
-    buf[i] = this.buffer[--this.size];
-    // clear buffer value
-    this.buffer[this.size] = 0;
+
+  /**
+   * Take numbers out of buffer and copy to array
+   * @param {Uint8Array} buf the destination array
+   */
+  async get(buf) {
+    if (!this.buffer) {
+      throw new Error('RandomBuffer is not initialized');
+    }
+    if (!(buf instanceof Uint8Array)) {
+      throw new Error('Invalid type: buf not an Uint8Array');
+    }
+    if (this.size < buf.length) {
+      if (!this.callback) {
+        throw new Error('Random number buffer depleted');
+      }
+      // Wait for random bytes from main context, then try again
+      await this.callback();
+      return this.get(buf);
+    }
+    for (let i = 0; i < buf.length; i++) {
+      buf[i] = this.buffer[--this.size];
+      // clear buffer value
+      this.buffer[this.size] = 0;
+    }
   }
-};
+}
