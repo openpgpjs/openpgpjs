@@ -40,11 +40,7 @@
 
 import stream from 'web-stream-tools';
 import { createReadableStreamWrapper } from '@mattiasbuelens/web-streams-adapter';
-import {
-  Message,
-  generateSessionKey as messageGenerateSessionKey,
-  encryptSessionKey as messageEncryptSessionKey
-} from './message';
+import { Message } from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import config from './config/config';
@@ -411,7 +407,7 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = 
 
   return Promise.resolve().then(async function() {
 
-    return messageGenerateSessionKey(publicKeys, date, toUserIds);
+    return Message.generateSessionKey(publicKeys, date, toUserIds);
 
   }).catch(onError.bind(null, 'Error generating session key'));
 }
@@ -437,7 +433,7 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, 
 
   return Promise.resolve().then(async function() {
 
-    const message = await messageEncryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
+    const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
     return armor ? message.armor() : message.write();
 
   }).catch(onError.bind(null, 'Error encrypting session key'));

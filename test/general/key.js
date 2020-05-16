@@ -2806,7 +2806,7 @@ module.exports = () => describe('Key', function() {
   it('makeDummy() - the converted key can be parsed', async function() {
     const { key: key } = await openpgp.generateKey({ userIds: 'dummy <dummy@alice.com>' });
     key.primaryKey.makeDummy();
-    const parsedKeys = (await openpgp.key.readArmored(key.armor())).keys;
+    const parsedKeys = await openpgp.key.readArmored(key.armor());
     expect(parsedKeys).to.not.be.empty;
   });
 
