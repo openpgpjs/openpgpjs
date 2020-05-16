@@ -27,33 +27,32 @@ import { PacketList, SignaturePacket } from './packet';
 import enums from './enums';
 
 /**
- * @class
- * @classdesc Class that represents an OpenPGP signature.
- * @param  {PacketList} packetlist The signature packets
+ * Class that represents an OpenPGP signature.
  */
-export function Signature(packetlist) {
-  if (!(this instanceof Signature)) {
-    return new Signature(packetlist);
+export class Signature {
+  /**
+   * @param  {PacketList} packetlist The signature packets
+   */
+  constructor(packetlist) {
+    this.packets = packetlist || new PacketList();
   }
-  this.packets = packetlist || new PacketList();
+
+  /**
+   * Returns binary encoded signature
+   * @returns {ReadableStream<Uint8Array>} binary signature
+   */
+  write() {
+    return this.packets.write();
+  }
+
+  /**
+   * Returns ASCII armored text of signature
+   * @returns {ReadableStream<String>} ASCII armor
+   */
+  armor() {
+    return armor.encode(enums.armor.signature, this.write());
+  }
 }
-
-
-/**
- * Returns binary encoded signature
- * @returns {ReadableStream<Uint8Array>} binary signature
- */
-Signature.prototype.write = function() {
-  return this.packets.write();
-};
-
-/**
- * Returns ASCII armored text of signature
- * @returns {ReadableStream<String>} ASCII armor
- */
-Signature.prototype.armor = function() {
-  return armor.encode(enums.armor.signature, this.write());
-};
 
 /**
  * reads an OpenPGP armored signature and returns a signature object

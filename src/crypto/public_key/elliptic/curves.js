@@ -137,80 +137,79 @@ const curves = {
   }
 };
 
-/**
- * @constructor
- */
-function Curve(oid_or_name, params) {
-  try {
-    if (util.isArray(oid_or_name) ||
-        util.isUint8Array(oid_or_name)) {
-      // by oid byte array
-      oid_or_name = new OID(oid_or_name);
+class Curve {
+  constructor(oid_or_name, params) {
+    try {
+      if (util.isArray(oid_or_name) ||
+          util.isUint8Array(oid_or_name)) {
+        // by oid byte array
+        oid_or_name = new OID(oid_or_name);
+      }
+      if (oid_or_name instanceof OID) {
+        // by curve OID
+        oid_or_name = oid_or_name.getName();
+      }
+      // by curve name or oid string
+      this.name = enums.write(enums.curve, oid_or_name);
+    } catch (err) {
+      throw new Error('Not valid curve');
     }
-    if (oid_or_name instanceof OID) {
-      // by curve OID
-      oid_or_name = oid_or_name.getName();
+    params = params || curves[this.name];
+
+    this.keyType = params.keyType;
+
+    this.oid = params.oid;
+    this.hash = params.hash;
+    this.cipher = params.cipher;
+    this.node = params.node && curves[this.name];
+    this.web = params.web && curves[this.name];
+    this.payloadSize = params.payloadSize;
+    if (this.web && util.getWebCrypto()) {
+      this.type = 'web';
+    } else if (this.node && util.getNodeCrypto()) {
+      this.type = 'node';
+    } else if (this.name === 'curve25519') {
+      this.type = 'curve25519';
+    } else if (this.name === 'ed25519') {
+      this.type = 'ed25519';
     }
-    // by curve name or oid string
-    this.name = enums.write(enums.curve, oid_or_name);
-  } catch (err) {
-    throw new Error('Not valid curve');
   }
-  params = params || curves[this.name];
 
-  this.keyType = params.keyType;
-
-  this.oid = params.oid;
-  this.hash = params.hash;
-  this.cipher = params.cipher;
-  this.node = params.node && curves[this.name];
-  this.web = params.web && curves[this.name];
-  this.payloadSize = params.payloadSize;
-  if (this.web && util.getWebCrypto()) {
-    this.type = 'web';
-  } else if (this.node && util.getNodeCrypto()) {
-    this.type = 'node';
-  } else if (this.name === 'curve25519') {
-    this.type = 'curve25519';
-  } else if (this.name === 'ed25519') {
-    this.type = 'ed25519';
+  async genKeyPair() {
+    let keyPair;
+    switch (this.type) {
+      case 'web':
+        try {
+          return await webGenKeyPair(this.name);
+        } catch (err) {
+          util.printDebugError("Browser did not support generating ec key " + err.message);
+          break;
+        }
+      case 'node':
+        return nodeGenKeyPair(this.name);
+      case 'curve25519': {
+        const privateKey = await random.getRandomBytes(32);
+        privateKey[0] = (privateKey[0] & 127) | 64;
+        privateKey[31] &= 248;
+        const secretKey = privateKey.slice().reverse();
+        keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
+        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+        return { publicKey, privateKey };
+      }
+      case 'ed25519': {
+        const privateKey = await random.getRandomBytes(32);
+        const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
+        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+        return { publicKey, privateKey };
+      }
+    }
+    const indutnyCurve = await getIndutnyCurve(this.name);
+    keyPair = await indutnyCurve.genKeyPair({
+      entropy: util.uint8ArrayToStr(await random.getRandomBytes(32))
+    });
+    return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
   }
 }
-
-Curve.prototype.genKeyPair = async function () {
-  let keyPair;
-  switch (this.type) {
-    case 'web':
-      try {
-        return await webGenKeyPair(this.name);
-      } catch (err) {
-        util.printDebugError("Browser did not support generating ec key " + err.message);
-        break;
-      }
-    case 'node':
-      return nodeGenKeyPair(this.name);
-    case 'curve25519': {
-      const privateKey = await random.getRandomBytes(32);
-      privateKey[0] = (privateKey[0] & 127) | 64;
-      privateKey[31] &= 248;
-      const secretKey = privateKey.slice().reverse();
-      keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
-      const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
-      return { publicKey, privateKey };
-    }
-    case 'ed25519': {
-      const privateKey = await random.getRandomBytes(32);
-      const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
-      const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
-      return { publicKey, privateKey };
-    }
-  }
-  const indutnyCurve = await getIndutnyCurve(this.name);
-  keyPair = await indutnyCurve.genKeyPair({
-    entropy: util.uint8ArrayToStr(await random.getRandomBytes(32))
-  });
-  return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
-};
 
 async function generate(curve) {
   curve = new Curve(curve);

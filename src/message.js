@@ -53,473 +53,578 @@ import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported, createSignatur
 
 
 /**
- * @class
- * @classdesc Class that represents an OpenPGP message.
+ * Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
- * @param  {module:PacketList} packetlist The packets that form this message
  * See {@link https://tools.ietf.org/html/rfc4880#section-11.3}
  */
-
-export function Message(packetlist) {
-  if (!(this instanceof Message)) {
-    return new Message(packetlist);
+export class Message {
+  /**
+   * @param  {module:PacketList} packetlist The packets that form this message
+   */
+  constructor(packetlist) {
+    this.packets = packetlist || new PacketList();
   }
-  this.packets = packetlist || new PacketList();
-}
 
-/**
- * Returns the key IDs of the keys to which the session key is encrypted
- * @returns {Array<module:type/keyid>} array of keyid objects
- */
-Message.prototype.getEncryptionKeyIds = function() {
-  const keyIds = [];
-  const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-  pkESKeyPacketlist.forEach(function(packet) {
-    keyIds.push(packet.publicKeyId);
-  });
-  return keyIds;
-};
+  /**
+   * Returns the key IDs of the keys to which the session key is encrypted
+   * @returns {Array<module:type/keyid>} array of keyid objects
+   */
+  getEncryptionKeyIds() {
+    const keyIds = [];
+    const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
+    pkESKeyPacketlist.forEach(function(packet) {
+      keyIds.push(packet.publicKeyId);
+    });
+    return keyIds;
+  }
 
-/**
- * Returns the key IDs of the keys that signed the message
- * @returns {Array<module:type/keyid>} array of keyid objects
- */
-Message.prototype.getSigningKeyIds = function() {
-  const keyIds = [];
-  const msg = this.unwrapCompressed();
-  // search for one pass signatures
-  const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
-  onePassSigList.forEach(function(packet) {
-    keyIds.push(packet.issuerKeyId);
-  });
-  // if nothing found look for signature packets
-  if (!keyIds.length) {
-    const signatureList = msg.packets.filterByTag(enums.packet.signature);
-    signatureList.forEach(function(packet) {
+  /**
+   * Returns the key IDs of the keys that signed the message
+   * @returns {Array<module:type/keyid>} array of keyid objects
+   */
+  getSigningKeyIds() {
+    const keyIds = [];
+    const msg = this.unwrapCompressed();
+    // search for one pass signatures
+    const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
+    onePassSigList.forEach(function(packet) {
       keyIds.push(packet.issuerKeyId);
     });
-  }
-  return keyIds;
-};
-
-/**
- * Decrypt the message. Either a private key, a session key, or a password must be specified.
- * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
- * @param  {Array<String>} passwords    (optional) passwords used to decrypt
- * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
- * @param  {Boolean} streaming          (optional) whether to process data as a stream
- * @returns {Promise<Message>}             new message with decrypted content
- * @async
- */
-Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, streaming) {
-  const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
-
-  const symEncryptedPacketlist = this.packets.filterByTag(
-    enums.packet.symmetricallyEncryptedData,
-    enums.packet.symEncryptedIntegrityProtectedData,
-    enums.packet.symEncryptedAEADProtectedData
-  );
-
-  if (symEncryptedPacketlist.length === 0) {
-    return this;
+    // if nothing found look for signature packets
+    if (!keyIds.length) {
+      const signatureList = msg.packets.filterByTag(enums.packet.signature);
+      signatureList.forEach(function(packet) {
+        keyIds.push(packet.issuerKeyId);
+      });
+    }
+    return keyIds;
   }
 
-  const symEncryptedPacket = symEncryptedPacketlist[0];
-  let exception = null;
-  const decryptedPromise = Promise.all(keyObjs.map(async keyObj => {
-    if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
-      throw new Error('Invalid session key for decryption.');
+  /**
+   * Decrypt the message. Either a private key, a session key, or a password must be specified.
+   * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
+   * @param  {Array<String>} passwords    (optional) passwords used to decrypt
+   * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
+   * @param  {Boolean} streaming          (optional) whether to process data as a stream
+   * @returns {Promise<Message>}             new message with decrypted content
+   * @async
+   */
+  async decrypt(privateKeys, passwords, sessionKeys, streaming) {
+    const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords);
+
+    const symEncryptedPacketlist = this.packets.filterByTag(
+      enums.packet.symmetricallyEncryptedData,
+      enums.packet.symEncryptedIntegrityProtectedData,
+      enums.packet.symEncryptedAEADProtectedData
+    );
+
+    if (symEncryptedPacketlist.length === 0) {
+      return this;
     }
 
-    try {
-      await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, streaming);
-    } catch (e) {
-      util.printDebugError(e);
-      exception = e;
-    }
-  }));
-  // We don't await stream.cancel here because it only returns when the other copy is canceled too.
-  stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
-  symEncryptedPacket.encrypted = null;
-  await decryptedPromise;
-
-  if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
-    throw exception || new Error('Decryption failed.');
-  }
-
-  const resultMsg = new Message(symEncryptedPacket.packets);
-  symEncryptedPacket.packets = new PacketList(); // remove packets after decryption
-
-  return resultMsg;
-};
-
-/**
- * Decrypt encrypted session keys either with private keys or passwords.
- * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
- * @param  {Array<String>} passwords   (optional) passwords used to decrypt
- * @returns {Promise<Array<{ data:      Uint8Array,
-                             algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
- * @async
- */
-Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
-  let keyPackets = [];
-
-  let exception;
-  if (passwords) {
-    const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
-    if (!symESKeyPacketlist) {
-      throw new Error('No symmetrically encrypted session key packet found.');
-    }
-    await Promise.all(passwords.map(async function(password, i) {
-      let packets;
-      if (i) {
-        packets = new PacketList();
-        await packets.read(symESKeyPacketlist.write(), { SymEncryptedSessionKeyPacket });
-      } else {
-        packets = symESKeyPacketlist;
+    const symEncryptedPacket = symEncryptedPacketlist[0];
+    let exception = null;
+    const decryptedPromise = Promise.all(keyObjs.map(async keyObj => {
+      if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
+        throw new Error('Invalid session key for decryption.');
       }
-      await Promise.all(packets.map(async function(keyPacket) {
-        try {
-          await keyPacket.decrypt(password);
-          keyPackets.push(keyPacket);
-        } catch (err) {
-          util.printDebugError(err);
-        }
-      }));
-    }));
-  } else if (privateKeys) {
-    const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-    if (!pkESKeyPacketlist) {
-      throw new Error('No public key encrypted session key packet found.');
-    }
-    await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
-      await Promise.all(privateKeys.map(async function(privateKey) {
-        let algos = [
-          enums.symmetric.aes256, // Old OpenPGP.js default fallback
-          enums.symmetric.aes128, // RFC4880bis fallback
-          enums.symmetric.tripledes, // RFC4880 fallback
-          enums.symmetric.cast5 // Golang OpenPGP fallback
-        ];
-        try {
-          const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
-          if (primaryUser.selfCertification.preferredSymmetricAlgorithms) {
-            algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
-          }
-        } catch (e) {}
 
-        const privateKeyPackets = privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket);
-        await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
-          if (!privateKeyPacket) {
-            return;
-          }
-          if (!privateKeyPacket.isDecrypted()) {
-            throw new Error('Private key is not decrypted.');
-          }
+      try {
+        await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, streaming);
+      } catch (e) {
+        util.printDebugError(e);
+        exception = e;
+      }
+    }));
+    // We don't await stream.cancel here because it only returns when the other copy is canceled too.
+    stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
+    symEncryptedPacket.encrypted = null;
+    await decryptedPromise;
+
+    if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
+      throw exception || new Error('Decryption failed.');
+    }
+
+    const resultMsg = new Message(symEncryptedPacket.packets);
+    symEncryptedPacket.packets = new PacketList(); // remove packets after decryption
+
+    return resultMsg;
+  }
+
+  /**
+   * Decrypt encrypted session keys either with private keys or passwords.
+   * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
+   * @param  {Array<String>} passwords   (optional) passwords used to decrypt
+   * @returns {Promise<Array<{ data:      Uint8Array,
+                               algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
+  * @async
+  */
+  async decryptSessionKeys(privateKeys, passwords) {
+    let keyPackets = [];
+
+    let exception;
+    if (passwords) {
+      const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
+      if (!symESKeyPacketlist) {
+        throw new Error('No symmetrically encrypted session key packet found.');
+      }
+      await Promise.all(passwords.map(async function(password, i) {
+        let packets;
+        if (i) {
+          packets = new PacketList();
+          await packets.read(symESKeyPacketlist.write(), { SymEncryptedSessionKeyPacket });
+        } else {
+          packets = symESKeyPacketlist;
+        }
+        await Promise.all(packets.map(async function(keyPacket) {
           try {
-            await keyPacket.decrypt(privateKeyPacket);
-            if (!algos.includes(enums.write(enums.symmetric, keyPacket.sessionKeyAlgorithm))) {
-              throw new Error('A non-preferred symmetric algorithm was used.');
-            }
+            await keyPacket.decrypt(password);
             keyPackets.push(keyPacket);
           } catch (err) {
             util.printDebugError(err);
-            exception = err;
           }
         }));
       }));
-      stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
-      keyPacket.encrypted = null;
-    }));
-  } else {
-    throw new Error('No key or password specified.');
-  }
+    } else if (privateKeys) {
+      const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
+      if (!pkESKeyPacketlist) {
+        throw new Error('No public key encrypted session key packet found.');
+      }
+      await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
+        await Promise.all(privateKeys.map(async function(privateKey) {
+          let algos = [
+            enums.symmetric.aes256, // Old OpenPGP.js default fallback
+            enums.symmetric.aes128, // RFC4880bis fallback
+            enums.symmetric.tripledes, // RFC4880 fallback
+            enums.symmetric.cast5 // Golang OpenPGP fallback
+          ];
+          try {
+            const primaryUser = await privateKey.getPrimaryUser(); // TODO: Pass userId from somewhere.
+            if (primaryUser.selfCertification.preferredSymmetricAlgorithms) {
+              algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
+            }
+          } catch (e) {}
 
-  if (keyPackets.length) {
-    // Return only unique session keys
-    if (keyPackets.length > 1) {
-      const seen = {};
-      keyPackets = keyPackets.filter(function(item) {
-        const k = item.sessionKeyAlgorithm + util.uint8ArrayToStr(item.sessionKey);
-        if (seen.hasOwnProperty(k)) {
-          return false;
-        }
-        seen[k] = true;
-        return true;
-      });
+          const privateKeyPackets = privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket);
+          await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
+            if (!privateKeyPacket) {
+              return;
+            }
+            if (!privateKeyPacket.isDecrypted()) {
+              throw new Error('Private key is not decrypted.');
+            }
+            try {
+              await keyPacket.decrypt(privateKeyPacket);
+              if (!algos.includes(enums.write(enums.symmetric, keyPacket.sessionKeyAlgorithm))) {
+                throw new Error('A non-preferred symmetric algorithm was used.');
+              }
+              keyPackets.push(keyPacket);
+            } catch (err) {
+              util.printDebugError(err);
+              exception = err;
+            }
+          }));
+        }));
+        stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
+        keyPacket.encrypted = null;
+      }));
+    } else {
+      throw new Error('No key or password specified.');
     }
 
-    return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
-  }
-  throw exception || new Error('Session key decryption failed.');
-};
+    if (keyPackets.length) {
+      // Return only unique session keys
+      if (keyPackets.length > 1) {
+        const seen = {};
+        keyPackets = keyPackets.filter(function(item) {
+          const k = item.sessionKeyAlgorithm + util.uint8ArrayToStr(item.sessionKey);
+          if (seen.hasOwnProperty(k)) {
+            return false;
+          }
+          seen[k] = true;
+          return true;
+        });
+      }
 
-/**
- * Get literal data that is the body of the message
- * @returns {(Uint8Array|null)} literal body of the message as Uint8Array
- */
-Message.prototype.getLiteralData = function() {
-  const msg = this.unwrapCompressed();
-  const literal = msg.packets.findPacket(enums.packet.literalData);
-  return (literal && literal.getBytes()) || null;
-};
-
-/**
- * Get filename from literal data packet
- * @returns {(String|null)} filename of literal data packet as string
- */
-Message.prototype.getFilename = function() {
-  const msg = this.unwrapCompressed();
-  const literal = msg.packets.findPacket(enums.packet.literalData);
-  return (literal && literal.getFilename()) || null;
-};
-
-/**
- * Get literal data as text
- * @returns {(String|null)} literal body of the message interpreted as text
- */
-Message.prototype.getText = function() {
-  const msg = this.unwrapCompressed();
-  const literal = msg.packets.findPacket(enums.packet.literalData);
-  if (literal) {
-    return literal.getText();
-  }
-  return null;
-};
-
-/**
- * Generate a new session key object, taking the algorithm preferences of the passed public keys into account, if any.
- * @param  {Array<Key>} keys           (optional) public key(s) to select algorithm preferences for
- * @param  {Date} date                 (optional) date to select algorithm preferences at
- * @param  {Array} userIds             (optional) user IDs to select algorithm preferences for
- * @returns {Promise<{ data: Uint8Array, algorithm: String }>} object with session key data and algorithm
- * @async
- */
-export async function generateSessionKey(keys = [], date = new Date(), userIds = []) {
-  const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
-  const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIds) ?
-    enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds)) :
-    undefined;
-  const sessionKeyData = await crypto.generateSessionKey(algorithm);
-  return { data: sessionKeyData, algorithm, aeadAlgorithm };
-}
-
-/**
- * Encrypt the message either with public keys, passwords, or both at once.
- * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
- * @param  {Array<String>} passwords   (optional) password(s) for message encryption
- * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
- * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date                 (optional) override the creation date of the literal package
- * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
- * @param  {Boolean} streaming         (optional) whether to process data as a stream
- * @returns {Promise<Message>}                   new message with encrypted content
- * @async
- */
-Message.prototype.encrypt = async function(keys, passwords, sessionKey, wildcard = false, date = new Date(), userIds = [], streaming) {
-  if (sessionKey) {
-    if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
-      throw new Error('Invalid session key for encryption.');
+      return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
     }
-  } else if (keys && keys.length) {
-    sessionKey = await generateSessionKey(keys, date, userIds);
-  } else if (passwords && passwords.length) {
-    sessionKey = await generateSessionKey();
-  } else {
-    throw new Error('No keys, passwords, or session key provided.');
+    throw exception || new Error('Session key decryption failed.');
   }
 
-  const { data: sessionKeyData, algorithm, aeadAlgorithm } = sessionKey;
-
-  const msg = await encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, keys, passwords, wildcard, date, userIds);
-
-  let symEncryptedPacket;
-  if (aeadAlgorithm) {
-    symEncryptedPacket = new SymEncryptedAEADProtectedDataPacket();
-    symEncryptedPacket.aeadAlgorithm = aeadAlgorithm;
-  } else if (config.integrityProtect) {
-    symEncryptedPacket = new SymEncryptedIntegrityProtectedDataPacket();
-  } else {
-    symEncryptedPacket = new SymmetricallyEncryptedDataPacket();
+  /**
+   * Get literal data that is the body of the message
+   * @returns {(Uint8Array|null)} literal body of the message as Uint8Array
+   */
+  getLiteralData() {
+    const msg = this.unwrapCompressed();
+    const literal = msg.packets.findPacket(enums.packet.literalData);
+    return (literal && literal.getBytes()) || null;
   }
-  symEncryptedPacket.packets = this.packets;
 
-  await symEncryptedPacket.encrypt(algorithm, sessionKeyData, streaming);
-
-  msg.packets.push(symEncryptedPacket);
-  symEncryptedPacket.packets = new PacketList(); // remove packets after encryption
-  return msg;
-};
-
-/**
- * Encrypt a session key either with public keys, passwords, or both at once.
- * @param  {Uint8Array} sessionKey     session key for encryption
- * @param  {String} algorithm          session key algorithm
- * @param  {String} aeadAlgorithm      (optional) aead algorithm, e.g. 'eax' or 'ocb'
- * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
- * @param  {Array<String>} passwords   (optional) for message encryption
- * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date                 (optional) override the date
- * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
- * @returns {Promise<Message>}          new message with encrypted content
- * @async
- */
-export async function encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), userIds = []) {
-  const packetlist = new PacketList();
-
-  if (publicKeys) {
-    const results = await Promise.all(publicKeys.map(async function(publicKey) {
-      const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userIds);
-      const pkESKeyPacket = new PublicKeyEncryptedSessionKeyPacket();
-      pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.getKeyId();
-      pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
-      pkESKeyPacket.sessionKey = sessionKey;
-      pkESKeyPacket.sessionKeyAlgorithm = algorithm;
-      await pkESKeyPacket.encrypt(encryptionKey.keyPacket);
-      delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
-      return pkESKeyPacket;
-    }));
-    packetlist.concat(results);
+  /**
+   * Get filename from literal data packet
+   * @returns {(String|null)} filename of literal data packet as string
+   */
+  getFilename() {
+    const msg = this.unwrapCompressed();
+    const literal = msg.packets.findPacket(enums.packet.literalData);
+    return (literal && literal.getFilename()) || null;
   }
-  if (passwords) {
-    const testDecrypt = async function(keyPacket, password) {
-      try {
-        await keyPacket.decrypt(password);
-        return 1;
-      } catch (e) {
-        return 0;
+
+  /**
+   * Get literal data as text
+   * @returns {(String|null)} literal body of the message interpreted as text
+   */
+  getText() {
+    const msg = this.unwrapCompressed();
+    const literal = msg.packets.findPacket(enums.packet.literalData);
+    if (literal) {
+      return literal.getText();
+    }
+    return null;
+  }
+
+  /**
+   * Generate a new session key object, taking the algorithm preferences of the passed public keys into account, if any.
+   * @param  {Array<Key>} keys           (optional) public key(s) to select algorithm preferences for
+   * @param  {Date} date                 (optional) date to select algorithm preferences at
+   * @param  {Array} userIds             (optional) user IDs to select algorithm preferences for
+   * @returns {Promise<{ data: Uint8Array, algorithm: String }>} object with session key data and algorithm
+   * @async
+   */
+  static async generateSessionKey(keys = [], date = new Date(), userIds = []) {
+    const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds));
+    const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIds) ?
+      enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds)) :
+      undefined;
+    const sessionKeyData = await crypto.generateSessionKey(algorithm);
+    return { data: sessionKeyData, algorithm, aeadAlgorithm };
+  }
+
+  /**
+   * Encrypt the message either with public keys, passwords, or both at once.
+   * @param  {Array<Key>} keys           (optional) public key(s) for message encryption
+   * @param  {Array<String>} passwords   (optional) password(s) for message encryption
+   * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
+   * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
+   * @param  {Date} date                 (optional) override the creation date of the literal package
+   * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+   * @param  {Boolean} streaming         (optional) whether to process data as a stream
+   * @returns {Promise<Message>}                   new message with encrypted content
+   * @async
+   */
+  async encrypt(keys, passwords, sessionKey, wildcard = false, date = new Date(), userIds = [], streaming) {
+    if (sessionKey) {
+      if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
+        throw new Error('Invalid session key for encryption.');
       }
-    };
+    } else if (keys && keys.length) {
+      sessionKey = await Message.generateSessionKey(keys, date, userIds);
+    } else if (passwords && passwords.length) {
+      sessionKey = await Message.generateSessionKey();
+    } else {
+      throw new Error('No keys, passwords, or session key provided.');
+    }
 
-    const sum = (accumulator, currentValue) => accumulator + currentValue;
+    const { data: sessionKeyData, algorithm, aeadAlgorithm } = sessionKey;
 
-    const encryptPassword = async function(sessionKey, algorithm, aeadAlgorithm, password) {
-      const symEncryptedSessionKeyPacket = new SymEncryptedSessionKeyPacket();
-      symEncryptedSessionKeyPacket.sessionKey = sessionKey;
-      symEncryptedSessionKeyPacket.sessionKeyAlgorithm = algorithm;
-      if (aeadAlgorithm) {
-        symEncryptedSessionKeyPacket.aeadAlgorithm = aeadAlgorithm;
-      }
-      await symEncryptedSessionKeyPacket.encrypt(password);
+    const msg = await Message.encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, keys, passwords, wildcard, date, userIds);
 
-      if (config.passwordCollisionCheck) {
-        const results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
-        if (results.reduce(sum) !== 1) {
-          return encryptPassword(sessionKey, algorithm, password);
+    let symEncryptedPacket;
+    if (aeadAlgorithm) {
+      symEncryptedPacket = new SymEncryptedAEADProtectedDataPacket();
+      symEncryptedPacket.aeadAlgorithm = aeadAlgorithm;
+    } else if (config.integrityProtect) {
+      symEncryptedPacket = new SymEncryptedIntegrityProtectedDataPacket();
+    } else {
+      symEncryptedPacket = new SymmetricallyEncryptedDataPacket();
+    }
+    symEncryptedPacket.packets = this.packets;
+
+    await symEncryptedPacket.encrypt(algorithm, sessionKeyData, streaming);
+
+    msg.packets.push(symEncryptedPacket);
+    symEncryptedPacket.packets = new PacketList(); // remove packets after encryption
+    return msg;
+  }
+
+  /**
+   * Encrypt a session key either with public keys, passwords, or both at once.
+   * @param  {Uint8Array} sessionKey     session key for encryption
+   * @param  {String} algorithm          session key algorithm
+   * @param  {String} aeadAlgorithm      (optional) aead algorithm, e.g. 'eax' or 'ocb'
+   * @param  {Array<Key>} publicKeys     (optional) public key(s) for message encryption
+   * @param  {Array<String>} passwords   (optional) for message encryption
+   * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
+   * @param  {Date} date                 (optional) override the date
+   * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+   * @returns {Promise<Message>}          new message with encrypted content
+   * @async
+   */
+  static async encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), userIds = []) {
+    const packetlist = new PacketList();
+
+    if (publicKeys) {
+      const results = await Promise.all(publicKeys.map(async function(publicKey) {
+        const encryptionKey = await publicKey.getEncryptionKey(undefined, date, userIds);
+        const pkESKeyPacket = new PublicKeyEncryptedSessionKeyPacket();
+        pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.getKeyId();
+        pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
+        pkESKeyPacket.sessionKey = sessionKey;
+        pkESKeyPacket.sessionKeyAlgorithm = algorithm;
+        await pkESKeyPacket.encrypt(encryptionKey.keyPacket);
+        delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
+        return pkESKeyPacket;
+      }));
+      packetlist.concat(results);
+    }
+    if (passwords) {
+      const testDecrypt = async function(keyPacket, password) {
+        try {
+          await keyPacket.decrypt(password);
+          return 1;
+        } catch (e) {
+          return 0;
         }
+      };
+
+      const sum = (accumulator, currentValue) => accumulator + currentValue;
+
+      const encryptPassword = async function(sessionKey, algorithm, aeadAlgorithm, password) {
+        const symEncryptedSessionKeyPacket = new SymEncryptedSessionKeyPacket();
+        symEncryptedSessionKeyPacket.sessionKey = sessionKey;
+        symEncryptedSessionKeyPacket.sessionKeyAlgorithm = algorithm;
+        if (aeadAlgorithm) {
+          symEncryptedSessionKeyPacket.aeadAlgorithm = aeadAlgorithm;
+        }
+        await symEncryptedSessionKeyPacket.encrypt(password);
+
+        if (config.passwordCollisionCheck) {
+          const results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
+          if (results.reduce(sum) !== 1) {
+            return encryptPassword(sessionKey, algorithm, password);
+          }
+        }
+
+        delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
+        return symEncryptedSessionKeyPacket;
+      };
+
+      const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, algorithm, aeadAlgorithm, pwd)));
+      packetlist.concat(results);
+    }
+
+    return new Message(packetlist);
+  }
+
+  /**
+   * Sign the message (the literal data packet of the message)
+   * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
+   * @param  {Signature} signature          (optional) any existing detached signature to add to the message
+   * @param  {Date} date                    (optional) override the creation time of the signature
+   * @param  {Array} userIds                (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Boolean} streaming            (optional) whether to process data as a stream
+   * @returns {Promise<Message>}             new message with signed content
+   * @async
+   */
+  async sign(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false) {
+    const packetlist = new PacketList();
+
+    const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
+    if (!literalDataPacket) {
+      throw new Error('No literal data packet to sign.');
+    }
+
+    let i;
+    let existingSigPacketlist;
+    // If data packet was created from Uint8Array, use binary, otherwise use text
+    const signatureType = literalDataPacket.text === null ?
+      enums.signature.binary : enums.signature.text;
+
+    if (signature) {
+      existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
+      for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
+        const signaturePacket = existingSigPacketlist[i];
+        const onePassSig = new OnePassSignaturePacket();
+        onePassSig.signatureType = signaturePacket.signatureType;
+        onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
+        onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
+        onePassSig.issuerKeyId = signaturePacket.issuerKeyId;
+        if (!privateKeys.length && i === 0) {
+          onePassSig.flags = 1;
+        }
+        packetlist.push(onePassSig);
       }
+    }
 
-      delete symEncryptedSessionKeyPacket.sessionKey; // delete plaintext session key after encryption
-      return symEncryptedSessionKeyPacket;
-    };
-
-    const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, algorithm, aeadAlgorithm, pwd)));
-    packetlist.concat(results);
-  }
-
-  return new Message(packetlist);
-}
-
-/**
- * Sign the message (the literal data packet of the message)
- * @param  {Array<module:key.Key>}        privateKeys private keys with decrypted secret key data for signing
- * @param  {Signature} signature          (optional) any existing detached signature to add to the message
- * @param  {Date} date                    (optional) override the creation time of the signature
- * @param  {Array} userIds                (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @param  {Boolean} streaming            (optional) whether to process data as a stream
- * @returns {Promise<Message>}             new message with signed content
- * @async
- */
-Message.prototype.sign = async function(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false) {
-  const packetlist = new PacketList();
-
-  const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
-  if (!literalDataPacket) {
-    throw new Error('No literal data packet to sign.');
-  }
-
-  let i;
-  let existingSigPacketlist;
-  // If data packet was created from Uint8Array, use binary, otherwise use text
-  const signatureType = literalDataPacket.text === null ?
-    enums.signature.binary : enums.signature.text;
-
-  if (signature) {
-    existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
-    for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
-      const signaturePacket = existingSigPacketlist[i];
+    await Promise.all(Array.from(privateKeys).reverse().map(async function (privateKey, i) {
+      if (privateKey.isPublic()) {
+        throw new Error('Need private key for signing');
+      }
+      const signingKey = await privateKey.getSigningKey(undefined, date, userIds);
       const onePassSig = new OnePassSignaturePacket();
-      onePassSig.signatureType = signaturePacket.signatureType;
-      onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
-      onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
-      onePassSig.issuerKeyId = signaturePacket.issuerKeyId;
-      if (!privateKeys.length && i === 0) {
+      onePassSig.signatureType = signatureType;
+      onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userIds);
+      onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
+      onePassSig.issuerKeyId = signingKey.getKeyId();
+      if (i === privateKeys.length - 1) {
         onePassSig.flags = 1;
       }
-      packetlist.push(onePassSig);
-    }
+      return onePassSig;
+    })).then(onePassSignatureList => {
+      onePassSignatureList.forEach(onePassSig => packetlist.push(onePassSig));
+    });
+
+    packetlist.push(literalDataPacket);
+    packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, false, streaming));
+
+    return new Message(packetlist);
   }
 
-  await Promise.all(Array.from(privateKeys).reverse().map(async function (privateKey, i) {
-    if (privateKey.isPublic()) {
-      throw new Error('Need private key for signing');
+  /**
+   * Compresses the message (the literal and -if signed- signature data packets of the message)
+   * @param  {module:enums.compression}   compression     compression algorithm to be used
+   * @returns {module:message.Message}       new message with compressed content
+   */
+  compress(compression) {
+    if (compression === enums.compression.uncompressed) {
+      return this;
     }
-    const signingKey = await privateKey.getSigningKey(undefined, date, userIds);
-    const onePassSig = new OnePassSignaturePacket();
-    onePassSig.signatureType = signatureType;
-    onePassSig.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKey.keyPacket, date, userIds);
-    onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
-    onePassSig.issuerKeyId = signingKey.getKeyId();
-    if (i === privateKeys.length - 1) {
-      onePassSig.flags = 1;
+
+    const compressed = new CompressedDataPacket();
+    compressed.packets = this.packets;
+    compressed.algorithm = enums.read(enums.compression, compression);
+
+    const packetList = new PacketList();
+    packetList.push(compressed);
+
+    return new Message(packetList);
+  }
+
+  /**
+   * Create a detached signature for the message (the literal data packet of the message)
+   * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
+   * @param  {Signature} signature                 (optional) any existing detached signature
+   * @param  {Date} date                           (optional) override the creation time of the signature
+   * @param  {Array} userIds                       (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Boolean} streaming                   (optional) whether to process data as a stream
+   * @returns {Promise<module:signature.Signature>} new detached signature of message content
+   * @async
+   */
+  async signDetached(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false) {
+    const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
+    if (!literalDataPacket) {
+      throw new Error('No literal data packet to sign.');
     }
-    return onePassSig;
-  })).then(onePassSignatureList => {
-    onePassSignatureList.forEach(onePassSig => packetlist.push(onePassSig));
-  });
+    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true, streaming));
+  }
 
-  packetlist.push(literalDataPacket);
-  packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, false, streaming));
+  /**
+   * Verify message signatures
+   * @param {Array<module:key.Key>} keys array of keys to verify signatures
+   * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @param  {Boolean} streaming (optional) whether to process data as a stream
+   * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
+   * @async
+   */
+  async verify(keys, date = new Date(), streaming) {
+    const msg = this.unwrapCompressed();
+    const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
+    if (literalDataList.length !== 1) {
+      throw new Error('Can only verify message with one literal data packet.');
+    }
+    if (!streaming) {
+      msg.packets.concat(await stream.readToEnd(msg.packets.stream, _ => _));
+    }
+    const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
+    const signatureList = msg.packets.filterByTag(enums.packet.signature);
+    if (streaming && onePassSigList.length && !signatureList.length && msg.packets.stream) {
+      await Promise.all(onePassSigList.map(async onePassSig => {
+        onePassSig.correspondingSig = new Promise((resolve, reject) => {
+          onePassSig.correspondingSigResolve = resolve;
+          onePassSig.correspondingSigReject = reject;
+        });
+        onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
+        onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming));
+        onePassSig.hashed.catch(() => {});
+      }));
+      msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
+        const reader = stream.getReader(readable);
+        const writer = stream.getWriter(writable);
+        try {
+          for (let i = 0; i < onePassSigList.length; i++) {
+            const { value: signature } = await reader.read();
+            onePassSigList[i].correspondingSigResolve(signature);
+          }
+          await reader.readToEnd();
+          await writer.ready;
+          await writer.close();
+        } catch (e) {
+          onePassSigList.forEach(onePassSig => {
+            onePassSig.correspondingSigReject(e);
+          });
+          await writer.abort(e);
+        }
+      });
+      return createVerificationObjects(onePassSigList, literalDataList, keys, date, false, streaming);
+    }
+    return createVerificationObjects(signatureList, literalDataList, keys, date, false, streaming);
+  }
 
-  return new Message(packetlist);
-};
+  /**
+   * Verify detached message signature
+   * @param {Array<module:key.Key>} keys array of keys to verify signatures
+   * @param {Signature} signature
+   * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
+   * @async
+   */
+  verifyDetached(signature, keys, date = new Date()) {
+    const msg = this.unwrapCompressed();
+    const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
+    if (literalDataList.length !== 1) {
+      throw new Error('Can only verify message with one literal data packet.');
+    }
+    const signatureList = signature.packets;
+    return createVerificationObjects(signatureList, literalDataList, keys, date, true);
+  }
 
-/**
- * Compresses the message (the literal and -if signed- signature data packets of the message)
- * @param  {module:enums.compression}   compression     compression algorithm to be used
- * @returns {module:message.Message}       new message with compressed content
- */
-Message.prototype.compress = function(compression) {
-  if (compression === enums.compression.uncompressed) {
+  /**
+   * Unwrap compressed message
+   * @returns {module:message.Message} message Content of compressed message
+   */
+  unwrapCompressed() {
+    const compressed = this.packets.filterByTag(enums.packet.compressedData);
+    if (compressed.length) {
+      return new Message(compressed[0].packets);
+    }
     return this;
   }
 
-  const compressed = new CompressedDataPacket();
-  compressed.packets = this.packets;
-  compressed.algorithm = enums.read(enums.compression, compression);
-
-  const packetList = new PacketList();
-  packetList.push(compressed);
-
-  return new Message(packetList);
-};
-
-/**
- * Create a detached signature for the message (the literal data packet of the message)
- * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
- * @param  {Signature} signature                 (optional) any existing detached signature
- * @param  {Date} date                           (optional) override the creation time of the signature
- * @param  {Array} userIds                       (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @param  {Boolean} streaming                   (optional) whether to process data as a stream
- * @returns {Promise<module:signature.Signature>} new detached signature of message content
- * @async
- */
-Message.prototype.signDetached = async function(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false) {
-  const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
-  if (!literalDataPacket) {
-    throw new Error('No literal data packet to sign.');
+  /**
+   * Append signature to unencrypted message object
+   * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
+   */
+  async appendSignature(detachedSignature) {
+    await this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : (await armor.decode(detachedSignature)).data, { SignaturePacket });
   }
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true, streaming));
-};
+
+  /**
+   * Returns binary encoded message
+   * @returns {ReadableStream<Uint8Array>} binary message
+   */
+  write() {
+    return this.packets.write();
+  }
+
+  /**
+   * Returns ASCII armored text of message
+   * @returns {ReadableStream<String>} ASCII armor
+   */
+  armor() {
+    return armor.encode(enums.armor.message, this.write());
+  }
+}
 
 /**
  * Create signature packets for the message
@@ -557,76 +662,6 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
   }
   return packetlist;
 }
-
-/**
- * Verify message signatures
- * @param {Array<module:key.Key>} keys array of keys to verify signatures
- * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @param  {Boolean} streaming (optional) whether to process data as a stream
- * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
- * @async
- */
-Message.prototype.verify = async function(keys, date = new Date(), streaming) {
-  const msg = this.unwrapCompressed();
-  const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
-  if (literalDataList.length !== 1) {
-    throw new Error('Can only verify message with one literal data packet.');
-  }
-  if (!streaming) {
-    msg.packets.concat(await stream.readToEnd(msg.packets.stream, _ => _));
-  }
-  const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
-  const signatureList = msg.packets.filterByTag(enums.packet.signature);
-  if (streaming && onePassSigList.length && !signatureList.length && msg.packets.stream) {
-    await Promise.all(onePassSigList.map(async onePassSig => {
-      onePassSig.correspondingSig = new Promise((resolve, reject) => {
-        onePassSig.correspondingSigResolve = resolve;
-        onePassSig.correspondingSigReject = reject;
-      });
-      onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-      onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming));
-      onePassSig.hashed.catch(() => {});
-    }));
-    msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
-      const reader = stream.getReader(readable);
-      const writer = stream.getWriter(writable);
-      try {
-        for (let i = 0; i < onePassSigList.length; i++) {
-          const { value: signature } = await reader.read();
-          onePassSigList[i].correspondingSigResolve(signature);
-        }
-        await reader.readToEnd();
-        await writer.ready;
-        await writer.close();
-      } catch (e) {
-        onePassSigList.forEach(onePassSig => {
-          onePassSig.correspondingSigReject(e);
-        });
-        await writer.abort(e);
-      }
-    });
-    return createVerificationObjects(onePassSigList, literalDataList, keys, date, false, streaming);
-  }
-  return createVerificationObjects(signatureList, literalDataList, keys, date, false, streaming);
-};
-
-/**
- * Verify detached message signature
- * @param {Array<module:key.Key>} keys array of keys to verify signatures
- * @param {Signature} signature
- * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
- * @async
- */
-Message.prototype.verifyDetached = function(signature, keys, date = new Date()) {
-  const msg = this.unwrapCompressed();
-  const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
-  if (literalDataList.length !== 1) {
-    throw new Error('Can only verify message with one literal data packet.');
-  }
-  const signatureList = signature.packets;
-  return createVerificationObjects(signatureList, literalDataList, keys, date, true);
-};
 
 /**
  * Create object containing signer's keyid and validity of signature
@@ -708,42 +743,6 @@ export async function createVerificationObjects(signatureList, literalDataList, 
     return createVerificationObject(signature, literalDataList, keys, date, detached, streaming);
   }));
 }
-
-/**
- * Unwrap compressed message
- * @returns {module:message.Message} message Content of compressed message
- */
-Message.prototype.unwrapCompressed = function() {
-  const compressed = this.packets.filterByTag(enums.packet.compressedData);
-  if (compressed.length) {
-    return new Message(compressed[0].packets);
-  }
-  return this;
-};
-
-/**
- * Append signature to unencrypted message object
- * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
- */
-Message.prototype.appendSignature = async function(detachedSignature) {
-  await this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : (await armor.decode(detachedSignature)).data, { SignaturePacket });
-};
-
-/**
- * Returns binary encoded message
- * @returns {ReadableStream<Uint8Array>} binary message
- */
-Message.prototype.write = function() {
-  return this.packets.write();
-};
-
-/**
- * Returns ASCII armored text of message
- * @returns {ReadableStream<String>} ASCII armor
- */
-Message.prototype.armor = function() {
-  return armor.encode(enums.armor.message, this.write());
-};
 
 /**
  * reads an OpenPGP armored message and returns a message object
