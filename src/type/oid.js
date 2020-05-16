@@ -37,70 +37,69 @@
 import util from '../util';
 import enums from '../enums';
 
-/**
- * @constructor
- */
-function OID(oid) {
-  if (oid instanceof OID) {
-    this.oid = oid.oid;
-  } else if (util.isArray(oid) ||
-             util.isUint8Array(oid)) {
-    oid = new Uint8Array(oid);
-    if (oid[0] === 0x06) { // DER encoded oid byte array
-      if (oid[1] !== oid.length - 2) {
-        throw new Error('Length mismatch in DER encoded oid');
+class OID {
+  constructor(oid) {
+    if (oid instanceof OID) {
+      this.oid = oid.oid;
+    } else if (util.isArray(oid) ||
+               util.isUint8Array(oid)) {
+      oid = new Uint8Array(oid);
+      if (oid[0] === 0x06) { // DER encoded oid byte array
+        if (oid[1] !== oid.length - 2) {
+          throw new Error('Length mismatch in DER encoded oid');
+        }
+        oid = oid.subarray(2);
       }
-      oid = oid.subarray(2);
+      this.oid = oid;
+    } else {
+      this.oid = '';
     }
-    this.oid = oid;
-  } else {
-    this.oid = '';
+  }
+
+  /**
+   * Method to read an OID object
+   * @param  {Uint8Array}  input  Where to read the OID from
+   * @returns {Number}             Number of read bytes
+   */
+  read(input) {
+    if (input.length >= 1) {
+      const length = input[0];
+      if (input.length >= 1 + length) {
+        this.oid = input.subarray(1, 1 + length);
+        return 1 + this.oid.length;
+      }
+    }
+    throw new Error('Invalid oid');
+  }
+
+  /**
+   * Serialize an OID object
+   * @returns {Uint8Array} Array with the serialized value the OID
+   */
+  write() {
+    return util.concatUint8Array([new Uint8Array([this.oid.length]), this.oid]);
+  }
+
+  /**
+   * Serialize an OID object as a hex string
+   * @returns {string} String with the hex value of the OID
+   */
+  toHex() {
+    return util.uint8ArrayToHex(this.oid);
+  }
+
+  /**
+   * If a known curve object identifier, return the canonical name of the curve
+   * @returns {string} String with the canonical name of the curve
+   */
+  getName() {
+    const hex = this.toHex();
+    if (enums.curve[hex]) {
+      return enums.write(enums.curve, hex);
+    } else {
+      throw new Error('Unknown curve object identifier.');
+    }
   }
 }
-
-/**
- * Method to read an OID object
- * @param  {Uint8Array}  input  Where to read the OID from
- * @returns {Number}             Number of read bytes
- */
-OID.prototype.read = function (input) {
-  if (input.length >= 1) {
-    const length = input[0];
-    if (input.length >= 1 + length) {
-      this.oid = input.subarray(1, 1 + length);
-      return 1 + this.oid.length;
-    }
-  }
-  throw new Error('Invalid oid');
-};
-
-/**
- * Serialize an OID object
- * @returns {Uint8Array} Array with the serialized value the OID
- */
-OID.prototype.write = function () {
-  return util.concatUint8Array([new Uint8Array([this.oid.length]), this.oid]);
-};
-
-/**
- * Serialize an OID object as a hex string
- * @returns {string} String with the hex value of the OID
- */
-OID.prototype.toHex = function() {
-  return util.uint8ArrayToHex(this.oid);
-};
-
-/**
- * If a known curve object identifier, return the canonical name of the curve
- * @returns {string} String with the canonical name of the curve
- */
-OID.prototype.getName = function() {
-  const hex = this.toHex();
-  if (enums.curve[hex]) {
-    return enums.write(enums.curve, hex);
-  } else {
-    throw new Error('Unknown curve object identifier.');
-  }
-};
 
 export default OID;
