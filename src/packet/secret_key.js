@@ -35,48 +35,327 @@ import util from '../util';
  * Public-Key packet, including the public-key material, but also
  * includes the secret-key material after all the public-key fields.
  * @memberof module:packet
- * @constructor
  * @extends PublicKeyPacket
  */
-function SecretKeyPacket(date = new Date()) {
-  PublicKeyPacket.call(this, date);
-  /**
-   * Packet type
-   * @type {module:enums.packet}
-   */
-  this.tag = enums.packet.secretKey;
-  /**
-   * Secret-key data
-   */
-  this.keyMaterial = null;
-  /**
-   * Indicates whether secret-key data is encrypted. `this.isEncrypted === false` means data is available in decrypted form.
-   */
-  this.isEncrypted = null;
-  /**
-   * S2K usage
-   * @type {Integer}
-   */
-  this.s2k_usage = 0;
-  /**
-   * S2K object
-   * @type {type/s2k}
-   */
-  this.s2k = null;
-  /**
-   * Symmetric algorithm
-   * @type {String}
-   */
-  this.symmetric = null;
-  /**
-   * AEAD algorithm
-   * @type {String}
-   */
-  this.aead = null;
-}
+class SecretKeyPacket extends PublicKeyPacket {
+  constructor(date = new Date()) {
+    super(date);
+    /**
+     * Packet type
+     * @type {module:enums.packet}
+     */
+    this.tag = enums.packet.secretKey;
+    /**
+     * Secret-key data
+     */
+    this.keyMaterial = null;
+    /**
+     * Indicates whether secret-key data is encrypted. `this.isEncrypted === false` means data is available in decrypted form.
+     */
+    this.isEncrypted = null;
+    /**
+     * S2K usage
+     * @type {Integer}
+     */
+    this.s2k_usage = 0;
+    /**
+     * S2K object
+     * @type {type/s2k}
+     */
+    this.s2k = null;
+    /**
+     * Symmetric algorithm
+     * @type {String}
+     */
+    this.symmetric = null;
+    /**
+     * AEAD algorithm
+     * @type {String}
+     */
+    this.aead = null;
+  }
 
-SecretKeyPacket.prototype = new PublicKeyPacket();
-SecretKeyPacket.prototype.constructor = SecretKeyPacket;
+  // 5.5.3.  Secret-Key Packet Formats
+
+  /**
+   * Internal parser for private keys as specified in
+   * {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.5.3|RFC4880bis-04 section 5.5.3}
+   * @param {String} bytes Input string to read the packet from
+   */
+  read(bytes) {
+    // - A Public-Key or Public-Subkey packet, as described above.
+    let i = this.readPublicKey(bytes);
+
+    // - One octet indicating string-to-key usage conventions.  Zero
+    //   indicates that the secret-key data is not encrypted.  255 or 254
+    //   indicates that a string-to-key specifier is being given.  Any
+    //   other value is a symmetric-key encryption algorithm identifier.
+    this.s2k_usage = bytes[i++];
+
+    // - Only for a version 5 packet, a one-octet scalar octet count of
+    //   the next 4 optional fields.
+    if (this.version === 5) {
+      i++;
+    }
+
+    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+    //   one-octet symmetric encryption algorithm.
+    if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
+      this.symmetric = bytes[i++];
+      this.symmetric = enums.read(enums.symmetric, this.symmetric);
+
+      // - [Optional] If string-to-key usage octet was 253, a one-octet
+      //   AEAD algorithm.
+      if (this.s2k_usage === 253) {
+        this.aead = bytes[i++];
+        this.aead = enums.read(enums.aead, this.aead);
+      }
+
+      // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+      //   string-to-key specifier.  The length of the string-to-key
+      //   specifier is implied by its type, as described above.
+      this.s2k = new type_s2k();
+      i += this.s2k.read(bytes.subarray(i, bytes.length));
+
+      if (this.s2k.type === 'gnu-dummy') {
+        return;
+      }
+    } else if (this.s2k_usage) {
+      this.symmetric = this.s2k_usage;
+      this.symmetric = enums.read(enums.symmetric, this.symmetric);
+    }
+
+    // - [Optional] If secret data is encrypted (string-to-key usage octet
+    //   not zero), an Initial Vector (IV) of the same length as the
+    //   cipher's block size.
+    if (this.s2k_usage) {
+      this.iv = bytes.subarray(
+        i,
+        i + crypto.cipher[this.symmetric].blockSize
+      );
+
+      i += this.iv.length;
+    }
+
+    // - Only for a version 5 packet, a four-octet scalar octet count for
+    //   the following key material.
+    if (this.version === 5) {
+      i += 4;
+    }
+
+    // - Plain or encrypted multiprecision integers comprising the secret
+    //   key data.  These algorithm-specific fields are as described
+    //   below.
+    this.keyMaterial = bytes.subarray(i);
+    this.isEncrypted = !!this.s2k_usage;
+
+    if (!this.isEncrypted) {
+      const cleartext = this.keyMaterial.subarray(0, -2);
+      if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
+        throw new Error('Key checksum mismatch');
+      }
+      const privParams = parse_cleartext_params(cleartext, this.algorithm);
+      this.params = this.params.concat(privParams);
+    }
+  }
+
+  /**
+   * Creates an OpenPGP key packet for the given key.
+   * @returns {String} A string of bytes containing the secret key OpenPGP packet
+   */
+  write() {
+    const arr = [this.writePublicKey()];
+
+    arr.push(new Uint8Array([this.s2k_usage]));
+
+    const optionalFieldsArr = [];
+    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+    //   one- octet symmetric encryption algorithm.
+    if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
+      optionalFieldsArr.push(enums.write(enums.symmetric, this.symmetric));
+
+      // - [Optional] If string-to-key usage octet was 253, a one-octet
+      //   AEAD algorithm.
+      if (this.s2k_usage === 253) {
+        optionalFieldsArr.push(enums.write(enums.aead, this.aead));
+      }
+
+      // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+      //   string-to-key specifier.  The length of the string-to-key
+      //   specifier is implied by its type, as described above.
+      optionalFieldsArr.push(...this.s2k.write());
+    }
+
+    // - [Optional] If secret data is encrypted (string-to-key usage octet
+    //   not zero), an Initial Vector (IV) of the same length as the
+    //   cipher's block size.
+    if (this.s2k_usage && this.s2k.type !== 'gnu-dummy') {
+      optionalFieldsArr.push(...this.iv);
+    }
+
+    if (this.version === 5) {
+      arr.push(new Uint8Array([optionalFieldsArr.length]));
+    }
+    arr.push(new Uint8Array(optionalFieldsArr));
+
+    if (!this.s2k || this.s2k.type !== 'gnu-dummy') {
+      if (!this.s2k_usage) {
+        const cleartextParams = write_cleartext_params(this.params, this.algorithm);
+        this.keyMaterial = util.concatUint8Array([
+          cleartextParams,
+          util.writeChecksum(cleartextParams)
+        ]);
+      }
+
+      if (this.version === 5) {
+        arr.push(util.writeNumber(this.keyMaterial.length, 4));
+      }
+      arr.push(this.keyMaterial);
+    }
+
+    return util.concatUint8Array(arr);
+  }
+
+  /**
+   * Check whether secret-key data is available in decrypted form. Returns null for public keys.
+   * @returns {Boolean|null}
+   */
+  isDecrypted() {
+    return this.isEncrypted === false;
+  }
+
+  /**
+   * Encrypt the payload. By default, we use aes256 and iterated, salted string
+   * to key specifier. If the key is in a decrypted state (isEncrypted === false)
+   * and the passphrase is empty or undefined, the key will be set as not encrypted.
+   * This can be used to remove passphrase protection after calling decrypt().
+   * @param {String} passphrase
+   * @returns {Promise<Boolean>}
+   * @async
+   */
+  async encrypt(passphrase) {
+    if (this.s2k && this.s2k.type === 'gnu-dummy') {
+      return false;
+    }
+
+    if (!this.isDecrypted()) {
+      throw new Error('Key packet is already encrypted');
+    }
+
+    if (this.isDecrypted() && !passphrase) {
+      this.s2k_usage = 0;
+      return false;
+    } else if (!passphrase) {
+      throw new Error('The key must be decrypted before removing passphrase protection.');
+    }
+
+    this.s2k = new type_s2k();
+    this.s2k.salt = await crypto.random.getRandomBytes(8);
+    const cleartext = write_cleartext_params(this.params, this.algorithm);
+    this.symmetric = 'aes256';
+    const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
+    const blockLen = crypto.cipher[this.symmetric].blockSize;
+    this.iv = await crypto.random.getRandomBytes(blockLen);
+
+    if (this.version === 5) {
+      this.s2k_usage = 253;
+      this.aead = 'eax';
+      const mode = crypto[this.aead];
+      const modeInstance = await mode(this.symmetric, key);
+      this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
+    } else {
+      this.s2k_usage = 254;
+      this.keyMaterial = await crypto.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
+        cleartext,
+        await crypto.hash.sha1(cleartext)
+      ]), this.iv);
+    }
+    return true;
+  }
+
+  /**
+   * Decrypts the private key params which are needed to use the key.
+   * {@link SecretKeyPacket.isDecrypted} should be false, as
+   * otherwise calls to this function will throw an error.
+   * @param {String} passphrase The passphrase for this private key as string
+   * @returns {Promise<Boolean>}
+   * @async
+   */
+  async decrypt(passphrase) {
+    if (this.s2k && this.s2k.type === 'gnu-dummy') {
+      this.isEncrypted = false;
+      return false;
+    }
+
+    if (this.isDecrypted()) {
+      throw new Error('Key packet is already decrypted.');
+    }
+
+    let key;
+    if (this.s2k_usage === 254 || this.s2k_usage === 253) {
+      key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
+    } else if (this.s2k_usage === 255) {
+      throw new Error('Encrypted private key is authenticated using an insecure two-byte hash');
+    } else {
+      throw new Error('Private key is encrypted using an insecure S2K function: unsalted MD5');
+    }
+
+    let cleartext;
+    if (this.s2k_usage === 253) {
+      const mode = crypto[this.aead];
+      try {
+        const modeInstance = await mode(this.symmetric, key);
+        cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
+      } catch (err) {
+        if (err.message === 'Authentication tag mismatch') {
+          throw new Error('Incorrect key passphrase: ' + err.message);
+        }
+        throw err;
+      }
+    } else {
+      const cleartextWithHash = await crypto.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
+
+      cleartext = cleartextWithHash.subarray(0, -20);
+      const hash = await crypto.hash.sha1(cleartext);
+
+      if (!util.equalsUint8Array(hash, cleartextWithHash.subarray(-20))) {
+        throw new Error('Incorrect key passphrase');
+      }
+    }
+
+    const privParams = parse_cleartext_params(cleartext, this.algorithm);
+    this.params = this.params.concat(privParams);
+    this.isEncrypted = false;
+    this.keyMaterial = null;
+    this.s2k_usage = 0;
+
+    return true;
+  }
+
+  async generate(bits, curve) {
+    const algo = enums.write(enums.publicKey, this.algorithm);
+    this.params = await crypto.generateParams(algo, bits, curve);
+    this.isEncrypted = false;
+  }
+
+  /**
+   * Clear private key parameters
+   */
+  clearPrivateParams() {
+    if (this.s2k && this.s2k.type === 'gnu-dummy') {
+      this.isEncrypted = true;
+      return;
+    }
+
+    const algo = enums.write(enums.publicKey, this.algorithm);
+    const publicParamCount = crypto.getPubKeyParamTypes(algo).length;
+    this.params.slice(publicParamCount).forEach(param => {
+      param.data.fill(0);
+    });
+    this.params.length = publicParamCount;
+    this.isEncrypted = true;
+  }
+}
 
 // Helper function
 
@@ -109,292 +388,11 @@ function write_cleartext_params(params, algorithm) {
 }
 
 
-// 5.5.3.  Secret-Key Packet Formats
-
-/**
- * Internal parser for private keys as specified in
- * {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.5.3|RFC4880bis-04 section 5.5.3}
- * @param {String} bytes Input string to read the packet from
- */
-SecretKeyPacket.prototype.read = function (bytes) {
-  // - A Public-Key or Public-Subkey packet, as described above.
-  let i = this.readPublicKey(bytes);
-
-  // - One octet indicating string-to-key usage conventions.  Zero
-  //   indicates that the secret-key data is not encrypted.  255 or 254
-  //   indicates that a string-to-key specifier is being given.  Any
-  //   other value is a symmetric-key encryption algorithm identifier.
-  this.s2k_usage = bytes[i++];
-
-  // - Only for a version 5 packet, a one-octet scalar octet count of
-  //   the next 4 optional fields.
-  if (this.version === 5) {
-    i++;
-  }
-
-  // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-  //   one-octet symmetric encryption algorithm.
-  if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
-    this.symmetric = bytes[i++];
-    this.symmetric = enums.read(enums.symmetric, this.symmetric);
-
-    // - [Optional] If string-to-key usage octet was 253, a one-octet
-    //   AEAD algorithm.
-    if (this.s2k_usage === 253) {
-      this.aead = bytes[i++];
-      this.aead = enums.read(enums.aead, this.aead);
-    }
-
-    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-    //   string-to-key specifier.  The length of the string-to-key
-    //   specifier is implied by its type, as described above.
-    this.s2k = new type_s2k();
-    i += this.s2k.read(bytes.subarray(i, bytes.length));
-
-    if (this.s2k.type === 'gnu-dummy') {
-      return;
-    }
-  } else if (this.s2k_usage) {
-    this.symmetric = this.s2k_usage;
-    this.symmetric = enums.read(enums.symmetric, this.symmetric);
-  }
-
-  // - [Optional] If secret data is encrypted (string-to-key usage octet
-  //   not zero), an Initial Vector (IV) of the same length as the
-  //   cipher's block size.
-  if (this.s2k_usage) {
-    this.iv = bytes.subarray(
-      i,
-      i + crypto.cipher[this.symmetric].blockSize
-    );
-
-    i += this.iv.length;
-  }
-
-  // - Only for a version 5 packet, a four-octet scalar octet count for
-  //   the following key material.
-  if (this.version === 5) {
-    i += 4;
-  }
-
-  // - Plain or encrypted multiprecision integers comprising the secret
-  //   key data.  These algorithm-specific fields are as described
-  //   below.
-  this.keyMaterial = bytes.subarray(i);
-  this.isEncrypted = !!this.s2k_usage;
-
-  if (!this.isEncrypted) {
-    const cleartext = this.keyMaterial.subarray(0, -2);
-    if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
-      throw new Error('Key checksum mismatch');
-    }
-    const privParams = parse_cleartext_params(cleartext, this.algorithm);
-    this.params = this.params.concat(privParams);
-  }
-};
-
-/**
- * Creates an OpenPGP key packet for the given key.
- * @returns {String} A string of bytes containing the secret key OpenPGP packet
- */
-SecretKeyPacket.prototype.write = function () {
-  const arr = [this.writePublicKey()];
-
-  arr.push(new Uint8Array([this.s2k_usage]));
-
-  const optionalFieldsArr = [];
-  // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-  //   one- octet symmetric encryption algorithm.
-  if (this.s2k_usage === 255 || this.s2k_usage === 254 || this.s2k_usage === 253) {
-    optionalFieldsArr.push(enums.write(enums.symmetric, this.symmetric));
-
-    // - [Optional] If string-to-key usage octet was 253, a one-octet
-    //   AEAD algorithm.
-    if (this.s2k_usage === 253) {
-      optionalFieldsArr.push(enums.write(enums.aead, this.aead));
-    }
-
-    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-    //   string-to-key specifier.  The length of the string-to-key
-    //   specifier is implied by its type, as described above.
-    optionalFieldsArr.push(...this.s2k.write());
-  }
-
-  // - [Optional] If secret data is encrypted (string-to-key usage octet
-  //   not zero), an Initial Vector (IV) of the same length as the
-  //   cipher's block size.
-  if (this.s2k_usage && this.s2k.type !== 'gnu-dummy') {
-    optionalFieldsArr.push(...this.iv);
-  }
-
-  if (this.version === 5) {
-    arr.push(new Uint8Array([optionalFieldsArr.length]));
-  }
-  arr.push(new Uint8Array(optionalFieldsArr));
-
-  if (!this.s2k || this.s2k.type !== 'gnu-dummy') {
-    if (!this.s2k_usage) {
-      const cleartextParams = write_cleartext_params(this.params, this.algorithm);
-      this.keyMaterial = util.concatUint8Array([
-        cleartextParams,
-        util.writeChecksum(cleartextParams)
-      ]);
-    }
-
-    if (this.version === 5) {
-      arr.push(util.writeNumber(this.keyMaterial.length, 4));
-    }
-    arr.push(this.keyMaterial);
-  }
-
-  return util.concatUint8Array(arr);
-};
-
-/**
- * Check whether secret-key data is available in decrypted form. Returns null for public keys.
- * @returns {Boolean|null}
- */
-SecretKeyPacket.prototype.isDecrypted = function() {
-  return this.isEncrypted === false;
-};
-
-/**
- * Encrypt the payload. By default, we use aes256 and iterated, salted string
- * to key specifier. If the key is in a decrypted state (isEncrypted === false)
- * and the passphrase is empty or undefined, the key will be set as not encrypted.
- * This can be used to remove passphrase protection after calling decrypt().
- * @param {String} passphrase
- * @returns {Promise<Boolean>}
- * @async
- */
-SecretKeyPacket.prototype.encrypt = async function (passphrase) {
-  if (this.s2k && this.s2k.type === 'gnu-dummy') {
-    return false;
-  }
-
-  if (!this.isDecrypted()) {
-    throw new Error('Key packet is already encrypted');
-  }
-
-  if (this.isDecrypted() && !passphrase) {
-    this.s2k_usage = 0;
-    return false;
-  } else if (!passphrase) {
-    throw new Error('The key must be decrypted before removing passphrase protection.');
-  }
-
-  this.s2k = new type_s2k();
-  this.s2k.salt = await crypto.random.getRandomBytes(8);
-  const cleartext = write_cleartext_params(this.params, this.algorithm);
-  this.symmetric = 'aes256';
-  const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
-  const blockLen = crypto.cipher[this.symmetric].blockSize;
-  this.iv = await crypto.random.getRandomBytes(blockLen);
-
-  if (this.version === 5) {
-    this.s2k_usage = 253;
-    this.aead = 'eax';
-    const mode = crypto[this.aead];
-    const modeInstance = await mode(this.symmetric, key);
-    this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
-  } else {
-    this.s2k_usage = 254;
-    this.keyMaterial = await crypto.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
-      cleartext,
-      await crypto.hash.sha1(cleartext)
-    ]), this.iv);
-  }
-  return true;
-};
-
 async function produceEncryptionKey(s2k, passphrase, algorithm) {
   return s2k.produce_key(
     passphrase,
     crypto.cipher[algorithm].keySize
   );
 }
-
-/**
- * Decrypts the private key params which are needed to use the key.
- * {@link SecretKeyPacket.isDecrypted} should be false, as
- * otherwise calls to this function will throw an error.
- * @param {String} passphrase The passphrase for this private key as string
- * @returns {Promise<Boolean>}
- * @async
- */
-SecretKeyPacket.prototype.decrypt = async function (passphrase) {
-  if (this.s2k && this.s2k.type === 'gnu-dummy') {
-    this.isEncrypted = false;
-    return false;
-  }
-
-  if (this.isDecrypted()) {
-    throw new Error('Key packet is already decrypted.');
-  }
-
-  let key;
-  if (this.s2k_usage === 254 || this.s2k_usage === 253) {
-    key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
-  } else if (this.s2k_usage === 255) {
-    throw new Error('Encrypted private key is authenticated using an insecure two-byte hash');
-  } else {
-    throw new Error('Private key is encrypted using an insecure S2K function: unsalted MD5');
-  }
-
-  let cleartext;
-  if (this.s2k_usage === 253) {
-    const mode = crypto[this.aead];
-    try {
-      const modeInstance = await mode(this.symmetric, key);
-      cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
-    } catch (err) {
-      if (err.message === 'Authentication tag mismatch') {
-        throw new Error('Incorrect key passphrase: ' + err.message);
-      }
-      throw err;
-    }
-  } else {
-    const cleartextWithHash = await crypto.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
-
-    cleartext = cleartextWithHash.subarray(0, -20);
-    const hash = await crypto.hash.sha1(cleartext);
-
-    if (!util.equalsUint8Array(hash, cleartextWithHash.subarray(-20))) {
-      throw new Error('Incorrect key passphrase');
-    }
-  }
-
-  const privParams = parse_cleartext_params(cleartext, this.algorithm);
-  this.params = this.params.concat(privParams);
-  this.isEncrypted = false;
-  this.keyMaterial = null;
-  this.s2k_usage = 0;
-
-  return true;
-};
-
-SecretKeyPacket.prototype.generate = async function (bits, curve) {
-  const algo = enums.write(enums.publicKey, this.algorithm);
-  this.params = await crypto.generateParams(algo, bits, curve);
-  this.isEncrypted = false;
-};
-
-/**
- * Clear private key parameters
- */
-SecretKeyPacket.prototype.clearPrivateParams = function () {
-  if (this.s2k && this.s2k.type === 'gnu-dummy') {
-    this.isEncrypted = true;
-    return;
-  }
-
-  const algo = enums.write(enums.publicKey, this.algorithm);
-  const publicParamCount = crypto.getPubKeyParamTypes(algo).length;
-  this.params.slice(publicParamCount).forEach(param => {
-    param.data.fill(0);
-  });
-  this.params.length = publicParamCount;
-  this.isEncrypted = true;
-};
 
 export default SecretKeyPacket;

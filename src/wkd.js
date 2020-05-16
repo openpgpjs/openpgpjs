@@ -26,52 +26,53 @@ import util from './util';
 import crypto from './crypto';
 import * as keyMod from './key';
 
-/**
- * Initialize the WKD client
- * @constructor
- */
-function WKD() {
-  this._fetch = typeof globalThis !== 'undefined' ? globalThis.fetch : require('node-fetch');
-}
-
-/**
- * Search for a public key using Web Key Directory protocol.
- * @param   {String}   options.email         User's email.
- * @param   {Boolean}  options.rawBytes      Returns Uint8Array instead of parsed key.
- * @returns {Promise<Uint8Array|
- *           {keys: Array<module:key.Key>,
- *            err: (Array<Error>|null)}>}     The public key.
- * @async
- */
-WKD.prototype.lookup = async function(options) {
-  const fetch = this._fetch;
-
-  if (!options.email) {
-    throw new Error('You must provide an email parameter!');
+class WKD {
+  /**
+   * Initialize the WKD client
+   */
+  constructor() {
+    this._fetch = typeof globalThis !== 'undefined' ? globalThis.fetch : require('node-fetch');
   }
 
-  if (!util.isEmailAddress(options.email)) {
-    throw new Error('Invalid e-mail address.');
-  }
+  /**
+   * Search for a public key using Web Key Directory protocol.
+   * @param   {String}   options.email         User's email.
+   * @param   {Boolean}  options.rawBytes      Returns Uint8Array instead of parsed key.
+   * @returns {Promise<Uint8Array|
+   *           {keys: Array<module:key.Key>,
+   *            err: (Array<Error>|null)}>}     The public key.
+   * @async
+   */
+  async lookup(options) {
+    const fetch = this._fetch;
 
-  const [, localPart, domain] = /(.*)@(.*)/.exec(options.email);
-  const localEncoded = util.encodeZBase32(await crypto.hash.sha1(util.strToUint8Array(localPart.toLowerCase())));
-
-  const url = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
-
-  return fetch(url).then(function(response) {
-    if (response.status === 200) {
-      return response.arrayBuffer();
+    if (!options.email) {
+      throw new Error('You must provide an email parameter!');
     }
-  }).then(function(publicKey) {
-    if (publicKey) {
-      const rawBytes = new Uint8Array(publicKey);
-      if (options.rawBytes) {
-        return rawBytes;
+
+    if (!util.isEmailAddress(options.email)) {
+      throw new Error('Invalid e-mail address.');
+    }
+
+    const [, localPart, domain] = /(.*)@(.*)/.exec(options.email);
+    const localEncoded = util.encodeZBase32(await crypto.hash.sha1(util.strToUint8Array(localPart.toLowerCase())));
+
+    const url = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
+
+    return fetch(url).then(function(response) {
+      if (response.status === 200) {
+        return response.arrayBuffer();
       }
-      return keyMod.readAll(rawBytes);
-    }
-  });
-};
+    }).then(function(publicKey) {
+      if (publicKey) {
+        const rawBytes = new Uint8Array(publicKey);
+        if (options.rawBytes) {
+          return rawBytes;
+        }
+        return keyMod.readAll(rawBytes);
+      }
+    });
+  }
+}
 
 export default WKD;

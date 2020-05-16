@@ -23,67 +23,68 @@
 
 import config from './config';
 
-/**
- * Initialize the HKP client and configure it with the key server url and fetch function.
- * @constructor
- * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
- *   the protocol to use, e.g. 'https://pgp.mit.edu'; defaults to
- *   openpgp.config.keyserver (https://keyserver.ubuntu.com)
- */
-function HKP(keyServerBaseUrl) {
-  this._baseUrl = keyServerBaseUrl || config.keyserver;
-  this._fetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : require('node-fetch');
-}
-
-/**
- * Search for a public key on the key server either by key ID or part of the user ID.
- * @param  {String}   options.keyID   The long public key ID.
- * @param  {String}   options.query   This can be any part of the key user ID such as name
- *   or email address.
- * @returns {Promise<String>}          The ascii armored public key.
- * @async
- */
-HKP.prototype.lookup = function(options) {
-  let uri = this._baseUrl + '/pks/lookup?op=get&options=mr&search=';
-  const fetch = this._fetch;
-
-  if (options.keyId) {
-    uri += '0x' + encodeURIComponent(options.keyId);
-  } else if (options.query) {
-    uri += encodeURIComponent(options.query);
-  } else {
-    throw new Error('You must provide a query parameter!');
+class HKP {
+  /**
+   * Initialize the HKP client and configure it with the key server url and fetch function.
+   * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
+   *   the protocol to use, e.g. 'https://pgp.mit.edu'; defaults to
+   *   openpgp.config.keyserver (https://keyserver.ubuntu.com)
+   */
+  constructor(keyServerBaseUrl) {
+    this._baseUrl = keyServerBaseUrl || config.keyserver;
+    this._fetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : require('node-fetch');
   }
 
-  return fetch(uri).then(function(response) {
-    if (response.status === 200) {
-      return response.text();
-    }
-  }).then(function(publicKeyArmored) {
-    if (!publicKeyArmored || publicKeyArmored.indexOf('-----END PGP PUBLIC KEY BLOCK-----') < 0) {
-      return;
-    }
-    return publicKeyArmored.trim();
-  });
-};
+  /**
+   * Search for a public key on the key server either by key ID or part of the user ID.
+   * @param  {String}   options.keyID   The long public key ID.
+   * @param  {String}   options.query   This can be any part of the key user ID such as name
+   *   or email address.
+   * @returns {Promise<String>}          The ascii armored public key.
+   * @async
+   */
+  lookup(options) {
+    let uri = this._baseUrl + '/pks/lookup?op=get&options=mr&search=';
+    const fetch = this._fetch;
 
-/**
- * Upload a public key to the server.
- * @param  {String}   publicKeyArmored  An ascii armored public key to be uploaded.
- * @returns {Promise}
- * @async
- */
-HKP.prototype.upload = function(publicKeyArmored) {
-  const uri = this._baseUrl + '/pks/add';
-  const fetch = this._fetch;
+    if (options.keyId) {
+      uri += '0x' + encodeURIComponent(options.keyId);
+    } else if (options.query) {
+      uri += encodeURIComponent(options.query);
+    } else {
+      throw new Error('You must provide a query parameter!');
+    }
 
-  return fetch(uri, {
-    method: 'post',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-    },
-    body: 'keytext=' + encodeURIComponent(publicKeyArmored)
-  });
-};
+    return fetch(uri).then(function(response) {
+      if (response.status === 200) {
+        return response.text();
+      }
+    }).then(function(publicKeyArmored) {
+      if (!publicKeyArmored || publicKeyArmored.indexOf('-----END PGP PUBLIC KEY BLOCK-----') < 0) {
+        return;
+      }
+      return publicKeyArmored.trim();
+    });
+  }
+
+  /**
+   * Upload a public key to the server.
+   * @param  {String}   publicKeyArmored  An ascii armored public key to be uploaded.
+   * @returns {Promise}
+   * @async
+   */
+  upload(publicKeyArmored) {
+    const uri = this._baseUrl + '/pks/add';
+    const fetch = this._fetch;
+
+    return fetch(uri, {
+      method: 'post',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+      },
+      body: 'keytext=' + encodeURIComponent(publicKeyArmored)
+    });
+  }
+}
 
 export default HKP;

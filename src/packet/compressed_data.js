@@ -47,91 +47,92 @@ import {
  * this packet is found as the contents of an encrypted packet, or following
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
  * @memberof module:packet
- * @constructor
  */
-function CompressedDataPacket() {
-  /**
-   * Packet type
-   * @type {module:enums.packet}
-   */
-  this.tag = enums.packet.compressedData;
-  /**
-   * List of packets
-   * @type {PacketList}
-   */
-  this.packets = null;
-  /**
-   * Compression algorithm
-   * @type {compression}
-   */
-  this.algorithm = 'zip';
+class CompressedDataPacket {
+  constructor() {
+    /**
+     * Packet type
+     * @type {module:enums.packet}
+     */
+    this.tag = enums.packet.compressedData;
+    /**
+     * List of packets
+     * @type {PacketList}
+     */
+    this.packets = null;
+    /**
+     * Compression algorithm
+     * @type {compression}
+     */
+    this.algorithm = 'zip';
+
+    /**
+     * Compressed packet data
+     * @type {Uint8Array | ReadableStream<Uint8Array>}
+     */
+    this.compressed = null;
+  }
 
   /**
-   * Compressed packet data
-   * @type {Uint8Array | ReadableStream<Uint8Array>}
+   * Parsing function for the packet.
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
    */
-  this.compressed = null;
+  async read(bytes, streaming) {
+    await stream.parse(bytes, async reader => {
+
+      // One octet that gives the algorithm used to compress the packet.
+      this.algorithm = enums.read(enums.compression, await reader.readByte());
+
+      // Compressed data, which makes up the remainder of the packet.
+      this.compressed = reader.remainder();
+
+      await this.decompress(streaming);
+    });
+  }
+
+
+  /**
+   * Return the compressed packet.
+   * @returns {Uint8Array | ReadableStream<Uint8Array>} binary compressed packet
+   */
+  write() {
+    if (this.compressed === null) {
+      this.compress();
+    }
+
+    return util.concat([new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed]);
+  }
+
+
+  /**
+   * Decompression method for decompressing the compressed data
+   * read by read_packet
+   */
+  async decompress(streaming) {
+
+    if (!decompress_fns[this.algorithm]) {
+      throw new Error(this.algorithm + ' decompression not supported');
+    }
+
+    await this.packets.read(decompress_fns[this.algorithm](this.compressed), {
+      LiteralDataPacket,
+      OnePassSignaturePacket,
+      SignaturePacket
+    }, streaming);
+  }
+
+  /**
+   * Compress the packet data (member decompressedData)
+   */
+  compress() {
+
+    if (!compress_fns[this.algorithm]) {
+      throw new Error(this.algorithm + ' compression not supported');
+    }
+
+    this.compressed = compress_fns[this.algorithm](this.packets.write());
+  }
 }
-
-/**
- * Parsing function for the packet.
- * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
- */
-CompressedDataPacket.prototype.read = async function (bytes, streaming) {
-  await stream.parse(bytes, async reader => {
-
-    // One octet that gives the algorithm used to compress the packet.
-    this.algorithm = enums.read(enums.compression, await reader.readByte());
-
-    // Compressed data, which makes up the remainder of the packet.
-    this.compressed = reader.remainder();
-
-    await this.decompress(streaming);
-  });
-};
-
-
-/**
- * Return the compressed packet.
- * @returns {Uint8Array | ReadableStream<Uint8Array>} binary compressed packet
- */
-CompressedDataPacket.prototype.write = function () {
-  if (this.compressed === null) {
-    this.compress();
-  }
-
-  return util.concat([new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed]);
-};
-
-
-/**
- * Decompression method for decompressing the compressed data
- * read by read_packet
- */
-CompressedDataPacket.prototype.decompress = async function (streaming) {
-
-  if (!decompress_fns[this.algorithm]) {
-    throw new Error(this.algorithm + ' decompression not supported');
-  }
-
-  await this.packets.read(decompress_fns[this.algorithm](this.compressed), {
-    LiteralDataPacket,
-    OnePassSignaturePacket,
-    SignaturePacket
-  }, streaming);
-};
-
-/**
- * Compress the packet data (member decompressedData)
- */
-CompressedDataPacket.prototype.compress = function () {
-
-  if (!compress_fns[this.algorithm]) {
-    throw new Error(this.algorithm + ' compression not supported');
-  }
-
-  this.compressed = compress_fns[this.algorithm](this.packets.write());
-};
 
 export default CompressedDataPacket;
 

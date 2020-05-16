@@ -27,41 +27,42 @@
  * @module type/kdf_params
  */
 
-/**
- * @constructor
- * @param  {enums.hash}       hash    Hash algorithm
- * @param  {enums.symmetric}  cipher  Symmetric algorithm
- */
-function KDFParams(data) {
-  if (data && data.length === 2) {
-    this.hash = data[0];
-    this.cipher = data[1];
-  } else {
-    this.hash = null;
-    this.cipher = null;
+class KDFParams {
+  /**
+   * @param  {enums.hash}       hash    Hash algorithm
+   * @param  {enums.symmetric}  cipher  Symmetric algorithm
+   */
+  constructor(data) {
+    if (data && data.length === 2) {
+      this.hash = data[0];
+      this.cipher = data[1];
+    } else {
+      this.hash = null;
+      this.cipher = null;
+    }
+  }
+
+  /**
+   * Read KDFParams from an Uint8Array
+   * @param  {Uint8Array}  input  Where to read the KDFParams from
+   * @returns {Number}             Number of read bytes
+   */
+  read(input) {
+    if (input.length < 4 || input[0] !== 3 || input[1] !== 1) {
+      throw new Error('Cannot read KDFParams');
+    }
+    this.hash = input[2];
+    this.cipher = input[3];
+    return 4;
+  }
+
+  /**
+   * Write KDFParams to an Uint8Array
+   * @returns  {Uint8Array}  Array with the KDFParams value
+   */
+  write() {
+    return new Uint8Array([3, 1, this.hash, this.cipher]);
   }
 }
-
-/**
- * Read KDFParams from an Uint8Array
- * @param  {Uint8Array}  input  Where to read the KDFParams from
- * @returns {Number}             Number of read bytes
- */
-KDFParams.prototype.read = function (input) {
-  if (input.length < 4 || input[0] !== 3 || input[1] !== 1) {
-    throw new Error('Cannot read KDFParams');
-  }
-  this.hash = input[2];
-  this.cipher = input[3];
-  return 4;
-};
-
-/**
- * Write KDFParams to an Uint8Array
- * @returns  {Uint8Array}  Array with the KDFParams value
- */
-KDFParams.prototype.write = function () {
-  return new Uint8Array([3, 1, this.hash, this.cipher]);
-};
 
 export default KDFParams;

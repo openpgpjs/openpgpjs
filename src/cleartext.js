@@ -32,117 +32,117 @@ import { Signature } from './signature';
 import { createVerificationObjects, createSignaturePackets } from './message';
 
 /**
- * @class
- * @classdesc Class that represents an OpenPGP cleartext signed message.
+ * Class that represents an OpenPGP cleartext signed message.
  * See {@link https://tools.ietf.org/html/rfc4880#section-7}
- * @param  {String}           text       The cleartext of the signed message
- * @param  {module:signature.Signature} signature  The detached signature or an empty signature for unsigned messages
  */
-export function CleartextMessage(text, signature) {
-  if (!(this instanceof CleartextMessage)) {
-    return new CleartextMessage(text, signature);
+export class CleartextMessage {
+  /**
+   * @param  {String}           text       The cleartext of the signed message
+   * @param  {module:signature.Signature} signature  The detached signature or an empty signature for unsigned messages
+   */
+  constructor(text, signature) {
+    // normalize EOL to canonical form <CR><LF>
+    this.text = util.removeTrailingSpaces(text).replace(/\r?\n/g, '\r\n');
+    if (signature && !(signature instanceof Signature)) {
+      throw new Error('Invalid signature input');
+    }
+    this.signature = signature || new Signature(new PacketList());
   }
-  // normalize EOL to canonical form <CR><LF>
-  this.text = util.removeTrailingSpaces(text).replace(/\r?\n/g, '\r\n');
-  if (signature && !(signature instanceof Signature)) {
-    throw new Error('Invalid signature input');
+
+  /**
+   * Returns the key IDs of the keys that signed the cleartext message
+   * @returns {Array<module:type/keyid>} array of keyid objects
+   */
+  getSigningKeyIds() {
+    const keyIds = [];
+    const signatureList = this.signature.packets;
+    signatureList.forEach(function(packet) {
+      keyIds.push(packet.issuerKeyId);
+    });
+    return keyIds;
   }
-  this.signature = signature || new Signature(new PacketList());
+
+  /**
+   * Sign the cleartext message
+   * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
+   * @param  {Signature} signature             (optional) any existing detached signature
+   * @param  {Date} date                       (optional) The creation time of the signature that should be created
+   * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
+   * @async
+   */
+  async sign(privateKeys, signature = null, date = new Date(), userIds = []) {
+    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userIds));
+  }
+
+  /**
+   * Sign the cleartext message
+   * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
+   * @param  {Signature} signature             (optional) any existing detached signature
+   * @param  {Date} date                       (optional) The creation time of the signature that should be created
+   * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @returns {Promise<module:signature.Signature>}      new detached signature of message content
+   * @async
+   */
+  async signDetached(privateKeys, signature = null, date = new Date(), userIds = []) {
+    const literalDataPacket = new LiteralDataPacket();
+    literalDataPacket.setText(this.text);
+
+    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true));
+  }
+
+  /**
+   * Verify signatures of cleartext signed message
+   * @param {Array<module:key.Key>} keys array of keys to verify signatures
+   * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+   * @async
+   */
+  verify(keys, date = new Date()) {
+    return this.verifyDetached(this.signature, keys, date);
+  }
+
+  /**
+   * Verify signatures of cleartext signed message
+   * @param {Array<module:key.Key>} keys array of keys to verify signatures
+   * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+   * @async
+   */
+  verifyDetached(signature, keys, date = new Date()) {
+    const signatureList = signature.packets;
+    const literalDataPacket = new LiteralDataPacket();
+    // we assume that cleartext signature is generated based on UTF8 cleartext
+    literalDataPacket.setText(this.text);
+    return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true);
+  }
+
+  /**
+   * Get cleartext
+   * @returns {String} cleartext of message
+   */
+  getText() {
+    // normalize end of line to \n
+    return this.text.replace(/\r\n/g, '\n');
+  }
+
+  /**
+   * Returns ASCII armored text of cleartext signed message
+   * @returns {String | ReadableStream<String>} ASCII armor
+   */
+  armor() {
+    let hashes = this.signature.packets.map(function(packet) {
+      return enums.read(enums.hash, packet.hashAlgorithm).toUpperCase();
+    });
+    hashes = hashes.filter(function(item, i, ar) { return ar.indexOf(item) === i; });
+    const body = {
+      hash: hashes.join(),
+      text: this.text,
+      data: this.signature.packets.write()
+    };
+    return armor.encode(enums.armor.signed, body);
+  }
 }
-
-/**
- * Returns the key IDs of the keys that signed the cleartext message
- * @returns {Array<module:type/keyid>} array of keyid objects
- */
-CleartextMessage.prototype.getSigningKeyIds = function() {
-  const keyIds = [];
-  const signatureList = this.signature.packets;
-  signatureList.forEach(function(packet) {
-    keyIds.push(packet.issuerKeyId);
-  });
-  return keyIds;
-};
-
-/**
- * Sign the cleartext message
- * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
- * @param  {Signature} signature             (optional) any existing detached signature
- * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
- * @async
- */
-CleartextMessage.prototype.sign = async function(privateKeys, signature = null, date = new Date(), userIds = []) {
-  return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userIds));
-};
-
-/**
- * Sign the cleartext message
- * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
- * @param  {Signature} signature             (optional) any existing detached signature
- * @param  {Date} date                       (optional) The creation time of the signature that should be created
- * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @returns {Promise<module:signature.Signature>}      new detached signature of message content
- * @async
- */
-CleartextMessage.prototype.signDetached = async function(privateKeys, signature = null, date = new Date(), userIds = []) {
-  const literalDataPacket = new LiteralDataPacket();
-  literalDataPacket.setText(this.text);
-
-  return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true));
-};
-
-/**
- * Verify signatures of cleartext signed message
- * @param {Array<module:key.Key>} keys array of keys to verify signatures
- * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
- * @async
- */
-CleartextMessage.prototype.verify = function(keys, date = new Date()) {
-  return this.verifyDetached(this.signature, keys, date);
-};
-
-/**
- * Verify signatures of cleartext signed message
- * @param {Array<module:key.Key>} keys array of keys to verify signatures
- * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
- * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
- * @async
- */
-CleartextMessage.prototype.verifyDetached = function(signature, keys, date = new Date()) {
-  const signatureList = signature.packets;
-  const literalDataPacket = new LiteralDataPacket();
-  // we assume that cleartext signature is generated based on UTF8 cleartext
-  literalDataPacket.setText(this.text);
-  return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true);
-};
-
-/**
- * Get cleartext
- * @returns {String} cleartext of message
- */
-CleartextMessage.prototype.getText = function() {
-  // normalize end of line to \n
-  return this.text.replace(/\r\n/g, '\n');
-};
-
-/**
- * Returns ASCII armored text of cleartext signed message
- * @returns {String | ReadableStream<String>} ASCII armor
- */
-CleartextMessage.prototype.armor = function() {
-  let hashes = this.signature.packets.map(function(packet) {
-    return enums.read(enums.hash, packet.hashAlgorithm).toUpperCase();
-  });
-  hashes = hashes.filter(function(item, i, ar) { return ar.indexOf(item) === i; });
-  const body = {
-    hash: hashes.join(),
-    text: this.text,
-    data: this.signature.packets.write()
-  };
-  return armor.encode(enums.armor.signed, body);
-};
 
 
 /**

@@ -42,53 +42,54 @@ import util from '../util';
  * User Attribute packet as a User ID packet with opaque contents, but
  * an implementation may use any method desired.
  * @memberof module:packet
- * @constructor
  */
-function UserAttributePacket() {
-  this.tag = enums.packet.userAttribute;
-  this.attributes = [];
+class UserAttributePacket {
+  constructor() {
+    this.tag = enums.packet.userAttribute;
+    this.attributes = [];
+  }
+
+  /**
+   * parsing function for a user attribute packet (tag 17).
+   * @param {Uint8Array} input payload of a tag 17 packet
+   */
+  read(bytes) {
+    let i = 0;
+    while (i < bytes.length) {
+      const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+      i += len.offset;
+
+      this.attributes.push(util.uint8ArrayToStr(bytes.subarray(i, i + len.len)));
+      i += len.len;
+    }
+  }
+
+  /**
+   * Creates a binary representation of the user attribute packet
+   * @returns {Uint8Array} string representation
+   */
+  write() {
+    const arr = [];
+    for (let i = 0; i < this.attributes.length; i++) {
+      arr.push(packet.writeSimpleLength(this.attributes[i].length));
+      arr.push(util.strToUint8Array(this.attributes[i]));
+    }
+    return util.concatUint8Array(arr);
+  }
+
+  /**
+   * Compare for equality
+   * @param  {UserAttributePacket} usrAttr
+   * @returns {Boolean}         true if equal
+   */
+  equals(usrAttr) {
+    if (!usrAttr || !(usrAttr instanceof UserAttributePacket)) {
+      return false;
+    }
+    return this.attributes.every(function(attr, index) {
+      return attr === usrAttr.attributes[index];
+    });
+  }
 }
-
-/**
- * parsing function for a user attribute packet (tag 17).
- * @param {Uint8Array} input payload of a tag 17 packet
- */
-UserAttributePacket.prototype.read = function(bytes) {
-  let i = 0;
-  while (i < bytes.length) {
-    const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
-    i += len.offset;
-
-    this.attributes.push(util.uint8ArrayToStr(bytes.subarray(i, i + len.len)));
-    i += len.len;
-  }
-};
-
-/**
- * Creates a binary representation of the user attribute packet
- * @returns {Uint8Array} string representation
- */
-UserAttributePacket.prototype.write = function() {
-  const arr = [];
-  for (let i = 0; i < this.attributes.length; i++) {
-    arr.push(packet.writeSimpleLength(this.attributes[i].length));
-    arr.push(util.strToUint8Array(this.attributes[i]));
-  }
-  return util.concatUint8Array(arr);
-};
-
-/**
- * Compare for equality
- * @param  {UserAttributePacket} usrAttr
- * @returns {Boolean}         true if equal
- */
-UserAttributePacket.prototype.equals = function(usrAttr) {
-  if (!usrAttr || !(usrAttr instanceof UserAttributePacket)) {
-    return false;
-  }
-  return this.attributes.every(function(attr, index) {
-    return attr === usrAttr.attributes[index];
-  });
-};
 
 export default UserAttributePacket;
