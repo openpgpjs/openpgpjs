@@ -44,101 +44,102 @@ import util from '../util';
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
  * @memberof module:packet
- * @constructor
  */
-function PublicKeyEncryptedSessionKeyPacket() {
-  this.tag = enums.packet.publicKeyEncryptedSessionKey;
-  this.version = 3;
+class PublicKeyEncryptedSessionKeyPacket {
+  constructor() {
+    this.tag = enums.packet.publicKeyEncryptedSessionKey;
+    this.version = 3;
 
-  this.publicKeyId = new type_keyid();
-  this.publicKeyAlgorithm = null;
+    this.publicKeyId = new type_keyid();
+    this.publicKeyAlgorithm = null;
 
-  this.sessionKey = null;
-  this.sessionKeyAlgorithm = null;
+    this.sessionKey = null;
+    this.sessionKeyAlgorithm = null;
 
-  /** @type {Array<module:type/mpi>} */
-  this.encrypted = [];
+    /** @type {Array<module:type/mpi>} */
+    this.encrypted = [];
+  }
+
+  /**
+   * Parsing function for a publickey encrypted session key packet (tag 1).
+   *
+   * @param {Uint8Array} input Payload of a tag 1 packet
+   * @param {Integer} position Position to start reading from the input string
+   * @param {Integer} len Length of the packet or the remaining length of
+   *            input at position
+   * @returns {PublicKeyEncryptedSessionKeyPacket} Object representation
+   */
+  read(bytes) {
+    this.version = bytes[0];
+    this.publicKeyId.read(bytes.subarray(1, bytes.length));
+    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
+
+    let i = 10;
+
+    const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+    const types = crypto.getEncSessionKeyParamTypes(algo);
+    this.encrypted = crypto.constructParams(types);
+
+    for (let j = 0; j < types.length; j++) {
+      i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
+    }
+  }
+
+  /**
+   * Create a string representation of a tag 1 packet
+   *
+   * @returns {Uint8Array} The Uint8Array representation
+   */
+  write() {
+    const arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
+
+    for (let i = 0; i < this.encrypted.length; i++) {
+      arr.push(this.encrypted[i].write());
+    }
+
+    return util.concatUint8Array(arr);
+  }
+
+  /**
+   * Encrypt session key packet
+   * @param {PublicKeyPacket} key Public key
+   * @returns {Promise<Boolean>}
+   * @async
+   */
+  async encrypt(key) {
+    let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
+
+    data += util.uint8ArrayToStr(this.sessionKey);
+    data += util.uint8ArrayToStr(util.writeChecksum(this.sessionKey));
+    const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+    this.encrypted = await crypto.publicKeyEncrypt(
+      algo, key.params, data, key.getFingerprintBytes());
+    return true;
+  }
+
+  /**
+   * Decrypts the session key (only for public key encrypted session key
+   * packets (tag 1)
+   *
+   * @param {SecretKeyPacket} key
+   *            Private key with secret params unlocked
+   * @returns {Promise<Boolean>}
+   * @async
+   */
+  async decrypt(key) {
+    const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+    const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
+    const checksum = util.strToUint8Array(decoded.substr(decoded.length - 2));
+    key = util.strToUint8Array(decoded.substring(1, decoded.length - 2));
+
+    if (!util.equalsUint8Array(checksum, util.writeChecksum(key))) {
+      throw new Error('Decryption error');
+    } else {
+      this.sessionKey = key;
+      this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded.charCodeAt(0));
+    }
+    return true;
+  }
 }
-
-/**
- * Parsing function for a publickey encrypted session key packet (tag 1).
- *
- * @param {Uint8Array} input Payload of a tag 1 packet
- * @param {Integer} position Position to start reading from the input string
- * @param {Integer} len Length of the packet or the remaining length of
- *            input at position
- * @returns {PublicKeyEncryptedSessionKeyPacket} Object representation
- */
-PublicKeyEncryptedSessionKeyPacket.prototype.read = function (bytes) {
-  this.version = bytes[0];
-  this.publicKeyId.read(bytes.subarray(1, bytes.length));
-  this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
-
-  let i = 10;
-
-  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  const types = crypto.getEncSessionKeyParamTypes(algo);
-  this.encrypted = crypto.constructParams(types);
-
-  for (let j = 0; j < types.length; j++) {
-    i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
-  }
-};
-
-/**
- * Create a string representation of a tag 1 packet
- *
- * @returns {Uint8Array} The Uint8Array representation
- */
-PublicKeyEncryptedSessionKeyPacket.prototype.write = function () {
-  const arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
-
-  for (let i = 0; i < this.encrypted.length; i++) {
-    arr.push(this.encrypted[i].write());
-  }
-
-  return util.concatUint8Array(arr);
-};
-
-/**
- * Encrypt session key packet
- * @param {PublicKeyPacket} key Public key
- * @returns {Promise<Boolean>}
- * @async
- */
-PublicKeyEncryptedSessionKeyPacket.prototype.encrypt = async function (key) {
-  let data = String.fromCharCode(enums.write(enums.symmetric, this.sessionKeyAlgorithm));
-
-  data += util.uint8ArrayToStr(this.sessionKey);
-  data += util.uint8ArrayToStr(util.writeChecksum(this.sessionKey));
-  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  this.encrypted = await crypto.publicKeyEncrypt(
-    algo, key.params, data, key.getFingerprintBytes());
-  return true;
-};
-
-/**
- * Decrypts the session key (only for public key encrypted session key
- * packets (tag 1)
- *
- * @param {SecretKeyPacket} key
- *            Private key with secret params unlocked
- * @returns {Promise<Boolean>}
- * @async
- */
-PublicKeyEncryptedSessionKeyPacket.prototype.decrypt = async function (key) {
-  const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-  const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
-  const checksum = util.strToUint8Array(decoded.substr(decoded.length - 2));
-  key = util.strToUint8Array(decoded.substring(1, decoded.length - 2));
-
-  if (!util.equalsUint8Array(checksum, util.writeChecksum(key))) {
-    throw new Error('Decryption error');
-  } else {
-    this.sessionKey = key;
-    this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded.charCodeAt(0));
-  }
-  return true;
-};
 
 export default PublicKeyEncryptedSessionKeyPacket;
