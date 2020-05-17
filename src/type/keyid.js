@@ -44,10 +44,18 @@ Keyid.prototype.read = function(bytes) {
   this.bytes = util.Uint8Array_to_str(bytes.subarray(0, 8));
 };
 
+/**
+ * Writes this key to an array.
+ * @returns {Uint8Array} key as an array of bytes.
+ */
 Keyid.prototype.write = function() {
   return util.str_to_Uint8Array(this.bytes);
 };
 
+/**
+ * Returns this key represented as a hexadecimal string.
+ * @returns {string} key as hex string.
+ */
 Keyid.prototype.toHex = function() {
   return util.str_to_hex(this.bytes);
 };
@@ -61,10 +69,18 @@ Keyid.prototype.equals = function(keyid, matchWildcard = false) {
   return (matchWildcard && (keyid.isWildcard() || this.isWildcard())) || this.bytes === keyid.bytes;
 };
 
+/**
+ * Checks to see if the key is null
+ * @returns {boolean} true if string is null.
+ */
 Keyid.prototype.isNull = function() {
   return this.bytes === '';
 };
 
+/**
+ * Checks to see if the key is a wildcard
+ * @returns {boolean} true if string is wildcard.
+ */
 Keyid.prototype.isWildcard = function() {
   return /^0+$/.test(this.toHex());
 };
