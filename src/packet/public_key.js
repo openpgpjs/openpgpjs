@@ -198,7 +198,7 @@ PublicKey.prototype.getCreationTime = function() {
 
 /**
  * Calculates the key id of the key
- * @returns {String} A 8 byte key id
+ * @returns {module:type/keyid} A 8 byte key id
  */
 PublicKey.prototype.getKeyId = function () {
   if (this.keyid) {
