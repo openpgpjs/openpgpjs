@@ -45,16 +45,16 @@ Keyid.prototype.read = function(bytes) {
 };
 
 /**
- * Writes this key to an array.
- * @returns {Uint8Array} key as an array of bytes.
+ * Serializes the Key ID
+ * @returns {Uint8Array} Key ID as a Uint8Array
  */
 Keyid.prototype.write = function() {
   return util.str_to_Uint8Array(this.bytes);
 };
 
 /**
- * Returns this key represented as a hexadecimal string.
- * @returns {string} key as hex string.
+ * Returns the Key ID represented as a hexadecimal string
+ * @returns {String} Key ID as a hexadecimal string
  */
 Keyid.prototype.toHex = function() {
   return util.str_to_hex(this.bytes);
@@ -70,16 +70,16 @@ Keyid.prototype.equals = function(keyid, matchWildcard = false) {
 };
 
 /**
- * Checks to see if the key is null
- * @returns {boolean} true if string is null.
+ * Checks to see if the Key ID is unset
+ * @returns {Boolean} true if the Key ID is null
  */
 Keyid.prototype.isNull = function() {
   return this.bytes === '';
 };
 
 /**
- * Checks to see if the key is a wildcard
- * @returns {boolean} true if string is wildcard.
+ * Checks to see if the Key ID is a "wildcard" Key ID (all zeros)
+ * @returns {Boolean} true if this is a wildcard Key ID
  */
 Keyid.prototype.isWildcard = function() {
   return /^0+$/.test(this.toHex());
