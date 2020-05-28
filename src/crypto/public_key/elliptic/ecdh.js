@@ -37,7 +37,6 @@ import aes_kw from '../../aes_kw';
 import cipher from '../../cipher';
 import random from '../../random';
 import hash from '../../hash';
-import type_kdf_params from '../../../type/kdf_params';
 import enums from '../../../enums';
 import util from '../../../util';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
@@ -46,12 +45,11 @@ const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
 // Build Param for ECDH algorithm (RFC 6637)
-function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
-  const kdf_params = new type_kdf_params([hash_algo, cipher_algo]);
+function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
   return util.concatUint8Array([
     oid.write(),
     new Uint8Array([public_algo]),
-    kdf_params.write(),
+    kdfParams.write(),
     util.str_to_Uint8Array("Anonymous Sender    "),
     fingerprint.subarray(0, 20)
   ]);
@@ -117,20 +115,19 @@ async function genPublicEphemeralKey(curve, Q) {
  * Encrypt and wrap a session key
  *
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
  * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}             Q            Recipient public key
- * @param  {String}                 fingerprint  Recipient fingerprint
+ * @param  {Uint8Array}             fingerprint  Recipient fingerprint
  * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
-async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
+async function encrypt(oid, kdfParams, m, Q, fingerprint) {
   const curve = new Curve(oid);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
-  const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = enums.read(enums.symmetric, cipher_algo);
-  const Z = await kdf(hash_algo, sharedKey, cipher[cipher_algo].keySize, param);
+  const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
+  const cipher_algo = enums.read(enums.symmetric, kdfParams.cipher);
+  const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param);
   const wrappedKey = aes_kw.wrap(Z, m.toString());
   return { publicKey, wrappedKey };
 }
@@ -176,26 +173,25 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * Decrypt and unwrap the value derived from session key
  *
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
  * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
- * @param  {String}                 fingerprint  Recipient fingerprint
+ * @param  {Uint8Array}             fingerprint  Recipient fingerprint
  * @returns {Promise<BN>}                        Value derived from session key
  * @async
  */
-async function decrypt(oid, cipher_algo, hash_algo, V, C, Q, d, fingerprint) {
+async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   const curve = new Curve(oid);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
-  const param = buildEcdhParam(enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = enums.read(enums.symmetric, cipher_algo);
+  const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
+  const cipher_algo = enums.read(enums.symmetric, kdfParams.cipher);
   let err;
   for (let i = 0; i < 3; i++) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
-      const Z = await kdf(hash_algo, sharedKey, cipher[cipher_algo].keySize, param, i === 1, i === 2);
+      const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param, i === 1, i === 2);
       return new BN(aes_kw.unwrap(Z, C));
     } catch (e) {
       err = e;

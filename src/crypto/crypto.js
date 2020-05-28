@@ -91,9 +91,9 @@ export default {
         data = new type_mpi(pkcs5.encode(data));
         const oid = pub_params[0];
         const Q = pub_params[1].toUint8Array();
-        const kdf_params = pub_params[2];
+        const kdfParams = pub_params[2];
         const { publicKey: V, wrappedKey: C } = await publicKey.elliptic.ecdh.encrypt(
-          oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
+          oid, kdfParams, data, Q, fingerprint);
         return constructParams(types, [V, C]);
       }
       default:
@@ -138,13 +138,13 @@ export default {
       }
       case enums.publicKey.ecdh: {
         const oid = key_params[0];
-        const kdf_params = key_params[2];
+        const kdfParams = key_params[2];
         const V = data_params[0].toUint8Array();
         const C = data_params[1].data;
         const Q = key_params[1].toUint8Array();
         const d = key_params[3].toUint8Array();
         const result = new type_mpi(await publicKey.elliptic.ecdh.decrypt(
-          oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint));
+          oid, kdfParams, V, C, Q, d, fingerprint));
         return pkcs5.decode(result.toString());
       }
       default:
@@ -285,7 +285,12 @@ export default {
         });
       case enums.publicKey.ecdh:
         return publicKey.elliptic.generate(oid).then(function (keyObject) {
-          return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
+          return constructParams(types, [
+            keyObject.oid,
+            keyObject.Q,
+            { hash: keyObject.hash, cipher: keyObject.cipher },
+            keyObject.d
+          ]);
         });
       default:
         throw new Error('Invalid public key algorithm.');
