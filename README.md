@@ -296,7 +296,7 @@ Where the value can be any of:
 
     // Either pipe the above stream somewhere, pass it to another function,
     // or read it manually as follows:
-    const reader = openpgp.stream.getReader(encrypted);
+    const reader = await openpgp.stream.getReader(encrypted);
     while (true) {
         const { done, value } = await reader.read();
         if (done) break;
