@@ -19,8 +19,7 @@ describe('ECDH key exchange @lightweight', function () {
       const curve = new elliptic_curves.Curve(oid);
       return elliptic_curves.ecdh.decrypt(
         new openpgp.OID(curve.oid),
-        cipher,
-        hash,
+        new openpgp.KDFParams({ cipher, hash }),
         new Uint8Array(ephemeral),
         data,
         new Uint8Array(pub),
@@ -136,8 +135,9 @@ describe('ECDH key exchange @lightweight', function () {
     );
     let cipher_algo = curveObj.cipher;
     const hash_algo = curveObj.hash;
+    const kdfParams = new openpgp.KDFParams({ cipher: cipher_algo, hash: hash_algo });
     const param = openpgp.crypto.publicKey.elliptic.ecdh.buildEcdhParam(
-      openpgp.enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint
+      openpgp.enums.publicKey.ecdh, oid, kdfParams, fingerprint
     );
     cipher_algo = openpgp.enums.read(openpgp.enums.symmetric, cipher_algo);
     const Z = await openpgp.crypto.publicKey.elliptic.ecdh.kdf(
@@ -154,8 +154,9 @@ describe('ECDH key exchange @lightweight', function () {
     );
     let cipher_algo = curveObj.cipher;
     const hash_algo = curveObj.hash;
+    const kdfParams = new openpgp.KDFParams({ cipher: cipher_algo, hash: hash_algo });
     const param = openpgp.crypto.publicKey.elliptic.ecdh.buildEcdhParam(
-      openpgp.enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint
+      openpgp.enums.publicKey.ecdh, oid, kdfParams, fingerprint
     );
     cipher_algo = openpgp.enums.read(openpgp.enums.symmetric, cipher_algo);
     const Z = await openpgp.crypto.publicKey.elliptic.ecdh.kdf(
@@ -186,8 +187,9 @@ describe('ECDH key exchange @lightweight', function () {
     const sharedKey = result.sharedKey;
     let cipher_algo = curveObj.cipher;
     const hash_algo = curveObj.hash;
+    const kdfParams = new openpgp.KDFParams({ cipher: cipher_algo, hash: hash_algo });
     const param = openpgp.crypto.publicKey.elliptic.ecdh.buildEcdhParam(
-      openpgp.enums.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint
+      openpgp.enums.publicKey.ecdh, oid, kdfParams, fingerprint
     );
     cipher_algo = openpgp.enums.read(openpgp.enums.symmetric, cipher_algo);
     const Z = await openpgp.crypto.publicKey.elliptic.ecdh.kdf(

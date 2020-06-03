@@ -27,20 +27,19 @@
  * @module type/kdf_params
  */
 
-import enums from '../enums.js';
-
 /**
  * @constructor
  * @param  {enums.hash}       hash    Hash algorithm
  * @param  {enums.symmetric}  cipher  Symmetric algorithm
  */
 function KDFParams(data) {
-  if (data && data.length === 2) {
-    this.hash = data[0];
-    this.cipher = data[1];
+  if (data) {
+    const { hash, cipher } = data;
+    this.hash = hash;
+    this.cipher = cipher;
   } else {
-    this.hash = enums.hash.sha1;
-    this.cipher = enums.symmetric.aes128;
+    this.hash = null;
+    this.cipher = null;
   }
 }
 
@@ -67,7 +66,8 @@ KDFParams.prototype.write = function () {
 };
 
 KDFParams.fromClone = function (clone) {
-  return new KDFParams([clone.hash, clone.cipher]);
+  const { hash, cipher } = clone;
+  return new KDFParams({ hash, cipher });
 };
 
 export default KDFParams;
