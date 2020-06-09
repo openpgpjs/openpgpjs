@@ -206,7 +206,7 @@ export default {
     userAttribute: 17,
     symEncryptedIntegrityProtectedData: 18,
     modificationDetectionCode: 19,
-    symEncryptedAEADProtectedData: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
+    AEADEncryptedData: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
   },
 
   /** Data types in the literal packet
