@@ -40,7 +40,7 @@ import {
   PacketList,
   LiteralDataPacket,
   CompressedDataPacket,
-  SymEncryptedAEADProtectedDataPacket,
+  AEADEncryptedDataPacket,
   SymEncryptedIntegrityProtectedDataPacket,
   SymmetricallyEncryptedDataPacket,
   PublicKeyEncryptedSessionKeyPacket,
@@ -115,7 +115,7 @@ export class Message {
     const symEncryptedPacketlist = this.packets.filterByTag(
       enums.packet.symmetricallyEncryptedData,
       enums.packet.symEncryptedIntegrityProtectedData,
-      enums.packet.symEncryptedAEADProtectedData
+      enums.packet.AEADEncryptedData
     );
 
     if (symEncryptedPacketlist.length === 0) {
@@ -332,7 +332,7 @@ export class Message {
 
     let symEncryptedPacket;
     if (aeadAlgorithm) {
-      symEncryptedPacket = new SymEncryptedAEADProtectedDataPacket();
+      symEncryptedPacket = new AEADEncryptedDataPacket();
       symEncryptedPacket.aeadAlgorithm = aeadAlgorithm;
     } else if (config.integrityProtect) {
       symEncryptedPacket = new SymEncryptedIntegrityProtectedDataPacket();
@@ -779,7 +779,7 @@ export async function read(input, fromStream = util.isStream(input)) {
   await packetlist.read(input, {
     LiteralDataPacket,
     CompressedDataPacket,
-    SymEncryptedAEADProtectedDataPacket,
+    AEADEncryptedDataPacket,
     SymEncryptedIntegrityProtectedDataPacket,
     SymmetricallyEncryptedDataPacket,
     PublicKeyEncryptedSessionKeyPacket,
