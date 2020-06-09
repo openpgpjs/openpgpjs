@@ -133,7 +133,7 @@ module.exports = () => describe("Packet", function() {
     const algo = 'aes256';
     const testText = input.createSomeMessage();
     const literal = new openpgp.LiteralDataPacket();
-    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const enc = new openpgp.AEADEncryptedDataPacket();
     const msg = new openpgp.PacketList();
 
     msg.push(enc);
@@ -159,7 +159,7 @@ module.exports = () => describe("Packet", function() {
     const algo = 'aes256';
 
     const literal = new openpgp.LiteralDataPacket();
-    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const enc = new openpgp.AEADEncryptedDataPacket();
     const msg = new openpgp.PacketList();
 
     msg.push(enc);
@@ -214,7 +214,7 @@ module.exports = () => describe("Packet", function() {
     const algo = 'aes256';
 
     const literal = new openpgp.LiteralDataPacket();
-    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const enc = new openpgp.AEADEncryptedDataPacket();
     const msg = new openpgp.PacketList();
     enc.aeadAlgorithm = 'experimentalGcm';
 
@@ -260,7 +260,7 @@ module.exports = () => describe("Packet", function() {
     const algo = 'aes128';
 
     const literal = new openpgp.LiteralDataPacket(0);
-    const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+    const enc = new openpgp.AEADEncryptedDataPacket();
     const msg = new openpgp.PacketList();
 
     msg.push(enc);
@@ -497,7 +497,7 @@ module.exports = () => describe("Packet", function() {
 
       const literal = new openpgp.LiteralDataPacket();
       const key_enc = new openpgp.SymEncryptedSessionKeyPacket();
-      const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+      const enc = new openpgp.AEADEncryptedDataPacket();
       const msg = new openpgp.PacketList();
 
       msg.push(key_enc);
@@ -565,7 +565,7 @@ module.exports = () => describe("Packet", function() {
 
       const literal = new openpgp.LiteralDataPacket(0);
       const key_enc = new openpgp.SymEncryptedSessionKeyPacket();
-      const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+      const enc = new openpgp.AEADEncryptedDataPacket();
       const msg = new openpgp.PacketList();
 
       msg.push(key_enc);
@@ -640,7 +640,7 @@ module.exports = () => describe("Packet", function() {
 
       const literal = new openpgp.LiteralDataPacket(0);
       const key_enc = new openpgp.SymEncryptedSessionKeyPacket();
-      const enc = new openpgp.SymEncryptedAEADProtectedDataPacket();
+      const enc = new openpgp.AEADEncryptedDataPacket();
       const msg = new openpgp.PacketList();
       enc.aeadAlgorithm = key_enc.aeadAlgorithm = 'ocb';
 

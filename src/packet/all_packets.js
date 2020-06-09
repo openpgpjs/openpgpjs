@@ -13,9 +13,9 @@ export {
   default as SymEncryptedIntegrityProtectedDataPacket
 } from './sym_encrypted_integrity_protected_data.js';
 export {
-  /** @see SymEncryptedAEADProtectedDataPacket */
-  default as SymEncryptedAEADProtectedDataPacket
-} from './sym_encrypted_aead_protected_data.js';
+  /** @see AEADEncryptedDataPacket */
+  default as AEADEncryptedDataPacket
+} from './aead_encrypted_data.js';
 export {
   /** @see PublicKeyEncryptedSessionKeyPacket */
   default as PublicKeyEncryptedSessionKeyPacket
