@@ -46,9 +46,9 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * AEAD Protected Data Packet
  * @memberof module:packet
  */
-class SymEncryptedAEADProtectedDataPacket {
+class AEADEncryptedDataPacket {
   constructor() {
-    this.tag = enums.packet.symEncryptedAEADProtectedData;
+    this.tag = enums.packet.AEADEncryptedData;
     this.version = VERSION;
     this.cipherAlgo = null;
     this.aeadAlgorithm = 'eax';
@@ -199,4 +199,4 @@ class SymEncryptedAEADProtectedDataPacket {
   }
 }
 
-export default SymEncryptedAEADProtectedDataPacket;
+export default AEADEncryptedDataPacket;
