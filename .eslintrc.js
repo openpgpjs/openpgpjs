@@ -1,5 +1,6 @@
 module.exports = {
   "extends": "airbnb-base",
+  "parser": "babel-eslint",
   "parserOptions": { "sourceType": "module" },
 
   "env": {
@@ -341,7 +342,7 @@ module.exports = {
     "no-use-before-define": [ 2, { "functions": false, "classes": true, "variables": false }],
     "no-constant-condition": [ 2, { "checkLoops": false } ],
     "new-cap": [ 2, { "properties": false, "capIsNewExceptionPattern": "CMAC|CBC|OMAC|CTR", "newIsCapExceptionPattern": "type|hash*"}],
-    "max-lines": [ 2, { "max": 550, "skipBlankLines": true, "skipComments": true } ],
+    "max-lines": [ 2, { "max": 600, "skipBlankLines": true, "skipComments": true } ],
     "no-unused-expressions": 0,
     "chai-friendly/no-unused-expressions": [ 2, { "allowShortCircuit": true } ],
 

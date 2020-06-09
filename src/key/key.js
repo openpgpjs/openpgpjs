@@ -30,7 +30,6 @@ import {
   PacketList,
   PublicKeyPacket,
   PublicSubkeyPacket,
-  SecretKeyPacket,
   SignaturePacket,
   LiteralDataPacket
 } from '../packet';
