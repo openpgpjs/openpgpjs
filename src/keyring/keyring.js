@@ -25,79 +25,6 @@
 import { readAllArmored } from '../key';
 import LocalStore from './localstore';
 
-class Keyring {
-  /**
-   * Initialization routine for the keyring.
-   * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
-   */
-  constructor(storeHandler) {
-    this.storeHandler = storeHandler || new LocalStore();
-  }
-
-  /**
-   * Calls the storeHandler to load the keys
-   * @async
-   */
-  async load() {
-    this.publicKeys = new KeyArray(await this.storeHandler.loadPublic());
-    this.privateKeys = new KeyArray(await this.storeHandler.loadPrivate());
-  }
-
-  /**
-   * Calls the storeHandler to save the keys
-   * @async
-   */
-  async store() {
-    await Promise.all([
-      this.storeHandler.storePublic(this.publicKeys.keys),
-      this.storeHandler.storePrivate(this.privateKeys.keys)
-    ]);
-  }
-
-  /**
-   * Clear the keyring - erase all the keys
-   */
-  clear() {
-    this.publicKeys.keys = [];
-    this.privateKeys.keys = [];
-  }
-
-  /**
-   * Searches the keyring for keys having the specified key id
-   * @param {String} keyId provided as string of lowercase hex number
-   * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @param  {Boolean} deep if true search also in subkeys
-   * @returns {Array<module:key.Key>|null} keys found or null
-   */
-  getKeysForId(keyId, deep) {
-    let result = [];
-    result = result.concat(this.publicKeys.getForId(keyId, deep) || []);
-    result = result.concat(this.privateKeys.getForId(keyId, deep) || []);
-    return result.length ? result : null;
-  }
-
-  /**
-   * Removes keys having the specified key id from the keyring
-   * @param {String} keyId provided as string of lowercase hex number
-   * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @returns {Array<module:key.Key>|null} keys found or null
-   */
-  removeKeysForId(keyId) {
-    let result = [];
-    result = result.concat(this.publicKeys.removeForId(keyId) || []);
-    result = result.concat(this.privateKeys.removeForId(keyId) || []);
-    return result.length ? result : null;
-  }
-
-  /**
-   * Get all public and private keys
-   * @returns {Array<module:key.Key>} all keys
-   */
-  getAllKeys() {
-    return this.publicKeys.keys.concat(this.privateKeys.keys);
-  }
-}
-
 /**
  * Array of keys
  */
@@ -189,6 +116,79 @@ class KeyArray {
       }
     }
     return null;
+  }
+}
+
+class Keyring {
+  /**
+   * Initialization routine for the keyring.
+   * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
+   */
+  constructor(storeHandler) {
+    this.storeHandler = storeHandler || new LocalStore();
+  }
+
+  /**
+   * Calls the storeHandler to load the keys
+   * @async
+   */
+  async load() {
+    this.publicKeys = new KeyArray(await this.storeHandler.loadPublic());
+    this.privateKeys = new KeyArray(await this.storeHandler.loadPrivate());
+  }
+
+  /**
+   * Calls the storeHandler to save the keys
+   * @async
+   */
+  async store() {
+    await Promise.all([
+      this.storeHandler.storePublic(this.publicKeys.keys),
+      this.storeHandler.storePrivate(this.privateKeys.keys)
+    ]);
+  }
+
+  /**
+   * Clear the keyring - erase all the keys
+   */
+  clear() {
+    this.publicKeys.keys = [];
+    this.privateKeys.keys = [];
+  }
+
+  /**
+   * Searches the keyring for keys having the specified key id
+   * @param {String} keyId provided as string of lowercase hex number
+   * withouth 0x prefix (can be 16-character key ID or fingerprint)
+   * @param  {Boolean} deep if true search also in subkeys
+   * @returns {Array<module:key.Key>|null} keys found or null
+   */
+  getKeysForId(keyId, deep) {
+    let result = [];
+    result = result.concat(this.publicKeys.getForId(keyId, deep) || []);
+    result = result.concat(this.privateKeys.getForId(keyId, deep) || []);
+    return result.length ? result : null;
+  }
+
+  /**
+   * Removes keys having the specified key id from the keyring
+   * @param {String} keyId provided as string of lowercase hex number
+   * withouth 0x prefix (can be 16-character key ID or fingerprint)
+   * @returns {Array<module:key.Key>|null} keys found or null
+   */
+  removeKeysForId(keyId) {
+    let result = [];
+    result = result.concat(this.publicKeys.removeForId(keyId) || []);
+    result = result.concat(this.privateKeys.removeForId(keyId) || []);
+    return result.length ? result : null;
+  }
+
+  /**
+   * Get all public and private keys
+   * @returns {Array<module:key.Key>} all keys
+   */
+  getAllKeys() {
+    return this.publicKeys.keys.concat(this.privateKeys.keys);
   }
 }
 
