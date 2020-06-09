@@ -109,7 +109,7 @@ export default {
       enums.packet.compressedData,
       enums.packet.symmetricallyEncryptedData,
       enums.packet.symEncryptedIntegrityProtectedData,
-      enums.packet.symEncryptedAEADProtectedData
+      enums.packet.AEADEncryptedData
     ].includes(tag_type);
   },
 
