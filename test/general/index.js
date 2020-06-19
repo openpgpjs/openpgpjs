@@ -4,6 +4,7 @@ import testArmor from './armor.js';
 import testPacket from './packet.js';
 import testSignature from './signature.js';
 import testKey from './key.js';
+import testForwarding from './forwarding.js';
 import testOpenPGP from './openpgp.js';
 import testConfig from './config.js';
 import testOID from './oid.js';
@@ -20,6 +21,7 @@ export default () => describe('General', function () {
   testPacket();
   testSignature();
   testKey();
+  testForwarding();
   testOpenPGP();
   testConfig();
   testOID();

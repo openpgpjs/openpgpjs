@@ -362,3 +362,77 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     });
   });
 });
+
+describe('KDF parameters', function () {
+  const fingerprint = new Uint8Array([
+    177, 183, 116, 123, 76, 133, 245, 212, 151, 243,
+    236, 71, 245, 86, 3, 168, 101, 74, 209, 105
+  ]);
+
+  it('Valid serialization', async function () {
+    const cipher = openpgp.enums.symmetric.aes256;
+    const hash = openpgp.enums.hash.sha256;
+
+    const v1 = new KDFParams({ cipher, hash });
+    const v1Copy = new KDFParams({});
+    v1Copy.read(v1.write());
+    expect(v1Copy).to.deep.equal(v1);
+
+    const v1Flags0x0 = new KDFParams({
+      cipher,
+      hash,
+      flags: 0x0 // discarded
+    });
+    const v1Flags0x0Copy = new KDFParams({});
+    v1Flags0x0Copy.read(v1Flags0x0.write());
+    v1Flags0x0.flags = undefined;
+    expect(v1Flags0x0Copy).to.deep.equal(v1Flags0x0);
+
+    const v2Flags0x3 = new KDFParams({
+      cipher,
+      hash,
+      version: 2,
+      flags: 0x3,
+      replacementFingerprint: fingerprint,
+      replacementKDFParams: new Uint8Array([3, 1, cipher, hash])
+    });
+    const v2Flags0x3Copy = new KDFParams();
+    v2Flags0x3Copy.read(v2Flags0x3.write());
+    expect(v2Flags0x3Copy).to.deep.equal(v2Flags0x3);
+
+    const v2Flags0x0 = new KDFParams({
+      cipher,
+      hash,
+      version: 2,
+      flags: 0x0
+    });
+    const v2Flags0x0Copy = new KDFParams({});
+    v2Flags0x0Copy.read(v2Flags0x0.write());
+
+    expect(v2Flags0x0Copy).to.deep.equal(v2Flags0x0);
+
+    const v2Flags0x1 = new KDFParams({
+      cipher,
+      hash,
+      version: 2,
+      flags: 0x1,
+      replacementFingerprint: fingerprint
+    });
+    const v2Flags0x1Copy = new KDFParams();
+    v2Flags0x1Copy.read(v2Flags0x1.write());
+    v2Flags0x1.replacementKDFParams = null;
+    expect(v2Flags0x1Copy).to.deep.equal(v2Flags0x1);
+
+    const v2Flags0x2 = new KDFParams({
+      cipher,
+      hash,
+      version: 2,
+      flags: 0x2,
+      replacementKDFParams: new Uint8Array([3, 1, cipher, hash])
+    });
+    const v2Flags0x2Copy = new KDFParams();
+    v2Flags0x2Copy.read(v2Flags0x2.write());
+    v2Flags0x2.replacementFingerprint = null;
+    expect(v2Flags0x2Copy).to.deep.equal(v2Flags0x2);
+  });
+});

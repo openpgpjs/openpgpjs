@@ -50,9 +50,9 @@ function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
   return util.concatUint8Array([
     oid.write(),
     new Uint8Array([public_algo]),
-    kdfParams.write(),
+    kdfParams.replacementKDFParams || kdfParams.write(),
     util.stringToUint8Array('Anonymous Sender    '),
-    fingerprint
+    kdfParams.replacementFingerprint || fingerprint
   ]);
 }
 
