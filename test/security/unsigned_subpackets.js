@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { key, message, enums, PacketList, SignaturePacket } = openpgp;
+const { readArmoredKey, Key, message, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -49,7 +49,7 @@ Dc2vwS83Aja9iWrIEg==
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 async function getInvalidKey() {
-  return await key.readArmored(INVALID_KEY);
+  return await readArmoredKey(INVALID_KEY);
 }
 async function makeKeyValid() {
   /**
@@ -82,10 +82,10 @@ async function makeKeyValid() {
   // reconstruct the modified key
   const newlist = new PacketList();
   newlist.concat([pubkey, puser, pusersig]);
-  let modifiedkey = new key.Key(newlist);
+  let modifiedkey = new Key(newlist);
   // re-read the message to eliminate any
   // behaviour due to cached values.
-  modifiedkey = await key.readArmored(await modifiedkey.armor());
+  modifiedkey = await readArmoredKey(await modifiedkey.armor());
 
   expect(await encryptFails(invalidkey)).to.be.true;
   expect(await encryptFails(modifiedkey)).to.be.true;

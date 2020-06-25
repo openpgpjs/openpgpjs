@@ -625,6 +625,63 @@ export class Message {
   armor() {
     return armor.encode(enums.armor.message, this.write());
   }
+
+  /**
+   * creates new message object from text
+   * @param {String | ReadableStream<String>} text
+   * @param {String} filename (optional)
+   * @param {Date} date (optional)
+   * @param {utf8|binary|text|mime} type (optional) data packet type
+   * @returns {module:message.Message} new message object
+   * @static
+   */
+  static fromText(text, filename, date = new Date(), type = 'utf8') {
+    const streamType = util.isStream(text);
+    if (streamType === 'node') {
+      text = stream.nodeToWeb(text);
+    }
+    const literalDataPacket = new LiteralDataPacket(date);
+    // text will be converted to UTF8
+    literalDataPacket.setText(text, type);
+    if (filename !== undefined) {
+      literalDataPacket.setFilename(filename);
+    }
+    const literalDataPacketlist = new PacketList();
+    literalDataPacketlist.push(literalDataPacket);
+    const message = new Message(literalDataPacketlist);
+    message.fromStream = streamType;
+    return message;
+  }
+
+  /**
+   * creates new message object from binary data
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
+   * @param {String} filename (optional)
+   * @param {Date} date (optional)
+   * @param {utf8|binary|text|mime} type (optional) data packet type
+   * @returns {module:message.Message} new message object
+   * @static
+   */
+  static fromBinary(bytes, filename, date = new Date(), type = 'binary') {
+    const streamType = util.isStream(bytes);
+    if (!util.isUint8Array(bytes) && !streamType) {
+      throw new Error('Data must be in the form of a Uint8Array or Stream');
+    }
+    if (streamType === 'node') {
+      bytes = stream.nodeToWeb(bytes);
+    }
+
+    const literalDataPacket = new LiteralDataPacket(date);
+    literalDataPacket.setBytes(bytes, type);
+    if (filename !== undefined) {
+      literalDataPacket.setFilename(filename);
+    }
+    const literalDataPacketlist = new PacketList();
+    literalDataPacketlist.push(literalDataPacket);
+    const message = new Message(literalDataPacketlist);
+    message.fromStream = streamType;
+    return message;
+  }
 }
 
 /**
@@ -752,7 +809,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
  * @async
  * @static
  */
-export async function readArmored(armoredText) {
+export async function readArmoredMessage(armoredText) {
   //TODO how do we want to handle bad text? Exception throwing
   //TODO don't accept non-message armored texts
   const streamType = util.isStream(armoredText);
@@ -760,7 +817,7 @@ export async function readArmored(armoredText) {
     armoredText = stream.nodeToWeb(armoredText);
   }
   const input = await armor.decode(armoredText);
-  return read(input.data, streamType);
+  return readMessage(input.data, streamType);
 }
 
 /**
@@ -771,7 +828,7 @@ export async function readArmored(armoredText) {
  * @async
  * @static
  */
-export async function read(input, fromStream = util.isStream(input)) {
+export async function readMessage(input, fromStream = util.isStream(input)) {
   const streamType = util.isStream(input);
   if (streamType === 'node') {
     input = stream.nodeToWeb(input);
@@ -790,62 +847,5 @@ export async function read(input, fromStream = util.isStream(input)) {
   }, fromStream);
   const message = new Message(packetlist);
   message.fromStream = fromStream;
-  return message;
-}
-
-/**
- * creates new message object from text
- * @param {String | ReadableStream<String>} text
- * @param {String} filename (optional)
- * @param {Date} date (optional)
- * @param {utf8|binary|text|mime} type (optional) data packet type
- * @returns {module:message.Message} new message object
- * @static
- */
-export function fromText(text, filename, date = new Date(), type = 'utf8') {
-  const streamType = util.isStream(text);
-  if (streamType === 'node') {
-    text = stream.nodeToWeb(text);
-  }
-  const literalDataPacket = new LiteralDataPacket(date);
-  // text will be converted to UTF8
-  literalDataPacket.setText(text, type);
-  if (filename !== undefined) {
-    literalDataPacket.setFilename(filename);
-  }
-  const literalDataPacketlist = new PacketList();
-  literalDataPacketlist.push(literalDataPacket);
-  const message = new Message(literalDataPacketlist);
-  message.fromStream = streamType;
-  return message;
-}
-
-/**
- * creates new message object from binary data
- * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
- * @param {String} filename (optional)
- * @param {Date} date (optional)
- * @param {utf8|binary|text|mime} type (optional) data packet type
- * @returns {module:message.Message} new message object
- * @static
- */
-export function fromBinary(bytes, filename, date = new Date(), type = 'binary') {
-  const streamType = util.isStream(bytes);
-  if (!util.isUint8Array(bytes) && !streamType) {
-    throw new Error('Data must be in the form of a Uint8Array or Stream');
-  }
-  if (streamType === 'node') {
-    bytes = stream.nodeToWeb(bytes);
-  }
-
-  const literalDataPacket = new LiteralDataPacket(date);
-  literalDataPacket.setBytes(bytes, type);
-  if (filename !== undefined) {
-    literalDataPacket.setFilename(filename);
-  }
-  const literalDataPacketlist = new PacketList();
-  literalDataPacketlist.push(literalDataPacket);
-  const message = new Message(literalDataPacketlist);
-  message.fromStream = streamType;
   return message;
 }
