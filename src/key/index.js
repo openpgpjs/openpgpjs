@@ -4,8 +4,8 @@
  */
 
 import {
-  read, readArmored,
-  readAll, readAllArmored,
+  readKey, readArmoredKey,
+  readKeys, readArmoredKeys,
   generate,
   reformat
 } from './factory';
@@ -20,8 +20,8 @@ import {
 import Key from './key.js';
 
 export {
-  read, readArmored,
-  readAll, readAllArmored,
+  readKey, readArmoredKey,
+  readKeys, readArmoredKeys,
   generate,
   reformat,
   getPreferredAlgo,

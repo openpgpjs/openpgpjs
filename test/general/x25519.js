@@ -122,7 +122,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     if (data[name].pub_key) {
       return data[name].pub_key;
     }
-    const pub = await openpgp.key.readArmored(data[name].pub);
+    const pub = await openpgp.readArmoredKey(data[name].pub);
     expect(pub).to.exist;
     expect(pub.getKeyId().toHex()).to.equal(data[name].id);
     data[name].pub_key = pub;
@@ -133,7 +133,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     if (data[name].priv_key) {
       return data[name].priv_key;
     }
-    const pk = await openpgp.key.readArmored(data[name].priv);
+    const pk = await openpgp.readArmoredKey(data[name].priv);
     expect(pk).to.exist;
     expect(pk.getKeyId().toHex()).to.equal(data[name].id);
     await pk.decrypt(data[name].pass);
@@ -157,7 +157,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
   it('Verify clear signed message', async function () {
     const name = 'light';
     const pub = await load_pub_key(name);
-    const msg = await openpgp.cleartext.readArmored(data[name].message_signed);
+    const msg = await openpgp.readArmoredCleartextMessage(data[name].message_signed);
     return openpgp.verify({ publicKeys: [pub], message: msg }).then(function(result) {
       expect(result).to.exist;
       expect(result.data).to.equal(data[name].message);
@@ -170,9 +170,9 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const name = 'light';
     const randomData = input.createSomeMessage();
     const priv = await load_priv_key(name);
-    const signed = await openpgp.sign({ privateKeys: [priv], message: openpgp.cleartext.fromText(randomData)});
+    const signed = await openpgp.sign({ privateKeys: [priv], message: openpgp.CleartextMessage.fromText(randomData)});
     const pub = await load_pub_key(name);
-    const msg = await openpgp.cleartext.readArmored(signed);
+    const msg = await openpgp.readArmoredCleartextMessage(signed);
     const result = await openpgp.verify({ publicKeys: [pub], message: msg});
 
     expect(result).to.exist;
@@ -184,7 +184,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
   it('Decrypt and verify message', async function () {
     const light = await load_pub_key('light');
     const night = await load_priv_key('night');
-    const msg = await openpgp.message.readArmored(data.night.message_encrypted);
+    const msg = await openpgp.readArmoredMessage(data.night.message_encrypted);
     const result = await openpgp.decrypt({ privateKeys: night, publicKeys: [light], message: msg });
 
     expect(result).to.exist;
@@ -197,9 +197,9 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const nightPublic = await load_pub_key('night');
     const lightPrivate = await load_priv_key('light');
     const randomData = input.createSomeMessage();
-    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], message: openpgp.message.fromText(randomData) });
+    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], message: openpgp.Message.fromText(randomData) });
 
-    const message = await openpgp.message.readArmored(encrypted);
+    const message = await openpgp.readArmoredMessage(encrypted);
     const lightPublic = await load_pub_key('light');
     const nightPrivate = await load_priv_key('night');
     const result = await openpgp.decrypt({ privateKeys: nightPrivate, publicKeys: [lightPublic], message: message });
@@ -390,7 +390,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       '=xeG/',
       '-----END PGP PUBLIC KEY BLOCK-----'
     ].join('\n');
-    const hi = await openpgp.key.readArmored(pubKey);
+    const hi = await openpgp.readArmoredKey(pubKey);
     const results = await hi.getPrimaryUser();
     // console.log(results);
     expect(results).to.exist;
@@ -466,9 +466,9 @@ function omnibus() {
           }),
           // Signing message
           openpgp.sign(
-            { message: openpgp.cleartext.fromText('Hi, this is me, Hi!'), privateKeys: hi }
+            { message: openpgp.CleartextMessage.fromText('Hi, this is me, Hi!'), privateKeys: hi }
           ).then(async signed => {
-            const msg = await openpgp.cleartext.readArmored(signed);
+            const msg = await openpgp.readArmoredCleartextMessage(signed);
             // Verifying signed message
             return Promise.all([
               openpgp.verify(
@@ -477,9 +477,9 @@ function omnibus() {
               // Verifying detached signature
               openpgp.verify(
                 {
-                  message: openpgp.message.fromText('Hi, this is me, Hi!'),
+                  message: openpgp.Message.fromText('Hi, this is me, Hi!'),
                   publicKeys: hi.toPublic(),
-                  signature: await openpgp.signature.readArmored(signed)
+                  signature: await openpgp.readArmoredSignature(signed)
                 }
               ).then(output => expect(output.signatures[0].valid).to.be.true)
             ]);
@@ -487,12 +487,12 @@ function omnibus() {
           // Encrypting and signing
           openpgp.encrypt(
             {
-              message: openpgp.message.fromText('Hi, Hi wrote this but only Bye can read it!'),
+              message: openpgp.Message.fromText('Hi, Hi wrote this but only Bye can read it!'),
               publicKeys: [bye.toPublic()],
               privateKeys: [hi]
             }
           ).then(async encrypted => {
-            const msg = await openpgp.message.readArmored(encrypted);
+            const msg = await openpgp.readArmoredMessage(encrypted);
             // Decrypting and verifying
             return openpgp.decrypt(
               {
