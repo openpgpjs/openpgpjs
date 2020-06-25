@@ -63,7 +63,7 @@ export function clonePackets(options) {
   if (options.message) {
     //could be either a Message or CleartextMessage object
     if (options.message instanceof Message) {
-      options.message = options.message.packets;
+      options.message = { packets: options.message.packets, fromStream: options.message.fromStream };
     } else if (options.message instanceof CleartextMessage) {
       options.message = { text: options.message.text, signature: options.message.signature.packets };
     }
@@ -151,8 +151,10 @@ function packetlistCloneToKey(clone) {
 }
 
 function packetlistCloneToMessage(clone) {
-  const packetlist = List.fromStructuredClone(clone);
-  return new Message(packetlist);
+  const packetlist = List.fromStructuredClone(clone.packets);
+  const message = new Message(packetlist);
+  message.fromStream = clone.fromStream;
+  return message;
 }
 
 function packetlistCloneToCleartextMessage(clone) {
