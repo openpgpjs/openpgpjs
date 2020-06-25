@@ -263,7 +263,7 @@ module.exports = () => {
   describe('DSA parameter validation', function() {
     let dsaKey;
     before(async () => {
-      dsaKey = await openpgp.key.readArmored(armoredDSAKey);
+      dsaKey = await openpgp.readArmoredKey(armoredDSAKey);
     });
 
     it('DSA params should be valid', async function() {
@@ -300,7 +300,7 @@ module.exports = () => {
   describe('ElGamal parameter validation', function() {
     let egKey;
     before(async () => {
-      egKey = (await openpgp.key.readArmored(armoredElGamalKey)).subKeys[0];
+      egKey = (await openpgp.readArmoredKey(armoredElGamalKey)).subKeys[0];
     });
 
     it('params should be valid', async function() {

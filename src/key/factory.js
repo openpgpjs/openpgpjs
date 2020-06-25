@@ -269,7 +269,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
  * @async
  * @static
  */
-export async function read(data) {
+export async function readKey(data) {
   const packetlist = new PacketList();
   await packetlist.read(data, helper.allowedKeyPackets);
   return new Key(packetlist);
@@ -282,12 +282,12 @@ export async function read(data) {
  * @async
  * @static
  */
-export async function readArmored(armoredKey) {
+export async function readArmoredKey(armoredKey) {
   const input = await armor.decode(armoredKey);
   if (!(input.type === enums.armor.publicKey || input.type === enums.armor.privateKey)) {
     throw new Error('Armored text not of type key');
   }
-  return read(input.data);
+  return readKey(input.data);
 }
 
 /**
@@ -297,7 +297,7 @@ export async function readArmored(armoredKey) {
  * @async
  * @static
  */
-export async function readAll(data) {
+export async function readKeys(data) {
   const keys = [];
   const packetlist = new PacketList();
   await packetlist.read(data, helper.allowedKeyPackets);
@@ -320,10 +320,10 @@ export async function readAll(data) {
  * @async
  * @static
  */
-export async function readAllArmored(armoredKey) {
+export async function readArmoredKeys(armoredKey) {
   const input = await armor.decode(armoredKey);
   if (!(input.type === enums.armor.publicKey || input.type === enums.armor.privateKey)) {
     throw new Error('Armored text not of type key');
   }
-  return readAll(input.data);
+  return readKeys(input.data);
 }

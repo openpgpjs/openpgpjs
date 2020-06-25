@@ -17,29 +17,28 @@ export {
  * @see module:key
  * @name module:openpgp.key
  */
-import * as keyMod from './key';
-export const key = keyMod;
+export * from './key';
 
 /**
  * @see module:signature
  * @name module:openpgp.signature
  */
-import * as signatureMod from './signature';
-export const signature = signatureMod;
+export * from './signature';
 
 /**
  * @see module:message
  * @name module:openpgp.message
  */
-import * as messageMod from './message';
-export const message = messageMod;
+export {
+  readMessage, readArmoredMessage,
+  Message
+} from './message';
 
 /**
  * @see module:cleartext
  * @name module:openpgp.cleartext
  */
-import * as cleartextMod from './cleartext';
-export const cleartext = cleartextMod;
+export * from './cleartext';
 
 /**
  * @see module:util

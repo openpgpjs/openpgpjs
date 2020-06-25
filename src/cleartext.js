@@ -142,6 +142,15 @@ export class CleartextMessage {
     };
     return armor.encode(enums.armor.signed, body);
   }
+
+  /**
+   * Creates a new CleartextMessage object from text
+   * @param {String} text
+   * @static
+   */
+  static fromText(text) {
+    return new CleartextMessage(text);
+  }
 }
 
 
@@ -152,7 +161,7 @@ export class CleartextMessage {
  * @async
  * @static
  */
-export async function readArmored(armoredText) {
+export async function readArmoredCleartextMessage(armoredText) {
   const input = await armor.decode(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
@@ -208,13 +217,4 @@ function verifyHeaders(headers, packetlist) {
   } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
-}
-
-/**
- * Creates a new CleartextMessage object from text
- * @param {String} text
- * @static
- */
-export function fromText(text) {
-  return new CleartextMessage(text);
 }
