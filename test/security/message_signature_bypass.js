@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { key, cleartext, util, SignaturePacket } = openpgp;
+const { readArmoredKey, readArmoredCleartextMessage, util, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -67,7 +67,7 @@ fhGyl7nA7UCwgsqf7ZPBhRg=
 =nbjQ
 -----END PGP SIGNATURE-----`;
 async function getOtherPubKey() {
-  return await key.readArmored(OTHERPUBKEY);
+  return await readArmoredKey(OTHERPUBKEY);
 }
 
 /**
@@ -84,7 +84,7 @@ jhAfE9q2ElqlaAvZZYw=`);
 async function fakeSignature() {
   // read the template and modify the text to
   // invalidate the signature.
-  let fake = await cleartext.readArmored(
+  let fake = await readArmoredCleartextMessage(
     ORIGINAL.replace(
       'You owe me',
       'I owe you'));
@@ -98,7 +98,7 @@ async function fakeSignature() {
   const faked_armored = await fake.armor();
   // re-read the message to eliminate any
   // behaviour due to cached values.
-  fake = await cleartext.readArmored(faked_armored);
+  fake = await readArmoredCleartextMessage(faked_armored);
   // faked message now verifies correctly
   const res = await openpgp.verify({
     message: fake,

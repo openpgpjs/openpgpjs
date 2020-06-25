@@ -135,7 +135,7 @@ module.exports = () => describe("Keyring", async function() {
 
   it('publicKeys.getForId() - valid id', function() {
     const key = keyring.publicKeys.getForId(keyId);
-    expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
+    expect(key).to.exist.and.be.an.instanceof(openpgp.Key);
     expect(key.getKeyId().toHex()).equals(keyId);
   });
 
@@ -146,7 +146,7 @@ module.exports = () => describe("Keyring", async function() {
 
   it('privateKeys.getForId() - valid id', function() {
     const key = keyring.privateKeys.getForId(keyId);
-    expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
+    expect(key).to.exist.and.be.an.instanceof(openpgp.Key);
     expect(key.getKeyId().toHex()).equals(keyId);
   });
 
@@ -157,7 +157,7 @@ module.exports = () => describe("Keyring", async function() {
 
   it('publicKeys.getForId() - deep, including subkeys - subkey id', function() {
     const key = keyring.publicKeys.getForId(subkeyId2, true);
-    expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
+    expect(key).to.exist.and.be.an.instanceof(openpgp.Key);
     expect(key.getKeyId().toHex()).equals(keyId2);
   });
 
@@ -179,7 +179,7 @@ module.exports = () => describe("Keyring", async function() {
 
   it('publicKeys.getForId() - valid fingerprint', function() {
     const key = keyring.publicKeys.getForId(keyFingerP2);
-    expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
+    expect(key).to.exist.and.be.an.instanceof(openpgp.Key);
     expect(key.getKeyId().toHex()).equals(keyId2);
   });
 
@@ -190,7 +190,7 @@ module.exports = () => describe("Keyring", async function() {
 
   it('publicKeys.getForId() - deep, including subkeys - subkey fingerprint', function() {
     const key = keyring.publicKeys.getForId(subkeyFingerP2, true);
-    expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
+    expect(key).to.exist.and.be.an.instanceof(openpgp.Key);
     expect(key.getKeyId().toHex()).equals(keyId2);
   });
 
@@ -250,7 +250,7 @@ module.exports = () => describe("Keyring", async function() {
 
   it('publicKeys.removeForId() - valid id', function() {
     const key = keyring.publicKeys.removeForId(keyId);
-    expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
+    expect(key).to.exist.and.be.an.instanceof(openpgp.Key);
     expect(key.getKeyId().toHex()).equals(keyId);
     expect(keyring.publicKeys.keys).to.exist.and.have.length(1);
   });
@@ -263,7 +263,7 @@ module.exports = () => describe("Keyring", async function() {
 
   it('publicKeys.removeForId() - valid fingerprint', function() {
     const key = keyring.publicKeys.removeForId(keyFingerP2);
-    expect(key).to.exist.and.be.an.instanceof(openpgp.key.Key);
+    expect(key).to.exist.and.be.an.instanceof(openpgp.Key);
     expect(key.getKeyId().toHex()).equals(keyId2);
     expect(keyring.publicKeys.keys).to.be.empty;
   });
@@ -273,14 +273,14 @@ module.exports = () => describe("Keyring", async function() {
     const localstore2 = new openpgp.Keyring.localstore('my-custom-prefix-');
     const localstore3 = new openpgp.Keyring.localstore();
     await localstore3.storePublic([]);
-    const key = await openpgp.key.readArmored(pubkey);
+    const key = await openpgp.readArmoredKey(pubkey);
     await localstore1.storePublic([key]);
     expect((await localstore2.loadPublic())[0].getKeyId().equals(key.getKeyId())).to.be.true;
     expect(await localstore3.loadPublic()).to.have.length(0);
   });
 
   it('emptying keyring and storing removes keys', async function() {
-    const key = await openpgp.key.readArmored(pubkey);
+    const key = await openpgp.readArmoredKey(pubkey);
 
     const localstore = new openpgp.Keyring.localstore('remove-prefix-');
 

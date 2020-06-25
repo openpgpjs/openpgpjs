@@ -78,7 +78,7 @@ module.exports = () => describe("Packet", function() {
 
     await enc.encrypt(algo, key);
 
-    const msg2 = new openpgp.message.Message();
+    const msg2 = new openpgp.Message();
     await msg2.packets.read(message.write(), { SymmetricallyEncryptedDataPacket: openpgp.SymmetricallyEncryptedDataPacket });
     msg2.packets[0].ignoreMdcError = true;
     const dec = await msg2.decrypt(null, null, [{ algorithm: algo, data: key }]);
@@ -771,7 +771,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 =wEIR
 -----END PGP SIGNATURE-----`;
 
-    const signature = await openpgp.signature.readArmored(armored_sig);
+    const signature = await openpgp.readArmoredSignature(armored_sig);
 
     expect(signature.packets[0].signersUserId).to.equal('test-wkd@metacode.biz');
   });
@@ -810,7 +810,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 =et/d
 -----END PGP PUBLIC KEY BLOCK-----`;
 
-    const key = await openpgp.key.readArmored(pubkey);
+    const key = await openpgp.readArmoredKey(pubkey);
 
     const { notations, rawNotations } = key.users[0].selfCertifications[0];
 
