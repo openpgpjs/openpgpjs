@@ -24,7 +24,7 @@
 
 import util from './util';
 import crypto from './crypto';
-import * as keyMod from './key';
+import { readKeys } from './key';
 
 class WKD {
   /**
@@ -78,7 +78,7 @@ class WKD {
     if (options.rawBytes) {
       return rawBytes;
     }
-    return keyMod.readAll(rawBytes);
+    return readKeys(rawBytes);
   }
 }
 

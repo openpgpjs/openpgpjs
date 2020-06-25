@@ -61,9 +61,9 @@ export class Signature {
  * @async
  * @static
  */
-export async function readArmored(armoredText) {
+export async function readArmoredSignature(armoredText) {
   const input = await armor.decode(armoredText);
-  return read(input.data);
+  return readSignature(input.data);
 }
 
 /**
@@ -73,7 +73,7 @@ export async function readArmored(armoredText) {
  * @async
  * @static
  */
-export async function read(input) {
+export async function readSignature(input) {
   const packetlist = new PacketList();
   await packetlist.read(input, { SignaturePacket });
   return new Signature(packetlist);

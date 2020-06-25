@@ -25,7 +25,7 @@
 
 import stream from 'web-stream-tools';
 import config from '../config';
-import { readArmored } from '../key';
+import { readArmoredKey } from '../key';
 
 /**
  * The class that deals with storage of the keyring.
@@ -97,7 +97,7 @@ async function loadKeys(storage, itemname) {
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     let key;
     for (let i = 0; i < armoredKeys.length; i++) {
-      key = await readArmored(armoredKeys[i]);
+      key = await readArmoredKey(armoredKeys[i]);
       keys.push(key);
     }
   }
