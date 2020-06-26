@@ -22,7 +22,7 @@
  * @module crypto/ocb
  */
 
-import ciphers from './cipher';
+import * as ciphers from './cipher';
 import util from '../util';
 
 

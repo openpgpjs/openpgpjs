@@ -26,9 +26,9 @@
 
 import enums from '../../../enums';
 import util from '../../../util';
-import random from '../../random';
+import { getRandomBytes } from '../../random';
 import hash from '../../hash';
-import Curve, { webCurves, privateToJwk, rawPublicToJwk, validateStandardParams } from './curves';
+import { Curve, webCurves, privateToJwk, rawPublicToJwk, validateStandardParams } from './curves';
 import { getIndutnyCurve, keyFromPrivate, keyFromPublic } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
@@ -46,7 +46,7 @@ const nodeCrypto = util.getNodeCrypto();
  *            s: Uint8Array}}               Signature of the message
  * @async
  */
-async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
+export async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
   const curve = new Curve(oid);
   if (message && !util.isStream(message)) {
     const keyPair = { publicKey, privateKey };
@@ -91,7 +91,7 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
  * @returns {Boolean}
  * @async
  */
-async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
+export async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
   const curve = new Curve(oid);
   if (message && !util.isStream(message)) {
     switch (curve.type) {
@@ -125,7 +125,7 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
  * @returns {Promise<Boolean>} whether params are valid
  * @async
  */
-async function validateParams(oid, Q, d) {
+export async function validateParams(oid, Q, d) {
   const curve = new Curve(oid);
   // Reject curves x25519 and ed25519
   if (curve.keyType !== enums.publicKey.ecdsa) {
@@ -137,7 +137,7 @@ async function validateParams(oid, Q, d) {
   switch (curve.type) {
     case 'web':
     case 'node': {
-      const message = await random.getRandomBytes(8);
+      const message = await getRandomBytes(8);
       const hashAlgo = enums.hash.sha256;
       const hashed = await hash.digest(hashAlgo, message);
       try {
@@ -151,8 +151,6 @@ async function validateParams(oid, Q, d) {
       return validateStandardParams(enums.publicKey.ecdsa, oid, Q, d);
   }
 }
-
-export default { sign, verify, ellipticVerify, ellipticSign, validateParams };
 
 
 //////////////////////////

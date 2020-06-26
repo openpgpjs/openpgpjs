@@ -94,53 +94,51 @@ class RandomBuffer {
   }
 }
 
-export default {
-  /**
-   * Retrieve secure random byte array of the specified length
-   * @param {Integer} length Length in bytes to generate
-   * @returns {Uint8Array} Random byte array
-   * @async
-   */
-  getRandomBytes: async function(length) {
-    const buf = new Uint8Array(length);
-    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-      crypto.getRandomValues(buf);
-    } else if (typeof globalThis !== 'undefined' && typeof globalThis.msCrypto === 'object' && typeof globalThis.msCrypto.getRandomValues === 'function') {
-      globalThis.msCrypto.getRandomValues(buf);
-    } else if (nodeCrypto) {
-      const bytes = nodeCrypto.randomBytes(buf.length);
-      buf.set(bytes);
-    } else if (this.randomBuffer.buffer) {
-      await this.randomBuffer.get(buf);
-    } else {
-      throw new Error('No secure random number generator available.');
-    }
-    return buf;
-  },
+/**
+ * Retrieve secure random byte array of the specified length
+ * @param {Integer} length Length in bytes to generate
+ * @returns {Uint8Array} Random byte array
+ * @async
+ */
+export async function getRandomBytes(length) {
+  const buf = new Uint8Array(length);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(buf);
+  } else if (typeof globalThis !== 'undefined' && typeof globalThis.msCrypto === 'object' && typeof globalThis.msCrypto.getRandomValues === 'function') {
+    globalThis.msCrypto.getRandomValues(buf);
+  } else if (nodeCrypto) {
+    const bytes = nodeCrypto.randomBytes(buf.length);
+    buf.set(bytes);
+  } else if (randomBuffer.buffer) {
+    await randomBuffer.get(buf);
+  } else {
+    throw new Error('No secure random number generator available.');
+  }
+  return buf;
+}
 
-  /**
-   * Create a secure random BigInteger that is greater than or equal to min and less than max.
-   * @param {module:BigInteger} min Lower bound, included
-   * @param {module:BigInteger} max Upper bound, excluded
-   * @returns {module:BigInteger} Random BigInteger
-   * @async
-   */
-  getRandomBigInteger: async function(min, max) {
-    const BigInteger = await util.getBigInteger();
+/**
+ * Create a secure random BigInteger that is greater than or equal to min and less than max.
+ * @param {module:BigInteger} min Lower bound, included
+ * @param {module:BigInteger} max Upper bound, excluded
+ * @returns {module:BigInteger} Random BigInteger
+ * @async
+ */
+export async function getRandomBigInteger(min, max) {
+  const BigInteger = await util.getBigInteger();
 
-    if (max.lt(min)) {
-      throw new Error('Illegal parameter value: max <= min');
-    }
+  if (max.lt(min)) {
+    throw new Error('Illegal parameter value: max <= min');
+  }
 
-    const modulus = max.sub(min);
-    const bytes = modulus.byteLength();
+  const modulus = max.sub(min);
+  const bytes = modulus.byteLength();
 
-    // Using a while loop is necessary to avoid bias introduced by the mod operation.
-    // However, we request 64 extra random bits so that the bias is negligible.
-    // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-    const r = new BigInteger(await this.getRandomBytes(bytes + 8));
-    return r.mod(modulus).add(min);
-  },
+  // Using a while loop is necessary to avoid bias introduced by the mod operation.
+  // However, we request 64 extra random bits so that the bias is negligible.
+  // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
+  const r = new BigInteger(await getRandomBytes(bytes + 8));
+  return r.mod(modulus).add(min);
+}
 
-  randomBuffer: new RandomBuffer()
-};
+export const randomBuffer = new RandomBuffer();
