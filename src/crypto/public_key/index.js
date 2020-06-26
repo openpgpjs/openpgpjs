@@ -9,10 +9,10 @@
  */
 
 import nacl from 'tweetnacl/nacl-fast-light.js';
-import rsa from './rsa';
-import elgamal from './elgamal';
-import elliptic from './elliptic';
-import dsa from './dsa';
+import * as rsa from './rsa';
+import * as elgamal from './elgamal';
+import * as elliptic from './elliptic';
+import * as dsa from './dsa';
 
 export default {
   /** @see module:crypto/public_key/rsa */

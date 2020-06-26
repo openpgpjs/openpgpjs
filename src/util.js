@@ -30,7 +30,7 @@ import emailAddresses from 'email-addresses';
 import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
-import b64 from './encoding/base64';
+import * as b64 from './encoding/base64';
 import { getBigInteger } from './biginteger';
 
 export default {

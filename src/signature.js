@@ -22,7 +22,7 @@
  * @module signature
  */
 
-import armor from './encoding/armor';
+import { armor, unarmor } from './encoding/armor';
 import { PacketList, SignaturePacket } from './packet';
 import enums from './enums';
 
@@ -50,7 +50,7 @@ export class Signature {
    * @returns {ReadableStream<String>} ASCII armor
    */
   armor() {
-    return armor.encode(enums.armor.signature, this.write());
+    return armor(enums.armor.signature, this.write());
   }
 }
 
@@ -62,7 +62,7 @@ export class Signature {
  * @static
  */
 export async function readArmoredSignature(armoredText) {
-  const input = await armor.decode(armoredText);
+  const input = await unarmor(armoredText);
   return readSignature(input.data);
 }
 

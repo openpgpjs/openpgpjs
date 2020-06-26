@@ -33,7 +33,7 @@ import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
 import config from '../config';
-import armor from '../encoding/armor';
+import { unarmor } from '../encoding/armor';
 
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
@@ -283,7 +283,7 @@ export async function readKey(data) {
  * @static
  */
 export async function readArmoredKey(armoredKey) {
-  const input = await armor.decode(armoredKey);
+  const input = await unarmor(armoredKey);
   if (!(input.type === enums.armor.publicKey || input.type === enums.armor.privateKey)) {
     throw new Error('Armored text not of type key');
   }
@@ -321,7 +321,7 @@ export async function readKeys(data) {
  * @static
  */
 export async function readArmoredKeys(armoredKey) {
-  const input = await armor.decode(armoredKey);
+  const input = await unarmor(armoredKey);
   if (!(input.type === enums.armor.publicKey || input.type === enums.armor.privateKey)) {
     throw new Error('Armored text not of type key');
   }

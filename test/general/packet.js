@@ -243,6 +243,9 @@ module.exports = () => describe("Packet", function() {
   it('Sym. encrypted AEAD protected packet test vector (AEAD)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/commit/00b20923e6233fb6ff1666ecd5acfefceb32907d
 
+    const nodeCrypto = openpgp.util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
     let packetBytes = openpgp.util.hexToUint8Array(`
       d4 4a 01 07 01 0e b7 32  37 9f 73 c4 92 8d e2 5f
       ac fe 65 17 ec 10 5d c1  1a 81 dc 0c b8 a2 f6 f3
@@ -271,8 +274,8 @@ module.exports = () => describe("Packet", function() {
 
     const msg2 = new openpgp.PacketList();
 
-    let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
-    randomBytesStub.returns(resolves(iv));
+    let randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.returns(iv);
 
     try {
       await enc.encrypt(algo, key);
@@ -298,7 +301,7 @@ module.exports = () => describe("Packet", function() {
         '=VZ0/\n' +
         '-----END PGP MESSAGE-----';
 
-    const msgbytes = (await openpgp.armor.decode(msg)).data;
+    const msgbytes = (await openpgp.unarmor(msg)).data;
 
     const parsed = new openpgp.PacketList();
     await parsed.read(msgbytes, openpgp);
@@ -365,7 +368,7 @@ module.exports = () => describe("Packet", function() {
         '-----END PGP PRIVATE KEY BLOCK-----';
 
     let key = new openpgp.PacketList();
-    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
+    await key.read((await openpgp.unarmor(armored_key)).data, openpgp);
     key = key[0];
 
     const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
@@ -432,11 +435,11 @@ module.exports = () => describe("Packet", function() {
         '-----END PGP MESSAGE-----';
 
     let key = new openpgp.PacketList();
-    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
+    await key.read((await openpgp.unarmor(armored_key)).data, openpgp);
     key = key[3];
 
     const msg = new openpgp.PacketList();
-    await msg.read((await openpgp.armor.decode(armored_msg)).data, openpgp);
+    await msg.read((await openpgp.unarmor(armored_msg)).data, openpgp);
 
     return msg[0].decrypt(key).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -521,6 +524,9 @@ module.exports = () => describe("Packet", function() {
   it('Sym. encrypted session key reading/writing test vector (EAX, AEAD)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b20923/back.mkd#sample-aead-eax-encryption-and-decryption
 
+    const nodeCrypto = openpgp.util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
     let aeadProtectVal = openpgp.config.aeadProtect;
     let aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
     let s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
@@ -533,11 +539,11 @@ module.exports = () => describe("Packet", function() {
     let sessionIV = openpgp.util.hexToUint8Array(`bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35`.replace(/\s+/g, ''));
     let dataIV = openpgp.util.hexToUint8Array(`b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10`.replace(/\s+/g, ''));
 
-    let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
-    randomBytesStub.onCall(0).returns(resolves(salt));
-    randomBytesStub.onCall(1).returns(resolves(sessionKey));
-    randomBytesStub.onCall(2).returns(resolves(sessionIV));
-    randomBytesStub.onCall(3).returns(resolves(dataIV));
+    let randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.onCall(0).returns(salt);
+    randomBytesStub.onCall(1).returns(sessionKey);
+    randomBytesStub.onCall(2).returns(sessionIV);
+    randomBytesStub.onCall(3).returns(dataIV);
 
     let packetBytes = openpgp.util.hexToUint8Array(`
       c3 3e 05 07 01 03 08 cd  5a 9f 70 fb e0 bc 65 90
@@ -596,6 +602,9 @@ module.exports = () => describe("Packet", function() {
   it('Sym. encrypted session key reading/writing test vector (AEAD, OCB)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b20923/back.mkd#sample-aead-ocb-encryption-and-decryption
 
+    const nodeCrypto = openpgp.util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
     let aeadProtectVal = openpgp.config.aeadProtect;
     let aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
     let s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
@@ -608,11 +617,11 @@ module.exports = () => describe("Packet", function() {
     let sessionIV = openpgp.util.hexToUint8Array(`99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c`.replace(/\s+/g, ''));
     let dataIV = openpgp.util.hexToUint8Array(`5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56`.replace(/\s+/g, ''));
 
-    let randomBytesStub = stub(openpgp.crypto.random, 'getRandomBytes');
-    randomBytesStub.onCall(0).returns(resolves(salt));
-    randomBytesStub.onCall(1).returns(resolves(sessionKey));
-    randomBytesStub.onCall(2).returns(resolves(sessionIV));
-    randomBytesStub.onCall(3).returns(resolves(dataIV));
+    let randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.onCall(0).returns(salt);
+    randomBytesStub.onCall(1).returns(sessionKey);
+    randomBytesStub.onCall(2).returns(sessionIV);
+    randomBytesStub.onCall(3).returns(dataIV);
 
     let packetBytes = openpgp.util.hexToUint8Array(`
       c3 3d 05 07 02 03 08 9f  0b 7d a3 e5 ea 64 77 90
@@ -683,12 +692,12 @@ module.exports = () => describe("Packet", function() {
         '-----END PGP MESSAGE-----';
 
     let key = new openpgp.PacketList();
-    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
+    await key.read((await openpgp.unarmor(armored_key)).data, openpgp);
     key = key[3];
     await key.decrypt('test');
 
     const msg = new openpgp.PacketList();
-    await msg.read((await openpgp.armor.decode(armored_msg)).data, openpgp);
+    await msg.read((await openpgp.unarmor(armored_msg)).data, openpgp);
 
     return msg[0].decrypt(key).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
@@ -701,7 +710,7 @@ module.exports = () => describe("Packet", function() {
 
   it('Secret key reading with signature verification.', async function() {
     const key = new openpgp.PacketList();
-    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
+    await key.read((await openpgp.unarmor(armored_key)).data, openpgp);
     return Promise.all([
       expect(key[2].verify(key[0],
         openpgp.enums.signature.certGeneric,
@@ -736,11 +745,11 @@ module.exports = () => describe("Packet", function() {
         '-----END PGP MESSAGE-----';
 
     const key = new openpgp.PacketList();
-    await key.read((await openpgp.armor.decode(armored_key)).data, openpgp);
+    await key.read((await openpgp.unarmor(armored_key)).data, openpgp);
     await key[3].decrypt('test');
 
     const msg = new openpgp.PacketList();
-    await msg.read((await openpgp.armor.decode(armored_msg)).data, openpgp);
+    await msg.read((await openpgp.unarmor(armored_msg)).data, openpgp);
 
     return msg[0].decrypt(key[3]).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);

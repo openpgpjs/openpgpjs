@@ -98,7 +98,7 @@ export { default as stream } from 'web-stream-tools';
  * @see module:encoding/armor
  * @name module:openpgp.armor
  */
-export { default as armor } from './encoding/armor';
+export * from './encoding/armor';
 
 /**
  * @see module:enums

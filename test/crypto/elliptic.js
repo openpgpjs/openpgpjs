@@ -186,17 +186,17 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
         ]);
       }
     });
-    it('Invalid point', function () {
+    it('Invalid point', async function () {
       if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
         this.skip();
       }
       if (openpgp.util.getNodeCrypto()) {
-        expect(verify_signature(
+        await expect(verify_signature(
           'secp256k1', 8, [], [], [], secp256k1_invalid_point
         )).to.eventually.be.false;
       }
       if (openpgp.config.useIndutnyElliptic) {
-        expect(verify_signature_elliptic(
+        await expect(verify_signature_elliptic(
           'secp256k1', 8, [], [], [], secp256k1_invalid_point
         )).to.be.rejectedWith(Error, /Invalid elliptic public key/);
       }
