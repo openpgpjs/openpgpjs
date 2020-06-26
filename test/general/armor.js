@@ -377,8 +377,8 @@ NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
-    const { type, data } = await openpgp.armor.decode(pubKey);
-    const armor = await openpgp.stream.readToEnd(openpgp.armor.encode(type, data));
+    const { type, data } = await openpgp.unarmor(pubKey);
+    const armor = await openpgp.stream.readToEnd(openpgp.armor(type, data));
     expect(
       armor
         .replace(/^(Version|Comment): .*$\r\n/mg, '')

@@ -22,11 +22,7 @@
  */
 
 import util from '../../util';
-import random from '../random';
-
-export default {
-  randomProbablePrime, isProbablePrime, fermat, millerRabin, divisionTest
-};
+import { getRandomBigInteger } from '../random';
 
 /**
  * Probabilistic random number generator
@@ -36,7 +32,7 @@ export default {
  * @returns BigInteger
  * @async
  */
-async function randomProbablePrime(bits, e, k) {
+export async function randomProbablePrime(bits, e, k) {
   const BigInteger = await util.getBigInteger();
   const one = new BigInteger(1);
   const min = one.leftShift(new BigInteger(bits - 1));
@@ -49,7 +45,7 @@ async function randomProbablePrime(bits, e, k) {
    */
   const adds = [1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2];
 
-  const n = await random.getRandomBigInteger(min, min.leftShift(one));
+  const n = await getRandomBigInteger(min, min.leftShift(one));
   let i = n.mod(thirty).toNumber();
 
   do {
@@ -72,7 +68,7 @@ async function randomProbablePrime(bits, e, k) {
  * @returns {boolean}
  * @async
  */
-async function isProbablePrime(n, e, k) {
+export async function isProbablePrime(n, e, k) {
   if (e && !n.dec().gcd(e).isOne()) {
     return false;
   }
@@ -97,13 +93,13 @@ async function isProbablePrime(n, e, k) {
  * @param {BigInteger} b Optional Fermat test base
  * @returns {boolean}
  */
-async function fermat(n, b) {
+export async function fermat(n, b) {
   const BigInteger = await util.getBigInteger();
   b = b || new BigInteger(2);
   return b.modExp(n.dec(), n).isOne();
 }
 
-async function divisionTest(n) {
+export async function divisionTest(n) {
   const BigInteger = await util.getBigInteger();
   return smallPrimes.every(m => {
     return n.mod(new BigInteger(m)) !== 0;
@@ -232,7 +228,7 @@ const smallPrimes = [
  * @returns {boolean}
  * @async
  */
-async function millerRabin(n, k, rand) {
+export async function millerRabin(n, k, rand) {
   const BigInteger = await util.getBigInteger();
   const len = n.bitLength();
 
@@ -248,7 +244,7 @@ async function millerRabin(n, k, rand) {
   const d = n.rightShift(new BigInteger(s));
 
   for (; k > 0; k--) {
-    const a = rand ? rand() : await random.getRandomBigInteger(new BigInteger(2), n1);
+    const a = rand ? rand() : await getRandomBigInteger(new BigInteger(2), n1);
 
     let x = a.modExp(d, n);
     if (x.isOne() || x.equal(n1)) {

@@ -25,7 +25,7 @@
  * @module key/Key
  */
 
-import armor from '../encoding/armor';
+import { armor, unarmor } from '../encoding/armor';
 import {
   PacketList,
   PublicKeyPacket,
@@ -280,7 +280,7 @@ class Key {
    */
   armor() {
     const type = this.isPublic() ? enums.armor.publicKey : enums.armor.privateKey;
-    return armor.encode(type, this.toPacketlist().write());
+    return armor(type, this.toPacketlist().write());
   }
 
   /**
@@ -749,7 +749,7 @@ class Key {
     const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.keyRevocation, dataToVerify, date);
     const packetlist = new PacketList();
     packetlist.push(revocationSignature);
-    return armor.encode(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate');
+    return armor(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate');
   }
 
   /**
@@ -761,7 +761,7 @@ class Key {
    * @async
    */
   async applyRevocationCertificate(revocationCertificate) {
-    const input = await armor.decode(revocationCertificate);
+    const input = await unarmor(revocationCertificate);
     const packetlist = new PacketList();
     await packetlist.read(input.data, { SignaturePacket });
     const revocationSignature = packetlist.findPacket(enums.packet.signature);

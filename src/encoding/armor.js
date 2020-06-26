@@ -25,7 +25,7 @@
  */
 
 import stream from 'web-stream-tools';
-import base64 from './base64.js';
+import * as base64 from './base64.js';
 import enums from '../enums.js';
 import config from '../config';
 import util from '../util';
@@ -233,7 +233,7 @@ function splitChecksum(text) {
  * @async
  * @static
  */
-function dearmor(input) {
+export function unarmor(input) {
   return new Promise(async (resolve, reject) => {
     try {
       const reSplit = /^-----[^-]+-----$/m;
@@ -359,7 +359,7 @@ function dearmor(input) {
  * @returns {String | ReadableStream<String>} Armored text
  * @static
  */
-function armor(messagetype, body, partindex, parttotal, customComment) {
+export function armor(messagetype, body, partindex, parttotal, customComment) {
   let text;
   let hash;
   if (messagetype === enums.armor.signed) {
@@ -426,8 +426,3 @@ function armor(messagetype, body, partindex, parttotal, customComment) {
 
   return util.concat(result);
 }
-
-export default {
-  encode: armor,
-  decode: dearmor
-};

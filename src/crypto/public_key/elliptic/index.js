@@ -24,11 +24,11 @@
  * @module crypto/public_key/elliptic
  */
 
-import Curve, { generate, getPreferredHashAlgo } from './curves';
-import ecdsa from './ecdsa';
-import eddsa from './eddsa';
-import ecdh from './ecdh';
+import { Curve, generate, getPreferredHashAlgo } from './curves';
+import * as ecdsa from './ecdsa';
+import * as eddsa from './eddsa';
+import * as ecdh from './ecdh';
 
-export default {
+export {
   Curve, ecdh, ecdsa, eddsa, generate, getPreferredHashAlgo
 };

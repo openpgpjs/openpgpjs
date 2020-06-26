@@ -2584,35 +2584,9 @@ function versionSpecificTests() {
 }
 
 module.exports = () => describe('Key', function() {
-  async function deepCopyKeyParams(params) {
-    const paramsCopy = {};
-    Object.keys(params).forEach(name => {
-      const param = params[name];
-      const copy = new Uint8Array(param.length);
-      copy.set(param);
-      paramsCopy[name] = copy;
-    });
-    return paramsCopy;
-  }
-
   let rsaGenStub;
   let v5KeysVal;
   let aeadProtectVal;
-  const rsaGenValue = {
-    512: openpgp.crypto.publicKey.rsa.generate(512, 65537),
-    1024: openpgp.crypto.publicKey.rsa.generate(1024, 65537),
-    2048: openpgp.crypto.publicKey.rsa.generate(2048, 65537)
-  };
-
-  beforeEach(function() {
-    // We fake the generation function to speed up the tests
-    rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
-    rsaGenStub.callsFake(async N => deepCopyKeyParams(await rsaGenValue[N]));
-  });
-
-  afterEach(function() {
-    rsaGenStub.restore();
-  });
 
   tryTests('V4', versionSpecificTests, {
     if: !openpgp.config.ci,
@@ -2706,7 +2680,7 @@ module.exports = () => describe('Key', function() {
 
     const packetlist = new openpgp.PacketList();
 
-    await packetlist.read((await openpgp.armor.decode(pub_sig_test)).data, openpgp);
+    await packetlist.read((await openpgp.unarmor(pub_sig_test)).data, openpgp);
 
     const subkeys = pubKey.getSubkeys();
     expect(subkeys).to.exist;
@@ -3114,10 +3088,10 @@ module.exports = () => describe('Key', function() {
     const revKey = await openpgp.readArmoredKey(revoked_key_arm4);
     const revocationCertificate = await revKey.getRevocationCertificate();
 
-    const input = await openpgp.armor.decode(revocation_certificate_arm4);
+    const input = await openpgp.unarmor(revocation_certificate_arm4);
     const packetlist = new openpgp.PacketList();
     await packetlist.read(input.data, { SignaturePacket: openpgp.SignaturePacket });
-    const armored = openpgp.armor.encode(openpgp.enums.armor.publicKey, packetlist.write());
+    const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write());
 
     expect(revocationCertificate.replace(/^Comment: .*$\r\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\r\n/mg, ''));
   });

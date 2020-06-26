@@ -24,7 +24,7 @@
  * @module cleartext
  */
 
-import armor from './encoding/armor';
+import { armor, unarmor } from './encoding/armor';
 import enums from './enums';
 import util from './util';
 import { PacketList, LiteralDataPacket, SignaturePacket } from './packet';
@@ -140,7 +140,7 @@ export class CleartextMessage {
       text: this.text,
       data: this.signature.packets.write()
     };
-    return armor.encode(enums.armor.signed, body);
+    return armor(enums.armor.signed, body);
   }
 
   /**
@@ -162,7 +162,7 @@ export class CleartextMessage {
  * @static
  */
 export async function readArmoredCleartextMessage(armoredText) {
-  const input = await armor.decode(armoredText);
+  const input = await unarmor(armoredText);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }
