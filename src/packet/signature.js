@@ -26,7 +26,7 @@
  */
 
 import stream from 'web-stream-tools';
-import packet from './packet';
+import { readSimpleLength, writeSimpleLength } from './packet';
 import type_keyid from '../type/keyid.js';
 import type_mpi from '../type/mpi.js';
 import crypto from '../crypto';
@@ -319,7 +319,7 @@ class SignaturePacket {
       arr.push(write_sub_packet(sub.issuerFingerprint, bytes));
     }
     this.unhashedSubpackets.forEach(data => {
-      arr.push(packet.writeSimpleLength(data.length));
+      arr.push(writeSimpleLength(data.length));
       arr.push(data);
     });
 
@@ -535,7 +535,7 @@ class SignaturePacket {
 
     // subpacket data set (zero or more subpackets)
     while (i < 2 + subpacket_length) {
-      const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+      const len = readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
       this.read_sub_packet(bytes.subarray(i, i + len.len), trusted);
@@ -767,7 +767,7 @@ class SignaturePacket {
  */
 function write_sub_packet(type, data) {
   const arr = [];
-  arr.push(packet.writeSimpleLength(data.length + 1));
+  arr.push(writeSimpleLength(data.length + 1));
   arr.push(new Uint8Array([type]));
   arr.push(data);
   return util.concat(arr);

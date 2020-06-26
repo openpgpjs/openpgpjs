@@ -28,7 +28,7 @@ import util from '../util';
  * @param  {Uint8Array}  message  message to pad
  * @returns {Uint8Array}  padded message
  */
-function encode(message) {
+export function encode(message) {
   const c = 8 - (message.length % 8);
   const padded = new Uint8Array(message.length + c).fill(c);
   padded.set(message);
@@ -40,7 +40,7 @@ function encode(message) {
  * @param  {Uint8Array}  message  message to remove padding from
  * @returns {Uint8Array} message without padding
  */
-function decode(message) {
+export function decode(message) {
   const len = message.length;
   if (len > 0) {
     const c = message[len - 1];
@@ -54,5 +54,3 @@ function decode(message) {
   }
   throw new Error('Invalid padding');
 }
-
-export default { encode, decode };

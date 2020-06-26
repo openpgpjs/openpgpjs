@@ -41,7 +41,7 @@ if (Buffer) {
  * @returns {String | ReadableStream<String>} radix-64 version of input string
  * @static
  */
-function encode(data) {
+export function encode(data) {
   let buf = new Uint8Array();
   return stream.transform(data, value => {
     buf = util.concatUint8Array([buf, value]);
@@ -65,7 +65,7 @@ function encode(data) {
  * @returns {Uint8Array | ReadableStream<Uint8Array>} binary array version of input string
  * @static
  */
-function decode(data) {
+export function decode(data) {
   let buf = '';
   return stream.transform(data, value => {
     buf += value;
@@ -92,5 +92,3 @@ function decode(data) {
     return decoded;
   }, () => decodeChunk(buf));
 }
-
-export default { encode, decode };

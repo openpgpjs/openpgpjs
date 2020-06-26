@@ -126,7 +126,6 @@ export default {
     plaintext: 0,
     /** Not implemented! */
     idea: 1,
-    '3des': 2,
     tripledes: 2,
     cast5: 3,
     blowfish: 4,

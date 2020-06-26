@@ -10,7 +10,11 @@
 
 import stream from 'web-stream-tools';
 import * as packets from './all_packets';
-import packetParser from './packet';
+import {
+  readPackets, supportsStreaming,
+  writeTag, writeHeader,
+  writePartialLength, writeSimpleLength
+} from './packet';
 import config from '../config';
 import enums from '../enums';
 import util from '../util';
@@ -33,7 +37,7 @@ class PacketList extends Array {
       try {
         while (true) {
           await writer.ready;
-          const done = await packetParser.read(readable, streaming, async parsed => {
+          const done = await readPackets(readable, streaming, async parsed => {
             try {
               const tag = enums.read(enums.packet, parsed.tag);
               const packet = packets.newPacketFromTag(tag, allowedPackets);
@@ -42,7 +46,7 @@ class PacketList extends Array {
               await packet.read(parsed.packet, streaming);
               await writer.write(packet);
             } catch (e) {
-              if (!config.tolerant || packetParser.supportsStreaming(parsed.tag)) {
+              if (!config.tolerant || supportsStreaming(parsed.tag)) {
                 // The packets that support streaming are the ones that contain
                 // message data. Those are also the ones we want to be more strict
                 // about and throw on parse errors for.
@@ -71,7 +75,7 @@ class PacketList extends Array {
       } else {
         this.stream = null;
       }
-      if (done || packetParser.supportsStreaming(value.tag)) {
+      if (done || supportsStreaming(value.tag)) {
         break;
       }
     }
@@ -88,31 +92,31 @@ class PacketList extends Array {
 
     for (let i = 0; i < this.length; i++) {
       const packetbytes = this[i].write();
-      if (util.isStream(packetbytes) && packetParser.supportsStreaming(this[i].tag)) {
+      if (util.isStream(packetbytes) && supportsStreaming(this[i].tag)) {
         let buffer = [];
         let bufferLength = 0;
         const minLength = 512;
-        arr.push(packetParser.writeTag(this[i].tag));
+        arr.push(writeTag(this[i].tag));
         arr.push(stream.transform(packetbytes, value => {
           buffer.push(value);
           bufferLength += value.length;
           if (bufferLength >= minLength) {
             const powerOf2 = Math.min(Math.log(bufferLength) / Math.LN2 | 0, 30);
             const chunkSize = 2 ** powerOf2;
-            const bufferConcat = util.concat([packetParser.writePartialLength(powerOf2)].concat(buffer));
+            const bufferConcat = util.concat([writePartialLength(powerOf2)].concat(buffer));
             buffer = [bufferConcat.subarray(1 + chunkSize)];
             bufferLength = buffer[0].length;
             return bufferConcat.subarray(0, 1 + chunkSize);
           }
-        }, () => util.concat([packetParser.writeSimpleLength(bufferLength)].concat(buffer))));
+        }, () => util.concat([writeSimpleLength(bufferLength)].concat(buffer))));
       } else {
         if (util.isStream(packetbytes)) {
           let length = 0;
           arr.push(stream.transform(stream.clone(packetbytes), value => {
             length += value.length;
-          }, () => packetParser.writeHeader(this[i].tag, length)));
+          }, () => writeHeader(this[i].tag, length)));
         } else {
-          arr.push(packetParser.writeHeader(this[i].tag, packetbytes.length));
+          arr.push(writeHeader(this[i].tag, packetbytes.length));
         }
         arr.push(packetbytes);
       }

@@ -25,13 +25,8 @@
  * @module crypto/pkcs1
  */
 
-import random from './random';
+import { getRandomBytes } from './random';
 import hash from './hash';
-
-/** @namespace */
-const eme = {};
-/** @namespace */
-const emsa = {};
 
 /**
  * ASN1 object identifiers for hashes
@@ -62,7 +57,7 @@ async function getPkcs1Padding(length) {
   const result = new Uint8Array(length);
   let count = 0;
   while (count < length) {
-    const randomBytes = await random.getRandomBytes(length - count);
+    const randomBytes = await getRandomBytes(length - count);
     for (let i = 0; i < randomBytes.length; i++) {
       if (randomBytes[i] !== 0) {
         result[count++] = randomBytes[i];
@@ -80,7 +75,7 @@ async function getPkcs1Padding(length) {
  * @returns {Promise<Uint8Array>} EME-PKCS1 padded message
  * @async
  */
-eme.encode = async function(message, keyLength) {
+export async function emeEncode(message, keyLength) {
   const mLength = message.length;
   // length checking
   if (mLength > keyLength - 11) {
@@ -98,7 +93,7 @@ eme.encode = async function(message, keyLength) {
   // 0x00 bytes
   encoded.set(message, keyLength - mLength);
   return encoded;
-};
+}
 
 /**
  * Decode a EME-PKCS1-v1_5 padded message
@@ -106,7 +101,7 @@ eme.encode = async function(message, keyLength) {
  * @param {Uint8Array} encoded encoded message bytes
  * @returns {Uint8Array} message
  */
-eme.decode = function(encoded) {
+export function emeDecode(encoded) {
   let i = 2;
   while (encoded[i] !== 0 && i < encoded.length) {
     i++;
@@ -117,7 +112,7 @@ eme.decode = function(encoded) {
     return encoded.subarray(i);
   }
   throw new Error('Decryption error');
-};
+}
 
 /**
  * Create a EMSA-PKCS1-v1_5 padded message
@@ -127,7 +122,7 @@ eme.decode = function(encoded) {
  * @param {Integer} emLen intended length in octets of the encoded message
  * @returns {Uint8Array} encoded message
  */
-emsa.encode = async function(algo, hashed, emLen) {
+export async function emsaEncode(algo, hashed, emLen) {
   let i;
   if (hashed.length !== hash.getHashByteLength(algo)) {
     throw new Error('Invalid hash length');
@@ -155,6 +150,4 @@ emsa.encode = async function(algo, hashed, emLen) {
   EM.set(hashPrefix, emLen - tLen);
   EM.set(hashed, emLen - hashed.length);
   return EM;
-};
-
-export default { eme, emsa };
+}
