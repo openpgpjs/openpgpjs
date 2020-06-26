@@ -28,7 +28,7 @@
  */
 
 import nacl from 'tweetnacl/nacl-fast-light.js';
-import random from '../../random';
+import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import OID from '../../../type/oid';
@@ -186,7 +186,7 @@ class Curve {
       case 'node':
         return nodeGenKeyPair(this.name);
       case 'curve25519': {
-        const privateKey = await random.getRandomBytes(32);
+        const privateKey = await getRandomBytes(32);
         privateKey[0] = (privateKey[0] & 127) | 64;
         privateKey[31] &= 248;
         const secretKey = privateKey.slice().reverse();
@@ -195,7 +195,7 @@ class Curve {
         return { publicKey, privateKey };
       }
       case 'ed25519': {
-        const privateKey = await random.getRandomBytes(32);
+        const privateKey = await getRandomBytes(32);
         const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
         const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
         return { publicKey, privateKey };
@@ -203,7 +203,7 @@ class Curve {
     }
     const indutnyCurve = await getIndutnyCurve(this.name);
     keyPair = await indutnyCurve.genKeyPair({
-      entropy: util.uint8ArrayToStr(await random.getRandomBytes(32))
+      entropy: util.uint8ArrayToStr(await getRandomBytes(32))
     });
     return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
   }
@@ -291,10 +291,8 @@ async function validateStandardParams(algo, oid, Q, d) {
   return true;
 }
 
-export default Curve;
-
 export {
-  curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams
+  Curve, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams
 };
 
 //////////////////////////

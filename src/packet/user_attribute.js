@@ -21,7 +21,7 @@
  * @requires util
  */
 
-import packet from './packet';
+import { readSimpleLength, writeSimpleLength } from './packet';
 import enums from '../enums';
 import util from '../util';
 
@@ -56,7 +56,7 @@ class UserAttributePacket {
   read(bytes) {
     let i = 0;
     while (i < bytes.length) {
-      const len = packet.readSimpleLength(bytes.subarray(i, bytes.length));
+      const len = readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
       this.attributes.push(util.uint8ArrayToStr(bytes.subarray(i, i + len.len)));
@@ -71,7 +71,7 @@ class UserAttributePacket {
   write() {
     const arr = [];
     for (let i = 0; i < this.attributes.length; i++) {
-      arr.push(packet.writeSimpleLength(this.attributes[i].length));
+      arr.push(writeSimpleLength(this.attributes[i].length));
       arr.push(util.strToUint8Array(this.attributes[i]));
     }
     return util.concatUint8Array(arr);

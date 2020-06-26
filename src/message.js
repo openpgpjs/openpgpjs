@@ -30,7 +30,7 @@
  */
 
 import stream from 'web-stream-tools';
-import armor from './encoding/armor';
+import { armor, unarmor } from './encoding/armor';
 import type_keyid from './type/keyid';
 import config from './config';
 import crypto from './crypto';
@@ -607,7 +607,7 @@ export class Message {
    * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
    */
   async appendSignature(detachedSignature) {
-    await this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : (await armor.decode(detachedSignature)).data, { SignaturePacket });
+    await this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : (await unarmor(detachedSignature)).data, { SignaturePacket });
   }
 
   /**
@@ -623,7 +623,7 @@ export class Message {
    * @returns {ReadableStream<String>} ASCII armor
    */
   armor() {
-    return armor.encode(enums.armor.message, this.write());
+    return armor(enums.armor.message, this.write());
   }
 
   /**
@@ -816,7 +816,7 @@ export async function readArmoredMessage(armoredText) {
   if (streamType === 'node') {
     armoredText = stream.nodeToWeb(armoredText);
   }
-  const input = await armor.decode(armoredText);
+  const input = await unarmor(armoredText);
   return readMessage(input.data, streamType);
 }
 
