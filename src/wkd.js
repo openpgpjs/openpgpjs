@@ -58,7 +58,7 @@ WKD.prototype.lookup = async function(options) {
   const localEncoded = util.encodeZBase32(await crypto.hash.sha1(util.str_to_Uint8Array(localPart.toLowerCase())));
 
   const urlAdvanced = `https://openpgpkey.${domain}/.well-known/openpgpkey/${domain}/hu/${localEncoded}`;
-  const urlBasic = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
+  const urlDirect = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
 
   return fetch(urlAdvanced).then(function(response) {
     if (response.status === 200) {
@@ -68,7 +68,7 @@ WKD.prototype.lookup = async function(options) {
     if (publicKey) {
       return publicKey;
     } else {
-      return fetch(urlBasic).then(function(response) {
+      return fetch(urlDirect).then(function(response) {
         if (response.status === 200) {
           return response.arrayBuffer();
         }
