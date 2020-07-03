@@ -106,7 +106,7 @@ eme.encode = async function(M, k) {
  * @returns {String} message, an octet string
  */
 eme.decode = function(EM) {
-  // leading zeros truncated by bn.js
+  // leading zeros truncated by BigInteger
   if (EM.charCodeAt(0) !== 0) {
     EM = String.fromCharCode(0) + EM;
   }

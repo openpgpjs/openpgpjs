@@ -80,10 +80,10 @@ export default {
       }
       case enums.publicKey.elgamal: {
         data = new type_mpi(await pkcs1.eme.encode(data, pub_params[0].byteLength()));
-        const m = data.toBN();
-        const p = pub_params[0].toBN();
-        const g = pub_params[1].toBN();
-        const y = pub_params[2].toBN();
+        const m = await data.toBigInteger();
+        const p = await pub_params[0].toBigInteger();
+        const g = await pub_params[1].toBigInteger();
+        const y = await pub_params[2].toBigInteger();
         const res = await publicKey.elgamal.encrypt(m, p, g, y);
         return constructParams(types, [res.c1, res.c2]);
       }
@@ -129,10 +129,10 @@ export default {
         return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
       }
       case enums.publicKey.elgamal: {
-        const c1 = data_params[0].toBN();
-        const c2 = data_params[1].toBN();
-        const p = key_params[0].toBN();
-        const x = key_params[3].toBN();
+        const c1 = await data_params[0].toBigInteger();
+        const c2 = await data_params[1].toBigInteger();
+        const p = await key_params[0].toBigInteger();
+        const x = await key_params[3].toBigInteger();
         const result = new type_mpi(await publicKey.elgamal.decrypt(c1, c2, p, x));
         return pkcs1.eme.decode(result.toString());
       }
