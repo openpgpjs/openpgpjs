@@ -233,7 +233,7 @@ SecretKey.prototype.write = function () {
   }
   arr.push(new Uint8Array(optionalFieldsArr));
 
-  if (!this.isGnuDummy()) {
+  if (!this.isDummy()) {
     if (!this.s2k_usage) {
       const cleartextParams = write_cleartext_params(this.params, this.algorithm);
       this.keyMaterial = util.concatUint8Array([
@@ -263,7 +263,7 @@ SecretKey.prototype.isDecrypted = function() {
  * Check whether this is a gnu-dummy key
  * @returns {Boolean}
  */
-SecretKey.prototype.isGnuDummy = function() {
+SecretKey.prototype.isDummy = function() {
   return !!(this.s2k && this.s2k.type === 'gnu-dummy');
 };
 
@@ -277,7 +277,7 @@ SecretKey.prototype.isGnuDummy = function() {
  * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
-  if (this.isGnuDummy()) {
+  if (this.isDummy()) {
     return false;
   }
 
@@ -332,7 +332,7 @@ async function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @async
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
-  if (this.isGnuDummy()) {
+  if (this.isDummy()) {
     this.isEncrypted = false;
     return false;
   }
@@ -390,12 +390,12 @@ SecretKey.prototype.generate = async function (bits, curve) {
 
 /**
  * Checks that the key parameters are consistent
- * @returns {Promise<Boolean>}  whether the parameters are valid
+ * @throws {Error} if validation was not successful
  * @async
  */
 SecretKey.prototype.validate = async function () {
-  if (this.isGnuDummy()) {
-    return true;
+  if (this.isDummy()) {
+    return;
   }
 
   if (!this.isDecrypted()) {
@@ -403,7 +403,10 @@ SecretKey.prototype.validate = async function () {
   }
 
   const algo = enums.write(enums.publicKey, this.algorithm);
-  return crypto.validateParams(algo, this.params);
+  const validParams = await crypto.validateParams(algo, this.params);
+  if (!validParams) {
+    throw new Error('Key is invalid');
+  }
 };
 
 /**

@@ -2712,14 +2712,20 @@ describe('Key', function() {
     expect(encryptExpirationTime).to.equal(Infinity);
   });
 
-  it("validate() - don't throw if key parameters correspond", async function() {
-    const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519' });
-    expect(await key.validate()).to.be.true;
-  });
-
-  it("validate() - throw if key parameters don't correspond", async function() {
+  it("decrypt() - throw if key parameters don't correspond", async function() {
     const { keys: [key] } = await openpgp.key.readArmored(mismatchingKeyParams);
     await expect(key.decrypt('userpass')).to.be.rejectedWith('Key is invalid');
+  });
+
+  it("decrypt(keyId) - throw if key parameters don't correspond", async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(mismatchingKeyParams);
+    const subKeyId = key.subKeys[0].getKeyId()
+    await expect(key.decrypt('userpass', subKeyId)).to.be.rejectedWith('Key is invalid');
+  });
+
+  it("validate() - don't throw if key parameters correspond", async function() {
+    const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519' });
+    expect(key.validate()).to.not.be.rejected;
   });
 
   it("validate() - throw if all-gnu-dummy key", async function() {
@@ -2729,17 +2735,17 @@ describe('Key', function() {
 
   it("validate() - gnu-dummy primary key with signing subkey", async function() {
     const { keys: [key] } = await openpgp.key.readArmored(gnuDummyKeySigningSubkey);
-    expect(await key.validate()).to.be.true;
+    expect(key.validate()).to.not.be.rejected;
   });
 
   it("validate() - gnu-dummy primary key with encryption subkey", async function() {
     const { keys: [key] } = await openpgp.key.readArmored(dsaGnuDummyKeyWithElGamalSubkey);
-    expect(await key.validate()).to.be.true;
+    expect(key.validate()).to.not.be.rejected;
   });
 
   it("validate() - curve ed25519 (eddsa) cannot be used for ecdsa", async function() {
     const { keys: [key] } = await openpgp.key.readArmored(eddsaKeyAsEcdsa);
-    expect(await key.validate()).to.be.false;
+    expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
@@ -2759,7 +2765,7 @@ describe('Key', function() {
     await expect(key.validate()).to.be.rejectedWith('Missing key parameters');
   });
 
-  it('clearPrivateParams() - check that private key parameters were zeroed out', async function() {
+  it('clearPrivateParams() - detect that private key parameters were zeroed out', async function() {
     const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
     const params = key.primaryKey.params.slice();
@@ -2768,7 +2774,7 @@ describe('Key', function() {
     key.primaryKey.params = params;
     const use_nativeVal = openpgp.config.use_native;
     openpgp.config.use_native = false;
-    expect(await key.validate()).to.be.false;
+    expect(key.validate()).to.be.rejectedWith('Key is invalid');
     openpgp.config.use_native = use_nativeVal;
   });
 

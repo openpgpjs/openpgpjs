@@ -261,9 +261,9 @@ async function validateStandardParams(algo, oid, Q, d) {
     // Re-derive public point Q'
     const { publicKey } = nacl.box.keyPair.fromSecretKey(d);
 
-    Q = new BN(Q);
-    const dG = new BN([0x40, ...publicKey]); // Add public key prefix
-    if (!dG.eq(Q)) {
+    Q = new Uint8Array(Q);
+    const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
+    if (!util.equalsUint8Array(dG, Q)) {
       return false;
     }
 

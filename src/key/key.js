@@ -406,6 +406,7 @@ Key.prototype.encrypt = async function(passphrases, keyId = null) {
  * @param  {String|Array<String>} passphrases
  * @param  {module:type/keyid} keyId
  * @returns {Promise<Boolean>} true if all matching key and subkey packets decrypted successfully
+ * @throws {Error} if any matching key or subkey packets did not decrypt successfully
  * @async
  */
 Key.prototype.decrypt = async function(passphrases, keyId = null) {
@@ -420,8 +421,9 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
     await Promise.all(passphrases.map(async function(passphrase) {
       try {
         await key.keyPacket.decrypt(passphrase);
-        // If we are decrypting a single key packet, we also validate it
-        decrypted = keyId ? await key.keyPacket.validate() : true;
+        // If we are decrypting a single key packet, we also validate it directly
+        keyId && await key.keyPacket.validate();
+        decrypted = true;
       } catch (e) {
         error = e;
       }
@@ -434,10 +436,7 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
 
   if (!keyId) {
     // The full key should be decrypted and we can validate it all
-    const valid = await this.validate();
-    if (!valid) {
-      throw new Error("Key is invalid");
-    }
+    await this.validate();
   }
 
   return results.every(result => result === true);
@@ -449,7 +448,7 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
  * In case of gnu-dummy primary key, it is enough to validate any signing subkeys
  *   otherwise all encryption subkeys are validated
  * If only gnu-dummy keys are found, we cannot properly validate so we throw an error
- * @returns {Promise<Boolean>} true if the primary key parameters correspond
+ * @throws {Error} if validation was not successful and the key cannot be trusted
  * @async
  */
 Key.prototype.validate = async function() {
@@ -458,7 +457,7 @@ Key.prototype.validate = async function() {
   }
 
   let signingKeyPacket;
-  if (!this.keyPacket.isGnuDummy()) {
+  if (!this.keyPacket.isDummy()) {
     signingKeyPacket = this.primaryKey;
   } else {
     /**
@@ -467,7 +466,7 @@ Key.prototype.validate = async function() {
      */
     const signingKey = await this.getSigningKey(null, null);
     // This could again be a dummy key
-    if (signingKey && !signingKey.keyPacket.isGnuDummy()) {
+    if (signingKey && !signingKey.keyPacket.isDummy()) {
       signingKeyPacket = signingKey.keyPacket;
     }
   }
@@ -475,21 +474,13 @@ Key.prototype.validate = async function() {
   if (signingKeyPacket) {
     return signingKeyPacket.validate();
   } else {
-    const results = await Promise.all(this.getKeys().map(async key => [
-      key.keyPacket.isGnuDummy(),
-      await key.keyPacket.validate()
-    ]));
-
-    let allDummies = true;
-    const allValid = results.every(([isDummy, isValid]) => {
-      allDummies &= isDummy;
-      return isValid;
-    });
-
+    const keys = this.getKeys();
+    const allDummies = keys.map(key => key.keyPacket.isDummy()).every(Boolean);
     if (allDummies) {
       throw new Error("Cannot validate an all-gnu-dummy key");
     }
-    return allValid;
+
+    return Promise.all(keys.map(async key => key.keyPacket.validate()));
   }
 };
 
