@@ -345,7 +345,7 @@ Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId
  * @param  {module:type/keyid} keyId, optional
  * @param  {Date}              date, optional
  * @param  {String}            userId, optional
- * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no encryption keys has been found
+ * @returns {Promise<Array<module:key.Key|module:key~SubKey>>} array of decryption keys
  * @async
  */
 Key.prototype.getDecryptionKeys = async function(keyId, date = new Date(), userId = {}) {
@@ -458,7 +458,9 @@ Key.prototype.validate = async function() {
   }
 
   let signingKeyPacket;
-  if (this.primaryKey.isGnuDummy()) {
+  if (!this.keyPacket.isGnuDummy()) {
+    signingKeyPacket = this.primaryKey;
+  } else {
     /**
      * It is enough to validate any signing keys
      * since its binding signatures are also checked
@@ -468,8 +470,6 @@ Key.prototype.validate = async function() {
     if (signingKey && !signingKey.keyPacket.isGnuDummy()) {
       signingKeyPacket = signingKey.keyPacket;
     }
-  } else {
-    signingKeyPacket = this.primaryKey;
   }
 
   if (signingKeyPacket) {

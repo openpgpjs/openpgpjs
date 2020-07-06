@@ -88,8 +88,8 @@ async function validateParams(oid, Q, k) {
    * and expect Q == Q'
    */
   const { publicKey } = nacl.sign.keyPair.fromSeed(k);
-  const dG = [0x40, ...publicKey]; // Add public key prefix
-  return util.equalsArray(Q, dG);
+  const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
+  return util.equalsUint8Array(Q, dG);
 }
 
 /**
