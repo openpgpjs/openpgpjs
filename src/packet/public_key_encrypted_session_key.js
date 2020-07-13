@@ -82,7 +82,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   }
 
   /**
-   * Create a string representation of a tag 1 packet
+   * Create a binary representation of a tag 1 packet
    *
    * @returns {Uint8Array} The Uint8Array representation
    */
