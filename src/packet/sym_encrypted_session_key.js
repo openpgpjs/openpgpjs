@@ -30,20 +30,17 @@ import enums from '../enums';
 import util from '../util';
 
 /**
- * Public-Key Encrypted Session Key Packets (Tag 1)
+ * Symmetric-Key Encrypted Session Key Packets (Tag 3)
  *
- * {@link https://tools.ietf.org/html/rfc4880#section-5.1|RFC4880 5.1}:
- * A Public-Key Encrypted Session Key packet holds the session key
- * used to encrypt a message. Zero or more Public-Key Encrypted Session Key
- * packets and/or Symmetric-Key Encrypted Session Key packets may precede a
- * Symmetrically Encrypted Data Packet, which holds an encrypted message. The
- * message is encrypted with the session key, and the session key is itself
- * encrypted and stored in the Encrypted Session Key packet(s). The
- * Symmetrically Encrypted Data Packet is preceded by one Public-Key Encrypted
- * Session Key packet for each OpenPGP key to which the message is encrypted.
- * The recipient of the message finds a session key that is encrypted to their
- * public key, decrypts the session key, and then uses the session key to
- * decrypt the message.
+ * {@link https://tools.ietf.org/html/rfc4880#section-5.3|RFC4880 5.3}:
+ * The Symmetric-Key Encrypted Session Key packet holds the
+ * symmetric-key encryption of a session key used to encrypt a message.
+ * Zero or more Public-Key Encrypted Session Key packets and/or
+ * Symmetric-Key Encrypted Session Key packets may precede a
+ * Symmetrically Encrypted Data packet that holds an encrypted message.
+ * The message is encrypted with a session key, and the session key is
+ * itself encrypted and stored in the Encrypted Session Key packet or
+ * the Symmetric-Key Encrypted Session Key packet.
  * @memberof module:packet
  */
 class SymEncryptedSessionKeyPacket {
@@ -62,12 +59,7 @@ class SymEncryptedSessionKeyPacket {
   /**
    * Parsing function for a symmetric encrypted session key packet (tag 3).
    *
-   * @param {Uint8Array} input Payload of a tag 1 packet
-   * @param {Integer} position Position to start reading from the input string
-   * @param {Integer} len
-   *            Length of the packet or the remaining length of
-   *            input at position
-   * @returns {SymEncryptedSessionKeyPacket} Object representation
+   * @param {Uint8Array} bytes Payload of a tag 3 packet
    */
   read(bytes) {
     let offset = 0;
@@ -105,6 +97,11 @@ class SymEncryptedSessionKeyPacket {
     }
   }
 
+  /**
+   * Create a binary representation of a tag 3 packet
+   *
+   * @returns {Uint8Array} The Uint8Array representation
+  */
   write() {
     const algo = this.encrypted === null ?
       this.sessionKeyAlgorithm :
