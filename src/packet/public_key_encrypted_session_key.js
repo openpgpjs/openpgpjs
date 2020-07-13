@@ -63,11 +63,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   /**
    * Parsing function for a publickey encrypted session key packet (tag 1).
    *
-   * @param {Uint8Array} input Payload of a tag 1 packet
-   * @param {Integer} position Position to start reading from the input string
-   * @param {Integer} len Length of the packet or the remaining length of
-   *            input at position
-   * @returns {PublicKeyEncryptedSessionKeyPacket} Object representation
+   * @param {Uint8Array} bytes Payload of a tag 1 packet
    */
   read(bytes) {
     this.version = bytes[0];
@@ -86,7 +82,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   }
 
   /**
-   * Create a string representation of a tag 1 packet
+   * Create a binary representation of a tag 1 packet
    *
    * @returns {Uint8Array} The Uint8Array representation
    */
