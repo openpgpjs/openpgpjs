@@ -51,19 +51,17 @@ export default {
         return publicKey.dsa.verify(hash_algo, r, s, hashed, g, p, q, y);
       }
       case enums.publicKey.ecdsa: {
-        const oid = pub_MPIs[0];
+        const { oid, Q } = publicKey.elliptic.ecdsa.parseParams(pub_MPIs);
         const signature = { r: msg_MPIs[0].toUint8Array(), s: msg_MPIs[1].toUint8Array() };
-        const Q = pub_MPIs[1].toUint8Array();
         return publicKey.elliptic.ecdsa.verify(oid, hash_algo, signature, data, Q, hashed);
       }
       case enums.publicKey.eddsa: {
-        const oid = pub_MPIs[0];
+        const { oid, Q } = publicKey.elliptic.eddsa.parseParams(pub_MPIs);
         // EdDSA signature params are expected in little-endian format
         const signature = {
           R: msg_MPIs[0].toUint8Array('le', 32),
           S: msg_MPIs[1].toUint8Array('le', 32)
         };
-        const Q = pub_MPIs[1].toUint8Array('be', 33);
         return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q, hashed);
       }
       default:
@@ -117,9 +115,7 @@ export default {
         throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
       }
       case enums.publicKey.ecdsa: {
-        const oid = key_params[0];
-        const Q = key_params[1].toUint8Array();
-        const d = key_params[2].toUint8Array();
+        const { oid, Q, d } = publicKey.elliptic.ecdsa.parseParams(key_params);
         const signature = await publicKey.elliptic.ecdsa.sign(oid, hash_algo, data, Q, d, hashed);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.r),
@@ -127,10 +123,8 @@ export default {
         ]);
       }
       case enums.publicKey.eddsa: {
-        const oid = key_params[0];
-        const Q = key_params[1].toUint8Array('be', 33);
-        const d = key_params[2].toUint8Array('be', 32);
-        const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, Q, d, hashed);
+        const { oid, Q, seed } = publicKey.elliptic.eddsa.parseParams(key_params);
+        const signature = await publicKey.elliptic.eddsa.sign(oid, hash_algo, data, Q, seed, hashed);
         return util.concatUint8Array([
           util.Uint8Array_to_MPI(signature.R),
           util.Uint8Array_to_MPI(signature.S)

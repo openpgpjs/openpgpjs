@@ -153,8 +153,8 @@ export default {
   },
 
   /** Returns the types comprising the private key of an algorithm
-   * @param {String} algo The public key algorithm
-   * @returns {Array<String>} The array of types
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @returns {Array<String>}         The array of types
    */
   getPrivKeyParamTypes: function(algo) {
     switch (algo) {
@@ -187,8 +187,8 @@ export default {
   },
 
   /** Returns the types comprising the public key of an algorithm
-   * @param {String} algo The public key algorithm
-   * @returns {Array<String>} The array of types
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @returns {Array<String>}         The array of types
    */
   getPubKeyParamTypes: function(algo) {
     switch (algo) {
@@ -230,8 +230,8 @@ export default {
   },
 
   /** Returns the types comprising the encrypted session key of an algorithm
-   * @param {String} algo The public key algorithm
-   * @returns {Array<String>} The array of types
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @returns {Array<String>}         The array of types
    */
   getEncSessionKeyParamTypes: function(algo) {
     switch (algo) {
@@ -257,10 +257,10 @@ export default {
   },
 
   /** Generate algorithm-specific key parameters
-   * @param {String}          algo The public key algorithm
-   * @param {Integer}         bits Bit length for RSA keys
-   * @param {module:type/oid} oid  Object identifier for ECC keys
-   * @returns {Array}              The array of parameters
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @param {Integer}                 bits Bit length for RSA keys
+   * @param {module:type/oid}         oid  Object identifier for ECC keys
+   * @returns {Array}                 The array of parameters
    * @async
    */
   generateParams: function(algo, bits, oid) {
@@ -292,6 +292,75 @@ export default {
             keyObject.d
           ]);
         });
+      default:
+        throw new Error('Invalid public key algorithm.');
+    }
+  },
+
+  /**
+   * Validate algorithm-specific key parameters
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @param {Array}                   params The array of parameters
+   * @returns {Promise<Boolean>       whether the parameters are valid
+   * @async
+   */
+  validateParams: async function(algo, params) {
+    switch (algo) {
+      case enums.publicKey.rsa_encrypt:
+      case enums.publicKey.rsa_encrypt_sign:
+      case enums.publicKey.rsa_sign: {
+        if (params.length < 6) {
+          throw new Error('Missing key parameters');
+        }
+        const n = params[0].toUint8Array();
+        const e = params[1].toUint8Array();
+        const d = params[2].toUint8Array();
+        const p = params[3].toUint8Array();
+        const q = params[4].toUint8Array();
+        const u = params[5].toUint8Array();
+        return publicKey.rsa.validateParams(n, e, d, p, q, u);
+      }
+      case enums.publicKey.dsa: {
+        if (params.length < 5) {
+          throw new Error('Missing key parameters');
+        }
+        const p = params[0].toUint8Array();
+        const q = params[1].toUint8Array();
+        const g = params[2].toUint8Array();
+        const y = params[3].toUint8Array();
+        const x = params[4].toUint8Array();
+        return publicKey.dsa.validateParams(p, q, g, y, x);
+      }
+      case enums.publicKey.elgamal: {
+        if (params.length < 4) {
+          throw new Error('Missing key parameters');
+        }
+        const p = params[0].toUint8Array();
+        const g = params[1].toUint8Array();
+        const y = params[2].toUint8Array();
+        const x = params[3].toUint8Array();
+        return publicKey.elgamal.validateParams(p, g, y, x);
+      }
+      case enums.publicKey.ecdsa:
+      case enums.publicKey.ecdh: {
+        const expectedLen = algo === enums.publicKey.ecdh ? 3 : 2;
+        if (params.length < expectedLen) {
+          throw new Error('Missing key parameters');
+        }
+
+        const algoModule = publicKey.elliptic[enums.read(enums.publicKey, algo)];
+        const { oid, Q, d } = algoModule.parseParams(params);
+        return algoModule.validateParams(oid, Q, d);
+      }
+      case enums.publicKey.eddsa: {
+        const expectedLen = 3;
+        if (params.length < expectedLen) {
+          throw new Error('Missing key parameters');
+        }
+
+        const { oid, Q, seed } = publicKey.elliptic.eddsa.parseParams(params);
+        return publicKey.elliptic.eddsa.validateParams(oid, Q, seed);
+      }
       default:
         throw new Error('Invalid public key algorithm.');
     }

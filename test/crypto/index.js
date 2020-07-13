@@ -10,4 +10,5 @@ describe('Crypto', function () {
   require('./eax.js');
   require('./ocb.js');
   require('./rsa.js');
+  require('./validate.js');
 });

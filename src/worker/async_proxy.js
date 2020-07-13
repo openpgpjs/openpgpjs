@@ -93,6 +93,7 @@ function AsyncProxy({ path = 'openpgp.worker.js', n = 1, workers = [], config } 
     worker.onmessage = handleMessage(workerId++);
     worker.onerror = e => {
       worker.loadedResolve(false);
+      // eslint-disable-next-line no-console
       console.error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
       return false;
     };

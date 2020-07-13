@@ -28,7 +28,9 @@
 import BN from 'bn.js';
 import enums from '../../../enums';
 import util from '../../../util';
-import Curve, { webCurves, privateToJwk, rawPublicToJwk } from './curves';
+import random from '../../random';
+import hash from '../../hash';
+import Curve, { webCurves, privateToJwk, rawPublicToJwk, validateStandardParams } from './curves';
 import { getIndutnyCurve, keyFromPrivate, keyFromPublic } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
@@ -57,7 +59,13 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
           // Need to await to make sure browser succeeds
           return await webSign(curve, hash_algo, message, keyPair);
         } catch (err) {
-          util.print_debug_error("Browser did not support signing: " + err.message);
+          // We do not fallback if the error is related to key integrity
+          // Unfortunaley Safari does not support p521 and throws a DataError when using it
+          // So we need to always fallback for that curve
+          if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+            throw err;
+          }
+          util.print_debug_error("Browser did not support verifying: " + err.message);
         }
         break;
       }
@@ -94,6 +102,12 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
           // Need to await to make sure browser succeeds
           return await webVerify(curve, hash_algo, signature, message, publicKey);
         } catch (err) {
+          // We do not fallback if the error is related to key integrity
+          // Unfortunaley Safari does not support p521 and throws a DataError when using it
+          // So we need to always fallback for that curve
+          if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+            throw err;
+          }
           util.print_debug_error("Browser did not support verifying: " + err.message);
         }
         break;
@@ -105,7 +119,66 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
   return ellipticVerify(curve, signature, digest, publicKey);
 }
 
-export default { sign, verify, ellipticVerify, ellipticSign };
+/**
+ * Validate EcDSA parameters
+ * @param {module:type/oid}    oid Elliptic curve object identifier
+ * @param {Uint8Array}         Q   EcDSA public point
+ * @param {Uint8Array}         d   EcDSA secret scalar
+ * @returns {Promise<Boolean>} whether params are valid
+ * @async
+ */
+async function validateParams(oid, Q, d) {
+  const curve = new Curve(oid);
+  // Reject curves x25519 and ed25519
+  if (curve.keyType !== enums.publicKey.ecdsa) {
+    return false;
+  }
+
+  // To speed up the validation, we try to use node- or webcrypto when available
+  // and sign + verify a random message
+  switch (curve.type) {
+    case 'web':
+    case 'node': {
+      const message = await random.getRandomBytes(8);
+      const hashAlgo = enums.hash.sha256;
+      const hashed = await hash.digest(hashAlgo, message);
+      try {
+        const signature = await sign(oid, hashAlgo, message, Q, d, hashed);
+        return await verify(oid, hashAlgo, signature, message, Q, hashed);
+      } catch (err) {
+        return false;
+      }
+    }
+    default:
+      return validateStandardParams(enums.publicKey.ecdsa, oid, Q, d);
+  }
+}
+
+/**
+ * Parses MPI params and returns them as byte arrays of fixed length
+ * @param {Array} params key parameters
+ * @returns {Object} parameters in the form
+ *  { oid, d: Uint8Array, Q: Uint8Array }
+ */
+function parseParams(params) {
+  if (params.length < 2 || params.length > 3) {
+    throw new Error('Unexpected number of parameters');
+  }
+
+  const oid = params[0];
+  const curve = new Curve(oid);
+  const parsedParams = { oid };
+  // The public point never has leading zeros, as it is prefixed by 0x40 or 0x04
+  parsedParams.Q = params[1].toUint8Array();
+  if (params.length === 3) {
+    parsedParams.d = params[2].toUint8Array('be', curve.payloadSize);
+  }
+
+  return parsedParams;
+}
+
+
+export default { sign, verify, ellipticVerify, ellipticSign, validateParams, parseParams };
 
 
 //////////////////////////
