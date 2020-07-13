@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.4 - 2020-04-22 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.5 - 2020-07-13 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -20665,7 +20665,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.4",
+  versionstring: "OpenPGP.js v4.10.5",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -22785,9 +22785,9 @@ exports.default = {
           data = new _mpi2.default(_pkcs4.default.encode(data));
           const oid = pub_params[0];
           const Q = pub_params[1].toUint8Array();
-          const kdf_params = pub_params[2];
+          const kdfParams = pub_params[2];
 
-          var _ref = await _public_key2.default.elliptic.ecdh.encrypt(oid, kdf_params.cipher, kdf_params.hash, data, Q, fingerprint);
+          var _ref = await _public_key2.default.elliptic.ecdh.encrypt(oid, kdfParams, data, Q, fingerprint);
 
           const V = _ref.publicKey,
                 C = _ref.wrappedKey;
@@ -22839,12 +22839,12 @@ exports.default = {
       case _enums2.default.publicKey.ecdh:
         {
           const oid = key_params[0];
-          const kdf_params = key_params[2];
+          const kdfParams = key_params[2];
           const V = data_params[0].toUint8Array();
           const C = data_params[1].data;
           const Q = key_params[1].toUint8Array();
           const d = key_params[3].toUint8Array();
-          const result = new _mpi2.default((await _public_key2.default.elliptic.ecdh.decrypt(oid, kdf_params.cipher, kdf_params.hash, V, C, Q, d, fingerprint)));
+          const result = new _mpi2.default((await _public_key2.default.elliptic.ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint)));
           return _pkcs4.default.decode(result.toString());
         }
       default:
@@ -22853,8 +22853,8 @@ exports.default = {
   },
 
   /** Returns the types comprising the private key of an algorithm
-   * @param {String} algo The public key algorithm
-   * @returns {Array<String>} The array of types
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @returns {Array<String>}         The array of types
    */
   getPrivKeyParamTypes: function getPrivKeyParamTypes(algo) {
     switch (algo) {
@@ -22887,8 +22887,8 @@ exports.default = {
   },
 
   /** Returns the types comprising the public key of an algorithm
-   * @param {String} algo The public key algorithm
-   * @returns {Array<String>} The array of types
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @returns {Array<String>}         The array of types
    */
   getPubKeyParamTypes: function getPubKeyParamTypes(algo) {
     switch (algo) {
@@ -22930,8 +22930,8 @@ exports.default = {
   },
 
   /** Returns the types comprising the encrypted session key of an algorithm
-   * @param {String} algo The public key algorithm
-   * @returns {Array<String>} The array of types
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @returns {Array<String>}         The array of types
    */
   getEncSessionKeyParamTypes: function getEncSessionKeyParamTypes(algo) {
     switch (algo) {
@@ -22957,10 +22957,10 @@ exports.default = {
   },
 
   /** Generate algorithm-specific key parameters
-   * @param {String}          algo The public key algorithm
-   * @param {Integer}         bits Bit length for RSA keys
-   * @param {module:type/oid} oid  Object identifier for ECC keys
-   * @returns {Array}              The array of parameters
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @param {Integer}                 bits Bit length for RSA keys
+   * @param {module:type/oid}         oid  Object identifier for ECC keys
+   * @returns {Array}                 The array of parameters
    * @async
    */
   generateParams: function generateParams(algo, bits, oid) {
@@ -22984,8 +22984,93 @@ exports.default = {
         });
       case _enums2.default.publicKey.ecdh:
         return _public_key2.default.elliptic.generate(oid).then(function (keyObject) {
-          return constructParams(types, [keyObject.oid, keyObject.Q, [keyObject.hash, keyObject.cipher], keyObject.d]);
+          return constructParams(types, [keyObject.oid, keyObject.Q, { hash: keyObject.hash, cipher: keyObject.cipher }, keyObject.d]);
         });
+      default:
+        throw new Error('Invalid public key algorithm.');
+    }
+  },
+
+  /**
+   * Validate algorithm-specific key parameters
+   * @param {module:enums.publicKey}  algo The public key algorithm
+   * @param {Array}                   params The array of parameters
+   * @returns {Promise<Boolean>       whether the parameters are valid
+   * @async
+   */
+  validateParams: async function validateParams(algo, params) {
+    switch (algo) {
+      case _enums2.default.publicKey.rsa_encrypt:
+      case _enums2.default.publicKey.rsa_encrypt_sign:
+      case _enums2.default.publicKey.rsa_sign:
+        {
+          if (params.length < 6) {
+            throw new Error('Missing key parameters');
+          }
+          const n = params[0].toUint8Array();
+          const e = params[1].toUint8Array();
+          const d = params[2].toUint8Array();
+          const p = params[3].toUint8Array();
+          const q = params[4].toUint8Array();
+          const u = params[5].toUint8Array();
+          return _public_key2.default.rsa.validateParams(n, e, d, p, q, u);
+        }
+      case _enums2.default.publicKey.dsa:
+        {
+          if (params.length < 5) {
+            throw new Error('Missing key parameters');
+          }
+          const p = params[0].toUint8Array();
+          const q = params[1].toUint8Array();
+          const g = params[2].toUint8Array();
+          const y = params[3].toUint8Array();
+          const x = params[4].toUint8Array();
+          return _public_key2.default.dsa.validateParams(p, q, g, y, x);
+        }
+      case _enums2.default.publicKey.elgamal:
+        {
+          if (params.length < 4) {
+            throw new Error('Missing key parameters');
+          }
+          const p = params[0].toUint8Array();
+          const g = params[1].toUint8Array();
+          const y = params[2].toUint8Array();
+          const x = params[3].toUint8Array();
+          return _public_key2.default.elgamal.validateParams(p, g, y, x);
+        }
+      case _enums2.default.publicKey.ecdsa:
+      case _enums2.default.publicKey.ecdh:
+        {
+          const expectedLen = algo === _enums2.default.publicKey.ecdh ? 3 : 2;
+          if (params.length < expectedLen) {
+            throw new Error('Missing key parameters');
+          }
+
+          const algoModule = _public_key2.default.elliptic[_enums2.default.read(_enums2.default.publicKey, algo)];
+
+          var _algoModule$parsePara = algoModule.parseParams(params);
+
+          const oid = _algoModule$parsePara.oid,
+                Q = _algoModule$parsePara.Q,
+                d = _algoModule$parsePara.d;
+
+          return algoModule.validateParams(oid, Q, d);
+        }
+      case _enums2.default.publicKey.eddsa:
+        {
+          const expectedLen = 3;
+          if (params.length < expectedLen) {
+            throw new Error('Missing key parameters');
+          }
+
+          var _publicKey$elliptic$e = _public_key2.default.elliptic.eddsa.parseParams(params);
+
+          const oid = _publicKey$elliptic$e.oid,
+                Q = _publicKey$elliptic$e.Q,
+                seed = _publicKey$elliptic$e.seed;
+
+          return _public_key2.default.elliptic.eddsa.validateParams(oid, Q, seed);
+        }
       default:
         throw new Error('Invalid public key algorithm.');
     }
@@ -24413,9 +24498,13 @@ var _util = require('../../util');
 
 var _util2 = _interopRequireDefault(_util);
 
+var _prime = require('./prime');
+
+var _prime2 = _interopRequireDefault(_prime);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-const one = new _bn2.default(1); // GPG4Browsers - An OpenPGP implementation in javascript
+// GPG4Browsers - An OpenPGP implementation in javascript
 // Copyright (C) 2011 Recurity Labs GmbH
 //
 // This library is free software; you can redistribute it and/or
@@ -24440,6 +24529,7 @@ const one = new _bn2.default(1); // GPG4Browsers - An OpenPGP implementation in 
  * @module crypto/public_key/dsa
  */
 
+const one = new _bn2.default(1);
 const zero = new _bn2.default(0);
 
 /*
@@ -24532,10 +24622,72 @@ exports.default = {
     const t2 = y.toRed(redp).redPow(u2.fromRed()); // y**u2 mod p
     const v = t1.redMul(t2).fromRed().mod(q); // (g**u1 * y**u2 mod p) mod q
     return v.cmp(r) === 0;
+  },
+
+  /**
+   * Validate DSA parameters
+   * @param {Uint8Array}         p DSA prime
+   * @param {Uint8Array}         q DSA group order
+   * @param {Uint8Array}         g DSA sub-group generator
+   * @param {Uint8Array}         y DSA public key
+   * @param {Uint8Array}         x DSA private key
+   * @returns {Promise<Boolean>} whether params are valid
+   * @async
+   */
+  validateParams: async function validateParams(p, q, g, y, x) {
+    p = new _bn2.default(p);
+    q = new _bn2.default(q);
+    g = new _bn2.default(g);
+    y = new _bn2.default(y);
+    const one = new _bn2.default(1);
+    // Check that 1 < g < p
+    if (g.lte(one) || g.gte(p)) {
+      return false;
+    }
+
+    /**
+     * Check that subgroup order q divides p-1
+     */
+    if (!p.sub(one).mod(q).isZero()) {
+      return false;
+    }
+
+    const pred = new _bn2.default.red(p);
+    const gModP = g.toRed(pred);
+    /**
+     * g has order q
+     * Check that g ** q = 1 mod p
+     */
+    if (!gModP.redPow(q).eq(one)) {
+      return false;
+    }
+
+    /**
+     * Check q is large and probably prime (we mainly want to avoid small factors)
+     */
+    const qSize = q.bitLength();
+    if (qSize < 150 || !(await _prime2.default.isProbablePrime(q, null, 32))) {
+      return false;
+    }
+
+    /**
+     * Re-derive public key y' = g ** x mod p
+     * Expect y == y'
+     *
+     * Blinded exponentiation computes g**{rq + x} to compare to y
+     */
+    x = new _bn2.default(x);
+    const r = await _random2.default.getRandomBN(new _bn2.default(2).shln(qSize - 1), new _bn2.default(2).shln(qSize)); // draw r of same size as q
+    const rqx = q.mul(r).add(x);
+    if (!y.eq(gModP.redPow(rqx))) {
+      return false;
+    }
+
+    return true;
   }
 };
 
-},{"../../util":136,"../random":87,"bn.js":16}],77:[function(require,module,exports){
+},{"../../util":136,"../random":87,"./prime":85,"bn.js":16}],77:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -24615,6 +24767,75 @@ exports.default = {
     const c1red = c1.toRed(redp);
     const c2red = c2.toRed(redp);
     return c1red.redPow(x).redInvm().redMul(c2red).fromRed();
+  },
+
+  /**
+   * Validate ElGamal parameters
+   * @param {Uint8Array}         p ElGamal prime
+   * @param {Uint8Array}         g ElGamal group generator
+   * @param {Uint8Array}         y ElGamal public key
+   * @param {Uint8Array}         x ElGamal private exponent
+   * @returns {Promise<Boolean>} whether params are valid
+   * @async
+   */
+  validateParams: async function validateParams(p, g, y, x) {
+    p = new _bn2.default(p);
+    g = new _bn2.default(g);
+    y = new _bn2.default(y);
+
+    const one = new _bn2.default(1);
+    // Check that 1 < g < p
+    if (g.lte(one) || g.gte(p)) {
+      return false;
+    }
+
+    // Expect p-1 to be large
+    const pSize = p.subn(1).bitLength();
+    if (pSize < 1023) {
+      return false;
+    }
+
+    const pred = new _bn2.default.red(p);
+    const gModP = g.toRed(pred);
+    /**
+     * g should have order p-1
+     * Check that g ** (p-1) = 1 mod p
+     */
+    if (!gModP.redPow(p.subn(1)).eq(one)) {
+      return false;
+    }
+
+    /**
+     * Since p-1 is not prime, g might have a smaller order that divides p-1
+     * We want to make sure that the order is large enough to hinder a small subgroup attack
+     *
+     * We just check g**i != 1 for all i up to a threshold
+     */
+    let res = g;
+    const i = new _bn2.default(1);
+    const threshold = new _bn2.default(2).shln(17); // we want order > threshold
+    while (i.lt(threshold)) {
+      res = res.mul(g).mod(p);
+      if (res.eqn(1)) {
+        return false;
+      }
+      i.iaddn(1);
+    }
+
+    /**
+     * Re-derive public key y' = g ** x mod p
+     * Expect y == y'
+     *
+     * Blinded exponentiation computes g**{r(p-1) + x} to compare to y
+     */
+    x = new _bn2.default(x);
+    const r = await _random2.default.getRandomBN(new _bn2.default(2).shln(pSize - 1), new _bn2.default(2).shln(pSize)); // draw r of same size as p-1
+    const rqx = p.subn(1).mul(r).add(x);
+    if (!y.eq(gModP.redPow(rqx))) {
+      return false;
+    }
+
+    return true;
   }
 };
 
@@ -24624,7 +24845,7 @@ exports.default = {
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.privateToJwk = exports.rawPublicToJwk = exports.jwkToRawPublic = exports.getPreferredHashAlgo = exports.generate = exports.nodeCurves = exports.webCurves = exports.curves = undefined;
+exports.validateStandardParams = exports.privateToJwk = exports.rawPublicToJwk = exports.jwkToRawPublic = exports.getPreferredHashAlgo = exports.generate = exports.nodeCurves = exports.webCurves = exports.curves = undefined;
 
 var _bn = require('bn.js');
 
@@ -24752,7 +24973,7 @@ const curves = {
   },
   curve25519: {
     oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
-    keyType: _enums2.default.publicKey.ecdsa,
+    keyType: _enums2.default.publicKey.ecdh,
     hash: _enums2.default.hash.sha256,
     cipher: _enums2.default.symmetric.aes128,
     node: false, // nodeCurves.curve25519 TODO
@@ -24876,6 +25097,73 @@ function getPreferredHashAlgo(oid) {
   return curves[_enums2.default.write(_enums2.default.curve, oid.toHex())].hash;
 }
 
+/**
+ * Validate ECDH and EcDSA parameters
+ * Not suitable for EdDSA (different secret key format)
+ * @param {module:enums.publicKey}  algo EC algorithm, to filter supported curves
+ * @param {module:type/oid}         oid  EC object identifier
+ * @param {Uint8Array}              Q    EC public point
+ * @param {Uint8Array}              d    EC secret scalar
+ * @returns {Promise<Boolean>}      whether params are valid
+ * @async
+ */
+async function validateStandardParams(algo, oid, Q, d) {
+  const supportedCurves = {
+    p256: true,
+    p384: true,
+    p521: true,
+    secp256k1: true,
+    curve25519: algo === _enums2.default.publicKey.ecdh,
+    brainpoolP256r1: true,
+    brainpoolP384r1: true,
+    brainpoolP512r1: true
+  };
+
+  // Check whether the given curve is supported
+  const curveName = oid.getName();
+  if (!supportedCurves[curveName]) {
+    return false;
+  }
+
+  if (curveName === 'curve25519') {
+    d = d.slice().reverse();
+    // Re-derive public point Q'
+
+    var _nacl$box$keyPair$fro = _naclFastLight2.default.box.keyPair.fromSecretKey(d);
+
+    const publicKey = _nacl$box$keyPair$fro.publicKey;
+
+
+    Q = new Uint8Array(Q);
+    const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
+    if (!_util2.default.equalsUint8Array(dG, Q)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  const curve = await (0, _indutnyKey.getIndutnyCurve)(curveName);
+  try {
+    // Parse Q and check that it is on the curve but not at infinity
+    Q = (0, _indutnyKey.keyFromPublic)(curve, Q).getPublic();
+  } catch (validationErrors) {
+    return false;
+  }
+
+  /**
+   * Re-derive public point Q' = dG from private key
+   * Expect Q == Q'
+   */
+  d = new _bn2.default(d);
+  const dG = (0, _indutnyKey.keyFromPrivate)(curve, d).getPublic();
+  if (!dG.eq(Q)) {
+    return false;
+  }
+
+  return true;
+}
+
 exports.default = Curve;
 exports.curves = curves;
 exports.webCurves = webCurves;
@@ -24885,6 +25173,7 @@ exports.getPreferredHashAlgo = getPreferredHashAlgo;
 exports.jwkToRawPublic = jwkToRawPublic;
 exports.rawPublicToJwk = rawPublicToJwk;
 exports.privateToJwk = privateToJwk;
+exports.validateStandardParams = validateStandardParams;
 
 //////////////////////////
 //                      //
@@ -25040,10 +25329,6 @@ var _hash = require('../../hash');
 
 var _hash2 = _interopRequireDefault(_hash);
 
-var _kdf_params = require('../../../type/kdf_params');
-
-var _kdf_params2 = _interopRequireDefault(_kdf_params);
-
 var _enums = require('../../../enums');
 
 var _enums2 = _interopRequireDefault(_enums);
@@ -25059,10 +25344,46 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const webCrypto = _util2.default.getWebCrypto();
 const nodeCrypto = _util2.default.getNodeCrypto();
 
+/**
+ * Validate ECDH parameters
+ * @param {module:type/oid}    oid Elliptic curve object identifier
+ * @param {Uint8Array}         Q   ECDH public point
+ * @param {Uint8Array}         d   ECDH secret scalar
+ * @returns {Promise<Boolean>} whether params are valid
+ * @async
+ */
+async function validateParams(oid, Q, d) {
+  return (0, _curves.validateStandardParams)(_enums2.default.publicKey.ecdh, oid, Q, d);
+}
+
 // Build Param for ECDH algorithm (RFC 6637)
-function buildEcdhParam(public_algo, oid, cipher_algo, hash_algo, fingerprint) {
-  const kdf_params = new _kdf_params2.default([hash_algo, cipher_algo]);
-  return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdf_params.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
+function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
+  return _util2.default.concatUint8Array([oid.write(), new Uint8Array([public_algo]), kdfParams.write(), _util2.default.str_to_Uint8Array("Anonymous Sender    "), fingerprint.subarray(0, 20)]);
+}
+
+/**
+ * Parses MPI params and returns them as byte arrays of fixed length
+ * @param {Array} params key parameters
+ * @returns {Object} parameters in the form
+ *  { oid, kdfParams, d: Uint8Array, Q: Uint8Array }
+ */
+function parseParams(params) {
+  if (params.length < 3 || params.length > 4) {
+    throw new Error('Unexpected number of parameters');
+  }
+
+  const oid = params[0];
+  const curve = new _curves2.default(oid);
+  const parsedParams = { oid };
+  // The public point never has leading zeros, as it is prefixed by 0x40 or 0x04
+  parsedParams.Q = params[1].toUint8Array();
+  parsedParams.kdfParams = params[2];
+
+  if (params.length === 4) {
+    parsedParams.d = params[3].toUint8Array('be', curve.payloadSize);
+  }
+
+  return parsedParams;
 }
 
 // Key Derivation Function (RFC 6637)
@@ -25130,15 +25451,14 @@ async function genPublicEphemeralKey(curve, Q) {
  * Encrypt and wrap a session key
  *
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
  * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
  * @param  {Uint8Array}             Q            Recipient public key
- * @param  {String}                 fingerprint  Recipient fingerprint
+ * @param  {Uint8Array}             fingerprint  Recipient fingerprint
  * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
-async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
+async function encrypt(oid, kdfParams, m, Q, fingerprint) {
   const curve = new _curves2.default(oid);
 
   var _ref2 = await genPublicEphemeralKey(curve, Q);
@@ -25146,9 +25466,9 @@ async function encrypt(oid, cipher_algo, hash_algo, m, Q, fingerprint) {
   const publicKey = _ref2.publicKey,
         sharedKey = _ref2.sharedKey;
 
-  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
-  const Z = await kdf(hash_algo, sharedKey, _cipher2.default[cipher_algo].keySize, param);
+  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, kdfParams, fingerprint);
+  const cipher_algo = _enums2.default.read(_enums2.default.symmetric, kdfParams.cipher);
+  const Z = await kdf(kdfParams.hash, sharedKey, _cipher2.default[cipher_algo].keySize, param);
   const wrappedKey = _aes_kw2.default.wrap(Z, m.toString());
   return { publicKey, wrappedKey };
 }
@@ -25195,30 +25515,29 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * Decrypt and unwrap the value derived from session key
  *
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:enums.symmetric} cipher_algo  Symmetric cipher to use
- * @param  {module:enums.hash}      hash_algo    Hash algorithm to use
+ * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
  * @param  {Uint8Array}             V            Public part of ephemeral key
  * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
- * @param  {String}                 fingerprint  Recipient fingerprint
+ * @param  {Uint8Array}             fingerprint  Recipient fingerprint
  * @returns {Promise<BN>}                        Value derived from session key
  * @async
  */
-async function decrypt(oid, cipher_algo, hash_algo, V, C, Q, d, fingerprint) {
+async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   const curve = new _curves2.default(oid);
 
   var _ref3 = await genPrivateEphemeralKey(curve, V, Q, d);
 
   const sharedKey = _ref3.sharedKey;
 
-  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, cipher_algo, hash_algo, fingerprint);
-  cipher_algo = _enums2.default.read(_enums2.default.symmetric, cipher_algo);
+  const param = buildEcdhParam(_enums2.default.publicKey.ecdh, oid, kdfParams, fingerprint);
+  const cipher_algo = _enums2.default.read(_enums2.default.symmetric, kdfParams.cipher);
   let err;
   for (let i = 0; i < 3; i++) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
-      const Z = await kdf(hash_algo, sharedKey, _cipher2.default[cipher_algo].keySize, param, i === 1, i === 2);
+      const Z = await kdf(kdfParams.hash, sharedKey, _cipher2.default[cipher_algo].keySize, param, i === 1, i === 2);
       return new _bn2.default(_aes_kw2.default.unwrap(Z, C));
     } catch (e) {
       err = e;
@@ -25393,9 +25712,9 @@ async function nodePublicEphemeralKey(curve, Q) {
   return { publicKey, sharedKey };
 }
 
-exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey };
+exports.default = { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey, validateParams, parseParams };
 
-},{"../../../enums":91,"../../../type/kdf_params":131,"../../../util":136,"../../aes_kw":58,"../../cipher":64,"../../hash":70,"../../random":87,"./curves":78,"./indutnyKey":83,"bn.js":16,"tweetnacl/nacl-fast-light.js":50}],80:[function(require,module,exports){
+},{"../../../enums":91,"../../../util":136,"../../aes_kw":58,"../../cipher":64,"../../hash":70,"../../random":87,"./curves":78,"./indutnyKey":83,"bn.js":16,"tweetnacl/nacl-fast-light.js":50}],80:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25413,6 +25732,14 @@ var _enums2 = _interopRequireDefault(_enums);
 var _util = require('../../../util');
 
 var _util2 = _interopRequireDefault(_util);
+
+var _random = require('../../random');
+
+var _random2 = _interopRequireDefault(_random);
+
+var _hash = require('../../hash');
+
+var _hash2 = _interopRequireDefault(_hash);
 
 var _curves = require('./curves');
 
@@ -25475,7 +25802,13 @@ async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
             // Need to await to make sure browser succeeds
             return await webSign(curve, hash_algo, message, keyPair);
           } catch (err) {
-            _util2.default.print_debug_error("Browser did not support signing: " + err.message);
+            // We do not fallback if the error is related to key integrity
+            // Unfortunaley Safari does not support p521 and throws a DataError when using it
+            // So we need to always fallback for that curve
+            if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+              throw err;
+            }
+            _util2.default.print_debug_error("Browser did not support verifying: " + err.message);
           }
           break;
         }
@@ -25513,6 +25846,12 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
           // Need to await to make sure browser succeeds
           return await webVerify(curve, hash_algo, signature, message, publicKey);
         } catch (err) {
+          // We do not fallback if the error is related to key integrity
+          // Unfortunaley Safari does not support p521 and throws a DataError when using it
+          // So we need to always fallback for that curve
+          if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+            throw err;
+          }
           _util2.default.print_debug_error("Browser did not support verifying: " + err.message);
         }
         break;
@@ -25524,7 +25863,66 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
   return ellipticVerify(curve, signature, digest, publicKey);
 }
 
-exports.default = { sign, verify, ellipticVerify, ellipticSign };
+/**
+ * Validate EcDSA parameters
+ * @param {module:type/oid}    oid Elliptic curve object identifier
+ * @param {Uint8Array}         Q   EcDSA public point
+ * @param {Uint8Array}         d   EcDSA secret scalar
+ * @returns {Promise<Boolean>} whether params are valid
+ * @async
+ */
+async function validateParams(oid, Q, d) {
+  const curve = new _curves2.default(oid);
+  // Reject curves x25519 and ed25519
+  if (curve.keyType !== _enums2.default.publicKey.ecdsa) {
+    return false;
+  }
+
+  // To speed up the validation, we try to use node- or webcrypto when available
+  // and sign + verify a random message
+  switch (curve.type) {
+    case 'web':
+    case 'node':
+      {
+        const message = await _random2.default.getRandomBytes(8);
+        const hashAlgo = _enums2.default.hash.sha256;
+        const hashed = await _hash2.default.digest(hashAlgo, message);
+        try {
+          const signature = await sign(oid, hashAlgo, message, Q, d, hashed);
+          return await verify(oid, hashAlgo, signature, message, Q, hashed);
+        } catch (err) {
+          return false;
+        }
+      }
+    default:
+      return (0, _curves.validateStandardParams)(_enums2.default.publicKey.ecdsa, oid, Q, d);
+  }
+}
+
+/**
+ * Parses MPI params and returns them as byte arrays of fixed length
+ * @param {Array} params key parameters
+ * @returns {Object} parameters in the form
+ *  { oid, d: Uint8Array, Q: Uint8Array }
+ */
+function parseParams(params) {
+  if (params.length < 2 || params.length > 3) {
+    throw new Error('Unexpected number of parameters');
+  }
+
+  const oid = params[0];
+  const curve = new _curves2.default(oid);
+  const parsedParams = { oid };
+  // The public point never has leading zeros, as it is prefixed by 0x40 or 0x04
+  parsedParams.Q = params[1].toUint8Array();
+  if (params.length === 3) {
+    parsedParams.d = params[2].toUint8Array('be', curve.payloadSize);
+  }
+
+  return parsedParams;
+}
+
+exports.default = { sign, verify, ellipticVerify, ellipticSign, validateParams, parseParams };
 
 //////////////////////////
 //                      //
@@ -25650,7 +26048,7 @@ const SubjectPublicKeyInfo = nodeCrypto ? asn1.define('SubjectPublicKeyInfo', fu
   this.seq().obj(this.key('algorithm').use(AlgorithmIdentifier), this.key('subjectPublicKey').bitstr());
 }) : undefined;
 
-},{"../../../enums":91,"../../../util":136,"./curves":78,"./indutnyKey":83,"asn1.js":"asn1.js","bn.js":16}],81:[function(require,module,exports){
+},{"../../../enums":91,"../../../util":136,"../../hash":70,"../../random":87,"./curves":78,"./indutnyKey":83,"asn1.js":"asn1.js","bn.js":16}],81:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -25738,7 +26136,57 @@ async function verify(oid, hash_algo, { R, S }, m, publicKey, hashed) {
   return _naclFastLight2.default.sign.detached.verify(hashed, signature, publicKey.subarray(1));
 }
 
-exports.default = { sign, verify };
+/**
+ * Validate EdDSA parameters
+ * @param {module:type/oid}    oid Elliptic curve object identifier
+ * @param {Uint8Array}         Q   EdDSA public point
+ * @param {Uint8Array}         k   EdDSA secret seed
+ * @returns {Promise<Boolean>} whether params are valid
+ * @async
+ */
+async function validateParams(oid, Q, k) {
+  // Check whether the given curve is supported
+  if (oid.getName() !== 'ed25519') {
+    return false;
+  }
+
+  /**
+   * Derive public point Q' = dG from private key
+   * and expect Q == Q'
+   */
+
+  var _nacl$sign$keyPair$fr = _naclFastLight2.default.sign.keyPair.fromSeed(k);
+
+  const publicKey = _nacl$sign$keyPair$fr.publicKey;
+
+  const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
+  return _util2.default.equalsUint8Array(Q, dG);
+}
+
+/**
+ * Parses MPI params and returns them as byte arrays of fixed length
+ * @param {Array} params key parameters
+ * @returns {Object} parameters in the form
+ *  { oid, seed: Uint8Array, Q: Uint8Array }
+ */
+function parseParams(params) {
+  if (params.length < 2 || params.length > 3) {
+    throw new Error('Unexpected number of parameters');
+  }
+
+  const parsedParams = {
+    oid: params[0],
+    Q: params[1].toUint8Array('be', 33)
+  };
+
+  if (params.length === 3) {
+    parsedParams.seed = params[2].toUint8Array('be', 32);
+  }
+
+  return parsedParams;
+}
+
+exports.default = { sign, verify, validateParams, parseParams };
 
 },{"../../../util":136,"hash.js/lib/hash/sha/512":23,"tweetnacl/nacl-fast-light.js":50}],82:[function(require,module,exports){
 'use strict';
@@ -26485,6 +26933,55 @@ exports.default = {
     };
   },
 
+  /**
+   * Validate RSA parameters
+   * @param {Uint8Array}         n RSA public modulus
+   * @param {Uint8Array}         e RSA public exponent
+   * @param {Uint8Array}         d RSA private exponent
+   * @param {Uint8Array}         p RSA private prime p
+   * @param {Uint8Array}         q RSA private prime q
+   * @param {Uint8Array}         u RSA inverse of p w.r.t. q
+   * @returns {Promise<Boolean>} whether params are valid
+   * @async
+   */
+  validateParams: async function validateParams(n, e, d, p, q, u) {
+    n = new _bn2.default(n);
+    p = new _bn2.default(p);
+    q = new _bn2.default(q);
+
+    // expect pq = n
+    if (!p.mul(q).eq(n)) {
+      return false;
+    }
+
+    const one = new _bn2.default(1);
+    const two = new _bn2.default(2);
+    // expect p*u = 1 mod q
+    u = new _bn2.default(u);
+    if (!p.mul(u).umod(q).eq(one)) {
+      return false;
+    }
+
+    e = new _bn2.default(e);
+    d = new _bn2.default(d);
+    /**
+     * In RSA pkcs#1 the exponents (d, e) are inverses modulo lcm(p-1, q-1)
+     * We check that [de = 1 mod (p-1)] and [de = 1 mod (q-1)]
+     * By CRT on coprime factors of (p-1, q-1) it follows that [de = 1 mod lcm(p-1, q-1)]
+     *
+     * We blind the multiplication with r, and check that rde = r mod lcm(p-1, q-1)
+     */
+    const r = await _random2.default.getRandomBN(two, two.shln(n.bitLength() / 3)); // r in [ 2, 2^{|n|/3} ) < p and q
+    const rde = r.mul(d).mul(e);
+
+    const areInverses = rde.umod(p.sub(one)).eq(r) && rde.umod(q.sub(one)).eq(r);
+    if (!areInverses) {
+      return false;
+    }
+
+    return true;
+  },
+
   bnSign: async function bnSign(hash_algo, n, d, hashed) {
     n = new _bn2.default(n);
     const m = new _bn2.default((await _pkcs2.default.emsa.encode(hash_algo, hashed, n.byteLength())), 16);
@@ -26989,20 +27486,26 @@ exports.default = {
         }
       case _enums2.default.publicKey.ecdsa:
         {
-          const oid = pub_MPIs[0];
+          var _publicKey$elliptic$e = _public_key2.default.elliptic.ecdsa.parseParams(pub_MPIs);
+
+          const oid = _publicKey$elliptic$e.oid,
+                Q = _publicKey$elliptic$e.Q;
+
           const signature = { r: msg_MPIs[0].toUint8Array(), s: msg_MPIs[1].toUint8Array() };
-          const Q = pub_MPIs[1].toUint8Array();
           return _public_key2.default.elliptic.ecdsa.verify(oid, hash_algo, signature, data, Q, hashed);
         }
       case _enums2.default.publicKey.eddsa:
         {
-          const oid = pub_MPIs[0];
+          var _publicKey$elliptic$e2 = _public_key2.default.elliptic.eddsa.parseParams(pub_MPIs);
+
+          const oid = _publicKey$elliptic$e2.oid,
+                Q = _publicKey$elliptic$e2.Q;
           // EdDSA signature params are expected in little-endian format
+
           const signature = {
             R: msg_MPIs[0].toUint8Array('le', 32),
             S: msg_MPIs[1].toUint8Array('le', 32)
           };
-          const Q = pub_MPIs[1].toUint8Array('be', 33);
           return _public_key2.default.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q, hashed);
         }
       default:
@@ -27057,18 +27560,24 @@ exports.default = {
         }
       case _enums2.default.publicKey.ecdsa:
         {
-          const oid = key_params[0];
-          const Q = key_params[1].toUint8Array();
-          const d = key_params[2].toUint8Array();
+          var _publicKey$elliptic$e3 = _public_key2.default.elliptic.ecdsa.parseParams(key_params);
+
+          const oid = _publicKey$elliptic$e3.oid,
+                Q = _publicKey$elliptic$e3.Q,
+                d = _publicKey$elliptic$e3.d;
+
           const signature = await _public_key2.default.elliptic.ecdsa.sign(oid, hash_algo, data, Q, d, hashed);
           return _util2.default.concatUint8Array([_util2.default.Uint8Array_to_MPI(signature.r), _util2.default.Uint8Array_to_MPI(signature.s)]);
         }
       case _enums2.default.publicKey.eddsa:
         {
-          const oid = key_params[0];
-          const Q = key_params[1].toUint8Array('be', 33);
-          const d = key_params[2].toUint8Array('be', 32);
-          const signature = await _public_key2.default.elliptic.eddsa.sign(oid, hash_algo, data, Q, d, hashed);
+          var _publicKey$elliptic$e4 = _public_key2.default.elliptic.eddsa.parseParams(key_params);
+
+          const oid = _publicKey$elliptic$e4.oid,
+                Q = _publicKey$elliptic$e4.Q,
+                seed = _publicKey$elliptic$e4.seed;
+
+          const signature = await _public_key2.default.elliptic.eddsa.sign(oid, hash_algo, data, Q, seed, hashed);
           return _util2.default.concatUint8Array([_util2.default.Uint8Array_to_MPI(signature.R), _util2.default.Uint8Array_to_MPI(signature.S)]);
         }
       default:
@@ -29679,6 +30188,41 @@ Key.prototype.getEncryptionKey = async function (keyId, date = new Date(), userI
 };
 
 /**
+ * Returns all keys that are available for decryption, matching the keyId when given
+ * This is useful to retrieve keys for session key decryption
+ * @param  {module:type/keyid} keyId, optional
+ * @param  {Date}              date, optional
+ * @param  {String}            userId, optional
+ * @returns {Promise<Array<module:key.Key|module:key~SubKey>>} array of decryption keys
+ * @async
+ */
+Key.prototype.getDecryptionKeys = async function (keyId, date = new Date(), userId = {}) {
+  await this.verifyPrimaryKey(date, userId);
+  const primaryKey = this.keyPacket;
+  const keys = [];
+  for (let i = 0; i < this.subKeys.length; i++) {
+    if (!keyId || this.subKeys[i].getKeyId().equals(keyId, true)) {
+      try {
+        await this.subKeys[i].verify(primaryKey, date);
+        const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
+        const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, _enums2.default.signature.subkey_binding, dataToVerify, date);
+        if (bindingSignature && helper.isValidEncryptionKeyPacket(this.subKeys[i].keyPacket, bindingSignature)) {
+          keys.push(this.subKeys[i]);
+        }
+      } catch (e) {}
+    }
+  }
+
+  // evaluate primary key
+  const primaryUser = await this.getPrimaryUser(date, userId);
+  if ((!keyId || primaryKey.getKeyId().equals(keyId, true)) && helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+    keys.push(this);
+  }
+
+  return keys;
+};
+
+/**
  * Encrypts all secret key and subkey packets matching keyId
  * @param  {String|Array<String>} passphrases - if multiple passphrases, then should be in same order as packets each should encrypt
  * @param  {module:type/keyid} keyId
@@ -29710,6 +30254,7 @@ Key.prototype.encrypt = async function (passphrases, keyId = null) {
  * @param  {String|Array<String>} passphrases
  * @param  {module:type/keyid} keyId
  * @returns {Promise<Boolean>} true if all matching key and subkey packets decrypted successfully
+ * @throws {Error} if any matching key or subkey packets did not decrypt successfully
  * @async
  */
 Key.prototype.decrypt = async function (passphrases, keyId = null) {
@@ -29724,6 +30269,8 @@ Key.prototype.decrypt = async function (passphrases, keyId = null) {
     await Promise.all(passphrases.map(async function (passphrase) {
       try {
         await key.keyPacket.decrypt(passphrase);
+        // If we are decrypting a single key packet, we also validate it directly
+        if (keyId) await key.keyPacket.validate();
         decrypted = true;
       } catch (e) {
         error = e;
@@ -29734,31 +30281,55 @@ Key.prototype.decrypt = async function (passphrases, keyId = null) {
     }
     return decrypted;
   }));
+
+  if (!keyId) {
+    // The full key should be decrypted and we can validate it all
+    await this.validate();
+  }
+
   return results.every(result => result === true);
 };
 
 /**
- * Check whether the private and public key parameters of the primary key match
- * @returns {Promise<Boolean>} true if the primary key parameters correspond
+ * Check whether the private and public primary key parameters correspond
+ * Together with verification of binding signatures, this guarantees key integrity
+ * In case of gnu-dummy primary key, it is enough to validate any signing subkeys
+ *   otherwise all encryption subkeys are validated
+ * If only gnu-dummy keys are found, we cannot properly validate so we throw an error
+ * @throws {Error} if validation was not successful and the key cannot be trusted
  * @async
  */
 Key.prototype.validate = async function () {
   if (!this.isPrivate()) {
-    throw new Error("Can't validate a public key");
+    throw new Error("Cannot validate a public key");
   }
-  const signingKeyPacket = this.primaryKey;
-  if (!signingKeyPacket.isDecrypted()) {
-    throw new Error("Key is not decrypted");
+
+  let signingKeyPacket;
+  if (!this.keyPacket.isDummy()) {
+    signingKeyPacket = this.primaryKey;
+  } else {
+    /**
+     * It is enough to validate any signing keys
+     * since its binding signatures are also checked
+     */
+    const signingKey = await this.getSigningKey(null, null);
+    // This could again be a dummy key
+    if (signingKey && !signingKey.keyPacket.isDummy()) {
+      signingKeyPacket = signingKey.keyPacket;
+    }
   }
-  const data = new _packet2.default.Literal();
-  data.setBytes(new Uint8Array(), 'binary');
-  const signature = new _packet2.default.Signature();
-  signature.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signature.hashAlgorithm = _enums2.default.hash.sha256;
-  const signatureType = _enums2.default.signature.binary;
-  signature.signatureType = signatureType;
-  await signature.sign(signingKeyPacket, data);
-  await signature.verify(signingKeyPacket, signatureType, data);
+
+  if (signingKeyPacket) {
+    return signingKeyPacket.validate();
+  } else {
+    const keys = this.getKeys();
+    const allDummies = keys.map(key => key.keyPacket.isDummy()).every(Boolean);
+    if (allDummies) {
+      throw new Error("Cannot validate an all-gnu-dummy key");
+    }
+
+    return Promise.all(keys.map(async key => key.keyPacket.validate()));
+  }
 };
 
 /**
@@ -31286,7 +31857,8 @@ Message.prototype.decryptSessionKeys = async function (privateKeys, passwords) {
           }
         } catch (e) {}
 
-        const privateKeyPackets = privateKey.getKeys(keyPacket.publicKeyId).map(key => key.keyPacket);
+        // do not check key expiration to allow decryption of old messages
+        const privateKeyPackets = (await privateKey.getDecryptionKeys(keyPacket.publicKeyId, null)).map(key => key.keyPacket);
         await Promise.all(privateKeyPackets.map(async function (privateKeyPacket) {
           if (!privateKeyPacket) {
             return;
@@ -32977,7 +33549,7 @@ function clonePackets(options) {
   if (options.message) {
     //could be either a Message or CleartextMessage object
     if (options.message instanceof _message.Message) {
-      options.message = options.message.packets;
+      options.message = { packets: options.message.packets, fromStream: options.message.fromStream };
     } else if (options.message instanceof _cleartext.CleartextMessage) {
       options.message = { text: options.message.text, signature: options.message.signature.packets };
     }
@@ -33065,8 +33637,10 @@ function packetlistCloneToKey(clone) {
 }
 
 function packetlistCloneToMessage(clone) {
-  const packetlist = _packetlist2.default.fromStructuredClone(clone);
-  return new _message.Message(packetlist);
+  const packetlist = _packetlist2.default.fromStructuredClone(clone.packets);
+  const message = new _message.Message(packetlist);
+  message.fromStream = clone.fromStream;
+  return message;
 }
 
 function packetlistCloneToCleartextMessage(clone) {
@@ -34600,7 +35174,7 @@ PublicKey.prototype.getCreationTime = function () {
 
 /**
  * Calculates the key id of the key
- * @returns {String} A 8 byte key id
+ * @returns {module:type/keyid} A 8 byte key id
  */
 PublicKey.prototype.getKeyId = function () {
   if (this.keyid) {
@@ -35173,7 +35747,7 @@ SecretKey.prototype.write = function () {
   }
   arr.push(new Uint8Array(optionalFieldsArr));
 
-  if (!this.s2k || this.s2k.type !== 'gnu-dummy') {
+  if (!this.isDummy()) {
     if (!this.s2k_usage) {
       const cleartextParams = write_cleartext_params(this.params, this.algorithm);
       this.keyMaterial = _util2.default.concatUint8Array([cleartextParams, _util2.default.write_checksum(cleartextParams)]);
@@ -35197,6 +35771,14 @@ SecretKey.prototype.isDecrypted = function () {
 };
 
 /**
+ * Check whether this is a gnu-dummy key
+ * @returns {Boolean}
+ */
+SecretKey.prototype.isDummy = function () {
+  return !!(this.s2k && this.s2k.type === 'gnu-dummy');
+};
+
+/**
  * Encrypt the payload. By default, we use aes256 and iterated, salted string
  * to key specifier. If the key is in a decrypted state (isEncrypted === false)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
@@ -35206,7 +35788,7 @@ SecretKey.prototype.isDecrypted = function () {
  * @async
  */
 SecretKey.prototype.encrypt = async function (passphrase) {
-  if (this.s2k && this.s2k.type === 'gnu-dummy') {
+  if (this.isDummy()) {
     return false;
   }
 
@@ -35255,7 +35837,7 @@ async function produceEncryptionKey(s2k, passphrase, algorithm) {
  * @async
  */
 SecretKey.prototype.decrypt = async function (passphrase) {
-  if (this.s2k && this.s2k.type === 'gnu-dummy') {
+  if (this.isDummy()) {
     this.isEncrypted = false;
     return false;
   }
@@ -35309,6 +35891,27 @@ SecretKey.prototype.generate = async function (bits, curve) {
   const algo = _enums2.default.write(_enums2.default.publicKey, this.algorithm);
   this.params = await _crypto2.default.generateParams(algo, bits, curve);
   this.isEncrypted = false;
+};
+
+/**
+ * Checks that the key parameters are consistent
+ * @throws {Error} if validation was not successful
+ * @async
+ */
+SecretKey.prototype.validate = async function () {
+  if (this.isDummy()) {
+    return;
+  }
+
+  if (!this.isDecrypted()) {
+    throw new Error('Key is not decrypted');
+  }
+
+  const algo = _enums2.default.write(_enums2.default.publicKey, this.algorithm);
+  const validParams = await _crypto2.default.validateParams(algo, this.params);
+  if (!validParams) {
+    throw new Error('Key is invalid');
+  }
 };
 
 /**
@@ -35602,13 +36205,8 @@ Signature.prototype.sign = async function (key, data, detached = false, streamin
   }
   const arr = [new Uint8Array([this.version, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
-  if (key.version === 5) {
-    // We could also generate this subpacket for version 4 keys, but for
-    // now we don't.
-    this.issuerKeyVersion = key.version;
-    this.issuerFingerprint = key.getFingerprintBytes();
-  }
-
+  this.issuerKeyVersion = key.version;
+  this.issuerFingerprint = key.getFingerprintBytes();
   this.issuerKeyId = key.getKeyId();
 
   // Add hashed subpackets
@@ -37458,33 +38056,6 @@ exports.default = ECDHSymmetricKey;
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-var _enums = require('../enums.js');
-
-var _enums2 = _interopRequireDefault(_enums);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * @constructor
- * @param  {enums.hash}       hash    Hash algorithm
- * @param  {enums.symmetric}  cipher  Symmetric algorithm
- */
-function KDFParams(data) {
-  if (data && data.length === 2) {
-    this.hash = data[0];
-    this.cipher = data[1];
-  } else {
-    this.hash = _enums2.default.hash.sha1;
-    this.cipher = _enums2.default.symmetric.aes128;
-  }
-}
-
-/**
- * Read KDFParams from an Uint8Array
- * @param  {Uint8Array}  input  Where to read the KDFParams from
- * @returns {Number}             Number of read bytes
- */
 // OpenPGP.js - An OpenPGP implementation in javascript
 // Copyright (C) 2015-2016 Decentral
 //
@@ -37514,6 +38085,29 @@ function KDFParams(data) {
  * @module type/kdf_params
  */
 
+/**
+ * @constructor
+ * @param  {enums.hash}       hash    Hash algorithm
+ * @param  {enums.symmetric}  cipher  Symmetric algorithm
+ */
+function KDFParams(data) {
+  if (data) {
+    const hash = data.hash,
+          cipher = data.cipher;
+
+    this.hash = hash;
+    this.cipher = cipher;
+  } else {
+    this.hash = null;
+    this.cipher = null;
+  }
+}
+
+/**
+ * Read KDFParams from an Uint8Array
+ * @param  {Uint8Array}  input  Where to read the KDFParams from
+ * @returns {Number}             Number of read bytes
+ */
 KDFParams.prototype.read = function (input) {
   if (input.length < 4 || input[0] !== 3 || input[1] !== 1) {
     throw new Error('Cannot read KDFParams');
@@ -37532,12 +38126,15 @@ KDFParams.prototype.write = function () {
 };
 
 KDFParams.fromClone = function (clone) {
-  return new KDFParams([clone.hash, clone.cipher]);
+  const hash = clone.hash,
+        cipher = clone.cipher;
+
+  return new KDFParams({ hash, cipher });
 };
 
 exports.default = KDFParams;
 
-},{"../enums.js":91}],132:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 'use strict';
 
 Object.defineProperty(exports, "__esModule", {
@@ -37594,10 +38191,18 @@ Keyid.prototype.read = function (bytes) {
   this.bytes = _util2.default.Uint8Array_to_str(bytes.subarray(0, 8));
 };
 
+/**
+ * Serializes the Key ID
+ * @returns {Uint8Array} Key ID as a Uint8Array
+ */
 Keyid.prototype.write = function () {
   return _util2.default.str_to_Uint8Array(this.bytes);
 };
 
+/**
+ * Returns the Key ID represented as a hexadecimal string
+ * @returns {String} Key ID as a hexadecimal string
+ */
 Keyid.prototype.toHex = function () {
   return _util2.default.str_to_hex(this.bytes);
 };
@@ -37611,10 +38216,18 @@ Keyid.prototype.equals = function (keyid, matchWildcard = false) {
   return matchWildcard && (keyid.isWildcard() || this.isWildcard()) || this.bytes === keyid.bytes;
 };
 
+/**
+ * Checks to see if the Key ID is unset
+ * @returns {Boolean} true if the Key ID is null
+ */
 Keyid.prototype.isNull = function () {
   return this.bytes === '';
 };
 
+/**
+ * Checks to see if the Key ID is a "wildcard" Key ID (all zeros)
+ * @returns {Boolean} true if this is a wildcard Key ID
+ */
 Keyid.prototype.isWildcard = function () {
   return (/^0+$/.test(this.toHex())
   );
@@ -39103,11 +39716,22 @@ WKD.prototype.lookup = async function (options) {
 
   const localEncoded = _util2.default.encodeZBase32((await _crypto2.default.hash.sha1(_util2.default.str_to_Uint8Array(localPart.toLowerCase()))));
 
-  const url = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
+  const urlAdvanced = `https://openpgpkey.${domain}/.well-known/openpgpkey/${domain}/hu/${localEncoded}`;
+  const urlDirect = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
 
-  return fetch(url).then(function (response) {
+  return fetch(urlAdvanced).then(function (response) {
     if (response.status === 200) {
       return response.arrayBuffer();
+    }
+  }).then(function (publicKey) {
+    if (publicKey) {
+      return publicKey;
+    } else {
+      return fetch(urlDirect).then(function (response) {
+        if (response.status === 200) {
+          return response.arrayBuffer();
+        }
+      });
     }
   }).then(function (publicKey) {
     if (publicKey) {
@@ -39236,6 +39860,7 @@ function AsyncProxy({ path = 'openpgp.worker.js', n = 1, workers = [], config } 
     worker.onmessage = handleMessage(workerId++);
     worker.onerror = e => {
       worker.loadedResolve(false);
+      // eslint-disable-next-line no-console
       console.error('Unhandled error in openpgp worker: ' + e.message + ' (' + e.filename + ':' + e.lineno + ')');
       return false;
     };
