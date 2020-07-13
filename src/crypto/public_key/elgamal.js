@@ -126,7 +126,7 @@ export default {
      * Blinded exponentiation computes g**{r(p-1) + x} to compare to y
      */
     x = new BN(x);
-    const r = (await random.getRandomBN(new BN(2).shln(pSize - 1), new BN(2).shln(pSize))); // draw r of same size as p-1
+    const r = await random.getRandomBN(new BN(2).shln(pSize - 1), new BN(2).shln(pSize)); // draw r of same size as p-1
     const rqx = p.subn(1).mul(r).add(x);
     if (!y.eq(gModP.redPow(rqx))) {
       return false;

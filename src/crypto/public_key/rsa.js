@@ -324,7 +324,7 @@ export default {
      *
      * We blind the multiplication with r, and check that rde = r mod lcm(p-1, q-1)
      */
-    const r = (await random.getRandomBN(two, two.shln(n.bitLength() / 3))); // r in [ 2, 2^{|n|/3} ) < p and q
+    const r = await random.getRandomBN(two, two.shln(n.bitLength() / 3)); // r in [ 2, 2^{|n|/3} ) < p and q
     const rde = r.mul(d).mul(e);
 
     const areInverses = rde.umod(p.sub(one)).eq(r) && rde.umod(q.sub(one)).eq(r);

@@ -422,7 +422,7 @@ Key.prototype.decrypt = async function(passphrases, keyId = null) {
       try {
         await key.keyPacket.decrypt(passphrase);
         // If we are decrypting a single key packet, we also validate it directly
-        keyId && await key.keyPacket.validate();
+        if (keyId) await key.keyPacket.validate();
         decrypted = true;
       } catch (e) {
         error = e;
