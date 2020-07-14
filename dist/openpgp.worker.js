@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.5 - 2020-07-13 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.6 - 2020-07-14 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 // GPG4Browsers - An OpenPGP implementation in javascript
@@ -161,7 +161,7 @@ function delegate(id, method, options) {
  * @param  {Object} event  Contains event type and data
  */
 function response(event) {
-  self.postMessage(event, openpgp.util.getTransferables(event.data, true));
+  self.postMessage(event, openpgp.util.getTransferables(event.data, openpgp.config.zero_copy));
 }
 
 /**
