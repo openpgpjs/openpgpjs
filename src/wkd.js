@@ -60,29 +60,19 @@ WKD.prototype.lookup = async function(options) {
   const urlAdvanced = `https://openpgpkey.${domain}/.well-known/openpgpkey/${domain}/hu/${localEncoded}`;
   const urlDirect = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
 
-  return fetch(urlAdvanced).then(function(response) {
-    if (response.status === 200) {
-      return response.arrayBuffer();
+  let response = await fetch(urlAdvanced);
+  if (response.status !== 200) {
+    response = await fetch(urlDirect);
+    if (response.status !== 200) {
+      return;
     }
-  }).then(function(publicKey) {
-    if (publicKey) {
-      return publicKey;
-    } else {
-      return fetch(urlDirect).then(function(response) {
-        if (response.status === 200) {
-          return response.arrayBuffer();
-        }
-      });
-    }
-  }).then(function(publicKey) {
-    if (publicKey) {
-      const rawBytes = new Uint8Array(publicKey);
-      if (options.rawBytes) {
-        return rawBytes;
-      }
-      return keyMod.read(rawBytes);
-    }
-  });
+  }
+
+  const rawBytes = new Uint8Array(await response.arrayBuffer());
+  if (options.rawBytes) {
+    return rawBytes;
+  }
+  return keyMod.read(rawBytes);
 };
 
 export default WKD;
