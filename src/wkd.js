@@ -60,10 +60,16 @@ WKD.prototype.lookup = async function(options) {
   const urlAdvanced = `https://openpgpkey.${domain}/.well-known/openpgpkey/${domain}/hu/${localEncoded}`;
   const urlDirect = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
 
-  let response = await fetch(urlAdvanced);
-  if (response.status !== 200) {
-    response = await fetch(urlDirect);
-    if (response.status !== 200) {
+  let response = await fetch(urlAdvanced)
+  .catch(function(err) {
+    return null;
+  });
+  if (!response || response.status !== 200) {
+    response = await fetch(urlDirect)
+    .catch(function(err) {
+      return null;
+    });
+    if (!response || response.status !== 200) {
       return;
     }
   }
