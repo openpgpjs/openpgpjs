@@ -2843,7 +2843,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('clearPrivateParams() - detect that private key parameters were zeroed out', async function() {
-    const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
+    const key = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
     const signingKeyPacket = key.subKeys[0].keyPacket;
     const params = signingKeyPacket.params.slice();
