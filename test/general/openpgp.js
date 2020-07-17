@@ -677,7 +677,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         privateKeys: privateKey
       };
       const encrypted = await openpgp.encrypt(encOpt);
-      decOpt.message = await openpgp.message.readArmored(encrypted.data);
+      decOpt.message = await openpgp.message.readArmored(encrypted);
       await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith('Error decrypting message: Private key is not decrypted.');
     });
 
@@ -779,12 +779,14 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           return openpgp.encryptSessionKey({
             data: sk,
             algorithm: 'aes128',
-            publicKeys: publicKey.keys
+            publicKeys: publicKey,
+            armor: false
           }).then(async function(encrypted) {
-            const invalidPrivateKey = (await openpgp.key.readArmored(priv_key)).keys[0];
+            const message = await openpgp.message.read(encrypted);
+            const invalidPrivateKey = await openpgp.key.readArmored(priv_key);
             invalidPrivateKey.subKeys[0].bindingSignatures = [];
             return openpgp.decryptSessionKeys({
-              message: encrypted.message,
+              message,
               privateKeys: invalidPrivateKey
             }).then(() => {
               throw new Error('Should not decrypt with invalid key');
