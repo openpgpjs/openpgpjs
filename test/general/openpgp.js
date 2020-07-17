@@ -806,13 +806,15 @@ describe('OpenPGP.js public api tests', function() {
         return openpgp.decryptKey({
           privateKey: privateKey.keys[0],
           passphrase: 'incorrect'
+        }).then(function() {
+          throw new Error('Should not decrypt with incorrect passphrase');
         }).catch(function(error){
           expect(error.message).to.match(/Incorrect key passphrase/);
         });
       });
     });
 
-    it('Calling decrypt with not decrypted key leads to exception', function() {
+    it('Calling decrypt with not decrypted key leads to exception', async function() {
       const encOpt = {
         message: openpgp.message.fromText(plaintext),
         publicKeys: publicKey.keys
@@ -820,12 +822,9 @@ describe('OpenPGP.js public api tests', function() {
       const decOpt = {
         privateKeys: privateKey.keys[0]
       };
-      return openpgp.encrypt(encOpt).then(async function(encrypted) {
-        decOpt.message = await openpgp.message.readArmored(encrypted.data);
-        return openpgp.decrypt(decOpt);
-      }).catch(function(error) {
-        expect(error.message).to.match(/not decrypted/);
-      });
+      const encrypted = await openpgp.encrypt(encOpt);
+      decOpt.message = await openpgp.message.readArmored(encrypted.data);
+      await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith('Error decrypting message: Private key is not decrypted.');
     });
 
     tryTests('CFB mode (asm.js)', tests, {
@@ -942,6 +941,8 @@ describe('OpenPGP.js public api tests', function() {
             return openpgp.decryptSessionKeys({
               message: encrypted.message,
               privateKeys: invalidPrivateKey
+            }).then(() => {
+              throw new Error('Should not decrypt with invalid key');
             }).catch(error => {
               expect(error.message).to.match(/Error decrypting session keys: Session key decryption failed./);
             });
@@ -2402,7 +2403,7 @@ describe('OpenPGP.js public api tests', function() {
           return openpgp.encrypt({
             message: openpgp.message.fromText(plaintext),
             publicKeys: revKey.publicKey
-          }).then(function(encrypted) {
+          }).then(function() {
             throw new Error('Should not encrypt with revoked key');
           }).catch(function(error) {
             expect(error.message).to.match(/Error encrypting message: Primary key is revoked/);
@@ -2419,7 +2420,7 @@ describe('OpenPGP.js public api tests', function() {
           return openpgp.encrypt({
             message: openpgp.message.fromText(plaintext),
             publicKeys: pubKeyDE
-          }).then(function(encrypted) {
+          }).then(function() {
             throw new Error('Should not encrypt with revoked subkey');
           }).catch(function(error) {
             expect(error.message).to.match(/Could not find valid encryption key packet/);
@@ -2526,11 +2527,9 @@ amnR6g==
         return openpgp.encrypt({
           message: openpgp.message.fromBinary(new Uint8Array([0x01, 0x01, 0x01])),
           passwords: null
-        })
-        .then(function() {
+        }).then(function() {
           throw new Error('Error expected.');
-        })
-        .catch(function(error) {
+        }).catch(function(error) {
           expect(error.message).to.match(/No keys, passwords, or session key provided/);
         });
       });
