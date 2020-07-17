@@ -10,5 +10,5 @@ module.exports = () => describe('Crypto', function () {
   require('./eax.js')();
   require('./ocb.js')();
   require('./rsa.js')();
-  require('./validate.js');
+  require('./validate.js')();
 });

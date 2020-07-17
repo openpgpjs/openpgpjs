@@ -198,7 +198,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
     arr.push(new Uint8Array(optionalFieldsArr));
 
-    if (!this.s2k || this.s2k.type !== 'gnu-dummy') {
+    if (!this.isDummy()) {
       if (!this.s2k_usage) {
         const cleartextParams = write_cleartext_params(this.params, this.algorithm);
         this.keyMaterial = util.concatUint8Array([
@@ -395,7 +395,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Clear private key parameters
    */
   clearPrivateParams() {
-    if (this.s2k && this.s2k.type === 'gnu-dummy') {
+    if (this.isDummy()) {
       this.isEncrypted = true;
       return;
     }
