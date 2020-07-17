@@ -306,9 +306,9 @@ export default {
    */
   validateParams: async function(algo, params) {
     switch (algo) {
-      case enums.publicKey.rsa_encrypt:
-      case enums.publicKey.rsa_encrypt_sign:
-      case enums.publicKey.rsa_sign: {
+      case enums.publicKey.rsaEncrypt:
+      case enums.publicKey.rsaEncryptSign:
+      case enums.publicKey.rsaSign: {
         if (params.length < 6) {
           throw new Error('Missing key parameters');
         }
