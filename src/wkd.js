@@ -60,11 +60,17 @@ WKD.prototype.lookup = async function(options) {
   const urlAdvanced = `https://openpgpkey.${domain}/.well-known/openpgpkey/${domain}/hu/${localEncoded}`;
   const urlDirect = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
 
-  let response = await fetch(urlAdvanced);
-  if (response.status !== 200) {
+  let response;
+  try {
+    response = await fetch(urlAdvanced);
+    if (response.status !== 200) {
+      throw new Error('Advanced WKD lookup failed: ' + response.statusText);
+    }
+  } catch (err) {
+    util.print_debug_error(err);
     response = await fetch(urlDirect);
     if (response.status !== 200) {
-      return;
+      throw new Error('Direct WKD lookup failed: ' + response.statusText);
     }
   }
 
