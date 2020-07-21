@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.6 - 2020-07-14 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.7 - 2020-07-21 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(_dereq_,module,exports){
 (function (global){
 "use strict";
@@ -31493,7 +31493,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.6",
+  versionstring: "OpenPGP.js v4.10.7",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -60625,7 +60625,7 @@ function WKD() {
 
 WKD.prototype.lookup = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee(options) {
-    var fetch, _$exec, _$exec2, localPart, domain, localEncoded, urlAdvanced, urlDirect;
+    var fetch, _$exec, _$exec2, localPart, domain, localEncoded, urlAdvanced, urlDirect, response, rawBytes;
 
     return _regenerator2.default.wrap(function _callee$(_context) {
       while (1) {
@@ -60659,36 +60659,68 @@ WKD.prototype.lookup = function () {
             localEncoded = _context.t0.encodeZBase32.call(_context.t0, _context.t1);
             urlAdvanced = 'https://openpgpkey.' + domain + '/.well-known/openpgpkey/' + domain + '/hu/' + localEncoded;
             urlDirect = 'https://' + domain + '/.well-known/openpgpkey/hu/' + localEncoded;
-            return _context.abrupt('return', fetch(urlAdvanced).then(function (response) {
-              if (response.status === 200) {
-                return response.arrayBuffer();
-              }
-            }).then(function (publicKey) {
-              if (publicKey) {
-                return publicKey;
-              } else {
-                return fetch(urlDirect).then(function (response) {
-                  if (response.status === 200) {
-                    return response.arrayBuffer();
-                  }
-                });
-              }
-            }).then(function (publicKey) {
-              if (publicKey) {
-                var rawBytes = new Uint8Array(publicKey);
-                if (options.rawBytes) {
-                  return rawBytes;
-                }
-                return keyMod.read(rawBytes);
-              }
-            }));
+            response = void 0;
+            _context.prev = 14;
+            _context.next = 17;
+            return fetch(urlAdvanced);
 
-          case 14:
+          case 17:
+            response = _context.sent;
+
+            if (!(response.status !== 200)) {
+              _context.next = 20;
+              break;
+            }
+
+            throw new Error('Advanced WKD lookup failed: ' + response.statusText);
+
+          case 20:
+            _context.next = 30;
+            break;
+
+          case 22:
+            _context.prev = 22;
+            _context.t2 = _context['catch'](14);
+
+            _util2.default.print_debug_error(_context.t2);
+            _context.next = 27;
+            return fetch(urlDirect);
+
+          case 27:
+            response = _context.sent;
+
+            if (!(response.status !== 200)) {
+              _context.next = 30;
+              break;
+            }
+
+            throw new Error('Direct WKD lookup failed: ' + response.statusText);
+
+          case 30:
+            _context.t3 = Uint8Array;
+            _context.next = 33;
+            return response.arrayBuffer();
+
+          case 33:
+            _context.t4 = _context.sent;
+            rawBytes = new _context.t3(_context.t4);
+
+            if (!options.rawBytes) {
+              _context.next = 37;
+              break;
+            }
+
+            return _context.abrupt('return', rawBytes);
+
+          case 37:
+            return _context.abrupt('return', keyMod.read(rawBytes));
+
+          case 38:
           case 'end':
             return _context.stop();
         }
       }
-    }, _callee, this);
+    }, _callee, this, [[14, 22]]);
   }));
 
   return function (_x) {

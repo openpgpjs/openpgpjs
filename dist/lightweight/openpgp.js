@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.6 - 2020-07-14 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.7 - 2020-07-21 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -20665,7 +20665,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.6",
+  versionstring: "OpenPGP.js v4.10.7",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -39719,29 +39719,25 @@ WKD.prototype.lookup = async function (options) {
   const urlAdvanced = `https://openpgpkey.${domain}/.well-known/openpgpkey/${domain}/hu/${localEncoded}`;
   const urlDirect = `https://${domain}/.well-known/openpgpkey/hu/${localEncoded}`;
 
-  return fetch(urlAdvanced).then(function (response) {
-    if (response.status === 200) {
-      return response.arrayBuffer();
+  let response;
+  try {
+    response = await fetch(urlAdvanced);
+    if (response.status !== 200) {
+      throw new Error('Advanced WKD lookup failed: ' + response.statusText);
     }
-  }).then(function (publicKey) {
-    if (publicKey) {
-      return publicKey;
-    } else {
-      return fetch(urlDirect).then(function (response) {
-        if (response.status === 200) {
-          return response.arrayBuffer();
-        }
-      });
+  } catch (err) {
+    _util2.default.print_debug_error(err);
+    response = await fetch(urlDirect);
+    if (response.status !== 200) {
+      throw new Error('Direct WKD lookup failed: ' + response.statusText);
     }
-  }).then(function (publicKey) {
-    if (publicKey) {
-      const rawBytes = new Uint8Array(publicKey);
-      if (options.rawBytes) {
-        return rawBytes;
-      }
-      return keyMod.read(rawBytes);
-    }
-  });
+  }
+
+  const rawBytes = new Uint8Array((await response.arrayBuffer()));
+  if (options.rawBytes) {
+    return rawBytes;
+  }
+  return keyMod.read(rawBytes);
 };
 
 exports.default = WKD;
