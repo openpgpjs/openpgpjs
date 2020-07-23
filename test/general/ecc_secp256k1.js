@@ -154,7 +154,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
     const pk = await openpgp.key.readArmored(data[name].priv);
     expect(pk).to.exist;
     expect(pk.getKeyId().toHex()).to.equal(data[name].id);
-    expect(await pk.decrypt(data[name].pass)).to.be.true;
+    await pk.decrypt(data[name].pass);
     data[name].priv_key = pk;
     return pk;
   }

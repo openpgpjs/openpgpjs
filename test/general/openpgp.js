@@ -709,8 +709,8 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       await expect(privateKey.decrypt('wrong passphrase')).to.eventually.be.rejectedWith('Incorrect key passphrase');
     });
 
-    it('Decrypting key with correct passphrase returns true', async function () {
-      expect(await privateKey.decrypt(passphrase)).to.be.true;
+    it('Decrypting key with correct passphrase does not throw', async function () {
+      await expect(privateKey.decrypt(passphrase)).to.not.be.rejected;
     });
 
     describe('decryptKey', function() {
@@ -815,7 +815,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         let decryptedPrivateKey;
         beforeEach(async function() {
           if (!decryptedPrivateKey) {
-            expect(await privateKey.decrypt(passphrase)).to.be.true;
+            await privateKey.decrypt(passphrase);
             decryptedPrivateKey = privateKey;
           }
           privateKey = decryptedPrivateKey;
@@ -975,7 +975,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         let decryptedPrivateKey;
         beforeEach(async function() {
           if (!decryptedPrivateKey) {
-            expect(await privateKey.decrypt(passphrase)).to.be.true;
+            await privateKey.decrypt(passphrase);
             decryptedPrivateKey = privateKey;
           }
           privateKey = decryptedPrivateKey;
@@ -1784,7 +1784,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       let decryptedPrivateKey;
       beforeEach(async function() {
         if (!decryptedPrivateKey) {
-          expect(await privateKey.decrypt(passphrase)).to.be.true;
+          privateKey.decrypt(passphrase);
           decryptedPrivateKey = privateKey;
         }
         privateKey = decryptedPrivateKey;
