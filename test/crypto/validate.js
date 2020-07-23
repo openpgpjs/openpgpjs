@@ -95,7 +95,7 @@ describe('EdDSA parameter validation', function() {
     expect(valid).to.be.false;
 
     const infQ = new Uint8Array(Q.length);
-    valid = await openpgp.crypto.publicKey.elliptic.ecdh.validateParams(oid, infQ, seed);
+    valid = await openpgp.crypto.publicKey.elliptic.eddsa.validateParams(oid, infQ, seed);
     expect(valid).to.be.false;
   });
 });
@@ -108,7 +108,7 @@ describe('ECC curve validation', function() {
       'ed25519'
     );
     const { oid, Q, seed } = openpgp.crypto.publicKey.elliptic.eddsa.parseParams(keyParams);
-    const valid = await openpgp.crypto.publicKey.elliptic.ecdsa.validateParams(oid, Q, seed);
+    const valid = await openpgp.crypto.publicKey.elliptic.ecdh.validateParams(oid, Q, seed);
     expect(valid).to.be.false;
   });
 
