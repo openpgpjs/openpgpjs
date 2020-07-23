@@ -166,7 +166,7 @@ class Key {
 
   /**
    * Clones the key object
-   * @param  {type/keyid} deep Whether to clone each packet, in addition to the list of packets
+   * @param  {Boolean} deep Whether to clone each packet, in addition to the list of packets
    * @returns {Promise<module:key.Key>} cloned key
    * @async
    */
