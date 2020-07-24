@@ -20,6 +20,7 @@
  * @requires packet
  * @requires enums
  * @requires util
+ * @requires type/S2K
  * @requires key/User
  * @requires key/Subkey
  * @module key/Key
@@ -32,6 +33,7 @@ import util from '../util';
 import User from './user';
 import SubKey from './subkey';
 import * as helper from './helper';
+import S2K from '../type/s2k';
 
 /**
  * @class
@@ -457,7 +459,7 @@ Key.prototype.validate = async function() {
   }
 
   let signingKeyPacket;
-  if (!this.keyPacket.isDummy()) {
+  if (!this.primaryKey.isDummy()) {
     signingKeyPacket = this.primaryKey;
   } else {
     /**
@@ -496,6 +498,30 @@ Key.prototype.clearPrivateParams = function () {
       keyPacket.clearPrivateParams();
     }
   });
+};
+
+/**
+ * Remove private primary key material, converting the key to a dummy one
+ * The resulting primary key cannot be used for signing/decrypting but can still verify the subkeys
+ * @returns {<module:key.Key} dummy version of the key
+ */
+Key.prototype.toDummy = function () {
+  if (this.primaryKey.isDummy()) {
+    return;
+  }
+  if (!this.isPrivate()) {
+    throw new Error("Cannot convert a public key");
+  }
+  if (!this.primaryKey.isDecrypted()) {
+    // this is technically not needed, but makes the conversion simpler
+    throw new Error("Key is not decrypted");
+  }
+  this.primaryKey.clearPrivateParams();
+  this.primaryKey.isEncrypted = false;
+  this.primaryKey.s2k = new S2K();
+  this.primaryKey.s2k.algorithm = 0;
+  this.primaryKey.s2k.c = 0;
+  this.primaryKey.s2k.type = 'gnu-dummy';
 };
 
 /**
