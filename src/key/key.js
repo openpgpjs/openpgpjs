@@ -796,7 +796,7 @@ class Key {
 
   /**
    * Signs primary user of key
-   * @param  {Array<module:key.Key>} privateKey decrypted private keys for signing
+   * @param  {Array<module:key.Key>} privateKeys decrypted private keys for signing
    * @param  {Date} date (optional) use the given date for verification instead of the current time
    * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
    * @returns {Promise<module:key.Key>} new public key with new certificate signature
@@ -877,9 +877,9 @@ class Key {
    * @param {Integer} options.rsaBits    number of bits for the key creation.
    * @param {Number} [options.keyExpirationTime=0]
    *                             The number of seconds after the key creation time that the key expires
-   * @param {String} curve       (optional) Elliptic curve for ECC keys
-   * @param {Date} date          (optional) Override the creation date of the key and the key signatures
-   * @param {Boolean} sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
+   * @param {String} options.curve       (optional) Elliptic curve for ECC keys
+   * @param {Date} options.date          (optional) Override the creation date of the key and the key signatures
+   * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @returns {Promise<module:key.Key>}
    * @async
    */

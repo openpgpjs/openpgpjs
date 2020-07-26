@@ -30,7 +30,7 @@ class SubKey {
 
   /**
    * Transforms structured subkey data to packetlist
-   * @returns {PacketListPacket}
+   * @returns {PacketList}
    */
   toPacketlist() {
     const packetlist = new PacketList();
