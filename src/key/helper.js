@@ -35,7 +35,7 @@ export async function generateSecretSubkey(options) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
   return secretSubkeyPacket;
 }
 
@@ -43,7 +43,7 @@ export async function generateSecretKey(options) {
   const secretKeyPacket = new SecretKeyPacket(options.date);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
   return secretKeyPacket;
 }
 
@@ -328,6 +328,7 @@ export async function isAeadSupported(keys, date = new Date(), userIds = []) {
 export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.curve = options.curve || subkeyDefaults.curve;
   options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
+  options.symmetric = options.symmetric || subkeyDefaults.symmetric;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
   options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
   options.date = options.date || subkeyDefaults.date;
@@ -348,6 +349,8 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
     } else {
       options.algorithm = enums.publicKey.ecdh;
     }
+  } else if (options.symmetric) {
+    options.algorithm = enums.publicKey.aead;
   } else if (options.rsaBits) {
     options.algorithm = enums.publicKey.rsaEncryptSign;
   } else {

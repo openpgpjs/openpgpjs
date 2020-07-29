@@ -49,6 +49,7 @@ import armor from '../encoding/armor';
  * @param {Number} [options.keyExpirationTime=0]
  *                             The number of seconds after the key creation time that the key expires
  * @param  {String} options.curve            (optional) elliptic curve for ECC keys
+ * @param  {String} options.symmetric            (optional) symmetric algorithm for symmetric keys
  * @param  {Date} options.date         Override the creation date of the key and the key signatures
  * @param  {Array<Object>} options.subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
@@ -61,9 +62,11 @@ export async function generate(options) {
   options = helper.sanitizeKeyOptions(options);
   options.subkeys = options.subkeys.map(function(subkey, index) { return helper.sanitizeKeyOptions(options.subkeys[index], options); });
 
-  let promises = [helper.generateSecretKey(options)];
-  promises = promises.concat(options.subkeys.map(helper.generateSecretSubkey));
-  return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
+  const packets = await Promise.all([
+    helper.generateSecretKey(options),
+    ...options.subkeys.map(helper.generateSecretSubkey)
+  ]);
+  return wrapKeyObject(packets[0], packets.slice(1), options);
 }
 
 /**

@@ -88,6 +88,16 @@ export { default as KDFParams } from './type/kdf_params';
  * @name module:openpgp.OID
  */
 export { default as OID } from './type/oid';
+/**
+ * @see module:type/symmetric_algorithm
+ * @name module:openpgp.SymmetricAlgorithm
+ */
+export { default as SymAlgorithm } from './type/symmetric_algorithm';
+/**
+ * @see module:type/symmetric_key_material
+ * @name module:openpgp.SymmetricKeyMaterial
+ */
+export { default as ByteArray } from './type/byte_array';
 
 /**
  * @see streams

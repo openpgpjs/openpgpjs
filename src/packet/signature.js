@@ -27,8 +27,8 @@
 
 import stream from 'web-stream-tools';
 import packet from './packet';
-import type_keyid from '../type/keyid.js';
-import type_mpi from '../type/mpi.js';
+import type_keyid from '../type/keyid';
+import type_mpi from '../type/mpi';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';

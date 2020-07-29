@@ -3383,6 +3383,24 @@ VYGdb3eNlV8CfoEC
       await subKey.verify(privateKey.primaryKey);
     });
 
+    it('create and add a new symmetric subkey to a rsa key', async function() {
+      openpgp.config.tolerant = false;
+      const privateKey = await openpgp.key.readArmored(priv_key_rsa);
+      await privateKey.decrypt('hello world');
+      const total = privateKey.subKeys.length;
+      const opt2 = { symmetric: 'aes256' };
+      let newPrivateKey = await privateKey.addSubkey(opt2);
+      const armoredKey = await newPrivateKey.armor();
+      newPrivateKey = await openpgp.key.readArmored(armoredKey);
+      const subKey = newPrivateKey.subKeys[total];
+      expect(subKey).to.exist;
+      expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
+      expect(subKey.getAlgorithmInfo().symmetric).to.be.equal('aes256');
+      expect(subKey.keyPacket.params[1]).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.params[2]).to.exist.and.to.have.length(32);
+      await subKey.verify(privateKey.primaryKey);
+    });
+
     it('sign/verify data with the new subkey correctly using curve25519', async function() {
       const userId = 'test <a@b.com>';
       const opt = { curve: 'curve25519', userIds: [userId], subkeys:[] };

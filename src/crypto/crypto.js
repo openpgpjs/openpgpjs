@@ -26,12 +26,15 @@
  * @requires type/ecdh_symkey
  * @requires type/kdf_params
  * @requires type/mpi
+ * @requires type/byte_array
+ * @requires type/symmetric_algorithm
  * @requires type/oid
  * @requires enums
  * @requires util
  * @module crypto/crypto
  */
 
+import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import publicKey from './public_key';
 import cipher from './cipher';
 import random from './random';
@@ -39,6 +42,8 @@ import type_ecdh_symkey from '../type/ecdh_symkey';
 import type_kdf_params from '../type/kdf_params';
 import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
+import type_byte from '../type/byte_array';
+import type_algo from '../type/symmetric_algorithm';
 import enums from '../enums';
 import util from '../util';
 import pkcs1 from './pkcs1';
@@ -180,6 +185,8 @@ export default {
       case enums.publicKey.ecdsa:
       case enums.publicKey.eddsa:
         return [type_mpi];
+      case enums.publicKey.aead:
+        return [type_byte];
       default:
         throw new Error('Invalid public key encryption algorithm.');
     }
@@ -223,6 +230,8 @@ export default {
       //       - KDF: variable-length field containing KDF parameters.
       case enums.publicKey.ecdh:
         return [type_oid, type_mpi, type_kdf_params];
+      case enums.publicKey.aead:
+        return [type_algo, type_byte];
       default:
         throw new Error('Invalid public key encryption algorithm.');
     }
@@ -259,38 +268,43 @@ export default {
    * @param {module:enums.publicKey}  algo The public key algorithm
    * @param {Integer}                 bits Bit length for RSA keys
    * @param {module:type/oid}         oid  Object identifier for ECC keys
+   * @param {module:enums.symmetric} symmetric  Symmetric algorithm
    * @returns {Array}                 The array of parameters
    * @async
    */
-  generateParams: function(algo, bits, oid) {
+  generateParams: async function(algo, bits, oid, symmetric) {
     const types = [].concat(this.getPubKeyParamTypes(algo), this.getPrivKeyParamTypes(algo));
     switch (algo) {
       case enums.publicKey.rsaEncrypt:
       case enums.publicKey.rsaEncryptSign:
       case enums.publicKey.rsaSign: {
-        return publicKey.rsa.generate(bits, 65537).then(function(keyObject) {
-          return constructParams(
-            types, [keyObject.n, keyObject.e, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
-          );
-        });
+        const keyObject = await publicKey.rsa.generate(bits, 65537)
+        return constructParams(
+          types, [keyObject.n, keyObject.e, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
+        );
       }
       case enums.publicKey.dsa:
       case enums.publicKey.elgamal:
         throw new Error('Unsupported algorithm for key generation.');
       case enums.publicKey.ecdsa:
-      case enums.publicKey.eddsa:
-        return publicKey.elliptic.generate(oid).then(function (keyObject) {
-          return constructParams(types, [keyObject.oid, keyObject.Q, keyObject.d]);
-        });
-      case enums.publicKey.ecdh:
-        return publicKey.elliptic.generate(oid).then(function (keyObject) {
-          return constructParams(types, [
-            keyObject.oid,
-            keyObject.Q,
-            { hash: keyObject.hash, cipher: keyObject.cipher },
-            keyObject.d
-          ]);
-        });
+      case enums.publicKey.eddsa: {
+        const keyObject = await publicKey.elliptic.generate(oid);
+        return constructParams(types, [keyObject.oid, keyObject.Q, keyObject.d]);
+      }
+      case enums.publicKey.ecdh: {
+        const keyObject = await publicKey.elliptic.generate(oid);
+        return constructParams(types, [
+          keyObject.oid,
+          keyObject.Q,
+          { hash: keyObject.hash, cipher: keyObject.cipher },
+          keyObject.d
+        ]);
+      }
+      case enums.publicKey.aead: {
+        const keyObject = await this.generateSessionKey(symmetric);
+        const hash = Sha256.bytes(keyObject);
+        return constructParams(types, [symmetric, hash, keyObject]);
+      }
       default:
         throw new Error('Invalid public key algorithm.');
     }
@@ -359,6 +373,14 @@ export default {
 
         const { oid, Q, seed } = publicKey.elliptic.eddsa.parseParams(params);
         return publicKey.elliptic.eddsa.validateParams(oid, Q, seed);
+      }
+      case enums.publicKey.aead: {
+        const expectedLen = 3;
+        if (params.length < expectedLen) {
+          throw new Error('Missing key parameters');
+        }
+        const algo = params[0].getName();
+        return cipher[algo].keySize === params[2].length && util.equalsUint8Array(params[1].data, Sha256.bytes(params[2].data));
       }
       default:
         throw new Error('Invalid public key algorithm.');

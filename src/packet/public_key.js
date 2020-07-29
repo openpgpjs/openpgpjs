@@ -20,6 +20,7 @@
 /**
  * @requires type/keyid
  * @requires type/mpi
+ * @requires type/symmetric_algorithm
  * @requires config
  * @requires crypto
  * @requires enums
@@ -30,6 +31,7 @@ import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
 import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import type_keyid from '../type/keyid';
 import type_mpi from '../type/mpi';
+import type_algo from '../type/symmetric_algorithm';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -246,6 +248,8 @@ class PublicKeyPacket {
     if (this.params[0] instanceof type_mpi) {
       result.rsaBits = this.params[0].byteLength() * 8;
       result.bits = result.rsaBits; // Deprecated.
+    } else if (this.params[0] instanceof type_algo) {
+      result.symmetric = this.params[0].getName();
     } else {
       result.curve = this.params[0].getName();
     }
