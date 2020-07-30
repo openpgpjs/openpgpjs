@@ -349,16 +349,14 @@ Key.prototype.getEncryptionKey = async function(keyId, date = new Date(), userId
  * @async
  */
 Key.prototype.getDecryptionKeys = async function(keyId, date = new Date(), userId = {}) {
-  await this.verifyPrimaryKey(date, userId);
   const primaryKey = this.keyPacket;
   const keys = [];
   for (let i = 0; i < this.subKeys.length; i++) {
     if (!keyId || this.subKeys[i].getKeyId().equals(keyId, true)) {
       try {
-        await this.subKeys[i].verify(primaryKey, date);
         const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
         const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkey_binding, dataToVerify, date);
-        if (bindingSignature && helper.isValidEncryptionKeyPacket(this.subKeys[i].keyPacket, bindingSignature)) {
+        if (bindingSignature && helper.isValidDecryptionKeyPacket(bindingSignature)) {
           keys.push(this.subKeys[i]);
         }
       } catch (e) {}
@@ -368,7 +366,7 @@ Key.prototype.getDecryptionKeys = async function(keyId, date = new Date(), userI
   // evaluate primary key
   const primaryUser = await this.getPrimaryUser(date, userId);
   if ((!keyId || primaryKey.getKeyId().equals(keyId, true)) &&
-      helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+      helper.isValidDecryptionKeyPacket(primaryUser.selfCertification)) {
     keys.push(this);
   }
 

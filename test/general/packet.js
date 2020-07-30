@@ -339,7 +339,7 @@ describe("Packet", function() {
 
         await msg2.read(msg.write());
 
-        return msg2[0].decrypt({ params: mpi, getFingerprintBytes() {} }).then(() => {
+        return msg2[0].decrypt({ algorithm: 'rsa_encrypt', params: mpi, getFingerprintBytes() {} }).then(() => {
 
           expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
           expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);

@@ -2428,6 +2428,42 @@ describe('OpenPGP.js public api tests', function() {
         });
       });
 
+      it('should decrypt with revoked subkey', async function() {
+        const pubKeyDE = (await openpgp.key.readArmored(pub_key_de)).keys[0];
+        const privKeyDE = (await openpgp.key.readArmored(priv_key_de)).keys[0];
+        await privKeyDE.decrypt(passphrase);
+        const encrypted = await openpgp.encrypt({
+          message: openpgp.message.fromText(plaintext),
+          publicKeys: pubKeyDE
+        });
+        privKeyDE.subKeys[0] = await privKeyDE.subKeys[0].revoke(privKeyDE.primaryKey);
+        const decOpt = {
+          message: await openpgp.message.readArmored(encrypted.data),
+          privateKeys: privKeyDE
+        };
+        const decrypted = await openpgp.decrypt(decOpt);
+        expect(decrypted.data).to.equal(plaintext);
+      });
+
+      it('should not decrypt with corrupted subkey', async function() {
+        const pubKeyDE = (await openpgp.key.readArmored(pub_key_de)).keys[0];
+        const privKeyDE = (await openpgp.key.readArmored(priv_key_de)).keys[0];
+        // corrupt the public key params
+        privKeyDE.subKeys[0].keyPacket.params[0].data[0]++;
+        // validation will not check the decryption subkey and will succeed
+        await privKeyDE.decrypt(passphrase);
+        const encrypted = await openpgp.encrypt({
+          message: openpgp.message.fromText(plaintext),
+          publicKeys: pubKeyDE
+        });
+        const decOpt = {
+          message: await openpgp.message.readArmored(encrypted.data),
+          privateKeys: privKeyDE
+        };
+        // binding signature is invalid
+        await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith(/Session key decryption failed/);
+      });
+
       it('should decrypt with two passwords message which GPG fails on', async function() {
         const decOpt = {
           message: await openpgp.message.readArmored(twoPasswordGPGFail),
