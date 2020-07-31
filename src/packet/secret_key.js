@@ -267,6 +267,28 @@ SecretKey.prototype.isDummy = function() {
   return !!(this.s2k && this.s2k.type === 'gnu-dummy');
 };
 
+
+/**
+ * Remove private key material, converting the key to a dummy one
+ * The resulting key cannot be used for signing/decrypting but can still verify signatures
+ */
+SecretKey.prototype.makeDummy = function () {
+  if (this.isDummy()) {
+    return;
+  }
+  if (!this.isDecrypted()) {
+    // this is technically not needed, but makes the conversion simpler
+    throw new Error("Key is not decrypted");
+  }
+  this.clearPrivateParams();
+  this.isEncrypted = false;
+  this.s2k = new type_s2k();
+  this.s2k.algorithm = 0;
+  this.s2k.c = 0;
+  this.s2k.type = 'gnu-dummy';
+};
+
+
 /**
  * Encrypt the payload. By default, we use aes256 and iterated, salted string
  * to key specifier. If the key is in a decrypted state (isEncrypted === false)
