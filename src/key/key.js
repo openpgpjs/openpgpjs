@@ -20,7 +20,6 @@
  * @requires packet
  * @requires enums
  * @requires util
- * @requires type/S2K
  * @requires key/User
  * @requires key/Subkey
  * @module key/Key
