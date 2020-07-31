@@ -267,7 +267,6 @@ SecretKey.prototype.isDummy = function() {
   return !!(this.s2k && this.s2k.type === 'gnu-dummy');
 };
 
-
 /**
  * Remove private key material, converting the key to a dummy one
  * The resulting key cannot be used for signing/decrypting but can still verify signatures
@@ -287,7 +286,6 @@ SecretKey.prototype.makeDummy = function () {
   this.s2k.c = 0;
   this.s2k.type = 'gnu-dummy';
 };
-
 
 /**
  * Encrypt the payload. By default, we use aes256 and iterated, salted string
