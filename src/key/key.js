@@ -457,7 +457,7 @@ Key.prototype.validate = async function() {
   }
 
   let signingKeyPacket;
-  if (!this.keyPacket.isDummy()) {
+  if (!this.primaryKey.isDummy()) {
     signingKeyPacket = this.primaryKey;
   } else {
     /**

@@ -2748,6 +2748,25 @@ describe('Key', function() {
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
+  it('makeDummy() - the converted key is valid but can no longer sign', async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
+    await key.decrypt('hello world');
+    expect(key.primaryKey.isDummy()).to.be.false;
+    key.primaryKey.makeDummy();
+    expect(key.primaryKey.isDummy()).to.be.true;
+    await key.validate();
+    await expect(openpgp.reformatKey({ privateKey: key, userIds: 'test2 <b@a.com>' })).to.be.rejectedWith(/Missing private key parameters/);
+  });
+
+  it('makeDummy() - subkeys of the converted key can still sign', async function() {
+    const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
+    await key.decrypt('hello world');
+    expect(key.primaryKey.isDummy()).to.be.false;
+    key.primaryKey.makeDummy();
+    expect(key.primaryKey.isDummy()).to.be.true;
+    await expect(openpgp.sign({ message: openpgp.message.fromText('test'), privateKeys: [key] })).to.be.fulfilled;
+  });
+
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
     const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
