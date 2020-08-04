@@ -22,6 +22,7 @@
  * well as key generation and parameter handling for all public-key cryptosystems.
  * @requires crypto/public_key
  * @requires crypto/cipher
+ * @requires crypto/hash
  * @requires crypto/random
  * @requires type/ecdh_symkey
  * @requires type/kdf_params
@@ -34,9 +35,9 @@
  * @module crypto/crypto
  */
 
-import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import publicKey from './public_key';
 import cipher from './cipher';
+import hash from './hash';
 import random from './random';
 import type_ecdh_symkey from '../type/ecdh_symkey';
 import type_kdf_params from '../type/kdf_params';
@@ -334,8 +335,8 @@ export default {
       }
       case enums.publicKey.aead: {
         const keyObject = await this.generateSessionKey(symmetric);
-        const hash = Sha256.bytes(keyObject);
-        return constructParams(types, [symmetric, hash, keyObject]);
+        const digest = await hash.sha256(keyObject);
+        return constructParams(types, [symmetric, digest, keyObject]);
       }
       default:
         throw new Error('Invalid public key algorithm.');
@@ -412,7 +413,7 @@ export default {
           throw new Error('Missing key parameters');
         }
         const algo = params[0].getName();
-        return cipher[algo].keySize === params[2].length && util.equalsUint8Array(params[1].data, Sha256.bytes(params[2].data));
+        return cipher[algo].keySize === params[2].length && util.equalsUint8Array(params[1].data, await hash.sha256(params[2].data));
       }
       default:
         throw new Error('Invalid public key algorithm.');
