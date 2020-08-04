@@ -248,6 +248,7 @@ class Key {
    * @returns {module:key.Key} new public Key
    */
   toPublic() {
+    // todo sym: how does this work with symmetric keys?
     const packetlist = new PacketList();
     const keyPackets = this.toPacketlist();
     let bytes;

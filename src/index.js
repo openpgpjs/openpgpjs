@@ -89,10 +89,10 @@ export { default as KDFParams } from './type/kdf_params';
  */
 export { default as OID } from './type/oid';
 /**
- * @see module:type/symmetric_algorithm
- * @name module:openpgp.SymmetricAlgorithm
+ * @see module:type/enum
+ * @name module:openpgp.TypeEnum
  */
-export { default as SymAlgorithm } from './type/symmetric_algorithm';
+export { default as TypeEnum } from './type/enum';
 /**
  * @see module:type/symmetric_key_material
  * @name module:openpgp.SymmetricKeyMaterial

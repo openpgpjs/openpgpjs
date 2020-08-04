@@ -713,14 +713,14 @@ module.exports = () => describe("Packet", function() {
       expect(key[2].verify(key[0],
         openpgp.enums.signature.certGeneric,
         {
-            userId: key[1],
-            key: key[0]
+          userId: key[1],
+          key: key[0]
         })).to.eventually.be.true,
       expect(key[4].verify(key[0],
         openpgp.enums.signature.keyBinding,
         {
-            key: key[0],
-            bind: key[3]
+          key: key[0],
+          bind: key[3]
         })).to.eventually.be.true
     ]);
   });
@@ -945,6 +945,43 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
           openpgp.stream.pipe(signed2[0].getBytes(), new openpgp.stream.WritableStream())
         ]);
       });
+    });
+  });
+
+  describe('Symmetric key encrypted symmetric key packet', () => {
+    let symmetricKey;
+    let enc;
+    const secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+
+    beforeEach(async () => {
+      symmetricKey = new openpgp.SecretSubkeyPacket();
+      symmetricKey.algorithm = openpgp.enums.publicKey.aead;
+      await symmetricKey.generate(null, null, 'aes256');
+
+      enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
+      enc.sessionKey = secret;
+      enc.publicKeyAlgorithm = 'aead';
+      enc.sessionKeyAlgorithm = 'aes256';
+      enc.publicKeyId.bytes = '12345678';
+    });
+
+    it('encrypt/decrypt using symmetric private key', async () => {
+      await enc.encrypt(symmetricKey);
+      await enc.decrypt(symmetricKey);
+      expect(openpgp.util.equalsUint8Array(secret, enc.sessionKey));
+    });
+
+    it('throws error encrypting with encrypted params', async () => {
+      await symmetricKey.encrypt("abcd");
+      await symmetricKey.clearPrivateParams();
+      await expect(enc.encrypt(symmetricKey)).to.eventually.be.rejectedWith('Cannot encrypt with symmetric key missing private parameters');
+    });
+
+    it('throws error decrypting with encrypted params', async () => {
+      await enc.encrypt(symmetricKey);
+      await symmetricKey.encrypt("abcd");
+      await symmetricKey.clearPrivateParams();
+      await expect(enc.decrypt(symmetricKey)).to.eventually.be.rejectedWith('Cannot encrypt with symmetric key missing private parameters');
     });
   });
 });

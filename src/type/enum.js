@@ -17,21 +17,21 @@
 
 
 /**
- * Symmetric algorithms
+ * Wrapper for enums
  *
  * @requires enums
- * @module type/symmetric_algo.js
+ * @module type/enum.js
  */
 
 
 import enums from "../enums";
 
-class SymmetricAlgorithm {
+const type_enum = e => class EnumType {
   constructor(data) {
     if (typeof data === 'undefined') {
       this.data = null;
     } else {
-      this.data = enums.write(enums.symmetric, data);
+      this.data = enums.write(e, data);
     }
   }
 
@@ -41,7 +41,7 @@ class SymmetricAlgorithm {
    */
   read(input) {
     const data = input[0];
-    this.data = enums.write(enums.symmetric, data);
+    this.data = enums.write(e, data);
     return 1;
   }
 
@@ -58,8 +58,12 @@ class SymmetricAlgorithm {
    * @returns  {string}  The name of the algorithm
    */
   getName() {
-    return enums.read(enums.symmetric, this.data);
+    return enums.read(e, this.data);
   }
-}
+};
+const type_algo = type_enum(enums.symmetric);
+const type_aead = type_enum(enums.aead);
 
-export default SymmetricAlgorithm;
+export { type_algo, type_aead };
+
+export default type_enum;

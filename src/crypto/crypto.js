@@ -27,7 +27,7 @@
  * @requires type/kdf_params
  * @requires type/mpi
  * @requires type/byte_array
- * @requires type/symmetric_algorithm
+ * @requires type/enum
  * @requires type/oid
  * @requires enums
  * @requires util
@@ -43,11 +43,12 @@ import type_kdf_params from '../type/kdf_params';
 import type_mpi from '../type/mpi';
 import type_oid from '../type/oid';
 import type_byte from '../type/byte_array';
-import type_algo from '../type/symmetric_algorithm';
+import { type_algo, type_aead } from '../type/enum';
 import enums from '../enums';
 import util from '../util';
 import pkcs1 from './pkcs1';
 import pkcs5 from './pkcs5';
+import crypto from "./";
 
 function constructParams(types, data) {
   return types.map(function(type, i) {
@@ -100,6 +101,21 @@ export default {
           oid, kdfParams, data, Q, fingerprint);
         return constructParams(types, [V, C]);
       }
+      case enums.publicKey.aead: {
+        if (pub_params.length < 3) {
+          throw new Error('Cannot encrypt with symmetric key missing private parameters');
+        }
+        data = util.strToUint8Array(data);
+        const symmetric_algo = pub_params[0].getName();
+        const aead_mode = 'eax';
+        const blockLen = cipher[symmetric_algo].blockSize;
+        const iv = await random.getRandomBytes(blockLen);
+        const key = pub_params[2].data;
+        const mode = crypto[aead_mode];
+        const modeInstance = await mode(symmetric_algo, key);
+        const res = await modeInstance.encrypt(data, iv.subarray(0, mode.ivLength), new Uint8Array());
+        return constructParams(types, [symmetric_algo, aead_mode, iv, res]);
+      }
       default:
         return [];
     }
@@ -150,6 +166,20 @@ export default {
         const result = new type_mpi(await publicKey.elliptic.ecdh.decrypt(
           oid, kdfParams, V, C, Q, d, fingerprint));
         return pkcs5.decode(result.toUint8Array());
+      }
+      case enums.publicKey.aead: {
+        if (key_params.length < 3) {
+          throw new Error('Cannot encrypt with symmetric key missing private parameters');
+        }
+        const symmetric_algo = data_params[0].getName();
+        const aead_mode = data_params[1].getName();
+        const iv = data_params[2].data;
+        const data = data_params[3].data;
+        const key = key_params[2].data;
+        const mode = crypto[aead_mode];
+        const modeInstance = await mode(symmetric_algo, key);
+        const res = await modeInstance.decrypt(data, iv.subarray(0, mode.ivLength), new Uint8Array());
+        return util.uint8ArrayToStr(res);
       }
       default:
         throw new Error('Invalid public key encryption algorithm.');
@@ -259,6 +289,8 @@ export default {
       //       - ECDH Symmetric Key
       case enums.publicKey.ecdh:
         return [type_mpi, type_ecdh_symkey];
+      case enums.publicKey.aead:
+        return [type_algo, type_aead, type_byte, type_byte];
       default:
         throw new Error('Invalid public key encryption algorithm.');
     }

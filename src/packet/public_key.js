@@ -31,7 +31,7 @@ import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
 import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import type_keyid from '../type/keyid';
 import type_mpi from '../type/mpi';
-import type_algo from '../type/symmetric_algorithm';
+import type_algo from '../type/enum';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
