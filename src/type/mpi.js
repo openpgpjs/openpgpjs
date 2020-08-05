@@ -54,8 +54,8 @@ class MPI {
 
   /**
    * Parsing function for a MPI ({@link https://tools.ietf.org/html/rfc4880#section-3.2|RFC 4880 3.2}).
-   * @param {Uint8Array} input  Payload of MPI data
-   * @param {String}     endian Endianness of the data; 'be' for big-endian or 'le' for little-endian
+   * @param {Uint8Array|string} bytes  Payload of MPI data
+   * @param {'be'|'le'}     endian Endianness of the data; 'be' for big-endian or 'le' for little-endian
    * @returns {Integer}          Length of data read
    */
   read(bytes, endian = 'be') {
