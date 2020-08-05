@@ -20,7 +20,7 @@
 /**
  * @requires type/keyid
  * @requires type/mpi
- * @requires type/enum
+ * @requires type/oid
  * @requires config
  * @requires crypto
  * @requires enums
@@ -31,7 +31,7 @@ import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
 import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import type_keyid from '../type/keyid';
 import type_mpi from '../type/mpi';
-import { type_algo } from '../type/enum';
+import type_oid from '../type/oid';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -240,7 +240,7 @@ class PublicKeyPacket {
 
   /**
    * Returns algorithm information
-   * @returns {Object} An object of the form {algorithm: String, rsaBits:int, curve:String}
+   * @returns {Object} An object of the form {algorithm: String, rsaBits:int, curve:String, symmetric: String}
    */
   getAlgorithmInfo() {
     const result = {};
@@ -248,10 +248,10 @@ class PublicKeyPacket {
     if (this.params[0] instanceof type_mpi) {
       result.rsaBits = this.params[0].byteLength() * 8;
       result.bits = result.rsaBits; // Deprecated.
-    } else if (this.params[0] instanceof type_algo) {
-      result.symmetric = this.params[0].getName();
-    } else {
+    } else if (this.params[0] instanceof type_oid) {
       result.curve = this.params[0].getName();
+    } else {
+      result.symmetric = this.params[0].getName();
     }
     return result;
   }
