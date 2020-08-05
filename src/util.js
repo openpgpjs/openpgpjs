@@ -307,8 +307,8 @@ export default {
 
   /**
    * Check Uint8Array equality
-   * @param {Uint8Array} first array
-   * @param {Uint8Array} second array
+   * @param {Uint8Array} array1 first array
+   * @param {Uint8Array} array2 second array
    * @returns {Boolean} equality
    */
   equalsUint8Array: function (array1, array2) {

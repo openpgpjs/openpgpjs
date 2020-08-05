@@ -103,7 +103,7 @@ async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
           return await webVerify(curve, hash_algo, signature, message, publicKey);
         } catch (err) {
           // We do not fallback if the error is related to key integrity
-          // Unfortunaley Safari does not support p521 and throws a DataError when using it
+          // Unfortunately Safari does not support p521 and throws a DataError when using it
           // So we need to always fallback for that curve
           if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
             throw err;

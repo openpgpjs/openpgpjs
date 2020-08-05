@@ -36,7 +36,7 @@ class Keyid {
 
   /**
    * Parsing method for a key id
-   * @param {Uint8Array} input Input to read the key id from
+   * @param {Uint8Array} bytes Input to read the key id from
    */
   read(bytes) {
     this.bytes = util.uint8ArrayToStr(bytes.subarray(0, 8));

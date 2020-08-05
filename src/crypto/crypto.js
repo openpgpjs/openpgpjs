@@ -154,7 +154,7 @@ export default {
 
   /** Returns the types comprising the private key of an algorithm
    * @param {module:enums.publicKey}  algo The public key algorithm
-   * @returns {Array<String>}         The array of types
+   * @returns {Array<Object>}         The array of types
    */
   getPrivKeyParamTypes: function(algo) {
     switch (algo) {
@@ -188,7 +188,7 @@ export default {
 
   /** Returns the types comprising the public key of an algorithm
    * @param {module:enums.publicKey}  algo The public key algorithm
-   * @returns {Array<String>}         The array of types
+   * @returns {Array<Object>}         The array of types
    */
   getPubKeyParamTypes: function(algo) {
     switch (algo) {
@@ -231,7 +231,7 @@ export default {
 
   /** Returns the types comprising the encrypted session key of an algorithm
    * @param {module:enums.publicKey}  algo The public key algorithm
-   * @returns {Array<String>}         The array of types
+   * @returns {Array<Object>}         The array of types
    */
   getEncSessionKeyParamTypes: function(algo) {
     switch (algo) {
@@ -301,7 +301,7 @@ export default {
    * Validate algorithm-specific key parameters
    * @param {module:enums.publicKey}  algo The public key algorithm
    * @param {Array}                   params The array of parameters
-   * @returns {Promise<Boolean>       whether the parameters are valid
+   * @returns {Promise<Boolean>}       whether the parameters are valid
    * @async
    */
   validateParams: async function(algo, params) {
