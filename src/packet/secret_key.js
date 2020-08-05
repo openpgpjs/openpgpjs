@@ -161,7 +161,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
   /**
    * Creates an OpenPGP key packet for the given key.
-   * @returns {String} A string of bytes containing the secret key OpenPGP packet
+   * @returns {Uint8Array} A string of bytes containing the secret key OpenPGP packet
    */
   write() {
     const arr = [this.writePublicKey()];

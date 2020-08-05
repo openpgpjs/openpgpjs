@@ -24,8 +24,8 @@ import util from '../util';
  */
 class PacketList extends Array {
   /**
-   * Reads a stream of binary data and interprents it as a list of packets.
-   * @param {Uint8Array | ReadableStream<Uint8Array>} A Uint8Array of bytes.
+   * Reads a stream of binary data and interprets it as a list of packets.
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes A Uint8Array of bytes.
    */
   async read(bytes, allowedPackets, streaming) {
     this.stream = stream.transformPair(bytes, async (readable, writable) => {

@@ -46,9 +46,9 @@ module.exports = () => describe('Decrypt and decompress message tests', function
     it(`Decrypts message compressed with ${key}`, async function () {
       const message = await openpgp.message.readArmored(test.input);
       const options = {
-          passwords: password,
-          message
-        };
+        passwords: password,
+        message
+      };
       return openpgp.decrypt(options).then(function (decrypted) {
         expect(decrypted.data).to.equal(test.output + '\n');
       });
