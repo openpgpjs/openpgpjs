@@ -59,7 +59,7 @@ class S2K {
 
   /**
    * Parsing function for a string-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
-   * @param {String} input Payload of string-to-key specifier
+   * @param {String} bytes Payload of string-to-key specifier
    * @returns {Integer} Actual length of the object
    */
   read(bytes) {
