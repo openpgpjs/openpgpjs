@@ -349,8 +349,8 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
       (signature.keyFlags[0] & enums.keyFlags.sign_data) !== 0);
 }
 
-export function isValidEncryptionKeyPacket(keyPacket, signature, allowRevoked = false) {
-  if (!signature.verified || (allowRevoked !== true && signature.revoked !== false)) { // Sanity check
+export function isValidEncryptionKeyPacket(keyPacket, signature) {
+  if (!signature.verified || signature.revoked !== false) { // Sanity check
     throw new Error('Signature not verified');
   }
   return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&

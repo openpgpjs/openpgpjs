@@ -130,8 +130,7 @@ PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
   const expectedAlgo = enums.write(enums.publicKey, key.algorithm);
   // check that session key algo matches the secret key algo
-  // considering rsa_encrypt and rsa_encrypt_sign as equal
-  if ((algo > 2 || expectedAlgo > 2) && algo !== expectedAlgo) {
+  if (algo !== expectedAlgo) {
     throw new Error('Decryption error');
   }
   const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());

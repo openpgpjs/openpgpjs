@@ -330,7 +330,7 @@ describe("Packet", function() {
       const msg2 = new openpgp.packet.List();
 
       enc.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
-      enc.publicKeyAlgorithm = 'rsa_encrypt';
+      enc.publicKeyAlgorithm = 'rsa_encrypt_sign';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
       return enc.encrypt({ params: mpi, getFingerprintBytes() {} }).then(async () => {
@@ -339,7 +339,7 @@ describe("Packet", function() {
 
         await msg2.read(msg.write());
 
-        return msg2[0].decrypt({ algorithm: 'rsa_encrypt', params: mpi, getFingerprintBytes() {} }).then(() => {
+        return msg2[0].decrypt({ algorithm: 'rsa_encrypt_sign', params: mpi, getFingerprintBytes() {} }).then(() => {
 
           expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
           expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
@@ -379,7 +379,7 @@ describe("Packet", function() {
     const secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
 
     enc.sessionKey = secret;
-    enc.publicKeyAlgorithm = 'rsa_encrypt';
+    enc.publicKeyAlgorithm = 'rsa_encrypt_sign';
     enc.sessionKeyAlgorithm = 'aes256';
     enc.publicKeyId.bytes = '12345678';
 

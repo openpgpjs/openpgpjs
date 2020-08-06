@@ -151,7 +151,7 @@ Message.prototype.decrypt = async function(privateKeys, passwords, sessionKeys, 
  * @async
  */
 Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
-  let sessionKeyPackets = [];
+  let keyPackets = [];
 
   let exception;
   if (passwords) {
@@ -167,10 +167,10 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
       } else {
         packets = symESKeyPacketlist;
       }
-      await Promise.all(packets.map(async function(sessionKeyPacket) {
+      await Promise.all(packets.map(async function(keyPacket) {
         try {
-          await sessionKeyPacket.decrypt(password);
-          sessionKeyPackets.push(sessionKeyPacket);
+          await keyPacket.decrypt(password);
+          keyPackets.push(keyPacket);
         } catch (err) {
           util.print_debug_error(err);
         }
@@ -181,7 +181,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
     if (!pkESKeyPacketlist) {
       throw new Error('No public key encrypted session key packet found.');
     }
-    await Promise.all(pkESKeyPacketlist.map(async function(sessionKeyPacket) {
+    await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
       await Promise.all(privateKeys.map(async function(privateKey) {
         let algos = [
           enums.symmetric.aes256, // Old OpenPGP.js default fallback
@@ -197,7 +197,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
         } catch (e) {}
 
         // do not check key expiration to allow decryption of old messages
-        const privateKeyPackets = (await privateKey.getDecryptionKeys(sessionKeyPacket.publicKeyId, null)).map(key => key.keyPacket);
+        const privateKeyPackets = (await privateKey.getDecryptionKeys(keyPacket.publicKeyId, null)).map(key => key.keyPacket);
         await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
           if (!privateKeyPacket) {
             return;
@@ -206,29 +206,29 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
             throw new Error('Private key is not decrypted.');
           }
           try {
-            await sessionKeyPacket.decrypt(privateKeyPacket);
-            if (!algos.includes(enums.write(enums.symmetric, sessionKeyPacket.sessionKeyAlgorithm))) {
+            await keyPacket.decrypt(privateKeyPacket);
+            if (!algos.includes(enums.write(enums.symmetric, keyPacket.sessionKeyAlgorithm))) {
               throw new Error('A non-preferred symmetric algorithm was used.');
             }
-            sessionKeyPackets.push(sessionKeyPacket);
+            keyPackets.push(keyPacket);
           } catch (err) {
             util.print_debug_error(err);
             exception = err;
           }
         }));
       }));
-      stream.cancel(sessionKeyPacket.encrypted); // Don't keep copy of encrypted data in memory.
-      sessionKeyPacket.encrypted = null;
+      stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
+      keyPacket.encrypted = null;
     }));
   } else {
     throw new Error('No key or password specified.');
   }
 
-  if (sessionKeyPackets.length) {
+  if (keyPackets.length) {
     // Return only unique session keys
-    if (sessionKeyPackets.length > 1) {
+    if (keyPackets.length > 1) {
       const seen = {};
-      sessionKeyPackets = sessionKeyPackets.filter(function(item) {
+      keyPackets = keyPackets.filter(function(item) {
         const k = item.sessionKeyAlgorithm + util.Uint8Array_to_str(item.sessionKey);
         if (seen.hasOwnProperty(k)) {
           return false;
@@ -238,7 +238,7 @@ Message.prototype.decryptSessionKeys = async function(privateKeys, passwords) {
       });
     }
 
-    return sessionKeyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
+    return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
   }
   throw exception || new Error('Session key decryption failed.');
 };
