@@ -374,7 +374,6 @@ EQr2Mx42THr260IFYp5E/rIA
 =oA0b
 -----END PGP PRIVATE KEY BLOCK-----`;
 
-
 const mismatchingKeyParams = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 Version: OpenPGP.js v4.7.0
 Comment: https://openpgpjs.org
@@ -709,8 +708,10 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       await expect(privateKey.decrypt('wrong passphrase')).to.eventually.be.rejectedWith('Incorrect key passphrase');
     });
 
-    it('Decrypting key with correct passphrase does not throw', async function () {
-      await expect(privateKey.decrypt(passphrase)).to.not.be.rejected;
+    it('Can decrypt key with correct passphrase', async function () {
+      expect(privateKey.isDecrypted()).to.be.false;
+      await privateKey.decrypt(passphrase);
+      expect(privateKey.isDecrypted()).to.be.true;
     });
 
     describe('decryptKey', function() {
@@ -1784,7 +1785,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       let decryptedPrivateKey;
       beforeEach(async function() {
         if (!decryptedPrivateKey) {
-          privateKey.decrypt(passphrase);
+          await privateKey.decrypt(passphrase);
           decryptedPrivateKey = privateKey;
         }
         privateKey = decryptedPrivateKey;

@@ -2203,13 +2203,13 @@ function versionSpecificTests() {
     const armor1 = key.armor();
     const armor2 = key.armor();
     expect(armor1).to.equal(armor2);
-    await expect(key.decrypt('passphrase')).to.not.be.rejected;
+    await key.decrypt('passphrase');
     expect(key.isDecrypted()).to.be.true;
     await key.encrypt('new_passphrase');
     expect(key.isDecrypted()).to.be.false;
     await expect(key.decrypt('passphrase')).to.be.rejectedWith('Incorrect key passphrase');
     expect(key.isDecrypted()).to.be.false;
-    await expect(key.decrypt('new_passphrase')).to.not.be.rejected;
+    await key.decrypt('new_passphrase');
     expect(key.isDecrypted()).to.be.true;
     const armor3 = key.armor();
     expect(armor3).to.not.equal(armor1);
