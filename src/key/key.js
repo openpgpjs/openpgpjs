@@ -166,7 +166,7 @@ class Key {
 
   /**
    * Clones the key object
-   * @param  {type/keyid} deep Whether to clone each packet, in addition to the list of packets
+   * @param  {Boolean} deep Whether to clone each packet, in addition to the list of packets
    * @returns {Promise<module:key.Key>} cloned key
    * @async
    */
@@ -424,7 +424,6 @@ class Key {
    * Decrypts all secret key and subkey packets matching keyId
    * @param  {String|Array<String>} passphrases
    * @param  {module:type/keyid} keyId
-   * @returns {Promise<Boolean>} true if all matching key and subkey packets decrypted successfully
    * @throws {Error} if any matching key or subkey packets did not decrypt successfully
    * @async
    */
@@ -434,7 +433,7 @@ class Key {
     }
     passphrases = util.isArray(passphrases) ? passphrases : [passphrases];
 
-    const results = await Promise.all(this.getKeys(keyId).map(async function(key) {
+    await Promise.all(this.getKeys(keyId).map(async function(key) {
       let decrypted = false;
       let error = null;
       await Promise.all(passphrases.map(async function(passphrase) {
@@ -457,8 +456,6 @@ class Key {
       // The full key should be decrypted and we can validate it all
       await this.validate();
     }
-
-    return results.every(result => result === true);
   }
 
   /**
