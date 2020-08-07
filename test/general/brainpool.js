@@ -184,7 +184,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     const pk = await openpgp.key.readArmored(data[name].priv);
     expect(pk).to.exist;
     expect(pk.getKeyId().toHex()).to.equal(data[name].id);
-    expect(await pk.decrypt(data[name].pass)).to.be.true;
+    await pk.decrypt(data[name].pass);
     data[name].priv_key = pk;
     return pk;
   }
