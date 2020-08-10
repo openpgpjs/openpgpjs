@@ -3401,6 +3401,33 @@ VYGdb3eNlV8CfoEC
       await subKey.verify(privateKey.primaryKey);
     });
 
+    it('create and add a new rsa key with a symmetric subkey', async function() {
+      const userId = 'test <a@b.com>';
+      const opt = { rsaBits: 512, userIds: [userId], subkeys:[{ symmetric: 'aes256' }] };
+      if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
+      const { key } = await openpgp.generateKey(opt);
+      const subKey = key.subKeys[0];
+      expect(key.subKeys.length).to.be.equal(1);
+      expect(subKey).to.exist;
+      expect(subKey.keyPacket.params[1]).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.params[2]).to.exist.and.to.have.length(32);
+      await subKey.verify(key.primaryKey);
+    });
+
+    it('create and add a new encrypted rsa key with a symmetric subkey', async function() {
+      const userId = 'test <a@b.com>';
+      const opt = { rsaBits: 512, userIds: [userId], passphrase: '123', subkeys:[{ symmetric: 'aes256' }] };
+      if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+
+      const { key } = await openpgp.generateKey(opt);
+      const subKey = key.subKeys[0];
+      expect(key.subKeys.length).to.be.equal(1);
+      expect(subKey).to.exist;
+      expect(subKey.keyPacket.params[1]).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.params[2]).not.to.exist;
+      await subKey.verify(key.primaryKey);
+    });
     it('sign/verify data with the new subkey correctly using curve25519', async function() {
       const userId = 'test <a@b.com>';
       const opt = { curve: 'curve25519', userIds: [userId], subkeys:[] };
