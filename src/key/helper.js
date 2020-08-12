@@ -151,7 +151,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
         case 'ecdh':
         case 'ecdsa':
         case 'eddsa':
-          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.params[0]);
+          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
       }
   }
   return crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?

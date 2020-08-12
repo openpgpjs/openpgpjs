@@ -28,18 +28,23 @@ import random from '../random';
 export default {
   /**
    * ElGamal Encryption function
-   * @param {BigInteger} m
-   * @param {BigInteger} p
-   * @param {BigInteger} g
-   * @param {BigInteger} y
+   * @param {Uint8Array} m
+   * @param {Uint8Array} p
+   * @param {Uint8Array} g
+   * @param {Uint8Array} y
    * @returns {{ c1: BigInteger, c2: BigInteger }}
    * @async
    */
   encrypt: async function(m, p, g, y) {
     const BigInteger = await util.getBigInteger();
-    // See Section 11.5 here: https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf
-    const k = await random.getRandomBigInteger(new BigInteger(0), p); // returns in [0, p-1]
-    return {
+    m = new BigInteger(m);
+    p = new BigInteger(p);
+    g = new BigInteger(g);
+    y = new BigInteger(y);
+    // OpenPGP uses a "special" version of ElGamal where g is generator of the full group Z/pZ*
+    // hence g has order p-1, and to avoid that k = 0 mod p-1, we need to pick k in [1, p-2]
+    const k = await random.getRandomBigInteger(new BigInteger(1), p.dec()); // returns in [1, p-2]
+    return { // TODOOOOOOOo return arrays
       c1: g.modExp(k, p),
       c2: y.modExp(k, p).imul(m).imod(p)
     };
@@ -47,14 +52,20 @@ export default {
 
   /**
    * ElGamal Encryption function
-   * @param {BigInteger} c1
-   * @param {BigInteger} c2
-   * @param {BigInteger} p
-   * @param {BigInteger} x
-   * @returns BigInteger
+   * @param {Uint8Array} c1
+   * @param {Uint8Array} c2
+   * @param {Uint8Array} p
+   * @param {Uint8Array} x
+   * @returns BigInteger // TODOOOOOOOOOO array
    * @async
    */
   decrypt: async function(c1, c2, p, x) {
+    const BigInteger = await util.getBigInteger();
+    p = new BigInteger(p);
+    x = new BigInteger(x);
+    c1 = new BigInteger(c1);
+    c2 = new BigInteger(c2);
+
     return c1.modExp(x, p).modInv(p).imul(c2).imod(p);
   },
 

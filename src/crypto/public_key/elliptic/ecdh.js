@@ -65,31 +65,6 @@ function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
   ]);
 }
 
-/**
- * Parses MPI params and returns them as byte arrays of fixed length
- * @param {Array} params key parameters
- * @returns {Object} parameters in the form
- *  { oid, kdfParams, d: Uint8Array, Q: Uint8Array }
- */
-function parseParams(params) {
-  if (params.length < 3 || params.length > 4) {
-    throw new Error('Unexpected number of parameters');
-  }
-
-  const oid = params[0];
-  const curve = new Curve(oid);
-  const parsedParams = { oid };
-  // The public point never has leading zeros, as it is prefixed by 0x40 or 0x04
-  parsedParams.Q = params[1].toUint8Array();
-  parsedParams.kdfParams = params[2];
-
-  if (params.length === 4) {
-    parsedParams.d = params[3].toUint8Array('be', curve.payloadSize);
-  }
-
-  return parsedParams;
-}
-
 // Key Derivation Function (RFC 6637)
 async function kdf(hash_algo, X, length, param, stripLeading = false, stripTrailing = false) {
   // Note: X is little endian for Curve25519, big-endian for all others.
@@ -411,4 +386,4 @@ async function nodePublicEphemeralKey(curve, Q) {
   return { publicKey, sharedKey };
 }
 
-export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey, validateParams, parseParams };
+export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey, validateParams };

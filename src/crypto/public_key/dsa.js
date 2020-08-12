@@ -36,16 +36,21 @@ export default {
    * DSA Sign function
    * @param {Integer} hash_algo
    * @param {Uint8Array} hashed
-   * @param {BigInteger} g
-   * @param {BigInteger} p
-   * @param {BigInteger} q
-   * @param {BigInteger} x
-   * @returns {{ r: BigInteger, s: BigInteger }}
+   * @param {Uint8Array} g
+   * @param {Uint8Array} p
+   * @param {Uint8Array} q
+   * @param {Uint8Array} x
+   * @returns {{ r: Uint8Array, s: Uint8Array }}
    * @async
    */
   sign: async function(hash_algo, hashed, g, p, q, x) {
     const BigInteger = await util.getBigInteger();
     const one = new BigInteger(1);
+    p = new BigInteger(p);
+    q = new BigInteger(q);
+    g = new BigInteger(g);
+    x = new BigInteger(x);
+
     let k;
     let r;
     let s;
@@ -90,17 +95,21 @@ export default {
    * @param {BigInteger} r
    * @param {BigInteger} s
    * @param {Uint8Array} hashed
-   * @param {BigInteger} g
-   * @param {BigInteger} p
-   * @param {BigInteger} q
-   * @param {BigInteger} y
+   * @param {Uint8Array} g
+   * @param {Uint8Array} p
+   * @param {Uint8Array} q
+   * @param {Uint8Array} y
    * @returns {boolean}
    * @async
    */
   verify: async function(hash_algo, r, s, hashed, g, p, q, y) {
     const BigInteger = await util.getBigInteger();
     const zero = new BigInteger(0);
-
+    p = new BigInteger(p);
+    q = new BigInteger(q);
+    g = new BigInteger(g);
+    y = new BigInteger(y);
+    // TODOOOOO larabr also take r,s as arrays
     if (r.lte(zero) || r.gte(q) ||
         s.lte(zero) || s.gte(q)) {
       util.printDebug("invalid DSA Signature");

@@ -2796,7 +2796,7 @@ module.exports = () => describe('Key', function() {
     key.primaryKey.makeDummy();
     expect(key.primaryKey.isDummy()).to.be.true;
     await key.validate();
-    await expect(openpgp.reformatKey({ privateKey: key, userIds: 'test2 <b@a.com>' })).to.be.rejectedWith(/Missing private key parameters/);
+    await expect(openpgp.reformatKey({ privateKey: key, userIds: 'test2 <b@a.com>' })).to.be.rejectedWith(/Missing key parameters/);
   });
 
   it('makeDummy() - subkeys of the converted key can still sign', async function() {
@@ -2819,25 +2819,28 @@ module.exports = () => describe('Key', function() {
     const key = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
     const signingKeyPacket = key.subKeys[0].keyPacket;
-    const params = signingKeyPacket.params;
+    const privateParams = signingKeyPacket.privateParams;
     await key.clearPrivateParams();
     key.primaryKey.isEncrypted = false;
-    key.primaryKey.params = params;
+    key.primaryKey.privateParams = privateParams;
     key.subKeys[0].keyPacket.isEncrypted = false;
-    key.subKeys[0].keyPacket.params = params;
-    await expect(key.validate()).to.be.rejectedWith('Missing key parameters');
+    key.subKeys[0].keyPacket.privateParams = privateParams;
+    await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
   it('clearPrivateParams() - detect that private key parameters were zeroed out', async function() {
     const key = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
     const signingKeyPacket = key.subKeys[0].keyPacket;
-    const params = signingKeyPacket.params.slice();
+    const privateParams = {};
+    Object.entries(signingKeyPacket.privateParams).forEach(([name, value]) => {
+      privateParams[name] = value;
+    });
     await key.clearPrivateParams();
     key.primaryKey.isEncrypted = false;
-    key.primaryKey.params = params;
+    key.primaryKey.privateParams = privateParams;
     key.subKeys[0].keyPacket.isEncrypted = false;
-    key.subKeys[0].keyPacket.params = params;
+    key.subKeys[0].keyPacket.privateParams = privateParams;
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
@@ -3312,9 +3315,9 @@ VYGdb3eNlV8CfoEC
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey).to.exist;
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
-      const subkeyN = subKey.keyPacket.params[0];
-      const pkN = privateKey.primaryKey.params[0];
-      expect(subkeyN.byteLength()).to.be.equal(rsaBits ? (rsaBits / 8) : pkN.byteLength());
+      const subkeyN = subKey.keyPacket.publicParams.n;
+      const pkN = privateKey.primaryKey.publicParams.n;
+      expect(subkeyN.length).to.be.equal(rsaBits ? (rsaBits / 8) : pkN.length);
       expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsaEncryptSign');
       expect(subKey.getAlgorithmInfo().rsaBits).to.be.equal(rsaBits || privateKey.getAlgorithmInfo().rsaBits);
       await subKey.verify(newPrivateKey.primaryKey);
@@ -3360,8 +3363,8 @@ VYGdb3eNlV8CfoEC
       expect(subKey1.getKeyId().toHex()).to.be.equal(subKey.getKeyId().toHex());
       expect(subKey).to.exist;
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
-      const subkeyOid = subKey.keyPacket.params[0];
-      const pkOid = privateKey.primaryKey.params[0];
+      const subkeyOid = subKey.keyPacket.publicParams.oid;
+      const pkOid = privateKey.primaryKey.publicParams.oid;
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
       expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
       await subKey.verify(privateKey.primaryKey);
@@ -3378,7 +3381,7 @@ VYGdb3eNlV8CfoEC
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey).to.exist;
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
-      expect(subKey.keyPacket.params[0].getName()).to.be.equal(openpgp.enums.curve.curve25519);
+      expect(subKey.keyPacket.publicParams.oid.getName()).to.be.equal(openpgp.enums.curve.curve25519);
       expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('ecdh');
       await subKey.verify(privateKey.primaryKey);
     });
@@ -3393,8 +3396,8 @@ VYGdb3eNlV8CfoEC
       const armoredKey = newPrivateKey.armor();
       newPrivateKey = await openpgp.key.readArmored(armoredKey);
       const subKey = newPrivateKey.subKeys[total];
-      const subkeyOid = subKey.keyPacket.params[0];
-      const pkOid = newPrivateKey.primaryKey.params[0];
+      const subkeyOid = subKey.keyPacket.publicParams.oid;
+      const pkOid = newPrivateKey.primaryKey.publicParams.oid;
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
       expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
       await subKey.verify(newPrivateKey.primaryKey);

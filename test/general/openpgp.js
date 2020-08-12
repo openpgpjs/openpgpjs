@@ -2328,7 +2328,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         const pubKeyDE = await openpgp.key.readArmored(pub_key_de);
         const privKeyDE = await openpgp.key.readArmored(priv_key_de);
         // corrupt the public key params
-        privKeyDE.subKeys[0].keyPacket.params[0].data[0]++;
+        privKeyDE.subKeys[0].keyPacket.publicParams.p[0]++;
         // validation will not check the decryption subkey and will succeed
         await privKeyDE.decrypt(passphrase);
         const encrypted = await openpgp.encrypt({
