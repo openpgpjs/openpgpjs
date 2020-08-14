@@ -169,9 +169,6 @@ export default {
         return pkcs5.decode(result.toUint8Array());
       }
       case enums.publicKey.aead: {
-        if (key_params.length < 3) {
-          throw new Error('Cannot encrypt with symmetric key missing private parameters');
-        }
         const symmetric_algo = key_params[0].getName();
         const key = key_params[2].data;
 
@@ -218,6 +215,7 @@ export default {
       case enums.publicKey.ecdsa:
       case enums.publicKey.eddsa:
         return [type_mpi];
+      case enums.publicKey.cmac:
       case enums.publicKey.aead:
         return [type_byte];
       default:
@@ -263,6 +261,7 @@ export default {
       //       - KDF: variable-length field containing KDF parameters.
       case enums.publicKey.ecdh:
         return [type_oid, type_mpi, type_kdf_params];
+      case enums.publicKey.cmac:
       case enums.publicKey.aead:
         return [type_algo, type_byte];
       default:
@@ -292,6 +291,7 @@ export default {
       //       - ECDH Symmetric Key
       case enums.publicKey.ecdh:
         return [type_mpi, type_ecdh_symkey];
+      case enums.publicKey.cmac:
       case enums.publicKey.aead:
         return [type_aead, type_byte, type_byte];
       default:
@@ -335,6 +335,7 @@ export default {
           keyObject.d
         ]);
       }
+      case enums.publicKey.cmac:
       case enums.publicKey.aead: {
         const keyObject = await this.generateSessionKey(symmetric);
         const digest = await hash.sha256(keyObject);
@@ -409,6 +410,7 @@ export default {
         const { oid, Q, seed } = publicKey.elliptic.eddsa.parseParams(params);
         return publicKey.elliptic.eddsa.validateParams(oid, Q, seed);
       }
+      case enums.publicKey.cmac:
       case enums.publicKey.aead: {
         const expectedLen = 3;
         if (params.length < expectedLen) {

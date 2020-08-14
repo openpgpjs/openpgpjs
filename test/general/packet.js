@@ -976,12 +976,5 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       await symmetricKey.clearPrivateParams();
       await expect(enc.encrypt(symmetricKey)).to.eventually.be.rejectedWith('Cannot encrypt with symmetric key missing private parameters');
     });
-
-    it('throws error decrypting with encrypted params', async () => {
-      await enc.encrypt(symmetricKey);
-      await symmetricKey.encrypt("abcd");
-      await symmetricKey.clearPrivateParams();
-      await expect(enc.decrypt(symmetricKey)).to.eventually.be.rejectedWith('Cannot encrypt with symmetric key missing private parameters');
-    });
   });
 });

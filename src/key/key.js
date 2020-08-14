@@ -248,7 +248,6 @@ class Key {
    * @returns {module:key.Key} new public Key
    */
   toPublic() {
-    // todo sym: how does this work with symmetric keys?
     const packetlist = new PacketList();
     const keyPackets = this.toPacketlist();
     let bytes;
@@ -869,7 +868,7 @@ class Key {
    * @param {Number} [options.keyExpirationTime=0]
    *                             The number of seconds after the key creation time that the key expires
    * @param {String} options.curve       (optional) Elliptic curve for ECC keys
-   * @param {String} options.symmetric   (optional) symmetric algorithm for symmetric keys
+   * @param {String} options.symmetric   (optional) Symmetric algorithm for aead/cmac keys
    * @param {Date} options.date          (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @returns {Promise<module:key.Key>}

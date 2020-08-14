@@ -70,6 +70,7 @@ if (globalThis.ReadableStream) {
  * @param  {String} curve            (optional) elliptic curve for ECC keys:
  *                                              curve25519, p256, p384, p521, secp256k1,
  *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
+ * @param  {String} symmetric        (optional) symmetric algorithm for aead/cmac keys
  * @param  {Date} date               (optional) override the creation date of the key and the key signatures
  * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
@@ -78,10 +79,11 @@ if (globalThis.ReadableStream) {
  * @async
  * @static
  */
-export function generateKey({ userIds = [], passphrase = "", rsaBits = null, keyExpirationTime = 0, curve = "curve25519", date = new Date(), subkeys = [{}] }) {
+export async function generateKey({ userIds = [], passphrase = "", rsaBits = null, keyExpirationTime = 0, curve = "curve25519", symmetric = null, date = new Date(), subkeys = [{}] }) {
   userIds = toArray(userIds);
-  curve = rsaBits ? "" : curve;
-  const options = { userIds, passphrase, rsaBits, keyExpirationTime, curve, date, subkeys };
+  symmetric = rsaBits ? "" : symmetric;
+  curve = rsaBits || symmetric ? "" : curve;
+  const options = { userIds, passphrase, rsaBits, keyExpirationTime, curve, symmetric, date, subkeys };
   if (util.getWebCryptoAll() && rsaBits && rsaBits < 2048) {
     throw new Error('rsaBits should be 2048 or 4096, found: ' + rsaBits);
   }

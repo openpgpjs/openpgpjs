@@ -36,7 +36,7 @@ const type_enum = e => class EnumType {
   }
 
   /**
-   * Read a SymmetricKey from a string
+   * Read an enum entry from a string or number
    * @param  {string|Number}  input  Where to read the symmetric algo from
    */
   read(input) {
@@ -46,7 +46,7 @@ const type_enum = e => class EnumType {
   }
 
   /**
-   * Write a Symmetric Algorithm as an integer
+   * Write an enum as an integer
    * @returns  {Uint8Array}  An integer representing the algorithm
    */
   write() {
@@ -54,8 +54,8 @@ const type_enum = e => class EnumType {
   }
 
   /**
-   * Get the name of the symmetric algorithm
-   * @returns  {string}  The name of the algorithm
+   * Get the name of the enum entry
+   * @returns  {string}  The name string
    */
   getName() {
     return enums.read(e, this.data);

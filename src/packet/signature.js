@@ -701,6 +701,8 @@ class SignaturePacket {
               publicKeyAlgorithm === enums.publicKey.ecdsa ||
               publicKeyAlgorithm === enums.publicKey.eddsa) {
       mpicount = 2;
+    } else if (publicKeyAlgorithm === enums.publicKey.cmac) {
+      mpicount = 1;
     }
 
     // EdDSA signature parameters are encoded in little-endian format

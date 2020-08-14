@@ -11,6 +11,7 @@ import crypto from './crypto';
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
+import CMAC from "./cmac";
 
 export default {
   /**
@@ -63,6 +64,19 @@ export default {
           S: msg_MPIs[1].toUint8Array('le', 32)
         };
         return publicKey.elliptic.eddsa.verify(oid, hash_algo, signature, data, Q, hashed);
+      }
+      case enums.publicKey.cmac: {
+        if (pub_MPIs.length < 3) {
+          throw new Error('Cannot verify CMAC signature with symmetric key missing private parameters');
+        }
+        const algo = pub_MPIs[0];
+        const key = pub_MPIs[2];
+        if (algo.getName().substr(0, 3) !== 'aes') {
+          throw new Error('CMAC supports only AES cipher');
+        }
+        const cmac = await CMAC(key);
+        const mac = await cmac(hashed);
+        return util.equalsUint8Array(mac, msg_MPIs[0].toUint8Array('be', 16));
       }
       default:
         throw new Error('Invalid signature algorithm.');
@@ -129,6 +143,17 @@ export default {
           util.uint8ArrayToMpi(signature.R),
           util.uint8ArrayToMpi(signature.S)
         ]);
+      }
+      case enums.publicKey.cmac: {
+        const algo = key_params[0];
+        const key = key_params[2];
+        if (algo.getName().substr(0, 3) !== 'aes') {
+          throw new Error('CMAC supports only AES cipher');
+        }
+        const cmac = await CMAC(key);
+        const mac = await cmac(hashed);
+
+        return util.uint8ArrayToMpi(mac);
       }
       default:
         throw new Error('Invalid signature algorithm.');

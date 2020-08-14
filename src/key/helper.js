@@ -350,7 +350,11 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       options.algorithm = enums.publicKey.ecdh;
     }
   } else if (options.symmetric) {
-    options.algorithm = enums.publicKey.aead;
+    if (options.sign) {
+      options.algorithm = enums.publicKey.cmac;
+    } else {
+      options.algorithm = enums.publicKey.aead;
+    }
   } else if (options.rsaBits) {
     options.algorithm = enums.publicKey.rsaEncryptSign;
   } else {

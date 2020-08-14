@@ -45,7 +45,7 @@ class ByteArray {
   }
 
   /**
-   * Read a SymmetricKey from an Uint8Array
+   * Read from an Uint8Array
    * @param  {Uint8Array}  input  Where to read the symmetric key from
    */
   read(input) {
@@ -60,7 +60,7 @@ class ByteArray {
   }
 
   /**
-   * Write a SymmetricKey as an Uint8Array
+   * Write as an Uint8Array
    * @returns  {Uint8Array}  An array containing the value
    */
   write() {

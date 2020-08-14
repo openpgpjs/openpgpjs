@@ -3384,7 +3384,6 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new symmetric subkey to a rsa key', async function() {
-      openpgp.config.tolerant = false;
       const privateKey = await openpgp.key.readArmored(priv_key_rsa);
       await privateKey.decrypt('hello world');
       const total = privateKey.subKeys.length;
@@ -3401,7 +3400,7 @@ VYGdb3eNlV8CfoEC
       await subKey.verify(privateKey.primaryKey);
     });
 
-    it('create and add a new rsa key with a symmetric subkey', async function() {
+    it('create and add a new rsa key with a symmetric encryption subkey', async function() {
       const userId = 'test <a@b.com>';
       const opt = { rsaBits: 512, userIds: [userId], subkeys:[{ symmetric: 'aes256' }] };
       if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -3415,7 +3414,7 @@ VYGdb3eNlV8CfoEC
       await subKey.verify(key.primaryKey);
     });
 
-    it('create and add a new encrypted rsa key with a symmetric subkey', async function() {
+    it('create and add a new encrypted rsa key with a symmetric encryption subkey', async function() {
       const userId = 'test <a@b.com>';
       const opt = { rsaBits: 512, userIds: [userId], passphrase: '123', subkeys:[{ symmetric: 'aes256' }] };
       if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
@@ -3427,6 +3426,19 @@ VYGdb3eNlV8CfoEC
       expect(subKey.keyPacket.params[1]).to.exist.and.to.have.length(32);
       expect(subKey.keyPacket.params[2]).not.to.exist;
       await subKey.verify(key.primaryKey);
+    });
+
+    it('create and add a symmetric signing key', async function() {
+      const userId = 'test <a@b.com>';
+      const opt = { userIds: [userId], symmetric: 'aes128' };
+      const { key } = await openpgp.generateKey(opt);
+      const signed = await openpgp.sign({ message: openpgp.message.fromText('the data to signed'), privateKeys: key, armor:false });
+      const message = await openpgp.message.read(signed);
+      const { signatures } = await openpgp.verify({ message, publicKeys: [key] });
+      expect(signatures).to.exist;
+      expect(signatures.length).to.be.equal(1);
+      expect(signatures[0].keyid.toHex()).to.be.equal(key.getKeyId().toHex());
+      expect(await signatures[0].verified).to.be.true;
     });
     it('sign/verify data with the new subkey correctly using curve25519', async function() {
       const userId = 'test <a@b.com>';
