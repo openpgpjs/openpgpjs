@@ -367,7 +367,6 @@ export function isValidDecryptionKeyPacket(signature) {
     throw new Error('Signature not verified');
   }
   return !signature.keyFlags ||
-      (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
-      (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0;
+    (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
+    (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0;
 }
-
