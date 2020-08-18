@@ -911,6 +911,32 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(notation.humanReadable).to.equal(false);
   });
 
+  it('Checks for critical bit in non-human-readable notations', async function() {
+    try {
+      openpgp.config.tolerant = false;
+      await openpgp.message.readArmored(`-----BEGIN PGP SIGNATURE-----
+
+wsEfBAABCABJBYJfKDH0K5QAAAAAAB0ABXVua25vd25AdGVzdHMuc2VxdW9pYS1w
+Z3Aub3JndmFsdWUWIQTRpm4aI7GCyZgPeIz7/MgqAV5zMAAKCRD7/MgqAV5zMLBK
+C/9Vdte8yq8QFp7Bo3mWWXiUDJ2vOdEpJs9PB12hN97wewjFKWvKcWRHofBrK+0v
+P4/sixMjqSXB75iz/lzCbPjkmgmaGKN6Smq6Pj5kIdpWIdtfjNoa+OEn1emrxpY1
+dT0Pe7r8w3Y/JmfK1ZoFfiq5YBP+rsjmAXf6BQ9RH+kMUsOgOVCjqzI5vPibTD91
+Aefm7XS35Wlj/O/zFXR9tiZyE/dKIujohB3bsV6sAmYzPxZVuZCYaj+6afRlAuWg
+IYs+aFmldMg4p1t1Ab/bRHbBxIlzhtbNE6IyOfc17mgOcjQzVJBc/EaxD7S3KjU2
+4aFmOaLyWDrvAJu1Ror2b+zekEiq90CnCtAUiAq6/qbWlGCGX4zFKWyHousDJcEB
+1n0xDkFUhndisMZanaU3S1hwzawMnpHi1RHI2a/etPPk0Ryrzo2rFi8ZdAHLWY6o
+4ymAWpppg47NhCwuYh/EG5G1P4ccxksRj1GX2r5HxH8ZeAQWWdviINErgrUONWHy
+bwM=
+=0x2S
+-----END PGP SIGNATURE-----`);
+      throw new Error('openpgp.message.readArmored should throw but it did not.');
+    } catch (e) {
+      expect(e.message).to.equal('Unknown critical notation: unknown@tests.sequoia-pgp.org');
+    } finally {
+      openpgp.config.tolerant = true;
+    }
+  });
+
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', async function() {
     const { reject_message_hash_algorithms } = openpgp.config;
     Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
