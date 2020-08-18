@@ -361,3 +361,12 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
       (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
       (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0);
 }
+
+export function isValidDecryptionKeyPacket(signature) {
+  if (!signature.verified) { // Sanity check
+    throw new Error('Signature not verified');
+  }
+  return !signature.keyFlags ||
+    (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
+    (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0;
+}

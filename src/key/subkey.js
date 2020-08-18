@@ -67,9 +67,9 @@ SubKey.prototype.isRevoked = async function(primaryKey, signature, key, date = n
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature. Throws if the subkey is invalid.
  * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey The primary key packet
- * @param  {Date}                     date       Use the given date instead of the current time
- * @returns {Promise<true>}                      The status of the subkey
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {Date}                    date        Use the given date instead of the current time
+ * @returns {Promise<undefined>}
  * @async
  */
 SubKey.prototype.verify = async function(primaryKey, date = new Date()) {

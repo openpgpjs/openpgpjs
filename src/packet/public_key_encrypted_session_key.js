@@ -128,6 +128,11 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+  const keyAlgo = enums.write(enums.publicKey, key.algorithm);
+  // check that session key algo matches the secret key algo
+  if (algo !== keyAlgo) {
+    throw new Error('Decryption error');
+  }
   const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
   const checksum = util.str_to_Uint8Array(decoded.substr(decoded.length - 2));
   key = util.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
