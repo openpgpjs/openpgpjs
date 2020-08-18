@@ -831,6 +831,15 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
 =fRXs
 -----END PGP MESSAGE-----`;
 
+const signature_with_non_human_readable_notations = `-----BEGIN PGP SIGNATURE-----
+
+wncEARYKAB8FAl2TS9MYFAAAAAAADAADdGVzdEBrZXkuY29tAQIDAAoJEGZ9
+gtV/iL8hrhMBAOQ/UgqRTbx1Z8inGmRdUx1cJU1SR4Pnq/eJNH/CFk5DAP0Q
+hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
+=ZGXr
+-----END PGP SIGNATURE-----
+`;
+
   it('Testing signature checking on CAST5-enciphered message', async function() {
     const { reject_message_hash_algorithms } = openpgp.config;
     Object.assign(openpgp.config, { reject_message_hash_algorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
@@ -885,6 +894,21 @@ vwjE8mqJXetNMfj8r2SCyvkEnlVRYR+/mnge+ib56FdJ8uKtqSxyvgA=
     await priv_key_gnupg_ext.decrypt('FlowCrypt');
     const sig = await openpgp.sign({ message: openpgp.message.fromText('test'), privateKeys: [priv_key_gnupg_ext], date: new Date('2018-12-17T03:24:00') });
     expect(sig.data).to.match(/-----END PGP MESSAGE-----\r\n$/);
+  });
+
+  it('Supports non-human-readable notations', async function() {
+    const { packets: [signature] } = await openpgp.message.readArmored(signature_with_non_human_readable_notations);
+    // There are no human-readable notations so `notations` property does not
+    // expose the `test@key.com` notation.
+    expect(Object.keys(signature.notations).length).to.equal(0);
+    expect(signature.notations['test@key.com']).to.equal(undefined);
+
+    // The notation is readable through `rawNotations` property:
+    expect(signature.rawNotations.length).to.equal(1);
+    const notation = signature.rawNotations[0];
+    expect(notation.name).to.equal('test@key.com');
+    expect(notation.value).to.deep.equal(Uint8Array.from([0x01, 0x02, 0x03]));
+    expect(notation.humanReadable).to.equal(false);
   });
 
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', async function() {

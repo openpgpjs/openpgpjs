@@ -71,7 +71,8 @@ function Signature(date = new Date()) {
   this.revocationKeyAlgorithm = null;
   this.revocationKeyFingerprint = null;
   this.issuerKeyId = new type_keyid();
-  this.notations = [];
+  this.rawNotations = [];
+  this.notations = {};
   this.preferredHashAlgorithms = null;
   this.preferredCompressionAlgorithms = null;
   this.keyServerPreferences = null;
@@ -233,13 +234,14 @@ Signature.prototype.write_hashed_sub_packets = function () {
     bytes = util.concat([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
   }
-  this.notations.forEach(([name, value]) => {
-    bytes = [new Uint8Array([0x80, 0, 0, 0])];
+  this.rawNotations.forEach(([{ name, value, humanReadable }]) => {
+    bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
     // 2 octets of name length
     bytes.push(util.writeNumber(name.length, 2));
     // 2 octets of value length
     bytes.push(util.writeNumber(value.length, 2));
-    bytes.push(util.str_to_Uint8Array(name + value));
+    bytes.push(util.str_to_Uint8Array(name));
+    bytes.push(value);
     bytes = util.concat(bytes);
     arr.push(write_sub_packet(sub.notation_data, bytes));
   });
@@ -436,29 +438,31 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
       this.issuerKeyId.read(bytes.subarray(mypos, bytes.length));
       break;
 
-    case 20:
+    case 20: {
       // Notation Data
-      // We don't know how to handle anything but a text flagged data.
-      if (bytes[mypos] === 0x80) {
-        // We extract key/value tuple from the byte stream.
-        mypos += 4;
-        const m = util.readNumber(bytes.subarray(mypos, mypos + 2));
-        mypos += 2;
-        const n = util.readNumber(bytes.subarray(mypos, mypos + 2));
-        mypos += 2;
+      const humanReadable = !!(bytes[mypos] & 0x80);
 
-        const name = util.Uint8Array_to_str(bytes.subarray(mypos, mypos + m));
-        const value = util.Uint8Array_to_str(bytes.subarray(mypos + m, mypos + m + n));
+      // We extract key/value tuple from the byte stream.
+      mypos += 4;
+      const m = util.readNumber(bytes.subarray(mypos, mypos + 2));
+      mypos += 2;
+      const n = util.readNumber(bytes.subarray(mypos, mypos + 2));
+      mypos += 2;
 
-        this.notations.push([name, value]);
+      const name = util.Uint8Array_to_str(bytes.subarray(mypos, mypos + m));
+      const value = bytes.subarray(mypos + m, mypos + m + n);
 
-        if (critical && (config.known_notations.indexOf(name) === -1)) {
-          throw new Error("Unknown critical notation: " + name);
-        }
-      } else {
-        util.print_debug("Unsupported notation flag " + bytes[mypos]);
+      this.rawNotations.push({ name, humanReadable, value });
+
+      if (humanReadable) {
+        this.notations[name] = util.Uint8Array_to_str(value);
+      }
+
+      if (critical && (config.known_notations.indexOf(name) === -1)) {
+        throw new Error("Unknown critical notation: " + name);
       }
       break;
+    }
     case 21:
       // Preferred Hash Algorithms
       read_array('preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
