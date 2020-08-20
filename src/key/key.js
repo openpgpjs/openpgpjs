@@ -63,8 +63,8 @@ class Key {
     this.users = [];
     this.subKeys = [];
     this.packetlist2structure(packetlist);
-    if (!this.keyPacket || !this.users.length) {
-      throw new Error('Invalid key: need at least key and user ID packet');
+    if (!this.keyPacket) {
+      throw new Error('Invalid key: need at least key packet');
     }
   }
 
