@@ -63,8 +63,8 @@ class Key {
     this.users = [];
     this.subKeys = [];
     this.packetlist2structure(packetlist);
-    if (!this.keyPacket || !this.users.length) {
-      throw new Error('Invalid key: need at least key and user ID packet');
+    if (!this.keyPacket) {
+      throw new Error('Invalid key: need at least key packet');
     }
   }
 
@@ -544,11 +544,6 @@ class Key {
     // check for key revocation signatures
     if (await this.isRevoked(null, null, date)) {
       throw new Error('Primary key is revoked');
-    }
-    // check for at least one self signature. Self signature of user ID not mandatory
-    // See {@link https://tools.ietf.org/html/rfc4880#section-11.1}
-    if (!this.users.some(user => user.userId && user.selfCertifications.length)) {
-      throw new Error('No self-certifications');
     }
     // check for valid, unrevoked, unexpired self signature
     const { selfCertification } = await this.getPrimaryUser(date, userId);
