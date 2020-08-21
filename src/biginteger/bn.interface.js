@@ -14,16 +14,6 @@ export default class BigInteger {
     this.value = new BN(n);
   }
 
-  /**
-   * Get BigInteger from a hex string
-   * @param {String} hex string to convert (without leading '0x')
-   */
-  static fromHexString(hex) {
-    const n = new BigInteger(null);
-    n.value = new BN(hex, 16);
-    return n;
-  }
-
   clone() {
     const clone = new BigInteger(null);
     this.value.copy(clone.value);

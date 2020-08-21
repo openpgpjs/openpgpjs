@@ -15,23 +15,15 @@ export default class BigInteger {
   constructor(n) {
     if (n instanceof Uint8Array) {
       const bytes = n;
-      let hex = '0x0';
-      for (let i = 0; i < n.length; i++) {
+      const hex = new Array(bytes.length);
+      for (let i = 0; i < bytes.length; i++) {
         const hexByte = bytes[i].toString(16);
-        hex += (bytes[i] <= 0xF) ? ('0' + hexByte) : hexByte;
+        hex[i] = (bytes[i] <= 0xF) ? ('0' + hexByte) : hexByte;
       }
-      this.value = BigInt(hex);
+      this.value = BigInt('0x0' + hex.join(''));
     } else {
       this.value = BigInt(n);
     }
-  }
-
-  /**
-   * Get BigInteger from a hex string
-   * @param {String} hex string to convert (without leading '0x')
-   */
-  static fromHexString(hex) {
-    return new BigInteger('0x' + hex);
   }
 
   clone() {

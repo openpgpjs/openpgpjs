@@ -488,7 +488,7 @@ function withCompression(tests) {
 module.exports = () => describe('OpenPGP.js public api tests', function() {
 
   let rsaGenStub;
-  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
+  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, 65537);
 
   beforeEach(function() {
     rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');

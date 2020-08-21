@@ -535,15 +535,7 @@ export default {
   /**
    * Detect native BigInt support
    */
-  detectBigInt: function() {
-    try {
-      // eslint-disable-next-line
-      BigInt(0);
-      return true;
-    } catch (err) {
-      return false;
-    }
-  },
+  detectBigInt: () => typeof BigInt !== 'undefined',
 
   /**
    * Get BigInteger class

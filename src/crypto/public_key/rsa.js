@@ -169,18 +169,18 @@ export default {
    * When possible, webCrypto or nodeCrypto is used. Otherwise, primes are generated using
    * 40 rounds of the Miller-Rabin probabilistic random prime generation algorithm.
    * @see module:crypto/public_key/prime
-   * @param {Integer} B RSA bit length
-   * @param {String}  E RSA public exponent in hex string
-   * @returns {{n: BN, e: BN, d: BN,
-   *            p: BN, q: BN, u: BN}} RSA public modulus, RSA public exponent, RSA private exponent,
-   *                                  RSA private prime p, RSA private prime q, u = q ** -1 mod p
+   * @param {Integer} bits RSA bit length
+   * @param {Integer} e    RSA public exponent
+   * @returns {{n, e, d,
+   *            p, q ,u: BigInteger}} RSA public modulus, RSA public exponent, RSA private exponent,
+   *                                  RSA private prime p, RSA private prime q, u = q ** 1 mod p
    * @async
    */
-  generate: async function(B, E) {
+  generate: async function(bits, e) {
     const BigInteger = await util.getBigInteger();
 
     let key;
-    E = BigInteger.fromHexString(E);
+    e = new BigInteger(e);
 
     // Native RSA keygen using Web Crypto
     if (util.getWebCrypto()) {
@@ -190,8 +190,8 @@ export default {
         // current standard spec
         keyGenOpt = {
           name: 'RSASSA-PKCS1-v1_5',
-          modulusLength: B, // the specified keysize in bits
-          publicExponent: E.toUint8Array(), // take three bytes (max 65537) for exponent
+          modulusLength: bits, // the specified keysize in bits
+          publicExponent: e.toUint8Array(), // take three bytes (max 65537) for exponent
           hash: {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
@@ -202,8 +202,8 @@ export default {
         // outdated spec implemented by old Webkit
         keyGenOpt = {
           name: 'RSA-OAEP',
-          modulusLength: B, // the specified keysize in bits
-          publicExponent: E.toUint8Array(), // take three bytes (max 65537) for exponent
+          modulusLength: bits, // the specified keysize in bits
+          publicExponent: e.toUint8Array(), // take three bytes (max 65537) for exponent
           hash: {
             name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
           }
@@ -225,7 +225,7 @@ export default {
       // map JWK parameters to BN
       key = {};
       key.n = new BigInteger(util.b64ToUint8Array(jwk.n));
-      key.e = E;
+      key.e = e;
       key.d = new BigInteger(util.b64ToUint8Array(jwk.d));
       // switch p and q
       key.p = new BigInteger(util.b64ToUint8Array(jwk.q));
@@ -235,8 +235,8 @@ export default {
       return key;
     } else if (util.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
-        modulusLength: Number(B.toString()),
-        publicExponent: Number(E.toString()),
+        modulusLength: bits,
+        publicExponent: e.toNumber(),
         publicKeyEncoding: { type: 'pkcs1', format: 'der' },
         privateKeyEncoding: { type: 'pkcs1', format: 'der' }
       };
@@ -266,8 +266,8 @@ export default {
     // RSA keygen fallback using 40 iterations of the Miller-Rabin test
     // See https://stackoverflow.com/a/6330138 for justification
     // Also see section C.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST
-    let q = await prime.randomProbablePrime(B - (B >> 1), E, 40);
-    let p = await prime.randomProbablePrime(B >> 1, E, 40);
+    let q = await prime.randomProbablePrime(bits - (bits >> 1), e, 40);
+    let p = await prime.randomProbablePrime(bits >> 1, e, 40);
 
     if (q.lt(p)) {
       [p, q] = [q, p];
@@ -276,8 +276,8 @@ export default {
     const phi = p.dec().imul(q.dec());
     return {
       n: p.mul(q),
-      e: E,
-      d: E.modInv(phi),
+      e,
+      d: e.modInv(phi),
       p: p,
       q: q,
       // dp: d.mod(p.subn(1)),
@@ -339,7 +339,7 @@ export default {
   bnSign: async function (hash_algo, n, d, hashed) {
     const BigInteger = await util.getBigInteger();
     n = new BigInteger(n);
-    const m = BigInteger.fromHexString(await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength()));
+    const m = new BigInteger(await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength()));
     d = new BigInteger(d);
     if (m.gte(n)) {
       throw new Error('Message size cannot exceed modulus size');
@@ -365,7 +365,7 @@ export default {
   },
 
   nodeSign: async function (hash_algo, data, n, e, d, p, q, u) {
-    const { default: BN } = await import('bn.js');
+    const BN = require('bn.js');
     const pBNum = new BN(p);
     const qBNum = new BN(q);
     const dBNum = new BN(d);
@@ -407,7 +407,7 @@ export default {
     }
     const EM1 = s.modExp(e, n).toUint8Array('be', n.byteLength());
     const EM2 = await pkcs1.emsa.encode(hash_algo, hashed, n.byteLength());
-    return util.uint8ArrayToHex(EM1) === EM2;
+    return util.equalsUint8Array(EM1, EM2);
   },
 
   webVerify: async function (hash_name, data, s, n, e) {
@@ -421,7 +421,7 @@ export default {
   },
 
   nodeVerify: async function (hash_algo, data, s, n, e) {
-    const { default: BN } = await import('bn.js');
+    const BN = require('bn.js');
 
     const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
     verify.write(data);
@@ -447,7 +447,7 @@ export default {
   },
 
   nodeEncrypt: async function (data, n, e) {
-    const { default: BN } = await import('bn.js');
+    const BN = require('bn.js');
 
     const keyObject = {
       modulus: new BN(n),
@@ -469,8 +469,7 @@ export default {
   bnEncrypt: async function (data, n, e) {
     const BigInteger = await util.getBigInteger();
     n = new BigInteger(n);
-    data = new type_mpi(await pkcs1.eme.encode(util.uint8ArrayToStr(data), n.byteLength()));
-    data = await data.toBigInteger();
+    data = new BigInteger(await pkcs1.eme.encode(data, n.byteLength()));
     e = new BigInteger(e);
     if (data.gte(n)) {
       throw new Error('Message size cannot exceed modulus size');
@@ -479,7 +478,7 @@ export default {
   },
 
   nodeDecrypt: async function (data, n, e, d, p, q, u) {
-    const { default: BN } = await import('bn.js');
+    const BN = require('bn.js');
 
     const pBNum = new BN(p);
     const qBNum = new BN(q);
@@ -509,7 +508,7 @@ export default {
       });
       key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     }
-    return util.uint8ArrayToStr(nodeCrypto.privateDecrypt(key, data));
+    return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
   },
 
   bnDecrypt: async function(data, n, e, d, p, q, u) {
@@ -545,7 +544,7 @@ export default {
       result = result.mul(unblinder).mod(n);
     }
 
-    return pkcs1.eme.decode((new type_mpi(result)).toString());
+    return pkcs1.eme.decode(result.toUint8Array('be', n.byteLength()));
   },
 
   prime: prime
