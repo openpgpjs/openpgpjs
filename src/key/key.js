@@ -545,11 +545,6 @@ class Key {
     if (await this.isRevoked(null, null, date)) {
       throw new Error('Primary key is revoked');
     }
-    // check for at least one self signature. Self signature of user ID not mandatory
-    // See {@link https://tools.ietf.org/html/rfc4880#section-11.1}
-    if (!this.users.some(user => user.userId && user.selfCertifications.length)) {
-      throw new Error('No self-certifications');
-    }
     // check for valid, unrevoked, unexpired self signature
     const { selfCertification } = await this.getPrimaryUser(date, userId);
     // check for expiration time

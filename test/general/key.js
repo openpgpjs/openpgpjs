@@ -3187,7 +3187,7 @@ VYGdb3eNlV8CfoEC
     expect(publicKey.users.length).to.equal(0);
     const privateKey = await openpgp.key.readArmored(uidlessKey);
     await privateKey.decrypt('correct horse battery staple');
-    await expect(openpgp.encrypt({ message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, armor: false })).to.be.rejectedWith('Error encrypting message: No self-certifications');
+    await expect(openpgp.encrypt({ message: openpgp.message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, armor: false })).to.be.rejectedWith('Could not find primary user');
   });
 
   it('Sign - specific user', async function() {
