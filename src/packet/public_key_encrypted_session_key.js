@@ -133,7 +133,6 @@ class PublicKeyEncryptedSessionKeyPacket {
     const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
     const checksum = decoded.subarray(decoded.length - 2);
     const sessionKey = decoded.subarray(1, decoded.length - 2);
-      console.log('hers');
     if (!util.equalsUint8Array(checksum, util.writeChecksum(sessionKey))) {
       throw new Error('Decryption error');
     } else {
