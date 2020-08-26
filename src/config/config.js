@@ -120,6 +120,14 @@ export default {
    * @property {Boolean} revocations_expire If true, expired revocation signatures are ignored
    */
   revocations_expire:       false,
+  /**
+   * @memberof module:config
+   * @property {Boolean} allow_insecure_decryption_with_signing_keys
+   *  If true, RSA sign-only keys can be used for decryption
+   *  This is potentially insecure, but it is needed to get around an old openpgpjs bug
+   *  where sign-only keys were selected for encryption
+   */
+  allow_insecure_decryption_with_signing_keys: false,
 
   /**
    * @memberof module:config
