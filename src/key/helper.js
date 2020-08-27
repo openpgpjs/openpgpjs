@@ -367,7 +367,7 @@ export function isValidDecryptionKeyPacket(signature) {
     throw new Error('Signature not verified');
   }
 
-  if (config.allow_insecure_decryption_with_signing_keys === true) {
+  if (config.allow_insecure_decryption_with_signing_keys) {
     // This is only relevant for RSA keys, all other signing ciphers cannot decrypt
     return true;
   }

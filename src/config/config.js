@@ -121,11 +121,11 @@ export default {
    */
   revocations_expire:       false,
   /**
+   * Allow decryption using RSA keys without `encrypt` flag.
+   * This setting is potentially insecure, but it is needed to get around an old openpgpjs bug
+   * where key flags were ignored when selecting a key for encryption.
    * @memberof module:config
    * @property {Boolean} allow_insecure_decryption_with_signing_keys
-   *  If true, RSA sign-only keys can be used for decryption
-   *  This is potentially insecure, but it is needed to get around an old openpgpjs bug
-   *  where sign-only keys were selected for encryption
    */
   allow_insecure_decryption_with_signing_keys: false,
 

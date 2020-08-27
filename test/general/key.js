@@ -1918,7 +1918,6 @@ vqBGKJzmO5q3cECw
 
 
 const rsaSignOnly = `-----BEGIN PGP PRIVATE KEY BLOCK-----
-Comment: different
 
 xcLYBF9Gl+MBCACc09O3gjyO0B1ledGxGFSUpPmhhJzkxKoY1WDX8VlASCHz
 bAA/BytgYBXHTe7N+N3yJ6uiN3DIQ2j5uGWk/h5jyIOsRuzQxJ40n8AdK/71
@@ -1954,7 +1953,6 @@ BZou86lozq7ISvRg1RSIWZ0ZRA==
 `;
 
 const encryptedRsaSignOnly = `-----BEGIN PGP MESSAGE-----
-Comment: different
 
 wcBMAwr9x5ZY6oZmAQf+Lxghg4keIFpEq8a65gFkIfW+chHTDPlfI8xnx6U9
 HdsICX3Oye5V0ToCVKkEWDxfN1yCfXiYalSNo7ScRZKR7C+j02/pC+FfR6AJ
@@ -2721,21 +2719,21 @@ describe('Key', function() {
   it('should not decrypt using a sign-only RSA key, unless explicitly configured', async function () {
     const allowSigningKeyDecryption = openpgp.config.allow_insecure_decryption_with_signing_keys;
     const { keys: [key] } = await openpgp.key.readArmored(rsaSignOnly);
-    console.log('off');
-    openpgp.config.allow_insecure_decryption_with_signing_keys = false;
-    await expect(openpgp.decrypt({
-      message: await openpgp.message.readArmored(encryptedRsaSignOnly),
-      privateKeys: key
-    })).to.be.rejectedWith(/Session key decryption failed/);
-    console.log('on');
+    try {
+      openpgp.config.allow_insecure_decryption_with_signing_keys = false;
+      await expect(openpgp.decrypt({
+        message: await openpgp.message.readArmored(encryptedRsaSignOnly),
+        privateKeys: key
+      })).to.be.rejectedWith(/Session key decryption failed/);
 
-    openpgp.config.allow_insecure_decryption_with_signing_keys = true;
-    await expect(openpgp.decrypt({
-      message: await openpgp.message.readArmored(encryptedRsaSignOnly),
-      privateKeys: key
-    })).to.be.fulfilled;
-
-    openpgp.config.allow_insecure_decryption_with_signing_keys = allowSigningKeyDecryption;
+      openpgp.config.allow_insecure_decryption_with_signing_keys = true;
+      await expect(openpgp.decrypt({
+        message: await openpgp.message.readArmored(encryptedRsaSignOnly),
+        privateKeys: key
+      })).to.be.fulfilled;
+    } finally {
+      openpgp.config.allow_insecure_decryption_with_signing_keys = allowSigningKeyDecryption;
+    }
   });
 
   it('Method getExpirationTime V4 Key', async function() {
