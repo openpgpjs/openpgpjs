@@ -9,8 +9,13 @@ export default class BigInteger {
   /**
    * Get a BigInteger (input must be big endian for strings and arrays)
    * @param {Number|String|Uint8Array} n value to convert
+   * @throws {Error} on undefined input
    */
   constructor(n) {
+    if (n === undefined) {
+      throw new Error('Invalid BigInteger input');
+    }
+
     this.value = new BN(n);
   }
 
@@ -108,24 +113,6 @@ export default class BigInteger {
   }
 
   /**
-   * BigInteger division in place
-   * @param {BigInteger} x value to divide
-   */
-  idiv(x) {
-    this.value = this.value.div(x.value);
-    return this;
-  }
-
-  /**
-   * BigInteger division
-   * @param {BigInteger} x value to divide
-   * @returns {BigInteger} this / x
-   */
-  div(x) {
-    return this.clone().idiv(x);
-  }
-
-  /**
    * Compute remainder in place
    * This is not the same as mod(m):
    *  the remainder is negative if the value is negative
@@ -218,77 +205,6 @@ export default class BigInteger {
    */
   gcd(n) {
     return new BigInteger(this.value.gcd(n.value));
-  }
-
-  /**
-   * Compute bitwise AND in place
-   * @param {BigInteger} x
-   */
-  ibitAnd(x) {
-    this.value.iand(x.value);
-    return this;
-  }
-
-  /**
-   * Compute bitwise AND with x
-   * @param {BigInteger} x
-   * @returns {BigInteger} this & x
-   */
-  bitAnd(x) {
-    return this.clone().ibitAnd(x);
-  }
-
-  /**
-   * Compute bitwise OR in place
-   * @param {BigInteger} x
-   */
-  ibitOr(x) {
-    this.value.ior(x.value);
-    return this;
-  }
-
-  /**
-   * Compute bitwise OR with x
-   * @param {BigInteger} x
-   * @returns {BigInteger} this | x
-   */
-  bitOr(x) {
-    return this.clone().ibitOr(x);
-  }
-
-  /**
-   * Compute bitwise XOR in place
-   * @param {BigInteger} x
-   */
-  ibitXor(x) {
-    this.value.ixor(x.value);
-    return this;
-  }
-
-  /**
-   * Compute bitwise XOR with x
-   * @param {BigInteger} x
-   * @returns {BigInteger} this ^ x
-   */
-  bitXor(x) {
-    return this.clone().ibitXor(x);
-  }
-
-  /**
-   * Compute bitwise negation in place
-   */
-  ibitNot() {
-    const n = this.value.bitLength();
-    this.value.inotn(n);
-    return this;
-  }
-
-  /**
-   * Compute bitwise negation
-   * @returns {BigInteger} ~this
-   */
-  bitNot() {
-    return this.clone().ibitNot();
   }
 
   /**

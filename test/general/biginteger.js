@@ -22,6 +22,11 @@ module.exports = () => describe('BigInteger interface', function() {
     BigInteger = await openpgp.util.getBigInteger();
   });
 
+  it('constructor throws on undefined input', function() {
+    expect(() => new BigInteger()).to.throw('Invalid BigInteger input');
+  });
+
+
   it('constructor supports strings', function() {
     const input = '417653931840771530406225971293556769925351769207235721650257629558293828796031115397206059067934284452829611906818956352854418342467914729341523414945427019410284762464062112274326172407819051167058569790660930309496043254270888417520676082271432948852231332576271876251597199882908964994070268531832274431027';
     const got = new BigInteger(input);
@@ -96,7 +101,7 @@ module.exports = () => describe('BigInteger interface', function() {
   it('binary operators are consistent', function() {
     const a = new BigInteger(12);
     const b = new BigInteger(34);
-    const ops = ['add', 'sub', 'mul', 'div', 'exp', 'bitAnd', 'bitOr', 'bitXor', 'mod', 'remainder', 'leftShift', 'rightShift'];
+    const ops = ['add', 'sub', 'mul', 'mod', 'leftShift', 'rightShift'];
     ops.forEach(op => {
       const iop = `i${op}`;
       expect(a[op](b).equal(a[iop](b))).to.be.true;
@@ -106,18 +111,8 @@ module.exports = () => describe('BigInteger interface', function() {
   it('unary operators are consistent', function() {
     const a = new BigInteger(12);
     const one = new BigInteger(1);
-    expect(a.bitNot().equal(a.ibitNot())).to.be.true;
+    expect(a.sub(one).equal(a.dec())).to.be.true;
     expect(a.add(one).equal(a.inc())).to.be.true;
-  });
-
-  it('modExp is correct (small values)', function() {
-    const x = new BigInteger(32);
-    const e = new BigInteger(33);
-    const n = new BigInteger(31);
-
-    const expected = x.exp(e).mod(n);
-    const got = x.modExp(e, n);
-    expect(got.equal(expected)).to.be.true;
   });
 
   it('modExp is correct (large values)', function() {

@@ -6,13 +6,17 @@
  * Operations are not constant time
  *  but we try and limit timing leakage where we can
  */
-
 export default class BigInteger {
   /**
    * Get a BigInteger (input must be big endian for strings and arrays)
    * @param {Number|String|Uint8Array} n value to convert
+   * @throws {Error} on null or undefined input
    */
   constructor(n) {
+    if (n === undefined) {
+      throw new Error('Invalid BigInteger input');
+    }
+
     if (n instanceof Uint8Array) {
       const bytes = n;
       const hex = new Array(bytes.length);
@@ -117,52 +121,11 @@ export default class BigInteger {
   }
 
   /**
-   * BigInteger division in place
-   * @param {BigInteger} x value to divide
-   */
-  idiv(x) {
-    this.value /= x.value;
-    return this;
-  }
-
-  /**
-   * BigInteger division
-   * @param {BigInteger} x value to divide
-   * @returns {BigInteger} this / x
-   */
-  div(x) {
-    return this.clone().idiv(x);
-  }
-
-  /**
-   * Compute remainder in place
-   * This is not the same as mod(m):
-   *  the remainder is negative if the value is negative
-   * @param {BigInteger} m divisor
-   */
-  iremainder(m) {
-    this.value %= m.value;
-    return this;
-  }
-
-
-  /**
-   * Compute remainder of this value when divided by m
-   * This is not the same as mod(m):
-   *  the remainder is negative if the value is negative
-   * @param {BigInteger} m divisor
-   * @returns {BigInteger} this % m
-   */
-  remainder(m) {
-    return this.clone().iremainder(m);
-  }
-
-  /**
    * Compute value modulo m, in place
    * @param {BigInteger} m modulo
    */
   imod(m) {
-    this.iremainder(m);
+    this.value %= m.value;
     if (this.isNegative()) {
       this.iadd(m);
     }
@@ -179,26 +142,7 @@ export default class BigInteger {
   }
 
   /**
-   * Exponentiate this to the power of x, in place
-   * @param {BigInteger} x exponent
-   */
-  iexp(x) {
-    this.value **= x.value;
-    return this;
-  }
-
-  /**
-   * Exponentiate this to the power of x
-   * @param {BigInteger} x exponent
-   * @returns {BigInteger} this ** x
-   */
-  exp(x) {
-    return this.clone().iexp(x);
-  }
-
-  /**
    * Compute modular exponentiation using square and multiply
-   * Much faster than this.exp(e).mod(n)
    * @param {BigInteger} e exponent
    * @param {BigInteger} n modulo
    * @returns {BigInteger} this ** e mod n
@@ -287,76 +231,6 @@ export default class BigInteger {
       a = tmp;
     }
     return new BigInteger(a);
-  }
-
-  /**
-   * Compute bitwise AND in place
-   * @param {BigInteger} x
-   */
-  ibitAnd(x) {
-    this.value &= x.value;
-    return this;
-  }
-
-  /**
-   * Compute bitwise AND with x
-   * @param {BigInteger} x
-   * @returns {BigInteger} this & x
-   */
-  bitAnd(x) {
-    return this.clone().ibitAnd(x);
-  }
-
-  /**
-   * Compute bitwise OR in place
-   * @param {BigInteger} x
-   */
-  ibitOr(x) {
-    this.value |= x.value;
-    return this;
-  }
-
-  /**
-   * Compute bitwise OR with x
-   * @param {BigInteger} x
-   * @returns {BigInteger} this | x
-   */
-  bitOr(x) {
-    return this.clone().ibitOr(x);
-  }
-
-  /**
-   * Compute bitwise XOR in place
-   * @param {BigInteger} x
-   */
-  ibitXor(x) {
-    this.value ^= x.value;
-    return this;
-  }
-
-  /**
-   * Compute bitwise XOR with x
-   * @param {BigInteger} x
-   * @returns {BigInteger} this ^ x
-   */
-  bitXor(x) {
-    return this.clone().ibitXor(x);
-  }
-
-  /**
-   * Compute bitwise negation in place
-   */
-  ibitNot() {
-    this.value = ~this.value;
-    return this;
-  }
-
-  /**
-   * Compute bitwise negation
-   * @returns {BigInteger} ~this
-   */
-  bitNot() {
-    return this.clone().ibitNot();
   }
 
   /**
