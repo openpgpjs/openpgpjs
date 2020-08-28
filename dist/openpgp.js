@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.7 - 2020-07-21 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.8 - 2020-08-28 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -25011,6 +25011,14 @@ exports.default = {
    * @property {Boolean} revocations_expire If true, expired revocation signatures are ignored
    */
   revocations_expire: false,
+  /**
+   * Allow decryption using RSA keys without `encrypt` flag.
+   * This setting is potentially insecure, but it is needed to get around an old openpgpjs bug
+   * where key flags were ignored when selecting a key for encryption.
+   * @memberof module:config
+   * @property {Boolean} allow_insecure_decryption_with_signing_keys
+   */
+  allow_insecure_decryption_with_signing_keys: false,
 
   /**
    * @memberof module:config
@@ -25052,7 +25060,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.7",
+  versionstring: "OpenPGP.js v4.10.8",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -33828,6 +33836,7 @@ exports.isAeadSupported = isAeadSupported;
 exports.sanitizeKeyOptions = sanitizeKeyOptions;
 exports.isValidSigningKeyPacket = isValidSigningKeyPacket;
 exports.isValidEncryptionKeyPacket = isValidEncryptionKeyPacket;
+exports.isValidDecryptionKeyPacket = isValidDecryptionKeyPacket;
 
 var _packet = require('../packet');
 
@@ -34177,6 +34186,20 @@ function isValidEncryptionKeyPacket(keyPacket, signature) {
     throw new Error('Signature not verified');
   }
   return keyPacket.algorithm !== _enums2.default.read(_enums2.default.publicKey, _enums2.default.publicKey.dsa) && keyPacket.algorithm !== _enums2.default.read(_enums2.default.publicKey, _enums2.default.publicKey.rsa_sign) && keyPacket.algorithm !== _enums2.default.read(_enums2.default.publicKey, _enums2.default.publicKey.ecdsa) && keyPacket.algorithm !== _enums2.default.read(_enums2.default.publicKey, _enums2.default.publicKey.eddsa) && (!signature.keyFlags || (signature.keyFlags[0] & _enums2.default.keyFlags.encrypt_communication) !== 0 || (signature.keyFlags[0] & _enums2.default.keyFlags.encrypt_storage) !== 0);
+}
+
+function isValidDecryptionKeyPacket(signature) {
+  if (!signature.verified) {
+    // Sanity check
+    throw new Error('Signature not verified');
+  }
+
+  if (_config2.default.allow_insecure_decryption_with_signing_keys) {
+    // This is only relevant for RSA keys, all other signing ciphers cannot decrypt
+    return true;
+  }
+
+  return !signature.keyFlags || (signature.keyFlags[0] & _enums2.default.keyFlags.encrypt_communication) !== 0 || (signature.keyFlags[0] & _enums2.default.keyFlags.encrypt_storage) !== 0;
 }
 
 },{"../config":79,"../crypto":94,"../enums":113,"../packet":131,"../util":158}],118:[function(require,module,exports){
@@ -34584,16 +34607,14 @@ Key.prototype.getEncryptionKey = async function (keyId, date = new Date(), userI
  * @async
  */
 Key.prototype.getDecryptionKeys = async function (keyId, date = new Date(), userId = {}) {
-  await this.verifyPrimaryKey(date, userId);
   const primaryKey = this.keyPacket;
   const keys = [];
   for (let i = 0; i < this.subKeys.length; i++) {
     if (!keyId || this.subKeys[i].getKeyId().equals(keyId, true)) {
       try {
-        await this.subKeys[i].verify(primaryKey, date);
         const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
         const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, _enums2.default.signature.subkey_binding, dataToVerify, date);
-        if (bindingSignature && helper.isValidEncryptionKeyPacket(this.subKeys[i].keyPacket, bindingSignature)) {
+        if (bindingSignature && helper.isValidDecryptionKeyPacket(bindingSignature)) {
           keys.push(this.subKeys[i]);
         }
       } catch (e) {}
@@ -34602,7 +34623,7 @@ Key.prototype.getDecryptionKeys = async function (keyId, date = new Date(), user
 
   // evaluate primary key
   const primaryUser = await this.getPrimaryUser(date, userId);
-  if ((!keyId || primaryKey.getKeyId().equals(keyId, true)) && helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+  if ((!keyId || primaryKey.getKeyId().equals(keyId, true)) && helper.isValidDecryptionKeyPacket(primaryUser.selfCertification)) {
     keys.push(this);
   }
 
@@ -34692,7 +34713,7 @@ Key.prototype.validate = async function () {
   }
 
   let signingKeyPacket;
-  if (!this.keyPacket.isDummy()) {
+  if (!this.primaryKey.isDummy()) {
     signingKeyPacket = this.primaryKey;
   } else {
     /**
@@ -35208,9 +35229,9 @@ SubKey.prototype.isRevoked = async function (primaryKey, signature, key, date = 
  * Verify subkey. Checks for revocation signatures, expiration time
  * and valid binding signature. Throws if the subkey is invalid.
  * @param  {module:packet.SecretKey|
- *          module:packet.PublicKey} primaryKey The primary key packet
- * @param  {Date}                     date       Use the given date instead of the current time
- * @returns {Promise<true>}                      The status of the subkey
+ *          module:packet.PublicKey} primaryKey  The primary key packet
+ * @param  {Date}                    date        Use the given date instead of the current time
+ * @returns {Promise<undefined>}
  * @async
  */
 SubKey.prototype.verify = async function (primaryKey, date = new Date()) {
@@ -39791,6 +39812,11 @@ PublicKeyEncryptedSessionKey.prototype.encrypt = async function (key) {
  */
 PublicKeyEncryptedSessionKey.prototype.decrypt = async function (key) {
   const algo = _enums2.default.write(_enums2.default.publicKey, this.publicKeyAlgorithm);
+  const keyAlgo = _enums2.default.write(_enums2.default.publicKey, key.algorithm);
+  // check that session key algo matches the secret key algo
+  if (algo !== keyAlgo) {
+    throw new Error('Decryption error');
+  }
   const decoded = await _crypto2.default.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
   const checksum = _util2.default.str_to_Uint8Array(decoded.substr(decoded.length - 2));
   key = _util2.default.str_to_Uint8Array(decoded.substring(1, decoded.length - 2));
@@ -40166,6 +40192,26 @@ SecretKey.prototype.isDummy = function () {
 };
 
 /**
+ * Remove private key material, converting the key to a dummy one
+ * The resulting key cannot be used for signing/decrypting but can still verify signatures
+ */
+SecretKey.prototype.makeDummy = function () {
+  if (this.isDummy()) {
+    return;
+  }
+  if (!this.isDecrypted()) {
+    // this is technically not needed, but makes the conversion simpler
+    throw new Error("Key is not decrypted");
+  }
+  this.clearPrivateParams();
+  this.isEncrypted = false;
+  this.s2k = new _s2k2.default();
+  this.s2k.algorithm = 0;
+  this.s2k.c = 0;
+  this.s2k.type = 'gnu-dummy';
+};
+
+/**
  * Encrypt the payload. By default, we use aes256 and iterated, salted string
  * to key specifier. If the key is in a decrypted state (isEncrypted === false)
  * and the passphrase is empty or undefined, the key will be set as not encrypted.
@@ -40500,7 +40546,8 @@ function Signature(date = new Date()) {
   this.revocationKeyAlgorithm = null;
   this.revocationKeyFingerprint = null;
   this.issuerKeyId = new _keyid2.default();
-  this.notations = [];
+  this.rawNotations = [];
+  this.notations = {};
   this.preferredHashAlgorithms = null;
   this.preferredCompressionAlgorithms = null;
   this.keyServerPreferences = null;
@@ -40660,13 +40707,14 @@ Signature.prototype.write_hashed_sub_packets = function () {
     bytes = _util2.default.concat([bytes, this.revocationKeyFingerprint]);
     arr.push(write_sub_packet(sub.revocation_key, bytes));
   }
-  this.notations.forEach(([name, value]) => {
-    bytes = [new Uint8Array([0x80, 0, 0, 0])];
+  this.rawNotations.forEach(([{ name, value, humanReadable }]) => {
+    bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
     // 2 octets of name length
     bytes.push(_util2.default.writeNumber(name.length, 2));
     // 2 octets of value length
     bytes.push(_util2.default.writeNumber(value.length, 2));
-    bytes.push(_util2.default.str_to_Uint8Array(name + value));
+    bytes.push(_util2.default.str_to_Uint8Array(name));
+    bytes.push(value);
     bytes = _util2.default.concat(bytes);
     arr.push(write_sub_packet(sub.notation_data, bytes));
   });
@@ -40862,9 +40910,10 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
       break;
 
     case 20:
-      // Notation Data
-      // We don't know how to handle anything but a text flagged data.
-      if (bytes[mypos] === 0x80) {
+      {
+        // Notation Data
+        const humanReadable = !!(bytes[mypos] & 0x80);
+
         // We extract key/value tuple from the byte stream.
         mypos += 4;
         const m = _util2.default.readNumber(bytes.subarray(mypos, mypos + 2));
@@ -40873,17 +40922,19 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
         mypos += 2;
 
         const name = _util2.default.Uint8Array_to_str(bytes.subarray(mypos, mypos + m));
-        const value = _util2.default.Uint8Array_to_str(bytes.subarray(mypos + m, mypos + m + n));
+        const value = bytes.subarray(mypos + m, mypos + m + n);
 
-        this.notations.push([name, value]);
+        this.rawNotations.push({ name, humanReadable, value });
+
+        if (humanReadable) {
+          this.notations[name] = _util2.default.Uint8Array_to_str(value);
+        }
 
         if (critical && _config2.default.known_notations.indexOf(name) === -1) {
           throw new Error("Unknown critical notation: " + name);
         }
-      } else {
-        _util2.default.print_debug("Unsupported notation flag " + bytes[mypos]);
+        break;
       }
-      break;
     case 21:
       // Preferred Hash Algorithms
       read_array('preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
