@@ -366,6 +366,12 @@ export function isValidDecryptionKeyPacket(signature) {
   if (!signature.verified) { // Sanity check
     throw new Error('Signature not verified');
   }
+
+  if (config.allow_insecure_decryption_with_signing_keys) {
+    // This is only relevant for RSA keys, all other signing ciphers cannot decrypt
+    return true;
+  }
+
   return !signature.keyFlags ||
     (signature.keyFlags[0] & enums.keyFlags.encrypt_communication) !== 0 ||
     (signature.keyFlags[0] & enums.keyFlags.encrypt_storage) !== 0;

@@ -120,6 +120,14 @@ export default {
    * @property {Boolean} revocations_expire If true, expired revocation signatures are ignored
    */
   revocations_expire:       false,
+  /**
+   * Allow decryption using RSA keys without `encrypt` flag.
+   * This setting is potentially insecure, but it is needed to get around an old openpgpjs bug
+   * where key flags were ignored when selecting a key for encryption.
+   * @memberof module:config
+   * @property {Boolean} allow_insecure_decryption_with_signing_keys
+   */
+  allow_insecure_decryption_with_signing_keys: false,
 
   /**
    * @memberof module:config
