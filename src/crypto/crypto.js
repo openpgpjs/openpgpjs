@@ -20,6 +20,7 @@
 /**
  * @fileoverview Provides functions for asymmetric encryption and decryption as
  * well as key generation and parameter handling for all public-key cryptosystems.
+ * @requires config
  * @requires crypto/public_key
  * @requires crypto/cipher
  * @requires crypto/hash
@@ -39,6 +40,7 @@ import publicKey from './public_key';
 import cipher from './cipher';
 import hash from './hash';
 import random from './random';
+import config from '../config';
 import type_ecdh_symkey from '../type/ecdh_symkey';
 import type_kdf_params from '../type/kdf_params';
 import type_mpi from '../type/mpi';
@@ -108,7 +110,7 @@ export default {
         }
         data = util.strToUint8Array(data);
         const symmetric_algo = pub_params[0].getName();
-        const aead_mode = 'eax';
+        const aead_mode = enums.read(enums.aead, config.aeadMode);
         const blockLen = cipher[symmetric_algo].blockSize;
         const iv = await random.getRandomBytes(blockLen);
         const key = pub_params[2].data;
