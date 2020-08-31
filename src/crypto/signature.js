@@ -74,7 +74,7 @@ export default {
         if (algo.getName().substr(0, 3) !== 'aes') {
           throw new Error('CMAC supports only AES cipher');
         }
-        const cmac = await CMAC(key);
+        const cmac = await CMAC(key.data);
         const mac = await cmac(hashed);
         return util.equalsUint8Array(mac, msg_MPIs[0].toUint8Array('be', 16));
       }
@@ -150,7 +150,7 @@ export default {
         if (algo.getName().substr(0, 3) !== 'aes') {
           throw new Error('CMAC supports only AES cipher');
         }
-        const cmac = await CMAC(key);
+        const cmac = await CMAC(key.data);
         const mac = await cmac(hashed);
 
         return util.uint8ArrayToMpi(mac);
