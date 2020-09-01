@@ -22,13 +22,11 @@
  * @see PublicKeyEncryptedSessionKeyPacket
  * @requires crypto/random
  * @requires crypto/hash
- * @requires util
  * @module crypto/pkcs1
  */
 
 import random from './random';
 import hash from './hash';
-import util from '../util';
 
 /** @namespace */
 const eme = {};

@@ -30,7 +30,6 @@ import config from '../../config';
 import util from '../../util';
 import pkcs1 from '../pkcs1';
 import enums from '../../enums';
-import type_mpi from '../../type/mpi';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
