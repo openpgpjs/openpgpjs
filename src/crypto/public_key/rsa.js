@@ -365,7 +365,7 @@ export default {
   },
 
   nodeSign: async function (hash_algo, data, n, e, d, p, q, u) {
-    const BN = require('bn.js');
+    const { default: BN } = await import('bn.js');
     const pBNum = new BN(p);
     const qBNum = new BN(q);
     const dBNum = new BN(d);
@@ -421,7 +421,7 @@ export default {
   },
 
   nodeVerify: async function (hash_algo, data, s, n, e) {
-    const BN = require('bn.js');
+    const { default: BN } = await import('bn.js');
 
     const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
     verify.write(data);
@@ -447,7 +447,7 @@ export default {
   },
 
   nodeEncrypt: async function (data, n, e) {
-    const BN = require('bn.js');
+    const { default: BN } = await import('bn.js');
 
     const keyObject = {
       modulus: new BN(n),
@@ -478,7 +478,7 @@ export default {
   },
 
   nodeDecrypt: async function (data, n, e, d, p, q, u) {
-    const BN = require('bn.js');
+    const { default: BN } = await import('bn.js');
 
     const pBNum = new BN(p);
     const qBNum = new BN(q);
