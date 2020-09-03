@@ -19,12 +19,9 @@
 
 /**
  * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
- * @requires bn.js
  * @requires util
  * @module crypto/random
  */
-
-import BN from 'bn.js';
 import util from '../util';
 
 // Do not use util.getNodeCrypto because we need this regardless of useNative setting
@@ -122,14 +119,16 @@ export default {
   },
 
   /**
-   * Create a secure random MPI that is greater than or equal to min and less than max.
-   * @param {module:type/mpi} min Lower bound, included
-   * @param {module:type/mpi} max Upper bound, excluded
-   * @returns {module:BN} Random MPI
+   * Create a secure random BigInteger that is greater than or equal to min and less than max.
+   * @param {module:BigInteger} min Lower bound, included
+   * @param {module:BigInteger} max Upper bound, excluded
+   * @returns {module:BigInteger} Random BigInteger
    * @async
    */
-  getRandomBN: async function(min, max) {
-    if (max.cmp(min) <= 0) {
+  getRandomBigInteger: async function(min, max) {
+    const BigInteger = await util.getBigInteger();
+
+    if (max.lt(min)) {
       throw new Error('Illegal parameter value: max <= min');
     }
 
@@ -139,7 +138,7 @@ export default {
     // Using a while loop is necessary to avoid bias introduced by the mod operation.
     // However, we request 64 extra random bits so that the bias is negligible.
     // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-    const r = new BN(await this.getRandomBytes(bytes + 8));
+    const r = new BigInteger(await this.getRandomBytes(bytes + 8));
     return r.mod(modulus).add(min);
   },
 

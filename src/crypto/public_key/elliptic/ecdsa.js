@@ -17,7 +17,6 @@
 
 /**
  * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
- * @requires bn.js
  * @requires web-stream-tools
  * @requires enums
  * @requires util
@@ -25,7 +24,6 @@
  * @module crypto/public_key/elliptic/ecdsa
  */
 
-import BN from 'bn.js';
 import enums from '../../../enums';
 import util from '../../../util';
 import random from '../../random';
@@ -283,6 +281,8 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
 }
 
 async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
+  const { default: BN } = await import('bn.js');
+
   const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
   verify.write(message);
   verify.end();

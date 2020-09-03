@@ -17,12 +17,11 @@
 
 /**
  * @fileoverview Algorithms for probabilistic random prime generation
- * @requires bn.js
  * @requires crypto/random
  * @module crypto/public_key/prime
  */
 
-import BN from 'bn.js';
+import util from '../../util';
 import random from '../random';
 
 export default {
@@ -32,14 +31,16 @@ export default {
 /**
  * Probabilistic random number generator
  * @param {Integer} bits Bit length of the prime
- * @param {BN}      e    Optional RSA exponent to check against the prime
+ * @param {BigInteger}      e    Optional RSA exponent to check against the prime
  * @param {Integer} k    Optional number of iterations of Miller-Rabin test
- * @returns BN
+ * @returns BigInteger
  * @async
  */
 async function randomProbablePrime(bits, e, k) {
-  const min = new BN(1).shln(bits - 1);
-  const thirty = new BN(30);
+  const BigInteger = await util.getBigInteger();
+  const one = new BigInteger(1);
+  const min = one.leftShift(new BigInteger(bits - 1));
+  const thirty = new BigInteger(30);
   /*
    * We can avoid any multiples of 3 and 5 by looking at n mod 30
    * n mod 30 = 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29
@@ -48,15 +49,15 @@ async function randomProbablePrime(bits, e, k) {
    */
   const adds = [1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2];
 
-  let n = await random.getRandomBN(min, min.shln(1));
+  const n = await random.getRandomBigInteger(min, min.leftShift(one));
   let i = n.mod(thirty).toNumber();
 
   do {
-    n.iaddn(adds[i]);
+    n.iadd(new BigInteger(adds[i]));
     i = (i + adds[i]) % adds.length;
     // If reached the maximum, go back to the minimum.
     if (n.bitLength() > bits) {
-      n = n.mod(min.shln(1)).iadd(min);
+      n.imod(min.leftShift(one)).iadd(min);
       i = n.mod(thirty).toNumber();
     }
   } while (!await isProbablePrime(n, e, k));
@@ -65,20 +66,20 @@ async function randomProbablePrime(bits, e, k) {
 
 /**
  * Probabilistic primality testing
- * @param {BN}      n Number to test
- * @param {BN}      e Optional RSA exponent to check against the prime
- * @param {Integer} k Optional number of iterations of Miller-Rabin test
+ * @param {BigInteger} n Number to test
+ * @param {BigInteger} e Optional RSA exponent to check against the prime
+ * @param {Integer}    k Optional number of iterations of Miller-Rabin test
  * @returns {boolean}
  * @async
  */
 async function isProbablePrime(n, e, k) {
-  if (e && !n.subn(1).gcd(e).eqn(1)) {
+  if (e && !n.dec().gcd(e).isOne()) {
     return false;
   }
-  if (!divisionTest(n)) {
+  if (!await divisionTest(n)) {
     return false;
   }
-  if (!fermat(n)) {
+  if (!await fermat(n)) {
     return false;
   }
   if (!await millerRabin(n, k)) {
@@ -91,24 +92,26 @@ async function isProbablePrime(n, e, k) {
 
 /**
  * Tests whether n is probably prime or not using Fermat's test with b = 2.
- * Fails if b^(n-1) mod n === 1.
- * @param {BN}      n Number to test
- * @param {Integer} b Optional Fermat test base
+ * Fails if b^(n-1) mod n != 1.
+ * @param {BigInteger} n Number to test
+ * @param {BigInteger} b Optional Fermat test base
  * @returns {boolean}
  */
-function fermat(n, b) {
-  b = b || new BN(2);
-  return b.toRed(BN.mont(n)).redPow(n.subn(1)).fromRed().cmpn(1) === 0;
+async function fermat(n, b) {
+  const BigInteger = await util.getBigInteger();
+  b = b || new BigInteger(2);
+  return b.modExp(n.dec(), n).isOne();
 }
 
-function divisionTest(n) {
-  return small_primes.every(m => {
-    return n.modn(m) !== 0;
+async function divisionTest(n) {
+  const BigInteger = await util.getBigInteger();
+  return smallPrimes.every(m => {
+    return n.mod(new BigInteger(m)) !== 0;
   });
 }
 
 // https://github.com/gpg/libgcrypt/blob/master/cipher/primegen.c
-const small_primes = [
+const smallPrimes = [
   7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43,
   47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101,
   103, 107, 109, 113, 127, 131, 137, 139, 149, 151,
@@ -223,45 +226,43 @@ const small_primes = [
 /**
  * Tests whether n is probably prime or not using the Miller-Rabin test.
  * See HAC Remark 4.28.
- * @param {BN}       n    Number to test
- * @param {Integer}  k    Optional number of iterations of Miller-Rabin test
- * @param {Function} rand Optional function to generate potential witnesses
+ * @param {BigInteger} n Number to test
+ * @param {Integer}    k Optional number of iterations of Miller-Rabin test
+ * @param {Function}   rand Optional function to generate potential witnesses
  * @returns {boolean}
  * @async
  */
 async function millerRabin(n, k, rand) {
+  const BigInteger = await util.getBigInteger();
   const len = n.bitLength();
-  const red = BN.mont(n);
-  const rone = new BN(1).toRed(red);
 
   if (!k) {
     k = Math.max(1, (len / 48) | 0);
   }
 
-  const n1 = n.subn(1);
-  const rn1 = n1.toRed(red);
+  const n1 = n.dec(); // n - 1
 
   // Find d and s, (n - 1) = (2 ^ s) * d;
   let s = 0;
-  while (!n1.testn(s)) { s++; }
-  const d = n.shrn(s);
+  while (!n1.getBit(s)) { s++; }
+  const d = n.rightShift(new BigInteger(s));
 
   for (; k > 0; k--) {
-    const a = rand ? rand() : await random.getRandomBN(new BN(2), n1);
+    const a = rand ? rand() : await random.getRandomBigInteger(new BigInteger(2), n1);
 
-    let x = a.toRed(red).redPow(d);
-    if (x.eq(rone) || x.eq(rn1)) {
+    let x = a.modExp(d, n);
+    if (x.isOne() || x.equal(n1)) {
       continue;
     }
 
     let i;
     for (i = 1; i < s; i++) {
-      x = x.redSqr();
+      x = x.mul(x).mod(n);
 
-      if (x.eq(rone)) {
+      if (x.isOne()) {
         return false;
       }
-      if (x.eq(rn1)) {
+      if (x.equal(n1)) {
         break;
       }
     }

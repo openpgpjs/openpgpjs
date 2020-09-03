@@ -551,7 +551,7 @@ function withCompression(tests) {
 module.exports = () => describe('OpenPGP.js public api tests', function() {
 
   let rsaGenStub;
-  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
+  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, 65537);
 
   beforeEach(function() {
     rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
@@ -2345,6 +2345,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       });
 
       it('RSA decryption with PKCS1 padding of wrong length should fail', async function() {
+        const key = await openpgp.key.readArmored(rsaPrivateKeyPKCS1);
         const key = (await openpgp.key.readArmored(rsaPrivateKeyPKCS1)).keys[0];
         // the paddings of these messages are prefixed by 0x02 and 0x000002 instead of 0x0002
         // the code should discriminate between these cases by checking the length of the padded plaintext

@@ -42,12 +42,12 @@ export default {
         return publicKey.rsa.verify(hash_algo, data, m, n, e, hashed);
       }
       case enums.publicKey.dsa: {
-        const r = msg_MPIs[0].toBN();
-        const s = msg_MPIs[1].toBN();
-        const p = pub_MPIs[0].toBN();
-        const q = pub_MPIs[1].toBN();
-        const g = pub_MPIs[2].toBN();
-        const y = pub_MPIs[3].toBN();
+        const r = await msg_MPIs[0].toBigInteger();
+        const s = await msg_MPIs[1].toBigInteger();
+        const p = await pub_MPIs[0].toBigInteger();
+        const q = await pub_MPIs[1].toBigInteger();
+        const g = await pub_MPIs[2].toBigInteger();
+        const y = await pub_MPIs[3].toBigInteger();
         return publicKey.dsa.verify(hash_algo, r, s, hashed, g, p, q, y);
       }
       case enums.publicKey.ecdsa: {
@@ -101,10 +101,10 @@ export default {
         return util.uint8ArrayToMpi(signature);
       }
       case enums.publicKey.dsa: {
-        const p = key_params[0].toBN();
-        const q = key_params[1].toBN();
-        const g = key_params[2].toBN();
-        const x = key_params[4].toBN();
+        const p = await key_params[0].toBigInteger();
+        const q = await key_params[1].toBigInteger();
+        const g = await key_params[2].toBigInteger();
+        const x = await key_params[4].toBigInteger();
         const signature = await publicKey.dsa.sign(hash_algo, hashed, g, p, q, x);
         return util.concatUint8Array([
           util.uint8ArrayToMpi(signature.r),
