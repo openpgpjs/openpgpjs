@@ -147,7 +147,7 @@ emsa.encode = async function(algo, hashed, emLen) {
   // The length of PS will be at least 8 octets
   const PS = new Uint8Array(emLen - tLen - 3).fill(0xff);
 
-  // Concatenate PS, the hash prefix, hashed data , and other padding to form the
+  // Concatenate PS, the hash prefix, hashed data, and other padding to form the
   // encoded message EM as EM = 0x00 || 0x01 || PS || 0x00 || prefix || hashed
   const EM = new Uint8Array(emLen);
   EM[1] = 0x01;
