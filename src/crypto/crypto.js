@@ -77,14 +77,11 @@ export default {
       }
       case enums.publicKey.elgamal: {
         const { p, g, y } = publicParams;
-        data = new type_mpi(await pkcs1.eme.encode(data, p.length));
-        const m = data.toUint8Array();// TODO i would do this as part of encryption
-        const res = await publicKey.elgamal.encrypt(m, p, g, y);
+        const res = await publicKey.elgamal.encrypt(data, p, g, y);
         return constructParams(types, [res.c1, res.c2]);
       }
       case enums.publicKey.ecdh: {
         const { oid, Q, kdfParams } = publicParams;
-        data = new type_mpi(pkcs5.encode(data));
         const { publicKey: V, wrappedKey: C } = await publicKey.elliptic.ecdh.encrypt(
           oid, kdfParams, data, Q, fingerprint);
         return constructParams(types, [V, C]);
@@ -103,8 +100,8 @@ export default {
    * @param {Array<module:type/mpi|
                    module:type/ecdh_symkey>}
                                             data_params encrypted session key parameters
-   * @param {String}                        fingerprint Recipient fingerprint
-   * @returns {String}                          String containing the decrypted data
+   * @param {Uint8Array}                    fingerprint Recipient fingerprint
+   * @returns {Uint8Array}                  decrypted data
    * @async
    */
   publicKeyDecrypt: async function(algo, publicKeyParams, privateKeyParams, data_params, fingerprint) {
@@ -121,17 +118,15 @@ export default {
         const c2 = data_params[1].toUint8Array();
         const p = publicKeyParams.p;
         const x = privateKeyParams.x;
-        const result = new type_mpi(await publicKey.elgamal.decrypt(c1, c2, p, x));
-        return pkcs1.eme.decode(result.toUint8Array('be', p.byteLength())); // TODO do as part of crypto functions
+        return publicKey.elgamal.decrypt(c1, c2, p, x);
       }
       case enums.publicKey.ecdh: {
         const { oid, Q, kdfParams } = publicKeyParams;
         const { d } = privateKeyParams;
         const V = data_params[0].toUint8Array();
         const C = data_params[1].data;
-        const result = new type_mpi(await publicKey.elliptic.ecdh.decrypt(
-          oid, kdfParams, V, C, Q, d, fingerprint));
-        return pkcs5.decode(result.toUint8Array());
+        return publicKey.elliptic.ecdh.decrypt(
+          oid, kdfParams, V, C, Q, d, fingerprint);
       }
       default:
         throw new Error('Invalid public key encryption algorithm.');

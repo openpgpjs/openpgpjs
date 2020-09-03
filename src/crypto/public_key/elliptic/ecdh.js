@@ -37,6 +37,8 @@ import random from '../../random';
 import hash from '../../hash';
 import enums from '../../../enums';
 import util from '../../../util';
+import pkcs5 from '../../pkcs5';
+import MPI from '../../../type/mpi';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
@@ -126,13 +128,15 @@ async function genPublicEphemeralKey(curve, Q) {
  *
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
  * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
- * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
+ * @param  {Uint8Array}             data         Unpadded session key data
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             fingerprint  Recipient fingerprint
  * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
-async function encrypt(oid, kdfParams, m, Q, fingerprint) {
+async function encrypt(oid, kdfParams, data, Q, fingerprint) {
+  const m = new MPI(pkcs5.encode(data));
+
   const curve = new Curve(oid);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
@@ -189,12 +193,10 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {Uint8Array}             fingerprint  Recipient fingerprint
- * @returns {Promise<BigInteger>}                        Value derived from session key
+ * @returns {Promise<Uint8Array>}   Value derived from session key
  * @async
  */
 async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
-  const BigInteger = await util.getBigInteger();
-
   const curve = new Curve(oid);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
@@ -204,7 +206,7 @@ async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
       const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param, i === 1, i === 2);
-      return new BigInteger(aes_kw.unwrap(Z, C));
+      return pkcs5.decode(aes_kw.unwrap(Z, C));
     } catch (e) {
       err = e;
     }

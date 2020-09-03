@@ -392,7 +392,14 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     const algo = enums.write(enums.publicKey, this.algorithm);
-    const validParams = await crypto.validateParams(algo, this.publicParams, this.privateParams);
+
+    let validParams;
+    try {
+      // this can throw if some parameters are undefined
+      validParams = await crypto.validateParams(algo, this.publicParams, this.privateParams);
+    } catch (_) {
+      validParams = false;
+    }
     if (!validParams) {
       throw new Error('Key is invalid');
     }
