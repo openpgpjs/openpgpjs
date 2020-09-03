@@ -2,9 +2,9 @@
 
 /**
  * BigInteger implementation of basic operations
- * Wrapper of the native BigInt library
- * Operations are not constant time
- *  but we try and limit timing leakage where we can
+ * that wraps the native BigInt library.
+ * Operations are not constant time,
+ * but we try and limit timing leakage where we can
  */
 export default class BigInteger {
   /**

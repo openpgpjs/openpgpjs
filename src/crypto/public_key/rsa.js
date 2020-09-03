@@ -507,7 +507,11 @@ export default {
       });
       key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     }
-    return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
+    try {
+      return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
+    } catch (err) {
+      throw new Error('Decryption error');
+    }
   },
 
   bnDecrypt: async function(data, n, e, d, p, q, u) {

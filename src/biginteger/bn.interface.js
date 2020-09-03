@@ -4,7 +4,6 @@ import BN from 'bn.js';
  * BigInteger implementation of basic operations
  * Wrapper of bn.js library (wwww.github.com/indutny/bn.js)
  */
-
 export default class BigInteger {
   /**
    * Get a BigInteger (input must be big endian for strings and arrays)
@@ -113,29 +112,6 @@ export default class BigInteger {
   }
 
   /**
-   * Compute remainder in place
-   * This is not the same as mod(m):
-   *  the remainder is negative if the value is negative
-   * @param {BigInteger} m divisor
-   */
-  iremainder(m) {
-    this.value = this.value.mod(m.value);
-    return this;
-  }
-
-
-  /**
-   * Compute remainder of this value when divided by m
-   * This is not the same as mod(m):
-   *  the remainder is negative if the value is negative
-   * @param {BigInteger} m divisor
-   * @returns {BigInteger} this % m
-   */
-  remainder(m) {
-    return this.clone().iremainder(m);
-  }
-
-  /**
    * Compute value modulo m, in place
    * @param {BigInteger} m modulo
    */
@@ -151,24 +127,6 @@ export default class BigInteger {
    */
   mod(m) {
     return this.clone().imod(m);
-  }
-
-  /**
-   * Exponentiate this to the power of x, in place
-   * @param {BigInteger} x exponent
-   */
-  iexp(x) {
-    this.value = this.value.pow(x.value);
-    return this;
-  }
-
-  /**
-   * Exponentiate this to the power of x
-   * @param {BigInteger} x exponent
-   * @returns {BigInteger} this ** x
-   */
-  exp(x) {
-    return this.clone().iexp(x);
   }
 
   /**
