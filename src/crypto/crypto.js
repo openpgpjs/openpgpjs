@@ -108,7 +108,6 @@ export default {
         if (pub_params.length < 3) {
           throw new Error('Cannot encrypt with symmetric key missing private parameters');
         }
-        data = util.strToUint8Array(data);
         const symmetric_algo = pub_params[0].getName();
         const aead_mode = enums.read(enums.aead, config.aeadMode);
         const blockLen = cipher[symmetric_algo].blockSize;
@@ -180,8 +179,7 @@ export default {
 
         const mode = crypto[aead_mode];
         const modeInstance = await mode(symmetric_algo, key);
-        const res = await modeInstance.decrypt(data, iv.subarray(0, mode.ivLength), new Uint8Array());
-        return util.uint8ArrayToStr(res);
+        return modeInstance.decrypt(data, iv.subarray(0, mode.ivLength), new Uint8Array());
       }
       default:
         throw new Error('Invalid public key encryption algorithm.');
