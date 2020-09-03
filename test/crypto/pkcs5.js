@@ -3,37 +3,13 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 const expect = require('chai').expect;
 
 module.exports = () => describe('PKCS5 padding', function() {
-  function repeat(pattern, count) {
-    let result = '';
-    for (let k = 0; k < count; ++k) {
-      result += pattern;
-    }
-    return result;
-  }
   const pkcs5 = openpgp.crypto.pkcs5;
-  it('Add padding', function () {
-    let s = '';
-    while (s.length < 16) {
-      const r = pkcs5.encode(s);
-      // 0..7 -> 8, 8..15 -> 16
-      const l = Math.ceil((s.length + 1) / 8) * 8;
-      const c = l - s.length;
-      expect(r.length).to.equal(l);
-      expect(c).is.at.least(1).is.at.most(8);
-      expect(r.substr(-1)).to.equal(String.fromCharCode(c));
-      s += ' ';
-    }
-  });
-  it('Remove padding', function () {
-    for (let k = 1; k <= 8; ++k) {
-      const s = repeat(' ', 8 - k);
-      const r = s + repeat(String.fromCharCode(k), k);
-      const t = pkcs5.decode(r);
-      expect(t).to.equal(s);
-    }
-  });
-  it('Invalid padding', function () {
-    expect(function () { pkcs5.decode(' '); }).to.throw(Error, /Invalid padding/);
-    expect(function () { pkcs5.decode(''); }).to.throw(Error, /Invalid padding/);
+  it('Add and remove padding', function () {
+    const m = new Uint8Array([0,1,2,3,4,5,6,7,8]);
+    const padded = pkcs5.encode(m);
+    const unpadded = pkcs5.decode(padded);
+    expect(padded[padded.length - 1]).to.equal(7);
+    expect(padded.length % 8).to.equal(0);
+    expect(unpadded).to.deep.equal(m);
   });
 });

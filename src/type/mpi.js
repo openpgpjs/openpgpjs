@@ -28,12 +28,9 @@
  * An MPI consists of two pieces: a two-octet scalar that is the length
  * of the MPI in bits followed by a string of octets that contain the
  * actual integer.
- * @requires bn.js
  * @requires util
  * @module type/mpi
  */
-
-import BN from 'bn.js';
 import util from '../util';
 
 class MPI {
@@ -41,7 +38,9 @@ class MPI {
     /** An implementation dependent integer */
     if (data instanceof MPI) {
       this.data = data.data;
-    } else if (BN.isBN(data)) {
+    } else if (util.isBigInteger(data)) {
+      this.fromBigInteger(data);
+    } else if (util.isBN(data)) {
       this.fromBN(data);
     } else if (util.isUint8Array(data)) {
       this.fromUint8Array(data);
@@ -121,8 +120,13 @@ class MPI {
     this.fromUint8Array(util.strToUint8Array(str), endian);
   }
 
-  toBN() {
-    return new BN(this.toUint8Array());
+  async toBigInteger() {
+    const BigInteger = await util.getBigInteger();
+    return new BigInteger(this.toUint8Array());
+  }
+
+  fromBigInteger(n) {
+    this.data = n.toUint8Array();
   }
 
   fromBN(bn) {

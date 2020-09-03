@@ -22,13 +22,11 @@
  * @see PublicKeyEncryptedSessionKeyPacket
  * @requires crypto/random
  * @requires crypto/hash
- * @requires util
  * @module crypto/pkcs1
  */
 
 import random from './random';
 import hash from './hash';
-import util from '../util';
 
 /** @namespace */
 const eme = {};
@@ -56,17 +54,18 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
 /**
  * Create padding with secure random data
  * @private
- * @param  {Integer} length Length of the padding in bytes
- * @returns {String}        Padding as string
+ * @param  {Integer}      length Length of the padding in bytes
+ * @returns {Uint8Array}  Random padding
  * @async
  */
 async function getPkcs1Padding(length) {
-  let result = '';
-  while (result.length < length) {
-    const randomBytes = await random.getRandomBytes(length - result.length);
+  const result = new Uint8Array(length);
+  let count = 0;
+  while (count < length) {
+    const randomBytes = await random.getRandomBytes(length - count);
     for (let i = 0; i < randomBytes.length; i++) {
       if (randomBytes[i] !== 0) {
-        result += String.fromCharCode(randomBytes[i]);
+        result[count++] = randomBytes[i];
       }
     }
   }
@@ -76,50 +75,46 @@ async function getPkcs1Padding(length) {
 /**
  * Create a EME-PKCS1-v1_5 padded message
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1}
- * @param {String} M message to be encoded
- * @param {Integer} k the length in octets of the key modulus
- * @returns {Promise<String>} EME-PKCS1 padded message
+ * @param {Uint8Array} message message to be encoded
+ * @param {Integer} keyLength the length in octets of the key modulus
+ * @returns {Promise<Uint8Array>} EME-PKCS1 padded message
  * @async
  */
-eme.encode = async function(M, k) {
-  const mLen = M.length;
+eme.encode = async function(message, keyLength) {
+  const mLength = message.length;
   // length checking
-  if (mLen > k - 11) {
+  if (mLength > keyLength - 11) {
     throw new Error('Message too long');
   }
   // Generate an octet string PS of length k - mLen - 3 consisting of
   // pseudo-randomly generated nonzero octets
-  const PS = await getPkcs1Padding(k - mLen - 3);
+  const PS = await getPkcs1Padding(keyLength - mLength - 3);
   // Concatenate PS, the message M, and other padding to form an
   // encoded message EM of length k octets as EM = 0x00 || 0x02 || PS || 0x00 || M.
-  return String.fromCharCode(0) +
-    String.fromCharCode(2) +
-    PS +
-    String.fromCharCode(0) +
-    M;
+  const encoded = new Uint8Array(keyLength);
+  // 0x00 byte
+  encoded[1] = 2;
+  encoded.set(PS, 2);
+  // 0x00 bytes
+  encoded.set(message, keyLength - mLength);
+  return encoded;
 };
 
 /**
  * Decode a EME-PKCS1-v1_5 padded message
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2}
- * @param {String} EM encoded message, an octet string
- * @returns {String} message, an octet string
+ * @param {Uint8Array} encoded encoded message bytes
+ * @returns {Uint8Array} message
  */
-eme.decode = function(EM) {
-  // leading zeros truncated by bn.js
-  if (EM.charCodeAt(0) !== 0) {
-    EM = String.fromCharCode(0) + EM;
-  }
-  const firstOct = EM.charCodeAt(0);
-  const secondOct = EM.charCodeAt(1);
+eme.decode = function(encoded) {
   let i = 2;
-  while (EM.charCodeAt(i) !== 0 && i < EM.length) {
+  while (encoded[i] !== 0 && i < encoded.length) {
     i++;
   }
   const psLen = i - 2;
-  const separator = EM.charCodeAt(i++);
-  if (firstOct === 0 && secondOct === 2 && psLen >= 8 && separator === 0) {
-    return EM.substr(i);
+  const separator = encoded[i++];
+  if (encoded[0] === 0 && encoded[1] === 2 && psLen >= 8 && separator === 0) {
+    return encoded.subarray(i);
   }
   throw new Error('Decryption error');
 };
@@ -130,41 +125,36 @@ eme.decode = function(EM) {
  * @param {Integer} algo Hash algorithm type used
  * @param {Uint8Array} hashed message to be encoded
  * @param {Integer} emLen intended length in octets of the encoded message
- * @returns {String} encoded message
+ * @returns {Uint8Array} encoded message
  */
 emsa.encode = async function(algo, hashed, emLen) {
   let i;
-  const H = util.uint8ArrayToStr(hashed);
-  if (H.length !== hash.getHashByteLength(algo)) {
+  if (hashed.length !== hash.getHashByteLength(algo)) {
     throw new Error('Invalid hash length');
   }
   // produce an ASN.1 DER value for the hash function used.
   // Let T be the full hash prefix
-  let T = '';
+  const hashPrefix = new Uint8Array(hash_headers[algo].length);
   for (i = 0; i < hash_headers[algo].length; i++) {
-    T += String.fromCharCode(hash_headers[algo][i]);
+    hashPrefix[i] = hash_headers[algo][i];
   }
-  // add hash value to prefix
-  T += H;
-  // and let tLen be the length in octets of T
-  const tLen = T.length;
+  // and let tLen be the length in octets prefix and hashed data
+  const tLen = hashPrefix.length + hashed.length;
   if (emLen < tLen + 11) {
     throw new Error('Intended encoded message length too short');
   }
   // an octet string PS consisting of emLen - tLen - 3 octets with hexadecimal value 0xFF
   // The length of PS will be at least 8 octets
-  let PS = '';
-  for (i = 0; i < (emLen - tLen - 3); i++) {
-    PS += String.fromCharCode(0xff);
-  }
-  // Concatenate PS, the hash prefix T, and other padding to form the
-  // encoded message EM as EM = 0x00 || 0x01 || PS || 0x00 || T.
-  const EM = String.fromCharCode(0x00) +
-        String.fromCharCode(0x01) +
-        PS +
-        String.fromCharCode(0x00) +
-        T;
-  return util.strToHex(EM);
+  const PS = new Uint8Array(emLen - tLen - 3).fill(0xff);
+
+  // Concatenate PS, the hash prefix, hashed data, and other padding to form the
+  // encoded message EM as EM = 0x00 || 0x01 || PS || 0x00 || prefix || hashed
+  const EM = new Uint8Array(emLen);
+  EM[1] = 0x01;
+  EM.set(PS, 2);
+  EM.set(hashPrefix, emLen - tLen);
+  EM.set(hashed, emLen - hashed.length);
+  return EM;
 };
 
 export default { eme, emsa };
