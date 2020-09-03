@@ -2540,9 +2540,9 @@ module.exports = () => describe('Key', function() {
   let v5KeysVal;
   let aeadProtectVal;
   const rsaGenValue = {
-    512: openpgp.crypto.publicKey.rsa.generate(512, "10001"),
-    1024: openpgp.crypto.publicKey.rsa.generate(1024, "10001"),
-    2048: openpgp.crypto.publicKey.rsa.generate(2048, "10001")
+    512: openpgp.crypto.publicKey.rsa.generate(512, 65537),
+    1024: openpgp.crypto.publicKey.rsa.generate(1024, 65537),
+    2048: openpgp.crypto.publicKey.rsa.generate(2048, 65537)
   };
 
   beforeEach(function() {

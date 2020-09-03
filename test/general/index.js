@@ -1,5 +1,6 @@
 module.exports = () => describe('General', function () {
   require('./util.js')();
+  require('./biginteger.js')();
   require('./armor.js')();
   require('./packet.js')();
   require('./keyring.js')();
