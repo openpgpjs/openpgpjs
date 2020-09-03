@@ -17,7 +17,6 @@
 
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
- * @requires bn.js
  * @requires tweetnacl
  * @requires crypto/public_key/elliptic/curve
  * @requires crypto/aes_kw
@@ -30,7 +29,6 @@
  * @module crypto/public_key/elliptic/ecdh
  */
 
-import BN from 'bn.js';
 import nacl from 'tweetnacl/nacl-fast-light.js';
 import Curve, { jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams } from './curves';
 import aes_kw from '../../aes_kw';
@@ -216,10 +214,12 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {Uint8Array}             fingerprint  Recipient fingerprint
- * @returns {Promise<BN>}                        Value derived from session key
+ * @returns {Promise<BigInteger>}                        Value derived from session key
  * @async
  */
 async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
+  const BigInteger = await util.getBigInteger();
+
   const curve = new Curve(oid);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
@@ -229,7 +229,7 @@ async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
       const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param, i === 1, i === 2);
-      return new BN(aes_kw.unwrap(Z, C));
+      return new BigInteger(aes_kw.unwrap(Z, C));
     } catch (e) {
       err = e;
     }

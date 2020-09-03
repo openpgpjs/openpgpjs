@@ -33,7 +33,8 @@ module.exports = {
     "postMessage": true,
     "resolves": true,
     "rejects": true,
-    "TransformStream": true
+    "TransformStream": true,
+    "BigInt": true
   },
 
   "rules": {

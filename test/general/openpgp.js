@@ -439,6 +439,68 @@ AxMSJy5Dv9gcVPq6V8fuPw05ODSpbieoIF3d3WuaI39lAZpfuhNaSNAQmzA7
 -----END PGP PRIVATE KEY BLOCK-----
 `;
 
+const rsaPrivateKeyPKCS1 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+=dSNv
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+
 function withCompression(tests) {
   const compressionTypes = Object.keys(openpgp.enums.compression).map(k => openpgp.enums.compression[k]);
 
@@ -488,7 +550,7 @@ function withCompression(tests) {
 module.exports = () => describe('OpenPGP.js public api tests', function() {
 
   let rsaGenStub;
-  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, "10001");
+  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, 65537);
 
   beforeEach(function() {
     rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
@@ -2279,6 +2341,52 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         };
         // binding signature is invalid
         await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith(/Session key decryption failed/);
+      });
+
+      it('RSA decryption with PKCS1 padding of wrong length should fail', async function() {
+        const key = await openpgp.key.readArmored(rsaPrivateKeyPKCS1);
+        // the paddings of these messages are prefixed by 0x02 and 0x000002 instead of 0x0002
+        // the code should discriminate between these cases by checking the length of the padded plaintext
+        const padding02 = `-----BEGIN PGP MESSAGE-----
+Version: OpenPGP.js VERSION
+Comment: https://openpgpjs.org
+
+wcBMAxbpoSTRSSl3AQf/fepDhqeam4Ecy8GUFChc47U3hbkdgINobI9TORAf
+eGFZVcyTQKVIt7fB8bwQwjxRmU98xCjF7VkLhPQJkzKlkT9cIDBKswU+d3fw
+lHAVYo77yUkFkVLXrQTZj/OjsA12V7lfRagO375XB3EpJUHVPvYQFFr3aSlo
+FbsCrpZoS6FXxRYVjGpIeMjam3a7qDavQpKhjOQ+Sfm0tk2JZkQwpFom6x7c
+9TEn3YSo6+I0ztjiuTBZDyYr8zocHW8imFzZRlcNuuuukesyFzFgHx46eVpO
+6PVjmiN50agZvsV9rgPyyH84nb3zYJ63shnrQWubTOVH4daGbe8uHi+ZM3UU
+J9I8AcH94nE77JUtCm7s1kOlo0EIshZsAqJwGveDGdAuabfViVwVxG4I24M6
+8sqJYJd9FpNjSbYlrLT0R9zy
+=+n/4
+-----END PGP MESSAGE-----`;
+        const padding000002 = `-----BEGIN PGP MESSAGE-----
+Version: OpenPGP.js VERSION
+Comment: https://openpgpjs.org
+
+wcBMAxbpoSTRSSl3AQf/fepDhqeam4Ecy8GUFChc47U3hbkdgINobI9TORAf
+eGFZVcyTQKVIt7fB8bwQwjxRmU98xCjF7VkLhPQJkzKlkT9cIDBKswU+d3fw
+lHAVYo77yUkFkVLXrQTZj/OjsA12V7lfRagO375XB3EpJUHVPvYQFFr3aSlo
+FbsCrpZoS6FXxRYVjGpIeMjam3a7qDavQpKhjOQ+Sfm0tk2JZkQwpFom6x7c
+9TEn3YSo6+I0ztjiuTBZDyYr8zocHW8imFzZRlcNuuuukesyFzFgHx46eVpO
+6PVjmiN50agZvsV9rgPyyH84nb3zYJ63shnrQWubTOVH4daGbe8uHi+ZM3UU
+J9I8AcH94nE77JUtCm7s1kOlo0EIshZsAqJwGveDGdAuabfViVwVxG4I24M6
+8sqJYJd9FpNjSbYlrLT0R9zy
+=+n/4
+-----END PGP MESSAGE-----`;
+
+        const decOpt02 = {
+          message: await openpgp.message.readArmored(padding02),
+          privateKeys: key
+        };
+        await expect(openpgp.decrypt(decOpt02)).to.be.rejectedWith(/Decryption error/);
+
+        const decOpt000002 = {
+          message: await openpgp.message.readArmored(padding000002),
+          privateKeys: key
+        };
+        await expect(openpgp.decrypt(decOpt000002)).to.be.rejectedWith(/Decryption error/);
       });
 
       it('should decrypt with two passwords message which GPG fails on', async function() {

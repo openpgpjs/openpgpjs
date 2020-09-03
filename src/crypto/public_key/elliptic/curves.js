@@ -17,7 +17,6 @@
 
 /**
  * @fileoverview Wrapper of an instance of an Elliptic Curve
- * @requires bn.js
  * @requires tweetnacl
  * @requires crypto/public_key/elliptic/key
  * @requires crypto/random
@@ -28,7 +27,6 @@
  * @module crypto/public_key/elliptic/curve
  */
 
-import BN from 'bn.js';
 import nacl from 'tweetnacl/nacl-fast-light.js';
 import random from '../../random';
 import enums from '../../../enums';
@@ -212,12 +210,14 @@ class Curve {
 }
 
 async function generate(curve) {
+  const BigInteger = await util.getBigInteger();
+
   curve = new Curve(curve);
   const keyPair = await curve.genKeyPair();
   return {
     oid: curve.oid,
-    Q: new BN(keyPair.publicKey),
-    d: new BN(keyPair.privateKey),
+    Q: new BigInteger(keyPair.publicKey),
+    d: new BigInteger(keyPair.privateKey),
     hash: curve.hash,
     cipher: curve.cipher
   };
@@ -281,7 +281,6 @@ async function validateStandardParams(algo, oid, Q, d) {
    * Re-derive public point Q' = dG from private key
    * Expect Q == Q'
    */
-  d = new BN(d);
   const dG = keyFromPrivate(curve, d).getPublic();
   if (!dG.eq(Q)) {
     return false;

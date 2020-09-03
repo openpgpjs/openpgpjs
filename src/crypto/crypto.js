@@ -61,8 +61,8 @@ export default {
    * @param {Array<module:type/mpi|
                    module:type/oid|
                    module:type/kdf_params>} pub_params  Algorithm-specific public key parameters
-   * @param {String}                        data        Data to be encrypted
-   * @param {String}                        fingerprint Recipient fingerprint
+   * @param {Uint8Array}                    data        Data to be encrypted
+   * @param {Uint8Array}                    fingerprint Recipient fingerprint
    * @returns {Array<module:type/mpi|
    *                 module:type/ecdh_symkey>}          encrypted session key parameters
    * @async
@@ -72,7 +72,6 @@ export default {
     switch (algo) {
       case enums.publicKey.rsaEncrypt:
       case enums.publicKey.rsaEncryptSign: {
-        data = util.strToUint8Array(data);
         const n = pub_params[0].toUint8Array();
         const e = pub_params[1].toUint8Array();
         const res = await publicKey.rsa.encrypt(data, n, e);
@@ -80,10 +79,10 @@ export default {
       }
       case enums.publicKey.elgamal: {
         data = new type_mpi(await pkcs1.eme.encode(data, pub_params[0].byteLength()));
-        const m = data.toBN();
-        const p = pub_params[0].toBN();
-        const g = pub_params[1].toBN();
-        const y = pub_params[2].toBN();
+        const m = await data.toBigInteger();
+        const p = await pub_params[0].toBigInteger();
+        const g = await pub_params[1].toBigInteger();
+        const y = await pub_params[2].toBigInteger();
         const res = await publicKey.elgamal.encrypt(m, p, g, y);
         return constructParams(types, [res.c1, res.c2]);
       }
@@ -129,12 +128,12 @@ export default {
         return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
       }
       case enums.publicKey.elgamal: {
-        const c1 = data_params[0].toBN();
-        const c2 = data_params[1].toBN();
-        const p = key_params[0].toBN();
-        const x = key_params[3].toBN();
+        const c1 = await data_params[0].toBigInteger();
+        const c2 = await data_params[1].toBigInteger();
+        const p = await key_params[0].toBigInteger();
+        const x = await key_params[3].toBigInteger();
         const result = new type_mpi(await publicKey.elgamal.decrypt(c1, c2, p, x));
-        return pkcs1.eme.decode(result.toString());
+        return pkcs1.eme.decode(result.toUint8Array('be', p.byteLength()));
       }
       case enums.publicKey.ecdh: {
         const oid = key_params[0];
@@ -145,7 +144,7 @@ export default {
         const d = key_params[3].toUint8Array();
         const result = new type_mpi(await publicKey.elliptic.ecdh.decrypt(
           oid, kdfParams, V, C, Q, d, fingerprint));
-        return pkcs5.decode(result.toString());
+        return pkcs5.decode(result.toUint8Array());
       }
       default:
         throw new Error('Invalid public key encryption algorithm.');
@@ -269,7 +268,7 @@ export default {
       case enums.publicKey.rsaEncrypt:
       case enums.publicKey.rsaEncryptSign:
       case enums.publicKey.rsaSign: {
-        return publicKey.rsa.generate(bits, "10001").then(function(keyObject) {
+        return publicKey.rsa.generate(bits, 65537).then(function(keyObject) {
           return constructParams(
             types, [keyObject.n, keyObject.e, keyObject.d, keyObject.p, keyObject.q, keyObject.u]
           );
