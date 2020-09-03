@@ -31,6 +31,7 @@ import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
 import b64 from './encoding/base64';
+import { getBigInteger } from './biginteger';
 
 export default {
   isString: function(data) {
@@ -39,6 +40,18 @@ export default {
 
   isArray: function(data) {
     return Array.prototype.isPrototypeOf(data);
+  },
+
+  isBigInteger: function(data) {
+    return data !== null && typeof data === 'object' && data.value &&
+      // eslint-disable-next-line valid-typeof
+      (typeof data.value === 'bigint' || this.isBN(data.value));
+  },
+
+  isBN: function(data) {
+    return data !== null && typeof data === 'object' &&
+      (data.constructor.name === 'BN' ||
+        (data.constructor.wordSize === 26 && Array.isArray(data.words))); // taken from BN.isBN()
   },
 
   isUint8Array: stream.isUint8Array,
@@ -518,6 +531,20 @@ export default {
     return typeof globalThis.process === 'object' &&
       typeof globalThis.process.versions === 'object';
   },
+
+  /**
+   * Detect native BigInt support
+   */
+  detectBigInt: () => typeof BigInt !== 'undefined',
+
+  /**
+   * Get BigInteger class
+   * It wraps the native BigInt type if it's available
+   * Otherwise it relies on bn.js
+   * @returns {BigInteger}
+   * @async
+   */
+  getBigInteger,
 
   /**
    * Get native Node.js crypto api. The default configuration is to use
