@@ -6,6 +6,7 @@ chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 const input = require('./testInputs.js');
+const { PacketList } = require('../../dist/node/openpgp.min');
 
 function stringify(array) {
   if (openpgp.util.isStream(array)) {
@@ -315,16 +316,10 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Public key encrypted symmetric key packet', function() {
-    const rsa = openpgp.crypto.publicKey.rsa;
+    const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    return rsa.generate(keySize, 65537).then(function(mpiGen) {
-
-      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
-      mpi = mpi.map(function(k) {
-        return new openpgp.MPI(k);
-      });
-
+    return openpgp.crypto.generateParams(rsa, keySize, 65537).then(function({ publicParams, privateParams }) {
       const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
       const msg = new openpgp.PacketList();
       const msg2 = new openpgp.PacketList();
@@ -333,14 +328,12 @@ module.exports = () => describe("Packet", function() {
       enc.publicKeyAlgorithm = 'rsaEncryptSign';
       enc.sessionKeyAlgorithm = 'aes256';
       enc.publicKeyId.bytes = '12345678';
-      return enc.encrypt({ params: mpi, getFingerprintBytes() {} }).then(async () => {
+      return enc.encrypt({ publicParams, getFingerprintBytes() {} }).then(async () => {
 
         msg.push(enc);
-
         await msg2.read(msg.write(), openpgp);
 
-        return msg2[0].decrypt({ algorithm: 'rsaEncryptSign', params: mpi, getFingerprintBytes() {} }).then(() => {
-
+        return msg2[0].decrypt({ algorithm: 'rsaEncryptSign', publicParams, privateParams, getFingerprintBytes() {} }).then(() => {
           expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
           expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
         });
@@ -841,82 +834,67 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     expect(rawNotations[1].humanReadable).to.equal(true);
   });
 
-  it('Writing and encryption of a secret key packet.', function() {
-    const key = new openpgp.PacketList();
-    key.push(new openpgp.SecretKeyPacket());
-
-    const rsa = openpgp.crypto.publicKey.rsa;
+  it('Writing and encryption of a secret key packet (AEAD)', async function() {
+    const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    const { privateParams, publicParams } = await openpgp.crypto.generateParams(rsa, keySize, 65537);
 
-    return rsa.generate(keySize, 65537).then(async function(mpiGen) {
-      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
-      mpi = mpi.map(function(k) {
-        return new openpgp.MPI(k);
-      });
+    const secretKeyPacket = new openpgp.SecretKeyPacket();
+    secretKeyPacket.privateParams = privateParams;
+    secretKeyPacket.publicParams = publicParams;
+    secretKeyPacket.algorithm = "rsaSign";
+    secretKeyPacket.isEncrypted = false;
+    await secretKeyPacket.encrypt('hello');
 
-      key[0].params = mpi;
-      key[0].algorithm = "rsaSign";
-      key[0].isEncrypted = false;
-      await key[0].encrypt('hello');
+    const raw = new openpgp.PacketList();
+    raw.push(secretKeyPacket);
+    const packetList = new openpgp.PacketList();
+    await packetList.read(raw.write(), openpgp);
+    const secretKeyPacket2 = packetList[0];
+    await secretKeyPacket2.decrypt('hello');
 
-      const raw = key.write();
-
-      const key2 = new openpgp.PacketList();
-      await key2.read(raw, openpgp);
-      await key2[0].decrypt('hello');
-
-      expect(key[0].params.toString()).to.equal(key2[0].params.toString());
-    });
+    expect(secretKeyPacket2.privateParams).to.deep.equal(secretKeyPacket.privateParams);
+    expect(secretKeyPacket2.publicParams).to.deep.equal(secretKeyPacket.publicParams);
   });
 
-  it('Writing and encryption of a secret key packet. (AEAD)', async function() {
-    let aeadProtectVal = openpgp.config.aeadProtect;
-    openpgp.config.aeadProtect = true;
+  it('Writing and encryption of a secret key packet (CFB)', async function() {
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    openpgp.config.aeadProtect = false;
 
-    const key = new openpgp.PacketList();
-    key.push(new openpgp.SecretKeyPacket());
-
-    const rsa = openpgp.crypto.publicKey.rsa;
+    const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     try {
-      const mpiGen = await rsa.generate(keySize, 65537);
-      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
-      mpi = mpi.map(function(k) {
-        return new openpgp.MPI(k);
-      });
+      const { privateParams, publicParams } = await openpgp.crypto.generateParams(rsa, keySize, 65537);
+      const secretKeyPacket = new openpgp.SecretKeyPacket();
+      secretKeyPacket.privateParams = privateParams;
+      secretKeyPacket.publicParams = publicParams;
+      secretKeyPacket.algorithm = "rsaSign";
+      secretKeyPacket.isEncrypted = false;
+      await secretKeyPacket.encrypt('hello');
 
-      key[0].params = mpi;
-      key[0].algorithm = "rsaSign";
-      key[0].isEncrypted = false;
-      await key[0].encrypt('hello');
-
-      const raw = key.write();
-
-      const key2 = new openpgp.PacketList();
-      await key2.read(raw, openpgp);
-      await key2[0].decrypt('hello');
-
-      expect(key[0].params.toString()).to.equal(key2[0].params.toString());
+      const raw = new openpgp.PacketList();
+      raw.push(secretKeyPacket);
+      const packetList = new openpgp.PacketList();
+      await packetList.read(raw.write(), openpgp);
+      const secretKeyPacket2 = packetList[0];
+      await secretKeyPacket2.decrypt('hello');
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
     }
   });
 
-  it('Writing and verification of a signature packet.', function() {
+  it('Writing and verification of a signature packet', function() {
     const key = new openpgp.SecretKeyPacket();
 
-    const rsa = openpgp.crypto.publicKey.rsa;
+    const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    return rsa.generate(keySize, 65537).then(function(mpiGen) {
-      let mpi = [mpiGen.n, mpiGen.e, mpiGen.d, mpiGen.p, mpiGen.q, mpiGen.u];
-      mpi = mpi.map(function(k) {
-        return new openpgp.MPI(k);
-      });
+    return openpgp.crypto.generateParams(rsa, keySize, 65537).then(function({ privateParams, publicParams }) {
       const testText = input.createSomeMessage();
 
-      key.params = mpi;
+      key.publicParams = publicParams;
+      key.privateParams = privateParams;
       key.algorithm = "rsaSign";
 
       const signed = new openpgp.PacketList();

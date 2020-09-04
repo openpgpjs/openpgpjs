@@ -29,7 +29,6 @@
 import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
 import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import type_keyid from '../type/keyid';
-import type_mpi from '../type/mpi';
 import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -70,10 +69,10 @@ class PublicKeyPacket {
      */
     this.algorithm = null;
     /**
-     * Algorithm specific params
-     * @type {Array<Object>}
+     * Algorithm specific public params
+     * @type {Object}
      */
-    this.params = [];
+    this.publicParams = null;
     /**
      * Time until expiration in days (V3 only)
      * @type {Integer}
@@ -116,16 +115,13 @@ class PublicKeyPacket {
         pos += 4;
       }
 
-      // - A series of values comprising the key material.  This is
-      //   algorithm-specific and described in section XXXX.
-      const types = crypto.getPubKeyParamTypes(algo);
-      this.params = crypto.constructParams(types);
-
-      for (let i = 0; i < types.length && pos < bytes.length; i++) {
-        pos += this.params[i].read(bytes.subarray(pos, bytes.length));
-        if (pos > bytes.length) {
-          throw new Error('Error reading MPI @:' + pos);
-        }
+      // - A series of values comprising the key material.
+      try {
+        const { read, publicParams } = crypto.parsePublicKeyParams(algo, bytes.subarray(pos));
+        this.publicParams = publicParams;
+        pos += read;
+      } catch (err) {
+        throw new Error('Error reading MPIs');
       }
 
       return pos;
@@ -134,9 +130,8 @@ class PublicKeyPacket {
   }
 
   /**
-   * Same as write_private_key, but has less information because of
-   * public key.
-   * @returns {Uint8Array} OpenPGP packet body contents,
+   * Creates an OpenPGP public key packet for the given key.
+   * @returns {Uint8Array} Bytes encoding the public key OpenPGP packet
    */
   write() {
     const arr = [];
@@ -147,8 +142,7 @@ class PublicKeyPacket {
     const algo = enums.write(enums.publicKey, this.algorithm);
     arr.push(new Uint8Array([algo]));
 
-    const paramCount = crypto.getPubKeyParamTypes(algo).length;
-    const params = util.concatUint8Array(this.params.slice(0, paramCount).map(param => param.write()));
+    const params = crypto.serializeKeyParams(algo, this.publicParams);
     if (this.version === 5) {
       // A four-octet scalar octet count for the following key material
       arr.push(util.writeNumber(params.length, 4));
@@ -243,11 +237,11 @@ class PublicKeyPacket {
   getAlgorithmInfo() {
     const result = {};
     result.algorithm = this.algorithm;
-    if (this.params[0] instanceof type_mpi) {
-      result.rsaBits = this.params[0].byteLength() * 8;
+    if (this.publicParams.n) {
+      result.rsaBits = this.publicParams.n.length * 8;
       result.bits = result.rsaBits; // Deprecated.
     } else {
-      result.curve = this.params[0].getName();
+      result.curve = this.publicParams.oid.getName();
     }
     return result;
   }

@@ -92,28 +92,4 @@ async function validateParams(oid, Q, k) {
   return util.equalsUint8Array(Q, dG);
 }
 
-/**
- * Parses MPI params and returns them as byte arrays of fixed length
- * @param {Array} params key parameters
- * @returns {Object} parameters in the form
- *  { oid, seed: Uint8Array, Q: Uint8Array }
- */
-function parseParams(params) {
-  if (params.length < 2 || params.length > 3) {
-    throw new Error('Unexpected number of parameters');
-  }
-
-  const parsedParams = {
-    oid: params[0],
-    Q: params[1].toUint8Array('be', 33)
-  };
-
-  if (params.length === 3) {
-    parsedParams.seed = params[2].toUint8Array('be', 32);
-  }
-
-  return parsedParams;
-}
-
-
-export default { sign, verify, validateParams, parseParams };
+export default { sign, verify, validateParams };
