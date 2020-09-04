@@ -24,38 +24,55 @@
 
 import util from '../../util';
 import random from '../random';
+import pkcs1 from '../pkcs1';
 
 export default {
   /**
    * ElGamal Encryption function
-   * @param {BigInteger} m
-   * @param {BigInteger} p
-   * @param {BigInteger} g
-   * @param {BigInteger} y
-   * @returns {{ c1: BigInteger, c2: BigInteger }}
+   * Note that in OpenPGP, the message needs to be padded with PKCS#1 (same as RSA)
+   * @param {Uint8Array} data to be padded and encrypted
+   * @param {Uint8Array} p
+   * @param {Uint8Array} g
+   * @param {Uint8Array} y
+   * @returns {{ c1: Uint8Array, c2: Uint8Array }}
    * @async
    */
-  encrypt: async function(m, p, g, y) {
+  encrypt: async function(data, p, g, y) {
     const BigInteger = await util.getBigInteger();
-    // See Section 11.5 here: https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf
-    const k = await random.getRandomBigInteger(new BigInteger(0), p); // returns in [0, p-1]
+    p = new BigInteger(p);
+    g = new BigInteger(g);
+    y = new BigInteger(y);
+
+    const padded = await pkcs1.eme.encode(data, p.byteLength());
+    const m = new BigInteger(padded);
+
+    // OpenPGP uses a "special" version of ElGamal where g is generator of the full group Z/pZ*
+    // hence g has order p-1, and to avoid that k = 0 mod p-1, we need to pick k in [1, p-2]
+    const k = await random.getRandomBigInteger(new BigInteger(1), p.dec());
     return {
-      c1: g.modExp(k, p),
-      c2: y.modExp(k, p).imul(m).imod(p)
+      c1: g.modExp(k, p).toUint8Array(),
+      c2: y.modExp(k, p).imul(m).imod(p).toUint8Array()
     };
   },
 
   /**
    * ElGamal Encryption function
-   * @param {BigInteger} c1
-   * @param {BigInteger} c2
-   * @param {BigInteger} p
-   * @param {BigInteger} x
-   * @returns BigInteger
+   * @param {Uint8Array} c1
+   * @param {Uint8Array} c2
+   * @param {Uint8Array} p
+   * @param {Uint8Array} x
+   * @returns {Uint8Array} unpadded message
    * @async
    */
   decrypt: async function(c1, c2, p, x) {
-    return c1.modExp(x, p).modInv(p).imul(c2).imod(p);
+    const BigInteger = await util.getBigInteger();
+    c1 = new BigInteger(c1);
+    c2 = new BigInteger(c2);
+    p = new BigInteger(p);
+    x = new BigInteger(x);
+
+    const padded = c1.modExp(x, p).modInv(p).imul(c2).imod(p);
+    return pkcs1.eme.decode(padded.toUint8Array('be', p.byteLength()));
   },
 
   /**

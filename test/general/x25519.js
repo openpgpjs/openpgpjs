@@ -219,22 +219,24 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       const { publicKey } = openpgp.crypto.publicKey.nacl.sign.keyPair.fromSeed(openpgp.util.hexToUint8Array(vector.SECRET_KEY));
       expect(publicKey).to.deep.equal(openpgp.util.hexToUint8Array(vector.PUBLIC_KEY));
       const data = util.strToUint8Array(vector.MESSAGE);
-      const keyIntegers = [
-        new openpgp.OID(curve.oid),
-        new openpgp.MPI(util.hexToStr('40'+vector.PUBLIC_KEY)),
-        new openpgp.MPI(util.hexToStr(vector.SECRET_KEY))
-      ];
+      const privateParams = {
+        seed: util.hexToUint8Array(vector.SECRET_KEY)
+      };
+      const publicParams = {
+        oid: new openpgp.OID(curve.oid),
+        Q: util.hexToUint8Array('40' + vector.PUBLIC_KEY)
+      };
       const msg_MPIs = [
         new openpgp.MPI(util.uint8ArrayToStr(util.hexToUint8Array(vector.SIGNATURE.R).reverse())),
         new openpgp.MPI(util.uint8ArrayToStr(util.hexToUint8Array(vector.SIGNATURE.S).reverse()))
       ];
       return Promise.all([
-        signature.sign(22, undefined, keyIntegers, undefined, data).then(signed => {
-          const len = ((signed[0] << 8| signed[1]) + 7) / 8;
+        signature.sign(22, undefined, publicParams, privateParams, undefined, data).then(signed => {
+          const len = (((signed[0] << 8) | signed[1]) + 7) / 8;
           expect(util.hexToUint8Array(vector.SIGNATURE.R)).to.deep.eq(signed.slice(2, 2 + len));
           expect(util.hexToUint8Array(vector.SIGNATURE.S)).to.deep.eq(signed.slice(4 + len));
         }),
-        signature.verify(22, undefined, msg_MPIs, keyIntegers, undefined, data).then(result => {
+        signature.verify(22, undefined, msg_MPIs, publicParams, undefined, data).then(result => {
           expect(result).to.be.true;
         })
       ]);
@@ -242,63 +244,44 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
 
     it('Signature of empty string', function () {
       return testVector({
-        SECRET_KEY:
-        ['9d61b19deffd5a60ba844af492ec2cc4',
-         '4449c5697b326919703bac031cae7f60'].join(''),
-        PUBLIC_KEY:
-        ['d75a980182b10ab7d54bfed3c964073a',
-         '0ee172f3daa62325af021a68f707511a'].join(''),
+        SECRET_KEY: '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60',
+        PUBLIC_KEY: 'd75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a',
         MESSAGE: '',
-        SIGNATURE:
-        { R: ['e5564300c360ac729086e2cc806e828a',
-              '84877f1eb8e5d974d873e06522490155'].join(''),
-          S: ['5fb8821590a33bacc61e39701cf9b46b',
-              'd25bf5f0595bbe24655141438e7a100b'].join('') }
+        SIGNATURE: {
+          R: 'e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e06522490155',
+          S: '5fb8821590a33bacc61e39701cf9b46bd25bf5f0595bbe24655141438e7a100b'
+        }
       });
     });
 
     it('Signature of single byte', function () {
       return testVector({
-        SECRET_KEY:
-        ['4ccd089b28ff96da9db6c346ec114e0f',
-         '5b8a319f35aba624da8cf6ed4fb8a6fb'].join(''),
-        PUBLIC_KEY:
-        ['3d4017c3e843895a92b70aa74d1b7ebc',
-         '9c982ccf2ec4968cc0cd55f12af4660c'].join(''),
+        SECRET_KEY: '4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb',
+        PUBLIC_KEY: '3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c',
         MESSAGE: util.hexToStr('72'),
-        SIGNATURE:
-        { R: ['92a009a9f0d4cab8720e820b5f642540',
-              'a2b27b5416503f8fb3762223ebdb69da'].join(''),
-          S: ['085ac1e43e15996e458f3613d0f11d8c',
-              '387b2eaeb4302aeeb00d291612bb0c00'].join('') }
+        SIGNATURE: {
+          R: '92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da',
+          S: '085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00'
+        }
       });
     });
 
     it('Signature of two bytes', function () {
       return testVector({
-        SECRET_KEY:
-        ['c5aa8df43f9f837bedb7442f31dcb7b1',
-         '66d38535076f094b85ce3a2e0b4458f7'].join(''),
-        PUBLIC_KEY:
-        ['fc51cd8e6218a1a38da47ed00230f058',
-         '0816ed13ba3303ac5deb911548908025'].join(''),
+        SECRET_KEY: 'c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7',
+        PUBLIC_KEY: 'fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025',
         MESSAGE: util.hexToStr('af82'),
-        SIGNATURE:
-        { R: ['6291d657deec24024827e69c3abe01a3',
-              '0ce548a284743a445e3680d7db5ac3ac'].join(''),
-          S: ['18ff9b538d16f290ae67f760984dc659',
-              '4a7c15e9716ed28dc027beceea1ec40a'].join('') }
+        SIGNATURE: {
+          R: '6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac',
+          S: '18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a'
+        }
       });
     });
 
     it('Signature of 1023 bytes', function () {
       return testVector({
-        SECRET_KEY:
-        ['f5e5767cf153319517630f226876b86c',
-         '8160cc583bc013744c6bf255f5cc0ee5'].join(''),
-        PUBLIC_KEY:
-        ['278117fc144c72340f67d0f2316e8386',
-         'ceffbf2b2428c9c51fef7c597f1d426e'].join(''),
+        SECRET_KEY: 'f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5',
+        PUBLIC_KEY: '278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e',
         MESSAGE: util.hexToStr([
           '08b8b2b733424243760fe426a4b54908',
           '632110a66c2f6591eabd3345e3e4eb98',
@@ -365,39 +348,32 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
           '0618983f8741c5ef68d3a101e8a3b8ca',
           'c60c905c15fc910840b94c00a0b9d0'
         ].join('')),
-        SIGNATURE:
-        { R: ['0aab4c900501b3e24d7cdf4663326a3a',
-              '87df5e4843b2cbdb67cbf6e460fec350'].join(''),
-          S: ['aa5371b1508f9f4528ecea23c436d94b',
-              '5e8fcd4f681e30a6ac00a9704a188a03'].join('') }
+        SIGNATURE: {
+          R: '0aab4c900501b3e24d7cdf4663326a3a87df5e4843b2cbdb67cbf6e460fec350',
+          S: 'aa5371b1508f9f4528ecea23c436d94b5e8fcd4f681e30a6ac00a9704a188a03'
+        }
       });
     });
 
     it('Signature of SHA(abc)', function () {
       return testVector({
-        SECRET_KEY:
-        ['833fe62409237b9d62ec77587520911e',
-         '9a759cec1d19755b7da901b96dca3d42'].join(''),
-        PUBLIC_KEY:
-        ['ec172b93ad5e563bf4932c70e1245034',
-         'c35467ef2efd4d64ebf819683467e2bf'].join(''),
+        SECRET_KEY: '833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42',
+        PUBLIC_KEY: 'ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf',
         MESSAGE: util.hexToStr([
           'ddaf35a193617abacc417349ae204131',
           '12e6fa4e89a97ea20a9eeee64b55d39a',
           '2192992a274fc1a836ba3c23a3feebbd',
           '454d4423643ce80e2a9ac94fa54ca49f'
         ].join('')),
-        SIGNATURE:
-        { R: ['dc2a4459e7369633a52b1bf277839a00',
-              '201009a3efbf3ecb69bea2186c26b589'].join(''),
-          S: ['09351fc9ac90b3ecfdfbc7c66431e030',
-              '3dca179c138ac17ad9bef1177331a704'].join('') }
+        SIGNATURE: {
+          R: 'dc2a4459e7369633a52b1bf277839a00201009a3efbf3ecb69bea2186c26b589',
+          S: '09351fc9ac90b3ecfdfbc7c66431e0303dca179c138ac17ad9bef1177331a704'
+        }
       });
     });
   });
 
-/* TODO how does GPG2 accept this?
-  it('Should handle little-endian parameters in EdDSA', function () {
+  it('Should handle little-endian parameters in EdDSA', async function () {
     const pubKey = [
       '-----BEGIN PGP PUBLIC KEY BLOCK-----',
       'Version: OpenPGP.js v3.0.0',
@@ -412,19 +388,18 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       'FQIbDAAAhNQBAKmy4gPorjbwTwy5usylHttP28XnTdaGkZ1E7Rc3G9luAQCs',
       'Gbm1oe83ZB+0aSp5m34YkpHQNb80y8PGFy7nIexiAA==',
       '=xeG/',
-      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+      '-----END PGP PUBLIC KEY BLOCK-----'
+    ].join('\n');
     const hi = await openpgp.key.readArmored(pubKey);
-    const results = hi.getPrimaryUser();
+    const results = await hi.getPrimaryUser();
+    // console.log(results);
     expect(results).to.exist;
     expect(results.user).to.exist;
     const user = results.user;
-    expect(user.selfCertifications[0].verify(
-      hi.primaryKey, {userId: user.userId, key: hi.primaryKey}
-    )).to.eventually.be.true;
     await user.verifyCertificate(
       hi.primaryKey, user.selfCertifications[0], [hi]
     );
-  }); */
+  });
 
   describe('X25519 Omnibus Tests', omnibus);
 });
