@@ -152,31 +152,7 @@ async function validateParams(oid, Q, d) {
   }
 }
 
-/**
- * Parses MPI params and returns them as byte arrays of fixed length
- * @param {Array} params key parameters
- * @returns {Object} parameters in the form
- *  { oid, d: Uint8Array, Q: Uint8Array }
- */
-function parseParams(params) {
-  if (params.length < 2 || params.length > 3) {
-    throw new Error('Unexpected number of parameters');
-  }
-
-  const oid = params[0];
-  const curve = new Curve(oid);
-  const parsedParams = { oid };
-  // The public point never has leading zeros, as it is prefixed by 0x40 or 0x04
-  parsedParams.Q = params[1].toUint8Array();
-  if (params.length === 3) {
-    parsedParams.d = params[2].toUint8Array('be', curve.payloadSize);
-  }
-
-  return parsedParams;
-}
-
-
-export default { sign, verify, ellipticVerify, ellipticSign, validateParams, parseParams };
+export default { sign, verify, ellipticVerify, ellipticSign, validateParams };
 
 
 //////////////////////////

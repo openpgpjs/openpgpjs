@@ -548,13 +548,24 @@ function withCompression(tests) {
 }
 
 module.exports = () => describe('OpenPGP.js public api tests', function() {
+  async function deepCopyKeyParams(params) {
+    const paramsCopy = {};
+    Object.keys(params).forEach(name => {
+      const param = params[name];
+      const copy = new Uint8Array(param.length);
+      copy.set(param);
+      paramsCopy[name] = copy;
+    });
+    return paramsCopy;
+  }
 
   let rsaGenStub;
-  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, 65537);
+  const rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, 65537);
 
   beforeEach(function() {
+    // We fake the generation function to speed up the tests
     rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
-    rsaGenStub.returns(rsaGenValue);
+    rsaGenStub.returns(async () => deepCopyKeyParams(await rsaGenValue()));
   });
 
   afterEach(function() {
@@ -2328,7 +2339,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         const pubKeyDE = await openpgp.key.readArmored(pub_key_de);
         const privKeyDE = await openpgp.key.readArmored(priv_key_de);
         // corrupt the public key params
-        privKeyDE.subKeys[0].keyPacket.params[0].data[0]++;
+        privKeyDE.subKeys[0].keyPacket.publicParams.p[0]++;
         // validation will not check the decryption subkey and will succeed
         await privKeyDE.decrypt(passphrase);
         const encrypted = await openpgp.encrypt({

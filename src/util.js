@@ -168,6 +168,31 @@ export default {
   },
 
   /**
+   * Read one MPI from bytes in input
+   * @param {Uint8Array} bytes  input data to parse
+   * @returns {Uint8Array} parsed MPI
+   */
+  readMPI: function (bytes) {
+    const bits = (bytes[0] << 8) | bytes[1];
+    const bytelen = (bits + 7) >>> 3;
+    return bytes.subarray(2, 2 + bytelen);
+  },
+
+  /**
+   * Pad Uint8Array to length by adding 0x0 bytes
+   * @param {Uint8Array} bytes      data to pad
+   * @param {Number}     length     padded length
+   * @param {'be'|'le'}  endianess  endianess of input data
+   * @return {Uint8Array} padded bytes
+   */
+  padToLength(bytes, length, endianess = 'be') {
+    const padded = new Uint8Array(length);
+    const offset = (endianess === 'be') ? 0 : (length - bytes.length);
+    padded.set(bytes, offset);
+    return padded;
+  },
+
+  /**
    * Convert a Uint8Array to an MPI-formatted Uint8Array.
    * Note: the output is **not** an MPI object.
    * @see {@link module:type/mpi/MPI.fromUint8Array}

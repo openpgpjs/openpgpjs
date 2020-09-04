@@ -177,9 +177,8 @@ class SignaturePacket {
     const hash = await this.hash(signatureType, data, toHash, detached);
 
     this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
-    const params = key.params;
     const signed = async () => crypto.signature.sign(
-      publicKeyAlgorithm, hashAlgorithm, params, toHash, await stream.readToEnd(hash)
+      publicKeyAlgorithm, hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
     );
     if (streaming) {
       this.signature = stream.fromAsync(signed);
@@ -714,7 +713,7 @@ class SignaturePacket {
       i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
     }
     const verified = await crypto.signature.verify(
-      publicKeyAlgorithm, hashAlgorithm, mpi, key.params,
+      publicKeyAlgorithm, hashAlgorithm, mpi, key.publicParams,
       toHash, hash
     );
     if (!verified) {

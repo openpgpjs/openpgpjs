@@ -214,10 +214,12 @@ async function generate(curve) {
 
   curve = new Curve(curve);
   const keyPair = await curve.genKeyPair();
+  const Q = new BigInteger(keyPair.publicKey).toUint8Array();
+  const secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
   return {
     oid: curve.oid,
-    Q: new BigInteger(keyPair.publicKey),
-    d: new BigInteger(keyPair.privateKey),
+    Q,
+    secret,
     hash: curve.hash,
     cipher: curve.cipher
   };

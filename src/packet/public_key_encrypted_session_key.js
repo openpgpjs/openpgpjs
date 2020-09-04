@@ -110,7 +110,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     ]);
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     this.encrypted = await crypto.publicKeyEncrypt(
-      algo, key.params, data, key.getFingerprintBytes());
+      algo, key.publicParams, data, key.getFingerprintBytes());
     return true;
   }
 
@@ -130,7 +130,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     if (algo !== keyAlgo) {
       throw new Error('Decryption error');
     }
-    const decoded = await crypto.publicKeyDecrypt(algo, key.params, this.encrypted, key.getFingerprintBytes());
+    const decoded = await crypto.publicKeyDecrypt(algo, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes());
     const checksum = decoded.subarray(decoded.length - 2);
     const sessionKey = decoded.subarray(1, decoded.length - 2);
     if (!util.equalsUint8Array(checksum, util.writeChecksum(sessionKey))) {

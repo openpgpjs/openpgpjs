@@ -171,14 +171,13 @@ export default {
    * @param {Integer} bits RSA bit length
    * @param {Integer} e    RSA public exponent
    * @returns {{n, e, d,
-   *            p, q ,u: BigInteger}} RSA public modulus, RSA public exponent, RSA private exponent,
-   *                                  RSA private prime p, RSA private prime q, u = q ** 1 mod p
+   *            p, q ,u: Uint8Array}} RSA public modulus, RSA public exponent, RSA private exponent,
+   *                                  RSA private prime p, RSA private prime q, u = p ** -1 mod q
    * @async
    */
   generate: async function(bits, e) {
     const BigInteger = await util.getBigInteger();
 
-    let key;
     e = new BigInteger(e);
 
     // Native RSA keygen using Web Crypto
@@ -221,17 +220,17 @@ export default {
       if (jwk instanceof ArrayBuffer) {
         jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(jwk)));
       }
-      // map JWK parameters to BN
-      key = {};
-      key.n = new BigInteger(util.b64ToUint8Array(jwk.n));
-      key.e = e;
-      key.d = new BigInteger(util.b64ToUint8Array(jwk.d));
-      // switch p and q
-      key.p = new BigInteger(util.b64ToUint8Array(jwk.q));
-      key.q = new BigInteger(util.b64ToUint8Array(jwk.p));
-      // Since p and q are switched in places, we could keep u
-      key.u = new BigInteger(util.b64ToUint8Array(jwk.qi));
-      return key;
+      // map JWK parameters to corresponding OpenPGP names
+      return {
+        n: util.b64ToUint8Array(jwk.n),
+        e: e.toUint8Array(),
+        d: util.b64ToUint8Array(jwk.d),
+        // switch p and q
+        p: util.b64ToUint8Array(jwk.q),
+        q: util.b64ToUint8Array(jwk.p),
+        // Since p and q are switched in places, u is the inverse of jwk.q
+        u: util.b64ToUint8Array(jwk.qi)
+      };
     } else if (util.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey) {
       const opts = {
         modulusLength: bits,
@@ -246,19 +245,20 @@ export default {
           resolve(RSAPrivateKey.decode(der, 'der'));
         }
       }));
-      /**  PGP spec differs from DER spec, DER: `(inverse of q) mod p`, PGP: `(inverse of p) mod q`.
+      /**
+       * OpenPGP spec differs from DER spec, DER: `u = (inverse of q) mod p`, OpenPGP: `u = (inverse of p) mod q`.
        * @link https://tools.ietf.org/html/rfc3447#section-3.2
        * @link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-08#section-5.6.1
        */
       return {
-        n: prv.modulus,
-        e: prv.publicExponent,
-        d: prv.privateExponent,
+        n: prv.modulus.toArrayLike(Uint8Array),
+        e: prv.publicExponent.toArrayLike(Uint8Array),
+        d: prv.privateExponent.toArrayLike(Uint8Array),
         // switch p and q
-        p: prv.prime2,
-        q: prv.prime1,
-        // Since p and q are switched in places, we could keep u
-        u: prv.coefficient // PGP type of u
+        p: prv.prime2.toArrayLike(Uint8Array),
+        q: prv.prime1.toArrayLike(Uint8Array),
+        // Since p and q are switched in places, we can keep u as defined by DER
+        u: prv.coefficient.toArrayLike(Uint8Array)
       };
     }
 
@@ -271,17 +271,16 @@ export default {
     if (q.lt(p)) {
       [p, q] = [q, p];
     }
-
     const phi = p.dec().imul(q.dec());
     return {
-      n: p.mul(q),
-      e,
-      d: e.modInv(phi),
-      p: p,
-      q: q,
+      n: p.mul(q).toUint8Array(),
+      e: e.toUint8Array(),
+      d: e.modInv(phi).toUint8Array(),
+      p: p.toUint8Array(),
+      q: q.toUint8Array(),
       // dp: d.mod(p.subn(1)),
       // dq: d.mod(q.subn(1)),
-      u: p.modInv(q)
+      u: p.modInv(q).toUint8Array()
     };
   },
 

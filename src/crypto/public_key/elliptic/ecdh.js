@@ -37,6 +37,8 @@ import random from '../../random';
 import hash from '../../hash';
 import enums from '../../../enums';
 import util from '../../../util';
+import pkcs5 from '../../pkcs5';
+import MPI from '../../../type/mpi';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
@@ -63,31 +65,6 @@ function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
     util.strToUint8Array("Anonymous Sender    "),
     fingerprint.subarray(0, 20)
   ]);
-}
-
-/**
- * Parses MPI params and returns them as byte arrays of fixed length
- * @param {Array} params key parameters
- * @returns {Object} parameters in the form
- *  { oid, kdfParams, d: Uint8Array, Q: Uint8Array }
- */
-function parseParams(params) {
-  if (params.length < 3 || params.length > 4) {
-    throw new Error('Unexpected number of parameters');
-  }
-
-  const oid = params[0];
-  const curve = new Curve(oid);
-  const parsedParams = { oid };
-  // The public point never has leading zeros, as it is prefixed by 0x40 or 0x04
-  parsedParams.Q = params[1].toUint8Array();
-  parsedParams.kdfParams = params[2];
-
-  if (params.length === 4) {
-    parsedParams.d = params[3].toUint8Array('be', curve.payloadSize);
-  }
-
-  return parsedParams;
 }
 
 // Key Derivation Function (RFC 6637)
@@ -151,13 +128,15 @@ async function genPublicEphemeralKey(curve, Q) {
  *
  * @param  {module:type/oid}        oid          Elliptic curve object identifier
  * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
- * @param  {module:type/mpi}        m            Value derived from session key (RFC 6637)
+ * @param  {Uint8Array}             data         Unpadded session key data
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             fingerprint  Recipient fingerprint
  * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
-async function encrypt(oid, kdfParams, m, Q, fingerprint) {
+async function encrypt(oid, kdfParams, data, Q, fingerprint) {
+  const m = new MPI(pkcs5.encode(data));
+
   const curve = new Curve(oid);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
@@ -214,12 +193,10 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param  {Uint8Array}             Q            Recipient public key
  * @param  {Uint8Array}             d            Recipient private key
  * @param  {Uint8Array}             fingerprint  Recipient fingerprint
- * @returns {Promise<BigInteger>}                        Value derived from session key
+ * @returns {Promise<Uint8Array>}   Value derived from session key
  * @async
  */
 async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
-  const BigInteger = await util.getBigInteger();
-
   const curve = new Curve(oid);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
@@ -229,7 +206,7 @@ async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
       const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param, i === 1, i === 2);
-      return new BigInteger(aes_kw.unwrap(Z, C));
+      return pkcs5.decode(aes_kw.unwrap(Z, C));
     } catch (e) {
       err = e;
     }
@@ -411,4 +388,4 @@ async function nodePublicEphemeralKey(curve, Q) {
   return { publicKey, sharedKey };
 }
 
-export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey, validateParams, parseParams };
+export default { encrypt, decrypt, genPublicEphemeralKey, genPrivateEphemeralKey, buildEcdhParam, kdf, webPublicEphemeralKey, webPrivateEphemeralKey, ellipticPublicEphemeralKey, ellipticPrivateEphemeralKey, nodePublicEphemeralKey, nodePrivateEphemeralKey, validateParams };

@@ -73,6 +73,11 @@ class SecretKeyPacket extends PublicKeyPacket {
      * @type {String}
      */
     this.aead = null;
+    /**
+     * Decrypted private parameters, referenced by name
+     * @type {Object}
+     */
+    this.privateParams = null;
   }
 
   // 5.5.3.  Secret-Key Packet Formats
@@ -154,8 +159,13 @@ class SecretKeyPacket extends PublicKeyPacket {
       if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
         throw new Error('Key checksum mismatch');
       }
-      const privParams = parse_cleartext_params(cleartext, this.algorithm);
-      this.params = this.params.concat(privParams);
+      try {
+        const algo = enums.write(enums.publicKey, this.algorithm);
+        const { privateParams } = crypto.parsePrivateKeyParams(algo, cleartext, this.publicParams);
+        this.privateParams = privateParams;
+      } catch (err) {
+        throw new Error('Error reading MPIs');
+      }
     }
   }
 
@@ -200,7 +210,8 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     if (!this.isDummy()) {
       if (!this.s2k_usage) {
-        const cleartextParams = write_cleartext_params(this.params, this.algorithm);
+        const algo = enums.write(enums.publicKey, this.algorithm);
+        const cleartextParams = crypto.serializeKeyParams(algo, this.privateParams);
         this.keyMaterial = util.concatUint8Array([
           cleartextParams,
           util.writeChecksum(cleartextParams)
@@ -282,7 +293,8 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     this.s2k = new type_s2k();
     this.s2k.salt = await crypto.random.getRandomBytes(8);
-    const cleartext = write_cleartext_params(this.params, this.algorithm);
+    const algo = enums.write(enums.publicKey, this.algorithm);
+    const cleartext = crypto.serializeKeyParams(algo, this.privateParams);
     this.symmetric = 'aes256';
     const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
     const blockLen = crypto.cipher[this.symmetric].blockSize;
@@ -354,8 +366,13 @@ class SecretKeyPacket extends PublicKeyPacket {
       }
     }
 
-    const privParams = parse_cleartext_params(cleartext, this.algorithm);
-    this.params = this.params.concat(privParams);
+    try {
+      const algo = enums.write(enums.publicKey, this.algorithm);
+      const { privateParams } = crypto.parsePrivateKeyParams(algo, cleartext, this.publicParams);
+      this.privateParams = privateParams;
+    } catch (err) {
+      throw new Error('Error reading MPIs');
+    }
     this.isEncrypted = false;
     this.keyMaterial = null;
     this.s2k_usage = 0;
@@ -378,7 +395,14 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     const algo = enums.write(enums.publicKey, this.algorithm);
-    const validParams = await crypto.validateParams(algo, this.params);
+
+    let validParams;
+    try {
+      // this can throw if some parameters are undefined
+      validParams = await crypto.validateParams(algo, this.publicParams, this.privateParams);
+    } catch (_) {
+      validParams = false;
+    }
     if (!validParams) {
       throw new Error('Key is invalid');
     }
@@ -387,7 +411,9 @@ class SecretKeyPacket extends PublicKeyPacket {
 
   async generate(bits, curve) {
     const algo = enums.write(enums.publicKey, this.algorithm);
-    this.params = await crypto.generateParams(algo, bits, curve);
+    const { privateParams, publicParams } = await crypto.generateParams(algo, bits, curve);
+    this.privateParams = privateParams;
+    this.publicParams = publicParams;
     this.isEncrypted = false;
   }
 
@@ -400,46 +426,15 @@ class SecretKeyPacket extends PublicKeyPacket {
       return;
     }
 
-    const algo = enums.write(enums.publicKey, this.algorithm);
-    const publicParamCount = crypto.getPubKeyParamTypes(algo).length;
-    this.params.slice(publicParamCount).forEach(param => {
-      param.data.fill(0);
+    Object.keys(this.privateParams).forEach(name => {
+      const param = this.privateParams[name];
+      param.fill(0);
+      delete this.privateParams[name];
     });
-    this.params.length = publicParamCount;
+    this.privateParams = null;
     this.isEncrypted = true;
   }
 }
-
-// Helper function
-
-function parse_cleartext_params(cleartext, algorithm) {
-  const algo = enums.write(enums.publicKey, algorithm);
-  const types = crypto.getPrivKeyParamTypes(algo);
-  const params = crypto.constructParams(types);
-  let p = 0;
-
-  for (let i = 0; i < types.length && p < cleartext.length; i++) {
-    p += params[i].read(cleartext.subarray(p, cleartext.length));
-    if (p > cleartext.length) {
-      throw new Error('Error reading param @:' + p);
-    }
-  }
-
-  return params;
-}
-
-function write_cleartext_params(params, algorithm) {
-  const arr = [];
-  const algo = enums.write(enums.publicKey, algorithm);
-  const numPublicParams = crypto.getPubKeyParamTypes(algo).length;
-
-  for (let i = numPublicParams; i < params.length; i++) {
-    arr.push(params[i].write());
-  }
-
-  return util.concatUint8Array(arr);
-}
-
 
 async function produceEncryptionKey(s2k, passphrase, algorithm) {
   return s2k.produce_key(
