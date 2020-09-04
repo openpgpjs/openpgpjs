@@ -92,8 +92,8 @@ export default {
   /**
    * DSA Verify function
    * @param {Integer} hash_algo
-   * @param {BigInteger} r
-   * @param {BigInteger} s
+   * @param {Uint8Array} r
+   * @param {Uint8Array} s
    * @param {Uint8Array} hashed
    * @param {Uint8Array} g
    * @param {Uint8Array} p
@@ -105,21 +105,24 @@ export default {
   verify: async function(hash_algo, r, s, hashed, g, p, q, y) {
     const BigInteger = await util.getBigInteger();
     const zero = new BigInteger(0);
+    r = new BigInteger(r);
+    s = new BigInteger(s);
+
     p = new BigInteger(p);
     q = new BigInteger(q);
     g = new BigInteger(g);
     y = new BigInteger(y);
-    // TODOOOOO larabr also take r,s as arrays
+
     if (r.lte(zero) || r.gte(q) ||
         s.lte(zero) || s.gte(q)) {
       util.printDebug("invalid DSA Signature");
-      return null;
+      return false;
     }
     const h = new BigInteger(hashed.subarray(0, q.byteLength())).imod(q);
     const w = s.modInv(q); // s**-1 mod q
     if (w.isZero()) {
       util.printDebug("invalid DSA Signature");
-      return null;
+      return false;
     }
 
     g = g.mod(p);

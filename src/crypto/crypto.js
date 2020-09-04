@@ -40,8 +40,6 @@ import KDFParams from '../type/kdf_params';
 import type_mpi from '../type/mpi';
 import enums from '../enums';
 import util from '../util';
-import pkcs1 from './pkcs1';
-import pkcs5 from './pkcs5';
 import OID from '../type/oid';
 import Curve from './public_key/elliptic/curves';
 
@@ -281,45 +279,30 @@ export default {
       case enums.publicKey.rsaEncrypt:
       case enums.publicKey.rsaEncryptSign:
       case enums.publicKey.rsaSign: {
-        return publicKey.rsa.generate(bits, 65537).then(function(keyObject) {
-          // TODOOOO once BigIntegers are merged, update rsa.generate to return Uint8Arrays
-          const params = {};
-          Object.keys(keyObject).forEach(name => { params[name] = keyObject[name].toUint8Array(); });
-          const { n, e, d, p, q, u } = params;
-          return {
-            privateParams: { d, p, q, u },
-            publicParams: { n, e }
-          };
-        });
+        return publicKey.rsa.generate(bits, 65537).then(({ n, e, d, p, q, u }) => ({
+          privateParams: { d, p, q, u },
+          publicParams: { n, e }
+        }));
       }
       case enums.publicKey.ecdsa:
-        return publicKey.elliptic.generate(oid).then(function (keyObject) {
-          const { oid, Q, secret } = keyObject;
-          return {
-            privateParams: { d: secret },
-            publicParams: { oid: new OID(oid), Q }
-          };
-        });
+        return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+          privateParams: { d: secret },
+          publicParams: { oid: new OID(oid), Q }
+        }));
       case enums.publicKey.eddsa:
-        return publicKey.elliptic.generate(oid).then(function (keyObject) {
-          const { oid, Q, secret } = keyObject;
-          return {
-            privateParams: { seed: secret },
-            publicParams: { oid: new OID(oid), Q }
-          };
-        });
+        return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+          privateParams: { seed: secret },
+          publicParams: { oid: new OID(oid), Q }
+        }));
       case enums.publicKey.ecdh:
-        return publicKey.elliptic.generate(oid).then(function (keyObject) {
-          const { oid, Q, secret, hash, cipher } = keyObject;
-          return {
-            privateParams: { d: secret },
-            publicParams: {
-              oid: new OID(oid),
-              Q,
-              kdfParams: new KDFParams({ hash, cipher })
-            }
-          };
-        });
+        return publicKey.elliptic.generate(oid).then(({ oid, Q, secret, hash, cipher }) => ({
+          privateParams: { d: secret },
+          publicParams: {
+            oid: new OID(oid),
+            Q,
+            kdfParams: new KDFParams({ hash, cipher })
+          }
+        }));
       case enums.publicKey.dsa:
       case enums.publicKey.elgamal:
         throw new Error('Unsupported algorithm for key generation.');

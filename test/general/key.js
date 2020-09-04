@@ -2536,6 +2536,17 @@ function versionSpecificTests() {
 }
 
 module.exports = () => describe('Key', function() {
+  async function deepCopyKeyParams(params) {
+    const paramsCopy = {};
+    Object.keys(params).forEach(name => {
+      const param = params[name];
+      const copy = new Uint8Array(param.length);
+      copy.set(param);
+      paramsCopy[name] = copy;
+    });
+    return paramsCopy;
+  }
+
   let rsaGenStub;
   let v5KeysVal;
   let aeadProtectVal;
@@ -2546,8 +2557,9 @@ module.exports = () => describe('Key', function() {
   };
 
   beforeEach(function() {
+    // We fake the generation function to speed up the tests
     rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
-    rsaGenStub.callsFake(N => rsaGenValue[N]);
+    rsaGenStub.callsFake(async N => deepCopyKeyParams(await rsaGenValue[N]));
   });
 
   afterEach(function() {

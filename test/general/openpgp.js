@@ -548,13 +548,24 @@ function withCompression(tests) {
 }
 
 module.exports = () => describe('OpenPGP.js public api tests', function() {
+  async function deepCopyKeyParams(params) {
+    const paramsCopy = {};
+    Object.keys(params).forEach(name => {
+      const param = params[name];
+      const copy = new Uint8Array(param.length);
+      copy.set(param);
+      paramsCopy[name] = copy;
+    });
+    return paramsCopy;
+  }
 
   let rsaGenStub;
-  let rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, 65537);
+  const rsaGenValue = openpgp.crypto.publicKey.rsa.generate(openpgp.util.getWebCryptoAll() ? 2048 : 512, 65537);
 
   beforeEach(function() {
+    // We fake the generation function to speed up the tests
     rsaGenStub = stub(openpgp.crypto.publicKey.rsa, 'generate');
-    rsaGenStub.returns(rsaGenValue);
+    rsaGenStub.returns(async () => deepCopyKeyParams(await rsaGenValue()));
   });
 
   afterEach(function() {

@@ -37,8 +37,8 @@ export default {
         return publicKey.rsa.verify(hash_algo, data, m, n, e, hashed);
       }
       case enums.publicKey.dsa: {
-        const r = await msg_MPIs[0].toBigInteger();
-        const s = await msg_MPIs[1].toBigInteger();
+        const r = await msg_MPIs[0].toUint8Array();
+        const s = await msg_MPIs[1].toUint8Array();
         const { g, p, q, y } = publicParams;
         return publicKey.dsa.verify(hash_algo, r, s, hashed, g, p, q, y);
       }
