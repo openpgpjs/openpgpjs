@@ -37,7 +37,7 @@ function HKP(keyServerBaseUrl) {
 
 /**
  * Search for a public key on the key server either by key ID or part of the user ID.
- * @param  {String}   options.keyID   The long public key ID.
+ * @param  {String}   options.keyId   The long public key ID.
  * @param  {String}   options.query   This can be any part of the key user ID such as name
  *   or email address.
  * @returns {Promise<String>}          The ascii armored public key.
