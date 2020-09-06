@@ -455,7 +455,7 @@ Signature.prototype.read_sub_packet = function (bytes, trusted = true) {
       this.rawNotations.push({ name, humanReadable, value });
 
       if (humanReadable) {
-        this.notations[name] = util.Uint8Array_to_str(value);
+        this.notations[name].push(util.Uint8Array_to_str(value));
       }
 
       if (critical && (config.known_notations.indexOf(name) === -1)) {
