@@ -94,12 +94,6 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
         ).to.eventually.be.true;
       });
     });
-    it('Shared secret generation', async function () {
-      const curve = new elliptic_curves.Curve('p256');
-      const { sharedKey: shared1 } = await elliptic_curves.ecdh.genPrivateEphemeralKey(curve, signature_data.pub, key_data.p256.pub, key_data.p256.priv);
-      const { sharedKey: shared2 } = await elliptic_curves.ecdh.genPrivateEphemeralKey(curve, key_data.p256.pub, signature_data.pub, signature_data.priv);
-      expect(shared1).to.deep.equal(shared2);
-    });
   });
   describe('ECDSA signature', function () {
     const verify_signature = async function (oid, hash, r, s, message, pub) {
@@ -111,17 +105,6 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       const ecdsa = elliptic_curves.ecdsa;
       return ecdsa.verify(
         oid, hash, { r: new Uint8Array(r), s: new Uint8Array(s) }, message, new Uint8Array(pub), await openpgp.crypto.hash.digest(hash, message)
-      );
-    };
-    const verify_signature_elliptic = async function (oid, hash, r, s, message, pub) {
-      if (openpgp.util.isString(message)) {
-        message = openpgp.util.strToUint8Array(message);
-      } else if (!openpgp.util.isUint8Array(message)) {
-        message = new Uint8Array(message);
-      }
-      const ecdsa = elliptic_curves.ecdsa;
-      return ecdsa.ellipticVerify(
-        new elliptic_curves.Curve(oid), { r: new Uint8Array(r), s: new Uint8Array(s) }, await openpgp.crypto.hash.digest(hash, message), new Uint8Array(pub)
       );
     };
     const secp256k1_point = new Uint8Array([
@@ -176,14 +159,20 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
         )).to.eventually.be.false;
       }
       if (openpgp.config.useIndutnyElliptic) {
-        return Promise.all([
-          expect(verify_signature_elliptic(
-            'secp256k1', 8, [], [], [], []
-          )).to.be.rejectedWith(Error, /Unknown point format/),
-          expect(verify_signature_elliptic(
-            'secp256k1', 8, [], [], [], secp256k1_invalid_point_format
-          )).to.be.rejectedWith(Error, /Unknown point format/)
-        ]);
+        const useNative = openpgp.config.useNative;
+        openpgp.config.useNative = false;
+        try {
+          await Promise.all([
+            expect(verify_signature(
+              'secp256k1', 8, [], [], [], []
+            )).to.be.rejectedWith(Error, /Unknown point format/),
+            expect(verify_signature(
+              'secp256k1', 8, [], [], [], secp256k1_invalid_point_format
+            )).to.be.rejectedWith(Error, /Unknown point format/)
+          ]);
+        } finally {
+          openpgp.config.useNative = useNative;
+        }
       }
     });
     it('Invalid point', async function () {
@@ -196,9 +185,15 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
         )).to.eventually.be.false;
       }
       if (openpgp.config.useIndutnyElliptic) {
-        await expect(verify_signature_elliptic(
-          'secp256k1', 8, [], [], [], secp256k1_invalid_point
-        )).to.be.rejectedWith(Error, /Invalid elliptic public key/);
+        const useNative = openpgp.config.useNative;
+        openpgp.config.useNative = false;
+        try {
+          await expect(verify_signature(
+            'secp256k1', 8, [], [], [], secp256k1_invalid_point
+          )).to.be.rejectedWith(Error, /Invalid elliptic public key/);
+        } finally {
+          openpgp.config.useNative = useNative;
+        }
       }
     });
     it('Invalid signature', function (done) {

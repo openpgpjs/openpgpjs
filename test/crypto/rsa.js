@@ -52,18 +52,23 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const { publicParams, privateParams } = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await openpgp.crypto.generateSessionKey('aes256');
-    const encryptedBn = await openpgp.crypto.publicKey.rsa.bnEncrypt(message, n, e);
-    const decrypted1 = await openpgp.crypto.publicKey.rsa.nodeDecrypt(encryptedBn, n, e, d, p, q, u);
-    expect(decrypted1).to.deep.equal(message);
-    const encryptedNode = await openpgp.crypto.publicKey.rsa.nodeEncrypt(message, n, e);
-    const decrypted2 = await openpgp.crypto.publicKey.rsa.bnDecrypt(encryptedNode, n, e, d, p, q, u);
-    expect(decrypted2).to.deep.equal(message);
+    const useNative = openpgp.config.useNative;
+    try {
+      openpgp.config.useNative = false;
+      const encryptedBn = await openpgp.crypto.publicKey.rsa.encrypt(message, n, e);
+      openpgp.config.useNative = true;
+      const decrypted1 = await openpgp.crypto.publicKey.rsa.decrypt(encryptedBn, n, e, d, p, q, u);
+      expect(decrypted1).to.deep.equal(message);
+      const encryptedNode = await openpgp.crypto.publicKey.rsa.encrypt(message, n, e);
+      openpgp.config.useNative = false;
+      const decrypted2 = await openpgp.crypto.publicKey.rsa.decrypt(encryptedNode, n, e, d, p, q, u);
+      expect(decrypted2).to.deep.equal(message);
+    } finally {
+      openpgp.config.useNative = useNative;
+    }
   });
 
-  it('compare webCrypto and bn math sign', async function() {
-    if (!openpgp.util.getWebCrypto()) {
-      this.skip();
-    }
+  it('compare native crypto and bn math sign', async function() {
     const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
     const { publicParams, privateParams } = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -71,21 +76,25 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
-    let signatureWeb;
+    const useNative = openpgp.config.useNative;
     try {
-      signatureWeb = await openpgp.crypto.publicKey.rsa.webSign('SHA-256', message, n, e, d, p, q, u, hashed);
-    } catch (error) {
-      openpgp.util.printDebugError('web crypto error');
-      this.skip();
+      openpgp.config.useNative = true;
+      let signatureWeb;
+      try {
+        signatureWeb = await openpgp.crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+      } catch (error) {
+        openpgp.util.printDebugError('web crypto error');
+        this.skip();
+      }
+      openpgp.config.useNative = false;
+      const signatureBN = await openpgp.crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+      expect(openpgp.util.uint8ArrayToHex(signatureWeb)).to.be.equal(openpgp.util.uint8ArrayToHex(signatureBN));
+    } finally {
+      openpgp.config.useNative = useNative;
     }
-    const signatureBN = await openpgp.crypto.publicKey.rsa.bnSign(hash_algo, n, d, hashed);
-    expect(openpgp.util.uint8ArrayToHex(signatureWeb)).to.be.equal(openpgp.util.uint8ArrayToHex(signatureBN));
   });
 
-  it('compare webCrypto and bn math verify', async function() {
-    if (!openpgp.util.getWebCrypto()) {
-      this.skip();
-    }
+  it('compare native crypto and bn math verify', async function() {
     const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
     const { publicParams, privateParams } = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -95,49 +104,22 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
     let verifyWeb;
     let signature;
+    const useNative = openpgp.config.useNative;
     try {
-      signature = await openpgp.crypto.publicKey.rsa.webSign('SHA-256', message, n, e, d, p, q, u, hashed);
-      verifyWeb = await openpgp.crypto.publicKey.rsa.webVerify('SHA-256', message, signature, n, e);
-    } catch (error) {
-      openpgp.util.printDebugError('web crypto error');
-      this.skip();
+      openpgp.config.useNative = true;
+      try {
+        signature = await openpgp.crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+        verifyWeb = await openpgp.crypto.publicKey.rsa.verify(hash_algo, message, signature, n, e);
+      } catch (error) {
+        openpgp.util.printDebugError('web crypto error');
+        this.skip();
+      }
+      openpgp.config.useNative = false;
+      const verifyBN = await openpgp.crypto.publicKey.rsa.verify(hash_algo, message, signature, n, e, hashed);
+      expect(verifyWeb).to.be.true;
+      expect(verifyBN).to.be.true;
+    } finally {
+      openpgp.config.useNative = useNative;
     }
-    const verifyBN = await openpgp.crypto.publicKey.rsa.bnVerify(hash_algo, signature, n, e, hashed);
-    expect(verifyWeb).to.be.true;
-    expect(verifyBN).to.be.true;
-  });
-
-  it('compare nodeCrypto and bn math sign', async function() {
-    if (!openpgp.util.getNodeCrypto()) {
-      this.skip();
-    }
-    const bits = 1024;
-    const { publicParams, privateParams } = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
-    const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await openpgp.crypto.random.getRandomBytes(64);
-    const hashName = 'sha256';
-    const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
-    const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
-    const signatureNode = await openpgp.crypto.publicKey.rsa.nodeSign(hash_algo, message, n, e, d, p, q, u);
-    const signatureBN = await openpgp.crypto.publicKey.rsa.bnSign(hash_algo, n, d, hashed);
-    expect(openpgp.util.uint8ArrayToHex(signatureNode)).to.be.equal(openpgp.util.uint8ArrayToHex(signatureBN));
-  });
-
-  it('compare nodeCrypto and bn math verify', async function() {
-    if (!openpgp.util.getNodeCrypto()) {
-      this.skip();
-    }
-    const bits = openpgp.util.getWebCrypto() ? 2048 : 1024;
-    const { publicParams, privateParams } = await openpgp.crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
-    const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await openpgp.crypto.random.getRandomBytes(64);
-    const hashName = 'sha256';
-    const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
-    const hashed = await openpgp.crypto.hash.digest(hash_algo, message);
-    const signatureNode = await openpgp.crypto.publicKey.rsa.nodeSign(hash_algo, message, n, e, d, p, q, u);
-    const verifyNode = await openpgp.crypto.publicKey.rsa.nodeVerify(hash_algo, message, signatureNode, n, e);
-    const verifyBN = await openpgp.crypto.publicKey.rsa.bnVerify(hash_algo, signatureNode, n, e, hashed);
-    expect(verifyNode).to.be.true;
-    expect(verifyBN).to.be.true;
   });
 });
