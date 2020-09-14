@@ -199,86 +199,132 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
   }
 
   describe('ECDHE key generation', function () {
-    it('Invalid curve', function (done) {
+    it('Invalid curve', async function () {
       if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
         this.skip();
       }
-      expect(genPublicEphemeralKey("secp256k1", Q1, fingerprint1)
-      ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/).notify(done);
+      const { key: publicKey } = await openpgp.generateKey({ curve: "secp256k1", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      await expect(
+        openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') })
+      ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/);
     });
     it('Invalid public part of ephemeral key and private key', async function () {
-      const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
-      const ECDHE_Z12 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, Q2, d2, fingerprint1);
-      expect(Array.from(ECDHE_Z12).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.false;
+      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      privateKey.subKeys[0].keyPacket.publicParams.Q = Q2;
+      privateKey.subKeys[0].keyPacket.privateParams.d = d2;
+      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      await expect(
+        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+      ).to.be.rejectedWith('Error decrypting message: Key Data Integrity failed');
     });
     it('Invalid fingerprint', async function () {
-      const ECDHE_VZ2 = await genPublicEphemeralKey("curve25519", Q2, fingerprint1);
-      const ECDHE_Z2 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ2.V, Q2, d2, fingerprint2);
-      expect(Array.from(ECDHE_Z2).join(' ') === Array.from(ECDHE_VZ2.Z).join(' ')).to.be.false;
+      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      privateKey.subKeys[0].keyPacket.publicParams.Q = Q2;
+      privateKey.subKeys[0].keyPacket.privateParams.d = d2;
+      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint2;
+      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      await expect(
+        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+      ).to.be.rejectedWith('Error decrypting message: Session key decryption failed');
     });
     it('Different keys', async function () {
-      const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
-      const ECDHE_VZ2 = await genPublicEphemeralKey("curve25519", Q2, fingerprint1);
-      const ECDHE_Z1 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, Q1, d1, fingerprint1);
-      expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ2.Z).join(' ')).to.be.false;
+      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = Q2;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      privateKey.subKeys[0].keyPacket.publicParams.Q = Q1;
+      privateKey.subKeys[0].keyPacket.privateParams.d = d1;
+      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      await expect(
+        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+      ).to.be.rejectedWith('Error decrypting message: Key Data Integrity failed');
     });
     it('Successful exchange curve25519', async function () {
-      const ECDHE_VZ1 = await genPublicEphemeralKey("curve25519", Q1, fingerprint1);
-      const ECDHE_Z1 = await genPrivateEphemeralKey("curve25519", ECDHE_VZ1.V, Q1, d1, fingerprint1);
-      expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
+      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
+      privateKey.subKeys[0].keyPacket.publicParams.Q = Q1;
+      privateKey.subKeys[0].keyPacket.privateParams.d = d1;
+      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      expect((
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+      ).data).to.equal('test');
     });
     it('Successful exchange NIST P256', async function () {
-      const ECDHE_VZ1 = await genPublicEphemeralKey("p256", key_data.p256.pub, fingerprint1);
-      const ECDHE_Z1 = await genPrivateEphemeralKey("p256", ECDHE_VZ1.V, key_data.p256.pub, key_data.p256.priv, fingerprint1);
-      expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
+      const { key: publicKey } = await openpgp.generateKey({ curve: "p256", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = key_data.p256.pub;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const { key: privateKey } = await openpgp.generateKey({ curve: "p256", userIds: [{ name: 'Test' }] });
+      privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p256.pub;
+      privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p256.priv;
+      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      expect((
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+      ).data).to.equal('test');
     });
     it('Successful exchange NIST P384', async function () {
-      const ECDHE_VZ1 = await genPublicEphemeralKey("p384", key_data.p384.pub, fingerprint1);
-      const ECDHE_Z1 = await genPrivateEphemeralKey("p384", ECDHE_VZ1.V, key_data.p384.pub, key_data.p384.priv, fingerprint1);
-      expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
+      const { key: publicKey } = await openpgp.generateKey({ curve: "p384", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = key_data.p384.pub;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const { key: privateKey } = await openpgp.generateKey({ curve: "p384", userIds: [{ name: 'Test' }] });
+      privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p384.pub;
+      privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p384.priv;
+      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      expect((
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+      ).data).to.equal('test');
     });
     it('Successful exchange NIST P521', async function () {
-      const ECDHE_VZ1 = await genPublicEphemeralKey("p521", key_data.p521.pub, fingerprint1);
-      const ECDHE_Z1 = await genPrivateEphemeralKey("p521", ECDHE_VZ1.V, key_data.p521.pub, key_data.p521.priv, fingerprint1);
-      expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
+      const { key: publicKey } = await openpgp.generateKey({ curve: "p521", userIds: [{ name: 'Test' }] });
+      publicKey.subKeys[0].keyPacket.publicParams.Q = key_data.p521.pub;
+      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const { key: privateKey } = await openpgp.generateKey({ curve: "p521", userIds: [{ name: 'Test' }] });
+      privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p521.pub;
+      privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p521.priv;
+      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      expect((
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+      ).data).to.equal('test');
     });
 
-    it('Comparing keys derived using webCrypto and elliptic', async function () {
+    it('Comparing decrypting with useNative = true and false', async function () {
       const names = ["p256", "p384", "p521"];
-      if (!openpgp.util.getWebCrypto() || !openpgp.config.useIndutnyElliptic) {
-        // eslint-disable-next-line no-invalid-this
-        this.skip();
-      }
       return Promise.all(names.map(async function (name) {
-        const curve = new elliptic_curves.Curve(name);
+        const { key: publicKey } = await openpgp.generateKey({ curve: name, userIds: [{ name: 'Test' }] });
+        publicKey.subKeys[0].keyPacket.publicParams.Q = key_data[name].pub;
+        publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+        const { key: privateKey } = await openpgp.generateKey({ curve: name, userIds: [{ name: 'Test' }] });
+        privateKey.subKeys[0].keyPacket.publicParams.Q = key_data[name].pub;
+        privateKey.subKeys[0].keyPacket.privateParams.d = key_data[name].priv;
+        privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
+        const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+        expect((
+          await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        ).data).to.equal('test');
+        const useNative = openpgp.config.useNative;
+        openpgp.config.useNative = !useNative;
         try {
-          await window.crypto.subtle.generateKey({
-            name: "ECDSA",
-            namedCurve: curve.web.web
-          }, false, ["sign", "verify"]);
-        } catch (err) {
-          openpgp.util.printDebugError(err);
-          return;
+          expect((
+            await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+          ).data).to.equal('test');
+        } finally {
+          openpgp.config.useNative = useNative;
         }
-        const ECDHE_VZ1 = await genPublicEphemeralKey(name, key_data[name].pub, fingerprint1);
-        const ECDHE_Z1 = await genPrivateEphemeralKeySpecific('ellipticPrivateEphemeralKey', name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
-        const ECDHE_Z2 = await genPrivateEphemeralKeySpecific('webPrivateEphemeralKey', name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
-        expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
-        expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_Z2).join(' ')).to.be.true;
-      }));
-    });
-    it('Comparing keys derived using nodeCrypto and elliptic', async function () {
-      const names = ["p256", "p384", "p521"];
-      if (!openpgp.util.getNodeCrypto() || !openpgp.config.useIndutnyElliptic) {
-        // eslint-disable-next-line no-invalid-this
-        this.skip();
-      }
-      return Promise.all(names.map(async function (name) {
-        const ECDHE_VZ1 = await genPublicEphemeralKey(name, key_data[name].pub, fingerprint1);
-        const ECDHE_Z1 = await genPrivateEphemeralKeySpecific('ellipticPrivateEphemeralKey', name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
-        const ECDHE_Z2 = await genPrivateEphemeralKeySpecific('nodePrivateEphemeralKey', name, ECDHE_VZ1.V, key_data[name].pub, key_data[name].priv, fingerprint1);
-        expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_VZ1.Z).join(' ')).to.be.true;
-        expect(Array.from(ECDHE_Z1).join(' ') === Array.from(ECDHE_Z2).join(' ')).to.be.true;
       }));
     });
   });
