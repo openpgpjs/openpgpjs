@@ -7,6 +7,8 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
+import CMAC from "./cmac";
+import ECDHSymkey from '../type/ecdh_symkey';
 
 /**
  * Parse signature in binary form to get the parameters.
@@ -54,6 +56,11 @@ export function parseSignatureParams(algo, signature) {
       s = util.leftPad(s, 32);
       return { r, s };
     }
+
+    case enums.publicKey.cmac: {
+      const mac = new ECDHSymkey(); mac.read(signature.subarray(read));
+      return { mac };
+    }
     default:
       throw new Error('Invalid signature algorithm.');
   }
@@ -68,12 +75,13 @@ export function parseSignatureParams(algo, signature) {
  * @param {module:enums.hash} hashAlgo - Hash algorithm
  * @param {Object} signature - Named algorithm-specific signature parameters
  * @param {Object} publicParams - Algorithm-specific public key parameters
+ * @param {Object} privateParams - Algorithm-specific private key parameters
  * @param {Uint8Array} data - Data for which the signature was created
  * @param {Uint8Array} hashed - The hashed data
  * @returns {Promise<Boolean>} True if signature is valid.
  * @async
  */
-export async function verify(algo, hashAlgo, signature, publicParams, data, hashed) {
+export async function verify(algo, hashAlgo, signature, publicParams, privateParams, data, hashed) {
   switch (algo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt:
@@ -99,6 +107,20 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
       const { oid, Q } = publicParams;
       // signature already padded on parsing
       return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signature, data, Q, hashed);
+    }
+    case enums.publicKey.cmac: {
+      if (!privateParams) {
+        throw new Error('Cannot verify CMAC signature with symmetric key missing private parameters');
+      }
+      const { cipher: algo } = publicParams;
+      const { keyMaterial } = privateParams;
+      if (algo.getName().substr(0, 3) !== 'aes') {
+        throw new Error('CMAC supports only AES cipher');
+      }
+
+      const cmac = await CMAC(keyMaterial);
+      const mac = await cmac(hashed);
+      return util.equalsUint8Array(mac, signature.mac.data);
     }
     default:
       throw new Error('Invalid signature algorithm.');
@@ -149,6 +171,17 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { oid, Q } = publicKeyParams;
       const { seed } = privateKeyParams;
       return publicKey.elliptic.eddsa.sign(oid, hashAlgo, data, Q, seed, hashed);
+    }
+    case enums.publicKey.cmac: {
+      const { cipher: algo } = publicKeyParams;
+      const { keyMaterial } = privateKeyParams;
+      if (algo.getName().substr(0, 3) !== 'aes') {
+        throw new Error('CMAC supports only AES cipher');
+      }
+      const cmac = await CMAC(keyMaterial);
+      const mac = await cmac(hashed);
+
+      return { mac: new ECDHSymkey(mac) };
     }
     default:
       throw new Error('Invalid signature algorithm.');

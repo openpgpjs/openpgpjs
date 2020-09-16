@@ -215,7 +215,7 @@ module.exports = () => describe('API functional testing', function() {
         openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAPublicParams, RSAPrivateParams, data, await crypto.hash.digest(2, data)
       );
       const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, data, await crypto.hash.digest(2, data)
+        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, {}, data, await crypto.hash.digest(2, data)
       );
       return expect(success).to.be.true;
     });
@@ -225,7 +225,7 @@ module.exports = () => describe('API functional testing', function() {
         openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAPublicParams, DSAPrivateParams, data, await crypto.hash.digest(2, data)
       );
       const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, data, await crypto.hash.digest(2, data)
+        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, {}, data, await crypto.hash.digest(2, data)
       );
 
       return expect(success).to.be.true;
@@ -256,7 +256,7 @@ module.exports = () => describe('API functional testing', function() {
 
     it('Asymmetric using RSA with eme_pkcs1 padding', async function () {
       const symmKey = await crypto.generateSessionKey('aes256');
-      return crypto.publicKeyEncrypt(algoRSA, RSAPublicParams, symmKey).then(RSAEncryptedData => {
+      return crypto.publicKeyEncrypt(algoRSA, RSAPublicParams, {}, symmKey).then(RSAEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoRSA, RSAPublicParams, RSAPrivateParams, RSAEncryptedData
         ).then(data => {
@@ -267,7 +267,7 @@ module.exports = () => describe('API functional testing', function() {
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', async function () {
       const symmKey = await crypto.generateSessionKey('aes256');
-      return crypto.publicKeyEncrypt(algoElGamal, elGamalPublicParams, symmKey).then(ElgamalEncryptedData => {
+      return crypto.publicKeyEncrypt(algoElGamal, elGamalPublicParams, {}, symmKey).then(ElgamalEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoElGamal, elGamalPublicParams, elGamalPrivateParams, ElgamalEncryptedData
         ).then(data => {

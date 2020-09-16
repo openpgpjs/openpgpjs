@@ -259,7 +259,7 @@ class PublicKeyPacket {
 
   /**
    * Returns algorithm information
-   * @returns {Object} An object of the form {algorithm: String, bits:int, curve:String}.
+   * @returns {Object} An object of the form {algorithm: String, bits:int, curve:String, symmetric:String}.
    */
   getAlgorithmInfo() {
     const result = {};
@@ -268,8 +268,10 @@ class PublicKeyPacket {
     const modulo = this.publicParams.n || this.publicParams.p;
     if (modulo) {
       result.bits = util.uint8ArrayBitLength(modulo);
-    } else {
+    } else if (this.publicParams.oid) {
       result.curve = this.publicParams.oid.getName();
+    } else {
+      result.symmetric = 'aes256';//this.publicParams.cipher.getName();
     }
     return result;
   }

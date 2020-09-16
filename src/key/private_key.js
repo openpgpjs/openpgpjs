@@ -214,6 +214,7 @@ class PrivateKey extends PublicKey {
    * @param {Integer} options.rsaBits    (optional) Number of bits for RSA subkeys
    * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
+   * @param {String}  options.symmetric   (optional) Symmetric algorithm for aead/cmac keys
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in [config]{@link module:config}
    * @returns {Promise<PrivateKey>}

@@ -105,8 +105,9 @@ class PublicKeyEncryptedSessionKeyPacket {
       util.writeChecksum(this.sessionKey)
     ]);
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
+    const privateParams = algo === enums.publicKey.aead ? key.privateParams : {};
     this.encrypted = await crypto.publicKeyEncrypt(
-      algo, key.publicParams, data, key.getFingerprintBytes());
+      algo, key.publicParams, privateParams, data, key.getFingerprintBytes());
   }
 
   /**

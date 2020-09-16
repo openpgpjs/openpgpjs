@@ -237,7 +237,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
           expect(R).to.deep.eq(r);
           expect(S).to.deep.eq(s);
         }),
-        signature.verify(22, openpgp.enums.hash.sha256, { r: R, s: S }, publicParams, undefined, data).then(result => {
+        signature.verify(22, openpgp.enums.hash.sha256, { r: R, s: S }, publicParams, {}, undefined, data).then(result => {
           expect(result).to.be.true;
         })
       ]);

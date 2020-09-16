@@ -115,7 +115,11 @@ export default {
     /** Reserved for AEDH */
     aedh: 23,
     /** Reserved for AEDSA */
-    aedsa: 24
+    aedsa: 24,
+    /** Symmetric authenticated encryption algorithms */
+    aead: 100,
+    /** Authentication using CMAC */
+    cmac: 101
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}

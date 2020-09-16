@@ -974,4 +974,35 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       ).to.be.rejectedWith(/User ID string is too long/);
     });
   });
+
+  describe('Symmetric key encrypted symmetric key packet', () => {
+    let symmetricKey;
+    let enc;
+    const secret = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+
+    beforeEach(async () => {
+      symmetricKey = new openpgp.SecretSubkeyPacket();
+      symmetricKey.algorithm = openpgp.enums.publicKey.aead;
+      await symmetricKey.generate(null, null, 'aes256');
+
+      enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
+      enc.sessionKey = secret;
+      enc.publicKeyAlgorithm = 'aead';
+      enc.sessionKeyAlgorithm = 'aes256';
+      enc.publicKeyID.bytes = '12345678';
+    });
+
+    it('encrypt/decrypt using symmetric private key', async () => {
+      openpgp.config.aeadMode = openpgp.enums.aead.eax;
+      await enc.encrypt(symmetricKey);
+      await enc.decrypt(symmetricKey);
+      expect(util.equalsUint8Array(secret, enc.sessionKey));
+    });
+
+    it('throws error encrypting with encrypted params', async () => {
+      await symmetricKey.encrypt("abcd");
+      await symmetricKey.clearPrivateParams();
+      await expect(enc.encrypt(symmetricKey)).to.eventually.be.rejectedWith('Cannot encrypt with symmetric key missing private parameters');
+    });
+  });
 });

@@ -45,21 +45,22 @@ import util from './util';
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
  *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
+ * @param {String} symmetric - (optional) symmetric algorithm for aead/cmac keys
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
  */
-export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
+export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config, symmetric = null }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
     throw new Error('UserIDs are required for key generation');
   }
-  if (type === "rsa" && rsaBits < config.minRSABits) {
-    throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
+  if (type === "rsa" && rsaBits < config.minRsaBits) {
+    throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${rsaBits}`);
   }
-  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
+  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys, symmetric };
 
   return generate(options, config).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate(date, config);

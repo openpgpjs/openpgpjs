@@ -401,9 +401,9 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
   }
 
-  async generate(bits, curve) {
+  async generate(bits, curve, symmetric) {
     const algo = enums.write(enums.publicKey, this.algorithm);
-    const { privateParams, publicParams } = await crypto.generateParams(algo, bits, curve);
+    const { privateParams, publicParams } = await crypto.generateParams(algo, bits, curve, symmetric);
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;

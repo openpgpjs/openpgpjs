@@ -20,7 +20,7 @@ export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
 }
@@ -29,7 +29,7 @@ export async function generateSecretKey(options, config) {
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }
@@ -323,6 +323,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.type = options.type || subkeyDefaults.type;
   options.curve = options.curve || subkeyDefaults.curve;
   options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
+  options.symmetric = options.symmetric || subkeyDefaults.symmetric;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
   options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
   options.date = options.date || subkeyDefaults.date;
@@ -347,6 +348,13 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       break;
     case 'rsa':
       options.algorithm = enums.publicKey.rsaEncryptSign;
+      break;
+    case 'symmetric':
+      if (options.sign) {
+        options.algorithm = enums.publicKey.cmac;
+      } else {
+        options.algorithm = enums.publicKey.aead;
+      }
       break;
     default:
       throw new Error(`Unsupported key type ${options.type}`);
