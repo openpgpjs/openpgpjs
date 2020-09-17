@@ -55,12 +55,12 @@ export function constructParams(types, data) {
 /**
  * Encrypts data using specified algorithm and public key parameters.
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1} for public key algorithms.
- * @param {module:enums.publicKey}    algo        Public key algorithm
- * @param {Object}                    pubParams  Algorithm-specific public key parameters
- * @param {Uint8Array}                data        Data to be encrypted
- * @param {Uint8Array}                fingerprint Recipient fingerprint
+ * @param {module:enums.publicKey}    algo          Public key algorithm
+ * @param {Object}                    publicParams  Algorithm-specific public key parameters
+ * @param {Uint8Array}                data          Data to be encrypted
+ * @param {Uint8Array}                fingerprint   Recipient fingerprint
  * @returns {Array<module:type/mpi|
- *                 module:type/ecdh_symkey>}          encrypted session key parameters
+ *                 module:type/ecdh_symkey>}        Encrypted session key parameters
  * @async
  */
 export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
@@ -91,14 +91,13 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
 /**
  * Decrypts data using specified algorithm and private key parameters.
  * See {@link https://tools.ietf.org/html/rfc4880#section-5.5.3|RFC 4880 5.5.3}
- * @param {module:enums.publicKey}        algo        Public key algorithm
+ * @param {module:enums.publicKey}        algo              Public key algorithm
  * @param {Object}                        publicKeyParams   Algorithm-specific public key parameters
  * @param {Object}                        privateKeyParams  Algorithm-specific private key parameters
  * @param {Array<module:type/mpi|
-                 module:type/ecdh_symkey>}
-                                          data_params encrypted session key parameters
- * @param {Uint8Array}                    fingerprint Recipient fingerprint
- * @returns {Uint8Array}                  decrypted data
+             module:type/ecdh_symkey>}    data_params       Encrypted session key parameters
+ * @param {Uint8Array}                    fingerprint       Recipient fingerprint
+ * @returns {Uint8Array}                                    Decrypted data
  * @async
  */
 export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, data_params, fingerprint) {
@@ -132,10 +131,9 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
 
 /**
  * Parse public key material in binary form to get the key parameters
- * @param {module:enums.publicKey} algo  The key algorithm
- * @param {Uint8Array}             bytes The key material to parse
- * @returns {Object} key parameters referenced by name
- * @returns { read: Number, publicParams: Object } number of read bytes plus key parameters referenced by name
+ * @param {module:enums.publicKey} algo               The key algorithm
+ * @param {Uint8Array}             bytes              The key material to parse
+ * @returns {{ read: Number, publicParams: Object }}  Number of read bytes plus key parameters referenced by name
  */
 export function parsePublicKeyParams(algo, bytes) {
   let read = 0;
@@ -143,7 +141,6 @@ export function parsePublicKeyParams(algo, bytes) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign: {
-      let read = 0;
       const n = util.readMPI(bytes.subarray(read)); read += n.length + 2;
       const e = util.readMPI(bytes.subarray(read)); read += e.length + 2;
       return { read, publicParams: { n, e } };
@@ -185,10 +182,10 @@ export function parsePublicKeyParams(algo, bytes) {
 
 /**
  * Parse private key material in binary form to get the key parameters
- * @param {module:enums.publicKey} algo  The key algorithm
- * @param {Uint8Array}             bytes The key material to parse
- * @param {Object}                 publicParams (ECC only) public params, needed to format some private params
- * @returns { read: Number, privateParams: Object } number of read bytes plus the key parameters referenced by name
+ * @param {module:enums.publicKey} algo               The key algorithm
+ * @param {Uint8Array}             bytes              The key material to parse
+ * @param {Object}                 publicParams       (ECC only) public params, needed to format some private params
+ * @returns {{ read: Number, privateParams: Object }} Number of read bytes plus the key parameters referenced by name
  */
 export function parsePrivateKeyParams(algo, bytes, publicParams) {
   let read = 0;
@@ -225,8 +222,8 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
 }
 
 /** Returns the types comprising the encrypted session key of an algorithm
- * @param {module:enums.publicKey} algo The public key algorithm
- * @returns {Array<Object>} The array of types
+ * @param {module:enums.publicKey}  algo  The public key algorithm
+ * @returns {Array<Object>}               The array of types
  */
 export function getEncSessionKeyParamTypes(algo) {
   switch (algo) {
@@ -253,9 +250,9 @@ export function getEncSessionKeyParamTypes(algo) {
 
 /**
  * Convert params to MPI and serializes them in the proper order
- * @param {module:enums.publicKey}  algo       The public key algorithm
- * @param {Object}                  params     The key parameters indexed by name
- * @returns {Uint8Array}  The array containing the MPIs
+ * @param {module:enums.publicKey}  algo    The public key algorithm
+ * @param {Object}                  params  The key parameters indexed by name
+ * @returns {Uint8Array}                    The array containing the MPIs
  */
 export function serializeKeyParams(algo, params) {
   const orderedParams = Object.keys(params).map(name => {
@@ -267,10 +264,10 @@ export function serializeKeyParams(algo, params) {
 
 /**
  * Generate algorithm-specific key parameters
- * @param {module:enums.publicKey}  algo The public key algorithm
- * @param {Integer}                 bits Bit length for RSA keys
- * @param {module:type/oid}         oid  Object identifier for ECC keys
- * @returns { publicParams, privateParams: {Object} } The parameters referenced by name
+ * @param {module:enums.publicKey}  algo                          The public key algorithm
+ * @param {Integer}                 bits                          Bit length for RSA keys
+ * @param {module:type/oid}         oid                           Object identifier for ECC keys
+ * @returns {{ publicParams: {Object}, privateParams: {Object} }} The parameters referenced by name
  * @async
  */
 export function generateParams(algo, bits, oid) {
@@ -312,10 +309,10 @@ export function generateParams(algo, bits, oid) {
 
 /**
  * Validate algorithm-specific key parameters
- * @param {module:enums.publicKey}  algo The public key algorithm
- * @param {Object}                  publicParams Algorithm-specific public key parameters
+ * @param {module:enums.publicKey}  algo          The public key algorithm
+ * @param {Object}                  publicParams  Algorithm-specific public key parameters
  * @param {Object}                  privateParams Algorithm-specific private key parameters
- * @returns {Promise<Boolean>}      whether the parameters are valid
+ * @returns {Promise<Boolean>}                    Whether the parameters are valid
  * @async
  */
 export async function validateParams(algo, publicParams, privateParams) {
@@ -360,8 +357,8 @@ export async function validateParams(algo, publicParams, privateParams) {
 /**
  * Generates a random byte prefix for the specified algorithm
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
- * @param {module:enums.symmetric} algo Symmetric encryption algorithm
- * @returns {Uint8Array}                Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
+ * @param {module:enums.symmetric}  algo  Symmetric encryption algorithm
+ * @returns {Uint8Array}                  Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
  * @async
  */
 export async function getPrefixRandom(algo) {
@@ -373,8 +370,8 @@ export async function getPrefixRandom(algo) {
 /**
  * Generating a session key for the specified symmetric algorithm
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
- * @param {module:enums.symmetric} algo Symmetric encryption algorithm
- * @returns {Uint8Array}                Random bytes as a string to be used as a key
+ * @param {module:enums.symmetric}  algo  Symmetric encryption algorithm
+ * @returns {Uint8Array}                  Random bytes as a string to be used as a key
  * @async
  */
 export function generateSessionKey(algo) {
