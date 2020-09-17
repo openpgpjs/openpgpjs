@@ -70,15 +70,8 @@ class PublicKeyEncryptedSessionKeyPacket {
     this.publicKeyId.read(bytes.subarray(1, bytes.length));
     this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
 
-    let i = 10;
-
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-    const types = crypto.getEncSessionKeyParamTypes(algo);
-    this.encrypted = crypto.constructParams(types);
-
-    for (let j = 0; j < types.length; j++) {
-      i += this.encrypted[j].read(bytes.subarray(i, bytes.length));
-    }
+    this.encrypted = crypto.parseEncSessionKeyParams(algo, bytes.subarray(10));
   }
 
   /**
@@ -87,11 +80,14 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @returns {Uint8Array} The Uint8Array representation
    */
   write() {
-    const arr = [new Uint8Array([this.version]), this.publicKeyId.write(), new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)])];
+    const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
 
-    for (let i = 0; i < this.encrypted.length; i++) {
-      arr.push(this.encrypted[i].write());
-    }
+    const arr = [
+      new Uint8Array([this.version]),
+      this.publicKeyId.write(),
+      new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)]),
+      crypto.serializeKeyParams(algo, this.encrypted)
+    ];
 
     return util.concatUint8Array(arr);
   }
