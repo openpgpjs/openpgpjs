@@ -2017,7 +2017,7 @@ zUdJ3Sg6Eu+OC2ae5II63iB5fG+lCwZtfuepWnePDv8RDKNHCVP/LoBNpGOZ
 U9I6AUkZWdcsueib9ghKDDy+HbUbf2kCJWUnuyeOCKqQifDb8bsLmdQY4Wb6
 EBeLgD8oZHVsH3NLjPakPw==
 =STqy
------END PGP MESSAGE-----`
+-----END PGP MESSAGE-----`;
 
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
@@ -2584,7 +2584,6 @@ function versionSpecificTests() {
 }
 
 module.exports = () => describe('Key', function() {
-  let rsaGenStub;
   let v5KeysVal;
   let aeadProtectVal;
 
@@ -2614,7 +2613,6 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Parsing armored text with RSA key and ECC subkey', async function() {
-    openpgp.config.tolerant = true;
     const pubKeys = await openpgp.readArmoredKeys(rsa_ecc_pub);
     expect(pubKeys).to.exist;
     expect(pubKeys).to.have.length(1);
