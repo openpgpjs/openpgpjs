@@ -25,7 +25,6 @@
  * @requires crypto/random
  * @requires type/ecdh_symkey
  * @requires type/kdf_params
- * @requires type/mpi
  * @requires type/oid
  * @requires enums
  * @requires util
@@ -35,22 +34,12 @@
 import publicKey from './public_key';
 import * as cipher from './cipher';
 import { getRandomBytes } from './random';
-import type_ecdh_symkey from '../type/ecdh_symkey';
+import ECDHSymkey from '../type/ecdh_symkey';
 import KDFParams from '../type/kdf_params';
-import type_mpi from '../type/mpi';
 import enums from '../enums';
 import util from '../util';
 import OID from '../type/oid';
 import { Curve } from './public_key/elliptic/curves';
-
-export function constructParams(types, data) {
-  return types.map(function(type, i) {
-    if (data && data[i]) {
-      return new type(data[i]);
-    }
-    return new type();
-  });
-}
 
 /**
  * Encrypts data using specified algorithm and public key parameters.
@@ -59,29 +48,26 @@ export function constructParams(types, data) {
  * @param {Object}                    publicParams  Algorithm-specific public key parameters
  * @param {Uint8Array}                data          Data to be encrypted
  * @param {Uint8Array}                fingerprint   Recipient fingerprint
- * @returns {Array<module:type/mpi|
- *                 module:type/ecdh_symkey>}        Encrypted session key parameters
+ * @returns {Object}                                Encrypted session key parameters
  * @async
  */
 export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
-  const types = getEncSessionKeyParamTypes(algo);
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign: {
       const { n, e } = publicParams;
-      const res = await publicKey.rsa.encrypt(data, n, e);
-      return constructParams(types, [res]);
+      const c = await publicKey.rsa.encrypt(data, n, e);
+      return { c };
     }
     case enums.publicKey.elgamal: {
       const { p, g, y } = publicParams;
-      const res = await publicKey.elgamal.encrypt(data, p, g, y);
-      return constructParams(types, [res.c1, res.c2]);
+      return publicKey.elgamal.encrypt(data, p, g, y);
     }
     case enums.publicKey.ecdh: {
       const { oid, Q, kdfParams } = publicParams;
       const { publicKey: V, wrappedKey: C } = await publicKey.elliptic.ecdh.encrypt(
         oid, kdfParams, data, Q, fingerprint);
-      return constructParams(types, [V, C]);
+      return { V, C: new ECDHSymkey(C) };
     }
     default:
       return [];
@@ -94,24 +80,22 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
  * @param {module:enums.publicKey}        algo              Public key algorithm
  * @param {Object}                        publicKeyParams   Algorithm-specific public key parameters
  * @param {Object}                        privateKeyParams  Algorithm-specific private key parameters
- * @param {Array<module:type/mpi|
-             module:type/ecdh_symkey>}    data_params       Encrypted session key parameters
+ * @param {Object}                        sessionKeyParams  Encrypted session key parameters
  * @param {Uint8Array}                    fingerprint       Recipient fingerprint
  * @returns {Uint8Array}                                    Decrypted data
  * @async
  */
-export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, data_params, fingerprint) {
+export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint) {
   switch (algo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt: {
-      const c = data_params[0].toUint8Array();
+      const { c } = sessionKeyParams;
       const { n, e } = publicKeyParams;
       const { d, p, q, u } = privateKeyParams;
       return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
     }
     case enums.publicKey.elgamal: {
-      const c1 = data_params[0].toUint8Array();
-      const c2 = data_params[1].toUint8Array();
+      const { c1, c2 } = sessionKeyParams;
       const p = publicKeyParams.p;
       const x = privateKeyParams.x;
       return publicKey.elgamal.decrypt(c1, c2, p, x);
@@ -119,10 +103,9 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
     case enums.publicKey.ecdh: {
       const { oid, Q, kdfParams } = publicKeyParams;
       const { d } = privateKeyParams;
-      const V = data_params[0].toUint8Array();
-      const C = data_params[1].data;
+      const { V, C } = sessionKeyParams;
       return publicKey.elliptic.ecdh.decrypt(
-        oid, kdfParams, V, C, Q, d, fingerprint);
+        oid, kdfParams, V, C.data, Q, d, fingerprint);
     }
     default:
       throw new Error('Invalid public key encryption algorithm.');
@@ -222,27 +205,37 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
 }
 
 /** Returns the types comprising the encrypted session key of an algorithm
- * @param {module:enums.publicKey}  algo  The public key algorithm
- * @returns {Array<Object>}               The array of types
+ * @param {module:enums.publicKey} algo   The key algorithm
+ * @param {Uint8Array}             bytes  The key material to parse
+ * @returns {Object}                      The session key parameters referenced by name
  */
-export function getEncSessionKeyParamTypes(algo) {
+export function parseEncSessionKeyParams(algo, bytes) {
+  let read = 0;
   switch (algo) {
     //   Algorithm-Specific Fields for RSA encrypted session keys:
     //       - MPI of RSA encrypted value m**e mod n.
     case enums.publicKey.rsaEncrypt:
-    case enums.publicKey.rsaEncryptSign:
-      return [type_mpi];
+    case enums.publicKey.rsaEncryptSign: {
+      const c = util.readMPI(bytes.subarray(read));
+      return { c };
+    }
 
     //   Algorithm-Specific Fields for Elgamal encrypted session keys:
     //       - MPI of Elgamal value g**k mod p
     //       - MPI of Elgamal value m * y**k mod p
-    case enums.publicKey.elgamal:
-      return [type_mpi, type_mpi];
+    case enums.publicKey.elgamal: {
+      const c1 = util.readMPI(bytes.subarray(read)); read += c1.length + 2;
+      const c2 = util.readMPI(bytes.subarray(read));
+      return { c1, c2 };
+    }
     //   Algorithm-Specific Fields for ECDH encrypted session keys:
     //       - MPI containing the ephemeral key used to establish the shared secret
     //       - ECDH Symmetric Key
-    case enums.publicKey.ecdh:
-      return [type_mpi, type_ecdh_symkey];
+    case enums.publicKey.ecdh: {
+      const V = util.readMPI(bytes.subarray(read)); read += V.length + 2;
+      const C = new ECDHSymkey(); C.read(bytes.subarray(read));
+      return { V, C };
+    }
     default:
       throw new Error('Invalid public key encryption algorithm.');
   }
