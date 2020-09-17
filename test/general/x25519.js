@@ -173,7 +173,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const signed = await openpgp.sign({ privateKeys: [priv], message: openpgp.CleartextMessage.fromText(randomData)});
     const pub = await load_pub_key(name);
     const msg = await openpgp.readArmoredCleartextMessage(signed);
-    const result = await openpgp.verify({ publicKeys: [pub], message: msg});
+    const result = await openpgp.verify({ publicKeys: [pub], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(randomData.replace(/[ \t]+$/mg, ''));
@@ -392,7 +392,6 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     ].join('\n');
     const hi = await openpgp.readArmoredKey(pubKey);
     const results = await hi.getPrimaryUser();
-    // console.log(results);
     expect(results).to.exist;
     expect(results.user).to.exist;
     const user = results.user;
