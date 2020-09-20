@@ -211,35 +211,24 @@ module.exports = () => describe('API functional testing', function() {
 
   describe('Sign and verify', function () {
     it('RSA', async function () {
-      return crypto.signature.sign(
-        1, 2, RSAPublicParams, RSAPrivateParams, data, await crypto.hash.digest(2, data)
-      ).then(async RSAsignedData => {
-        const RSAsignedDataMPI = new openpgp.MPI();
-        RSAsignedDataMPI.read(RSAsignedData);
-        return crypto.signature.verify(
-          1, 2, [RSAsignedDataMPI], RSAPublicParams, data, await crypto.hash.digest(2, data)
-        ).then(success => {
-          return expect(success).to.be.true;
-        });
-      });
+      const RSAsignedData = await crypto.signature.sign(
+        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAPublicParams, RSAPrivateParams, data, await crypto.hash.digest(2, data)
+      );
+      const success = await crypto.signature.verify(
+        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, data, await crypto.hash.digest(2, data)
+      );
+      return expect(success).to.be.true;
     });
 
     it('DSA', async function () {
-      return crypto.signature.sign(
-        17, 2, DSAPublicParams, DSAPrivateParams, data, await crypto.hash.digest(2, data)
-      ).then(async DSAsignedData => {
-        DSAsignedData = util.uint8ArrayToStr(DSAsignedData);
-        const DSAmsgMPIs = [];
-        DSAmsgMPIs[0] = new openpgp.MPI();
-        DSAmsgMPIs[1] = new openpgp.MPI();
-        DSAmsgMPIs[0].read(DSAsignedData.substring(0,34));
-        DSAmsgMPIs[1].read(DSAsignedData.substring(34,68));
-        return crypto.signature.verify(
-          17, 2, DSAmsgMPIs, DSAPublicParams, data, await crypto.hash.digest(2, data)
-        ).then(success => {
-          return expect(success).to.be.true;
-        });
-      });
+      const DSAsignedData = await crypto.signature.sign(
+        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAPublicParams, DSAPrivateParams, data, await crypto.hash.digest(2, data)
+      );
+      const success = await crypto.signature.verify(
+        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, data, await crypto.hash.digest(2, data)
+      );
+
+      return expect(success).to.be.true;
     });
   });
 

@@ -19,7 +19,6 @@
 
 /**
  * @requires type/keyid
- * @requires type/mpi
  * @requires config
  * @requires crypto
  * @requires enums
@@ -33,7 +32,6 @@ import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import { serializeAlgorithmSpecificFields } from "../crypto/crypto";
 
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)
