@@ -17,7 +17,6 @@
 
 /**
  * @requires type/keyid
- * @requires type/mpi
  * @requires crypto
  * @requires enums
  * @requires util
@@ -27,7 +26,6 @@ import type_keyid from '../type/keyid';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import { serializeAlgorithmSpecificFields } from "../crypto/crypto";
 
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)
@@ -57,8 +55,8 @@ class PublicKeyEncryptedSessionKeyPacket {
     this.sessionKey = null;
     this.sessionKeyAlgorithm = null;
 
-    /** @type {Array<module:type/mpi>} */
-    this.encrypted = [];
+    /** @type {Object} */
+    this.encrypted = {};
   }
 
   /**

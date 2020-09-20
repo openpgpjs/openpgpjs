@@ -19,7 +19,6 @@
  * @requires web-stream-tools
  * @requires packet/packet
  * @requires type/keyid
- * @requires type/mpi
  * @requires crypto
  * @requires enums
  * @requires util

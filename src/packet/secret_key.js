@@ -29,7 +29,6 @@ import type_s2k from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import { serializeAlgorithmSpecificFields } from "../crypto/crypto";
 
 /**
  * A Secret-Key packet contains all the information that is found in a

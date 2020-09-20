@@ -9,7 +9,7 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
-import { serializeAlgorithmSpecificFields } from "./crypto";
+import crypto from '.';
 
 
 /**
@@ -130,7 +130,7 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { g, p, q } = publicKeyParams;
       const { x } = privateKeyParams;
       const signature = await publicKey.dsa.sign(hashAlgo, hashed, g, p, q, x);
-      return serializeAlgorithmSpecificFields(algo, signature);
+      return crypto.serializeAlgorithmSpecificFields(algo, signature);
     }
     case enums.publicKey.elgamal: {
       throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
@@ -139,13 +139,13 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { oid, Q } = publicKeyParams;
       const { d } = privateKeyParams;
       const signature = await publicKey.elliptic.ecdsa.sign(oid, hashAlgo, data, Q, d, hashed);
-      return serializeAlgorithmSpecificFields(algo, signature);
+      return crypto.serializeAlgorithmSpecificFields(algo, signature);
     }
     case enums.publicKey.eddsa: {
       const { oid, Q } = publicKeyParams;
       const { seed } = privateKeyParams;
       const signature = await publicKey.elliptic.eddsa.sign(oid, hashAlgo, data, Q, seed, hashed);
-      return serializeAlgorithmSpecificFields(algo, signature);
+      return crypto.serializeAlgorithmSpecificFields(algo, signature);
     }
     default:
       throw new Error('Invalid signature algorithm.');
