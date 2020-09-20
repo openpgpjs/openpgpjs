@@ -27,6 +27,7 @@ import type_keyid from '../type/keyid';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import { serializeAlgorithmSpecificFields } from "../crypto/crypto";
 
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)
@@ -86,7 +87,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       new Uint8Array([this.version]),
       this.publicKeyId.write(),
       new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)]),
-      crypto.serializeKeyParams(algo, this.encrypted)
+      crypto.serializeAlgorithmSpecificFields(algo, this.encrypted)
     ];
 
     return util.concatUint8Array(arr);

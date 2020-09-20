@@ -29,6 +29,7 @@ import type_s2k from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import { serializeAlgorithmSpecificFields } from "../crypto/crypto";
 
 /**
  * A Secret-Key packet contains all the information that is found in a
@@ -211,7 +212,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     if (!this.isDummy()) {
       if (!this.s2k_usage) {
         const algo = enums.write(enums.publicKey, this.algorithm);
-        const cleartextParams = crypto.serializeKeyParams(algo, this.privateParams);
+        const cleartextParams = crypto.serializeAlgorithmSpecificFields(algo, this.privateParams);
         this.keyMaterial = util.concatUint8Array([
           cleartextParams,
           util.writeChecksum(cleartextParams)
@@ -291,7 +292,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k = new type_s2k();
     this.s2k.salt = await crypto.random.getRandomBytes(8);
     const algo = enums.write(enums.publicKey, this.algorithm);
-    const cleartext = crypto.serializeKeyParams(algo, this.privateParams);
+    const cleartext = crypto.serializeAlgorithmSpecificFields(algo, this.privateParams);
     this.symmetric = 'aes256';
     const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
     const blockLen = crypto.cipher[this.symmetric].blockSize;

@@ -33,6 +33,7 @@ import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import { serializeAlgorithmSpecificFields } from "../crypto/crypto";
 
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)
@@ -142,7 +143,7 @@ class PublicKeyPacket {
     const algo = enums.write(enums.publicKey, this.algorithm);
     arr.push(new Uint8Array([algo]));
 
-    const params = crypto.serializeKeyParams(algo, this.publicParams);
+    const params = crypto.serializeAlgorithmSpecificFields(algo, this.publicParams);
     if (this.version === 5) {
       // A four-octet scalar octet count for the following key material
       arr.push(util.writeNumber(params.length, 4));
