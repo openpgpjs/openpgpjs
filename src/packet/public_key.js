@@ -141,7 +141,7 @@ class PublicKeyPacket {
     const algo = enums.write(enums.publicKey, this.algorithm);
     arr.push(new Uint8Array([algo]));
 
-    const params = crypto.serializeAlgorithmSpecificFields(algo, this.publicParams);
+    const params = crypto.serializeParams(algo, this.publicParams);
     if (this.version === 5) {
       // A four-octet scalar octet count for the following key material
       arr.push(util.writeNumber(params.length, 4));

@@ -85,7 +85,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       new Uint8Array([this.version]),
       this.publicKeyId.write(),
       new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)]),
-      crypto.serializeAlgorithmSpecificFields(algo, this.encrypted)
+      crypto.serializeParams(algo, this.encrypted)
     ];
 
     return util.concatUint8Array(arr);

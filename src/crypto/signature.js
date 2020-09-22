@@ -9,7 +9,6 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
-import crypto from '.';
 
 
 /**
@@ -50,7 +49,7 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.eddsa: {
       const r = util.padToLength(util.readMPI(signature.subarray(read)), 32, 'le'); read += r.length + 2;
       const s = util.padToLength(util.readMPI(signature.subarray(read)), 32, 'le');
-      return { s, r };
+      return { r, s };
     }
     default:
       throw new Error('Invalid signature algorithm.');
@@ -64,7 +63,7 @@ export function parseSignatureParams(algo, signature) {
  * for public key and hash algorithms.
  * @param {module:enums.publicKey}  algo          Public key algorithm
  * @param {module:enums.hash}       hashAlgo      Hash algorithm
- * @param {Uint8Array}              signature     Encoded algorithm-specific signature parameters
+ * @param {Object}                  signature     Named algorithm-specific signature parameters
  * @param {Object}                  publicParams  Algorithm-specific public key parameters
  * @param {Uint8Array}              data          Data for which the signature was created
  * @param {Uint8Array}              hashed        The hashed data
@@ -72,27 +71,26 @@ export function parseSignatureParams(algo, signature) {
  * @async
  */
 export async function verify(algo, hashAlgo, signature, publicParams, data, hashed) {
-  const signatureParams = parseSignatureParams(algo, signature);
   switch (algo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
       const { n, e } = publicParams;
-      const { s } = signatureParams;
+      const { s } = signature;
       return publicKey.rsa.verify(hashAlgo, data, s, n, e, hashed);
     }
     case enums.publicKey.dsa: {
       const { g, p, q, y } = publicParams;
-      const { r, s } = signatureParams;
+      const { r, s } = signature;
       return publicKey.dsa.verify(hashAlgo, r, s, hashed, g, p, q, y);
     }
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicParams;
-      return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, signatureParams, data, Q, hashed);
+      return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, signature, data, Q, hashed);
     }
     case enums.publicKey.eddsa: {
       const { oid, Q } = publicParams;
-      return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signatureParams, data, Q, hashed);
+      return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signature, data, Q, hashed);
     }
     default:
       throw new Error('Invalid signature algorithm.');
@@ -110,7 +108,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
  * @param {Object}                 privateKeyParams Algorithm-specific public and private key parameters
  * @param {Uint8Array}             data             Data to be signed
  * @param {Uint8Array}             hashed           The hashed data
- * @returns {Uint8Array} Signature
+ * @returns {Object} Signature                      Object containing named signature parameters
  * @async
  */
 export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, data, hashed) {
@@ -123,14 +121,13 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
     case enums.publicKey.rsaSign: {
       const { n, e } = publicKeyParams;
       const { d, p, q, u } = privateKeyParams;
-      const signature = await publicKey.rsa.sign(hashAlgo, data, n, e, d, p, q, u, hashed);
-      return util.uint8ArrayToMpi(signature);
+      const s = await publicKey.rsa.sign(hashAlgo, data, n, e, d, p, q, u, hashed);
+      return { s };
     }
     case enums.publicKey.dsa: {
       const { g, p, q } = publicKeyParams;
       const { x } = privateKeyParams;
-      const signature = await publicKey.dsa.sign(hashAlgo, hashed, g, p, q, x);
-      return crypto.serializeAlgorithmSpecificFields(algo, signature);
+      return publicKey.dsa.sign(hashAlgo, hashed, g, p, q, x);
     }
     case enums.publicKey.elgamal: {
       throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
@@ -138,14 +135,12 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicKeyParams;
       const { d } = privateKeyParams;
-      const signature = await publicKey.elliptic.ecdsa.sign(oid, hashAlgo, data, Q, d, hashed);
-      return crypto.serializeAlgorithmSpecificFields(algo, signature);
+      return publicKey.elliptic.ecdsa.sign(oid, hashAlgo, data, Q, d, hashed);
     }
     case enums.publicKey.eddsa: {
       const { oid, Q } = publicKeyParams;
       const { seed } = privateKeyParams;
-      const signature = await publicKey.elliptic.eddsa.sign(oid, hashAlgo, data, Q, seed, hashed);
-      return crypto.serializeAlgorithmSpecificFields(algo, signature);
+      return publicKey.elliptic.eddsa.sign(oid, hashAlgo, data, Q, seed, hashed);
     }
     default:
       throw new Error('Invalid signature algorithm.');

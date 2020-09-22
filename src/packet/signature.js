@@ -131,7 +131,19 @@ class SignaturePacket {
     this.signedHashValue = bytes.subarray(i, i + 2);
     i += 2;
 
-    this.signature = bytes.subarray(i, bytes.length);
+    this.params = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, bytes.subarray(i, bytes.length));
+  }
+
+  /**
+   * @returns {Uint8Array | ReadableStream<Uint8Array>}
+   */
+  write_params() {
+    if (this.params instanceof Promise) {
+      return stream.fromAsync(
+        async () => crypto.serializeParams(this.publicKeyAlgorithm, await this.params)
+      );
+    }
+    return crypto.serializeParams(this.publicKeyAlgorithm, this.params);
   }
 
   write() {
@@ -139,7 +151,7 @@ class SignaturePacket {
     arr.push(this.signatureData);
     arr.push(this.write_unhashed_sub_packets());
     arr.push(this.signedHashValue);
-    arr.push(stream.clone(this.signature));
+    arr.push(this.write_params());
     return util.concat(arr);
   }
 
@@ -179,9 +191,9 @@ class SignaturePacket {
       publicKeyAlgorithm, hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
     );
     if (streaming) {
-      this.signature = stream.fromAsync(signed);
+      this.params = signed();
     } else {
-      this.signature = await signed();
+      this.params = await signed();
 
       // Store the fact that this signature is valid, e.g. for when we call `await
       // getLatestValidSignature(this.revocationSignatures, key, data)` later.
@@ -686,10 +698,10 @@ class SignaturePacket {
       throw new Error('Message digest did not match');
     }
 
-    this.signature = await stream.readToEnd(this.signature);
+    this.params = await this.params;
 
     const verified = await crypto.signature.verify(
-      publicKeyAlgorithm, hashAlgorithm, this.signature, key.publicParams,
+      publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
       toHash, hash
     );
     if (!verified) {

@@ -228,17 +228,12 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       };
       const R = util.hexToUint8Array(vector.SIGNATURE.R);
       const S = util.hexToUint8Array(vector.SIGNATURE.S);
-      const msg_MPIs = util.concatUint8Array([
-        util.uint8ArrayToMpi(R),
-        util.uint8ArrayToMpi(S)
-      ]);
       return Promise.all([
-        signature.sign(22, undefined, publicParams, privateParams, undefined, data).then(signed => {
-          const len = (((signed[0] << 8) | signed[1]) + 7) / 8;
-          expect(R).to.deep.eq(signed.slice(2, 2 + len));
-          expect(S).to.deep.eq(signed.slice(4 + len));
+        signature.sign(22, undefined, publicParams, privateParams, undefined, data).then(({ r, s }) => {
+          expect(R).to.deep.eq(r);
+          expect(S).to.deep.eq(s);
         }),
-        signature.verify(22, undefined, msg_MPIs, publicParams, undefined, data).then(result => {
+        signature.verify(22, undefined, { r: R, s: S }, publicParams, undefined, data).then(result => {
           expect(result).to.be.true;
         })
       ]);
