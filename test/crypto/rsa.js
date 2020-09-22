@@ -39,8 +39,7 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await openpgp.crypto.generateSessionKey('aes256');
     const encrypted = await openpgp.crypto.publicKey.rsa.encrypt(message, n, e);
-    const result = new openpgp.MPI(encrypted);
-    const decrypted = await openpgp.crypto.publicKey.rsa.decrypt(result.toUint8Array(), n, e, d, p, q, u);
+    const decrypted = await openpgp.crypto.publicKey.rsa.decrypt(encrypted, n, e, d, p, q, u);
     expect(decrypted).to.deep.equal(message);
   });
 

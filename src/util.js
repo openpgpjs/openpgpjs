@@ -194,9 +194,6 @@ export default {
 
   /**
    * Convert a Uint8Array to an MPI-formatted Uint8Array.
-   * Note: the output is **not** an MPI object.
-   * @see {@link module:type/mpi/MPI.fromUint8Array}
-   * @see {@link module:type/mpi/MPI.toUint8Array}
    * @param {Uint8Array} bin An array of 8-bit integers to convert
    * @returns {Uint8Array} MPI-formatted Uint8Array
    */

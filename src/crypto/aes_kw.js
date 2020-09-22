@@ -29,8 +29,8 @@ import util from '../util';
 /**
  * AES key wrap
  * @function
- * @param {String} key
- * @param {String} data
+ * @param {Uint8Array} key
+ * @param {Uint8Array} data
  * @returns {Uint8Array}
  */
 export function wrap(key, data) {

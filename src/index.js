@@ -53,12 +53,6 @@ export { default as util } from './util';
 export * from './packet';
 
 /**
- * @see module:type/mpi
- * @name module:openpgp.MPI
- */
-export { default as MPI } from './type/mpi';
-
-/**
  * @see module:type/s2k
  * @name module:openpgp.S2K
  */
