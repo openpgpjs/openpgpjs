@@ -38,7 +38,6 @@ import hash from '../../hash';
 import enums from '../../../enums';
 import util from '../../../util';
 import * as pkcs5 from '../../pkcs5';
-import MPI from '../../../type/mpi';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
@@ -135,14 +134,14 @@ async function genPublicEphemeralKey(curve, Q) {
  * @async
  */
 export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
-  const m = new MPI(pkcs5.encode(data));
+  const m = pkcs5.encode(data);
 
   const curve = new Curve(oid);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
   const cipher_algo = enums.read(enums.symmetric, kdfParams.cipher);
   const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param);
-  const wrappedKey = aes_kw.wrap(Z, m.toString());
+  const wrappedKey = aes_kw.wrap(Z, m);
   return { publicKey, wrappedKey };
 }
 

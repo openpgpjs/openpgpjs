@@ -155,14 +155,4 @@ module.exports = () => describe('BigInteger interface', function() {
     const expected = nBN.testn(5) ? 1 : 0;
     expect(n.getBit(i) === expected).to.be.true;
   });
-
-  describe('MPI and BigInteger conversions', function() {
-    it('MPI to/from BigInteger is correct', async function() {
-      const input = '417653931840771530406225971293556769925351769207235721650257629558293828796031115397206059067934284452829611906818956352854418342467914729341523414945427019410284762464062112274326172407819051167058569790660930309496043254270888417520676082271432948852231332576271876251597199882908964994070268531832274431027';
-      const n = new BigInteger(input);
-      const mpi = new openpgp.MPI(n);
-
-      expect((await mpi.toBigInteger()).equal(n)).to.be.true;
-    });
-  });
 });
