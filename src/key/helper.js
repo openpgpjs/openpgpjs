@@ -238,7 +238,7 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
       await Promise.all(source.map(async function(sourceSig) {
         if (!sourceSig.isExpired() && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
-              return util.equalsUint8Array(destSig.signature, sourceSig.signature);
+              return util.equalsUint8Array(destSig.write_params(), sourceSig.write_params());
             })) {
           dest[attr].push(sourceSig);
         }

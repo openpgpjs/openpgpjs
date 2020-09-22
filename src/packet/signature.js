@@ -19,7 +19,6 @@
  * @requires web-stream-tools
  * @requires packet/packet
  * @requires type/keyid
- * @requires type/mpi
  * @requires crypto
  * @requires enums
  * @requires util
@@ -28,7 +27,6 @@
 import stream from 'web-stream-tools';
 import { readSimpleLength, writeSimpleLength } from './packet';
 import type_keyid from '../type/keyid.js';
-import type_mpi from '../type/mpi.js';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -133,7 +131,19 @@ class SignaturePacket {
     this.signedHashValue = bytes.subarray(i, i + 2);
     i += 2;
 
-    this.signature = bytes.subarray(i, bytes.length);
+    this.params = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, bytes.subarray(i, bytes.length));
+  }
+
+  /**
+   * @returns {Uint8Array | ReadableStream<Uint8Array>}
+   */
+  write_params() {
+    if (this.params instanceof Promise) {
+      return stream.fromAsync(
+        async () => crypto.serializeParams(this.publicKeyAlgorithm, await this.params)
+      );
+    }
+    return crypto.serializeParams(this.publicKeyAlgorithm, this.params);
   }
 
   write() {
@@ -141,7 +151,7 @@ class SignaturePacket {
     arr.push(this.signatureData);
     arr.push(this.write_unhashed_sub_packets());
     arr.push(this.signedHashValue);
-    arr.push(stream.clone(this.signature));
+    arr.push(this.write_params());
     return util.concat(arr);
   }
 
@@ -181,9 +191,9 @@ class SignaturePacket {
       publicKeyAlgorithm, hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
     );
     if (streaming) {
-      this.signature = stream.fromAsync(signed);
+      this.params = signed();
     } else {
-      this.signature = await signed();
+      this.params = await signed();
 
       // Store the fact that this signature is valid, e.g. for when we call `await
       // getLatestValidSignature(this.revocationSignatures, key, data)` later.
@@ -661,6 +671,7 @@ class SignaturePacket {
    * @param {module:enums.signature} signatureType expected signature type
    * @param {String|Object} data data which on the signature applies
    * @param {Boolean} detached (optional) whether to verify a detached signature
+   * @param {Boolean} streaming (optional) whether to process data as a stream
    * @returns {Promise<Boolean>} True if message is verified, else false.
    * @async
    */
@@ -687,33 +698,10 @@ class SignaturePacket {
       throw new Error('Message digest did not match');
     }
 
-    let mpicount = 0;
-    // Algorithm-Specific Fields for RSA signatures:
-    //      - multiprecision number (MPI) of RSA signature value m**d mod n.
-    if (publicKeyAlgorithm > 0 && publicKeyAlgorithm < 4) {
-      mpicount = 1;
+    this.params = await this.params;
 
-    //    Algorithm-Specific Fields for DSA, ECDSA, and EdDSA signatures:
-    //      - MPI of DSA value r.
-    //      - MPI of DSA value s.
-    } else if (publicKeyAlgorithm === enums.publicKey.dsa ||
-              publicKeyAlgorithm === enums.publicKey.ecdsa ||
-              publicKeyAlgorithm === enums.publicKey.eddsa) {
-      mpicount = 2;
-    }
-
-    // EdDSA signature parameters are encoded in little-endian format
-    // https://tools.ietf.org/html/rfc8032#section-5.1.2
-    const endian = publicKeyAlgorithm === enums.publicKey.eddsa ? 'le' : 'be';
-    const mpi = [];
-    let i = 0;
-    this.signature = await stream.readToEnd(this.signature);
-    for (let j = 0; j < mpicount; j++) {
-      mpi[j] = new type_mpi();
-      i += mpi[j].read(this.signature.subarray(i, this.signature.length), endian);
-    }
     const verified = await crypto.signature.verify(
-      publicKeyAlgorithm, hashAlgorithm, mpi, key.publicParams,
+      publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
       toHash, hash
     );
     if (!verified) {
