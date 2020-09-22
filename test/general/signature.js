@@ -656,7 +656,7 @@ WPVMYDzj6X7I1A+nWeNiPlp2PoUUUvdCLisY1aU1wyTJa7wBsLARsrhXk5/R1pQt
 Blk+CJ7ytHy6En8542bB/yC+Z9/zWbVuhg==
 =jmT1
 -----END PGP PUBLIC KEY BLOCK-----`;
-      
+
     const msg_sig_expired =
     ['-----BEGIN PGP MESSAGE-----',
       'Comment: GPGTools - https://gpgtools.org',
@@ -1609,21 +1609,17 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const privKey2 = await openpgp.readArmoredKey(priv_key_arm2);
     await privKey2.decrypt('hello world');
 
-    const opt = {rsaBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null};
+    const opt = { rsaBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null };
     if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
-    return openpgp.generateKey(opt).then(function(gen) {
-      const generatedKey = gen.key;
-      return msg.signDetached([generatedKey, privKey2]).then(detachedSig => {
-        return msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]).then(async result => {
-          expect(await result[0].verified).to.be.true;
-          expect(await result[1].verified).to.be.true;
-        });
-      });
-    });
+    const { key: generatedKey } = await openpgp.generateKey(opt);
+    const detachedSig = await msg.signDetached([generatedKey, privKey2]);
+    const result = await msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]);
+    expect(await result[0].verified).to.be.true;
+    expect(await result[1].verified).to.be.true;
   });
 
   it('Sign message with key without password', function() {
-    const opt = {userIds: { name:'test', email:'a@b.com' }, passphrase: null};
+    const opt = { userIds: { name:'test', email:'a@b.com' }, passphrase: null };
     return openpgp.generateKey(opt).then(function(gen) {
       const key = gen.key;
       let message = openpgp.Message.fromText('hello world');

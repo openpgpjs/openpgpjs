@@ -216,8 +216,8 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const util = openpgp.util;
     function testVector(vector) {
       const curve = new elliptic.Curve('ed25519');
-      const { publicKey } = openpgp.crypto.publicKey.nacl.sign.keyPair.fromSeed(openpgp.util.hexToUint8Array(vector.SECRET_KEY));
-      expect(publicKey).to.deep.equal(openpgp.util.hexToUint8Array(vector.PUBLIC_KEY));
+      const { publicKey } = openpgp.crypto.publicKey.nacl.sign.keyPair.fromSeed(util.hexToUint8Array(vector.SECRET_KEY));
+      expect(publicKey).to.deep.equal(util.hexToUint8Array(vector.PUBLIC_KEY));
       const data = util.strToUint8Array(vector.MESSAGE);
       const privateParams = {
         seed: util.hexToUint8Array(vector.SECRET_KEY)
@@ -226,17 +226,14 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
         oid: new openpgp.OID(curve.oid),
         Q: util.hexToUint8Array('40' + vector.PUBLIC_KEY)
       };
-      const msg_MPIs = [
-        new openpgp.MPI(util.uint8ArrayToStr(util.hexToUint8Array(vector.SIGNATURE.R).reverse())),
-        new openpgp.MPI(util.uint8ArrayToStr(util.hexToUint8Array(vector.SIGNATURE.S).reverse()))
-      ];
+      const R = util.hexToUint8Array(vector.SIGNATURE.R);
+      const S = util.hexToUint8Array(vector.SIGNATURE.S);
       return Promise.all([
-        signature.sign(22, undefined, publicParams, privateParams, undefined, data).then(signed => {
-          const len = (((signed[0] << 8) | signed[1]) + 7) / 8;
-          expect(util.hexToUint8Array(vector.SIGNATURE.R)).to.deep.eq(signed.slice(2, 2 + len));
-          expect(util.hexToUint8Array(vector.SIGNATURE.S)).to.deep.eq(signed.slice(4 + len));
+        signature.sign(22, undefined, publicParams, privateParams, undefined, data).then(({ r, s }) => {
+          expect(R).to.deep.eq(r);
+          expect(S).to.deep.eq(s);
         }),
-        signature.verify(22, undefined, msg_MPIs, publicParams, undefined, data).then(result => {
+        signature.verify(22, undefined, { r: R, s: S }, publicParams, undefined, data).then(result => {
           expect(result).to.be.true;
         })
       ]);

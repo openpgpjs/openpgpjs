@@ -17,7 +17,6 @@
 
 /**
  * @requires type/keyid
- * @requires type/mpi
  * @requires crypto
  * @requires enums
  * @requires util
@@ -56,8 +55,8 @@ class PublicKeyEncryptedSessionKeyPacket {
     this.sessionKey = null;
     this.sessionKeyAlgorithm = null;
 
-    /** @type {Array<module:type/mpi>} */
-    this.encrypted = [];
+    /** @type {Object} */
+    this.encrypted = {};
   }
 
   /**
@@ -86,7 +85,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       new Uint8Array([this.version]),
       this.publicKeyId.write(),
       new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)]),
-      crypto.serializeKeyParams(algo, this.encrypted)
+      crypto.serializeParams(algo, this.encrypted)
     ];
 
     return util.concatUint8Array(arr);
