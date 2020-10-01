@@ -1,4 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const aes_kw = require('../../src/crypto/aes_kw');
 
 const expect = require('chai').expect;
 
@@ -49,8 +50,8 @@ module.exports = () => describe('AES Key Wrap and Unwrap', function () {
       const input_bin = openpgp.util.hexToStr(input);
       const output = test[3].replace(/\s/g, "");
       const output_bin = openpgp.util.hexToStr(output);
-      expect(openpgp.util.uint8ArrayToHex(openpgp.crypto.aes_kw.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
-      expect(openpgp.util.uint8ArrayToHex(openpgp.crypto.aes_kw.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
+      expect(openpgp.util.uint8ArrayToHex(aes_kw.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
+      expect(openpgp.util.uint8ArrayToHex(aes_kw.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
       done();
     });
   });

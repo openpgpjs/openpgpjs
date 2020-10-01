@@ -107,12 +107,6 @@ export { default as enums } from './enums';
 export { default as config } from './config/config';
 
 /**
- * @see module:crypto
- * @name module:openpgp.crypto
- */
-export { default as crypto } from './crypto';
-
-/**
  * @see module:keyring
  * @name module:openpgp.Keyring
  */

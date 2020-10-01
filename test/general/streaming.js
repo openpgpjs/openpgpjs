@@ -1,4 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const random = require('../../src/crypto/random');
 
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
@@ -896,7 +897,7 @@ module.exports = () => describe('Streaming', function() {
         await new Promise(setTimeout);
         if (test === currentTest && i++ < 100) {
           if (i === 4) await dataArrivedPromise;
-          let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+          let randomBytes = await random.getRandomBytes(1024);
           controller.enqueue(randomBytes);
           plaintext.push(randomBytes);
         } else {

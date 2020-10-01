@@ -28,6 +28,7 @@ import { randomProbablePrime } from './prime';
 import { getRandomBigInteger } from '../random';
 import config from '../../config';
 import util from '../../util';
+import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64';
 import { emsaEncode, emeEncode, emeDecode } from '../pkcs1';
 import enums from '../../enums';
 
@@ -221,14 +222,14 @@ export async function generate(bits, e) {
     }
     // map JWK parameters to corresponding OpenPGP names
     return {
-      n: util.b64ToUint8Array(jwk.n),
+      n: b64ToUint8Array(jwk.n),
       e: e.toUint8Array(),
-      d: util.b64ToUint8Array(jwk.d),
+      d: b64ToUint8Array(jwk.d),
       // switch p and q
-      p: util.b64ToUint8Array(jwk.q),
-      q: util.b64ToUint8Array(jwk.p),
+      p: b64ToUint8Array(jwk.q),
+      q: b64ToUint8Array(jwk.p),
       // Since p and q are switched in places, u is the inverse of jwk.q
-      u: util.b64ToUint8Array(jwk.qi)
+      u: b64ToUint8Array(jwk.qi)
     };
   } else if (util.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey) {
     const opts = {
@@ -570,16 +571,16 @@ async function privateToJwk(n, e, d, p, q, u) {
   dq = dq.toUint8Array();
   return {
     kty: 'RSA',
-    n: util.uint8ArrayToB64(n, true),
-    e: util.uint8ArrayToB64(e, true),
-    d: util.uint8ArrayToB64(d, true),
+    n: uint8ArrayToB64(n, true),
+    e: uint8ArrayToB64(e, true),
+    d: uint8ArrayToB64(d, true),
     // switch p and q
-    p: util.uint8ArrayToB64(q, true),
-    q: util.uint8ArrayToB64(p, true),
+    p: uint8ArrayToB64(q, true),
+    q: uint8ArrayToB64(p, true),
     // switch dp and dq
-    dp: util.uint8ArrayToB64(dq, true),
-    dq: util.uint8ArrayToB64(dp, true),
-    qi: util.uint8ArrayToB64(u, true),
+    dp: uint8ArrayToB64(dq, true),
+    dq: uint8ArrayToB64(dp, true),
+    qi: uint8ArrayToB64(u, true),
     ext: true
   };
 }
@@ -593,8 +594,8 @@ async function privateToJwk(n, e, d, p, q, u) {
 function publicToJwk(n, e) {
   return {
     kty: 'RSA',
-    n: util.uint8ArrayToB64(n, true),
-    e: util.uint8ArrayToB64(e, true),
+    n: uint8ArrayToB64(n, true),
+    e: uint8ArrayToB64(e, true),
     ext: true
   };
 }

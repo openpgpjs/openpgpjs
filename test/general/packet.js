@@ -1,4 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const crypto = require('../../src/crypto');
 
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
@@ -322,7 +323,7 @@ module.exports = () => describe("Packet", function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    return openpgp.crypto.generateParams(rsa, keySize, 65537).then(function({ publicParams, privateParams }) {
+    return crypto.generateParams(rsa, keySize, 65537).then(function({ publicParams, privateParams }) {
       const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
       const msg = new openpgp.PacketList();
       const msg2 = new openpgp.PacketList();
@@ -846,7 +847,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   it('Writing and encryption of a secret key packet (AEAD)', async function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
-    const { privateParams, publicParams } = await openpgp.crypto.generateParams(rsa, keySize, 65537);
+    const { privateParams, publicParams } = await crypto.generateParams(rsa, keySize, 65537);
 
     const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
@@ -874,7 +875,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     try {
-      const { privateParams, publicParams } = await openpgp.crypto.generateParams(rsa, keySize, 65537);
+      const { privateParams, publicParams } = await crypto.generateParams(rsa, keySize, 65537);
       const secretKeyPacket = new openpgp.SecretKeyPacket();
       secretKeyPacket.privateParams = privateParams;
       secretKeyPacket.publicParams = publicParams;
@@ -899,7 +900,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
-    return openpgp.crypto.generateParams(rsa, keySize, 65537).then(function({ privateParams, publicParams }) {
+    return crypto.generateParams(rsa, keySize, 65537).then(function({ privateParams, publicParams }) {
       const testText = input.createSomeMessage();
 
       key.publicParams = publicParams;

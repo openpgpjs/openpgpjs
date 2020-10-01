@@ -1,4 +1,8 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const OID = require('../../src/type/oid');
+const KDFParams = require('../../src/type/kdf_params');
+const elliptic_curves = require('../../src/crypto/public_key/elliptic');
+
 const chai = require('chai');
 const elliptic_data = require('./elliptic_data');
 
@@ -8,7 +12,6 @@ const expect = chai.expect;
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
 module.exports = () => describe('ECDH key exchange @lightweight', function () {
-  const elliptic_curves = openpgp.crypto.publicKey.elliptic;
   const decrypt_message = function (oid, hash, cipher, priv, pub, ephemeral, data, fingerprint) {
     if (openpgp.util.isString(data)) {
       data = openpgp.util.strToUint8Array(data);
@@ -18,8 +21,8 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
     return Promise.resolve().then(() => {
       const curve = new elliptic_curves.Curve(oid);
       return elliptic_curves.ecdh.decrypt(
-        new openpgp.OID(curve.oid),
-        new openpgp.KDFParams({ cipher, hash }),
+        new OID(curve.oid),
+        new KDFParams({ cipher, hash }),
         new Uint8Array(ephemeral),
         data,
         new Uint8Array(pub),

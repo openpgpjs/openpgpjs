@@ -1,4 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const random = require('../../src/crypto/random');
+
 const BN = require('bn.js');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -13,7 +15,7 @@ async function getRandomBN(min, max) {
 
   const modulus = max.sub(min);
   const bytes = modulus.byteLength();
-  const r = new BN(await openpgp.crypto.random.getRandomBytes(bytes + 8));
+  const r = new BN(await random.getRandomBytes(bytes + 8));
   return r.mod(modulus).add(min);
 }
 

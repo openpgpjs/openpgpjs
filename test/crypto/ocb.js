@@ -3,6 +3,7 @@
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const OCB = require('../../src/crypto/ocb');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -122,7 +123,7 @@ module.exports = () => describe('Symmetric AES-OCB', function() {
       const headerBytes = openpgp.util.hexToUint8Array(vec.A);
       const ctBytes = openpgp.util.hexToUint8Array(vec.C);
 
-      const ocb = await openpgp.crypto.ocb(cipher, keyBytes);
+      const ocb = await OCB(cipher, keyBytes);
 
       // encryption test
       let ct = await ocb.encrypt(msgBytes, nonceBytes, headerBytes);
@@ -162,7 +163,7 @@ module.exports = () => describe('Symmetric AES-OCB', function() {
       const k = new Uint8Array(keylen / 8);
       k[k.length - 1] = taglen;
 
-      const ocb = await openpgp.crypto.ocb('aes' + keylen, k);
+      const ocb = await OCB('aes' + keylen, k);
 
       const c = [];
       let n;

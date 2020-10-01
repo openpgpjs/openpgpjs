@@ -3,6 +3,7 @@
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const EAX = require('../../src/crypto/eax');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -94,7 +95,7 @@ function testAESEAX() {
       const headerBytes = openpgp.util.hexToUint8Array(vec.header);
       const ctBytes = openpgp.util.hexToUint8Array(vec.ct);
 
-      const eax = await openpgp.crypto.eax(cipher, keyBytes);
+      const eax = await EAX(cipher, keyBytes);
 
       // encryption test
       let ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);

@@ -31,6 +31,7 @@ import nacl from 'tweetnacl/nacl-fast-light.js';
 import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
+import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 
@@ -311,7 +312,7 @@ async function webGenKeyPair(name) {
 
   return {
     publicKey: jwkToRawPublic(publicKey),
-    privateKey: util.b64ToUint8Array(privateKey.d, true)
+    privateKey: b64ToUint8Array(privateKey.d, true)
   };
 }
 
@@ -337,8 +338,8 @@ async function nodeGenKeyPair(name) {
  * @returns {Uint8Array}                    raw public key
  */
 function jwkToRawPublic(jwk) {
-  const bufX = util.b64ToUint8Array(jwk.x);
-  const bufY = util.b64ToUint8Array(jwk.y);
+  const bufX = b64ToUint8Array(jwk.x);
+  const bufY = b64ToUint8Array(jwk.y);
   const publicKey = new Uint8Array(bufX.length + bufY.length + 1);
   publicKey[0] = 0x04;
   publicKey.set(bufX, 1);
@@ -361,8 +362,8 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
   const jwk = {
     kty: "EC",
     crv: name,
-    x: util.uint8ArrayToB64(bufX, true),
-    y: util.uint8ArrayToB64(bufY, true),
+    x: uint8ArrayToB64(bufX, true),
+    y: uint8ArrayToB64(bufY, true),
     ext: true
   };
   return jwk;
@@ -378,6 +379,6 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
  */
 function privateToJwk(payloadSize, name, publicKey, privateKey) {
   const jwk = rawPublicToJwk(payloadSize, name, publicKey);
-  jwk.d = util.uint8ArrayToB64(privateKey, true);
+  jwk.d = uint8ArrayToB64(privateKey, true);
   return jwk;
 }

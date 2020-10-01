@@ -30,7 +30,6 @@ import emailAddresses from 'email-addresses';
 import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
-import * as b64 from './encoding/base64';
 import { getBigInteger } from './biginteger';
 
 export default {
@@ -201,31 +200,6 @@ export default {
     const size = (bin.length - 1) * 8 + util.nbits(bin[0]);
     const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
     return util.concatUint8Array([prefix, bin]);
-  },
-
-  /**
-   * Convert a Base-64 encoded string an array of 8-bit integer
-   *
-   * Note: accepts both Radix-64 and URL-safe strings
-   * @param {String} base64 Base-64 encoded string to convert
-   * @returns {Uint8Array} An array of 8-bit integers
-   */
-  b64ToUint8Array: function (base64) {
-    return b64.decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
-  },
-
-  /**
-   * Convert an array of 8-bit integer to a Base-64 encoded string
-   * @param {Uint8Array} bytes An array of 8-bit integers to convert
-   * @param {bool}       url   If true, output is URL-safe
-   * @returns {String}          Base-64 encoded string
-   */
-  uint8ArrayToB64: function (bytes, url) {
-    let encoded = b64.encode(bytes).replace(/[\r\n]/g, '');
-    if (url) {
-      encoded = encoded.replace(/[+]/g, '-').replace(/[/]/g, '_').replace(/[=]/g, '');
-    }
-    return encoded;
   },
 
   /**

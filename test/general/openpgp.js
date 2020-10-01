@@ -1,9 +1,10 @@
 /* globals tryTests: true */
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const crypto = require('../../src/crypto');
+const random = require('../../src/crypto/random');
 
 const spy = require('sinon/lib/sinon/spy');
-const stub = require('sinon/lib/sinon/stub');
 const input = require('./testInputs.js');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -1136,7 +1137,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt using custom session key and decrypt using session key', async function () {
           const sessionKey = {
-            data: await openpgp.crypto.generateSessionKey('aes256'),
+            data: await crypto.generateSessionKey('aes256'),
             algorithm: 'aes256'
           };
           const encOpt = {
@@ -1159,7 +1160,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt using custom session key and decrypt using private key', async function () {
           const sessionKey = {
-            data: await openpgp.crypto.generateSessionKey('aes128'),
+            data: await crypto.generateSessionKey('aes128'),
             algorithm: 'aes128'
           };
           const encOpt = {
@@ -1791,7 +1792,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             const data = new ReadableStream({
               async pull(controller) {
                 if (i++ < 4) {
-                  let randomBytes = await openpgp.crypto.random.getRandomBytes(10);
+                  let randomBytes = await random.getRandomBytes(10);
                   controller.enqueue(randomBytes);
                   plaintext.push(randomBytes.slice());
                 } else {
@@ -2389,7 +2390,7 @@ J9I8AcH94nE77JUtCm7s1kOlo0EIshZsAqJwGveDGdAuabfViVwVxG4I24M6
       });
 
       it('should decrypt with three passwords', async function() {
-        const messageBinary = openpgp.util.b64ToUint8Array('wy4ECQMIElIx/jiwJV9gp/MZ/ElZwUfHrzOBfOtM8VmgDy76F7eSGWH26tAlx3WI0kMBZv6Tlc1Y6baaZ6MEcOLTG/C7uzHH7KMfuQFd3fcMaVcDawk9EEy/CybiGBE+acT6id2pemHQy6Nk76d9UUTFubcB');
+        const messageBinary = openpgp.util.hexToUint8Array('c32e04090308125231fe38b0255f60a7f319fc4959c147c7af33817ceb4cf159a00f2efa17b7921961f6ead025c77588d2430166fe9395cd58e9b69a67a30470e2d31bf0bbbb31c7eca31fb9015dddf70c6957036b093d104cbf0b26e218113e69c4fa89dda97a61d0cba364efa77d5144c5b9b701');
         const message = await openpgp.readMessage(messageBinary);
         const passwords = ['Test', 'Pinata', 'a'];
         const decrypted = await openpgp.decrypt({ message, passwords });
@@ -2412,33 +2413,7 @@ J9I8AcH94nE77JUtCm7s1kOlo0EIshZsAqJwGveDGdAuabfViVwVxG4I24M6
         expect(decrypted.data).to.equal('Tesssst<br><br><br>Sent from ProtonMail mobile<br><br><br>');
       });
 
-      it('should decrypt broken Blowfish message from old OpenPGP.js', async function() {
-        openpgp.crypto.cipher.blowfish.blockSize = 16;
-        openpgp.crypto.cipher.blowfish.prototype.blockSize = 16;
-        const useNativeVal = openpgp.config.useNative;
-        openpgp.config.useNative = false;
-        try {
-          const { data } = await openpgp.decrypt({
-            passwords: 'test',
-            message: await openpgp.readArmoredMessage(`-----BEGIN PGP MESSAGE-----
-Version: OpenPGP.js v4.8.1
-Comment: https://openpgpjs.org
-
-wx4EBAMI0eHVbTnl2iLg6pIJ4sWw2K7OwfxFP8bmaUvSRAGiSDGJSFNUuB4v
-SU69Z1XyXiuTpD3780FnLnR4dF41nhbrTXaDG+X1b3JsZCHTFMGF7Eb+YVhh
-YCXOZwd3z5lxcj/M
-=oXcN
------END PGP MESSAGE-----`)
-          });
-          expect(data).to.equal('Hello World!');
-        } finally {
-          openpgp.crypto.cipher.blowfish.blockSize = 8;
-          openpgp.crypto.cipher.blowfish.prototype.blockSize = 8;
-          openpgp.config.useNative = useNativeVal;
-        }
-      });
-
-      it('should decrypt correct Blowfish message from new OpenPGP.js', async function() {
+      it('should decrypt Blowfish message', async function() {
         const { data } = await openpgp.decrypt({
           passwords: 'test',
           message: await openpgp.readArmoredMessage(`-----BEGIN PGP MESSAGE-----

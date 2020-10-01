@@ -1,9 +1,9 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
+const { ripemd: rmdString } = require('../../../src/crypto/hash');
 
 const chai = require('chai');
 
 const { util } = openpgp;
-const rmdString = openpgp.crypto.hash.ripemd;
 const { expect } = chai;
 
 module.exports = () => it("RIPE-MD 160 bits with test vectors from https://homes.esat.kuleuven.be/~bosselae/ripemd160.html", async function() {
