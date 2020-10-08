@@ -23,7 +23,8 @@
     "lib": "src"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "lightweight/"
   ],
   "scripts": {
     "build": "rollup --config",
