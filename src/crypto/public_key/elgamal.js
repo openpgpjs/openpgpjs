@@ -25,8 +25,6 @@
 import BN from 'bn.js';
 import random from '../random';
 
-const zero = new BN(0);
-
 export default {
   /**
    * ElGamal Encryption function
@@ -42,8 +40,9 @@ export default {
     const mred = m.toRed(redp);
     const gred = g.toRed(redp);
     const yred = y.toRed(redp);
-    // See Section 11.5 here: https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf
-    const k = await random.getRandomBN(zero, p); // returns in [0, p-1]
+    // OpenPGP uses a "special" version of ElGamal where g is generator of the full group Z/pZ*
+    // hence g has order p-1, and to avoid that k = 0 mod p-1, we need to pick k in [1, p-2]
+    const k = await random.getRandomBN(new BN(1), p.subn(1));
     return {
       c1: gred.redPow(k).fromRed(),
       c2: yred.redPow(k).redMul(mred).fromRed()
