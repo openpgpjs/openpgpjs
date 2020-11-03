@@ -391,14 +391,11 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
 ///////////////////////////////////////////////
 
 /**
- * Decrypt symmetric session keys with a private key or password. Either a private key or
- *   a password must be specified.
- * @param  {Message} message                 a message object containing the encrypted session key packets
- * @param  {Key|Array<Key>} privateKeys     (optional) private keys with decrypted secret key data
- * @param  {String|Array<String>} passwords (optional) passwords to decrypt the session key
- * @returns {Promise<Object|undefined>}    Array of decrypted session key, algorithm pairs in form:
- *                                          { data:Uint8Array, algorithm:String }
- *                                          or 'undefined' if no key packets found
+ * Generate a new session key object, taking the algorithm preferences of the passed public keys into account.
+ * @param  {Key|Array<Key>} publicKeys  array of public keys or single key used to select algorithm preferences for
+ * @param  {Date} date                  (optional) date to select algorithm preferences at
+ * @param  {Array} toUserIds            (optional) user IDs to select algorithm preferences for
+ * @returns {Promise<{ data: Uint8Array, algorithm: String }>} object with session key data and algorithm
  * @async
  * @static
  */
