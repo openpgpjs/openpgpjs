@@ -133,8 +133,10 @@ export default {
         const c2 = data_params[1].toBN();
         const p = key_params[0].toBN();
         const x = key_params[3].toBN();
-        const result = new type_mpi(await publicKey.elgamal.decrypt(c1, c2, p, x));
-        return pkcs1.eme.decode(result.toString());
+        const result = new type_mpi(await publicKey.elgamal.decrypt(c1, c2, p, x)); // MPI and BN.js discard any leading zeros
+        return pkcs1.eme.decode(
+          util.Uint8Array_to_str(result.toUint8Array('be', p.byteLength())) // re-introduce leading zeros
+        );
       }
       case enums.publicKey.ecdh: {
         const oid = key_params[0];

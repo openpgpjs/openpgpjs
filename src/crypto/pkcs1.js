@@ -106,10 +106,6 @@ eme.encode = async function(M, k) {
  * @returns {String} message, an octet string
  */
 eme.decode = function(EM) {
-  // leading zeros truncated by bn.js
-  if (EM.charCodeAt(0) !== 0) {
-    EM = String.fromCharCode(0) + EM;
-  }
   const firstOct = EM.charCodeAt(0);
   const secondOct = EM.charCodeAt(1);
   let i = 2;

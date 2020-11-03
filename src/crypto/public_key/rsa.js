@@ -501,7 +501,11 @@ export default {
       });
       key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     }
-    return util.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
+    try {
+      return util.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
+    } catch (err) {
+      throw new Error('Decryption error');
+    }
   },
 
   bnDecrypt: async function(data, n, e, d, p, q, u) {
@@ -540,7 +544,8 @@ export default {
       result = result.redMul(unblinder);
     }
 
-    return pkcs1.eme.decode((new type_mpi(result)).toString());
+    result = new type_mpi(result).toUint8Array('be', n.byteLength()); // preserve leading zeros
+    return pkcs1.eme.decode(util.Uint8Array_to_str(result));
   },
 
   prime: prime
