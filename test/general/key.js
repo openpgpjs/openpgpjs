@@ -2817,6 +2817,24 @@ describe('Key', function() {
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
+  it('makeDummy() - the converted key can be parsed', async function() {
+    const { key: key } = await openpgp.generateKey({ userIds: 'dummy <dummy@alice.com>' });
+    key.primaryKey.makeDummy();
+    const parsedKeys = (await openpgp.key.readArmored(key.armor())).keys;
+    expect(parsedKeys).to.not.be.empty;
+  });
+
+  it('makeDummy() - the converted key can be encrypted and decrypted', async function() {
+    const { key: key } = await openpgp.generateKey({ userIds: 'dummy <dummy@alice.com>' });
+    const passphrase = 'passphrase';
+    key.primaryKey.makeDummy();
+    expect(key.isDecrypted()).to.be.true;
+    await key.encrypt(passphrase);
+    expect(key.isDecrypted()).to.be.false;
+    await key.decrypt(passphrase);
+    expect(key.isDecrypted()).to.be.true;
+  });
+
   it('makeDummy() - the converted key is valid but can no longer sign', async function() {
     const { keys: [key] } = await openpgp.key.readArmored(priv_key_rsa);
     await key.decrypt('hello world');
