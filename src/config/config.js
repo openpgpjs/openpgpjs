@@ -152,12 +152,12 @@ export default {
    * @memberof module:config
    * @property {Boolean} showVersion Whether to include {@link module:config/config.versionString} in armored messages
    */
-  showVersion: true,
+  showVersion: false,
   /**
    * @memberof module:config
    * @property {Boolean} showComment Whether to include {@link module:config/config.commentString} in armored messages
    */
-  showComment: true,
+  showComment: false,
   /**
    * @memberof module:config
    * @property {String} versionString A version string to be included in armored messages
