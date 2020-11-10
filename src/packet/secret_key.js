@@ -280,11 +280,14 @@ SecretKey.prototype.makeDummy = function () {
     throw new Error("Key is not decrypted");
   }
   this.clearPrivateParams();
+  this.keyMaterial = null;
   this.isEncrypted = false;
   this.s2k = new type_s2k();
   this.s2k.algorithm = 0;
   this.s2k.c = 0;
   this.s2k.type = 'gnu-dummy';
+  this.s2k_usage = 254;
+  this.symmetric = 'aes256';
 };
 
 /**
