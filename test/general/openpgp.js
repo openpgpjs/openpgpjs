@@ -744,14 +744,27 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
 
     it('Configuration', async function() {
-      openpgp.config.showVersion = false;
-      openpgp.config.commentString = 'different';
+      const showCommentVal = openpgp.config.showComment;
+      const showVersionVal = openpgp.config.showVersion;
+      const commentStringVal = openpgp.config.commentString;
 
-      return openpgp.encrypt({ publicKeys:publicKey, message:openpgp.Message.fromText(plaintext) }).then(function(encrypted) {
-        expect(encrypted).to.exist;
-        expect(encrypted).not.to.match(/^Version:/);
-        expect(encrypted).to.match(/Comment: different/);
-      });
+      try {
+        const encryptedDefault = await openpgp.encrypt({ publicKeys:publicKey, message:openpgp.Message.fromText(plaintext) });
+        expect(encryptedDefault).to.exist;
+        expect(encryptedDefault).not.to.match(/^Version:/);
+        expect(encryptedDefault).not.to.match(/^Comment:/);
+
+        openpgp.config.showComment = true;
+        openpgp.config.commentString = 'different';
+        const encryptedWithComment = await openpgp.encrypt({ publicKeys:publicKey, message:openpgp.Message.fromText(plaintext) });
+        expect(encryptedWithComment).to.exist;
+        expect(encryptedWithComment).not.to.match(/^Version:/);
+        expect(encryptedWithComment).to.match(/Comment: different/);
+      } finally {
+        openpgp.config.showComment = showCommentVal;
+        openpgp.config.showVersion = showVersionVal;
+        openpgp.config.commentString = commentStringVal;
+      }
     });
 
     it('Decrypting key with wrong passphrase rejected', async function () {
