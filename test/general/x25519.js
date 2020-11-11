@@ -1,6 +1,7 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const elliptic = require('../../src/crypto/public_key/elliptic');
 const signature = require('../../src/crypto/signature');
+const OID = require('../../src/type/oid');
 const util = require('../../src/util');
 
 const nacl = require('tweetnacl');
@@ -224,7 +225,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
         seed: util.hexToUint8Array(vector.SECRET_KEY)
       };
       const publicParams = {
-        oid: new openpgp.OID(curve.oid),
+        oid: new OID(curve.oid),
         Q: util.hexToUint8Array('40' + vector.PUBLIC_KEY)
       };
       const R = util.hexToUint8Array(vector.SIGNATURE.R);
