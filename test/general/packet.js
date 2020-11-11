@@ -1,5 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const crypto = require('../../src/crypto');
+const util = require('../../src/util');
 
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
@@ -10,11 +11,11 @@ const input = require('./testInputs.js');
 const { PacketList } = require('../../dist/node/openpgp.min');
 
 function stringify(array) {
-  if (openpgp.util.isStream(array)) {
+  if (openpgp.stream.isStream(array)) {
     return openpgp.stream.readToEnd(array).then(stringify);
   }
 
-  if (!openpgp.util.isUint8Array(array)) {
+  if (!util.isUint8Array(array)) {
     throw new Error('Data must be in the form of a Uint8Array');
   }
 
@@ -201,7 +202,7 @@ module.exports = () => describe("Packet", function() {
   }
 
   it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEAD, GCM)', async function() {
-    const webCrypto = openpgp.util.getWebCrypto();
+    const webCrypto = util.getWebCrypto();
     if (!webCrypto) return;
     const encryptStub = cryptStub(webCrypto, 'encrypt');
     const decryptStub = cryptStub(webCrypto, 'decrypt');
@@ -244,10 +245,10 @@ module.exports = () => describe("Packet", function() {
   it('Sym. encrypted AEAD protected packet test vector (AEAD)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/commit/00b20923e6233fb6ff1666ecd5acfefceb32907d
 
-    const nodeCrypto = openpgp.util.getNodeCrypto();
+    const nodeCrypto = util.getNodeCrypto();
     if (!nodeCrypto) return;
 
-    let packetBytes = openpgp.util.hexToUint8Array(`
+    let packetBytes = util.hexToUint8Array(`
       d4 4a 01 07 01 0e b7 32  37 9f 73 c4 92 8d e2 5f
       ac fe 65 17 ec 10 5d c1  1a 81 dc 0c b8 a2 f6 f3
       d9 00 16 38 4a 56 fc 82  1a e1 1a e8 db cb 49 86
@@ -260,8 +261,8 @@ module.exports = () => describe("Packet", function() {
     openpgp.config.aeadProtect = true;
     openpgp.config.aeadChunkSizeByte = 14;
 
-    const iv = openpgp.util.hexToUint8Array('b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10'.replace(/\s+/g, ''));
-    const key = openpgp.util.hexToUint8Array('86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d'.replace(/\s+/g, ''));
+    const iv = util.hexToUint8Array('b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10'.replace(/\s+/g, ''));
+    const key = util.hexToUint8Array('86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d'.replace(/\s+/g, ''));
     const algo = 'aes128';
 
     const literal = new openpgp.LiteralDataPacket(0);
@@ -269,7 +270,7 @@ module.exports = () => describe("Packet", function() {
     const msg = new openpgp.PacketList();
 
     msg.push(enc);
-    literal.setBytes(openpgp.util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+    literal.setBytes(util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
     literal.filename = '';
     enc.packets.push(literal);
 
@@ -321,7 +322,7 @@ module.exports = () => describe("Packet", function() {
 
   it('Public key encrypted symmetric key packet', function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
-    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    const keySize = util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return crypto.generateParams(rsa, keySize, 65537).then(function({ publicParams, privateParams }) {
       const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
@@ -525,7 +526,7 @@ module.exports = () => describe("Packet", function() {
   it('Sym. encrypted session key reading/writing test vector (EAX, AEAD)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b20923/back.mkd#sample-aead-eax-encryption-and-decryption
 
-    const nodeCrypto = openpgp.util.getNodeCrypto();
+    const nodeCrypto = util.getNodeCrypto();
     if (!nodeCrypto) return;
 
     let aeadProtectVal = openpgp.config.aeadProtect;
@@ -535,10 +536,10 @@ module.exports = () => describe("Packet", function() {
     openpgp.config.aeadChunkSizeByte = 14;
     openpgp.config.s2kIterationCountByte = 0x90;
 
-    let salt = openpgp.util.hexToUint8Array(`cd5a9f70fbe0bc65`);
-    let sessionKey = openpgp.util.hexToUint8Array(`86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d`.replace(/\s+/g, ''));
-    let sessionIV = openpgp.util.hexToUint8Array(`bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35`.replace(/\s+/g, ''));
-    let dataIV = openpgp.util.hexToUint8Array(`b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10`.replace(/\s+/g, ''));
+    let salt = util.hexToUint8Array(`cd5a9f70fbe0bc65`);
+    let sessionKey = util.hexToUint8Array(`86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d`.replace(/\s+/g, ''));
+    let sessionIV = util.hexToUint8Array(`bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35`.replace(/\s+/g, ''));
+    let dataIV = util.hexToUint8Array(`b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10`.replace(/\s+/g, ''));
 
     let randomBytesStub = stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
@@ -546,7 +547,7 @@ module.exports = () => describe("Packet", function() {
     randomBytesStub.onCall(2).returns(sessionIV);
     randomBytesStub.onCall(3).returns(dataIV);
 
-    let packetBytes = openpgp.util.hexToUint8Array(`
+    let packetBytes = util.hexToUint8Array(`
       c3 3e 05 07 01 03 08 cd  5a 9f 70 fb e0 bc 65 90
       bc 66 9e 34 e5 00 dc ae  dc 5b 32 aa 2d ab 02 35
       9d ee 19 d0 7c 34 46 c4  31 2a 34 ae 19 67 a2 fb
@@ -576,7 +577,7 @@ module.exports = () => describe("Packet", function() {
 
       const key = key_enc.sessionKey;
 
-      literal.setBytes(openpgp.util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+      literal.setBytes(util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
       literal.filename = '';
       enc.packets.push(literal);
       await enc.encrypt(algo, key);
@@ -603,7 +604,7 @@ module.exports = () => describe("Packet", function() {
   it('Sym. encrypted session key reading/writing test vector (AEAD, OCB)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b20923/back.mkd#sample-aead-ocb-encryption-and-decryption
 
-    const nodeCrypto = openpgp.util.getNodeCrypto();
+    const nodeCrypto = util.getNodeCrypto();
     if (!nodeCrypto) return;
 
     let aeadProtectVal = openpgp.config.aeadProtect;
@@ -613,10 +614,10 @@ module.exports = () => describe("Packet", function() {
     openpgp.config.aeadChunkSizeByte = 14;
     openpgp.config.s2kIterationCountByte = 0x90;
 
-    let salt = openpgp.util.hexToUint8Array(`9f0b7da3e5ea6477`);
-    let sessionKey = openpgp.util.hexToUint8Array(`d1 f0 1b a3 0e 13 0a a7 d2 58 2c 16 e0 50 ae 44`.replace(/\s+/g, ''));
-    let sessionIV = openpgp.util.hexToUint8Array(`99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c`.replace(/\s+/g, ''));
-    let dataIV = openpgp.util.hexToUint8Array(`5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56`.replace(/\s+/g, ''));
+    let salt = util.hexToUint8Array(`9f0b7da3e5ea6477`);
+    let sessionKey = util.hexToUint8Array(`d1 f0 1b a3 0e 13 0a a7 d2 58 2c 16 e0 50 ae 44`.replace(/\s+/g, ''));
+    let sessionIV = util.hexToUint8Array(`99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c`.replace(/\s+/g, ''));
+    let dataIV = util.hexToUint8Array(`5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56`.replace(/\s+/g, ''));
 
     let randomBytesStub = stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
@@ -624,7 +625,7 @@ module.exports = () => describe("Packet", function() {
     randomBytesStub.onCall(2).returns(sessionIV);
     randomBytesStub.onCall(3).returns(dataIV);
 
-    let packetBytes = openpgp.util.hexToUint8Array(`
+    let packetBytes = util.hexToUint8Array(`
       c3 3d 05 07 02 03 08 9f  0b 7d a3 e5 ea 64 77 90
       99 e3 26 e5 40 0a 90 93  6c ef b4 e8 eb a0 8c 67
       73 71 6d 1f 27 14 54 0a  38 fc ac 52 99 49 da c5
@@ -655,7 +656,7 @@ module.exports = () => describe("Packet", function() {
 
       const key = key_enc.sessionKey;
 
-      literal.setBytes(openpgp.util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+      literal.setBytes(util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
       literal.filename = '';
       enc.packets.push(literal);
       await enc.encrypt(algo, key);
@@ -846,7 +847,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
   it('Writing and encryption of a secret key packet (AEAD)', async function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
-    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    const keySize = util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
     const { privateParams, publicParams } = await crypto.generateParams(rsa, keySize, 65537);
 
     const secretKeyPacket = new openpgp.SecretKeyPacket();
@@ -872,7 +873,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     openpgp.config.aeadProtect = false;
 
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
-    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    const keySize = util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     try {
       const { privateParams, publicParams } = await crypto.generateParams(rsa, keySize, 65537);
@@ -898,7 +899,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const key = new openpgp.SecretKeyPacket();
 
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
-    const keySize = openpgp.util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    const keySize = util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
 
     return crypto.generateParams(rsa, keySize, 65537).then(function({ privateParams, publicParams }) {
       const testText = input.createSomeMessage();

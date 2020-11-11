@@ -41,12 +41,6 @@ export {
 export * from './cleartext';
 
 /**
- * @see module:util
- * @name module:openpgp.util
- */
-export { default as util } from './util';
-
-/**
  * @see module:packet
  * @name module:openpgp.packet
  */

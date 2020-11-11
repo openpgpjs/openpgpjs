@@ -1,9 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
 const Cast5 = require('../../../src/crypto/cipher/cast5');
+const util = require('../../../src/util');
 
 const chai = require('chai');
 
-const { util } = openpgp;
 const { expect } = chai;
 
 module.exports = () => it('CAST-128 cipher test with test vectors from RFC2144', function (done) {

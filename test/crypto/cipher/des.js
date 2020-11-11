@@ -1,9 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
 const { DES, TripleDES } = require('../../../src/crypto/cipher/des');
+const util = require('../../../src/util');
 
 const chai = require('chai');
 
-const { util } = openpgp;
 const { expect } = chai;
 
 module.exports = () => describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', function() {

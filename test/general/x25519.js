@@ -1,6 +1,7 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const elliptic = require('../../src/crypto/public_key/elliptic');
 const signature = require('../../src/crypto/signature');
+const util = require('../../src/util');
 
 const nacl = require('tweetnacl');
 
@@ -214,7 +215,6 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
 
   describe('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
-    const util = openpgp.util;
     function testVector(vector) {
       const curve = new elliptic.Curve('ed25519');
       const { publicKey } = nacl.sign.keyPair.fromSeed(util.hexToUint8Array(vector.SECRET_KEY));

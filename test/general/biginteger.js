@@ -1,5 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const random = require('../../src/crypto/random');
+const util = require('../../src/util');
 
 const BN = require('bn.js');
 const chai = require('chai');
@@ -21,7 +22,7 @@ async function getRandomBN(min, max) {
 
 module.exports = () => describe('BigInteger interface', function() {
   before(async () => {
-    BigInteger = await openpgp.util.getBigInteger();
+    BigInteger = await util.getBigInteger();
   });
 
   it('constructor throws on undefined input', function() {

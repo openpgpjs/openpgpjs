@@ -1,6 +1,7 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const util = require('../../src/util');
 
-const { readArmoredKey, readArmoredCleartextMessage, util, SignaturePacket } = openpgp;
+const { readArmoredKey, readArmoredCleartextMessage, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));

@@ -2,6 +2,7 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 const elliptic_curves = require('../../src/crypto/public_key/elliptic');
 const hashMod = require('../../src/crypto/hash');
 const config = require('../../src/config');
+const util = require('../../src/util');
 
 const chai = require('chai');
 
@@ -67,7 +68,7 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       done();
     });
     it('Creating KeyPair', function () {
-      if (!config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
+      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
         this.skip();
       }
       const names = config.useIndutnyElliptic ? ['p256', 'p384', 'p521', 'secp256k1', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
@@ -99,9 +100,9 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
   });
   describe('ECDSA signature', function () {
     const verify_signature = async function (oid, hash, r, s, message, pub) {
-      if (openpgp.util.isString(message)) {
-        message = openpgp.util.strToUint8Array(message);
-      } else if (!openpgp.util.isUint8Array(message)) {
+      if (util.isString(message)) {
+        message = util.strToUint8Array(message);
+      } else if (!util.isUint8Array(message)) {
         message = new Uint8Array(message);
       }
       const ecdsa = elliptic_curves.ecdsa;
@@ -149,10 +150,10 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       ]);
     });
     it('Invalid public key', async function () {
-      if (!config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
+      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
         this.skip();
       }
-      if (openpgp.util.getNodeCrypto()) {
+      if (util.getNodeCrypto()) {
         await expect(verify_signature(
           'secp256k1', 8, [], [], [], []
         )).to.eventually.be.false;
@@ -178,10 +179,10 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       }
     });
     it('Invalid point', async function () {
-      if (!config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
+      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
         this.skip();
       }
-      if (openpgp.util.getNodeCrypto()) {
+      if (util.getNodeCrypto()) {
         await expect(verify_signature(
           'secp256k1', 8, [], [], [], secp256k1_invalid_point
         )).to.eventually.be.false;
@@ -199,7 +200,7 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       }
     });
     it('Invalid signature', function (done) {
-      if (!config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
+      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
         this.skip();
       }
       expect(verify_signature(
