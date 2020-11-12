@@ -32,6 +32,7 @@ import {
   PublicSubkeyPacket,
   SignaturePacket
 } from '../packet';
+import config from '../config';
 import enums from '../enums';
 import util from '../util';
 import User from './user';
@@ -861,12 +862,12 @@ class Key {
 
   /**
    * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
-   * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key.
-   * @param {Integer} options.rsaBits    number of bits for the key creation.
-   * @param {Number} [options.keyExpirationTime=0]
-   *                             The number of seconds after the key creation time that the key expires
-   * @param {String} options.curve       (optional) Elliptic curve for ECC keys
-   * @param {Date} options.date          (optional) Override the creation date of the key and the key signatures
+   * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
+   * @param {ecc|rsa} options.type       The subkey algorithm: ECC or RSA
+   * @param {String}  options.curve      (optional) Elliptic curve for ECC keys
+   * @param {Integer} options.rsaBits    (optional) Number of bits for RSA subkeys
+   * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
+   * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @returns {Promise<module:key.Key>}
    * @async
@@ -878,14 +879,17 @@ class Key {
     if (options.passphrase) {
       throw new Error("Subkey could not be encrypted here, please encrypt whole key");
     }
-    if (util.getWebCryptoAll() && options.rsaBits < 2048) {
-      throw new Error('When using webCrypto rsaBits should be 2048 or 4096, found: ' + options.rsaBits);
+    if (options.rsaBits < config.minRsaBits) {
+      throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${options.rsaBits}`);
     }
     const secretKeyPacket = this.primaryKey;
     if (!secretKeyPacket.isDecrypted()) {
       throw new Error("Key is not decrypted");
     }
     const defaultOptions = secretKeyPacket.getAlgorithmInfo();
+    defaultOptions.type = defaultOptions.curve ? 'ecc' : 'rsa'; // DSA keys default to RSA
+    defaultOptions.rsaBits = defaultOptions.bits || 4096;
+    defaultOptions.curve = defaultOptions.curve || 'curve25519';
     options = helper.sanitizeKeyOptions(options, defaultOptions);
     const keyPacket = await helper.generateSecretSubkey(options);
     const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options);

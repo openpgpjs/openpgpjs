@@ -244,7 +244,7 @@ module.exports = () => {
   describe('RSA parameter validation', function() {
     let rsaKey;
     before(async () => {
-      rsaKey = (await openpgp.generateKey({ rsaBits: 2048, userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
+      rsaKey = (await openpgp.generateKey({ type: "rsa", rsaBits: 2048, userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
     });
 
     it('generated RSA params are valid', async function() {
