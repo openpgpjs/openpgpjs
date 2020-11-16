@@ -41,46 +41,10 @@ export {
 export * from './cleartext';
 
 /**
- * @see module:util
- * @name module:openpgp.util
- */
-export { default as util } from './util';
-
-/**
  * @see module:packet
  * @name module:openpgp.packet
  */
 export * from './packet';
-
-/**
- * @see module:type/s2k
- * @name module:openpgp.S2K
- */
-export { default as S2K } from './type/s2k';
-
-/**
- * @see module:type/keyid
- * @name module:openpgp.Keyid
- */
-export { default as Keyid } from './type/keyid';
-
-/**
- * @see module:type/ecdh_symkey
- * @name module:openpgp.ECDHSymmetricKey
- */
-export { default as ECDHSymmetricKey } from './type/ecdh_symkey';
-
-/**
- * @see module:type/kdf_params
- * @name module:openpgp.KDFParams
- */
-export { default as KDFParams } from './type/kdf_params';
-
-/**
- * @see module:type/oid
- * @name module:openpgp.OID
- */
-export { default as OID } from './type/oid';
 
 /**
  * @see streams
@@ -105,12 +69,6 @@ export { default as enums } from './enums';
  * @name module:openpgp.config
  */
 export { default as config } from './config/config';
-
-/**
- * @see module:crypto
- * @name module:openpgp.crypto
- */
-export { default as crypto } from './crypto';
 
 /**
  * @see module:keyring
