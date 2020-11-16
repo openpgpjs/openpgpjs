@@ -124,13 +124,13 @@ function aesEncrypt(algo, key, pt, iv) {
   }
   // asm.js fallback
   const cfb = new AES_CFB(key, iv);
-  return stream.transform(pt, value => cfb.AES_Encrypt_process(value), () => cfb.AES_Encrypt_finish());
+  return stream.transform(pt, value => cfb.aes.AES_Encrypt_process(value), () => cfb.aes.AES_Encrypt_finish());
 }
 
 function aesDecrypt(algo, key, ct, iv) {
   if (util.isStream(ct)) {
     const cfb = new AES_CFB(key, iv);
-    return stream.transform(ct, value => cfb.AES_Decrypt_process(value), () => cfb.AES_Decrypt_finish());
+    return stream.transform(ct, value => cfb.aes.AES_Decrypt_process(value), () => cfb.aes.AES_Decrypt_finish());
   }
   return AES_CFB.decrypt(ct, key, iv);
 }
