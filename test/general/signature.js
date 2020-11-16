@@ -1,4 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const util = require('../../src/util');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -1118,7 +1119,7 @@ bwM=
   });
 
   it('Verify latin-1 signed message', async function() {
-    const latin1Binary = openpgp.util.hexToUint8Array('48e46c6cf62057e86c74');
+    const latin1Binary = util.hexToUint8Array('48e46c6cf62057e86c74');
     const message = openpgp.Message.fromBinary(latin1Binary);
 
     message.appendSignature(`-----BEGIN PGP SIGNATURE-----
@@ -1404,7 +1405,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - armored', async function() {
-    const plaintext = openpgp.util.strToUint8Array('short message\nnext line \n한국어/조선말');
+    const plaintext = util.strToUint8Array('short message\nnext line \n한국어/조선말');
     const pubKey = await openpgp.readArmoredKey(pub_key_arm2);
     const privKey = await openpgp.readArmoredKey(priv_key_arm2);
     await privKey.decrypt('hello world');
@@ -1424,7 +1425,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   });
 
   it('Sign text with openpgp.sign and verify with openpgp.verify leads to same bytes cleartext and valid signatures - not armored', async function() {
-    const plaintext = openpgp.util.strToUint8Array('short message\nnext line \n한국어/조선말');
+    const plaintext = util.strToUint8Array('short message\nnext line \n한국어/조선말');
     const pubKey = await openpgp.readArmoredKey(pub_key_arm2);
     const privKey = await openpgp.readArmoredKey(priv_key_arm2);
     await privKey.decrypt('hello world');
@@ -1450,7 +1451,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     await privKey.decrypt('hello world');
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.Message.fromText(plaintext), detached: true}).then(async function(signed) {
       const signature = await openpgp.readArmoredSignature(signed);
-      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.Message.fromBinary(openpgp.util.encodeUtf8(plaintext)), signature: signature });
+      return openpgp.verify({ publicKeys:[pubKey], message: openpgp.Message.fromBinary(util.encodeUtf8(plaintext)), signature: signature });
     }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(cleartextSig.signatures).to.have.length(1);
@@ -1461,7 +1462,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
   it('Should verify cleartext message correctly when using a detached binary signature and text literal data', async function () {
     const plaintext = 'short message\nnext line \n한국어/조선말';
-    const plaintextArray = openpgp.util.encodeUtf8(plaintext);
+    const plaintextArray = util.encodeUtf8(plaintext);
     const pubKey = await openpgp.readArmoredKey(pub_key_arm2);
     const privKey = await openpgp.readArmoredKey(priv_key_arm2);
     await privKey.decrypt('hello world');
@@ -1483,7 +1484,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     await Promise.all([privKey.primaryKey.decrypt('hello world'), privKey.subKeys[0].keyPacket.decrypt('hello world')]);
     return openpgp.sign({ privateKeys:[privKey], message: openpgp.Message.fromText(plaintext), detached: true}).then(async function(signed) {
       const signature = await openpgp.readArmoredSignature(signed);
-      return openpgp.encrypt({ message: openpgp.Message.fromBinary(openpgp.util.encodeUtf8(plaintext)), publicKeys: [pubKey], signature })
+      return openpgp.encrypt({ message: openpgp.Message.fromBinary(util.encodeUtf8(plaintext)), publicKeys: [pubKey], signature })
     }).then(async data => {
       const csMsg = await openpgp.readArmoredMessage(data);
       return openpgp.decrypt({ message: csMsg, privateKeys: [ privKey ], publicKeys: [ pubKey ] });
@@ -1610,7 +1611,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     await privKey2.decrypt('hello world');
 
     const opt = { rsaBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null };
-    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     const { key: generatedKey } = await openpgp.generateKey(opt);
     const detachedSig = await msg.signDetached([generatedKey, privKey2]);
     const result = await msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]);

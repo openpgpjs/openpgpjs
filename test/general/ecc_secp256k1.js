@@ -1,6 +1,7 @@
 /* globals tryTests: true */
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const util = require('../../src/util');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -8,7 +9,7 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 
 module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', function () {
-  if (!openpgp.config.useIndutnyElliptic && !openpgp.util.getNodeCrypto()) {
+  if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
     before(function() {
       this.skip();
     });

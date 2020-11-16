@@ -1,4 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const crypto = require('../../src/crypto');
+const util = require('../../src/util');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -6,8 +8,6 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 
 module.exports = () => describe('API functional testing', function() {
-  const util = openpgp.util;
-  const crypto = openpgp.crypto;
   const RSAPublicKeyMaterial = util.concatUint8Array([
     new Uint8Array([0x08,0x00,0xac,0x15,0xb3,0xd6,0xd2,0x0f,0xf0,0x7a,0xdd,0x21,0xb7,
       0xbf,0x61,0xfa,0xca,0x93,0x86,0xc8,0x55,0x5a,0x4b,0xa6,0xa4,0x1a,

@@ -3,6 +3,8 @@
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const EAX = require('../../src/crypto/eax');
+const util = require('../../src/util');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -88,21 +90,21 @@ function testAESEAX() {
     const cipher = 'aes128';
 
     await Promise.all(vectors.map(async vec => {
-      const keyBytes = openpgp.util.hexToUint8Array(vec.key);
-      const msgBytes = openpgp.util.hexToUint8Array(vec.msg);
-      const nonceBytes = openpgp.util.hexToUint8Array(vec.nonce);
-      const headerBytes = openpgp.util.hexToUint8Array(vec.header);
-      const ctBytes = openpgp.util.hexToUint8Array(vec.ct);
+      const keyBytes = util.hexToUint8Array(vec.key);
+      const msgBytes = util.hexToUint8Array(vec.msg);
+      const nonceBytes = util.hexToUint8Array(vec.nonce);
+      const headerBytes = util.hexToUint8Array(vec.header);
+      const ctBytes = util.hexToUint8Array(vec.ct);
 
-      const eax = await openpgp.crypto.eax(cipher, keyBytes);
+      const eax = await EAX(cipher, keyBytes);
 
       // encryption test
       let ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);
-      expect(openpgp.util.uint8ArrayToHex(ct)).to.equal(vec.ct.toLowerCase());
+      expect(util.uint8ArrayToHex(ct)).to.equal(vec.ct.toLowerCase());
 
       // decryption test with verification
       let pt = await eax.decrypt(ctBytes, nonceBytes, headerBytes);
-      expect(openpgp.util.uint8ArrayToHex(pt)).to.equal(vec.msg.toLowerCase());
+      expect(util.uint8ArrayToHex(pt)).to.equal(vec.msg.toLowerCase());
 
       // tampering detection test
       ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);
@@ -113,12 +115,12 @@ function testAESEAX() {
       // testing without additional data
       ct = await eax.encrypt(msgBytes, nonceBytes, new Uint8Array());
       pt = await eax.decrypt(ct, nonceBytes, new Uint8Array());
-      expect(openpgp.util.uint8ArrayToHex(pt)).to.equal(vec.msg.toLowerCase());
+      expect(util.uint8ArrayToHex(pt)).to.equal(vec.msg.toLowerCase());
 
       // testing with multiple additional data
-      ct = await eax.encrypt(msgBytes, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
-      pt = await eax.decrypt(ct, nonceBytes, openpgp.util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
-      expect(openpgp.util.uint8ArrayToHex(pt)).to.equal(vec.msg.toLowerCase());
+      ct = await eax.encrypt(msgBytes, nonceBytes, util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
+      pt = await eax.decrypt(ct, nonceBytes, util.concatUint8Array([headerBytes, headerBytes, headerBytes]));
+      expect(util.uint8ArrayToHex(pt)).to.equal(vec.msg.toLowerCase());
     }));
   });
 }

@@ -92,3 +92,28 @@ export function decode(data) {
     return decoded;
   }, () => decodeChunk(buf));
 }
+
+/**
+ * Convert a Base-64 encoded string an array of 8-bit integer
+ *
+ * Note: accepts both Radix-64 and URL-safe strings
+ * @param {String} base64 Base-64 encoded string to convert
+ * @returns {Uint8Array} An array of 8-bit integers
+ */
+export function b64ToUint8Array(base64) {
+  return decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
+}
+
+/**
+ * Convert an array of 8-bit integer to a Base-64 encoded string
+ * @param {Uint8Array} bytes An array of 8-bit integers to convert
+ * @param {bool}       url   If true, output is URL-safe
+ * @returns {String}          Base-64 encoded string
+ */
+export function uint8ArrayToB64(bytes, url) {
+  let encoded = encode(bytes).replace(/[\r\n]/g, '');
+  if (url) {
+    encoded = encoded.replace(/[+]/g, '-').replace(/[/]/g, '_').replace(/[=]/g, '');
+  }
+  return encoded;
+}

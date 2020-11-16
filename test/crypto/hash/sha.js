@@ -1,9 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
+const hash = require('../../../src/crypto/hash');
+const util = require('../../../src/util');
 
 const chai = require('chai');
 
-const { util } = openpgp;
-const { hash } = openpgp.crypto;
 const { expect } = chai;
 
 module.exports = () => it('SHA* with test vectors from NIST FIPS 180-2', async function() {

@@ -1,6 +1,10 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const elliptic = require('../../src/crypto/public_key/elliptic');
+const signature = require('../../src/crypto/signature');
+const OID = require('../../src/type/oid');
+const util = require('../../src/util');
 
-const elliptic = openpgp.crypto.publicKey.elliptic;
+const nacl = require('tweetnacl');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -212,18 +216,16 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
 
   describe('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
-    const signature = openpgp.crypto.signature;
-    const util = openpgp.util;
     function testVector(vector) {
       const curve = new elliptic.Curve('ed25519');
-      const { publicKey } = openpgp.crypto.publicKey.nacl.sign.keyPair.fromSeed(util.hexToUint8Array(vector.SECRET_KEY));
+      const { publicKey } = nacl.sign.keyPair.fromSeed(util.hexToUint8Array(vector.SECRET_KEY));
       expect(publicKey).to.deep.equal(util.hexToUint8Array(vector.PUBLIC_KEY));
       const data = util.strToUint8Array(vector.MESSAGE);
       const privateParams = {
         seed: util.hexToUint8Array(vector.SECRET_KEY)
       };
       const publicParams = {
-        oid: new openpgp.OID(curve.oid),
+        oid: new OID(curve.oid),
         Q: util.hexToUint8Array('40' + vector.PUBLIC_KEY)
       };
       const R = util.hexToUint8Array(vector.SIGNATURE.R);

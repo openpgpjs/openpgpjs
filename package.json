@@ -26,11 +26,16 @@
     "dist/",
     "lightweight/"
   ],
+  "esm": {
+    "cjs": {
+      "dedefault": true
+    }
+  },
   "scripts": {
     "build": "rollup --config",
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
-    "test": "mocha --timeout 120000 test/unittests.js",
+    "test": "mocha --require esm --timeout 120000 test/unittests.js",
     "start": "http-server",
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
@@ -59,6 +64,7 @@
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-chai-friendly": "^0.5.0",
     "eslint-plugin-import": "^2.8.0",
+    "esm": "^3.2.25",
     "hash.js": "^1.1.3",
     "http-server": "^0.12.3",
     "jsdoc": "github:openpgpjs/jsdoc#0f1816eb4553856647b4ca9561b9307b11ec4f9e",

@@ -1,9 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
+const md5 = require('../../../src/crypto/hash/md5');
+const util = require('../../../src/util');
 
 const chai = require('chai');
 
-const { util } = openpgp;
-const md5 = openpgp.crypto.hash.md5;
 const { expect } = chai;
 
 module.exports = () => it('MD5 with test vectors from RFC 1321', async function() {

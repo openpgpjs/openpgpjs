@@ -1,4 +1,4 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const random = require('../../src/crypto/random');
 
 const chai = require('chai');
 
@@ -8,7 +8,7 @@ module.exports = () => describe('Random Buffer', function() {
   let randomBuffer;
 
   before(function() {
-    randomBuffer = new openpgp.crypto.random.randomBuffer.constructor();
+    randomBuffer = new random.randomBuffer.constructor();
     expect(randomBuffer).to.exist;
   });
 
