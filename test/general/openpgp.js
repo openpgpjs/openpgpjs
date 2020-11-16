@@ -1,9 +1,11 @@
 /* globals tryTests: true */
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const crypto = require('../../src/crypto');
+const random = require('../../src/crypto/random');
+const util = require('../../src/util');
 
 const spy = require('sinon/lib/sinon/spy');
-const stub = require('sinon/lib/sinon/stub');
 const input = require('./testInputs.js');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -635,7 +637,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
   describe('generateKey - unit tests', function() {
     it('should have default params set', function() {
-      const now = openpgp.util.normalizeDate(new Date());
+      const now = util.normalizeDate(new Date());
       const opt = {
         userIds: { name: 'Test User', email: 'text@example.com' },
         passphrase: 'secret',
@@ -1149,7 +1151,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt using custom session key and decrypt using session key', async function () {
           const sessionKey = {
-            data: await openpgp.crypto.generateSessionKey('aes256'),
+            data: await crypto.generateSessionKey('aes256'),
             algorithm: 'aes256'
           };
           const encOpt = {
@@ -1172,7 +1174,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt using custom session key and decrypt using private key', async function () {
           const sessionKey = {
-            data: await openpgp.crypto.generateSessionKey('aes128'),
+            data: await crypto.generateSessionKey('aes128'),
             algorithm: 'aes128'
           };
           const encOpt = {
@@ -1589,7 +1591,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
                   expect(e.message).to.match(/Ascii armor integrity check on message failed/);
                   expect(stepReached).to.equal(
                     j === 0 ? 0 :
-                      (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || openpgp.util.detectNode() || openpgp.util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
+                      (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || util.detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
                       1
                   );
                   return;
@@ -1603,7 +1605,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         it('should fail to decrypt unarmored message with garbage data appended', async function() {
           const { key } = await openpgp.generateKey({ userIds: {} });
           const message = await openpgp.encrypt({ message: openpgp.Message.fromText('test'), publicKeys: key, privateKeys: key, armor: false });
-          const encrypted = openpgp.util.concat([message, new Uint8Array([11])]);
+          const encrypted = util.concat([message, new Uint8Array([11])]);
           await expect(
             openpgp.decrypt({ message: await openpgp.readMessage(encrypted), privateKeys: key, publicKeys: key })
           ).to.be.rejectedWith('Error during parsing. This message / key probably does not conform to a valid OpenPGP format.');
@@ -1804,7 +1806,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             const data = new ReadableStream({
               async pull(controller) {
                 if (i++ < 4) {
-                  let randomBytes = await openpgp.crypto.random.getRandomBytes(10);
+                  let randomBytes = await random.getRandomBytes(10);
                   controller.enqueue(randomBytes);
                   plaintext.push(randomBytes.slice());
                 } else {
@@ -1816,7 +1818,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               message: openpgp.Message.fromBinary(data),
               passwords: ['test']
             }));
-            expect(openpgp.util.isStream(encrypted)).to.equal(useNativeStream ? 'web' : 'ponyfill');
+            expect(openpgp.stream.isStream(encrypted)).to.equal(useNativeStream ? 'web' : 'ponyfill');
 
             const message = await openpgp.readArmoredMessage(encrypted);
             const decrypted = await openpgp.decrypt({
@@ -1824,8 +1826,8 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               message,
               format: 'binary'
             });
-            expect(openpgp.util.isStream(decrypted.data)).to.equal(useNativeStream ? 'web' : 'ponyfill');
-            expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(openpgp.util.concatUint8Array(plaintext));
+            expect(openpgp.stream.isStream(decrypted.data)).to.equal(useNativeStream ? 'web' : 'ponyfill');
+            expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
           });
         });
       });
@@ -1996,7 +1998,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       });
 
       it('should sign and verify data and not armor with detached signatures', function () {
-          const start = openpgp.util.normalizeDate();
+          const start = util.normalizeDate();
           const message = openpgp.Message.fromText(plaintext);
           const signOpt = {
               message,
@@ -2013,7 +2015,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               return openpgp.verify(verifyOpt);
           }).then(async function (verified) {
               expect(verified.data).to.equal(plaintext);
-              expect(+verified.signatures[0].signature.packets[0].created).to.be.lte(+openpgp.util.normalizeDate());
+              expect(+verified.signatures[0].signature.packets[0].created).to.be.lte(+util.normalizeDate());
               expect(+verified.signatures[0].signature.packets[0].created).to.be.gte(+start);
               expect(verified.signatures[0].valid).to.be.true;
               const signingKey = await privateKey.getSigningKey();
@@ -2132,7 +2134,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           };
           const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })();
           return openpgp.sign(signOpt).then(async function (signed) {
-            expect(openpgp.util.isStream(signed)).to.equal(useNativeStream ? 'web' : 'ponyfill');
+            expect(openpgp.stream.isStream(signed)).to.equal(useNativeStream ? 'web' : 'ponyfill');
             const message = await openpgp.readMessage(signed);
             message.packets.concat(await openpgp.stream.readToEnd(message.packets.stream, _ => _));
             const packets = new openpgp.PacketList();
@@ -2402,7 +2404,7 @@ J9I8AcH94nE77JUtCm7s1kOlo0EIshZsAqJwGveDGdAuabfViVwVxG4I24M6
       });
 
       it('should decrypt with three passwords', async function() {
-        const messageBinary = openpgp.util.b64ToUint8Array('wy4ECQMIElIx/jiwJV9gp/MZ/ElZwUfHrzOBfOtM8VmgDy76F7eSGWH26tAlx3WI0kMBZv6Tlc1Y6baaZ6MEcOLTG/C7uzHH7KMfuQFd3fcMaVcDawk9EEy/CybiGBE+acT6id2pemHQy6Nk76d9UUTFubcB');
+        const messageBinary = util.hexToUint8Array('c32e04090308125231fe38b0255f60a7f319fc4959c147c7af33817ceb4cf159a00f2efa17b7921961f6ead025c77588d2430166fe9395cd58e9b69a67a30470e2d31bf0bbbb31c7eca31fb9015dddf70c6957036b093d104cbf0b26e218113e69c4fa89dda97a61d0cba364efa77d5144c5b9b701');
         const message = await openpgp.readMessage(messageBinary);
         const passwords = ['Test', 'Pinata', 'a'];
         const decrypted = await openpgp.decrypt({ message, passwords });
@@ -2425,33 +2427,7 @@ J9I8AcH94nE77JUtCm7s1kOlo0EIshZsAqJwGveDGdAuabfViVwVxG4I24M6
         expect(decrypted.data).to.equal('Tesssst<br><br><br>Sent from ProtonMail mobile<br><br><br>');
       });
 
-      it('should decrypt broken Blowfish message from old OpenPGP.js', async function() {
-        openpgp.crypto.cipher.blowfish.blockSize = 16;
-        openpgp.crypto.cipher.blowfish.prototype.blockSize = 16;
-        const useNativeVal = openpgp.config.useNative;
-        openpgp.config.useNative = false;
-        try {
-          const { data } = await openpgp.decrypt({
-            passwords: 'test',
-            message: await openpgp.readArmoredMessage(`-----BEGIN PGP MESSAGE-----
-Version: OpenPGP.js v4.8.1
-Comment: https://openpgpjs.org
-
-wx4EBAMI0eHVbTnl2iLg6pIJ4sWw2K7OwfxFP8bmaUvSRAGiSDGJSFNUuB4v
-SU69Z1XyXiuTpD3780FnLnR4dF41nhbrTXaDG+X1b3JsZCHTFMGF7Eb+YVhh
-YCXOZwd3z5lxcj/M
-=oXcN
------END PGP MESSAGE-----`)
-          });
-          expect(data).to.equal('Hello World!');
-        } finally {
-          openpgp.crypto.cipher.blowfish.blockSize = 8;
-          openpgp.crypto.cipher.blowfish.prototype.blockSize = 8;
-          openpgp.config.useNative = useNativeVal;
-        }
-      });
-
-      it('should decrypt correct Blowfish message from new OpenPGP.js', async function() {
+      it('should decrypt Blowfish message', async function() {
         const { data } = await openpgp.decrypt({
           passwords: 'test',
           message: await openpgp.readArmoredMessage(`-----BEGIN PGP MESSAGE-----
@@ -2478,7 +2454,7 @@ amnR6g==
           message: await openpgp.readArmoredMessage(encrypted),
           format: 'binary'
         });
-        expect(openpgp.util.decodeUtf8(decrypted.data)).to.equal('"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:123\r\nDTSTART:20191211T121212Z\r\nDTEND:20191212T121212Z\r\nEND:VEVENT\r\nEND:VCALENDAR"');
+        expect(util.decodeUtf8(decrypted.data)).to.equal('"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:123\r\nDTSTART:20191211T121212Z\r\nDTEND:20191212T121212Z\r\nEND:VEVENT\r\nEND:VCALENDAR"');
       });
 
     });

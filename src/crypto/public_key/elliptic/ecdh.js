@@ -37,6 +37,7 @@ import { getRandomBytes } from '../../random';
 import hash from '../../hash';
 import enums from '../../../enums';
 import util from '../../../util';
+import { b64ToUint8Array } from '../../../encoding/base64';
 import * as pkcs5 from '../../pkcs5';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 
@@ -262,7 +263,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
   );
   [S, secret] = await Promise.all([S, secret]);
   const sharedKey = new Uint8Array(S);
-  const secretKey = util.b64ToUint8Array(secret.d, true);
+  const secretKey = b64ToUint8Array(secret.d, true);
   return { secretKey, sharedKey };
 }
 

@@ -95,12 +95,17 @@ export default Object.assign([
     output: [
       { file: 'test/lib/unittests-bundle.js', format: 'es', sourcemap: true },
     ],
+    inlineDynamicImports: true,
     plugins: [
       resolve({
         browser: true
       }),
       commonjs({
         ignore: builtinModules.concat(nodeDependencies).concat(['../..', '../../..'])
+      }),
+      replace({
+        'require(': 'void(',
+        delimiters: ['', '']
       })
     ]
   }

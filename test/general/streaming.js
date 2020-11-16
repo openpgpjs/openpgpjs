@@ -1,4 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const random = require('../../src/crypto/random');
+const util = require('../../src/util');
 
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
@@ -7,7 +9,7 @@ const input = require('./testInputs.js');
 
 const { expect } = chai;
 
-const { stream, util } = openpgp;
+const { stream } = openpgp;
 
 const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })();
 const ReadableStream = useNativeStream ? global.ReadableStream : openpgp.stream.ReadableStream;
@@ -241,7 +243,7 @@ function tests() {
       passwords: ['test'],
       armor: false
     });
-    expect(util.isStream(encrypted)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
     const message = await openpgp.readMessage(encrypted);
     setTimeout(dataArrived, 3000); // Do not wait until data arrived, but wait a bit to check that it doesn't arrive early.
@@ -250,7 +252,7 @@ function tests() {
       message,
       format: 'binary'
     });
-    expect(util.isStream(decrypted.data)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(decrypted.data);
     expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
     if (i <= 10) throw new Error('Data arrived early.');
@@ -269,7 +271,7 @@ function tests() {
         passwords: ['test'],
         armor: false
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage(encrypted);
       const decrypted = await openpgp.decrypt({
@@ -277,8 +279,8 @@ function tests() {
         message,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
-      expect(util.isStream(decrypted.signatures)).to.be.false;
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.signatures)).to.be.false;
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
       dataArrived();
@@ -300,7 +302,7 @@ function tests() {
         privateKeys: privKey,
         armor: false
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage(encrypted);
       const decrypted = await openpgp.decrypt({
@@ -309,7 +311,7 @@ function tests() {
         message,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
       dataArrived();
@@ -332,7 +334,7 @@ function tests() {
         privateKeys: priv,
         armor: false
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage(encrypted);
       const decrypted = await openpgp.decrypt({
@@ -341,7 +343,7 @@ function tests() {
         message,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
       dataArrived();
@@ -364,7 +366,7 @@ function tests() {
         privateKeys: priv,
         armor: false
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage(encrypted);
       const decrypted = await openpgp.decrypt({
@@ -373,7 +375,7 @@ function tests() {
         message,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
       dataArrived();
@@ -393,7 +395,7 @@ function tests() {
         message: openpgp.Message.fromBinary(data),
         passwords: ['test']
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
         value += '';
@@ -408,7 +410,7 @@ function tests() {
         streaming: expectedType,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       dataArrived();
@@ -429,7 +431,7 @@ function tests() {
         publicKeys: pubKey,
         privateKeys: privKey
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
         value += '';
@@ -444,7 +446,7 @@ function tests() {
         streaming: expectedType,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       dataArrived();
@@ -464,7 +466,7 @@ function tests() {
         publicKeys: pubKey,
         privateKeys: privKey
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
         value += '';
@@ -478,7 +480,7 @@ function tests() {
         streaming: expectedType,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       dataArrived();
@@ -495,7 +497,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
     const message = await openpgp.readArmoredMessage(openpgp.stream.transform(signed, value => {
       value += '';
@@ -509,7 +511,7 @@ function tests() {
       streaming: expectedType,
       format: 'binary'
     });
-    expect(util.isStream(verified.data)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(verified.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(verified.data);
     expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
     dataArrived();
@@ -523,7 +525,7 @@ function tests() {
       passwords: ['test'],
       armor: false
     });
-    expect(util.isStream(encrypted)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
     const message = await openpgp.readMessage(encrypted);
     const decrypted = await openpgp.decrypt({
@@ -531,7 +533,7 @@ function tests() {
       message,
       format: 'binary'
     });
-    expect(util.isStream(decrypted.data)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(decrypted.data);
     expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
     dataArrived();
@@ -561,14 +563,14 @@ function tests() {
         streaming: expectedType,
         passwords: ['test']
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readArmoredMessage(encrypted);
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect((await reader.peekBytes(plaintext[0].length * 4)).toString('utf8').substr(0, plaintext[0].length)).to.equal(plaintext[0]);
       dataArrived();
@@ -615,7 +617,7 @@ function tests() {
       message,
       format: 'binary'
     });
-    expect(util.isStream(decrypted.data)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(decrypted.data);
     expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
     dataArrived();
@@ -629,7 +631,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
     const message = await openpgp.readArmoredMessage(signed);
     const verified = await openpgp.verify({
@@ -637,7 +639,7 @@ function tests() {
       message,
       format: 'binary'
     });
-    expect(util.isStream(verified.data)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(verified.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(verified.data);
     expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
     dataArrived();
@@ -653,7 +655,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       passwords: ['test']
     });
-    expect(util.isStream(encrypted)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
     const reader = openpgp.stream.getReader(encrypted);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
@@ -667,7 +669,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
     const reader = openpgp.stream.getReader(signed);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\r\n/);
@@ -677,28 +679,38 @@ function tests() {
   });
 
   it("Don't pull entire input stream when we're not pulling decrypted stream (AEAD)", async function() {
-    let coresStub = stub(openpgp.util, 'getHardwareConcurrency');
-    coresStub.returns(1);
+    let coresStub;
+    if (util.detectNode()) {
+      coresStub = stub(require('os'), 'cpus');
+      coresStub.returns([,]);
+      // Object.defineProperty(require('os'), 'cpus', { value: () => [,], configurable: true });
+    } else {
+      Object.defineProperty(navigator, 'hardwareConcurrency', { value: 1, configurable: true });
+    }
     try {
       const encrypted = await openpgp.encrypt({
         message: openpgp.Message.fromBinary(data),
         passwords: ['test']
       });
-      expect(util.isStream(encrypted)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
       const message = await openpgp.readArmoredMessage(encrypted);
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal(expectedType);
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = openpgp.stream.getReader(decrypted.data);
       expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
       dataArrived();
       await new Promise(resolve => setTimeout(resolve, 3000));
       expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
     } finally {
-      coresStub.restore();
+      if (util.detectNode()) {
+        coresStub.restore();
+      } else {
+        delete navigator.hardwareConcurrency;
+      }
     }
   });
 
@@ -707,14 +719,14 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const message = await openpgp.readArmoredMessage(signed);
     const verified = await openpgp.verify({
       publicKeys: pubKey,
       message,
       format: 'binary'
     });
-    expect(util.isStream(verified.data)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(verified.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(verified.data);
     expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
     dataArrived();
@@ -737,7 +749,7 @@ function tests() {
       detached: true,
       streaming: expectedType
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const sigArmored = await openpgp.stream.readToEnd(signed);
     const signature = await openpgp.readArmoredMessage(sigArmored);
     const verified = await openpgp.verify({
@@ -766,7 +778,7 @@ function tests() {
       streaming: false,
       armor: false
     });
-    expect(util.isStream(signed)).to.be.false;
+    expect(openpgp.stream.isStream(signed)).to.be.false;
     const signature = await openpgp.readMessage(signed);
     const verified = await openpgp.verify({
       signature,
@@ -796,7 +808,7 @@ function tests() {
       detached: true,
       streaming: expectedType
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const sigArmored = await openpgp.stream.readToEnd(signed);
     const signature = await openpgp.readArmoredMessage(sigArmored);
     const verified = await openpgp.verify({
@@ -827,7 +839,7 @@ function tests() {
       detached: true,
       streaming: expectedType
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const sigArmored = await openpgp.stream.readToEnd(signed);
     const signature = await openpgp.readArmoredMessage(sigArmored);
     const verified = await openpgp.verify({
@@ -846,7 +858,7 @@ function tests() {
       privateKeys: privKey,
       detached: true
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);
     expect((await reader.readBytes(31)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\r\n');
     dataArrived();
@@ -860,7 +872,7 @@ function tests() {
       privateKeys: privKey,
       detached: true
     });
-    expect(util.isStream(signed)).to.equal(expectedType);
+    expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);
     expect((await reader.readBytes(31)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\r\n');
     dataArrived();
@@ -896,7 +908,7 @@ module.exports = () => describe('Streaming', function() {
         await new Promise(setTimeout);
         if (test === currentTest && i++ < 100) {
           if (i === 4) await dataArrivedPromise;
-          let randomBytes = await openpgp.crypto.random.getRandomBytes(1024);
+          let randomBytes = await random.getRandomBytes(1024);
           controller.enqueue(randomBytes);
           plaintext.push(randomBytes);
         } else {
@@ -921,14 +933,14 @@ module.exports = () => describe('Streaming', function() {
   });
 
   tryTests('Node Streams', tests, {
-    if: openpgp.util.detectNode(),
+    if: util.detectNode(),
     beforeEach: function() {
       data = openpgp.stream.webToNode(data);
       expectedType = 'node';
     }
   });
 
-  if (openpgp.util.detectNode()) {
+  if (util.detectNode()) {
     const fs = require('fs');
 
     it('Node: Encrypt and decrypt text message roundtrip', async function() {
@@ -939,14 +951,14 @@ module.exports = () => describe('Streaming', function() {
         message: openpgp.Message.fromText(data),
         passwords: ['test']
       });
-      expect(util.isStream(encrypted)).to.equal('node');
+      expect(openpgp.stream.isStream(encrypted)).to.equal('node');
 
       const message = await openpgp.readArmoredMessage(encrypted);
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message
       });
-      expect(util.isStream(decrypted.data)).to.equal('node');
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal('node');
       expect(await openpgp.stream.readToEnd(decrypted.data)).to.equal(plaintext);
     });
 
@@ -959,7 +971,7 @@ module.exports = () => describe('Streaming', function() {
         passwords: ['test'],
         armor: false
       });
-      expect(util.isStream(encrypted)).to.equal('node');
+      expect(openpgp.stream.isStream(encrypted)).to.equal('node');
 
       const message = await openpgp.readMessage(encrypted);
       const decrypted = await openpgp.decrypt({
@@ -967,7 +979,7 @@ module.exports = () => describe('Streaming', function() {
         message,
         format: 'binary'
       });
-      expect(util.isStream(decrypted.data)).to.equal('node');
+      expect(openpgp.stream.isStream(decrypted.data)).to.equal('node');
       expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(plaintext);
     });
   }

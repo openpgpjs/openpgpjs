@@ -1,8 +1,8 @@
 /* globals tryTests: true */
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const util = require('../../src/util');
 
-const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -2235,7 +2235,7 @@ function versionSpecificTests() {
   it('Generate RSA key - two subkeys with default values', function() {
     const userId = 'test <a@b.com>';
     const opt = { rsaBits: 512, userIds: [userId], passphrase: '123', subkeys:[{},{}] };
-    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
 
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
@@ -2286,7 +2286,7 @@ function versionSpecificTests() {
   it('Generate key - override main RSA key options for subkey', function() {
     const userId = 'test <a@b.com>';
     const opt = { rsaBits: 512, userIds: [userId], passphrase: '123', subkeys:[{ curve: 'curve25519' }] };
-    if (openpgp.util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    if (util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
@@ -2452,8 +2452,8 @@ function versionSpecificTests() {
   it('Reformat key with two subkeys with passphrase', function() {
     const userId1 = 'test <a@b.com>';
     const userId2 = 'test <b@c.com>';
-    const now = openpgp.util.normalizeDate(new Date());
-    const before = openpgp.util.normalizeDate(new Date(0));
+    const now = util.normalizeDate(new Date());
+    const before = util.normalizeDate(new Date(0));
     const opt1 = { userIds: [userId1], date: now };
     return openpgp.generateKey(opt1).then(function(newKey) {
       newKey = newKey.key;
@@ -2640,7 +2640,7 @@ module.exports = () => describe('Key', function() {
 
   it('Parsing V5 public key packet', async function() {
     // Manually modified from https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b2092/back.mkd#sample-eddsa-key
-    const packetBytes = openpgp.util.hexToUint8Array(`
+    const packetBytes = util.hexToUint8Array(`
       98 37 05 53 f3 5f 0b 16  00 00 00 2d  09 2b 06 01 04 01 da 47
       0f 01 01 07 40 3f 09 89  94 bd d9 16 ed 40 53 19
       79 34 e4 a8 7c 80 73 3a  12 80 d6 2f 80 10 99 2e
@@ -3353,7 +3353,7 @@ VYGdb3eNlV8CfoEC
   describe('addSubkey functionality testing', function() {
     let rsaBits;
     let rsaOpt = {};
-    if (openpgp.util.getWebCryptoAll()) {
+    if (util.getWebCryptoAll()) {
       rsaBits = 2048;
       rsaOpt = { rsaBits: rsaBits };
     }
