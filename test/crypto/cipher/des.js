@@ -1,8 +1,8 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
+const { DES, TripleDES } = require('../../../src/crypto/cipher/des');
+const util = require('../../../src/util');
 
 const chai = require('chai');
 
-const { util } = openpgp;
 const { expect } = chai;
 
 module.exports = () => describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', function() {
@@ -75,7 +75,7 @@ module.exports = () => describe('TripleDES (EDE) cipher test with test vectors f
 
   it('3DES EDE test vectors', function (done) {
     for (let i = 0; i < testvectors.length; i++) {
-      const des = new openpgp.crypto.cipher.tripledes(key);
+      const des = new TripleDES(key);
 
       const encr = util.uint8ArrayToStr(des.encrypt(testvectors[i][0], key));
 
@@ -115,7 +115,7 @@ module.exports = () => describe('TripleDES (EDE) cipher test with test vectors f
       [[0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D], [0xCA, 0x59, 0x61, 0x3A, 0x83, 0x23, 0x26, 0xDD]],
       [[0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F], [0x83, 0x25, 0x79, 0x06, 0x54, 0xA4, 0x44, 0xD9]]];
 
-    const des = new openpgp.crypto.cipher.des(key);
+    const des = new DES(key);
 
     for (let padding = 0; padding < 3; padding++) {
       const thisVectorSet = testvectors[padding];

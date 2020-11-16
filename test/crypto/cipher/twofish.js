@@ -1,13 +1,13 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../..');
+const TF = require('../../../src/crypto/cipher/twofish');
+const util = require('../../../src/util');
 
 const chai = require('chai');
 
-const { util } = openpgp;
 const { expect } = chai;
 
 module.exports = () => it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', function(done) {
   function tfencrypt(block, key) {
-    const tf = new openpgp.crypto.cipher.twofish(util.strToUint8Array(key));
+    const tf = new TF(util.strToUint8Array(key));
 
     return tf.encrypt(block);
   }
