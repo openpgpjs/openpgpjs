@@ -758,18 +758,26 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
 
     describe('decryptKey', function() {
-      it('should work for correct passphrase', function() {
+      it('should work for correct passphrase', async function() {
+        const originalKey = await openpgp.readArmoredKey(privateKey.armor());
         return openpgp.decryptKey({
           privateKey: privateKey,
           passphrase: passphrase
         }).then(function(unlocked){
           expect(unlocked.getKeyId().toHex()).to.equal(privateKey.getKeyId().toHex());
+          expect(unlocked.subKeys[0].getKeyId().toHex()).to.equal(privateKey.subKeys[0].getKeyId().toHex());
           expect(unlocked.isDecrypted()).to.be.true;
+          expect(unlocked.keyPacket.privateParams).to.not.be.null;
+          // original key should be unchanged
           expect(privateKey.isDecrypted()).to.be.false;
+          expect(privateKey.keyPacket.privateParams).to.be.null;
+          originalKey.subKeys[0].getKeyId(); // fill in keyid
+          expect(privateKey).to.deep.equal(originalKey);
         });
       });
 
-      it('should fail for incorrect passphrase', function() {
+      it('should fail for incorrect passphrase', async function() {
+        const originalKey = await openpgp.readArmoredKey(privateKey.armor());
         return openpgp.decryptKey({
           privateKey: privateKey,
           passphrase: 'incorrect'
@@ -777,18 +785,82 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           throw new Error('Should not decrypt with incorrect passphrase');
         }).catch(function(error){
           expect(error.message).to.match(/Incorrect key passphrase/);
+          // original key should be unchanged
+          expect(privateKey.isDecrypted()).to.be.false;
+          expect(privateKey.keyPacket.privateParams).to.be.null;
+          expect(privateKey).to.deep.equal(originalKey);
         });
       });
 
-      it('should fail for corrupted key', function() {
+      it('should fail for corrupted key', async function() {
+        const originalKey = await openpgp.readArmoredKey(privateKeyMismatchingParams.armor());
         return openpgp.decryptKey({
           privateKey: privateKeyMismatchingParams,
           passphrase: 'userpass'
         }).then(function() {
           throw new Error('Should not decrypt corrupted key');
-        }).catch(function(error){
+        }).catch(function(error) {
           expect(error.message).to.match(/Key is invalid/);
+          expect(privateKeyMismatchingParams.isDecrypted()).to.be.false;
+          expect(privateKeyMismatchingParams.keyPacket.privateParams).to.be.null;
+          expect(privateKeyMismatchingParams).to.deep.equal(originalKey);
         });
+      });
+    });
+
+    describe('encryptKey', function() {
+      it('should not change original key', async function() {
+        const { privateKeyArmored } = await openpgp.generateKey({ userIds: [{ name: 'test', email: 'test@test.com' }] });
+        // read both keys from armored data to make sure all fields are exactly the same
+        const key = await openpgp.readArmoredKey(privateKeyArmored);
+        const originalKey = await openpgp.readArmoredKey(privateKeyArmored);
+        return openpgp.encryptKey({
+          privateKey: key,
+          passphrase: passphrase
+        }).then(function(locked){
+          expect(locked.getKeyId().toHex()).to.equal(key.getKeyId().toHex());
+          expect(locked.subKeys[0].getKeyId().toHex()).to.equal(key.subKeys[0].getKeyId().toHex());
+          expect(locked.isDecrypted()).to.be.false;
+          expect(locked.keyPacket.privateParams).to.be.null;
+          // original key should be unchanged
+          expect(key.isDecrypted()).to.be.true;
+          expect(key.keyPacket.privateParams).to.not.be.null;
+          originalKey.subKeys[0].getKeyId(); // fill in keyid
+          expect(key).to.deep.equal(originalKey);
+        });
+      });
+
+      it('encrypted key can be decrypted', async function() {
+        const { key } = await openpgp.generateKey({ userIds: [{ name: 'test', email: 'test@test.com' }] });
+        const locked = await openpgp.encryptKey({
+          privateKey: key,
+          passphrase: passphrase
+        });
+        expect(locked.isDecrypted()).to.be.false;
+        const unlocked = await openpgp.decryptKey({
+          privateKey: locked,
+          passphrase: passphrase
+        });
+        expect(unlocked.isDecrypted()).to.be.true;
+      });
+
+      it('should support multiple passphrases', async function() {
+        const { key } = await openpgp.generateKey({ userIds: [{ name: 'test', email: 'test@test.com' }] });
+        const passphrases = ['123', '456'];
+        const locked = await openpgp.encryptKey({
+          privateKey: key,
+          passphrase: passphrases
+        });
+        expect(locked.isDecrypted()).to.be.false;
+        await expect(openpgp.decryptKey({
+          privateKey: locked,
+          passphrase: passphrases[0]
+        })).to.eventually.be.rejectedWith(/Incorrect key passphrase/);
+        const unlocked = await openpgp.decryptKey({
+          privateKey: locked,
+          passphrase: passphrases
+        });
+        expect(unlocked.isDecrypted()).to.be.true;
       });
     });
 
