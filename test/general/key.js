@@ -2925,6 +2925,26 @@ module.exports = () => describe('Key', function() {
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
+  it("isDecrypted() - should reflect whether all (sub)keys are encrypted", async function() {
+    const passphrase = '12345678';
+    const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519', passphrase });
+    expect(key.isDecrypted()).to.be.false;
+    await key.decrypt(passphrase, key.subKeys[0].getKeyId());
+    expect(key.isDecrypted()).to.be.true;
+  });
+
+  it("isDecrypted() - gnu-dummy primary key", async function() {
+    const key = await openpgp.readArmoredKey(gnuDummyKeySigningSubkey);
+    expect(key.isDecrypted()).to.be.true;
+    await key.encrypt('12345678');
+    expect(key.isDecrypted()).to.be.false;
+  });
+
+  it("isDecrypted() - all-gnu-dummy key", async function() {
+    const key = await openpgp.readArmoredKey(gnuDummyKey);
+    expect(key.isDecrypted()).to.be.false;
+  });
+
   it('makeDummy() - the converted key can be parsed', async function() {
     const { key } = await openpgp.generateKey({ userIds: { name: 'dummy', email: 'dummy@alice.com' } });
     key.primaryKey.makeDummy();

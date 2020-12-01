@@ -47,7 +47,6 @@ import * as helper from './helper';
  * @borrows PublicKeyPacket#hasSameFingerprintAs as Key#hasSameFingerprintAs
  * @borrows PublicKeyPacket#getAlgorithmInfo as Key#getAlgorithmInfo
  * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
- * @borrows PublicKeyPacket#isDecrypted as Key#isDecrypted
  */
 class Key {
   /**
@@ -455,6 +454,14 @@ class Key {
       // The full key should be decrypted and we can validate it all
       await this.validate();
     }
+  }
+
+  /**
+   * Returns true if the primary key or any subkey is decrypted.
+   * A dummy key is considered encrypted.
+   */
+  isDecrypted() {
+    return this.getKeys().some(({ keyPacket }) => !keyPacket.isDummy() && keyPacket.isDecrypted());
   }
 
   /**
@@ -900,7 +907,7 @@ class Key {
   }
 }
 
-['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted', 'hasSameFingerprintAs'].forEach(name => {
+['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name];
 });
