@@ -208,7 +208,7 @@ export class Message {
           // do not check key expiration to allow decryption of old messages
           const privateKeyPackets = (await privateKey.getDecryptionKeys(keyPacket.publicKeyId, null)).map(key => key.keyPacket);
           await Promise.all(privateKeyPackets.map(async function(privateKeyPacket) {
-            if (!privateKeyPacket) {
+            if (!privateKeyPacket || privateKeyPacket.isDummy()) {
               return;
             }
             if (!privateKeyPacket.isDecrypted()) {

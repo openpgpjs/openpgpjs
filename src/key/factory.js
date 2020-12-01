@@ -77,13 +77,13 @@ export async function generate(options) {
 export async function reformat(options) {
   options = sanitize(options);
 
-  try {
-    const isDecrypted = options.privateKey.getKeys().every(key => key.isDecrypted());
-    if (!isDecrypted) {
-      await options.privateKey.decrypt();
-    }
-  } catch (err) {
-    throw new Error('Key not decrypted');
+  if (options.privateKey.primaryKey.isDummy()) {
+    throw new Error('Cannot reformat a gnu-dummy primary key');
+  }
+
+  const isDecrypted = options.privateKey.getKeys().every(key => key.isDecrypted());
+  if (!isDecrypted) {
+    throw new Error('Key is not decrypted');
   }
 
   const packetlist = options.privateKey.toPacketlist();

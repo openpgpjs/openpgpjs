@@ -878,9 +878,9 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       expect(msg.signatures).to.have.length(1);
       expect(msg.signatures[0].valid).to.be.true;
       expect(msg.signatures[0].signature.packets.length).to.equal(1);
-      await expect(openpgp.sign({ message: openpgp.Message.fromText('test'), privateKeys: [priv_key_gnupg_ext] })).to.eventually.be.rejectedWith(/Missing key parameters/);
-      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith(/Missing key parameters/);
-      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith(/Missing key parameters/);
+      await expect(openpgp.sign({ message: openpgp.Message.fromText('test'), privateKeys: [priv_key_gnupg_ext] })).to.eventually.be.rejectedWith(/Cannot sign with a gnu-dummy key/);
+      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
+      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
       await priv_key_gnupg_ext.encrypt("abcd");
       expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
       const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();

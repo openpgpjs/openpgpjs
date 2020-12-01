@@ -461,7 +461,7 @@ class Key {
    * A dummy key is considered encrypted.
    */
   isDecrypted() {
-    return this.getKeys().some(({ keyPacket }) => !keyPacket.isDummy() && keyPacket.isDecrypted());
+    return this.getKeys().some(({ keyPacket }) => keyPacket.isDecrypted());
   }
 
   /**
@@ -890,6 +890,9 @@ class Key {
       throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${options.rsaBits}`);
     }
     const secretKeyPacket = this.primaryKey;
+    if (secretKeyPacket.isDummy()) {
+      throw new Error("Cannot add subkey to gnu-dummy primary key");
+    }
     if (!secretKeyPacket.isDecrypted()) {
       throw new Error("Key is not decrypted");
     }
