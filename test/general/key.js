@@ -3091,7 +3091,7 @@ module.exports = () => describe('Key', function() {
     await packetlist.read(input.data, { SignaturePacket: openpgp.SignaturePacket });
     const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write());
 
-    expect(revocationCertificate.replace(/^Comment: .*$\r\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\r\n/mg, ''));
+    expect(revocationCertificate.replace(/^Comment: .*$\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\n/mg, ''));
   });
 
   it('getRevocationCertificate() should have an appropriate comment', async function() {
