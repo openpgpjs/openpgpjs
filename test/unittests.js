@@ -1,3 +1,5 @@
+(typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
+
 (typeof window !== 'undefined' ? window : global).resolves = function(val) {
   return new Promise(function(res) { res(val); });
 };
