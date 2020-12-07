@@ -2,7 +2,6 @@
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const OCB = require('../../src/crypto/ocb');
 const util = require('../../src/util');
 
