@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.8 - 2020-08-28 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.9 - 2020-12-07 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -25060,7 +25060,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.8",
+  versionstring: "OpenPGP.js v4.10.9",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -33055,7 +33055,7 @@ function HKP(keyServerBaseUrl) {
 
 /**
  * Search for a public key on the key server either by key ID or part of the user ID.
- * @param  {String}   options.keyID   The long public key ID.
+ * @param  {String}   options.keyId   The long public key ID.
  * @param  {String}   options.query   This can be any part of the key user ID such as name
  *   or email address.
  * @returns {Promise<String>}          The ascii armored public key.
@@ -40204,11 +40204,14 @@ SecretKey.prototype.makeDummy = function () {
     throw new Error("Key is not decrypted");
   }
   this.clearPrivateParams();
+  this.keyMaterial = null;
   this.isEncrypted = false;
   this.s2k = new _s2k2.default();
   this.s2k.algorithm = 0;
   this.s2k.c = 0;
   this.s2k.type = 'gnu-dummy';
+  this.s2k_usage = 254;
+  this.symmetric = 'aes256';
 };
 
 /**
@@ -44123,7 +44126,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @constructor
  */
 function WKD() {
-  this._fetch = typeof global !== 'undefined' ? global.fetch : require('node-fetch');
+  this._fetch = typeof global.fetch === 'function' ? global.fetch : require('node-fetch');
 }
 
 /**
