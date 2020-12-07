@@ -93,7 +93,7 @@ export default Object.assign([
   {
     input: 'test/unittests.js',
     output: [
-      { file: 'test/lib/unittests-bundle.js', format: 'es', sourcemap: true },
+      { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true },
     ],
     inlineDynamicImports: true,
     plugins: [
