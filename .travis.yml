@@ -1,13 +1,12 @@
-sudo: false
 language: node_js
-cache:
-  directories:
-    - node_modules
+cache: npm
 addons:
     code_climate:
         repo_token: $CODECLIMATE_REPO_TOKEN
 matrix:
   include:
+    - node_js: "14"
+      env: OPENPGP_NODE_JS='14' OPENPGPJSTEST='lint'
     - node_js: "10"
       env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
     - node_js: "12"
