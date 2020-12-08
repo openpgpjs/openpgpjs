@@ -7,6 +7,10 @@ if [ $OPENPGPJSTEST = "coverage" ]; then
   npm run coverage
   codeclimate-test-reporter < coverage/lcov.info
 
+elif [ $OPENPGPJSTEST = "lint" ]; then
+  echo "Running OpenPGP.js eslint."
+  npm run lint
+
 elif [ $OPENPGPJSTEST = "unit" ]; then
   echo "Running OpenPGP.js unit tests on node.js."
   npm test ${LIGHTWEIGHT+ -- --grep lightweight}
