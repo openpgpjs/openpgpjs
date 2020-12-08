@@ -82,20 +82,15 @@ module.exports = () => describe('Util unit tests', function() {
     });
   });
 
-  describe('padToLength', function() {
+  describe('leftPad', function() {
     it('should not change the input if the length is correct', function() {
       const bytes = new Uint8Array([2, 1]);
-      const padded = util.padToLength(bytes, 2);
+      const padded = util.leftPad(bytes, 2);
       expect(padded).to.deep.equal(bytes);
     });
-    it('should add trailing zeros to little-endian array', function() {
-      const bytes = new Uint8Array([2, 1]);
-      const padded = util.padToLength(bytes, 5, 'le');
-      expect(padded).to.deep.equal(new Uint8Array([2, 1, 0, 0, 0]));
-    });
-    it('should add leading zeros to big-endian array', function() {
+    it('should add leading zeros to input array', function() {
       const bytes = new Uint8Array([1, 2]);
-      const padded = util.padToLength(bytes, 5);
+      const padded = util.leftPad(bytes, 5);
       expect(padded).to.deep.equal(new Uint8Array([0, 0, 0, 1, 2]));
     });
   });

@@ -178,15 +178,14 @@ export default {
   },
 
   /**
-   * Pad Uint8Array to length by adding 0x0 bytes
+   * Left-pad Uint8Array to length by adding 0x0 bytes
    * @param {Uint8Array} bytes      data to pad
    * @param {Number}     length     padded length
-   * @param {'be'|'le'}  endianess  endianess of input data
    * @return {Uint8Array} padded bytes
    */
-  padToLength(bytes, length, endianess = 'be') {
+  leftPad(bytes, length) {
     const padded = new Uint8Array(length);
-    const offset = (endianess === 'le') ? 0 : (length - bytes.length);
+    const offset = length - bytes.length;
     padded.set(bytes, offset);
     return padded;
   },
