@@ -186,7 +186,7 @@ export default {
    */
   padToLength(bytes, length, endianess = 'be') {
     const padded = new Uint8Array(length);
-    const offset = (endianess === 'be') ? 0 : (length - bytes.length);
+    const offset = (endianess === 'le') ? 0 : (length - bytes.length);
     padded.set(bytes, offset);
     return padded;
   },
@@ -197,9 +197,12 @@ export default {
    * @returns {Uint8Array} MPI-formatted Uint8Array
    */
   uint8ArrayToMpi: function (bin) {
-    const size = (bin.length - 1) * 8 + util.nbits(bin[0]);
+    let i; // index of leading non-zero byte
+    for (i = 0; i < bin.length; i++) if (bin[i] !== 0) break;
+    const stripped = bin.subarray(i);
+    const size = (stripped.length - 1) * 8 + util.nbits(stripped[0]);
     const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
-    return util.concatUint8Array([prefix, bin]);
+    return util.concatUint8Array([prefix, stripped]);
   },
 
   /**

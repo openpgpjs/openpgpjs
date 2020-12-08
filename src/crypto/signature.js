@@ -44,11 +44,13 @@ export function parseSignatureParams(algo, signature) {
     // Algorithm-Specific Fields for EdDSA signatures:
     // -  MPI of an EC point r.
     // -  EdDSA value s, in MPI, in the little endian representation.
-    // EdDSA signature parameters are encoded in little-endian format
+    // EdDSA signature parameters, where S is encoded in little-endian format
     // https://tools.ietf.org/html/rfc8032#section-5.1.2
     case enums.publicKey.eddsa: {
-      const r = util.padToLength(util.readMPI(signature.subarray(read)), 32, 'le'); read += r.length + 2;
-      const s = util.padToLength(util.readMPI(signature.subarray(read)), 32, 'le');
+      // When parsing little-endian MPI data, we always need to left-pad it, as done with big-endian values:
+      // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
+      const r = util.padToLength(util.readMPI(signature.subarray(read)), 32); read += r.length + 2;
+      const s = util.padToLength(util.readMPI(signature.subarray(read)), 32);
       return { r, s };
     }
     default:

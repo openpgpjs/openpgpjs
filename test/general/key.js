@@ -2019,6 +2019,31 @@ EBeLgD8oZHVsH3NLjPakPw==
 =STqy
 -----END PGP MESSAGE-----`;
 
+const shortP521Key = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xcAiBV/Pa+4TAAAAjQUrgQQAIwQjBADY+IGvRpeUzbT0+YRUe0KCMxAZmDY1
+KjDzULlmOJOS0bfZfqd4HsUF2hRoU/rg1gu1ju/Nt/18db0SJExOqVB9CgA0
+ZYiYyJhGYDOVg/bD54E7a3txWuDPB1DzkGWJH8PkqGNzU0BJpZcUVA6Th09s
+YeO7rx5jSoyWNXjUYKwc24trFAAAAAAARQIItVgIiTWNT+QEVnZqDKKTIOUU
+XEetkjCjPed1RiSchiZpwq+Bvx5hWGsbV5Pjj0S6EuH/ca5w+2ZyITLWZjr1
+LP8eP80UVGVzdCA8dGVzdEB0ZXN0LmNvbT7CwBUFEBMKACEFAl/Pa+4ECwkH
+CAMVCAoEFgIBAAIZAQIbAwIeBwMiAQIAIyIhBbDerrGG7kdy9vbLYvb/j6TC
+53fuQgK9Gtt1xng5MgpSUX0CCJZB+Ppt8yG5hBzwiGz5ZRpPVBFihEftaTOO
+tKUuYRpWlvgA/XV11DgL6KZWRwu4C2venydBW987CVXCbRp4r18FAgkBjTR1
+AXHEstTVwJYj8mWkOZrz+Bfqvu6pWPmVYclgHJK2sSWizakvX/DtX/LFgTJL
+UoASOVvu1hYHDsCO7vWWC/bHwCYFX89r7hIAAACRBSuBBAAjBCMEAULqNQ3L
+CcdVlpIHiq4Xb+elTEdu2oDDA+FCbwroX3wvMatrH6GodxCcrjQKUrfVNiiI
+cvj+r6SE/pRDnxsvW/JSAWUz3XKfVXccb0PYf0ikkTmb8UW33AaNYX6Srk0W
+iamEmEzUpCMiiyXiYe+fp9JD63rKLXBbvLCT2mHuYO/hOikKAwEKCQAAAAAA
+RQIDBONtE8bb3Yr2otNhdR67lg529mm3rSRsyWwMBVUPwX0RTTZ/bejq7XP5
+fuXV8QSEjWdOdPBARGw9jhw51D1XWl8gFsK9BRgTCgAJBQJfz2vuAhsMACMi
+IQWw3q6xhu5Hcvb2y2L2/4+kwud37kICvRrbdcZ4OTIKUiWwAgkBdH+OZHBt
+D2Yx2xKVPqDGJgMa5Ta8GmQZOFnoC2SpB6i9hIOfwiNjNLs+bv+kTxZ09nzf
+3ZUGYi5Ei70hLrDAy7UCCNQNObtPmUYaUTtRzj3S9jUohbIpQxcfyoCMh6aP
+usLw5q4tc+I5gdq57aiulJ8r4Jj9rdzsZFA7PzNJ9WPGVYJ3
+=GSXO
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2740,6 +2765,14 @@ module.exports = () => describe('Key', function() {
     await expect(pubKey.getEncryptionKey()).to.be.rejectedWith('Could not find valid encryption key packet in key c076e634d32b498d');
   });
 
+  it('should pad an ECDSA P-521 key with shorter secret key', async function() {
+    const key = await openpgp.readArmoredKey(shortP521Key);
+    // secret key should be padded
+    expect(key.keyPacket.privateParams.d.length === 66);
+    // sanity check
+    await expect(key.validate()).to.be.fulfilled;
+  });
+
   it('should not decrypt using a sign-only RSA key, unless explicitly configured', async function () {
     const allowSigningKeyDecryption = openpgp.config.allowInsecureDecryptionWithSigningKeys;
     const key = await openpgp.readArmoredKey(rsaSignOnly);
@@ -2803,6 +2836,37 @@ module.exports = () => describe('Key', function() {
     expect(expirationTime).to.equal(Infinity);
     const encryptExpirationTime = await pubKey.getExpirationTime('encrypt_sign');
     expect(encryptExpirationTime).to.equal(Infinity);
+  });
+
+  it('Parse and verify shorter EdDSA signature', async function() {
+    const key = await openpgp.readArmoredKey(`-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEX8+jfBYJKwYBBAHaRw8BAQdA9GbdDjprR0sWf0R5a5IpulUauc0FsmzJ
+mOYCfoowt8EAAP9UwaqC0LWWQ5RlX7mps3728vFa/If1KBVwAjk7Uqhi2BKL
+zQ90ZXN0MiA8YkBhLmNvbT7CjAQQFgoAHQUCX8+jfAQLCQcIAxUICgQWAgEA
+AhkBAhsDAh4BACEJEG464aV2od77FiEEIcg441MtKnyJnPDRbjrhpXah3vuR
+gQD+Il6Gw2oIok4/ANyDDLBYZtKqRrMv4NcfF9DHYuAFcP4BAPhFOffyP3qU
+AEZb7QPrWdLfhn8/FeSFZxJvnmupQ9sDx10EX8+jfBIKKwYBBAGXVQEFAQEH
+QOSzo9cX1U2esGFClprOt0QWXNJ97228R5tKFxo6/0NoAwEIBwAA/0n4sq2i
+N6/jE+6rVO4o/7LW0xahxpV1tTA6qv1Op9TwFIDCeAQYFggACQUCX8+jfAIb
+DAAhCRBuOuGldqHe+xYhBCHIOONTLSp8iZzw0W464aV2od773XcA/jlmX8/c
+1/zIotEkyMZB4mI+GAg3FQ6bIACFBH1sz0MzAP9Snri0P4FRZ8D5THRCJoUm
+GBgpBmrf6IVv484jBswGDA==
+=8rBO
+-----END PGP PRIVATE KEY BLOCK-----`);
+    const encrypted = `-----BEGIN PGP MESSAGE-----
+
+wV4DWlRRjuYiLSsSAQdAWwDKQLN4ZUS5fqiwFtAMrRfZZe9J4SgClhG6avEe
+AEowkSZwWRT+8Hy8aBIb4oPehYUFXXZ7BtlJCyd7LOTUtqyc00OE0721PC3M
+v0+zird60sACATlDmTwweR5GFtEAjHVheIL5rbkOBRD+oSqB8z+IovNg83Pz
+FVwsFZnCLtECoYgpF2MJdopuC/bPHcrvf4ndwmD11uXtms4Rq4y25QyqApbn
+Hj/hljufk0OkavUXxrNKjGQtxLHMpa3Nsi0MHWY8JguxOKFKpAIMP32CD1e+
+j+GItrR+QbbN13ODlcR3hf66cwjLLsJCx5VcBaRspKF05O3ix/u9KVjJqtbi
+Ie6jnY0zP2ldtS4JmhKBa43qmOHCxHc=
+=7B58
+-----END PGP MESSAGE-----`;
+    const decrypted = await openpgp.decrypt({ message: await openpgp.readArmoredMessage(encrypted), privateKeys: key, publicKeys: key.toPublic() });
+    expect(decrypted.signatures[0].valid).to.be.true;
   });
 
   it("decrypt() - throw if key parameters don't correspond", async function() {

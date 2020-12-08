@@ -201,28 +201,32 @@ module.exports = () => {
         }
       });
 
-      if (ecdsaKey) {
-        it(`EcDSA ${curve} params should be valid`, async function() {
-          await expect(ecdsaKey.keyPacket.validate()).to.not.be.rejected;
-        });
+      it(`EcDSA ${curve} params should be valid`, async function() {
+        if (!ecdsaKey) {
+          this.skip();
+        }
+        await expect(ecdsaKey.keyPacket.validate()).to.not.be.rejected;
+      });
 
-        it('detect invalid EcDSA Q', async function() {
-          const keyPacket = cloneKeyPacket(ecdsaKey);
-          const Q = keyPacket.publicParams.Q;
-          Q[0]++;
-          await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
-
-          const infQ = new Uint8Array(Q.length);
-          keyPacket.publicParams.Q = infQ;
-          await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
-        });
-      }
+      it(`ECDSA ${curve} - detect invalid Q`, async function() {
+        if (!ecdsaKey) {
+          this.skip();
+        }
+        const keyPacket = cloneKeyPacket(ecdsaKey);
+        const Q = keyPacket.publicParams.Q;
+        Q[16]++;
+        await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
+        const infQ = new Uint8Array(Q.length);
+        infQ[0] = 4;
+        keyPacket.publicParams.Q = infQ;
+        await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
+      });
 
       it(`ECDH ${curve} params should be valid`, async function() {
         await expect(ecdhKey.keyPacket.validate()).to.not.be.rejected;
       });
 
-      it('detect invalid ECDH Q', async function() {
+      it(`ECDH ${curve} - detect invalid Q`, async function() {
         const keyPacket = cloneKeyPacket(ecdhKey);
         const Q = keyPacket.publicParams.Q;
         Q[16]++;
@@ -230,6 +234,7 @@ module.exports = () => {
 
         const infQ = new Uint8Array(Q.length);
         keyPacket.publicParams.Q = infQ;
+        infQ[0] = 4;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
       });
     });
