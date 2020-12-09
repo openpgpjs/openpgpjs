@@ -662,23 +662,23 @@ declare namespace OpenPGP {
     function read(type: typeof keyStatus, e: keyStatus): keyStatusNames | string | any;
     function read(type: typeof keyFlags, e: keyFlags): keyFlagsNames | string | any;
 
-    export type armorNames = 'multipart_section' | 'multipart_last' | 'signed' | 'message' | 'public_key' | 'private_key';
+    export type armorNames = 'multipartSection' | 'multipartLast' | 'signed' | 'message' | 'publicKey' | 'privateKey';
     enum armor {
-      multipart_section = 0,
-      multipart_last = 1,
+      multipartSection = 0,
+      multipartLast = 1,
       signed = 2,
       message = 3,
-      public_key = 4,
-      private_key = 5,
+      publicKey = 4,
+      privateKey = 5,
       signature = 6,
     }
 
     enum reasonForRevocation {
-      no_reason = 0, // No reason specified (key revocations or cert revocations)
-      key_superseded = 1, // Key is superseded (key revocations)
-      key_compromised = 2, // Key material has been compromised (key revocations)
-      key_retired = 3, // Key is retired and no longer used (key revocations)
-      userid_invalid = 32, // User ID information is no longer valid (cert revocations)
+      noReason = 0, // No reason specified (key revocations or cert revocations)
+      keySuperseded = 1, // Key is superseded (key revocations)
+      keyCompromised = 2, // Key material has been compromised (key revocations)
+      keyRetired = 3, // Key is retired and no longer used (key revocations)
+      useridInvalid = 32, // User ID information is no longer valid (cert revocations)
     }
 
     export type compressionNames = 'uncompressed' | 'zip' | 'zlib' | 'bzip2';
@@ -724,11 +724,11 @@ declare namespace OpenPGP {
       symEncryptedAEADProtected = 20,
     }
 
-    export type publicKeyNames = 'rsa_encrypt_sign' | 'rsa_encrypt' | 'rsa_sign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsa' | 'aedh' | 'aedsa';
+    export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsa' | 'aedh' | 'aedsa';
     enum publicKey {
-      rsa_encrypt_sign = 1,
-      rsa_encrypt = 2,
-      rsa_sign = 3,
+      rsaEncryptSign = 1,
+      rsaEncrypt = 2,
+      rsaSign = 3,
       elgamal = 16,
       dsa = 17,
       ecdh = 18,
@@ -751,25 +751,25 @@ declare namespace OpenPGP {
       twofish = 10,
     }
 
-    export type keyStatusNames = 'invalid' | 'expired' | 'revoked' | 'valid' | 'no_self_cert';
+    export type keyStatusNames = 'invalid' | 'expired' | 'revoked' | 'valid' | 'noSelfCert';
     enum keyStatus {
       invalid = 0,
       expired = 1,
       revoked = 2,
       valid = 3,
-      no_self_cert = 4,
+      noSelfCert = 4,
     }
 
-    export type keyFlagsNames = 'certify_keys' | 'sign_data' | 'encrypt_communication' | 'encrypt_storage' | 'split_private_key' | 'authentication'
-      | 'shared_private_key';
+    export type keyFlagsNames = 'certifyKeys' | 'signData' | 'encryptCommunication' | 'encryptStorage' | 'splitPrivateKey' | 'authentication'
+      | 'sharedPrivateKey';
     enum keyFlags {
-      certify_keys = 1,
-      sign_data = 2,
-      encrypt_communication = 4,
-      encrypt_storage = 8,
-      split_private_key = 16,
+      certifyKeys = 1,
+      signData = 2,
+      encryptCommunication = 4,
+      encryptStorage = 8,
+      splitPrivateKey = 16,
       authentication = 32,
-      shared_private_key = 128,
+      sharedPrivateKey = 128,
     }
 
   }
@@ -951,21 +951,21 @@ declare namespace OpenPGP {
     /** Calculates a 16bit sum of a string by adding each character codes modulus 65535
         @param text string to create a sum of
     */
-    function calc_checksum(text: string): number;
+    function calcChecksum(text: string): number;
 
     /** Convert a string of utf8 bytes to a native javascript string
         @param utf8 A valid squence of utf8 bytes
     */
-    function decode_utf8(utf8: string): string;
+    function decodeUtf8(utf8: string): string;
 
     /** Convert a native javascript string to a string of utf8 bytes
         param str The string to convert
     */
-    function encode_utf8(str: string): string;
+    function encodeUtf8(str: string): string;
 
     /** Return the algorithm type as string
      */
-    function get_hashAlgorithmString(): string;
+    function getHashAlgorithmString(): string;
 
     /** Get native Web Cryptography api. The default configuration is to use the api when available. But it can also be deactivated with config.useWebCrypto
      */
@@ -974,12 +974,12 @@ declare namespace OpenPGP {
     /** Helper function to print a debug message. Debug messages are only printed if
         @param str string of the debug message
     */
-    function print_debug(str: string): void;
+    function printDebug(str: string): void;
 
     /** Helper function to print a debug message. Debug messages are only printed if
         @param str string of the debug message
     */
-    function print_debug_hexstr_dump(str: string): void;
+    function printDebugHexstrDump(str: string): void;
 
     /** Shifting a string to n bits right
         @param value The string to shift
@@ -992,42 +992,46 @@ declare namespace OpenPGP {
      * @param {String} str String to convert
      * @returns {Uint8Array} An array of 8-bit integers
      */
-    function str_to_Uint8Array(str: string): Uint8Array;
+    function strToUint8Array(str: string): Uint8Array;
 
     /**
      * Convert an array of 8-bit integers to a string
      * @param {Uint8Array} bytes An array of 8-bit integers to convert
      * @returns {String} String representation of the array
      */
-    function Uint8Array_to_str(bin: Uint8Array): string;
+    function uint8ArrayToStr(bin: Uint8Array): string;
 
     /**
      * Convert an array of 8-bit integers to a hex string
      * @param {Uint8Array} bytes Array of 8-bit integers to convert
      * @returns {String} Hexadecimal representation of the array
      */
-    function Uint8Array_to_hex(bytes: Uint8Array): string;
+    function uint8ArrayToHex(bytes: Uint8Array): string;
+
+    function uint8ArrayToB64(bytes: Uint8Array): string;
+
+    function uint8ArrayToMpi(bytes: Uint8Array): unknown; // todo - MPI
 
     /**
      * Convert a hex string to an array of 8-bit integers
      * @param {String} hex  A hex string to convert
      * @returns {Uint8Array} An array of 8-bit integers
      */
-    function hex_to_Uint8Array(hex: string): Uint8Array;
+    function hexToUint8Array(hex: string): Uint8Array;
 
     /**
      * Create hex string from a binary
      * @param {String} str String to convert
      * @returns {String} String containing the hexadecimal values
      */
-    function str_to_hex(str: string): string;
+    function strToHex(str: string): string;
 
     /**
      * Create binary string from a hex encoded string
      * @param {String} str Hex string to convert
      * @returns {String}
      */
-    function hex_to_str(hex: string): string;
+    function hexToStr(hex: string): string;
 
     function parseUserId(userid: string): UserId;
 
