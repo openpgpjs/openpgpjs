@@ -9,208 +9,65 @@
 
 declare namespace OpenPGP {
 
-  type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
-
-  export interface UserId {
-    name?: string;
-    email?: string;
-  }
-
-  export interface SessionKey {
-    data: Uint8Array;
-    algorithm: string;
-  }
-
-  interface BaseStream<T extends Uint8Array | string> { }
-  interface WebStream<T extends Uint8Array | string> extends BaseStream<T> { // copied+simplified version of ReadableStream from lib.dom.d.ts
-    readonly locked: boolean; getReader: Function; pipeThrough: Function; pipeTo: Function; tee: Function;
-    cancel(reason?: any): Promise<void>;
-  }
-  interface NodeStream<T extends Uint8Array | string> extends BaseStream<T> { // copied+simplified version of ReadableStream from @types/node/index.d.ts
-    readable: boolean; pipe: Function; unpipe: Function; wrap: Function;
-    read(size?: number): string | Uint8Array; setEncoding(encoding: string): this; pause(): this; resume(): this;
-    isPaused(): boolean; unshift(chunk: string | Uint8Array): void;
-  }
-  type Stream<T extends Uint8Array | string> = WebStream<T> | NodeStream<T>;
-
-  /**
-   * EncryptArmorOptions or EncryptBinaryOptions will be used based on armor option (boolean), defaults to armoring
-   */
-  interface BaseEncryptOptions {
-    /** message to be encrypted as created by openpgp.message.fromText or openpgp.message.fromBinary */
-    message: message.Message;
-    /** (optional) array of keys or single key, used to encrypt the message */
-    publicKeys?: key.Key | key.Key[];
-    /** (optional) private keys for signing. If omitted message will not be signed */
-    privateKeys?: key.Key | key.Key[];
-    /** (optional) array of passwords or a single password to encrypt the message */
-    passwords?: string | string[];
-    /** (optional) session key in the form: { data:Uint8Array, algorithm:String } */
-    sessionKey?: SessionKey;
-    /** (optional) which compression algorithm to compress the message with, defaults to what is specified in config */
-    compression?: enums.compression;
-    /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-    streaming?: 'web' | 'node' | false;
-    /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
-    signature?: signature.Signature;
-    /** (optional) encrypt as of a certain date */
-    date?: Date;
-    /** (optional) use a key ID of 0 instead of the public key IDs */
-    wildcard?: boolean;
-    /** (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
-    fromUserId?: UserId;
-    /** (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
-    toUserId?: UserId;
-  }
-
-  export type EncryptOptions = BaseEncryptOptions | EncryptArmorOptions | EncryptBinaryOptions;
-
-  export interface EncryptArmorOptions extends BaseEncryptOptions {
-    /** if the return values should be ascii armored or the message/signature objects */
-    armor: true;
-  }
-
-  export interface EncryptBinaryOptions extends BaseEncryptOptions {
-    /** if the return values should be ascii armored or the message/signature objects */
-    armor: false;
-  }
-
-  // ########################
-
-  export namespace packet {
-
-    // todo - check this - ListPacket? PacketList? List?
-    export class List<PACKET_TYPE> extends Array<PACKET_TYPE> {
-      [index: number]: PACKET_TYPE;
-      public length: number;
-      public read(bytes: Uint8Array): void;
-      public write(): Uint8Array;
-      public push(...packet: PACKET_TYPE[]): number;
-      public pop(): PACKET_TYPE;
-      public filter(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => void): List<PACKET_TYPE>;
-      public filterByTag(...args: enums.packet[]): List<PACKET_TYPE>;
-      public forEach(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => void): void;
-      public map<RETURN_TYPE>(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => RETURN_TYPE): List<RETURN_TYPE>;
-      // some()
-      // every()
-      // findPacket()
-      // indexOfTag()
-      // slice()
-      // concat()
-      // fromStructuredClone()
-    }
-
-    function fromStructuredClone(packetClone: object): AnyPacket;
-
-    function newPacketFromTag(tag: enums.packetNames): AnyPacket;
-  }
-
-  export interface DecryptOptions {
-    /** the message object with the encrypted data */
-    message: message.Message;
-    /** (optional) private keys with decrypted secret key data or session key */
-    privateKeys?: key.Key | key.Key[];
-    /** (optional) passwords to decrypt the message */
-    passwords?: string | string[];
-    /** (optional) session keys in the form: { data:Uint8Array, algorithm:String } */
-    sessionKeys?: SessionKey | SessionKey[];
-    /** (optional) array of public keys or single key, to verify signatures */
-    publicKeys?: key.Key | key.Key[];
-    /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
-    format?: string;
-    /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-    streaming?: 'web' | 'node' | false;
-    /** (optional) detached signature for verification */
-    signature?: signature.Signature;
-  }
-
-  export interface SignOptions {
-    message: cleartext.CleartextMessage | message.Message;
-    privateKeys?: key.Key | key.Key[];
-    armor?: boolean;
-    streaming?: 'web' | 'node' | false;
-    dataType?: DataPacketType;
-    detached?: boolean;
-    date?: Date;
-    fromUserId?: UserId;
-  }
-
-  export interface KeyPair {
-    key: key.Key; // todo - still like this?
-    privateKeyArmored: string;
-    publicKeyArmored: string;
-  }
-
-  export interface KeyOptions {
-    userIds: UserId[]; // generating a key with no user defined results in error
-    passphrase?: string;
-    numBits?: number;
-    keyExpirationTime?: number;
-    curve?: key.EllipticCurveName;
-    date?: Date;
-    subkeys?: KeyOptions[];
-  }
-
-  /**
-   * Intended for internal use with openpgp.key.generate()
-   * It's recommended that users choose openpgp.generateKey() that requires KeyOptions instead
-   */
-  export interface FullKeyOptions {
-    userIds: UserId[];
-    passphrase?: string;
-    numBits?: number;
-    keyExpirationTime?: number;
-    curve?: key.EllipticCurveName;
-    date?: Date;
-    subkeys: KeyOptions[]; // required unline KeyOptions.subkeys
-  }
-
-  export interface Keyid {
-    bytes: string;
-  }
-
-  export interface DecryptMessageResult {
-    data: Uint8Array | string;
-    signatures: signature.Signature[];
-    filename: string;
-  }
-
-
-  export function encrypt(options: EncryptBinaryOptions): Promise<Uint8Array | Stream<Uint8Array>>;
-  export function encrypt(options: EncryptArmorOptions | BaseEncryptOptions): Promise<string | Stream<string>>;
-  export function sign(options: SignOptions): Promise<Uint8Array | Stream<Uint8Array> | string | Stream<string>>;
-
-  export function decrypt(options: DecryptOptions): Promise<DecryptMessageResult>;
-  export function generateKey(options: KeyOptions): Promise<KeyPair>;
-
-  /* ############## v5 NEW STUFF ################# */
-
-  // todo - just guessing the input, or is it PublicKeyPacket?
-  function generateSessionKey(publicKeys: key.Key[]): Promise<SessionKey>
-
   /* ############## v5 KEY #################### */
 
-  function readArmoredKey(armoredText: string): Promise<key.Key>;
-  function readKey(data: Uint8Array): Promise<key.Key>;
-  function readArmoredKeys(armoredText: string): Promise<key.Key[]>;
-  function readKeys(data: Uint8Array): Promise<key.Key[]>;
+  export function readArmoredKey(armoredText: string): Promise<key.Key>;
+  export function readKey(data: Uint8Array): Promise<key.Key>;
+  export function readArmoredKeys(armoredText: string): Promise<key.Key[]>;
+  export function readKeys(data: Uint8Array): Promise<key.Key[]>;
+  export function generateKey(options: KeyOptions): Promise<KeyPair>;
+  export function generateSessionKey(publicKeys: key.Key[]): Promise<SessionKey>; // todo - guessing input, is it PublicKeyPacket[]?
+  export function decryptKey(options: { privateKey: key.Key; passphrase?: string | string[]; }): Promise<key.Key>;
+  export function encryptKey(options: { privateKey: key.Key; passphrase?: string }): Promise<key.Key>;
+  export function reformatKey(options: { privateKey: key.Key; userIds?: (string | UserId)[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
 
   /* ############## v5 SIG #################### */
 
-  function readArmoredSignature(armoredText: string): Promise<signature.Signature>;
-  function readSignature(input: Uint8Array): Promise<signature.Signature>;
+  export function readArmoredSignature(armoredText: string): Promise<signature.Signature>;
+  export function readSignature(input: Uint8Array): Promise<signature.Signature>;
 
   /* ############## v5 CLEARTEXT #################### */
 
-  function readArmoredCleartextMessage(armoredText: string): Promise<cleartext.CleartextMessage>;
-  function fromText(text: string): cleartext.CleartextMessage;
+  export function readArmoredCleartextMessage(armoredText: string): Promise<cleartext.CleartextMessage>;
+  export function fromText(text: string): cleartext.CleartextMessage;
 
   /* ############## v5 MSG #################### */
 
-  function readArmoredMessage(armoredText: string | Stream<string>): Promise<message.Message>;
-  function readMessage(input: Uint8Array): Promise<message.Message>;
-  function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
-  function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
+  export function readArmoredMessage(armoredText: string | Stream<string>): Promise<message.Message>;
+  export function readMessage(input: Uint8Array): Promise<message.Message>;
+  export function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
+  export function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
+  export function encrypt(options: EncryptBinaryOptions): Promise<Uint8Array | Stream<Uint8Array>>;
+  export function encrypt(options: EncryptArmorOptions | BaseEncryptOptions): Promise<string | Stream<string>>;
+  export function sign(options: SignOptions): Promise<Uint8Array | Stream<Uint8Array> | string | Stream<string>>;
+  export function decrypt(options: DecryptOptions): Promise<DecryptMessageResult>;
+
+  /* ############## v5 CONFIG #################### */
+
+  export namespace config {
+    let preferHashAlgorithm: enums.hash;
+    let encryptionCipher: enums.symmetric;
+    let compression: enums.compression;
+    let showVersion: boolean;
+    let showComment: boolean;
+    let integrityProtect: boolean;
+    let debug: boolean;
+    let deflateLevel: number;
+    let aeadProtect: boolean;
+    let ignoreMdcError: boolean;
+    let checksumRequired: boolean;
+    let rsaBlinding: boolean;
+    let passwordCollisionCheck: boolean;
+    let revocationsExpire: boolean;
+    let useNative: boolean;
+    let zeroCopy: boolean;
+    let tolerant: boolean;
+    let versionString: string;
+    let commentString: string;
+    let keyserver: string;
+    let nodeStore: string;
+    let allowInsecureDecryptionWithSigningKeys: boolean;
+  }
 
   /* ############## v5 PACKET #################### */
 
@@ -371,31 +228,166 @@ declare namespace OpenPGP {
   export type AnySecretPacket = SecretKeyPacket | SecretSubkeyPacket;
   export type AnyKeyPacket = PublicKeyPacket | SecretKeyPacket | PublicSubkeyPacket | SecretSubkeyPacket;
 
-  /* ############## v5 END #################### */
+  type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 
+  /* ############## v5 STREAM #################### */
+
+  interface BaseStream<T extends Uint8Array | string> { }
+  interface WebStream<T extends Uint8Array | string> extends BaseStream<T> { // copied+simplified version of ReadableStream from lib.dom.d.ts
+    readonly locked: boolean; getReader: Function; pipeThrough: Function; pipeTo: Function; tee: Function;
+    cancel(reason?: any): Promise<void>;
+  }
+  interface NodeStream<T extends Uint8Array | string> extends BaseStream<T> { // copied+simplified version of ReadableStream from @types/node/index.d.ts
+    readable: boolean; pipe: Function; unpipe: Function; wrap: Function;
+    read(size?: number): string | Uint8Array; setEncoding(encoding: string): this; pause(): this; resume(): this;
+    isPaused(): boolean; unshift(chunk: string | Uint8Array): void;
+  }
+  type Stream<T extends Uint8Array | string> = WebStream<T> | NodeStream<T>;
+
+  /* ############## v5 GENERAL #################### */
+
+  export interface UserId { name?: string; email?: string; }
+  export interface SessionKey { data: Uint8Array; algorithm: string; }
 
   /**
-   * Reformats signature packets for a key and rewraps key object.
+   * EncryptArmorOptions or EncryptBinaryOptions will be used based on armor option (boolean), defaults to armoring
    */
-  export function reformatKey(options: {
-    privateKey: key.Key;
-    userIds?: (string | UserId)[];
+  interface BaseEncryptOptions {
+    /** message to be encrypted as created by openpgp.message.fromText or openpgp.message.fromBinary */
+    message: message.Message;
+    /** (optional) array of keys or single key, used to encrypt the message */
+    publicKeys?: key.Key | key.Key[];
+    /** (optional) private keys for signing. If omitted message will not be signed */
+    privateKeys?: key.Key | key.Key[];
+    /** (optional) array of passwords or a single password to encrypt the message */
+    passwords?: string | string[];
+    /** (optional) session key in the form: { data:Uint8Array, algorithm:String } */
+    sessionKey?: SessionKey;
+    /** (optional) which compression algorithm to compress the message with, defaults to what is specified in config */
+    compression?: enums.compression;
+    /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
+    streaming?: 'web' | 'node' | false;
+    /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
+    signature?: signature.Signature;
+    /** (optional) encrypt as of a certain date */
+    date?: Date;
+    /** (optional) use a key ID of 0 instead of the public key IDs */
+    wildcard?: boolean;
+    /** (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
+    fromUserId?: UserId;
+    /** (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
+    toUserId?: UserId;
+  }
+
+  export type EncryptOptions = BaseEncryptOptions | EncryptArmorOptions | EncryptBinaryOptions;
+
+  export interface EncryptArmorOptions extends BaseEncryptOptions {
+    /** if the return values should be ascii armored or the message/signature objects */
+    armor: true;
+  }
+
+  export interface EncryptBinaryOptions extends BaseEncryptOptions {
+    /** if the return values should be ascii armored or the message/signature objects */
+    armor: false;
+  }
+
+  export namespace packet {
+
+    // todo - check this - ListPacket? PacketList? List?
+    export class List<PACKET_TYPE> extends Array<PACKET_TYPE> {
+      [index: number]: PACKET_TYPE;
+      public length: number;
+      public read(bytes: Uint8Array): void;
+      public write(): Uint8Array;
+      public push(...packet: PACKET_TYPE[]): number;
+      public pop(): PACKET_TYPE;
+      public filter(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => void): List<PACKET_TYPE>;
+      public filterByTag(...args: enums.packet[]): List<PACKET_TYPE>;
+      public forEach(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => void): void;
+      public map<RETURN_TYPE>(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => RETURN_TYPE): List<RETURN_TYPE>;
+      // some()
+      // every()
+      // findPacket()
+      // indexOfTag()
+      // slice()
+      // concat()
+      // fromStructuredClone()
+    }
+
+    function fromStructuredClone(packetClone: object): AnyPacket;
+
+    function newPacketFromTag(tag: enums.packetNames): AnyPacket;
+  }
+
+  export interface DecryptOptions {
+    /** the message object with the encrypted data */
+    message: message.Message;
+    /** (optional) private keys with decrypted secret key data or session key */
+    privateKeys?: key.Key | key.Key[];
+    /** (optional) passwords to decrypt the message */
+    passwords?: string | string[];
+    /** (optional) session keys in the form: { data:Uint8Array, algorithm:String } */
+    sessionKeys?: SessionKey | SessionKey[];
+    /** (optional) array of public keys or single key, to verify signatures */
+    publicKeys?: key.Key | key.Key[];
+    /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
+    format?: string;
+    /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
+    streaming?: 'web' | 'node' | false;
+    /** (optional) detached signature for verification */
+    signature?: signature.Signature;
+  }
+
+  export interface SignOptions {
+    message: cleartext.CleartextMessage | message.Message;
+    privateKeys?: key.Key | key.Key[];
+    armor?: boolean;
+    streaming?: 'web' | 'node' | false;
+    dataType?: DataPacketType;
+    detached?: boolean;
+    date?: Date;
+    fromUserId?: UserId;
+  }
+
+  export interface KeyPair {
+    key: key.Key; // todo - still like this?
+    privateKeyArmored: string;
+    publicKeyArmored: string;
+  }
+
+  export interface KeyOptions {
+    userIds: UserId[]; // generating a key with no user defined results in error
     passphrase?: string;
+    numBits?: number;
     keyExpirationTime?: number;
-  }): Promise<KeyPair>;
+    curve?: key.EllipticCurveName;
+    date?: Date;
+    subkeys?: KeyOptions[];
+  }
 
   /**
-   * Unlock a private key with your passphrase.
+   * Intended for internal use with openpgp.key.generate()
+   * It's recommended that users choose openpgp.generateKey() that requires KeyOptions instead
    */
-  export function decryptKey(options: {
-    privateKey: key.Key;
-    passphrase?: string | string[];
-  }): Promise<key.Key>;
+  export interface FullKeyOptions {
+    userIds: UserId[];
+    passphrase?: string;
+    numBits?: number;
+    keyExpirationTime?: number;
+    curve?: key.EllipticCurveName;
+    date?: Date;
+    subkeys: KeyOptions[]; // required unline KeyOptions.subkeys
+  }
 
-  export function encryptKey(options: {
-    privateKey: key.Key;
-    passphrase?: string
-  }): Promise<key.Key>;
+  export interface Keyid {
+    bytes: string;
+  }
+
+  export interface DecryptMessageResult {
+    data: Uint8Array | string;
+    signatures: signature.Signature[];
+    filename: string;
+  }
 
   export namespace armor {
     /**
@@ -436,31 +428,6 @@ declare namespace OpenPGP {
        */
       verify(keys: key.Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
     }
-  }
-
-  export namespace config {
-    let preferHashAlgorithm: enums.hash;
-    let encryptionCipher: enums.symmetric;
-    let compression: enums.compression;
-    let showVersion: boolean;
-    let showComment: boolean;
-    let integrityProtect: boolean;
-    let debug: boolean;
-    let deflateLevel: number;
-    let aeadProtect: boolean;
-    let ignoreMdcError: boolean;
-    let checksumRequired: boolean;
-    let rsaBlinding: boolean;
-    let passwordCollisionCheck: boolean;
-    let revocationsExpire: boolean;
-    let useNative: boolean;
-    let zeroCopy: boolean;
-    let tolerant: boolean;
-    let versionString: string;
-    let commentString: string;
-    let keyserver: string;
-    let nodeStore: string;
-    let allowInsecureDecryptionWithSigningKeys: boolean;
   }
 
   export namespace crypto {
@@ -855,9 +822,6 @@ declare namespace OpenPGP {
     public lookup(options: { keyid?: string, query?: string }): Promise<string | undefined>;
   }
 
-  /**
-   * todo - some of these are outdated - check OpenPGP.js api
-   */
   export namespace util {
     /** Convert an array of integers(0.255) to a string
         @param bin An array of (binary) integers to convert
