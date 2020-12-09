@@ -168,6 +168,7 @@ export class Message {
   public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
 
   static fromText(text: string): Message;
+  static fromBinary(data: Uint8Array): Message;
 }
 
 

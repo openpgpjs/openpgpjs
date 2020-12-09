@@ -18,20 +18,24 @@ import { expect } from 'chai';
   // generate
   const { publicKeyArmored, key } = await generateKey({ userIds: [{ email: "user@corp.co" }] });
   expect(key).to.be.instanceOf(Key);
+  const publicKeys = [key.toPublic()];
 
   // parse
   expect(await readArmoredKey(publicKeyArmored)).to.be.instanceOf(Key);
   expect(await readArmoredKeys(publicKeyArmored)).to.have.lengthOf(1);
 
   // Encrypt text message(armored)
-  const message = Message.fromText('hello');
-  const encrypted = await encrypt({ publicKeys: [key.toPublic()], message });
-  expect(encrypted).to.include('-----BEGIN PGP MESSAGE-----');
+  const messageFromText = Message.fromText('hello');
+  const encryptedArmored = await encrypt({ publicKeys, message: messageFromText });
+  expect(encryptedArmored).to.include('-----BEGIN PGP MESSAGE-----');
 
-  // // Encrypt text message(unarmored)  
-  // const message = Message.fromBinary(data);
-  // const encrypted = await encrypt({ publicKeys, message, armor: false });
-  // console.log(encrypted); // Uint8Array
+  // Encrypt text message(unarmored) 
+  const uint = new Uint8Array(2);
+  uint[0] = 1;
+  uint[1] = 2;
+  const messageFromBinary = Message.fromBinary(uint);
+  const encryptedBinary = await encrypt({ publicKeys, message: messageFromBinary, armor: false });
+  expect(encryptedBinary).to.be.instanceOf(Uint8Array);
 
   // // Encrypt message(inspect packets)
   // import stream from 'web-stream-tools';
