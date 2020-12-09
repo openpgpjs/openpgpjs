@@ -52,8 +52,6 @@ declare namespace OpenPGP {
     /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
     streaming?: 'web' | 'node' | false;
     /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
-    detached?: boolean;
-    /** (optional) a detached signature to add to the encrypted message */
     signature?: signature.Signature;
     /** (optional) encrypt as of a certain date */
     date?: Date;
@@ -107,30 +105,6 @@ declare namespace OpenPGP {
     function newPacketFromTag(tag: enums.packetNames): AnyPacket;
   }
 
-  export interface EncryptArmorResult {
-    data: string;
-    signature?: string;
-  }
-
-  export interface EncryptBinaryResult {
-    message: message.Message;
-    signature?: signature.Signature;
-  }
-
-  export type EncryptResult = EncryptArmorResult | EncryptBinaryResult;
-
-  export interface SignArmorResult {
-    data: string | Stream<string>;
-    signature: string | Stream<string>;
-  }
-
-  export interface SignBinaryResult {
-    message: message.Message | cleartext.CleartextMessage;
-    signature: signature.Signature;
-  }
-
-  export type SignResult = SignArmorResult | SignBinaryResult;
-
   export interface DecryptOptions {
     /** the message object with the encrypted data */
     message: message.Message;
@@ -161,11 +135,8 @@ declare namespace OpenPGP {
     fromUserId?: UserId;
   }
 
-  export interface KeyContainer {
-    key: key.Key;
-  }
-
-  export interface KeyPair extends KeyContainer {
+  export interface KeyPair {
+    key: key.Key; // todo - still like this?
     privateKeyArmored: string;
     publicKeyArmored: string;
   }
@@ -204,64 +175,12 @@ declare namespace OpenPGP {
     filename: string;
   }
 
-  /**
-   * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
-   *   must be specified. If private keys are specified, those will be used to sign the message.
-   * @param {EncryptOptions} options               See `EncryptOptions`
-   * @returns {Promise<EncryptResult>}             Promise of `EncryptResult` (and optionally signed message) in the form:
-   *                                                 {data: ASCII armored message if 'armor' is true;
-   *                                                  message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
-   * @async
-   * @static
-   */
-  export function encrypt(options: EncryptBinaryOptions): Promise<EncryptBinaryResult>;
-  export function encrypt(options: EncryptArmorOptions | BaseEncryptOptions): Promise<EncryptArmorResult>;
 
-  /**
-   * Signs a cleartext message.
-   * @param {String | Uint8Array} data           cleartext input to be signed
-   * @param {utf8|binary|text|mime} dataType     (optional) data packet type
-   * @param {Key|Array<Key>} privateKeys         array of keys or single key with decrypted secret key data to sign cleartext
-   * @param {Boolean} armor                      (optional) if the return value should be ascii armored or the message object
-   * @param {Boolean} detached                   (optional) if the return value should contain a detached signature
-   * @param {Date} date                          (optional) override the creation date signature
-   * @param {Object} fromUserId                  (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' }
-   * @returns {Promise<Object>}                    signed cleartext in the form:
-   *                                               {data: ASCII armored message if 'armor' is true;
-   *                                                message: full Message object if 'armor' is false, signature: detached signature if 'detached' is true}
-   * @async
-   * @static
-   */
-  export function sign(options: SignOptions): Promise<SignResult>;
+  export function encrypt(options: EncryptBinaryOptions): Promise<Uint8Array | Stream<Uint8Array>>;
+  export function encrypt(options: EncryptArmorOptions | BaseEncryptOptions): Promise<string | Stream<string>>;
+  export function sign(options: SignOptions): Promise<Uint8Array | Stream<Uint8Array> | string | Stream<string>>;
 
-  /**
-   * Decrypts a message with the user's private key, a session key or a password. Either a private key;
-   *   a session key or a password must be specified.
-   * @param {DecryptOptions} options           see `DecryptOptions`
-   * @returns {Promise<DecryptMessageResult>}  Promise of `DecryptMessageResult` and verified message in the form:
-   *                                        { data:Uint8Array|String, filename:String, signatures:[{ keyid:String, valid:Boolean }] }
-   * @async
-   * @static
-   */
   export function decrypt(options: DecryptOptions): Promise<DecryptMessageResult>;
-
-  /**
-   * Generates a new OpenPGP key pair. Supports RSA and ECC keys. Primary and subkey will be of same type.
-   * @param {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
-   * @param {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
-   * @param {Number} numBits          (optional) number of bits for RSA keys: 2048 or 4096.
-   * @param {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
-   * @param {String} curve            (optional) elliptic curve for ECC keys:
-   *                                              curve25519, p256, p384, p521, secp256k1;
-   *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
-   * @param {Date} date               (optional) override the creation date of the key and the key signatures
-   * @param {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
-   *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
-   * @returns {Promise<Object>}         The generated key object in the form:
-   *                                    { key:Key, privateKeyArmored:String, publicKeyArmored:String }
-   * @async
-   * @static
-   */
   export function generateKey(options: KeyOptions): Promise<KeyPair>;
 
   /* ############## v5 NEW STUFF ################# */
@@ -457,14 +376,6 @@ declare namespace OpenPGP {
 
   /**
    * Reformats signature packets for a key and rewraps key object.
-   * @param {Key} privateKey          private key to reformat
-   * @param {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
-   * @param {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
-   * @param {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
-   * @returns {Promise<Object>}         The generated key object in the form:
-   *                                    { key:Key, privateKeyArmored:String, publicKeyArmored:String }
-   * @async
-   * @static
    */
   export function reformatKey(options: {
     privateKey: key.Key;
@@ -475,33 +386,25 @@ declare namespace OpenPGP {
 
   /**
    * Unlock a private key with your passphrase.
-   * @param {Key} privateKey                    the private key that is to be decrypted
-   * @param {String|Array<String>} passphrase   the user's passphrase(s) chosen during key generation
-   * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
-   * @async
    */
   export function decryptKey(options: {
     privateKey: key.Key;
     passphrase?: string | string[];
-  }): Promise<KeyContainer>;
+  }): Promise<key.Key>;
 
   export function encryptKey(options: {
     privateKey: key.Key;
     passphrase?: string
-  }): Promise<KeyContainer>;
+  }): Promise<key.Key>;
 
   export namespace armor {
-    /** Armor an OpenPGP binary packet block
-     * @param messagetype type of the message
-     * @param body
-     * @param partindex
-     * @param parttotal
+    /**
+     * Armor an OpenPGP binary packet block
      */
     function armor(messagetype: enums.armor, body: object, partindex: number, parttotal: number): string;
 
-    /** DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
-     *
-     *  @param text OpenPGP armored message
+    /** 
+     * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
      */
     function dearmor(text: string): object;
   }
