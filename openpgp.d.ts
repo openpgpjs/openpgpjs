@@ -420,6 +420,11 @@ declare namespace OpenPGP {
    */
   export function generateKey(options: KeyOptions): Promise<KeyPair>;
 
+  function readArmoredKey(armoredText: string): Promise<key.Key>;
+  function readKey(data: Uint8Array): Promise<key.Key>;
+  function readArmoredKeys(armoredText: string): Promise<key.Key[]>;
+  function readKeys(data: Uint8Array): Promise<key.Key[]>;
+
   /**
    * Reformats signature packets for a key and rewraps key object.
    * @param {Key} privateKey          private key to reformat
@@ -831,11 +836,6 @@ declare namespace OpenPGP {
       user: User;
     }
 
-    interface KeyResult {
-      keys: Key[];
-      err?: Error[];
-    }
-
     type AlgorithmInfo = {
       algorithm: enums.publicKeyNames;
       bits: number;
@@ -846,17 +846,6 @@ declare namespace OpenPGP {
       */
     function generate(options: FullKeyOptions): Promise<Key>;
 
-    /** Reads an OpenPGP armored text and returns one or multiple key objects
-
-        @param armoredText text to be parsed
-    */
-    function readArmored(armoredText: string): Promise<KeyResult>;
-
-    /** Reads an OpenPGP binary data and returns one or multiple key objects
-
-        @param data to be parsed
-    */
-    function read(data: Uint8Array): Promise<KeyResult>;
   }
 
   export namespace signature {
