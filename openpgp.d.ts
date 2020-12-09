@@ -79,8 +79,11 @@ declare namespace OpenPGP {
     armor: false;
   }
 
+  // ########################
+
   export namespace packet {
 
+    // todo - check this - ListPacket? PacketList? List?
     export class List<PACKET_TYPE> extends Array<PACKET_TYPE> {
       [index: number]: PACKET_TYPE;
       public length: number;
@@ -104,163 +107,6 @@ declare namespace OpenPGP {
     function fromStructuredClone(packetClone: object): AnyPacket;
 
     function newPacketFromTag(tag: enums.packetNames): AnyPacket;
-
-    class BasePacket {
-      public tag: enums.packet;
-      public read(bytes: Uint8Array): void;
-      public write(): Uint8Array;
-    }
-
-    class BaseKeyPacket extends BasePacket {
-      // fingerprint: Uint8Array|null; - not included because not recommended to use. Use getFingerprint() or getFingerprintBytes()
-      public algorithm: enums.publicKey;
-      public created: Date;
-
-      public version: number;
-      public expirationTimeV3: number | null;
-      public keyExpirationTime: number | null;
-      public getBitSize(): number;
-      public getAlgorithmInfo(): key.AlgorithmInfo;
-      public getFingerprint(): string;
-      public getFingerprintBytes(): Uint8Array | null;
-      public getCreationTime(): Date;
-      public getKeyId(): Keyid;
-      public params: object[];
-      public isDecrypted(): boolean;
-      public isEncrypted: boolean; // may be null, false or true
-    }
-
-    class BasePrimaryKeyPacket extends BaseKeyPacket {
-    }
-
-    export class Compressed extends BasePacket {
-      public tag: enums.packet.compressed;
-    }
-
-    export class SymEncryptedIntegrityProtected extends BasePacket {
-      public tag: enums.packet.symEncryptedIntegrityProtected;
-    }
-
-    export class SymEncryptedAEADProtected extends BasePacket {
-      public tag: enums.packet.symEncryptedAEADProtected;
-    }
-
-    export class PublicKeyEncryptedSessionKey extends BasePacket {
-      public tag: enums.packet.publicKeyEncryptedSessionKey;
-    }
-
-    export class SymEncryptedSessionKey extends BasePacket {
-      public tag: enums.packet.symEncryptedSessionKey;
-    }
-
-    export class Literal extends BasePacket {
-      public tag: enums.packet.literal;
-    }
-
-    export class PublicKey extends BasePrimaryKeyPacket {
-      public tag: enums.packet.publicKey;
-    }
-
-    export class SymmetricallyEncrypted extends BasePacket {
-      public tag: enums.packet.symmetricallyEncrypted;
-    }
-
-    export class Marker extends BasePacket {
-      public tag: enums.packet.marker;
-    }
-
-    export class PublicSubkey extends BaseKeyPacket {
-      public tag: enums.packet.publicSubkey;
-    }
-
-    export class UserAttribute extends BasePacket {
-      public tag: enums.packet.userAttribute;
-    }
-
-    export class OnePassSignature extends BasePacket {
-      public tag: enums.packet.onePassSignature;
-      public correspondingSig?: Promise<Signature>;
-    }
-
-    export class SecretKey extends BasePrimaryKeyPacket {
-      public tag: enums.packet.secretKey;
-      // encrypted: null | unknown[]; // Encrypted secret-key data, not meant for public use
-      public s2k: { type: string } | null;
-      public encrypt(passphrase: string): Promise<boolean>;
-      public decrypt(passphrase: string): Promise<true>;
-    }
-
-    export class Userid extends BasePacket {
-      public tag: enums.packet.userid;
-      public userid: string;
-    }
-
-    export class SecretSubkey extends BaseKeyPacket {
-      public tag: enums.packet.secretSubkey;
-      // encrypted: null | unknown[]; // Encrypted secret-key data, not meant for public use
-      public s2k: { type: string } | null;
-      public encrypt(passphrase: string): Promise<boolean>;
-      public decrypt(passphrase: string): Promise<true>;
-    }
-
-    export class Signature extends BasePacket {
-      public tag: enums.packet.signature;
-      public version: number;
-      public signatureType: null | number;
-      public hashAlgorithm: null | number;
-      public publicKeyAlgorithm: null | number;
-      public signatureData: null | Uint8Array;
-      public unhashedSubpackets: null | Uint8Array;
-      public signedHashValue: null | Uint8Array;
-      public created: Date;
-      public signatureExpirationTime: null | number;
-      public signatureNeverExpires: boolean;
-      public exportable: null | boolean;
-      public trustLevel: null | number;
-      public trustAmount: null | number;
-      public regularExpression: null | number;
-      public revocable: null | boolean;
-      public keyExpirationTime: null | number;
-      public keyNeverExpires: null | boolean;
-      public preferredSymmetricAlgorithms: null | number[];
-      public revocationKeyClass: null | number;
-      public revocationKeyAlgorithm: null | number;
-      public revocationKeyFingerprint: null | Uint8Array;
-      public issuerKeyId: Keyid;
-      public notation: null | { [name: string]: string };
-      public preferredHashAlgorithms: null | number[];
-      public preferredCompressionAlgorithms: null | number[];
-      public keyServerPreferences: null | number[];
-      public preferredKeyServer: null | string;
-      public isPrimaryUserID: null | boolean;
-      public policyURI: null | string;
-      public keyFlags: null | number[];
-      public signersUserId: null | string;
-      public reasonForRevocationFlag: null | number;
-      public reasonForRevocationString: null | string;
-      public features: null | number[];
-      public signatureTargetPublicKeyAlgorithm: null | number;
-      public signatureTargetHashAlgorithm: null | number;
-      public signatureTargetHash: null | string;
-      public embeddedSignature: null | Signature;
-      public issuerKeyVersion: null | number;
-      public issuerFingerprint: null | Uint8Array;
-      public preferredAeadAlgorithms: null | Uint8Array;
-      public verified: null | boolean;
-      public revoked: null | boolean;
-      public sign(key: SecretKey | SecretSubkey, data: Uint8Array): true;
-      public isExpired(date?: Date): boolean;
-      public getExpirationTime(): Date | typeof Infinity;
-    }
-
-    export class Trust extends BasePacket {
-      public tag: enums.packet.trust;
-    }
-
-    export type AnyPacket = Compressed | SymEncryptedIntegrityProtected | SymEncryptedAEADProtected | PublicKeyEncryptedSessionKey | SymEncryptedSessionKey | Literal
-      | PublicKey | SymmetricallyEncrypted | Marker | PublicSubkey | UserAttribute | OnePassSignature | SecretKey | Userid | SecretSubkey | Signature | Trust;
-    export type AnySecretPacket = SecretKey | SecretSubkey;
-    export type AnyKeyPacket = PublicKey | SecretKey | PublicSubkey | SecretSubkey;
   }
 
   export interface EncryptArmorResult {
@@ -420,27 +266,191 @@ declare namespace OpenPGP {
    */
   export function generateKey(options: KeyOptions): Promise<KeyPair>;
 
-  // these are v5 methods on openpgpjs { }
+  /* ############## v5 KEY #################### */
 
-  // key
   function readArmoredKey(armoredText: string): Promise<key.Key>;
   function readKey(data: Uint8Array): Promise<key.Key>;
   function readArmoredKeys(armoredText: string): Promise<key.Key[]>;
   function readKeys(data: Uint8Array): Promise<key.Key[]>;
 
-  // sig
+  /* ############## v5 SIG #################### */
+
   function readArmoredSignature(armoredText: string): Promise<signature.Signature>;
   function readSignature(input: Uint8Array): Promise<signature.Signature>;
 
-  // cleartext
+  /* ############## v5 CLEARTEXT #################### */
+
   function readArmoredCleartextMessage(armoredText: string): Promise<cleartext.CleartextMessage>;
   function fromText(text: string): cleartext.CleartextMessage;
 
-  // msg
+  /* ############## v5 MSG #################### */
+
   function readArmoredMessage(armoredText: string | Stream<string>): Promise<message.Message>;
   function readMessage(input: Uint8Array): Promise<message.Message>;
   function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
   function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
+
+  /* ############## v5 PACKET #################### */
+
+  class BasePacket {
+    public tag: enums.packet;
+    public read(bytes: Uint8Array): void;
+    public write(): Uint8Array;
+  }
+
+  class BaseKeyPacket extends BasePacket {
+    // fingerprint: Uint8Array|null; - not included because not recommended to use. Use getFingerprint() or getFingerprintBytes()
+    public algorithm: enums.publicKey;
+    public created: Date;
+
+    public version: number;
+    public expirationTimeV3: number | null;
+    public keyExpirationTime: number | null;
+    public getBitSize(): number;
+    public getAlgorithmInfo(): key.AlgorithmInfo;
+    public getFingerprint(): string;
+    public getFingerprintBytes(): Uint8Array | null;
+    public getCreationTime(): Date;
+    public getKeyId(): Keyid;
+    public params: object[];
+    public isDecrypted(): boolean;
+    public isEncrypted: boolean; // may be null, false or true
+  }
+
+  class BasePrimaryKeyPacket extends BaseKeyPacket {
+  }
+
+  export class CompressedDataPacket extends BasePacket {
+    public tag: enums.packet.compressed;
+  }
+
+  export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
+    public tag: enums.packet.symEncryptedIntegrityProtected;
+  }
+
+  export class AEADEncryptedDataPacket extends BasePacket {
+    public tag: enums.packet.AEADEncryptedDataPacket;
+  }
+
+  export class PublicKeyEncryptedSessionKeyPaclet extends BasePacket {
+    public tag: enums.packet.publicKeyEncryptedSessionKey;
+  }
+
+  export class SymEncryptedSessionKey extends BasePacket {
+    public tag: enums.packet.symEncryptedSessionKey;
+  }
+
+  export class LiteralDataPacket extends BasePacket {
+    public tag: enums.packet.literal;
+  }
+
+  export class PublicKeyPacket extends BasePrimaryKeyPacket {
+    public tag: enums.packet.publicKey;
+  }
+
+  export class SymmetricallyEncryptedDataPacket extends BasePacket {
+    public tag: enums.packet.symmetricallyEncrypted;
+  }
+
+  export class MarkerPacket extends BasePacket {
+    public tag: enums.packet.marker;
+  }
+
+  export class PublicSubkeyPacket extends BaseKeyPacket {
+    public tag: enums.packet.publicSubkey;
+  }
+
+  export class UserAttributePacket extends BasePacket {
+    public tag: enums.packet.userAttribute;
+  }
+
+  export class OnePassSignaturePacket extends BasePacket {
+    public tag: enums.packet.onePassSignature;
+    public correspondingSig?: Promise<SignaturePacket>;
+  }
+
+  export class SecretKeyPacket extends BasePrimaryKeyPacket {
+    public tag: enums.packet.secretKey;
+    // encrypted: null | unknown[]; // Encrypted secret-key data, not meant for public use
+    public s2k: { type: string } | null;
+    public encrypt(passphrase: string): Promise<boolean>;
+    public decrypt(passphrase: string): Promise<true>;
+  }
+
+  export class UserIDPacket extends BasePacket {
+    public tag: enums.packet.userid;
+    public userid: string;
+  }
+
+  export class SecretSubkeyPacket extends BaseKeyPacket {
+    public tag: enums.packet.secretSubkey;
+    // encrypted: null | unknown[]; // Encrypted secret-key data, not meant for public use
+    public s2k: { type: string } | null;
+    public encrypt(passphrase: string): Promise<boolean>;
+    public decrypt(passphrase: string): Promise<true>;
+  }
+
+  export class SignaturePacket extends BasePacket {
+    public tag: enums.packet.signature;
+    public version: number;
+    public signatureType: null | number;
+    public hashAlgorithm: null | number;
+    public publicKeyAlgorithm: null | number;
+    public signatureData: null | Uint8Array;
+    public unhashedSubpackets: null | Uint8Array;
+    public signedHashValue: null | Uint8Array;
+    public created: Date;
+    public signatureExpirationTime: null | number;
+    public signatureNeverExpires: boolean;
+    public exportable: null | boolean;
+    public trustLevel: null | number;
+    public trustAmount: null | number;
+    public regularExpression: null | number;
+    public revocable: null | boolean;
+    public keyExpirationTime: null | number;
+    public keyNeverExpires: null | boolean;
+    public preferredSymmetricAlgorithms: null | number[];
+    public revocationKeyClass: null | number;
+    public revocationKeyAlgorithm: null | number;
+    public revocationKeyFingerprint: null | Uint8Array;
+    public issuerKeyId: Keyid;
+    public notation: null | { [name: string]: string };
+    public preferredHashAlgorithms: null | number[];
+    public preferredCompressionAlgorithms: null | number[];
+    public keyServerPreferences: null | number[];
+    public preferredKeyServer: null | string;
+    public isPrimaryUserID: null | boolean;
+    public policyURI: null | string;
+    public keyFlags: null | number[];
+    public signersUserId: null | string;
+    public reasonForRevocationFlag: null | number;
+    public reasonForRevocationString: null | string;
+    public features: null | number[];
+    public signatureTargetPublicKeyAlgorithm: null | number;
+    public signatureTargetHashAlgorithm: null | number;
+    public signatureTargetHash: null | string;
+    public embeddedSignature: null | SignaturePacket;
+    public issuerKeyVersion: null | number;
+    public issuerFingerprint: null | Uint8Array;
+    public preferredAeadAlgorithms: null | Uint8Array;
+    public verified: null | boolean;
+    public revoked: null | boolean;
+    public sign(key: SecretKeyPacket | SecretSubkeyPacket, data: Uint8Array): true;
+    public isExpired(date?: Date): boolean;
+    public getExpirationTime(): Date | typeof Infinity;
+  }
+
+  export class TrustPacket extends BasePacket {
+    public tag: enums.packet.trust;
+  }
+
+  export type AnyPacket = CompressedDataPacket | SymEncryptedIntegrityProtectedDataPacket | AEADEncryptedDataPacket | PublicKeyEncryptedSessionKeyPaclet | SymEncryptedSessionKey | LiteralDataPacket
+    | PublicKeyPacket | SymmetricallyEncryptedDataPacket | MarkerPacket | PublicSubkeyPacket | UserAttributePacket | OnePassSignaturePacket | SecretKeyPacket | UserIDPacket | SecretSubkeyPacket | SignaturePacket | TrustPacket;
+  export type AnySecretPacket = SecretKeyPacket | SecretSubkeyPacket;
+  export type AnyKeyPacket = PublicKeyPacket | SecretKeyPacket | PublicSubkeyPacket | SecretSubkeyPacket;
+
+  /* ############## v5 END #################### */
+
 
   /**
    * Reformats signature packets for a key and rewraps key object.
@@ -702,7 +712,7 @@ declare namespace OpenPGP {
 
     export type packetNames = 'publicKeyEncryptedSessionKey' | 'signature' | 'symEncryptedSessionKey' | 'onePassSignature' | 'secretKey' | 'publicKey'
       | 'secretSubkey' | 'compressed' | 'symmetricallyEncrypted' | 'marker' | 'literal' | 'trust' | 'userid' | 'publicSubkey' | 'userAttribute'
-      | 'symEncryptedIntegrityProtected' | 'modificationDetectionCode' | 'symEncryptedAEADProtected';
+      | 'symEncryptedIntegrityProtected' | 'modificationDetectionCode' | 'AEADEncryptedDataPacket';
     enum packet {
       publicKeyEncryptedSessionKey = 1,
       signature = 2,
@@ -721,7 +731,7 @@ declare namespace OpenPGP {
       userAttribute = 17,
       symEncryptedIntegrityProtected = 18,
       modificationDetectionCode = 19,
-      symEncryptedAEADProtected = 20,
+      AEADEncryptedDataPacket = 20,
     }
 
     export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsa' | 'aedh' | 'aedsa';
@@ -781,12 +791,12 @@ declare namespace OpenPGP {
     /** Class that represents an OpenPGP key. Must contain a primary key. Can contain additional subkeys, signatures, user ids, user attributes.
      */
     class Key {
-      public primaryKey: packet.PublicKey | packet.SecretKey;
+      public primaryKey: PublicKeyPacket | SecretKeyPacket;
       public subKeys: SubKey[];
       public users: User[];
-      public revocationSignatures: packet.Signature[];
-      public keyPacket: packet.PublicKey | packet.SecretKey;
-      constructor(packetlist: packet.List<packet.AnyPacket>);
+      public revocationSignatures: SignaturePacket[];
+      public keyPacket: PublicKeyPacket | SecretKeyPacket;
+      constructor(packetlist: packet.List<AnyPacket>);
       public armor(): string;
       public decrypt(passphrase: string | string[], keyId?: Keyid): Promise<boolean>;
       public encrypt(passphrase: string | string[]): Promise<void>;
@@ -816,12 +826,12 @@ declare namespace OpenPGP {
     }
 
     class SubKey {
-      public subKey: packet.SecretSubkey | packet.PublicSubkey;
-      public keyPacket: packet.SecretKey;
-      public bindingSignatures: packet.Signature[];
-      public revocationSignatures: packet.Signature[];
-      constructor(subKeyPacket: packet.SecretSubkey | packet.PublicSubkey);
-      public verify(primaryKey: packet.PublicKey | packet.SecretKey): Promise<enums.keyStatus>;
+      public subKey: SecretSubkeyPacket | PublicSubkeyPacket;
+      public keyPacket: SecretKeyPacket;
+      public bindingSignatures: SignaturePacket[];
+      public revocationSignatures: SignaturePacket[];
+      constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
+      public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<enums.keyStatus>;
       public isDecrypted(): boolean;
       public getFingerprint(): string;
       public getCreationTime(): Date;
@@ -830,11 +840,11 @@ declare namespace OpenPGP {
     }
 
     export interface User {
-      userId: packet.Userid | null;
-      userAttribute: packet.UserAttribute | null;
-      selfCertifications: packet.Signature[];
-      otherCertifications: packet.Signature[];
-      revocationSignatures: packet.Signature[];
+      userId: UserIDPacket | null;
+      userAttribute: UserAttributePacket | null;
+      selfCertifications: SignaturePacket[];
+      otherCertifications: SignaturePacket[];
+      revocationSignatures: SignaturePacket[];
     }
 
     export interface PrimaryUser {
@@ -856,8 +866,8 @@ declare namespace OpenPGP {
 
   export namespace signature {
     class Signature {
-      public packets: packet.List<packet.Signature>;
-      constructor(packetlist: packet.List<packet.Signature>);
+      public packets: packet.List<SignaturePacket>;
+      constructor(packetlist: packet.List<SignaturePacket>);
       public armor(): string;
     }
   }
@@ -867,8 +877,8 @@ declare namespace OpenPGP {
      */
     class Message {
 
-      public packets: packet.List<packet.AnyPacket>;
-      constructor(packetlist: packet.List<packet.AnyPacket>);
+      public packets: packet.List<AnyPacket>;
+      constructor(packetlist: packet.List<AnyPacket>);
 
       /** Returns ASCII armored text of message
        */
