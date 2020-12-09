@@ -860,7 +860,7 @@ function tests() {
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);
-    expect((await reader.readBytes(31)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\n\n');
+    expect((await reader.readBytes(30)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\n');
     dataArrived();
     await new Promise(resolve => setTimeout(resolve, 3000));
     expect(i).to.be.greaterThan(100);
@@ -874,7 +874,7 @@ function tests() {
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);
-    expect((await reader.readBytes(31)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\n\n');
+    expect((await reader.readBytes(30)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\n');
     dataArrived();
     reader.releaseLock();
     await openpgp.stream.cancel(signed, new Error('canceled by test'));
