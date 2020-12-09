@@ -11,15 +11,82 @@
 
 /* ############## v5 KEY #################### */
 
-export function readArmoredKey(armoredText: string): Promise<key.Key>;
-export function readKey(data: Uint8Array): Promise<key.Key>;
-export function readArmoredKeys(armoredText: string): Promise<key.Key[]>;
-export function readKeys(data: Uint8Array): Promise<key.Key[]>;
+export function readArmoredKey(armoredText: string): Promise<Key>;
+export function readKey(data: Uint8Array): Promise<Key>;
+export function readArmoredKeys(armoredText: string): Promise<Key[]>;
+export function readKeys(data: Uint8Array): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
-export function generateSessionKey(publicKeys: key.Key[]): Promise<SessionKey>; // todo - guessing input, is it PublicKeyPacket[]?
-export function decryptKey(options: { privateKey: key.Key; passphrase?: string | string[]; }): Promise<key.Key>;
-export function encryptKey(options: { privateKey: key.Key; passphrase?: string }): Promise<key.Key>;
-export function reformatKey(options: { privateKey: key.Key; userIds?: (string | UserId)[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
+export function generateSessionKey(publicKeys: Key[]): Promise<SessionKey>; // todo - guessing input, is it PublicKeyPacket[]?
+export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
+export function encryptKey(options: { privateKey: Key; passphrase?: string }): Promise<Key>;
+export function reformatKey(options: { privateKey: Key; userIds?: (string | UserId)[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
+
+export class Key {
+  public primaryKey: PublicKeyPacket | SecretKeyPacket;
+  public subKeys: SubKey[];
+  public users: User[];
+  public revocationSignatures: SignaturePacket[];
+  public keyPacket: PublicKeyPacket | SecretKeyPacket;
+  constructor(packetlist: packet.List<AnyPacket>);
+  public armor(): string;
+  public decrypt(passphrase: string | string[], keyId?: Keyid): Promise<boolean>;
+  public encrypt(passphrase: string | string[]): Promise<void>;
+  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign' | null, keyId?: Keyid | null, userId?: UserId | null): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
+  public getKeyIds(): Keyid[];
+  public getPrimaryUser(): Promise<PrimaryUser>; // throws on err
+  public getUserIds(): string[];
+  public isPrivate(): boolean;
+  public isPublic(): boolean;
+  public toPublic(): Key;
+  public update(key: Key): void;
+  public verifyPrimaryKey(): Promise<void>; // throws on err
+  public isRevoked(): Promise<boolean>;
+  public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date): Promise<Key>;
+  public getRevocationCertificate(): Promise<Stream<string> | string | undefined>;
+  public getEncryptionKey(keyid?: Keyid | null, date?: Date, userId?: UserId | null): Promise<Key | SubKey | null>;
+  public getSigningKey(keyid?: Keyid | null, date?: Date, userId?: UserId | null): Promise<Key | SubKey | null>;
+  public getKeys(keyId?: Keyid): (Key | SubKey)[];
+  public isDecrypted(): boolean;
+  public isFullyEncrypted(): boolean;
+  public isFullyDecrypted(): boolean;
+  public isPacketDecrypted(keyId: Keyid): boolean;
+  public getFingerprint(): string;
+  public getCreationTime(): Date;
+  public getAlgorithmInfo(): AlgorithmInfo;
+  public getKeyId(): Keyid;
+}
+
+export class SubKey {
+  public subKey: SecretSubkeyPacket | PublicSubkeyPacket;
+  public keyPacket: SecretKeyPacket;
+  public bindingSignatures: SignaturePacket[];
+  public revocationSignatures: SignaturePacket[];
+  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
+  public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<enums.keyStatus>;
+  public isDecrypted(): boolean;
+  public getFingerprint(): string;
+  public getCreationTime(): Date;
+  public getAlgorithmInfo(): AlgorithmInfo;
+  public getKeyId(): Keyid;
+}
+
+export interface User {
+  userId: UserIDPacket | null;
+  userAttribute: UserAttributePacket | null;
+  selfCertifications: SignaturePacket[];
+  otherCertifications: SignaturePacket[];
+  revocationSignatures: SignaturePacket[];
+}
+
+export interface PrimaryUser {
+  index: number;
+  user: User;
+}
+
+type AlgorithmInfo = {
+  algorithm: enums.publicKeyNames;
+  bits: number;
+};
 
 /* ############## v5 SIG #################### */
 
@@ -33,14 +100,75 @@ export function fromText(text: string): cleartext.CleartextMessage;
 
 /* ############## v5 MSG #################### */
 
-export function readArmoredMessage(armoredText: string | Stream<string>): Promise<message.Message>;
-export function readMessage(input: Uint8Array): Promise<message.Message>;
-export function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
-export function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
+export function readArmoredMessage(armoredText: string | Stream<string>): Promise<Message>;
+export function readMessage(input: Uint8Array): Promise<Message>;
+export function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): Message;
+export function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): Message;
 export function encrypt(options: EncryptBinaryOptions): Promise<Uint8Array | Stream<Uint8Array>>;
 export function encrypt(options: EncryptArmorOptions | BaseEncryptOptions): Promise<string | Stream<string>>;
 export function sign(options: SignOptions): Promise<Uint8Array | Stream<Uint8Array> | string | Stream<string>>;
 export function decrypt(options: DecryptOptions): Promise<DecryptMessageResult>;
+
+/** Class that represents an OpenPGP  Can be an encrypted message, signed message, compressed message or literal message
+ */
+export class Message {
+
+  public packets: packet.List<AnyPacket>;
+  constructor(packetlist: packet.List<AnyPacket>);
+
+  /** Returns ASCII armored text of message
+   */
+  public armor(): string;
+
+  /** Decrypt the message
+      @param privateKey private key with decrypted secret data
+  */
+  public decrypt(privateKeys?: Key[] | null, passwords?: string[] | null, sessionKeys?: SessionKey[] | null, streaming?: boolean): Promise<Message>;
+
+  /** Encrypt the message
+      @param keys array of keys, used to encrypt the message
+  */
+  public encrypt(keys: Key[]): Promise<Message>;
+
+  /** Returns the key IDs of the keys to which the session key is encrypted
+   */
+  public getEncryptionKeyIds(): Keyid[];
+
+  /** Get literal data that is the body of the message
+   */
+  public getLiteralData(): Uint8Array | null | Stream<Uint8Array>;
+
+  /** Returns the key IDs of the keys that signed the message
+   */
+  public getSigningKeyIds(): Keyid[];
+
+  /** Get literal data as text
+   */
+  public getText(): string | null | Stream<string>;
+
+  public getFilename(): string | null;
+
+  /** Sign the message (the literal data packet of the message)
+      @param privateKey private keys with decrypted secret key data for signing
+  */
+  public sign(privateKey: Key[]): Promise<Message>;
+
+  /** Unwrap compressed message
+   */
+  public unwrapCompressed(): Message;
+
+  /** Verify message signatures
+      @param keys array of keys to verify signatures
+  */
+  public verify(keys: Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
+
+  /**
+   * Append signature to unencrypted message object
+   * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
+   */
+  public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
+}
+
 
 /* ############## v5 CONFIG #################### */
 
@@ -86,7 +214,7 @@ declare class BaseKeyPacket extends BasePacket {
   public expirationTimeV3: number | null;
   public keyExpirationTime: number | null;
   public getBitSize(): number;
-  public getAlgorithmInfo(): key.AlgorithmInfo;
+  public getAlgorithmInfo(): AlgorithmInfo;
   public getFingerprint(): string;
   public getFingerprintBytes(): Uint8Array | null;
   public getCreationTime(): Date;
@@ -254,11 +382,11 @@ export interface SessionKey { data: Uint8Array; algorithm: string; }
  */
 interface BaseEncryptOptions {
   /** message to be encrypted as created by openpgp.message.fromText or openpgp.message.fromBinary */
-  message: message.Message;
+  message: Message;
   /** (optional) array of keys or single key, used to encrypt the message */
-  publicKeys?: key.Key | key.Key[];
+  publicKeys?: Key | Key[];
   /** (optional) private keys for signing. If omitted message will not be signed */
-  privateKeys?: key.Key | key.Key[];
+  privateKeys?: Key | Key[];
   /** (optional) array of passwords or a single password to encrypt the message */
   passwords?: string | string[];
   /** (optional) session key in the form: { data:Uint8Array, algorithm:String } */
@@ -321,15 +449,15 @@ export namespace packet {
 
 export interface DecryptOptions {
   /** the message object with the encrypted data */
-  message: message.Message;
+  message: Message;
   /** (optional) private keys with decrypted secret key data or session key */
-  privateKeys?: key.Key | key.Key[];
+  privateKeys?: Key | Key[];
   /** (optional) passwords to decrypt the message */
   passwords?: string | string[];
   /** (optional) session keys in the form: { data:Uint8Array, algorithm:String } */
   sessionKeys?: SessionKey | SessionKey[];
   /** (optional) array of public keys or single key, to verify signatures */
-  publicKeys?: key.Key | key.Key[];
+  publicKeys?: Key | Key[];
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
   format?: string;
   /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
@@ -339,8 +467,8 @@ export interface DecryptOptions {
 }
 
 export interface SignOptions {
-  message: cleartext.CleartextMessage | message.Message;
-  privateKeys?: key.Key | key.Key[];
+  message: cleartext.CleartextMessage | Message;
+  privateKeys?: Key | Key[];
   armor?: boolean;
   streaming?: 'web' | 'node' | false;
   dataType?: DataPacketType;
@@ -350,23 +478,25 @@ export interface SignOptions {
 }
 
 export interface KeyPair {
-  key: key.Key; // todo - still like this?
+  key: Key; // todo - still like this?
   privateKeyArmored: string;
   publicKeyArmored: string;
 }
+
+export type EllipticCurveName = 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
 export interface KeyOptions {
   userIds: UserId[]; // generating a key with no user defined results in error
   passphrase?: string;
   numBits?: number;
   keyExpirationTime?: number;
-  curve?: key.EllipticCurveName;
+  curve?: EllipticCurveName;
   date?: Date;
   subkeys?: KeyOptions[];
 }
 
 /**
- * Intended for internal use with openpgp.key.generate()
+ * Intended for internal use with openpgp.generate()
  * It's recommended that users choose openpgp.generateKey() that requires KeyOptions instead
  */
 export interface FullKeyOptions {
@@ -374,7 +504,7 @@ export interface FullKeyOptions {
   passphrase?: string;
   numBits?: number;
   keyExpirationTime?: number;
-  curve?: key.EllipticCurveName;
+  curve?: EllipticCurveName;
   date?: Date;
   subkeys: KeyOptions[]; // required unline KeyOptions.subkeys
 }
@@ -421,12 +551,12 @@ export namespace cleartext {
      *
      *  @param privateKeys private keys with decrypted secret key data for signing
      */
-    sign(privateKeys: Array<key.Key>): void;
+    sign(privateKeys: Array<Key>): void;
 
     /** Verify signatures of cleartext signed message
      *  @param keys array of keys to verify signatures
      */
-    verify(keys: key.Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
+    verify(keys: Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
   }
 }
 
@@ -657,87 +787,7 @@ export namespace enums {
 
 }
 
-export namespace key {
-
-  export type EllipticCurveName = 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
-
-  /** Class that represents an OpenPGP key. Must contain a primary key. Can contain additional subkeys, signatures, user ids, user attributes.
-   */
-  class Key {
-    public primaryKey: PublicKeyPacket | SecretKeyPacket;
-    public subKeys: SubKey[];
-    public users: User[];
-    public revocationSignatures: SignaturePacket[];
-    public keyPacket: PublicKeyPacket | SecretKeyPacket;
-    constructor(packetlist: packet.List<AnyPacket>);
-    public armor(): string;
-    public decrypt(passphrase: string | string[], keyId?: Keyid): Promise<boolean>;
-    public encrypt(passphrase: string | string[]): Promise<void>;
-    public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign' | null, keyId?: Keyid | null, userId?: UserId | null): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
-    public getKeyIds(): Keyid[];
-    public getPrimaryUser(): Promise<PrimaryUser>; // throws on err
-    public getUserIds(): string[];
-    public isPrivate(): boolean;
-    public isPublic(): boolean;
-    public toPublic(): Key;
-    public update(key: Key): void;
-    public verifyPrimaryKey(): Promise<void>; // throws on err
-    public isRevoked(): Promise<boolean>;
-    public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date): Promise<Key>;
-    public getRevocationCertificate(): Promise<Stream<string> | string | undefined>;
-    public getEncryptionKey(keyid?: Keyid | null, date?: Date, userId?: UserId | null): Promise<key.Key | key.SubKey | null>;
-    public getSigningKey(keyid?: Keyid | null, date?: Date, userId?: UserId | null): Promise<key.Key | key.SubKey | null>;
-    public getKeys(keyId?: Keyid): (Key | SubKey)[];
-    public isDecrypted(): boolean;
-    public isFullyEncrypted(): boolean;
-    public isFullyDecrypted(): boolean;
-    public isPacketDecrypted(keyId: Keyid): boolean;
-    public getFingerprint(): string;
-    public getCreationTime(): Date;
-    public getAlgorithmInfo(): AlgorithmInfo;
-    public getKeyId(): Keyid;
-  }
-
-  class SubKey {
-    public subKey: SecretSubkeyPacket | PublicSubkeyPacket;
-    public keyPacket: SecretKeyPacket;
-    public bindingSignatures: SignaturePacket[];
-    public revocationSignatures: SignaturePacket[];
-    constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
-    public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<enums.keyStatus>;
-    public isDecrypted(): boolean;
-    public getFingerprint(): string;
-    public getCreationTime(): Date;
-    public getAlgorithmInfo(): AlgorithmInfo;
-    public getKeyId(): Keyid;
-  }
-
-  export interface User {
-    userId: UserIDPacket | null;
-    userAttribute: UserAttributePacket | null;
-    selfCertifications: SignaturePacket[];
-    otherCertifications: SignaturePacket[];
-    revocationSignatures: SignaturePacket[];
-  }
-
-  export interface PrimaryUser {
-    index: number;
-    user: User;
-  }
-
-  type AlgorithmInfo = {
-    algorithm: enums.publicKeyNames;
-    bits: number;
-  };
-
-  /** Generates a new OpenPGP key. Currently only supports RSA keys. Primary and subkey will be of same type.
-    *  @param options
-    */
-  function generate(options: FullKeyOptions): Promise<Key>;
-
-}
-
-export namespace signature {
+export namespace signature { // todo - remove?
   class Signature {
     public packets: packet.List<SignaturePacket>;
     constructor(packetlist: packet.List<SignaturePacket>);
@@ -745,66 +795,7 @@ export namespace signature {
   }
 }
 
-export namespace message {
-  /** Class that represents an OpenPGP message. Can be an encrypted message, signed message, compressed message or literal message
-   */
-  class Message {
-
-    public packets: packet.List<AnyPacket>;
-    constructor(packetlist: packet.List<AnyPacket>);
-
-    /** Returns ASCII armored text of message
-     */
-    public armor(): string;
-
-    /** Decrypt the message
-        @param privateKey private key with decrypted secret data
-    */
-    public decrypt(privateKeys?: key.Key[] | null, passwords?: string[] | null, sessionKeys?: SessionKey[] | null, streaming?: boolean): Promise<Message>;
-
-    /** Encrypt the message
-        @param keys array of keys, used to encrypt the message
-    */
-    public encrypt(keys: key.Key[]): Promise<Message>;
-
-    /** Returns the key IDs of the keys to which the session key is encrypted
-     */
-    public getEncryptionKeyIds(): Keyid[];
-
-    /** Get literal data that is the body of the message
-     */
-    public getLiteralData(): Uint8Array | null | Stream<Uint8Array>;
-
-    /** Returns the key IDs of the keys that signed the message
-     */
-    public getSigningKeyIds(): Keyid[];
-
-    /** Get literal data as text
-     */
-    public getText(): string | null | Stream<string>;
-
-    public getFilename(): string | null;
-
-    /** Sign the message (the literal data packet of the message)
-        @param privateKey private keys with decrypted secret key data for signing
-    */
-    public sign(privateKey: key.Key[]): Promise<Message>;
-
-    /** Unwrap compressed message
-     */
-    public unwrapCompressed(): Message;
-
-    /** Verify message signatures
-        @param keys array of keys to verify signatures
-    */
-    public verify(keys: key.Key[], date?: Date, streaming?: boolean): Promise<Verification[]>;
-
-    /**
-     * Append signature to unencrypted message object
-     * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
-     */
-    public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
-  }
+export namespace message { // todo - remove?
 
   class SessionKey { // todo
 
