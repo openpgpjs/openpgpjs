@@ -7,8 +7,6 @@
  *  - Errietta Kostala <https://github.com/errietta>
  */
 
-// declare module OpenPGP {
-
 /* ############## v5 KEY #################### */
 
 export function readArmoredKey(armoredText: string): Promise<Key>;
@@ -932,6 +930,4 @@ export namespace stream {
   // webToNode
   // nodeToWeb
 }
-
-// }
 
