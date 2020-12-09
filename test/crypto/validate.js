@@ -80,6 +80,7 @@ function cloneKeyPacket(key) {
   return keyPacket;
 }
 
+/* eslint-disable no-invalid-this */
 module.exports = () => {
   describe('EdDSA parameter validation', function() {
     let eddsaKey;
