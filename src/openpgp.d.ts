@@ -96,7 +96,6 @@ export function readSignature(input: Uint8Array): Promise<signature.Signature>;
 /* ############## v5 CLEARTEXT #################### */
 
 export function readArmoredCleartextMessage(armoredText: string): Promise<cleartext.CleartextMessage>;
-export function fromText(text: string): cleartext.CleartextMessage;
 
 /* ############## v5 MSG #################### */
 
@@ -167,6 +166,8 @@ export class Message {
    * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
    */
   public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
+
+  static fromText(text: string): Message;
 }
 
 
@@ -381,7 +382,7 @@ export interface SessionKey { data: Uint8Array; algorithm: string; }
  * EncryptArmorOptions or EncryptBinaryOptions will be used based on armor option (boolean), defaults to armoring
  */
 interface BaseEncryptOptions {
-  /** message to be encrypted as created by openpgp.message.fromText or openpgp.message.fromBinary */
+  /** message to be encrypted as created by Message.fromText or Message.fromBinary */
   message: Message;
   /** (optional) array of keys or single key, used to encrypt the message */
   publicKeys?: Key | Key[];
@@ -534,7 +535,7 @@ export namespace armor {
 export namespace cleartext {
   /** Class that represents an OpenPGP cleartext signed message.
    */
-  interface CleartextMessage {
+  class CleartextMessage {
     /** Returns ASCII armored text of cleartext signed message
      */
     armor(): string;
@@ -557,6 +558,8 @@ export namespace cleartext {
      *  @param keys array of keys to verify signatures
      */
     verify(keys: Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
+
+    static fromText(text: string): cleartext.CleartextMessage;
   }
 }
 

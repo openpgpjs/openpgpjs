@@ -10,23 +10,23 @@
 
 /// - <reference path="../../openpgp.d.ts" />
 
-import { generateKey, readArmoredKey, readArmoredKeys, Key, util, armor } from '../../dist/node/openpgp';
+import { generateKey, readArmoredKey, readArmoredKeys, Key, Message, encrypt } from '../../dist/node/openpgp';
 import { expect } from 'chai';
 
 (async () => {
 
   // generate
-  const { publicKeyArmored, privateKeyArmored, key } = await generateKey({ userIds: [{ email: "user@corp.co" }] });
+  const { publicKeyArmored, key } = await generateKey({ userIds: [{ email: "user@corp.co" }] });
   expect(key).to.be.instanceOf(Key);
 
   // parse
   expect(await readArmoredKey(publicKeyArmored)).to.be.instanceOf(Key);
-  expect(await readArmoredKeys(publicKeyArmored + '\n' + privateKeyArmored)).to.have.lengthOf(2);
+  expect(await readArmoredKeys(publicKeyArmored)).to.have.lengthOf(1);
 
-  // // Encrypt text message(armored)
-  // const message = Message.fromText(text);
-  // const encrypted = await encrypt({ publicKeys, message });
-  // console.log(encrypted); // String
+  // Encrypt text message(armored)
+  const message = Message.fromText('hello');
+  const encrypted = await encrypt({ publicKeys: [key.toPublic()], message });
+  expect(encrypted).to.include('-----BEGIN PGP MESSAGE-----');
 
   // // Encrypt text message(unarmored)  
   // const message = Message.fromBinary(data);
@@ -93,6 +93,8 @@ import { expect } from 'chai';
   // const message = Message.fromBinary(data);
   // const encrypted = await encrypt({ publicKeys, message, armor: false });
   // encrypted.pipe(targetStream);
+
+  console.log('typescript definitions are correct');
 })().catch(e => {
   console.error('TypeScript definitions tests failed by throwing the following error');
   console.error(e);
