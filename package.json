@@ -36,6 +36,7 @@
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
     "test": "mocha --require esm --timeout 120000 test/unittests.js",
+    "test-type-definitions": "cp ./openpgp.d.ts dist/ && ./node_modules/.bin/typescript test/typescript/definitions.ts && node test/typescript/definitions.js",
     "start": "http-server",
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
@@ -77,6 +78,7 @@
     "sinon": "^4.3.0",
     "text-encoding-utf-8": "^1.0.2",
     "tweetnacl": "github:openpgpjs/tweetnacl-js#1ef755f2b252a3e328ac739848d00e0dad76be2d",
+    "typescript": "^4.1.2",
     "web-stream-tools": "github:openpgpjs/web-stream-tools#5e6cb1a976d50c421091907615cf7cce77ac4f2a",
     "whatwg-fetch": "^2.0.3"
   },
