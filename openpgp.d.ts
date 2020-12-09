@@ -432,10 +432,15 @@ declare namespace OpenPGP {
   function readArmoredSignature(armoredText: string): Promise<signature.Signature>;
   function readSignature(input: Uint8Array): Promise<signature.Signature>;
 
-  // msg or cleartext
+  // cleartext
   function readArmoredCleartextMessage(armoredText: string): Promise<cleartext.CleartextMessage>;
+  function fromText(text: string): cleartext.CleartextMessage;
+
+  // msg
   function readArmoredMessage(armoredText: string | Stream<string>): Promise<message.Message>;
   function readMessage(input: Uint8Array): Promise<message.Message>;
+  function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
+  function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): message.Message;
 
   /**
    * Reformats signature packets for a key and rewraps key object.
@@ -515,8 +520,6 @@ declare namespace OpenPGP {
        */
       verify(keys: key.Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
     }
-
-    function fromText(text: string): CleartextMessage;
   }
 
   export namespace config {
@@ -929,16 +932,6 @@ declare namespace OpenPGP {
       verified: Promise<null | boolean>;
       signature: Promise<signature.Signature>;
     }
-
-    /** creates new message object from binary data
-        @param bytes
-    */
-    function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): Message;
-
-    /** creates new message object from text
-        @param text
-    */
-    function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): Message;
   }
 
   export class HKP {
