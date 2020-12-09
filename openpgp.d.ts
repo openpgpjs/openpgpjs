@@ -321,15 +321,15 @@ declare namespace OpenPGP {
   }
 
   export class CompressedDataPacket extends BasePacket {
-    public tag: enums.packet.compressed;
+    public tag: enums.packet.compressedData;
   }
 
   export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
-    public tag: enums.packet.symEncryptedIntegrityProtected;
+    public tag: enums.packet.symEncryptedIntegrityProtectedData;
   }
 
   export class AEADEncryptedDataPacket extends BasePacket {
-    public tag: enums.packet.AEADEncryptedDataPacket;
+    public tag: enums.packet.AEADEncryptedData;
   }
 
   export class PublicKeyEncryptedSessionKeyPaclet extends BasePacket {
@@ -341,7 +341,7 @@ declare namespace OpenPGP {
   }
 
   export class LiteralDataPacket extends BasePacket {
-    public tag: enums.packet.literal;
+    public tag: enums.packet.literalData;
   }
 
   export class PublicKeyPacket extends BasePrimaryKeyPacket {
@@ -349,7 +349,7 @@ declare namespace OpenPGP {
   }
 
   export class SymmetricallyEncryptedDataPacket extends BasePacket {
-    public tag: enums.packet.symmetricallyEncrypted;
+    public tag: enums.packet.symmetricallyEncryptedData;
   }
 
   export class MarkerPacket extends BasePacket {
@@ -378,7 +378,7 @@ declare namespace OpenPGP {
   }
 
   export class UserIDPacket extends BasePacket {
-    public tag: enums.packet.userid;
+    public tag: enums.packet.userID;
     public userid: string;
   }
 
@@ -721,17 +721,17 @@ declare namespace OpenPGP {
       secretKey = 5,
       publicKey = 6,
       secretSubkey = 7,
-      compressed = 8,
-      symmetricallyEncrypted = 9,
+      compressedData = 8,
+      symmetricallyEncryptedData = 9,
       marker = 10,
-      literal = 11,
+      literalData = 11,
       trust = 12,
-      userid = 13,
+      userID = 13,
       publicSubkey = 14,
       userAttribute = 17,
-      symEncryptedIntegrityProtected = 18,
+      symEncryptedIntegrityProtectedData = 18,
       modificationDetectionCode = 19,
-      AEADEncryptedDataPacket = 20,
+      AEADEncryptedData = 20,
     }
 
     export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsa' | 'aedh' | 'aedsa';
@@ -1020,7 +1020,7 @@ declare namespace OpenPGP {
 
     function uint8ArrayToB64(bytes: Uint8Array): string;
 
-    function uint8ArrayToMpi(bytes: Uint8Array): unknown; // todo - MPI
+    function uint8ArrayToMpi(bytes: Uint8Array): crypto.Mpi;
 
     /**
      * Convert a hex string to an array of 8-bit integers
