@@ -55,8 +55,6 @@ declare namespace OpenPGP {
     detached?: boolean;
     /** (optional) a detached signature to add to the encrypted message */
     signature?: signature.Signature;
-    /** (optional) if the unencrypted session key should be added to returned object */
-    returnSessionKey?: boolean;
     /** (optional) encrypt as of a certain date */
     date?: Date;
     /** (optional) use a key ID of 0 instead of the public key IDs */
@@ -265,6 +263,11 @@ declare namespace OpenPGP {
    * @static
    */
   export function generateKey(options: KeyOptions): Promise<KeyPair>;
+
+  /* ############## v5 NEW STUFF ################# */
+
+  // todo - just guessing the input, or is it PublicKeyPacket?
+  function generateSessionKey(publicKeys: key.Key[]): Promise<SessionKey>
 
   /* ############## v5 KEY #################### */
 
