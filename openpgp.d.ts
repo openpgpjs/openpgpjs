@@ -523,28 +523,28 @@ declare namespace OpenPGP {
   }
 
   export namespace config {
-    let prefer_hash_algorithm: enums.hash;
-    let encryption_cipher: enums.symmetric;
+    let preferHashAlgorithm: enums.hash;
+    let encryptionCipher: enums.symmetric;
     let compression: enums.compression;
-    let show_version: boolean;
-    let show_comment: boolean;
-    let integrity_protect: boolean;
+    let showVersion: boolean;
+    let showComment: boolean;
+    let integrityProtect: boolean;
     let debug: boolean;
-    let deflate_level: number;
-    let aead_protect: boolean;
-    let ignore_mdc_error: boolean;
-    let checksum_required: boolean;
-    let rsa_blinding: boolean;
-    let password_collision_check: boolean;
-    let revocations_expire: boolean;
-    let use_native: boolean;
-    let zero_copy: boolean;
+    let deflateLevel: number;
+    let aeadProtect: boolean;
+    let ignoreMdcError: boolean;
+    let checksumRequired: boolean;
+    let rsaBlinding: boolean;
+    let passwordCollisionCheck: boolean;
+    let revocationsExpire: boolean;
+    let useNative: boolean;
+    let zeroCopy: boolean;
     let tolerant: boolean;
     let versionstring: string;
     let commentstring: string;
     let keyserver: string;
-    let node_store: string;
-    let allow_insecure_decryption_with_signing_keys: boolean;
+    let nodeStore: string;
+    let allowInsecureDecryptionWithSigningKeys: boolean;
   }
 
   export namespace crypto {
