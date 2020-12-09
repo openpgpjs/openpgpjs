@@ -540,8 +540,8 @@ declare namespace OpenPGP {
     let useNative: boolean;
     let zeroCopy: boolean;
     let tolerant: boolean;
-    let versionstring: string;
-    let commentstring: string;
+    let versionString: string;
+    let commentString: string;
     let keyserver: string;
     let nodeStore: string;
     let allowInsecureDecryptionWithSigningKeys: boolean;
