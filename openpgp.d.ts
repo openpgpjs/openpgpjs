@@ -420,10 +420,22 @@ declare namespace OpenPGP {
    */
   export function generateKey(options: KeyOptions): Promise<KeyPair>;
 
+  // these are v5 methods on openpgpjs { }
+
+  // key
   function readArmoredKey(armoredText: string): Promise<key.Key>;
   function readKey(data: Uint8Array): Promise<key.Key>;
   function readArmoredKeys(armoredText: string): Promise<key.Key[]>;
   function readKeys(data: Uint8Array): Promise<key.Key[]>;
+
+  // sig
+  function readArmoredSignature(armoredText: string): Promise<signature.Signature>;
+  function readSignature(input: Uint8Array): Promise<signature.Signature>;
+
+  // msg or cleartext
+  function readArmoredCleartextMessage(armoredText: string): Promise<cleartext.CleartextMessage>;
+  function readArmoredMessage(armoredText: string | Stream<string>): Promise<message.Message>;
+  function readMessage(input: Uint8Array): Promise<message.Message>;
 
   /**
    * Reformats signature packets for a key and rewraps key object.
@@ -503,15 +515,6 @@ declare namespace OpenPGP {
        */
       verify(keys: key.Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
     }
-
-    /**
-     * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
-     * @param armoredText text to be parsed
-     * @returns new cleartext message object
-     * @async
-     * @static
-     */
-    function readArmored(armoredText: string): Promise<CleartextMessage>;
 
     function fromText(text: string): CleartextMessage;
   }
@@ -854,18 +857,6 @@ declare namespace OpenPGP {
       constructor(packetlist: packet.List<packet.Signature>);
       public armor(): string;
     }
-
-    /** reads an OpenPGP armored signature and returns a signature object
-
-        @param armoredText text to be parsed
-    */
-    function readArmored(armoredText: string): Promise<Signature>;
-
-    /** reads an OpenPGP signature as byte array and returns a signature object
-
-        @param  input   binary signature
-    */
-    function read(input: Uint8Array): Promise<Signature>;
   }
 
   export namespace message {
@@ -948,20 +939,6 @@ declare namespace OpenPGP {
         @param text
     */
     function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): Message;
-
-    /** reads an OpenPGP armored message and returns a message object
-
-        @param armoredText text to be parsed
-    */
-    function readArmored(armoredText: string | Stream<string>): Promise<Message>;
-
-    /**
-     * reads an OpenPGP message as byte array and returns a message object
-     * @param {Uint8Array} input  binary message
-     * @returns {Message}           new message object
-     * @static
-     */
-    function read(input: Uint8Array): Promise<Message>;
   }
 
   export class HKP {
