@@ -360,50 +360,6 @@ declare namespace OpenPGP {
     filename: string;
   }
 
-  export interface OpenPGPWorker {
-    randomCallback(): void;
-    configure(config: any): void;
-    seedRandom(buffer: ArrayBuffer): void;
-    delegate(id: number, method: string, options: any): void;
-    response(event: any): void;
-  }
-
-  export interface WorkerOptions {
-    path?: string;
-    n?: number;
-    workers?: OpenPGPWorker[];
-    config?: any;
-  }
-
-  export class AsyncProxy {
-
-    public workers: OpenPGPWorker[];
-    constructor(options: WorkerOptions);
-    public getId(): number;
-    public seedRandom(workerId: number, size: number): Promise<void>;
-    public terminate(): void;
-    public delegate(method: string, options: any): void;
-  }
-
-  /**
-   * Set the path for the web worker script and create an instance of the async proxy
-   * @param {String} path            relative path to the worker scripts, default: 'openpgp.worker.js'
-   * @param {Number} n               number of workers to initialize
-   * @param {Array<Object>} workers  alternative to path parameter: web workers initialized with 'openpgp.worker.js'
-   */
-  export function initWorker(options: WorkerOptions): boolean;
-
-  /**
-   * Returns a reference to the async proxy if the worker was initialized with openpgp.initWorker()
-   * @returns {module:worker/async_proxy.AsyncProxy|null} the async proxy or null if not initialized
-   */
-  export function getWorker(): AsyncProxy;
-
-  /**
-   * Cleanup the current instance of the web worker.
-   */
-  export function destroyWorker(): void;
-
   /**
    * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
    *   must be specified. If private keys are specified, those will be used to sign the message.
