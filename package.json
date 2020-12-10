@@ -38,7 +38,7 @@
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
     "test": "mocha --require esm --timeout 120000 test/unittests.js",
-    "test-type-definitions": "./node_modules/.bin/tsc --strict test/typescript/definitions.ts && node test/typescript/definitions.js",
+    "test-type-definitions": "tsc --strict test/typescript/definitions.ts && node test/typescript/definitions.js",
     "start": "http-server",
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
