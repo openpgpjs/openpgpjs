@@ -1795,4 +1795,38 @@ Ie6jnY0zP2ldtS4JmhKBa43qmOHCxHc=
     const decrypted = await openpgp.decrypt({ message: await openpgp.readArmoredMessage(encrypted), privateKeys: key, publicKeys: key.toPublic() });
     expect(decrypted.signatures[0].valid).to.be.true;
   });
+
+  it('should verify a shorter ECDSA signature', async function() {
+    const key = await openpgp.readArmoredKey(`-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYAFX9JrLRMAAABMCCqGSM49AwEHAgMErtQdX4vh7ng/ut+k1mooYNh3Ywqt
+wr0tSS8hxZMvQRIFQ53Weq0e97ioZKXGimprEL571yvAN7I19wtQtqi61AAA
+AAAAJAEAjWdW+qlMFaKwXCls3O/X8I1rbZ0OdFgeE3TnRP3YETAP5s0KYSA8
+YUBhLml0PsKSBRATCAAhBQJf0mstBAsJBwgDFQgKBBYCAQACGQECGwMCHgcD
+IgECACMiIQUee6Tb+GlhTk/ozKrt7RhInCyR6w3OJb/tYAN1+qbIoYUqAP9S
+XmJCmSMrq6KfAD1aWSTBhtmujh+6y/pYTaf6VJVBYQEAt18zK0tw5EihHASY
+FXbfdFHBzrMmPJ4UV6UiBvH6k2zHhAVf0mstEgAAAFAIKoZIzj0DAQcCAwQx
+qnVPmWex365Nx8X8BGuMNI2TITXzTh9+AuPftZjPm09dhxdT9xmrCstPu/U1
+cpacIp0LIq13ngLgeZWcGFcnAwEIBwAAAAAAJAEAsTvBsKk/XoCz2mi8sz5q
+EYaN9YdDOU2jF+HOaSNaJAsPF8J6BRgTCAAJBQJf0mstAhsMACMiIQUee6Tb
++GlhTk/ozKrt7RhInCyR6w3OJb/tYAN1+qbIoVutAP9GHPLn7D9Uahm81lhK
+AcvDfr9a0Cp4WAVzKDKLUzrRMgEAozi0VyjiBo1U2LcwTPJkA4PEQqQRVW1D
+KZTMSAH7JEo=
+=tqWy
+-----END PGP PRIVATE KEY BLOCK-----`);
+    const signed = `-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+short message
+-----BEGIN PGP SIGNATURE-----
+
+wnYFARMIAAYFAl/Say0AIyIhBR57pNv4aWFOT+jMqu3tGEicLJHrDc4lv+1g
+A3X6psihFkcA+Nuog2qpAq20Zc2lzVjDZzQosb8MLvKMg3UFCX12Oc0BAJwd
+JImeZLY02MctIpGZULbqgcUGK0P/yqrPL8Pe4lQM
+=Pacb
+-----END PGP SIGNATURE-----`;
+    const message = await openpgp.readArmoredCleartextMessage(signed);
+    const verified = await openpgp.verify({ publicKeys: key, message });
+    expect(verified.signatures[0].valid).to.be.true;
+  });
 });

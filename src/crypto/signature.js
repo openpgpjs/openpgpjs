@@ -10,9 +10,10 @@ import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
 
-
 /**
  * Parse signature in binary form to get the parameters.
+ * The returned values are only padded for EdDSA, since in the other cases their expected length
+ * depends on the key params, hence we delegate the padding to the signature verification function.
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1}
  * See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2|RFC 4880 5.2.2.}
  * @param {module:enums.publicKey} algo       Public key algorithm
@@ -80,20 +81,25 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
       const { n, e } = publicParams;
-      const s = util.leftPad(signature.s, n.length);
+      const s = util.leftPad(signature.s, n.length); // padding needed for webcrypto and node crypto
       return publicKey.rsa.verify(hashAlgo, data, s, n, e, hashed);
     }
     case enums.publicKey.dsa: {
       const { g, p, q, y } = publicParams;
-      const { r, s } = signature;
+      const { r, s } = signature; // no need to pad, since we always handle them as BigIntegers
       return publicKey.dsa.verify(hashAlgo, r, s, hashed, g, p, q, y);
     }
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicParams;
-      return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, signature, data, Q, hashed);
+      const curveSize = new publicKey.elliptic.Curve(oid).payloadSize;
+      // padding needed for webcrypto
+      const r = util.leftPad(signature.r, curveSize);
+      const s = util.leftPad(signature.s, curveSize);
+      return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
     }
     case enums.publicKey.eddsa: {
       const { oid, Q } = publicParams;
+      // signature already padded on parsing
       return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signature, data, Q, hashed);
     }
     default:
