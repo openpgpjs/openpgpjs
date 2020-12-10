@@ -7,6 +7,8 @@ matrix:
   include:
     - node_js: "14"
       env: OPENPGP_NODE_JS='14' OPENPGPJSTEST='lint'
+    - node_js: "14"
+      env: OPENPGP_NODE_JS='14' OPENPGPJSTEST='test-type-definitions'
     - node_js: "10"
       env: OPENPGP_NODE_JS='10' OPENPGPJSTEST='unit'
     - node_js: "12"

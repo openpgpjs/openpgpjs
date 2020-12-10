@@ -11,6 +11,10 @@ elif [ $OPENPGPJSTEST = "lint" ]; then
   echo "Running OpenPGP.js eslint."
   npm run lint
 
+elif [ $OPENPGPJSTEST = "test-type-definitions" ]; then
+  echo "Testing OpenPGP.js type definitions."
+  npm run test-type-definitions
+
 elif [ $OPENPGPJSTEST = "unit" ]; then
   echo "Running OpenPGP.js unit tests on node.js."
   npm test ${LIGHTWEIGHT+ -- --grep lightweight}
