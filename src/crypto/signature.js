@@ -29,6 +29,8 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
       const s = util.readMPI(signature.subarray(read));
+      // The signature needs to be the same length as the public key modulo n.
+      // We pad s on signature verification, where we have access to n.
       return { s };
     }
     // Algorithm-Specific Fields for DSA or ECDSA signatures:
@@ -78,7 +80,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
       const { n, e } = publicParams;
-      const { s } = signature;
+      const s = util.leftPad(signature.s, n.length);
       return publicKey.rsa.verify(hashAlgo, data, s, n, e, hashed);
     }
     case enums.publicKey.dsa: {

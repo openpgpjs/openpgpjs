@@ -2456,7 +2456,6 @@ amnR6g==
         });
         expect(util.decodeUtf8(decrypted.data)).to.equal('"BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:123\r\nDTSTART:20191211T121212Z\r\nDTEND:20191212T121212Z\r\nEND:VEVENT\r\nEND:VCALENDAR"');
       });
-
     });
 
     describe('Errors', function() {
