@@ -6,7 +6,7 @@
  *  - if it failt to run, edit the definitions (and consequently this file) to match actual library API
  */
 
-import { generateKey, readArmoredKey, readArmoredKeys, Key, readMessage, readArmoredMessage, Message, CleartextMessage, encrypt, sign, verify } from '../../dist/node/openpgp';
+import { generateKey, readArmoredKey, readArmoredKeys, Key, readMessage, readArmoredMessage, Message, CleartextMessage, encrypt, sign, verify } from '../..';
 import { expect } from 'chai';
 
 (async () => {
@@ -97,7 +97,7 @@ import { expect } from 'chai';
   // const encrypted = await encrypt({ publicKeys, message, armor: false });
   // encrypted.pipe(targetStream);
 
-  console.log('typescript definitions are correct');
+  console.log('TypeScript definitions are correct');
 })().catch(e => {
   console.error('TypeScript definitions tests failed by throwing the following error');
   console.error(e);
