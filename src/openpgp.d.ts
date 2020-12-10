@@ -95,7 +95,7 @@ export function readArmoredCleartextMessage(armoredText: string): Promise<Cleart
 /* ############## v5 MSG #################### */
 
 export function readArmoredMessage(armoredText: string | Stream<string>): Promise<Message>;
-export function readMessage(input: Uint8Array): Promise<Message>;
+export function readMessage(input: Uint8Array | Stream<Uint8Array>): Promise<Message>;
 export function encrypt(options: EncryptBinaryOptions): Promise<Uint8Array | Stream<Uint8Array>>;
 export function encrypt(options: EncryptArmorOptions | BaseEncryptOptions): Promise<string | Stream<string>>;
 export function sign(options: SignOptions): Promise<Uint8Array | Stream<Uint8Array> | string | Stream<string>>;
