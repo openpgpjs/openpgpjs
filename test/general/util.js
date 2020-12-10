@@ -101,6 +101,10 @@ module.exports = () => describe('Util unit tests', function() {
       const mpi = util.uint8ArrayToMpi(bytes);
       expect(mpi).to.deep.equal(new Uint8Array([0, 9, 1, 2]));
     });
+    it('should throw on array of all zeros', function() {
+      const bytes = new Uint8Array([0, 0]);
+      expect(() => util.uint8ArrayToMpi(bytes)).to.throw('Zero MPI');
+    });
   });
 
   describe('isEmailAddress', function() {

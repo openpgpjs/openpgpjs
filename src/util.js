@@ -198,6 +198,9 @@ export default {
   uint8ArrayToMpi: function (bin) {
     let i; // index of leading non-zero byte
     for (i = 0; i < bin.length; i++) if (bin[i] !== 0) break;
+    if (i === bin.length) {
+      throw new Error('Zero MPI');
+    }
     const stripped = bin.subarray(i);
     const size = (stripped.length - 1) * 8 + util.nbits(stripped[0]);
     const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
