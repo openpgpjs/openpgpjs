@@ -3,7 +3,7 @@
  * 
  * If types are off, either this will fail to build with TypeScript, or it will fail to run.
  *  - if it fails to build, edit the file to match type definitions
- *  - if it fails to run, edit this file match actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
+ *  - if it fails to run, edit this file to match the actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
  */
 
 import { generateKey, readArmoredKey, readArmoredKeys, Key, readMessage, readArmoredMessage, Message, CleartextMessage, encrypt, decrypt, sign, verify } from '../..';

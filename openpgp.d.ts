@@ -521,7 +521,7 @@ type Stream<T extends Data> = WebStream<T> | NodeStream<T>;
 type MaybeStream<T extends Data> = T | Stream<T>;
 
 export namespace stream {
-  function readToEnd<T extends Data>(input: Stream<T> | T, concat?: (list: T[]) => T): Promise<T>;
+  function readToEnd<T extends Data>(input: MaybeStream<T>, concat?: (list: T[]) => T): Promise<T>;
   // concat
   // slice
   // clone
@@ -667,7 +667,7 @@ export function armor(messagetype: enums.armor, body: object, partindex: number,
 /**
  * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
  */
-export function unarmor<T extends MaybeStream<Uint8Array>>(text: string): Promise<{ text: string, data: T, type: enums.armor }>;
+export function unarmor(text: string): Promise<{ text: string, data: Stream<Uint8Array>, type: enums.armor }>;
 
 export class HKP {
   constructor(keyServerBaseUrl?: string);
