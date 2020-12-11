@@ -88,9 +88,50 @@ type AlgorithmInfo = {
 export function readArmoredSignature(armoredText: string): Promise<Signature>;
 export function readSignature(input: Uint8Array): Promise<Signature>;
 
+export class Signature {
+  public packets: PacketList<SignaturePacket>;
+  constructor(packetlist: PacketList<SignaturePacket>);
+  public armor(): string;
+}
+
+export interface VerificationResult {
+  keyid: Keyid;
+  verified: Promise<null | boolean>;
+  signature: Promise<Signature>;
+}
+
 /* ############## v5 CLEARTEXT #################### */
 
 export function readArmoredCleartextMessage(armoredText: string): Promise<CleartextMessage>;
+
+/** Class that represents an OpenPGP cleartext signed message.
+ */
+export class CleartextMessage {
+  /** Returns ASCII armored text of cleartext signed message
+   */
+  armor(): string;
+
+  /** Returns the key IDs of the keys that signed the cleartext message
+   */
+  getSigningKeyIds(): Array<Keyid>;
+
+  /** Get cleartext
+   */
+  getText(): string;
+
+  /** Sign the cleartext message
+   *
+   *  @param privateKeys private keys with decrypted secret key data for signing
+   */
+  sign(privateKeys: Array<Key>): void;
+
+  /** Verify signatures of cleartext signed message
+   *  @param keys array of keys to verify signatures
+   */
+  verify(keys: Key[], date?: Date, streaming?: boolean): Promise<VerificationResult[]>;
+
+  static fromText(text: string): CleartextMessage;
+}
 
 /* ############## v5 MSG #################### */
 
@@ -138,45 +179,53 @@ export function sign<T extends MaybeStream<Data>>(options: SignOptions & { messa
   T extends NodeStream<infer X> ? NodeStream<string> :
   string
 >;
-export function sign(options: SignOptions & { message: CleartextMessage }): string;
+export function sign(options: SignOptions & { message: CleartextMessage }): Promise<string>;
 
-export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T, format: 'binary' }): Promise<DecryptMessageResult & { data:
+export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T, format: 'binary' }): Promise<DecryptMessageResult & {
+  data:
   T extends 'web' ? WebStream<Uint8Array> :
   T extends 'node' ? NodeStream<Uint8Array> :
   Uint8Array
 }>;
-export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T }): Promise<DecryptMessageResult & { data:
+export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T }): Promise<DecryptMessageResult & {
+  data:
   T extends 'web' ? WebStream<string> :
   T extends 'node' ? NodeStream<string> :
   string
 }>;
-export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & { data:
+export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & {
+  data:
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
   Uint8Array
 }>;
-export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T> }): Promise<DecryptMessageResult & { data:
+export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T> }): Promise<DecryptMessageResult & {
+  data:
   T extends WebStream<infer X> ? WebStream<string> :
   T extends NodeStream<infer X> ? NodeStream<string> :
   string
 }>;
 
-export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T, format: 'binary' }): Promise<VerifyMessageResult & { data:
+export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T, format: 'binary' }): Promise<VerifyMessageResult & {
+  data:
   T extends 'web' ? WebStream<Uint8Array> :
   T extends 'node' ? NodeStream<Uint8Array> :
   Uint8Array
 }>;
-export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T }): Promise<VerifyMessageResult & { data:
+export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T }): Promise<VerifyMessageResult & {
+  data:
   T extends 'web' ? WebStream<string> :
   T extends 'node' ? NodeStream<string> :
   string
 }>;
-export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult & { data:
+export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult & {
+  data:
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
   Uint8Array
 }>;
-export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T> }): Promise<VerifyMessageResult & { data:
+export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T> }): Promise<VerifyMessageResult & {
+  data:
   T extends WebStream<infer X> ? WebStream<string> :
   T extends NodeStream<infer X> ? NodeStream<string> :
   string
@@ -471,6 +520,14 @@ interface NodeStream<T extends Data> extends BaseStream<T> { // copied+simplifie
 type Stream<T extends Data> = WebStream<T> | NodeStream<T>;
 type MaybeStream<T extends Data> = T | Stream<T>;
 
+export namespace stream {
+  function readToEnd<T extends Data>(input: Stream<T> | T, concat?: (list: T[]) => T): Promise<T>;
+  // concat
+  // slice
+  // clone
+  // webToNode
+  // nodeToWeb
+}
 
 /* ############## v5 GENERAL #################### */
 
@@ -610,38 +667,14 @@ export function armor(messagetype: enums.armor, body: object, partindex: number,
 /**
  * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
  */
-export function unarmor(text: string): object;
+export function unarmor<T extends MaybeStream<Uint8Array>>(text: string): Promise<{ text: string, data: T, type: enums.armor }>;
 
-
-/** Class that represents an OpenPGP cleartext signed message.
- */
-export class CleartextMessage {
-  /** Returns ASCII armored text of cleartext signed message
-   */
-  armor(): string;
-
-  /** Returns the key IDs of the keys that signed the cleartext message
-   */
-  getSigningKeyIds(): Array<Keyid>;
-
-  /** Get cleartext
-   */
-  getText(): string;
-
-  /** Sign the cleartext message
-   *
-   *  @param privateKeys private keys with decrypted secret key data for signing
-   */
-  sign(privateKeys: Array<Key>): void;
-
-  /** Verify signatures of cleartext signed message
-   *  @param keys array of keys to verify signatures
-   */
-  verify(keys: Key[], date?: Date, streaming?: boolean): Promise<VerificationResult[]>;
-
-  static fromText(text: string): CleartextMessage;
+export class HKP {
+  constructor(keyServerBaseUrl?: string);
+  public lookup(options: { keyid?: string, query?: string }): Promise<string | undefined>;
 }
 
+/* ############## v5 ENUMS #################### */
 
 export namespace enums {
 
@@ -766,26 +799,7 @@ export namespace enums {
 
 }
 
-
-export class Signature {
-  public packets: PacketList<SignaturePacket>;
-  constructor(packetlist: PacketList<SignaturePacket>);
-  public armor(): string;
-}
-
-
-export interface VerificationResult {
-  keyid: Keyid;
-  verified: Promise<null | boolean>;
-  signature: Promise<Signature>;
-}
-
-
-export class HKP {
-  constructor(keyServerBaseUrl?: string);
-  public lookup(options: { keyid?: string, query?: string }): Promise<string | undefined>;
-}
-
+/* ############## v5 UTIL #################### */
 
 export namespace util {
   /** Convert a string of utf8 bytes to a native javascript string
@@ -878,14 +892,4 @@ export namespace util {
    * @returns {String} Binary data encoded using Z-Base32
    */
   function encodeZBase32(data: Uint8Array): string;
-}
-
-
-export namespace stream {
-  function readToEnd<T extends Data>(input: Stream<T> | T, concat?: (list: T[]) => T): Promise<T>;
-  // concat
-  // slice
-  // clone
-  // webToNode
-  // nodeToWeb
 }
