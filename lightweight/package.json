@@ -1,4 +1,5 @@
 {
   "name": "openpgp-lightweight",
-  "main": "../dist/lightweight/openpgp.min.mjs"
+  "main": "../dist/lightweight/openpgp.min.mjs",
+  "types": "../openpgp.d.ts"
 }

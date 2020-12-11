@@ -6,81 +6,96 @@
  *  - if it failt to run, edit the definitions (and consequently this file) to match actual library API
  */
 
-import { generateKey, readArmoredKey, readArmoredKeys, Key, Message, encrypt } from '../../dist/node/openpgp';
+import { generateKey, readArmoredKey, readArmoredKeys, Key, readMessage, readArmoredMessage, Message, CleartextMessage, encrypt, decrypt, sign, verify } from '../..';
 import { expect } from 'chai';
 
 (async () => {
 
-  // generate
+  // Generate keys
   const { publicKeyArmored, key } = await generateKey({ userIds: [{ email: "user@corp.co" }] });
   expect(key).to.be.instanceOf(Key);
+  const privateKeys = [key];
   const publicKeys = [key.toPublic()];
 
-  // parse
+  // Parse keys
   expect(await readArmoredKey(publicKeyArmored)).to.be.instanceOf(Key);
   expect(await readArmoredKeys(publicKeyArmored)).to.have.lengthOf(1);
 
-  // Encrypt text message(armored)
-  const messageFromText = Message.fromText('hello');
-  const encryptedArmored = await encrypt({ publicKeys, message: messageFromText });
-  expect(encryptedArmored).to.include('-----BEGIN PGP MESSAGE-----');
+  // Encrypt text message (armored)
+  const text = 'hello';
+  const textMessage = Message.fromText('hello');
+  const encryptedArmor: string = await encrypt({ publicKeys, message: textMessage });
+  expect(encryptedArmor).to.include('-----BEGIN PGP MESSAGE-----');
 
-  // Encrypt text message(unarmored) 
-  const uint = new Uint8Array(2);
-  uint[0] = 1;
-  uint[1] = 2;
-  const messageFromBinary = Message.fromBinary(uint);
-  const encryptedBinary = await encrypt({ publicKeys, message: messageFromBinary, armor: false });
+  // Encrypt binary message (unarmored)
+  const binary = new Uint8Array(2);
+  binary[0] = 1;
+  binary[1] = 2;
+  const binaryMessage = Message.fromBinary(binary);
+  const encryptedBinary: Uint8Array = await encrypt({ publicKeys, message: binaryMessage, armor: false });
   expect(encryptedBinary).to.be.instanceOf(Uint8Array);
 
-  // // Encrypt message(inspect packets)
-  // import stream from 'web-stream-tools';
-  // const encrypted = await encrypt({ publicKeys, message, armor: false });
-  // const message = await readMessage(encrypted.data);
-  // message.packets.concat(await stream.readToEnd(message.packets.stream, _ => _)); // Optional, if you want to inspect trailing signature packets
+  // Decrypt text message (armored)
+  const encryptedTextMessage = await readArmoredMessage(encryptedArmor);
+  const decryptedText = await decrypt({ privateKeys, message: encryptedTextMessage });
+  const decryptedTextData: string = decryptedText.data;
+  expect(decryptedTextData).to.equal(text);
 
-  // // Sign cleartext message(armored)
-  // const message = CleartextMessage.fromText(text);
-  // const signed = await sign({ privateKeys, message });
-  // console.log(signed); // String
+  // Decrypt binary message (unarmored)
+  const encryptedBinaryMessage = await readMessage(encryptedBinary);
+  const decryptedBinary = await decrypt({ privateKeys, message: encryptedBinaryMessage, format: 'binary' });
+  const decryptedBinaryData: Uint8Array = decryptedBinary.data;
+  expect(decryptedBinaryData).to.deep.equal(binary);
 
-  // // Sign text message(unarmored)
-  // const message = Message.fromText(text);
-  // const signed = await sign({ privateKeys, message, armor: false });
-  // console.log(signed); // Uint8Array
+  // Encrypt message (inspect packets)
+  const encryptedMessage = await readMessage(encryptedBinary);
+  expect(encryptedMessage).to.be.instanceOf(Message);
 
-  // // Detached - sign cleartext message(armored)
+  // Sign cleartext message (armored)
+  const cleartextMessage = CleartextMessage.fromText('hello');
+  const clearSignedArmor = await sign({ privateKeys, message: cleartextMessage });
+  expect(clearSignedArmor).to.include('-----BEGIN PGP SIGNED MESSAGE-----');
+
+  // Sign text message (armored)
+  const textSignedArmor: string = await sign({ privateKeys, message: textMessage });
+  expect(textSignedArmor).to.include('-----BEGIN PGP MESSAGE-----');
+
+  // Sign text message (unarmored)
+  const textSignedBinary: Uint8Array = await sign({ privateKeys, message: binaryMessage, armor: false });
+  expect(textSignedBinary).to.be.instanceOf(Uint8Array);
+
+  // Verify signed text message (armored)
+  const signedMessage = await readArmoredMessage(textSignedArmor);
+  const verifiedText = await verify({ publicKeys, message: signedMessage });
+  const verifiedTextData: string = verifiedText.data;
+  expect(verifiedTextData).to.equal(text);
+
+  // Verify signed binary message (unarmored)
+  const message = await readMessage(textSignedBinary);
+  const verifiedBinary = await verify({ publicKeys, message, format: 'binary' });
+  const verifiedBinaryData: Uint8Array = verifiedBinary.data;
+  expect(verifiedBinaryData).to.deep.equal(binary);
+
+  // // Detached - sign cleartext message (armored)
   // import { Message, sign } from 'openpgp';
   // const message = Message.fromText(util.removeTrailingSpaces(text));
   // const signed = await sign({ privateKeys, message, detached: true });
   // console.log(signed); // String
 
-  // // Detached - sign binary message(unarmored)
+  // // Detached - sign binary message (unarmored)
   // const message = Message.fromText(text);
   // const signed = await sign({ privateKeys, message, detached: true, armor: false });
   // console.log(signed); // Uint8Array
 
-  // // Verify signed text message(armored)  
-  // const message = await readArmoredMessage(armor);
-  // const verified = await verify({ publicKeys, message });
-  // console.log(verified.data); // String
-  // console.log(verified.signatures); // Array
-
-  // // Verify signed binary message(unarmored)
-  // const message = await readMessage(binary);
-  // const verified = await verify({ publicKeys, message, format: 'binary' });
-  // console.log(verified.data); // Uint8Array
-  // console.log(verified.signatures); // Array
-
-  // // Encrypt session keys(armored)
+  // // Encrypt session keys (armored)
   // const encrypted = await encryptSessionKey({ publicKeys, data, algorithm });
   // console.log(encrypted); // String
 
-  // // Encrypt session keys(unarmored)
+  // // Encrypt session keys (unarmored)
   // const encrypted = await encryptSessionKey({ publicKeys, data, algorithm, armor: false });
   // console.log(encrypted); // Uint8Array
 
-  // // Streaming - encrypt text message on Node.js(armored)
+  // // Streaming - encrypt text message on Node.js (armored)
   // const data = fs.createReadStream(filename, { encoding: 'utf8' });
   // const message = Message.fromText(data);
   // const encrypted = await encrypt({ publicKeys, message });
@@ -88,13 +103,13 @@ import { expect } from 'chai';
   //   console.log(chunk); // String
   // });
 
-  // //Streaming - encrypt binary message on Node.js(unarmored)
+  // // Streaming - encrypt binary message on Node.js (unarmored)
   // const data = fs.createReadStream(filename);
   // const message = Message.fromBinary(data);
   // const encrypted = await encrypt({ publicKeys, message, armor: false });
   // encrypted.pipe(targetStream);
 
-  console.log('typescript definitions are correct');
+  console.log('TypeScript definitions are correct');
 })().catch(e => {
   console.error('TypeScript definitions tests failed by throwing the following error');
   console.error(e);

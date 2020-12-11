@@ -14,7 +14,7 @@ export function readKey(data: Uint8Array): Promise<Key>;
 export function readArmoredKeys(armoredText: string): Promise<Key[]>;
 export function readKeys(data: Uint8Array): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
-export function generateSessionKey(publicKeys: Key[]): Promise<SessionKey>; // todo - guessing input, is it PublicKeyPacket[]?
+export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserId[] }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
 export function encryptKey(options: { privateKey: Key; passphrase?: string }): Promise<Key>;
 export function reformatKey(options: { privateKey: Key; userIds?: (string | UserId)[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
@@ -25,7 +25,7 @@ export class Key {
   public users: User[];
   public revocationSignatures: SignaturePacket[];
   public keyPacket: PublicKeyPacket | SecretKeyPacket;
-  constructor(packetlist: packet.List<AnyPacket>);
+  constructor(packetlist: PacketList<AnyPacket>);
   public armor(): string;
   public decrypt(passphrase: string | string[], keyId?: Keyid): Promise<boolean>;
   public encrypt(passphrase: string | string[]): Promise<void>;
@@ -45,9 +45,6 @@ export class Key {
   public getSigningKey(keyid?: Keyid | null, date?: Date, userId?: UserId | null): Promise<Key | SubKey | null>;
   public getKeys(keyId?: Keyid): (Key | SubKey)[];
   public isDecrypted(): boolean;
-  public isFullyEncrypted(): boolean;
-  public isFullyDecrypted(): boolean;
-  public isPacketDecrypted(keyId: Keyid): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
   public getAlgorithmInfo(): AlgorithmInfo;
@@ -88,30 +85,109 @@ type AlgorithmInfo = {
 
 /* ############## v5 SIG #################### */
 
-export function readArmoredSignature(armoredText: string): Promise<signature.Signature>;
-export function readSignature(input: Uint8Array): Promise<signature.Signature>;
+export function readArmoredSignature(armoredText: string): Promise<Signature>;
+export function readSignature(input: Uint8Array): Promise<Signature>;
 
 /* ############## v5 CLEARTEXT #################### */
 
-export function readArmoredCleartextMessage(armoredText: string): Promise<cleartext.CleartextMessage>;
+export function readArmoredCleartextMessage(armoredText: string): Promise<CleartextMessage>;
 
 /* ############## v5 MSG #################### */
 
-export function readArmoredMessage(armoredText: string | Stream<string>): Promise<Message>;
-export function readMessage(input: Uint8Array): Promise<Message>;
-export function fromBinary(bytes: Uint8Array | Stream<Uint8Array>, filename?: string, date?: Date, type?: DataPacketType): Message;
-export function fromText(text: string | Stream<string>, filename?: string, date?: Date, type?: DataPacketType): Message;
-export function encrypt(options: EncryptBinaryOptions): Promise<Uint8Array | Stream<Uint8Array>>;
-export function encrypt(options: EncryptArmorOptions | BaseEncryptOptions): Promise<string | Stream<string>>;
-export function sign(options: SignOptions): Promise<Uint8Array | Stream<Uint8Array> | string | Stream<string>>;
-export function decrypt(options: DecryptOptions): Promise<DecryptMessageResult>;
+export function readArmoredMessage<T extends MaybeStream<string>>(armoredText: T): Promise<Message<T>>;
+export function readMessage<T extends MaybeStream<Uint8Array>>(input: T): Promise<Message<T>>;
 
-/** Class that represents an OpenPGP  Can be an encrypted message, signed message, compressed message or literal message
+export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T, armor: false }): Promise<
+  T extends 'web' ? WebStream<Uint8Array> :
+  T extends 'node' ? NodeStream<Uint8Array> :
+  Uint8Array
+>;
+export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T }): Promise<
+  T extends 'web' ? WebStream<string> :
+  T extends 'node' ? NodeStream<string> :
+  string
+>;
+export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, armor: false }): Promise<
+  T extends WebStream<infer X> ? WebStream<Uint8Array> :
+  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  Uint8Array
+>;
+export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T> }): Promise<
+  T extends WebStream<infer X> ? WebStream<string> :
+  T extends NodeStream<infer X> ? NodeStream<string> :
+  string
+>;
+
+export function sign<T extends 'web' | 'node' | false>(options: SignOptions & { streaming: T, armor: false }): Promise<
+  T extends 'web' ? WebStream<Uint8Array> :
+  T extends 'node' ? NodeStream<Uint8Array> :
+  Uint8Array
+>;
+export function sign<T extends 'web' | 'node' | false>(options: SignOptions & { streaming: T }): Promise<
+  T extends 'web' ? WebStream<string> :
+  T extends 'node' ? NodeStream<string> :
+  string
+>;
+export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, armor: false }): Promise<
+  T extends WebStream<infer X> ? WebStream<Uint8Array> :
+  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  Uint8Array
+>;
+export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T> }): Promise<
+  T extends WebStream<infer X> ? WebStream<string> :
+  T extends NodeStream<infer X> ? NodeStream<string> :
+  string
+>;
+export function sign(options: SignOptions & { message: CleartextMessage }): string;
+
+export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T, format: 'binary' }): Promise<DecryptMessageResult & { data:
+  T extends 'web' ? WebStream<Uint8Array> :
+  T extends 'node' ? NodeStream<Uint8Array> :
+  Uint8Array
+}>;
+export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T }): Promise<DecryptMessageResult & { data:
+  T extends 'web' ? WebStream<string> :
+  T extends 'node' ? NodeStream<string> :
+  string
+}>;
+export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & { data:
+  T extends WebStream<infer X> ? WebStream<Uint8Array> :
+  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  Uint8Array
+}>;
+export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T> }): Promise<DecryptMessageResult & { data:
+  T extends WebStream<infer X> ? WebStream<string> :
+  T extends NodeStream<infer X> ? NodeStream<string> :
+  string
+}>;
+
+export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T, format: 'binary' }): Promise<VerifyMessageResult & { data:
+  T extends 'web' ? WebStream<Uint8Array> :
+  T extends 'node' ? NodeStream<Uint8Array> :
+  Uint8Array
+}>;
+export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T }): Promise<VerifyMessageResult & { data:
+  T extends 'web' ? WebStream<string> :
+  T extends 'node' ? NodeStream<string> :
+  string
+}>;
+export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult & { data:
+  T extends WebStream<infer X> ? WebStream<Uint8Array> :
+  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  Uint8Array
+}>;
+export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T> }): Promise<VerifyMessageResult & { data:
+  T extends WebStream<infer X> ? WebStream<string> :
+  T extends NodeStream<infer X> ? NodeStream<string> :
+  string
+}>;
+
+/** Class that represents an OpenPGP message.  Can be an encrypted message, signed message, compressed message or literal message
  */
-export class Message {
+export class Message<T extends MaybeStream<Data>> {
 
-  public packets: packet.List<AnyPacket>;
-  constructor(packetlist: packet.List<AnyPacket>);
+  public packets: PacketList<AnyPacket>;
+  constructor(packetlist: PacketList<AnyPacket>);
 
   /** Returns ASCII armored text of message
    */
@@ -120,12 +196,12 @@ export class Message {
   /** Decrypt the message
       @param privateKey private key with decrypted secret data
   */
-  public decrypt(privateKeys?: Key[] | null, passwords?: string[] | null, sessionKeys?: SessionKey[] | null, streaming?: boolean): Promise<Message>;
+  public decrypt(privateKeys?: Key[] | null, passwords?: string[] | null, sessionKeys?: SessionKey[] | null, streaming?: boolean): Promise<Message<MaybeStream<Data>>>;
 
   /** Encrypt the message
       @param keys array of keys, used to encrypt the message
   */
-  public encrypt(keys: Key[]): Promise<Message>;
+  public encrypt(keys: Key[]): Promise<Message<MaybeStream<Data>>>;
 
   /** Returns the key IDs of the keys to which the session key is encrypted
    */
@@ -148,16 +224,16 @@ export class Message {
   /** Sign the message (the literal data packet of the message)
       @param privateKey private keys with decrypted secret key data for signing
   */
-  public sign(privateKey: Key[]): Promise<Message>;
+  public sign(privateKey: Key[]): Promise<Message<T>>;
 
   /** Unwrap compressed message
    */
-  public unwrapCompressed(): Message;
+  public unwrapCompressed(): Message<T>;
 
   /** Verify message signatures
       @param keys array of keys to verify signatures
   */
-  public verify(keys: Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
+  public verify(keys: Key[], date?: Date, streaming?: boolean): Promise<VerificationResult[]>;
 
   /**
    * Append signature to unencrypted message object
@@ -165,8 +241,8 @@ export class Message {
    */
   public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
 
-  static fromText(text: string): Message;
-  static fromBinary(data: Uint8Array): Message;
+  static fromText<T extends MaybeStream<string>>(text: T, filename?: string, date?: Date, type?: DataPacketType): Message<T>;
+  static fromBinary<T extends MaybeStream<Uint8Array>>(bytes: T, filename?: string, date?: Date, type?: DataPacketType): Message<T>;
 }
 
 
@@ -358,31 +434,53 @@ export type AnyKeyPacket = PublicKeyPacket | SecretKeyPacket | PublicSubkeyPacke
 
 type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 
+
+export class PacketList<PACKET_TYPE> extends Array<PACKET_TYPE> {
+  [index: number]: PACKET_TYPE;
+  public length: number;
+  public read(bytes: Uint8Array): void;
+  public write(): Uint8Array;
+  public push(...packet: PACKET_TYPE[]): number;
+  public pop(): PACKET_TYPE;
+  public filter(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => void): PacketList<PACKET_TYPE>;
+  public filterByTag(...args: enums.packet[]): PacketList<PACKET_TYPE>;
+  public forEach(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => void): void;
+  public map<RETURN_TYPE>(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => RETURN_TYPE): PacketList<RETURN_TYPE>;
+  // some()
+  // every()
+  // findPacket()
+  // indexOfTag()
+  // slice()
+  // concat()
+  // fromStructuredClone()
+}
+
 /* ############## v5 STREAM #################### */
 
-interface BaseStream<T extends Uint8Array | string> { }
-interface WebStream<T extends Uint8Array | string> extends BaseStream<T> { // copied+simplified version of ReadableStream from lib.dom.d.ts
+type Data = Uint8Array | string;
+interface BaseStream<T extends Data> { }
+interface WebStream<T extends Data> extends BaseStream<T> { // copied+simplified version of ReadableStream from lib.dom.d.ts
   readonly locked: boolean; getReader: Function; pipeThrough: Function; pipeTo: Function; tee: Function;
   cancel(reason?: any): Promise<void>;
 }
-interface NodeStream<T extends Uint8Array | string> extends BaseStream<T> { // copied+simplified version of ReadableStream from @types/node/index.d.ts
+interface NodeStream<T extends Data> extends BaseStream<T> { // copied+simplified version of ReadableStream from @types/node/index.d.ts
   readable: boolean; pipe: Function; unpipe: Function; wrap: Function;
   read(size?: number): string | Uint8Array; setEncoding(encoding: string): this; pause(): this; resume(): this;
   isPaused(): boolean; unshift(chunk: string | Uint8Array): void;
 }
-type Stream<T extends Uint8Array | string> = WebStream<T> | NodeStream<T>;
+type Stream<T extends Data> = WebStream<T> | NodeStream<T>;
+type MaybeStream<T extends Data> = T | Stream<T>;
+
 
 /* ############## v5 GENERAL #################### */
 
 export interface UserId { name?: string; email?: string; }
 export interface SessionKey { data: Uint8Array; algorithm: string; }
 
-/**
- * EncryptArmorOptions or EncryptBinaryOptions will be used based on armor option (boolean), defaults to armoring
- */
-interface BaseEncryptOptions {
+
+interface EncryptOptions {
   /** message to be encrypted as created by Message.fromText or Message.fromBinary */
-  message: Message;
+  message: Message<MaybeStream<Data>>;
   /** (optional) array of keys or single key, used to encrypt the message */
   publicKeys?: Key | Key[];
   /** (optional) private keys for signing. If omitted message will not be signed */
@@ -393,10 +491,12 @@ interface BaseEncryptOptions {
   sessionKey?: SessionKey;
   /** (optional) which compression algorithm to compress the message with, defaults to what is specified in config */
   compression?: enums.compression;
+  /** if the return values should be ascii armored or the message/signature objects */
+  armor?: boolean;
   /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
   streaming?: 'web' | 'node' | false;
   /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
-  signature?: signature.Signature;
+  signature?: Signature;
   /** (optional) encrypt as of a certain date */
   date?: Date;
   /** (optional) use a key ID of 0 instead of the public key IDs */
@@ -407,49 +507,9 @@ interface BaseEncryptOptions {
   toUserId?: UserId;
 }
 
-export type EncryptOptions = BaseEncryptOptions | EncryptArmorOptions | EncryptBinaryOptions;
-
-export interface EncryptArmorOptions extends BaseEncryptOptions {
-  /** if the return values should be ascii armored or the message/signature objects */
-  armor: true;
-}
-
-export interface EncryptBinaryOptions extends BaseEncryptOptions {
-  /** if the return values should be ascii armored or the message/signature objects */
-  armor: false;
-}
-
-export namespace packet {
-
-  // todo - check this - ListPacket? PacketList? List?
-  export class List<PACKET_TYPE> extends Array<PACKET_TYPE> {
-    [index: number]: PACKET_TYPE;
-    public length: number;
-    public read(bytes: Uint8Array): void;
-    public write(): Uint8Array;
-    public push(...packet: PACKET_TYPE[]): number;
-    public pop(): PACKET_TYPE;
-    public filter(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => void): List<PACKET_TYPE>;
-    public filterByTag(...args: enums.packet[]): List<PACKET_TYPE>;
-    public forEach(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => void): void;
-    public map<RETURN_TYPE>(callback: (packet: PACKET_TYPE, i: number, self: List<PACKET_TYPE>) => RETURN_TYPE): List<RETURN_TYPE>;
-    // some()
-    // every()
-    // findPacket()
-    // indexOfTag()
-    // slice()
-    // concat()
-    // fromStructuredClone()
-  }
-
-  function fromStructuredClone(packetClone: object): AnyPacket;
-
-  function newPacketFromTag(tag: enums.packetNames): AnyPacket;
-}
-
 export interface DecryptOptions {
   /** the message object with the encrypted data */
-  message: Message;
+  message: Message<MaybeStream<Data>>;
   /** (optional) private keys with decrypted secret key data or session key */
   privateKeys?: Key | Key[];
   /** (optional) passwords to decrypt the message */
@@ -459,15 +519,17 @@ export interface DecryptOptions {
   /** (optional) array of public keys or single key, to verify signatures */
   publicKeys?: Key | Key[];
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
-  format?: string;
+  format?: 'utf8' | 'binary';
   /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
   streaming?: 'web' | 'node' | false;
   /** (optional) detached signature for verification */
-  signature?: signature.Signature;
+  signature?: Signature;
+  /** (optional) use the given date for verification instead of the current time */
+  date?: Date;
 }
 
 export interface SignOptions {
-  message: cleartext.CleartextMessage | Message;
+  message: CleartextMessage | Message<MaybeStream<Data>>;
   privateKeys?: Key | Key[];
   armor?: boolean;
   streaming?: 'web' | 'node' | false;
@@ -477,8 +539,23 @@ export interface SignOptions {
   fromUserId?: UserId;
 }
 
+export interface VerifyOptions {
+  /** array of publicKeys or single key, to verify signatures */
+  publicKeys: Key | Key[];
+  /** (cleartext) message object with signatures */
+  message: CleartextMessage | Message<MaybeStream<Data>>;
+  /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
+  format?: 'utf8' | 'binary';
+  /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
+  streaming?: 'web' | 'node' | false;
+  /** (optional) detached signature for verification */
+  signature?: Signature;
+  /** (optional) use the given date for verification instead of the current time */
+  date?: Date;
+}
+
 export interface KeyPair {
-  key: Key; // todo - still like this?
+  key: Key;
   privateKeyArmored: string;
   publicKeyArmored: string;
 }
@@ -506,7 +583,7 @@ export interface FullKeyOptions {
   keyExpirationTime?: number;
   curve?: EllipticCurveName;
   date?: Date;
-  subkeys: KeyOptions[]; // required unline KeyOptions.subkeys
+  subkeys: KeyOptions[]; // required unlike KeyOptions.subkeys
 }
 
 export interface Keyid {
@@ -514,157 +591,57 @@ export interface Keyid {
 }
 
 export interface DecryptMessageResult {
-  data: Uint8Array | string;
-  signatures: signature.Signature[];
+  data: MaybeStream<Data>;
+  signatures: VerificationResult[];
   filename: string;
 }
 
-export namespace armor {
-  /**
-   * Armor an OpenPGP binary packet block
-   */
-  function armor(messagetype: enums.armor, body: object, partindex: number, parttotal: number): string;
-
-  /** 
-   * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
-   */
-  function dearmor(text: string): object;
+export interface VerifyMessageResult {
+  data: MaybeStream<Data>;
+  signatures: VerificationResult[];
 }
 
-export namespace cleartext {
-  /** Class that represents an OpenPGP cleartext signed message.
+
+/**
+ * Armor an OpenPGP binary packet block
+ */
+export function armor(messagetype: enums.armor, body: object, partindex: number, parttotal: number): string;
+
+/**
+ * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
+ */
+export function unarmor(text: string): object;
+
+
+/** Class that represents an OpenPGP cleartext signed message.
+ */
+export class CleartextMessage {
+  /** Returns ASCII armored text of cleartext signed message
    */
-  class CleartextMessage {
-    /** Returns ASCII armored text of cleartext signed message
-     */
-    armor(): string;
+  armor(): string;
 
-    /** Returns the key IDs of the keys that signed the cleartext message
-     */
-    getSigningKeyIds(): Array<Keyid>;
+  /** Returns the key IDs of the keys that signed the cleartext message
+   */
+  getSigningKeyIds(): Array<Keyid>;
 
-    /** Get cleartext
-     */
-    getText(): string;
+  /** Get cleartext
+   */
+  getText(): string;
 
-    /** Sign the cleartext message
-     *
-     *  @param privateKeys private keys with decrypted secret key data for signing
-     */
-    sign(privateKeys: Array<Key>): void;
+  /** Sign the cleartext message
+   *
+   *  @param privateKeys private keys with decrypted secret key data for signing
+   */
+  sign(privateKeys: Array<Key>): void;
 
-    /** Verify signatures of cleartext signed message
-     *  @param keys array of keys to verify signatures
-     */
-    verify(keys: Key[], date?: Date, streaming?: boolean): Promise<message.Verification[]>;
+  /** Verify signatures of cleartext signed message
+   *  @param keys array of keys to verify signatures
+   */
+  verify(keys: Key[], date?: Date, streaming?: boolean): Promise<VerificationResult[]>;
 
-    static fromText(text: string): cleartext.CleartextMessage;
-  }
+  static fromText(text: string): CleartextMessage;
 }
 
-export namespace crypto {
-  interface Mpi {
-    data: number;
-    read(input: string): number;
-    write(): string;
-  }
-
-  /** Generating a session key for the specified symmetric algorithm
-   *   @param algo Algorithm to use
-   */
-  function generateSessionKey(algo: enums.symmetric): string;
-
-  /** generate random byte prefix as string for the specified algorithm
-   *   @param algo Algorithm to use
-   */
-  function getPrefixRandom(algo: enums.symmetric): string;
-
-  /** Returns the number of integers comprising the private key of an algorithm
-   *  @param algo The public key algorithm
-   */
-  function getPrivateMpiCount(algo: enums.symmetric): number;
-
-  /** Decrypts data using the specified public key multiprecision integers of the private key, the specified secretMPIs of the private key and the specified algorithm.
-      @param algo Algorithm to be used
-      @param publicMPIs Algorithm dependent multiprecision integers of the public key part of the private key
-      @param secretMPIs Algorithm dependent multiprecision integers of the private key used
-      @param data Data to be encrypted as MPI
-  */
-  function publicKeyDecrypt(algo: enums.publicKey, publicMPIs: Array<Mpi>, secretMPIs: Array<Mpi>, data: Mpi): Mpi;
-
-  /** Encrypts data using the specified public key multiprecision integers and the specified algorithm.
-      @param algo Algorithm to be used
-      @param publicMPIs Algorithm dependent multiprecision integers
-      @param data Data to be encrypted as MPI
-  */
-  function publicKeyEncrypt(algo: enums.publicKey, publicMPIs: Array<Mpi>, data: Mpi): Array<Mpi>;
-
-  namespace cfb {
-    /** This function decrypts a given plaintext using the specified blockcipher to decrypt a message
-        @param cipherfn the algorithm cipher class to decrypt data in one block_size encryption
-        @param key binary string representation of key to be used to decrypt the ciphertext. This will be passed to the cipherfn
-        @param ciphertext to be decrypted provided as a string
-        @param resync a boolean value specifying if a resync of the IV should be used or not. The encrypteddatapacket uses the "old" style with a resync. Decryption within an encryptedintegrityprotecteddata packet is not resyncing the IV.
-    */
-    function decrypt(cipherfn: string, key: string, ciphertext: string, resync: boolean): string;
-
-    /** This function encrypts a given with the specified prefixrandom using the specified blockcipher to encrypt a message
-        @param prefixrandom random bytes of block_size length provided as a string to be used in prefixing the data
-        @param cipherfn the algorithm cipher class to encrypt data in one block_size encryption
-        @param plaintext data to be encrypted provided as a string
-        @param key binary string representation of key to be used to encrypt the plaintext. This will be passed to the cipherfn
-        @param resync a boolean value specifying if a resync of the IV should be used or not. The encrypteddatapacket uses the "old" style with a resync. Encryption within an encryptedintegrityprotecteddata packet is not resyncing the IV.
-    */
-    function encrypt(prefixrandom: string, cipherfn: string, plaintext: string, key: string, resync: boolean): string;
-
-    /** Decrypts the prefixed data for the Modification Detection Code (MDC) computation
-        @param cipherfn cipherfn.encrypt Cipher function to use
-        @param key binary string representation of key to be used to check the mdc This will be passed to the cipherfn
-        @param ciphertext The encrypted data
-    */
-    function mdc(cipherfn: object, key: string, ciphertext: string): string;
-  }
-
-  namespace hash {
-    /** Create a hash on the specified data using the specified algorithm
-        @param algo Hash algorithm type
-        @param data Data to be hashed
-    */
-    function digest(algo: enums.hash, data: Uint8Array): Promise<Uint8Array>;
-
-    /** Returns the hash size in bytes of the specified hash algorithm type
-        @param algo Hash algorithm type
-    */
-    function getHashByteLength(algo: enums.hash): number;
-  }
-
-  namespace random {
-    /** Retrieve secure random byte string of the specified length
-        @param length Length in bytes to generate
-    */
-    function getRandomBytes(length: number): Promise<Uint8Array>;
-  }
-
-  namespace signature {
-    /** Create a signature on data using the specified algorithm
-        @param hash_algo hash Algorithm to use
-        @param algo Asymmetric cipher algorithm to use
-        @param publicMPIs Public key multiprecision integers of the private key
-        @param secretMPIs Private key multiprecision integers which is used to sign the data
-        @param data Data to be signed
-    */
-    function sign(hash_algo: enums.hash, algo: enums.publicKey, publicMPIs: Array<Mpi>, secretMPIs: Array<Mpi>, data: string): Mpi;
-
-    /**
-        @param algo public Key algorithm
-        @param hash_algo Hash algorithm
-        @param msg_MPIs Signature multiprecision integers
-        @param publickey_MPIs Public key multiprecision integers
-        @param data Data on where the signature was computed on
-    */
-    function verify(algo: enums.publicKey, hash_algo: enums.hash, msg_MPIs: Array<Mpi>, publickey_MPIs: Array<Mpi>, data: string): boolean;
-  }
-}
 
 export namespace enums {
 
@@ -789,43 +766,28 @@ export namespace enums {
 
 }
 
-export namespace signature { // todo - remove?
-  class Signature {
-    public packets: packet.List<SignaturePacket>;
-    constructor(packetlist: packet.List<SignaturePacket>);
-    public armor(): string;
-  }
+
+export class Signature {
+  public packets: PacketList<SignaturePacket>;
+  constructor(packetlist: PacketList<SignaturePacket>);
+  public armor(): string;
 }
 
-export namespace message { // todo - remove?
 
-  class SessionKey { // todo
-
-  }
-
-  export interface Verification {
-    keyid: Keyid;
-    verified: Promise<null | boolean>;
-    signature: Promise<signature.Signature>;
-  }
+export interface VerificationResult {
+  keyid: Keyid;
+  verified: Promise<null | boolean>;
+  signature: Promise<Signature>;
 }
+
 
 export class HKP {
   constructor(keyServerBaseUrl?: string);
   public lookup(options: { keyid?: string, query?: string }): Promise<string | undefined>;
 }
 
+
 export namespace util {
-  /** Convert an array of integers(0.255) to a string
-      @param bin An array of (binary) integers to convert
-  */
-  function bin2str(bin: Array<number>): string;
-
-  /** Calculates a 16bit sum of a string by adding each character codes modulus 65535
-      @param text string to create a sum of
-  */
-  function calcChecksum(text: string): number;
-
   /** Convert a string of utf8 bytes to a native javascript string
       @param utf8 A valid squence of utf8 bytes
   */
@@ -835,10 +797,6 @@ export namespace util {
       param str The string to convert
   */
   function encodeUtf8(str: string): string;
-
-  /** Return the algorithm type as string
-   */
-  function getHashAlgorithmString(): string;
 
   /** Get native Web Cryptography api. The default configuration is to use the api when available. But it can also be deactivated with config.useWebCrypto
    */
@@ -883,7 +841,7 @@ export namespace util {
 
   function uint8ArrayToB64(bytes: Uint8Array): string;
 
-  function uint8ArrayToMpi(bytes: Uint8Array): crypto.Mpi;
+  function uint8ArrayToMpi(bytes: Uint8Array): Uint8Array;
 
   /**
    * Convert a hex string to an array of 8-bit integers
@@ -922,12 +880,12 @@ export namespace util {
   function encodeZBase32(data: Uint8Array): string;
 }
 
+
 export namespace stream {
-  function readToEnd<T extends Uint8Array | string>(input: Stream<T> | T, concat?: (list: T[]) => T): Promise<T>;
+  function readToEnd<T extends Data>(input: Stream<T> | T, concat?: (list: T[]) => T): Promise<T>;
   // concat
   // slice
   // clone
   // webToNode
   // nodeToWeb
 }
-

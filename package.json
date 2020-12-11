@@ -19,12 +19,14 @@
     "./dist/node/openpgp.min.js": "./dist/openpgp.min.js",
     "./dist/node/openpgp.min.mjs": "./dist/openpgp.min.mjs"
   },
+  "types": "openpgp.d.ts",
   "directories": {
     "lib": "src"
   },
   "files": [
     "dist/",
-    "lightweight/"
+    "lightweight/",
+    "openpgp.d.ts"
   ],
   "esm": {
     "cjs": {
@@ -36,7 +38,7 @@
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
     "test": "mocha --require esm --timeout 120000 test/unittests.js",
-    "test-type-definitions": "cp ./src/openpgp.d.ts dist/ && cp ./src/openpgp.d.ts dist/node/ && ./node_modules/.bin/tsc test/typescript/definitions.ts && node test/typescript/definitions.js",
+    "test-type-definitions": "tsc --strict test/typescript/definitions.ts && node test/typescript/definitions.js",
     "start": "http-server",
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
