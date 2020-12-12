@@ -19,12 +19,14 @@
     "./dist/node/openpgp.min.js": "./dist/openpgp.min.js",
     "./dist/node/openpgp.min.mjs": "./dist/openpgp.min.mjs"
   },
+  "types": "openpgp.d.ts",
   "directories": {
     "lib": "src"
   },
   "files": [
     "dist/",
-    "lightweight/"
+    "lightweight/",
+    "openpgp.d.ts"
   ],
   "esm": {
     "cjs": {
@@ -36,6 +38,7 @@
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
     "test": "mocha --require esm --timeout 120000 test/unittests.js",
+    "test-type-definitions": "tsc test/typescript/definitions.ts && node test/typescript/definitions.js",
     "start": "http-server",
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
@@ -51,6 +54,7 @@
     "@rollup/plugin-commonjs": "^11.1.0",
     "@rollup/plugin-node-resolve": "^7.1.3",
     "@rollup/plugin-replace": "^2.3.2",
+    "@types/chai": "^4.2.14",
     "asmcrypto.js": "github:openpgpjs/asmcrypto#5b994303a9d3e27e0915f72a10b6c2c51535a4dc",
     "babel-eslint": "^10.1.0",
     "bn.js": "^4.11.8",
@@ -77,6 +81,7 @@
     "sinon": "^4.3.0",
     "text-encoding-utf-8": "^1.0.2",
     "tweetnacl": "github:openpgpjs/tweetnacl-js#1ef755f2b252a3e328ac739848d00e0dad76be2d",
+    "typescript": "^4.1.2",
     "web-stream-tools": "github:openpgpjs/web-stream-tools#5e6cb1a976d50c421091907615cf7cce77ac4f2a",
     "whatwg-fetch": "^2.0.3"
   },

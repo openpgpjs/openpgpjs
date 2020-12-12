@@ -1,0 +1,8 @@
+{
+  "exclude": [
+    "./build/"
+  ],
+  "compilerOptions": {
+    "strict": true
+  }
+}
