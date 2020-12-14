@@ -621,9 +621,10 @@ export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p5
 interface KeyOptions {
   userIds: UserId[]; // generating a key with no user defined results in error
   passphrase?: string;
-  numBits?: number;
-  keyExpirationTime?: number;
+  type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
+  rsaBits?: number;
+  keyExpirationTime?: number;
   date?: Date;
   subkeys?: KeyOptions[];
 }
