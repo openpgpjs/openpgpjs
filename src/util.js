@@ -26,7 +26,6 @@
  * @module util
  */
 
-import emailAddresses from 'email-addresses';
 import stream from 'web-stream-tools';
 import config from './config';
 import util from './util'; // re-import module to access util functions
@@ -596,44 +595,6 @@ export default {
     }
     const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}|xn--[a-zA-Z\-0-9]+)))$/;
     return re.test(data);
-  },
-
-  /**
-   * Format user id for internal use.
-   */
-  formatUserId: function(id) {
-    // name, email address and comment can be empty but must be of the correct type
-    if ((id.name && !util.isString(id.name)) ||
-        (id.email && !util.isEmailAddress(id.email)) ||
-        (id.comment && !util.isString(id.comment))) {
-      throw new Error('Invalid user id format');
-    }
-    const components = [];
-    if (id.name) {
-      components.push(id.name);
-    }
-    if (id.comment) {
-      components.push(`(${id.comment})`);
-    }
-    if (id.email) {
-      components.push(`<${id.email}>`);
-    }
-    return components.join(' ');
-  },
-
-  /**
-   * Parse user id.
-   */
-  parseUserId: function(userid) {
-    if (userid.length > config.maxUseridLength) {
-      throw new Error('User id string is too long');
-    }
-    try {
-      const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userid, atInDisplayName: true });
-      return { name, email, comment: comments.replace(/^\(|\)$/g, '') };
-    } catch (e) {
-      throw new Error('Invalid user id format');
-    }
   },
 
   /**

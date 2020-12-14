@@ -19,9 +19,11 @@
  * @requires enums
  * @requires util
  */
+import emailAddresses from 'email-addresses';
 
 import enums from '../enums';
 import util from '../util';
+import config from '../config';
 
 /**
  * Implementation of the User ID Packet (Tag 13)
@@ -52,16 +54,16 @@ class UserIDPacket {
    * @param {Uint8Array} input payload of a tag 13 packet
    */
   read(bytes) {
-    this.parse(util.decodeUtf8(bytes));
-  }
-
-  /**
-   * Parse userid string, e.g. 'John Doe <john@example.com>'
-   */
-  parse(userid) {
+    const userid = util.decodeUtf8(bytes);
+    if (userid.length > config.maxUseridLength) {
+      throw new Error('User ID string is too long');
+    }
     try {
-      Object.assign(this, util.parseUserId(userid));
-    } catch (e) {}
+      const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userid, atInDisplayName: true });
+      this.comment = comments.replace(/^\(|\)$/g, '');
+      this.name = name;
+      this.email = email;
+    } catch {}
     this.userid = userid;
   }
 
@@ -74,14 +76,22 @@ class UserIDPacket {
   }
 
   /**
-   * Set userid string from object, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
+   * Set userId from object
+   * @param {Object} userId  object specifying userId name, email and comment
    */
-  format(userid) {
-    if (util.isString(userid)) {
-      userid = util.parseUserId(userid);
+  fromObject(userId) {
+    if (util.isString(userId) ||
+      (userId.name && !util.isString(userId.name)) ||
+      (userId.email && !util.isEmailAddress(userId.email)) ||
+      (userId.comment && !util.isString(userId.comment))) {
+      throw new Error('Invalid user ID format');
     }
-    Object.assign(this, userid);
-    this.userid = util.formatUserId(userid);
+    Object.assign(this, userId);
+    const components = [];
+    if (this.name) components.push(this.name);
+    if (this.comment) components.push(`(${this.comment})`);
+    if (this.email) components.push(`<${this.email}>`);
+    this.userid = components.join(' ');
   }
 }
 
