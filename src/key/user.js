@@ -102,7 +102,7 @@ class User {
    * @param  {SignaturePacket}  certificate A certificate of this user
    * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
    * @param  {Date}                     date        Use the given date instead of the current time
-   * @returns {Promise<true>}                       status of the certificate
+   * @returns {Promise<true|null>}   status of the certificate
    * @async
    */
   async verifyCertificate(primaryKey, certificate, keys, date = new Date()) {
@@ -157,11 +157,12 @@ class User {
 
   /**
    * Verify User. Checks for existence of self signatures, revocation signatures
-   * and validity of self signature. Throws when there are no valid self signatures.
+   * and validity of self signature.
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param  {Date}            date       Use the given date instead of the current time
    * @returns {Promise<true>}             Status of user
+   * @throws {Error} if there are no valid self signatures.
    * @async
    */
   async verify(primaryKey, date = new Date()) {
@@ -215,8 +216,9 @@ class User {
     // self signatures
     await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
       try {
-        return srcSelfSig.verified || srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify);
-      } catch (e) {
+        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify);
+        return true;
+      } catch {
         return false;
       }
     });

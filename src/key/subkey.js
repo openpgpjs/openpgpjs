@@ -64,11 +64,11 @@ class SubKey {
 
   /**
    * Verify subkey. Checks for revocation signatures, expiration time
-   * and valid binding signature. Throws if the subkey is invalid.
+   * and valid binding signature.
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param  {Date}            date       Use the given date instead of the current time
-   * @returns {Promise<undefined>}
+   * @throws {Error}           if the subkey is invalid.
    * @async
    */
   async verify(primaryKey, date = new Date()) {
@@ -112,7 +112,7 @@ class SubKey {
    * @param  {module:key~SubKey}  subKey     Source subkey to merge
    * @param  {SecretKeyPacket|
               SecretSubkeyPacket} primaryKey primary key used for validation
-   * @returns {Promise<undefined>}
+   * @throws {Error} if update failed
    * @async
    */
   async update(subKey, primaryKey) {
@@ -137,8 +137,9 @@ class SubKey {
         }
       }
       try {
-        return srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify);
-      } catch (e) {
+        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify);
+        return true;
+      } catch {
         return false;
       }
     });
