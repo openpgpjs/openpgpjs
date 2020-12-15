@@ -2,6 +2,7 @@
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
+const key = require('../../src/key');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -3122,7 +3123,7 @@ module.exports = () => describe('Key', function() {
 
   it("getPreferredAlgo('symmetric') - one key - AES256", async function() {
     const [key1] = await openpgp.readArmoredKeys(twoKeys);
-    const prefAlgo = await openpgp.getPreferredAlgo('symmetric', [key1]);
+    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
   });
 
@@ -3132,7 +3133,7 @@ module.exports = () => describe('Key', function() {
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = [6,8,3];
-    const prefAlgo = await openpgp.getPreferredAlgo('symmetric', [key1, key2]);
+    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes192);
   });
 
@@ -3142,7 +3143,7 @@ module.exports = () => describe('Key', function() {
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = null;
-    const prefAlgo = await openpgp.getPreferredAlgo('symmetric', [key1, key2]);
+    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes128);
   });
 
@@ -3151,9 +3152,9 @@ module.exports = () => describe('Key', function() {
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
-    const prefAlgo = await openpgp.getPreferredAlgo('aead', [key1]);
+    const prefAlgo = await key.getPreferredAlgo('aead', [key1]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
-    const supported = await openpgp.isAeadSupported([key1]);
+    const supported = await key.isAeadSupported([key1]);
     expect(supported).to.be.true;
   });
 
@@ -3166,9 +3167,9 @@ module.exports = () => describe('Key', function() {
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
     const primaryUser2 = await key2.getPrimaryUser();
     primaryUser2.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    const prefAlgo = await openpgp.getPreferredAlgo('aead', [key1, key2]);
+    const prefAlgo = await key.getPreferredAlgo('aead', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.eax);
-    const supported = await openpgp.isAeadSupported([key1, key2]);
+    const supported = await key.isAeadSupported([key1, key2]);
     expect(supported).to.be.true;
   });
 
@@ -3179,9 +3180,9 @@ module.exports = () => describe('Key', function() {
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
-    const prefAlgo = await openpgp.getPreferredAlgo('aead', [key1, key2]);
+    const prefAlgo = await key.getPreferredAlgo('aead', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.eax);
-    const supported = await openpgp.isAeadSupported([key1, key2]);
+    const supported = await key.isAeadSupported([key1, key2]);
     expect(supported).to.be.false;
   });
 
