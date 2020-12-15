@@ -629,20 +629,6 @@ export interface KeyOptions {
   subkeys?: KeyOptions[];
 }
 
-/**
- * Intended for internal use with openpgp.generate()
- * It's recommended that users choose openpgp.generateKey() that requires KeyOptions instead
- */
-export interface FullKeyOptions {
-  userIds: UserId[];
-  passphrase?: string;
-  numBits?: number;
-  keyExpirationTime?: number;
-  curve?: EllipticCurveName;
-  date?: Date;
-  subkeys: KeyOptions[]; // required unlike KeyOptions.subkeys
-}
-
 export interface Keyid {
   bytes: string;
 }
