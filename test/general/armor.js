@@ -381,11 +381,11 @@ NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
     const armor = await openpgp.stream.readToEnd(openpgp.armor(type, data));
     expect(
       armor
-        .replace(/^(Version|Comment): .*$\r\n/mg, '')
+        .replace(/^(Version|Comment): .*$\n/mg, '')
     ).to.equal(
       pubKey
         .replace('\n=', '=')
-        .replace(/\n/g, '\r\n')
+        .replace(/\n\r/g, '\n')
     );
   });
 

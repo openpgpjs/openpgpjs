@@ -52,11 +52,11 @@ export function encode(data) {
     const encoded = encodeChunk(buf.subarray(0, bytes));
     for (let i = 0; i < lines; i++) {
       r.push(encoded.substr(i * 60, 60));
-      r.push('\r\n');
+      r.push('\n');
     }
     buf = buf.subarray(bytes);
     return r.join('');
-  }, () => (buf.length ? encodeChunk(buf) + '\r\n' : ''));
+  }, () => (buf.length ? encodeChunk(buf) + '\n' : ''));
 }
 
 /**
