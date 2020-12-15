@@ -17,7 +17,11 @@ export {
  * @see module:key
  * @name module:openpgp.key
  */
-export * from './key';
+export {
+  readKey, readArmoredKey,
+  readKeys, readArmoredKeys,
+  Key
+} from './key';
 
 /**
  * @see module:signature
