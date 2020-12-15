@@ -894,7 +894,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     const priv_key_gnupg_ext = await openpgp.readArmoredKey(flowcrypt_stripped_key);
     await priv_key_gnupg_ext.decrypt('FlowCrypt');
     const sig = await openpgp.sign({ message: openpgp.Message.fromText('test'), privateKeys: [priv_key_gnupg_ext], date: new Date('2018-12-17T03:24:00') });
-    expect(sig).to.match(/-----END PGP MESSAGE-----\r\n$/);
+    expect(sig).to.match(/-----END PGP MESSAGE-----\n$/);
   });
 
   it('Supports non-human-readable notations', async function() {
