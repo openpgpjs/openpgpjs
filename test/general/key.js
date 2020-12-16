@@ -2020,6 +2020,31 @@ EBeLgD8oZHVsH3NLjPakPw==
 =STqy
 -----END PGP MESSAGE-----`;
 
+const shortP521Key = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xcAiBV/Pa+4TAAAAjQUrgQQAIwQjBADY+IGvRpeUzbT0+YRUe0KCMxAZmDY1
+KjDzULlmOJOS0bfZfqd4HsUF2hRoU/rg1gu1ju/Nt/18db0SJExOqVB9CgA0
+ZYiYyJhGYDOVg/bD54E7a3txWuDPB1DzkGWJH8PkqGNzU0BJpZcUVA6Th09s
+YeO7rx5jSoyWNXjUYKwc24trFAAAAAAARQIItVgIiTWNT+QEVnZqDKKTIOUU
+XEetkjCjPed1RiSchiZpwq+Bvx5hWGsbV5Pjj0S6EuH/ca5w+2ZyITLWZjr1
+LP8eP80UVGVzdCA8dGVzdEB0ZXN0LmNvbT7CwBUFEBMKACEFAl/Pa+4ECwkH
+CAMVCAoEFgIBAAIZAQIbAwIeBwMiAQIAIyIhBbDerrGG7kdy9vbLYvb/j6TC
+53fuQgK9Gtt1xng5MgpSUX0CCJZB+Ppt8yG5hBzwiGz5ZRpPVBFihEftaTOO
+tKUuYRpWlvgA/XV11DgL6KZWRwu4C2venydBW987CVXCbRp4r18FAgkBjTR1
+AXHEstTVwJYj8mWkOZrz+Bfqvu6pWPmVYclgHJK2sSWizakvX/DtX/LFgTJL
+UoASOVvu1hYHDsCO7vWWC/bHwCYFX89r7hIAAACRBSuBBAAjBCMEAULqNQ3L
+CcdVlpIHiq4Xb+elTEdu2oDDA+FCbwroX3wvMatrH6GodxCcrjQKUrfVNiiI
+cvj+r6SE/pRDnxsvW/JSAWUz3XKfVXccb0PYf0ikkTmb8UW33AaNYX6Srk0W
+iamEmEzUpCMiiyXiYe+fp9JD63rKLXBbvLCT2mHuYO/hOikKAwEKCQAAAAAA
+RQIDBONtE8bb3Yr2otNhdR67lg529mm3rSRsyWwMBVUPwX0RTTZ/bejq7XP5
+fuXV8QSEjWdOdPBARGw9jhw51D1XWl8gFsK9BRgTCgAJBQJfz2vuAhsMACMi
+IQWw3q6xhu5Hcvb2y2L2/4+kwud37kICvRrbdcZ4OTIKUiWwAgkBdH+OZHBt
+D2Yx2xKVPqDGJgMa5Ta8GmQZOFnoC2SpB6i9hIOfwiNjNLs+bv+kTxZ09nzf
+3ZUGYi5Ei70hLrDAy7UCCNQNObtPmUYaUTtRzj3S9jUohbIpQxcfyoCMh6aP
+usLw5q4tc+I5gdq57aiulJ8r4Jj9rdzsZFA7PzNJ9WPGVYJ3
+=GSXO
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2739,6 +2764,14 @@ module.exports = () => describe('Key', function() {
     pubKey.subKeys = [];
     // primary key has only key flags for signing
     await expect(pubKey.getEncryptionKey()).to.be.rejectedWith('Could not find valid encryption key packet in key c076e634d32b498d');
+  });
+
+  it('should pad an ECDSA P-521 key with shorter secret key', async function() {
+    const key = await openpgp.readArmoredKey(shortP521Key);
+    // secret key should be padded
+    expect(key.keyPacket.privateParams.d.length === 66);
+    // sanity check
+    await expect(key.validate()).to.be.fulfilled;
   });
 
   it('should not decrypt using a sign-only RSA key, unless explicitly configured', async function () {

@@ -4,6 +4,7 @@ const chai = require('chai');
 
 const { expect } = chai;
 
+/* eslint-disable no-invalid-this */
 module.exports = () => tryTests('Application Worker', tests, {
   if: typeof window !== 'undefined' && window.Worker && window.MessageChannel
 });
