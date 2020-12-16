@@ -82,6 +82,31 @@ module.exports = () => describe('Util unit tests', function() {
     });
   });
 
+  describe('leftPad', function() {
+    it('should not change the input if the length is correct', function() {
+      const bytes = new Uint8Array([2, 1]);
+      const padded = util.leftPad(bytes, 2);
+      expect(padded).to.deep.equal(bytes);
+    });
+    it('should add leading zeros to input array', function() {
+      const bytes = new Uint8Array([1, 2]);
+      const padded = util.leftPad(bytes, 5);
+      expect(padded).to.deep.equal(new Uint8Array([0, 0, 0, 1, 2]));
+    });
+  });
+
+  describe('uint8ArrayToMpi', function() {
+    it('should strip leading zeros', function() {
+      const bytes = new Uint8Array([0, 0, 1, 2]);
+      const mpi = util.uint8ArrayToMpi(bytes);
+      expect(mpi).to.deep.equal(new Uint8Array([0, 9, 1, 2]));
+    });
+    it('should throw on array of all zeros', function() {
+      const bytes = new Uint8Array([0, 0]);
+      expect(() => util.uint8ArrayToMpi(bytes)).to.throw('Zero MPI');
+    });
+  });
+
   describe('isEmailAddress', function() {
     it('should return true for valid email address', function() {
       const data = 'test@example.com';

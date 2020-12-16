@@ -10,9 +10,10 @@ import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
 
-
 /**
  * Parse signature in binary form to get the parameters.
+ * The returned values are only padded for EdDSA, since in the other cases their expected length
+ * depends on the key params, hence we delegate the padding to the signature verification function.
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1}
  * See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2|RFC 4880 5.2.2.}
  * @param {module:enums.publicKey} algo       Public key algorithm
@@ -29,6 +30,8 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
       const s = util.readMPI(signature.subarray(read));
+      // The signature needs to be the same length as the public key modulo n.
+      // We pad s on signature verification, where we have access to n.
       return { s };
     }
     // Algorithm-Specific Fields for DSA or ECDSA signatures:
@@ -43,12 +46,14 @@ export function parseSignatureParams(algo, signature) {
     }
     // Algorithm-Specific Fields for EdDSA signatures:
     // -  MPI of an EC point r.
-    // -  EdDSA value s, in MPI, in the little endian representation.
-    // EdDSA signature parameters are encoded in little-endian format
-    // https://tools.ietf.org/html/rfc8032#section-5.1.2
+    // -  EdDSA value s, in MPI, in the little endian representation
     case enums.publicKey.eddsa: {
-      const r = util.padToLength(util.readMPI(signature.subarray(read)), 32, 'le'); read += r.length + 2;
-      const s = util.padToLength(util.readMPI(signature.subarray(read)), 32, 'le');
+      // When parsing little-endian MPI data, we always need to left-pad it, as done with big-endian values:
+      // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
+      let r = util.readMPI(signature.subarray(read)); read += r.length + 2;
+      r = util.leftPad(r, 32);
+      let s = util.readMPI(signature.subarray(read));
+      s = util.leftPad(s, 32);
       return { r, s };
     }
     default:
@@ -76,20 +81,25 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
       const { n, e } = publicParams;
-      const { s } = signature;
+      const s = util.leftPad(signature.s, n.length); // padding needed for webcrypto and node crypto
       return publicKey.rsa.verify(hashAlgo, data, s, n, e, hashed);
     }
     case enums.publicKey.dsa: {
       const { g, p, q, y } = publicParams;
-      const { r, s } = signature;
+      const { r, s } = signature; // no need to pad, since we always handle them as BigIntegers
       return publicKey.dsa.verify(hashAlgo, r, s, hashed, g, p, q, y);
     }
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicParams;
-      return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, signature, data, Q, hashed);
+      const curveSize = new publicKey.elliptic.Curve(oid).payloadSize;
+      // padding needed for webcrypto
+      const r = util.leftPad(signature.r, curveSize);
+      const s = util.leftPad(signature.s, curveSize);
+      return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
     }
     case enums.publicKey.eddsa: {
       const { oid, Q } = publicParams;
+      // signature already padded on parsing
       return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signature, data, Q, hashed);
     }
     default:
