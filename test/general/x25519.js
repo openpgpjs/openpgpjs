@@ -372,33 +372,6 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     });
   });
 
-  it('Should handle little-endian parameters in EdDSA', async function () {
-    const pubKey = [
-      '-----BEGIN PGP PUBLIC KEY BLOCK-----',
-      'Version: OpenPGP.js v3.0.0',
-      'Comment: https://openpgpjs.org',
-      '',
-      'xjMEWnRgnxYJKwYBBAHaRw8BAQdAZ8gxxCdUxIv4tBwhfUMW2uoEb1KvOfP8',
-      'D+0ObBtsLnfNDkhpIDxoaUBoZWwubG8+wnYEEBYKACkFAlp0YJ8GCwkHCAMC',
-      'CRDAYsFlymHCFQQVCAoCAxYCAQIZAQIbAwIeAQAAswsA/3qNZnwBn/ef4twv',
-      'uvmFicYK//DDX1jIkpDiQ+/okLUEAPdAr3J/Z2WA7OD0d36trHNB06WLXJUu',
-      'aCVm1TwoJHcNzjgEWnRgnxIKKwYBBAGXVQEFAQEHQPBVH+skap0NHMBw2HMe',
-      'xWYUQ67I9Did3KoJuuEJ/ctQAwEIB8JhBBgWCAATBQJadGCfCRDAYsFlymHC',
-      'FQIbDAAAhNQBAKmy4gPorjbwTwy5usylHttP28XnTdaGkZ1E7Rc3G9luAQCs',
-      'Gbm1oe83ZB+0aSp5m34YkpHQNb80y8PGFy7nIexiAA==',
-      '=xeG/',
-      '-----END PGP PUBLIC KEY BLOCK-----'
-    ].join('\n');
-    const hi = await openpgp.readArmoredKey(pubKey);
-    const results = await hi.getPrimaryUser();
-    expect(results).to.exist;
-    expect(results.user).to.exist;
-    const user = results.user;
-    await user.verifyCertificate(
-      hi.primaryKey, user.selfCertifications[0], [hi]
-    );
-  });
-
   describe('X25519 Omnibus Tests', omnibus);
 });
 

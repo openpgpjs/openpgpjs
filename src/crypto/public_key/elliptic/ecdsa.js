@@ -207,7 +207,6 @@ async function webSign(curve, hash_algo, message, keyPair) {
 }
 
 async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
-  const len = curve.payloadSize;
   const jwk = rawPublicToJwk(curve.payloadSize, webCurves[curve.name], publicKey);
   const key = await webCrypto.importKey(
     "jwk",
@@ -221,10 +220,7 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
     ["verify"]
   );
 
-  const signature = util.concatUint8Array([
-    new Uint8Array(len - r.length), r,
-    new Uint8Array(len - s.length), s
-  ]).buffer;
+  const signature = util.concatUint8Array([r, s]).buffer;
 
   return webCrypto.verify(
     {

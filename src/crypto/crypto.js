@@ -149,7 +149,7 @@ export function parsePublicKeyParams(algo, bytes) {
     case enums.publicKey.eddsa: {
       const oid = new OID(); read += oid.read(bytes);
       let Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
-      Q = util.padToLength(Q, 33);
+      Q = util.leftPad(Q, 33);
       return { read: read, publicParams: { oid, Q } };
     }
     case enums.publicKey.ecdh: {
@@ -191,12 +191,12 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
     case enums.publicKey.ecdh: {
       const curve = new Curve(publicParams.oid);
       let d = util.readMPI(bytes.subarray(read)); read += d.length + 2;
-      d = util.padToLength(d, curve.payloadSize);
+      d = util.leftPad(d, curve.payloadSize);
       return { read, privateParams: { d } };
     }
     case enums.publicKey.eddsa: {
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
-      seed = util.padToLength(seed, 32);
+      seed = util.leftPad(seed, 32);
       return { read, privateParams: { seed } };
     }
     default:
