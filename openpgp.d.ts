@@ -310,6 +310,7 @@ export namespace config {
   let ignoreMdcError: boolean;
   let checksumRequired: boolean;
   let rsaBlinding: boolean;
+  let minRsaBits: number;
   let passwordCollisionCheck: boolean;
   let revocationsExpire: boolean;
   let useNative: boolean;
