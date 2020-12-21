@@ -218,7 +218,7 @@ class User {
       try {
         srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify);
         return true;
-      } catch {
+      } catch (e) {
         return false;
       }
     });
