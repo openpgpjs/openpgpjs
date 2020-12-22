@@ -503,6 +503,41 @@ IMq6OV/eCedB8bF4bqoU+zGdGh+XwJkoYVVF6DtG+gIcceHUjC0eXHw=
 -----END PGP PRIVATE KEY BLOCK-----
 `;
 
+const gnuDummyKeySigningSubkey = `
+-----BEGIN PGP PRIVATE KEY BLOCK-----
+Version: OpenPGP.js VERSION
+Comment: https://openpgpjs.org
+
+xZUEWCC+hwEEALu8GwefswqZLoiKJk1Nd1yKmVWBL1ypV35FN0gCjI1NyyJX
+UfQZDdC2h0494OVAM2iqKepqht3tH2DebeFLnc2ivvIFmQJZDnH2/0nFG2gC
+rSySWHUjVfbMSpmTaXpit8EX/rjNauGOdbePbezOSsAhW7R9pBdtDjPnq2Zm
+vDXXABEBAAH+B2UAR05VAc0JR05VIER1bW15wrgEEwECACIFAlggvocCGwMG
+CwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEJ3XHFanUJgCeMYD/2zKefpl
+clQoBdDPJKCYJm8IhuWuoF8SnHAsbhD+U42Gbm+2EATTPj0jyGPkZzl7a0th
+S2rSjQ4JF0Ktgdr9585haknpGwr31t486KxXOY4AEsiBmRyvTbaQegwKaQ+C
+/0JQYo/XKpsaX7PMDBB9SNFSa8NkhxYseLaB7gbM8w+Lx8EYBFggvpwBBADF
+YeeJwp6MAVwVwXX/eBRKBIft6LC4E9czu8N2AbOW97WjWNtXi3OuM32OwKXq
+vSck8Mx8FLOAuvVq41NEboeknhptw7HzoQMB35q8NxA9lvvPd0+Ef+BvaVB6
+NmweHttt45LxYxLMdXdGoIt3wn/HBY81HnMqfV/KnggZ+imJ0wARAQABAAP7
+BA56WdHzb53HIzYgWZl04H3BJdB4JU6/FJo0yHpjeWRQ46Q7w2WJzjHS6eBB
+G+OhGzjAGYK7AUr8wgjqMq6LQHt2f80N/nWLusZ00a4lcMd7rvoHLWwRj80a
+RzviOvvhP7kZY1TrhbS+Sl+BWaNIDOxS2maEkxexztt4GEl2dWUCAMoJvyFm
+qPVqVx2Yug29vuJsDcr9XwnjrYI8PtszJI8Fr+5rKgWE3GJumheaXaug60dr
+mLMXdvT/0lj3sXquqR0CAPoZ1Mn7GaUKjPVJ7CiJ/UjqSurrGhruA5ikhehQ
+vUB+v4uIl7ICcX8zfiP+SMhWY9qdkmOvLSSSMcTkguMfe68B/j/qf2en5OHy
+6NJgMIjMrBHvrf34f6pxw5p10J6nxjooZQxV0P+9MoTHWsy0r6Er8IOSSTGc
+WyWJ8wmSqiq/dZSoJcLAfQQYAQIACQUCWCC+nAIbAgCoCRCd1xxWp1CYAp0g
+BBkBAgAGBQJYIL6cAAoJEOYZSGiVA/C9CT4D/2Vq2dKxHmzn/UD1MWSLXUbN
+ISd8tvHjoVg52RafdgHFmg9AbE0DW8ifwaai7FkifD0IXiN04nER3MuVhAn1
+gtMu03m1AQyX/X39tHz+otpwBn0g57NhFbHFmzKfr/+N+XsDRj4VXn13hhqM
+qQR8i1wgiWBUFJbpP5M1BPdH4Qfkcn8D/j8A3QKYGGETa8bNOdVTRU+sThXr
+imOfWu58V1yWCmLE1kK66qkqmgRVUefqacF/ieMqNmsAY+zmR9D4fg2wzu/d
+nPjJXp1670Vlzg7oT5XVYnfys7x4GLHsbaOSjXToILq+3GwI9UjNjtpobcfm
+mNG2ibD6lftLOtDsVSDY8a6a
+=KjxQ
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+
 function withCompression(tests) {
   const compressionTypes = Object.keys(openpgp.enums.compression).map(k => openpgp.enums.compression[k]);
 
@@ -861,6 +896,24 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           passphrase: passphrases
         });
         expect(unlocked.isDecrypted()).to.be.true;
+      });
+
+      it('should encrypt gnu-dummy key', async function() {
+        const key = await openpgp.readArmoredKey(gnuDummyKeySigningSubkey);
+        const locked = await openpgp.encryptKey({
+          privateKey: key,
+          passphrase: passphrase
+        });
+        expect(key.isDecrypted()).to.be.true;
+        expect(locked.isDecrypted()).to.be.false;
+        expect(locked.primaryKey.isDummy()).to.be.true;
+        const unlocked = await openpgp.decryptKey({
+          privateKey: locked,
+          passphrase: passphrase
+        });
+        expect(key.isDecrypted()).to.be.true;
+        expect(unlocked.isDecrypted()).to.be.true;
+        expect(unlocked.primaryKey.isDummy()).to.be.true;
       });
     });
 
