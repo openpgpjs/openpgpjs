@@ -1521,17 +1521,21 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   // TODO add test with multiple revocation signatures
   it('Verify primary key revocation signatures', async function() {
     const pubKey = await openpgp.readArmoredKey(pub_revoked);
-    await expect(pubKey.revocationSignatures[0].verify(
-      pubKey.primaryKey, openpgp.enums.signature.keyRevocation, {key: pubKey.primaryKey}
-    )).to.eventually.be.true;
+    const revSig = pubKey.revocationSignatures[0];
+    revSig.verified = null;
+    await pubKey.revocationSignatures[0].verify(
+      pubKey.primaryKey, openpgp.enums.signature.keyRevocation, { key: pubKey.primaryKey }
+    ).then(() => expect(revSig.verified).to.be.true);
   });
 
   // TODO add test with multiple revocation signatures
   it('Verify subkey revocation signatures', async function() {
     const pubKey = await openpgp.readArmoredKey(pub_revoked);
-    await expect(pubKey.subKeys[0].revocationSignatures[0].verify(
-      pubKey.primaryKey, openpgp.enums.signature.subkeyRevocation, {key: pubKey.primaryKey, bind: pubKey.subKeys[0].keyPacket}
-    )).to.eventually.be.true;
+    const revSig = pubKey.subKeys[0].revocationSignatures[0];
+    revSig.verified = null;
+    await revSig.verify(
+      pubKey.primaryKey, openpgp.enums.signature.subkeyRevocation, { key: pubKey.primaryKey, bind: pubKey.subKeys[0].keyPacket }
+    ).then(() => expect(revSig.verified).to.be.true);
   });
 
   it('Verify key expiration date', async function() {

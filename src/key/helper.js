@@ -62,10 +62,10 @@ export async function getLatestValidSignature(signatures, primaryKey, signatureT
       if (
         (!signature || signatures[i].created >= signature.created) &&
         // check binding signature is not expired (ie, check for V4 expiration time)
-        !signatures[i].isExpired(date) &&
-        // check binding signature is verified
-        (signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify))
+        !signatures[i].isExpired(date)
       ) {
+        // check binding signature is verified
+        signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify);
         signature = signatures[i];
       }
     } catch (e) {
@@ -278,9 +278,10 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // third-party key certification, which should only affect
         // `verifyAllCertifications`.)
         (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
-        !(config.revocationsExpire && revocationSignature.isExpired(normDate)) &&
-        (revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify))
+        !(config.revocationsExpire && revocationSignature.isExpired(normDate))
       ) {
+        revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify);
+
         // TODO get an identifier of the revoked object instead
         revocationKeyIds.push(revocationSignature.issuerKeyId);
       }

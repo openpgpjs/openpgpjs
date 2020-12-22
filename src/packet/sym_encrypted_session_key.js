@@ -125,7 +125,7 @@ class SymEncryptedSessionKeyPacket {
   /**
    * Decrypts the session key
    * @param {String} passphrase The passphrase in string form
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if decryption was not successful
    * @async
    */
   async decrypt(passphrase) {
@@ -149,14 +149,12 @@ class SymEncryptedSessionKeyPacket {
     } else {
       this.sessionKey = key;
     }
-
-    return true;
   }
 
   /**
    * Encrypts the session key
    * @param {String} passphrase The passphrase in string form
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if encryption was not successful
    * @async
    */
   async encrypt(passphrase) {
@@ -187,8 +185,6 @@ class SymEncryptedSessionKeyPacket {
       const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
       this.encrypted = await crypto.cfb.encrypt(algo, key, private_key, new Uint8Array(crypto.cipher[algo].blockSize));
     }
-
-    return true;
   }
 }
 

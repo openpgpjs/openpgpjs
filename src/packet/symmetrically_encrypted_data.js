@@ -83,7 +83,7 @@ class SymmetricallyEncryptedDataPacket {
    * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
    * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
    * @param {Uint8Array} key    The key of cipher blocksize length to be used
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if decryption was not successful
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, streaming) {
@@ -104,8 +104,6 @@ class SymmetricallyEncryptedDataPacket {
       OnePassSignaturePacket,
       SignaturePacket
     }, streaming);
-
-    return true;
   }
 
   /**
@@ -113,7 +111,7 @@ class SymmetricallyEncryptedDataPacket {
    * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
    * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
    * @param {Uint8Array} key    The key of cipher blocksize length to be used
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if encryption was not successful
    * @async
    */
   async encrypt(algo, key) {
@@ -123,8 +121,6 @@ class SymmetricallyEncryptedDataPacket {
     const FRE = await crypto.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize));
     const ciphertext = await crypto.cfb.encrypt(algo, key, data, FRE.subarray(2));
     this.encrypted = util.concat([FRE, ciphertext]);
-
-    return true;
   }
 }
 

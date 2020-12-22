@@ -161,7 +161,7 @@ class SignaturePacket {
    * @param {Object} data Contains packets to be signed.
    * @param {Boolean} detached (optional) whether to create a detached signature
    * @param {Boolean} streaming (optional) whether to process data as a stream
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if signing failed
    * @async
    */
   async sign(key, data, detached = false, streaming = false) {
@@ -201,7 +201,6 @@ class SignaturePacket {
       // same as the ones passed to sign.
       this.verified = true;
     }
-    return true;
   }
 
   /**
@@ -672,7 +671,7 @@ class SignaturePacket {
    * @param {String|Object} data data which on the signature applies
    * @param {Boolean} detached (optional) whether to verify a detached signature
    * @param {Boolean} streaming (optional) whether to process data as a stream
-   * @returns {Promise<Boolean>} True if message is verified, else false.
+   * @throws {Error} if signature validation failed
    * @async
    */
   async verify(key, signatureType, data, detached = false, streaming = false) {
@@ -718,7 +717,6 @@ class SignaturePacket {
       throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
     }
     this.verified = true;
-    return true;
   }
 
   /**

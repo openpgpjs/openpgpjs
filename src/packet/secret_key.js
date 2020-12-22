@@ -269,12 +269,12 @@ class SecretKeyPacket extends PublicKeyPacket {
    * and the passphrase is empty or undefined, the key will be set as not encrypted.
    * This can be used to remove passphrase protection after calling decrypt().
    * @param {String} passphrase
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if encryption was not successful
    * @async
    */
   async encrypt(passphrase) {
     if (this.isDummy()) {
-      return false;
+      return;
     }
 
     if (!this.isDecrypted()) {
@@ -283,7 +283,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     if (this.isDecrypted() && !passphrase) {
       this.s2k_usage = 0;
-      return false;
+      return;
     } else if (!passphrase) {
       throw new Error('The key must be decrypted before removing passphrase protection.');
     }
@@ -310,7 +310,6 @@ class SecretKeyPacket extends PublicKeyPacket {
         await crypto.hash.sha1(cleartext)
       ]), this.iv);
     }
-    return true;
   }
 
   /**
@@ -318,13 +317,13 @@ class SecretKeyPacket extends PublicKeyPacket {
    * {@link SecretKeyPacket.isDecrypted} should be false, as
    * otherwise calls to this function will throw an error.
    * @param {String} passphrase The passphrase for this private key as string
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if decryption was not successful
    * @async
    */
   async decrypt(passphrase) {
     if (this.isDummy()) {
       this.isEncrypted = false;
-      return false;
+      return;
     }
 
     if (this.isDecrypted()) {
@@ -373,8 +372,6 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = false;
     this.keyMaterial = null;
     this.s2k_usage = 0;
-
-    return true;
   }
 
   /**

@@ -398,7 +398,7 @@ class Key {
    * Encrypts all secret key and subkey packets matching keyId
    * @param  {String|Array<String>} passphrases - if multiple passphrases, then should be in same order as packets each should encrypt
    * @param  {module:type/keyid} keyId
-   * @returns {Promise<Array<SecretKeyPacket|SecretSubkeyPacket>>}
+   * @throws {Error} if encryption failed for any key or subkey
    * @async
    */
   async encrypt(passphrases, keyId = null) {
@@ -412,11 +412,10 @@ class Key {
       throw new Error("Invalid number of passphrases for key");
     }
 
-    return Promise.all(keys.map(async function(key, i) {
+    await Promise.all(keys.map(async function(key, i) {
       const { keyPacket } = key;
       await keyPacket.encrypt(passphrases[i]);
       keyPacket.clearPrivateParams();
-      return keyPacket;
     }));
   }
 
@@ -449,7 +448,6 @@ class Key {
       if (!decrypted) {
         throw error;
       }
-      return decrypted;
     }));
 
     if (!keyId) {
@@ -536,7 +534,7 @@ class Key {
    * and valid self signature. Throws if the primary key is invalid.
    * @param {Date} date (optional) use the given date for verification instead of the current time
    * @param  {Object} userId (optional) user ID
-   * @returns {Promise<true>} The status of the primary key
+   * @throws {Error} If key verification failed
    * @async
    */
   async verifyPrimaryKey(date = new Date(), userId = {}) {
