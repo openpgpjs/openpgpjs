@@ -730,7 +730,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} detached (optional) whether to verify detached signature packets
  * @returns {Promise<Array<{keyid: module:type/keyid,
- *                          valid: Boolean}>>} list of signer's keyid and validity of signature
+ *                          valid: Boolean|null}>>} list of signer's keyid and validity of signature
  * @async
  */
 async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, streaming = false) {
@@ -751,7 +751,7 @@ async function createVerificationObject(signature, literalDataList, keys, date =
       if (!signingKey) {
         return null;
       }
-      const verified = await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, streaming);
+      await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, streaming);
       const sig = await signaturePacket;
       if (sig.isExpired(date) || !(
         sig.created >= signingKey.getCreationTime() &&
@@ -762,7 +762,7 @@ async function createVerificationObject(signature, literalDataList, keys, date =
       )) {
         throw new Error('Signature is expired');
       }
-      return verified;
+      return true;
     })(),
     signature: (async () => {
       const sig = await signaturePacket;
