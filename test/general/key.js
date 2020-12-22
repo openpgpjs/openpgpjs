@@ -3041,17 +3041,21 @@ module.exports = () => describe('Key', function() {
     source.subKeys = [];
     dest.subKeys = [];
     expect(dest.isPublic()).to.be.true;
-    return dest.update(source).then(() => {
-      expect(dest.isPrivate()).to.be.true;
-      return Promise.all([
-        dest.verifyPrimaryKey().then(result => {
-          expect(source.verifyPrimaryKey()).to.eventually.equal(result);
-        }),
-        dest.users[0].verify(dest.primaryKey).then(result => {
-          expect(source.users[0].verify(source.primaryKey)).to.eventually.equal(result);
-        })
-      ]);
-    });
+
+    await dest.update(source);
+    expect(dest.isPrivate()).to.be.true;
+
+    const { selfCertification: destCertification } = await dest.getPrimaryUser();
+    const { selfCertification: sourceCertification } = await source.getPrimaryUser();
+    destCertification.verified = null;
+    sourceCertification.verified = null;
+    await dest.verifyPrimaryKey().then(async () => expect(destCertification.verified).to.be.true);
+    await source.verifyPrimaryKey().then(async () => expect(sourceCertification.verified).to.be.true);
+
+    destCertification.verified = null;
+    sourceCertification.verified = null;
+    await dest.users[0].verify(dest.primaryKey).then(async () => expect(destCertification.verified).to.be.true);
+    await source.users[0].verify(source.primaryKey).then(async () => expect(sourceCertification.verified).to.be.true);
   });
 
   it('update() - merge private key into public key - mismatch throws error', async function() {

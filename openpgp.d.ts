@@ -16,33 +16,33 @@ export function readKeys(data: Uint8Array): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
 export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserId[] }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
-export function encryptKey(options: { privateKey: Key; passphrase?: string }): Promise<Key>;
+export function encryptKey(options: { privateKey: Key; passphrase?: string | string[] }): Promise<Key>;
 export function reformatKey(options: { privateKey: Key; userIds?: (string | UserId)[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
 
 export class Key {
+  constructor(packetlist: PacketList<AnyPacket>);
   public primaryKey: PublicKeyPacket | SecretKeyPacket;
   public subKeys: SubKey[];
   public users: User[];
   public revocationSignatures: SignaturePacket[];
   public keyPacket: PublicKeyPacket | SecretKeyPacket;
-  constructor(packetlist: PacketList<AnyPacket>);
   public armor(): string;
-  public decrypt(passphrase: string | string[], keyId?: Keyid): Promise<boolean>;
-  public encrypt(passphrase: string | string[]): Promise<void>;
-  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign' | null, keyId?: Keyid | null, userId?: UserId | null): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
+  public decrypt(passphrase: string | string[], keyId?: Keyid): Promise<void>; // throws on error
+  public encrypt(passphrase: string | string[]): Promise<void>; // throws on error
+  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyId?: Keyid, userId?: UserId): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
   public getKeyIds(): Keyid[];
-  public getPrimaryUser(): Promise<PrimaryUser>; // throws on err
+  public getPrimaryUser(): Promise<PrimaryUser>; // throws on error
   public getUserIds(): string[];
   public isPrivate(): boolean;
   public isPublic(): boolean;
   public toPublic(): Key;
   public update(key: Key): void;
-  public verifyPrimaryKey(): Promise<void>; // throws on err
+  public verifyPrimaryKey(): Promise<void>; // throws on error
   public isRevoked(): Promise<boolean>;
   public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date): Promise<Key>;
   public getRevocationCertificate(): Promise<Stream<string> | string | undefined>;
-  public getEncryptionKey(keyid?: Keyid | null, date?: Date, userId?: UserId | null): Promise<Key | SubKey | null>;
-  public getSigningKey(keyid?: Keyid | null, date?: Date, userId?: UserId | null): Promise<Key | SubKey | null>;
+  public getEncryptionKey(keyid?: Keyid, date?: Date | null, userId?: UserId): Promise<Key | SubKey>;
+  public getSigningKey(keyid?: Keyid, date?: Date | null, userId?: UserId): Promise<Key | SubKey>;
   public getKeys(keyId?: Keyid): (Key | SubKey)[];
   public isDecrypted(): boolean;
   public getFingerprint(): string;
@@ -52,11 +52,10 @@ export class Key {
 }
 
 export class SubKey {
-  public subKey: SecretSubkeyPacket | PublicSubkeyPacket;
-  public keyPacket: SecretKeyPacket;
+  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
+  public keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
   public bindingSignatures: SignaturePacket[];
   public revocationSignatures: SignaturePacket[];
-  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
   public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<enums.keyStatus>;
   public isDecrypted(): boolean;
   public getFingerprint(): string;
@@ -80,7 +79,8 @@ export interface PrimaryUser {
 
 type AlgorithmInfo = {
   algorithm: enums.publicKeyNames;
-  bits: number;
+  bits?: number;
+  curve?: EllipticCurveName;
 };
 
 /* ############## v5 SIG #################### */
@@ -94,7 +94,7 @@ export class Signature {
   public armor(): string;
 }
 
-export interface VerificationResult {
+interface VerificationResult {
   keyid: Keyid;
   verified: Promise<null | boolean>;
   signature: Promise<Signature>;
@@ -113,7 +113,7 @@ export class CleartextMessage {
 
   /** Returns the key IDs of the keys that signed the cleartext message
    */
-  getSigningKeyIds(): Array<Keyid>;
+  getSigningKeyIds(): Keyid[];
 
   /** Get cleartext
    */
@@ -123,7 +123,7 @@ export class CleartextMessage {
    *
    *  @param privateKeys private keys with decrypted secret key data for signing
    */
-  sign(privateKeys: Array<Key>): void;
+  sign(privateKeys: Key[]): void;
 
   /** Verify signatures of cleartext signed message
    *  @param keys array of keys to verify signatures
@@ -258,7 +258,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data that is the body of the message
    */
-  public getLiteralData(): Uint8Array | null | Stream<Uint8Array>;
+  public getLiteralData(): Uint8Array | Stream<Uint8Array> | null;
 
   /** Returns the key IDs of the keys that signed the message
    */
@@ -266,7 +266,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data as text
    */
-  public getText(): string | null | Stream<string>;
+  public getText(): string | Stream<string> | null;
 
   public getFilename(): string | null;
 
@@ -324,32 +324,54 @@ export namespace config {
 
 /* ############## v5 PACKET #################### */
 
-declare class BasePacket {
+declare abstract class BasePacket {
   public tag: enums.packet;
   public read(bytes: Uint8Array): void;
   public write(): Uint8Array;
 }
 
-declare class BaseKeyPacket extends BasePacket {
-  // fingerprint: Uint8Array|null; - not included because not recommended to use. Use getFingerprint() or getFingerprintBytes()
+/**
+ * The relationship between the KeyPacket classes is modeled by considering the following:
+ * - A Secret (Sub)Key Packet can always be used when a Public one is expected.
+ * - A Subkey Packet cannot always be used when a Primary Key Packet is expected (and vice versa).
+ */
+declare abstract class BasePublicKeyPacket extends BasePacket {
   public algorithm: enums.publicKey;
   public created: Date;
-
   public version: number;
-  public expirationTimeV3: number | null;
-  public keyExpirationTime: number | null;
-  public getBitSize(): number;
   public getAlgorithmInfo(): AlgorithmInfo;
   public getFingerprint(): string;
   public getFingerprintBytes(): Uint8Array | null;
+  public hasSameFingerprintAs(other: BasePublicKeyPacket): boolean;
   public getCreationTime(): Date;
   public getKeyId(): Keyid;
-  public params: object[];
   public isDecrypted(): boolean;
-  public isEncrypted: boolean; // may be null, false or true
+  public publicParams: object;
 }
 
-declare class BasePrimaryKeyPacket extends BaseKeyPacket {
+export class PublicKeyPacket extends BasePublicKeyPacket {
+  public tag: enums.packet.publicKey;
+}
+
+export class PublicSubkeyPacket extends BasePublicKeyPacket {
+  public tag: enums.packet.publicSubkey;
+}
+
+declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
+  public privateParams: object | null;
+  public encrypt(passphrase: string): Promise<void>; // throws on error
+  public decrypt(passphrase: string): Promise<void>; // throws on error
+  public validate(): Promise<void>; // throws on error
+  public isDummy(): boolean;
+  public makeDummy(): void;
+}
+
+export class SecretKeyPacket extends BaseSecretKeyPacket {
+  public tag: enums.packet.secretKey;
+}
+
+export class SecretSubkeyPacket extends BaseSecretKeyPacket {
+  public tag: enums.packet.secretSubkey;
 }
 
 export class CompressedDataPacket extends BasePacket {
@@ -376,20 +398,12 @@ export class LiteralDataPacket extends BasePacket {
   public tag: enums.packet.literalData;
 }
 
-export class PublicKeyPacket extends BasePrimaryKeyPacket {
-  public tag: enums.packet.publicKey;
-}
-
 export class SymmetricallyEncryptedDataPacket extends BasePacket {
   public tag: enums.packet.symmetricallyEncryptedData;
 }
 
 export class MarkerPacket extends BasePacket {
   public tag: enums.packet.marker;
-}
-
-export class PublicSubkeyPacket extends BaseKeyPacket {
-  public tag: enums.packet.publicSubkey;
 }
 
 export class UserAttributePacket extends BasePacket {
@@ -401,33 +415,17 @@ export class OnePassSignaturePacket extends BasePacket {
   public correspondingSig?: Promise<SignaturePacket>;
 }
 
-export class SecretKeyPacket extends BasePrimaryKeyPacket {
-  public tag: enums.packet.secretKey;
-  // encrypted: null | unknown[]; // Encrypted secret-key data, not meant for public use
-  public s2k: { type: string } | null;
-  public encrypt(passphrase: string): Promise<boolean>;
-  public decrypt(passphrase: string): Promise<true>;
-}
-
 export class UserIDPacket extends BasePacket {
   public tag: enums.packet.userID;
   public userid: string;
 }
 
-export class SecretSubkeyPacket extends BaseKeyPacket {
-  public tag: enums.packet.secretSubkey;
-  // encrypted: null | unknown[]; // Encrypted secret-key data, not meant for public use
-  public s2k: { type: string } | null;
-  public encrypt(passphrase: string): Promise<boolean>;
-  public decrypt(passphrase: string): Promise<true>;
-}
-
 export class SignaturePacket extends BasePacket {
   public tag: enums.packet.signature;
   public version: number;
-  public signatureType: null | number;
-  public hashAlgorithm: null | number;
-  public publicKeyAlgorithm: null | number;
+  public signatureType: enums.signature | null;
+  public hashAlgorithm: enums.hash | null;
+  public publicKeyAlgorithm: enums.publicKey | null;
   public signatureData: null | Uint8Array;
   public unhashedSubpackets: null | Uint8Array;
   public signedHashValue: null | Uint8Array;
@@ -441,33 +439,34 @@ export class SignaturePacket extends BasePacket {
   public revocable: null | boolean;
   public keyExpirationTime: null | number;
   public keyNeverExpires: null | boolean;
-  public preferredSymmetricAlgorithms: null | number[];
+  public preferredSymmetricAlgorithms: enums.symmetric[] | null;
   public revocationKeyClass: null | number;
-  public revocationKeyAlgorithm: null | number;
+  public revocationKeyAlgorithm: null | enums.publicKey;
   public revocationKeyFingerprint: null | Uint8Array;
   public issuerKeyId: Keyid;
   public notation: null | { [name: string]: string };
-  public preferredHashAlgorithms: null | number[];
-  public preferredCompressionAlgorithms: null | number[];
+  public preferredHashAlgorithms: enums.hash[] | null;
+  public preferredCompressionAlgorithms: enums.compression[] | null;
   public keyServerPreferences: null | number[];
   public preferredKeyServer: null | string;
   public isPrimaryUserID: null | boolean;
   public policyURI: null | string;
-  public keyFlags: null | number[];
+  public keyFlags: Uint8Array | null;
   public signersUserId: null | string;
-  public reasonForRevocationFlag: null | number;
+  public reasonForRevocationFlag: null | enums.reasonForRevocation;
   public reasonForRevocationString: null | string;
-  public features: null | number[];
-  public signatureTargetPublicKeyAlgorithm: null | number;
-  public signatureTargetHashAlgorithm: null | number;
+  public features: Uint8Array | null;
+  public signatureTargetPublicKeyAlgorithm: enums.publicKey | null;
+  public signatureTargetHashAlgorithm: enums.hash | null;
   public signatureTargetHash: null | string;
   public embeddedSignature: null | SignaturePacket;
   public issuerKeyVersion: null | number;
   public issuerFingerprint: null | Uint8Array;
-  public preferredAeadAlgorithms: null | Uint8Array;
+  public preferredAeadAlgorithms: enums.aead[] | null;
   public verified: null | boolean;
   public revoked: null | boolean;
-  public sign(key: SecretKeyPacket | SecretSubkeyPacket, data: Uint8Array): true;
+  public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean, streaming?: boolean): Promise<void>;
+  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, detached?: boolean, streaming?: boolean): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
 }
@@ -476,10 +475,9 @@ export class TrustPacket extends BasePacket {
   public tag: enums.packet.trust;
 }
 
-export type AnyPacket = CompressedDataPacket | SymEncryptedIntegrityProtectedDataPacket | AEADEncryptedDataPacket | PublicKeyEncryptedSessionKeyPaclet | SymEncryptedSessionKey | LiteralDataPacket
-  | PublicKeyPacket | SymmetricallyEncryptedDataPacket | MarkerPacket | PublicSubkeyPacket | UserAttributePacket | OnePassSignaturePacket | SecretKeyPacket | UserIDPacket | SecretSubkeyPacket | SignaturePacket | TrustPacket;
-export type AnySecretPacket = SecretKeyPacket | SecretSubkeyPacket;
-export type AnyKeyPacket = PublicKeyPacket | SecretKeyPacket | PublicSubkeyPacket | SecretSubkeyPacket;
+export type AnyPacket = BasePacket;
+export type AnySecretKeyPacket = SecretKeyPacket | SecretSubkeyPacket;
+export type AnyKeyPacket = BasePublicKeyPacket;
 
 type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 
@@ -531,7 +529,7 @@ export namespace stream {
 
 /* ############## v5 GENERAL #################### */
 
-export interface UserId { name?: string; email?: string; }
+export interface UserId { name?: string; email?: string; comment?: string; }
 export interface SessionKey { data: Uint8Array; algorithm: string; }
 
 
@@ -564,7 +562,7 @@ interface EncryptOptions {
   toUserId?: UserId;
 }
 
-export interface DecryptOptions {
+interface DecryptOptions {
   /** the message object with the encrypted data */
   message: Message<MaybeStream<Data>>;
   /** (optional) private keys with decrypted secret key data or session key */
@@ -585,7 +583,7 @@ export interface DecryptOptions {
   date?: Date;
 }
 
-export interface SignOptions {
+interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   privateKeys?: Key | Key[];
   armor?: boolean;
@@ -596,7 +594,7 @@ export interface SignOptions {
   fromUserId?: UserId;
 }
 
-export interface VerifyOptions {
+interface VerifyOptions {
   /** array of publicKeys or single key, to verify signatures */
   publicKeys: Key | Key[];
   /** (cleartext) message object with signatures */
@@ -611,15 +609,16 @@ export interface VerifyOptions {
   date?: Date;
 }
 
-export interface KeyPair {
+interface KeyPair {
   key: Key;
   privateKeyArmored: string;
   publicKeyArmored: string;
+  revocationCertificate: string;
 }
 
-export type EllipticCurveName = 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
+export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
-export interface KeyOptions {
+interface KeyOptions {
   userIds: UserId[]; // generating a key with no user defined results in error
   passphrase?: string;
   numBits?: number;
@@ -629,17 +628,19 @@ export interface KeyOptions {
   subkeys?: KeyOptions[];
 }
 
-export interface Keyid {
+declare class Keyid {
   bytes: string;
+  equals(keyid: Keyid, matchWildcard?: boolean): boolean;
+  toHex(): string;
 }
 
-export interface DecryptMessageResult {
+interface DecryptMessageResult {
   data: MaybeStream<Data>;
   signatures: VerificationResult[];
   filename: string;
 }
 
-export interface VerifyMessageResult {
+interface VerifyMessageResult {
   data: MaybeStream<Data>;
   signatures: VerificationResult[];
 }
@@ -664,14 +665,14 @@ export class HKP {
 
 export namespace enums {
 
-  function read(type: typeof armor, e: armor): armorNames | string | any;
-  function read(type: typeof compression, e: compression): compressionNames | string | any;
-  function read(type: typeof hash, e: hash): hashNames | string | any;
-  function read(type: typeof packet, e: packet): packetNames | string | any;
-  function read(type: typeof publicKey, e: publicKey): publicKeyNames | string | any;
-  function read(type: typeof symmetric, e: symmetric): symmetricNames | string | any;
-  function read(type: typeof keyStatus, e: keyStatus): keyStatusNames | string | any;
-  function read(type: typeof keyFlags, e: keyFlags): keyFlagsNames | string | any;
+  function read(type: typeof armor, e: armor): armorNames;
+  function read(type: typeof compression, e: compression): compressionNames;
+  function read(type: typeof hash, e: hash): hashNames;
+  function read(type: typeof packet, e: packet): packetNames;
+  function read(type: typeof publicKey, e: publicKey): publicKeyNames;
+  function read(type: typeof symmetric, e: symmetric): symmetricNames;
+  function read(type: typeof keyStatus, e: keyStatus): keyStatusNames;
+  function read(type: typeof keyFlags, e: keyFlags): keyFlagsNames;
 
   export type armorNames = 'multipartSection' | 'multipartLast' | 'signed' | 'message' | 'publicKey' | 'privateKey';
   enum armor {
@@ -783,11 +784,34 @@ export namespace enums {
     sharedPrivateKey = 128,
   }
 
+  enum signature {
+    binary = 0,
+    text = 1,
+    standalone = 2,
+    certGeneric = 16,
+    certPersona = 17,
+    certCasual = 18,
+    certPositive = 19,
+    certRevocation = 48,
+    subkeyBinding = 24,
+    keyBinding = 25,
+    key = 31,
+    keyRevocation = 32,
+    subkeyRevocation = 40,
+    timestamp = 64,
+    thirdParty = 80
+  }
+
+  enum aead {
+    eax = 1,
+    ocb = 2,
+    experimentalGcm = 100 // Private algorithm
+  }
 }
 
 /* ############## v5 UTIL #################### */
 
-export namespace util {
+declare namespace util {
   /** Convert a string of utf8 bytes to a native javascript string
       @param utf8 A valid squence of utf8 bytes
   */

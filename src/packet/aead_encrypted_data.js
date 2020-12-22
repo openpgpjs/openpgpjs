@@ -90,7 +90,7 @@ class AEADEncryptedDataPacket {
    * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
    * @param  {Uint8Array} key               The session key used to encrypt the payload
    * @param  {Boolean} streaming            Whether the top-level function will return a stream
-   * @returns {Boolean}
+   * @throws {Error} if decryption was not successful
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, streaming) {
@@ -100,7 +100,6 @@ class AEADEncryptedDataPacket {
       OnePassSignaturePacket,
       SignaturePacket
     }, streaming);
-    return true;
   }
 
   /**
@@ -108,6 +107,7 @@ class AEADEncryptedDataPacket {
    * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
    * @param  {Uint8Array} key               The session key used to encrypt the payload
    * @param  {Boolean} streaming            Whether the top-level function will return a stream
+   * @throws {Error} if encryption was not successful
    * @async
    */
   async encrypt(sessionKeyAlgorithm, key, streaming) {
