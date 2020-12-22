@@ -200,20 +200,20 @@ export async function decryptKey({ privateKey, passphrase }) {
  * Lock a private key with the given passphrase.
  * This method does not change the original key.
  * @param  {Key} privateKey                   the private key to encrypt
- * @param  {String|Array<String>} passphrase  the user's passphrase(s)
+ * @param  {String|Array<String>} passphrase  if multiple passphrases, they should be in the same order as the packets each should encrypt
  * @returns {Promise<Key>}                    the locked key object
  * @async
  */
 export async function encryptKey({ privateKey, passphrase }) {
   const key = await privateKey.clone();
-  // shallow clone is enough since the encrypted material is not changed in place by decryption
   key.getKeys().forEach(k => {
+    // shallow clone the key packets
     k.keyPacket = Object.create(
       Object.getPrototypeOf(k.keyPacket),
       Object.getOwnPropertyDescriptors(k.keyPacket)
     );
     if (!k.keyPacket.isDecrypted()) return;
-    // deep clone of private params, which are cleared during encryption
+    // deep clone the private params, which are cleared during encryption
     const privateParams = {};
     Object.keys(k.keyPacket.privateParams).forEach(name => {
       privateParams[name] = new Uint8Array(k.keyPacket.privateParams[name]);
