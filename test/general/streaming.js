@@ -400,7 +400,7 @@ function tests() {
       const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
         value += '';
         if (value === '=' || value.length === 6) return; // Remove checksum
-        const newlineIndex = value.indexOf('\r\n', 500);
+        const newlineIndex = value.indexOf('\n', 500);
         if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
         return value;
       }));
@@ -435,7 +435,7 @@ function tests() {
 
       const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
         value += '';
-        const newlineIndex = value.indexOf('\r\n', 500);
+        const newlineIndex = value.indexOf('\n', 500);
         if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
         return value;
       }));
@@ -470,7 +470,7 @@ function tests() {
 
       const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
         value += '';
-        const newlineIndex = value.indexOf('\r\n', 500);
+        const newlineIndex = value.indexOf('\n', 500);
         if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
         return value;
       }));
@@ -501,7 +501,7 @@ function tests() {
 
     const message = await openpgp.readArmoredMessage(openpgp.stream.transform(signed, value => {
       value += '';
-      const newlineIndex = value.indexOf('\r\n', 500);
+      const newlineIndex = value.indexOf('\n', 500);
       if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
       return value;
     }));
