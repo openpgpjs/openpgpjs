@@ -124,7 +124,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
   const fingerprint1 = new Uint8Array([
     177, 183,
     116, 123, 76, 133, 245, 212, 151, 243, 236,
-    71, 245, 86, 3, 168, 101, 74, 209, 105
+    71, 245, 86, 3, 168, 101, 56, 209, 105
   ]);
   const fingerprint2 = new Uint8Array([
     177, 83,
