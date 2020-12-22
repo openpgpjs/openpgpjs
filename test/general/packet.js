@@ -713,20 +713,16 @@ module.exports = () => describe("Packet", function() {
   it('Secret key reading with signature verification.', async function() {
     const key = new openpgp.PacketList();
     await key.read((await openpgp.unarmor(armored_key)).data, openpgp);
-    return Promise.all([
-      expect(key[2].verify(key[0],
-        openpgp.enums.signature.certGeneric,
-        {
-            userId: key[1],
-            key: key[0]
-        })).to.eventually.be.true,
-      expect(key[4].verify(key[0],
-        openpgp.enums.signature.keyBinding,
-        {
-            key: key[0],
-            bind: key[3]
-        })).to.eventually.be.true
-    ]);
+
+    expect(key[2].verified).to.be.null;
+    expect(key[4].verified).to.be.null;
+
+    await key[2].verify(
+      key[0], openpgp.enums.signature.certGeneric, { userId: key[1], key: key[0] }
+    ).then(async () => expect(key[2].verified).to.be.true);
+    await key[4].verify(
+      key[0], openpgp.enums.signature.keyBinding, { key: key[0], bind: key[3] }
+    ).then(async () => expect(key[4].verified).to.be.true);
   });
 
   it('Reading a signed, encrypted message.', async function() {
@@ -760,10 +756,8 @@ module.exports = () => describe("Packet", function() {
       payload.concat(await openpgp.stream.readToEnd(payload.stream, arr => arr));
 
       await Promise.all([
-        expect(payload[2].verify(
-          key[0], openpgp.enums.signature.binary, payload[1]
-        )).to.eventually.be.true,
-        openpgp.stream.pipe(payload[1].getBytes(), new openpgp.stream.WritableStream())
+        payload[2].verify(key[0], openpgp.enums.signature.binary, payload[1]),
+        openpgp.stream.pipe(payload[1].getBytes(),new openpgp.stream.WritableStream())
       ]);
     });
   });
@@ -930,7 +924,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
         signed2.concat(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
 
         await Promise.all([
-          expect(signed2[1].verify(key, openpgp.enums.signature.text, signed2[0])).to.eventually.be.true,
+          signed2[1].verify(key, openpgp.enums.signature.text, signed2[0]),
           openpgp.stream.pipe(signed2[0].getBytes(), new openpgp.stream.WritableStream())
         ]);
       });
