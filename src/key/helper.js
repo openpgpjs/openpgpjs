@@ -327,6 +327,7 @@ export async function isAeadSupported(keys, date = new Date(), userIds = []) {
 }
 
 export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
+  options.type = options.type || subkeyDefaults.type;
   options.curve = options.curve || subkeyDefaults.curve;
   options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
@@ -335,24 +336,27 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
 
   options.sign = options.sign || false;
 
-  if (options.curve) {
-    try {
-      options.curve = enums.write(enums.curve, options.curve);
-    } catch (e) {
-      throw new Error('Not valid curve.');
-    }
-    if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-      options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
-    }
-    if (options.sign) {
-      options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
-    } else {
-      options.algorithm = enums.publicKey.ecdh;
-    }
-  } else if (options.rsaBits) {
-    options.algorithm = enums.publicKey.rsaEncryptSign;
-  } else {
-    throw new Error('Unrecognized key type');
+  switch (options.type) {
+    case 'ecc':
+      try {
+        options.curve = enums.write(enums.curve, options.curve);
+      } catch (e) {
+        throw new Error('Invalid curve');
+      }
+      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
+        options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
+      }
+      if (options.sign) {
+        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
+      } else {
+        options.algorithm = enums.publicKey.ecdh;
+      }
+      break;
+    case 'rsa':
+      options.algorithm = enums.publicKey.rsaEncryptSign;
+      break;
+    default:
+      throw new Error(`Unsupported key type ${options.type}`);
   }
   return options;
 }

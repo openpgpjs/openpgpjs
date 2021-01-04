@@ -231,14 +231,15 @@ class PublicKeyPacket {
 
   /**
    * Returns algorithm information
-   * @returns {Object} An object of the form {algorithm: String, rsaBits:int, curve:String}
+   * @returns {Object} An object of the form {algorithm: String, bits:int, curve:String}
    */
   getAlgorithmInfo() {
     const result = {};
     result.algorithm = this.algorithm;
-    if (this.publicParams.n) {
-      result.rsaBits = this.publicParams.n.length * 8;
-      result.bits = result.rsaBits; // Deprecated.
+    // RSA, DSA or ElGamal public modulo
+    const modulo = this.publicParams.n || this.publicParams.p;
+    if (modulo) {
+      result.bits = modulo.length * 8;
     } else {
       result.curve = this.publicParams.oid.getName();
     }
