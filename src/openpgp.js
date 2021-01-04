@@ -62,28 +62,28 @@ if (globalThis.ReadableStream) {
 
 
 /**
- * Generates a new OpenPGP key pair. Supports RSA and ECC keys. Primary and subkey will be of same type.
- * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
- * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Number} rsaBits          (optional) number of bits for RSA keys: 2048 or 4096.
- * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
- * @param  {String} curve            (optional) elliptic curve for ECC keys:
- *                                              curve25519, p256, p384, p521, secp256k1,
- *                                              brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1.
- * @param  {Date} date               (optional) override the creation date of the key and the key signatures
- * @param  {Array<Object>} subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
- *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * Generates a new OpenPGP key pair. Supports RSA and ECC keys. By default, primary and subkeys will be of same type.
+ * @param  {ecc|rsa} type                  (optional) The primary key algorithm type: ECC (default) or RSA
+ * @param  {Array<String|Object>} userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param  {String} passphrase             (optional) The passphrase used to encrypt the resulting private key
+ * @param  {Number} rsaBits                (optional) Number of bits for RSA keys, defaults to 4096
+ * @param  {String} curve                  (optional) Elliptic curve for ECC keys:
+ *                                             curve25519 (default), p256, p384, p521, secp256k1,
+ *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
+ * @param  {Date}   date                   (optional) Override the creation date of the key and the key signatures
+ * @param  {Number} keyExpirationTime      (optional) Number of seconds from the key creation time after which the key expires
+ * @param  {Array<Object>} subkeys         (optional) Options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ *                                             sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
  */
-export function generateKey({ userIds = [], passphrase = "", rsaBits = null, keyExpirationTime = 0, curve = "curve25519", date = new Date(), subkeys = [{}] }) {
+export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}] }) {
   userIds = toArray(userIds);
-  curve = rsaBits ? "" : curve;
-  const options = { userIds, passphrase, rsaBits, keyExpirationTime, curve, date, subkeys };
-  if (util.getWebCryptoAll() && rsaBits && rsaBits < 2048) {
-    throw new Error('rsaBits should be 2048 or 4096, found: ' + rsaBits);
+  const options = { userIds, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
+  if (type === "rsa" && rsaBits < config.minRsaBits) {
+    throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${rsaBits}`);
   }
 
   return generate(options).then(async key => {
@@ -103,10 +103,10 @@ export function generateKey({ userIds = [], passphrase = "", rsaBits = null, key
 
 /**
  * Reformats signature packets for a key and rewraps key object.
- * @param  {Key} privateKey          private key to reformat
- * @param  {Array<Object>} userIds   array of user IDs e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
- * @param  {String} passphrase       (optional) The passphrase used to encrypt the resulting private key
- * @param  {Number} keyExpirationTime (optional) The number of seconds after the key creation time that the key expires
+ * @param  {Key} privateKey                Private key to reformat
+ * @param  {Array<String|Object>} userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param  {String} passphrase             (optional) The passphrase used to encrypt the resulting private key
+ * @param  {Number} keyExpirationTime      (optional) Number of seconds from the key creation time after which the key expires
  * @returns {Promise<Object>}         The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async

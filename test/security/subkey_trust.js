@@ -1,5 +1,4 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const util = require('../../src/util');
 
 const { readArmoredKey, Key, readArmoredCleartextMessage, CleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
 const key = require('../../src/key');
@@ -12,7 +11,8 @@ const expect = chai.expect;
 async function generateTestData() {
   const victimPrivKey = await key.generate({
     userIds: ['Victim <victim@example.com>'],
-    rsaBits: util.getWebCryptoAll() ? 2048 : 1024,
+    type: 'rsa',
+    rsaBits: 1024,
     subkeys: [{
       sign: true
     }]
@@ -21,7 +21,8 @@ async function generateTestData() {
 
   const attackerPrivKey = await key.generate({
     userIds: ['Attacker <attacker@example.com>'],
-    rsaBits: util.getWebCryptoAll() ? 2048 : 1024,
+    type: 'rsa',
+    rsaBits: 1024,
     subkeys: [],
     sign: false
   });
