@@ -14,7 +14,7 @@ const expect = chai.expect;
 const native = util.getWebCrypto() || util.getNodeCrypto();
 module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptography with native crypto', function () {
   it('generate rsa key', async function() {
-    const bits = util.getWebCryptoAll() ? 2048 : 1024;
+    const bits = 1024;
     const keyObject = await crypto.publicKey.rsa.generate(bits, 65537);
     expect(keyObject.n).to.exist;
     expect(keyObject.e).to.exist;
@@ -25,7 +25,7 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
   });
 
   it('sign and verify using generated key params', async function() {
-    const bits = util.getWebCryptoAll() ? 2048 : 1024;
+    const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const message = await random.getRandomBytes(64);
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, 'sha256');
@@ -38,7 +38,7 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
   });
 
   it('encrypt and decrypt using generated key params', async function() {
-    const bits = util.getWebCryptoAll() ? 2048 : 1024;
+    const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await crypto.generateSessionKey('aes256');
@@ -72,7 +72,7 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
   });
 
   it('compare native crypto and bn math sign', async function() {
-    const bits = util.getWebCrypto() ? 2048 : 1024;
+    const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await random.getRandomBytes(64);
@@ -98,7 +98,7 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
   });
 
   it('compare native crypto and bn math verify', async function() {
-    const bits = util.getWebCrypto() ? 2048 : 1024;
+    const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await random.getRandomBytes(64);
