@@ -109,6 +109,11 @@ export default {
    */
   rsaBlinding: true,
   /**
+   * @memberof module:config
+   * @property {Number} minRsaBits Minimum RSA key size allowed for key generation
+   */
+  minRsaBits: 2048,
+  /**
    * Work-around for rare GPG decryption bug when encrypting with multiple passwords.
    * **Slower and slightly less secure**
    * @memberof module:config

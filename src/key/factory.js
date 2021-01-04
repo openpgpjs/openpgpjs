@@ -37,21 +37,16 @@ import { unarmor } from '../encoding/armor';
 
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
- * Primary and subkey will be of same type.
- * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsaEncryptSign]
- *                             To indicate what type of key to make.
- *                             RSA is 1. See {@link https://tools.ietf.org/html/rfc4880#section-9.1}
- * @param {Integer} options.rsaBits    number of bits for the key creation.
- * @param {String|Array<String>}  options.userIds
- *                             Assumes already in form of "User Name <username@email.com>"
- *                             If array is used, the first userId is set as primary user Id
- * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
- * @param {Number} [options.keyExpirationTime=0]
- *                             The number of seconds after the key creation time that the key expires
- * @param  {String} options.curve            (optional) elliptic curve for ECC keys
- * @param  {Date} options.date         Override the creation date of the key and the key signatures
- * @param  {Array<Object>} options.subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
- *                                              sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * By default, primary and subkeys will be of same type.
+ * @param {ecc|rsa} options.type                  The primary key algorithm type: ECC or RSA
+ * @param {String}  options.curve                 Elliptic curve for ECC keys
+ * @param {Integer} options.rsaBits               Number of bits for RSA keys
+ * @param {Array<String|Object>} options.userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param {String}  options.passphrase            Passphrase used to encrypt the resulting private key
+ * @param {Number}  options.keyExpirationTime     (optional) Number of seconds from the key creation time after which the key expires
+ * @param {Date}    options.date                  Creation date of the key and the key signatures
+ * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @returns {Promise<module:key.Key>}
  * @async
  * @static
@@ -68,16 +63,12 @@ export async function generate(options) {
 
 /**
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
- * @param {module:key.Key} options.privateKey   The private key to reformat
- * @param {module:enums.publicKey} [options.keyType=module:enums.publicKey.rsaEncryptSign]
- * @param {String|Array<String>}  options.userIds
- *                             Assumes already in form of "User Name <username@email.com>"
- *                             If array is used, the first userId is set as primary user Id
- * @param {String}  options.passphrase The passphrase used to encrypt the resulting private key
- * @param {Number} [options.keyExpirationTime=0]
- *                             The number of seconds after the key creation time that the key expires
- * @param  {Date} options.date         Override the creation date of the key and the key signatures
- * @param  {Array<Object>} options.subkeys   (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ * @param {module:key.Key} options.privateKey     The private key to reformat
+ * @param {Array<String|Object>} options.userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key
+ * @param {Number} options.keyExpirationTime      Number of seconds from the key creation time after which the key expires
+ * @param {Date}   options.date                   Override the creation date of the key and the key signatures
+ * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *
  * @returns {Promise<module:key.Key>}
  * @async
