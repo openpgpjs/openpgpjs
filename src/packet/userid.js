@@ -50,6 +50,29 @@ class UserIDPacket {
   }
 
   /**
+   * Create UserIDPacket instance from object
+   * @param {Object} userId  object specifying userId name, email and comment
+   * @returns {module:userid.UserIDPacket}
+   * @static
+   */
+  static fromObject(userId) {
+    if (util.isString(userId) ||
+      (userId.name && !util.isString(userId.name)) ||
+      (userId.email && !util.isEmailAddress(userId.email)) ||
+      (userId.comment && !util.isString(userId.comment))) {
+      throw new Error('Invalid user ID format');
+    }
+    const packet = new UserIDPacket();
+    Object.assign(packet, userId);
+    const components = [];
+    if (packet.name) components.push(packet.name);
+    if (packet.comment) components.push(`(${packet.comment})`);
+    if (packet.email) components.push(`<${packet.email}>`);
+    packet.userid = components.join(' ');
+    return packet;
+  }
+
+  /**
    * Parsing function for a user id packet (tag 13).
    * @param {Uint8Array} input payload of a tag 13 packet
    */
@@ -73,25 +96,6 @@ class UserIDPacket {
    */
   write() {
     return util.encodeUtf8(this.userid);
-  }
-
-  /**
-   * Set userId from object
-   * @param {Object} userId  object specifying userId name, email and comment
-   */
-  fromObject(userId) {
-    if (util.isString(userId) ||
-      (userId.name && !util.isString(userId.name)) ||
-      (userId.email && !util.isEmailAddress(userId.email)) ||
-      (userId.comment && !util.isString(userId.comment))) {
-      throw new Error('Invalid user ID format');
-    }
-    Object.assign(this, userId);
-    const components = [];
-    if (this.name) components.push(this.name);
-    if (this.comment) components.push(`(${this.comment})`);
-    if (this.email) components.push(`<${this.email}>`);
-    this.userid = components.join(' ');
   }
 }
 

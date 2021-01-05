@@ -3343,7 +3343,7 @@ VYGdb3eNlV8CfoEC
     // Set first user to primary. We won't select this user, this is to test that.
     privateKey.users[0].selfCertifications[0].isPrimaryUserID = true;
     // Change userid of the first user so that we don't select it. This also makes this user invalid.
-    privateKey.users[0].userId.fromObject({ name: 'Test User', email: 'b@c.com' });
+    privateKey.users[0].userId = openpgp.UserIDPacket.fromObject({ name: 'Test User', email: 'b@c.com' });
     // Set second user to prefer aes128. We will select this user.
     privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
     const signed = await openpgp.sign({ message: openpgp.Message.fromText('hello'), privateKeys: privateKey, fromUserIds: { name: 'Test McTestington', email: 'test@example.com' }, armor: false });
