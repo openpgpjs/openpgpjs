@@ -2273,13 +2273,13 @@ function versionSpecificTests() {
   });
 
   it('Generate key - default values', function() {
-    const userId = 'test <a@b.com>';
+    const userId = { name: 'test', email: 'a@b.com' };
     const opt = { userIds: [userId] };
     return openpgp.generateKey(opt).then(function({ key }) {
       expect(key.isDecrypted()).to.be.true;
       expect(key.getAlgorithmInfo().algorithm).to.equal('eddsa');
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal(userId);
+      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.length(1);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
@@ -3469,7 +3469,7 @@ VYGdb3eNlV8CfoEC
     });
 
     it('Add a new default subkey to an rsaSign key', async function() {
-      const userId = 'test <a@b.com>';
+      const userId = { name: 'test', email: 'a@b.com' };
       const opt = { type: 'rsa', rsaBits, userIds: [userId], subkeys: [] };
       const { key } = await openpgp.generateKey(opt);
       expect(key.subKeys).to.have.length(0);
@@ -3479,7 +3479,7 @@ VYGdb3eNlV8CfoEC
     });
 
     it('Add a new default subkey to an ecc key', async function() {
-      const userId = 'test <a@b.com>';
+      const userId = { name: 'test', email: 'a@b.com' };
       const opt = { type: 'ecc', userIds: [userId], subkeys: [] };
       const { key } = await openpgp.generateKey(opt);
       expect(key.subKeys).to.have.length(0);
@@ -3544,7 +3544,7 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new ecdsa subkey to a eddsa key', async function() {
-      const userId = 'test <a@b.com>';
+      const userId = { name: 'test', email: 'a@b.com' };
       const opt = { curve: 'ed25519', userIds: [userId], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;
@@ -3578,7 +3578,7 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new rsa subkey to a ecc key', async function() {
-      const userId = 'test <a@b.com>';
+      const userId = { name: 'test', email: 'a@b.com' };
       const opt = { curve: 'ed25519', userIds: [userId], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;

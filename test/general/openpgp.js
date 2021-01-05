@@ -2441,7 +2441,7 @@ amnR6g==
       curves.forEach(curve => {
         it(`sign/verify with ${curve}`, async function() {
           const plaintext = 'short message';
-          const key = (await openpgp.generateKey({ curve, userIds: 'Alice <info@alice.com>' })).key;
+          const key = (await openpgp.generateKey({ curve, userIds: { name: 'Alice', email: 'info@alice.com' } })).key;
           const signed = await openpgp.sign({ privateKeys:[key], message: openpgp.CleartextMessage.fromText(plaintext) });
           const verified = await openpgp.verify({ publicKeys:[key], message: await openpgp.readArmoredCleartextMessage(signed) });
           expect(verified.signatures[0].valid).to.be.true;
