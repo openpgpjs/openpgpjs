@@ -17,7 +17,7 @@ export function generateKey(options: KeyOptions): Promise<KeyPair>;
 export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserID[] }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
 export function encryptKey(options: { privateKey: Key; passphrase?: string | string[] }): Promise<Key>;
-export function reformatKey(options: { privateKey: Key; userIds?: UserID[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
+export function reformatKey(options: { privateKey: Key; userIds?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
 
 export class Key {
   constructor(packetlist: PacketList<AnyPacket>);
@@ -621,7 +621,7 @@ interface KeyPair {
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
 interface KeyOptions {
-  userIds: UserID[]; // generating a key with no user defined results in error
+  userIds: UserID|UserID[];
   passphrase?: string;
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
