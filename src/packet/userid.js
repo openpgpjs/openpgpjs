@@ -86,7 +86,7 @@ class UserIDPacket {
       this.comment = comments.replace(/^\(|\)$/g, '');
       this.name = name;
       this.email = email;
-    } catch {}
+    } catch (e) {}
     this.userid = userid;
   }
 
