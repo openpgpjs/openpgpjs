@@ -557,7 +557,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         userIds: [{ name: {}, email: 'text@example.com' }]
       };
       const test = openpgp.generateKey(opt);
-      await expect(test).to.eventually.be.rejectedWith(/Invalid user id format/);
+      await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
     });
 
     it('should fail for invalid user email address', async function() {
@@ -565,7 +565,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         userIds: [{ name: 'Test User', email: 'textexample.com' }]
       };
       const test = openpgp.generateKey(opt);
-      await expect(test).to.eventually.be.rejectedWith(/Invalid user id format/);
+      await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
     });
 
     it('should fail for invalid user email address', async function() {
@@ -573,61 +573,39 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         userIds: [{ name: 'Test User', email: 'text@examplecom' }]
       };
       const test = openpgp.generateKey(opt);
-      await expect(test).to.eventually.be.rejectedWith(/Invalid user id format/);
+      await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
     });
 
-    it('should fail for invalid string user id', async function() {
-      const opt = {
-        userIds: ['Test User text@example.com>']
-      };
-      const test = openpgp.generateKey(opt);
-      await expect(test).to.eventually.be.rejectedWith(/Invalid user id format/);
-    });
-
-    it('should fail for invalid single string user id', async function() {
-      const opt = {
-        userIds: 'Test User text@example.com>'
-      };
-      const test = openpgp.generateKey(opt);
-      await expect(test).to.eventually.be.rejectedWith(/Invalid user id format/);
-    });
-
-    it('should work for valid single string user id', function() {
+    it('should fail for string user ID', async function() {
       const opt = {
         userIds: 'Test User <text@example.com>'
       };
-      return openpgp.generateKey(opt);
+      const test = openpgp.generateKey(opt);
+      await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
     });
 
-    it('should work for valid string user id', function() {
-      const opt = {
-        userIds: ['Test User <text@example.com>']
-      };
-      return openpgp.generateKey(opt);
-    });
-
-    it('should work for valid single user id hash', function() {
+    it('should work for valid single user ID object', function() {
       const opt = {
         userIds: { name: 'Test User', email: 'text@example.com' }
       };
       return openpgp.generateKey(opt);
     });
 
-    it('should work for valid single user id hash', function() {
+    it('should work for array of user ID objects', function() {
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }]
       };
       return openpgp.generateKey(opt);
     });
 
-    it('should work for an empty name', function() {
+    it('should work for undefined name', function() {
       const opt = {
         userIds: { email: 'text@example.com' }
       };
       return openpgp.generateKey(opt);
     });
 
-    it('should work for an empty email address', function() {
+    it('should work for an undefined email address', function() {
       const opt = {
         userIds: { name: 'Test User' }
       };
@@ -2463,7 +2441,7 @@ amnR6g==
       curves.forEach(curve => {
         it(`sign/verify with ${curve}`, async function() {
           const plaintext = 'short message';
-          const key = (await openpgp.generateKey({ curve, userIds: 'Alice <info@alice.com>' })).key;
+          const key = (await openpgp.generateKey({ curve, userIds: { name: 'Alice', email: 'info@alice.com' } })).key;
           const signed = await openpgp.sign({ privateKeys:[key], message: openpgp.CleartextMessage.fromText(plaintext) });
           const verified = await openpgp.verify({ publicKeys:[key], message: await openpgp.readArmoredCleartextMessage(signed) });
           expect(verified.signatures[0].valid).to.be.true;

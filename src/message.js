@@ -289,7 +289,7 @@ export class Message {
    * Generate a new session key object, taking the algorithm preferences of the passed public keys into account, if any.
    * @param  {Array<Key>} keys           (optional) public key(s) to select algorithm preferences for
    * @param  {Date} date                 (optional) date to select algorithm preferences at
-   * @param  {Array} userIds             (optional) user IDs to select algorithm preferences for
+   * @param  {Array<Object>} userIds     (optional) user IDs to select algorithm preferences for
    * @returns {Promise<{ data: Uint8Array, algorithm: String }>} object with session key data and algorithm
    * @async
    */
@@ -309,7 +309,7 @@ export class Message {
    * @param  {Object} sessionKey         (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param  {Boolean} wildcard          (optional) use a key ID of 0 instead of the public key IDs
    * @param  {Date} date                 (optional) override the creation date of the literal package
-   * @param  {Array} userIds             (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+   * @param  {Array<Object>} userIds     (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
    * @param  {Boolean} streaming         (optional) whether to process data as a stream
    * @returns {Promise<Message>}                   new message with encrypted content
    * @async

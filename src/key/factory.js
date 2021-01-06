@@ -156,9 +156,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
       return algos;
     }
 
-    const userIdPacket = new UserIDPacket();
-    userIdPacket.format(userId);
-
+    const userIdPacket = UserIDPacket.fromObject(userId);
     const dataToSign = {};
     dataToSign.userId = userIdPacket;
     dataToSign.key = secretKeyPacket;

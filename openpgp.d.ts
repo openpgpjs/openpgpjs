@@ -14,10 +14,10 @@ export function readKey(data: Uint8Array): Promise<Key>;
 export function readArmoredKeys(armoredText: string): Promise<Key[]>;
 export function readKeys(data: Uint8Array): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
-export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserId[] }): Promise<SessionKey>;
+export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserID[] }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
 export function encryptKey(options: { privateKey: Key; passphrase?: string | string[] }): Promise<Key>;
-export function reformatKey(options: { privateKey: Key; userIds?: (string | UserId)[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
+export function reformatKey(options: { privateKey: Key; userIds?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
 
 export class Key {
   constructor(packetlist: PacketList<AnyPacket>);
@@ -29,7 +29,7 @@ export class Key {
   public armor(): string;
   public decrypt(passphrase: string | string[], keyId?: Keyid): Promise<void>; // throws on error
   public encrypt(passphrase: string | string[]): Promise<void>; // throws on error
-  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyId?: Keyid, userId?: UserId): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
+  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyId?: Keyid, userId?: UserID): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
   public getKeyIds(): Keyid[];
   public getPrimaryUser(): Promise<PrimaryUser>; // throws on error
   public getUserIds(): string[];
@@ -41,8 +41,8 @@ export class Key {
   public isRevoked(): Promise<boolean>;
   public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date): Promise<Key>;
   public getRevocationCertificate(): Promise<Stream<string> | string | undefined>;
-  public getEncryptionKey(keyid?: Keyid, date?: Date | null, userId?: UserId): Promise<Key | SubKey>;
-  public getSigningKey(keyid?: Keyid, date?: Date | null, userId?: UserId): Promise<Key | SubKey>;
+  public getEncryptionKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
+  public getSigningKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
   public getKeys(keyId?: Keyid): (Key | SubKey)[];
   public isDecrypted(): boolean;
   public getFingerprint(): string;
@@ -419,6 +419,7 @@ export class OnePassSignaturePacket extends BasePacket {
 export class UserIDPacket extends BasePacket {
   public tag: enums.packet.userID;
   public userid: string;
+  static fromObject(userId: UserID): UserIDPacket;
 }
 
 export class SignaturePacket extends BasePacket {
@@ -530,7 +531,7 @@ export namespace stream {
 
 /* ############## v5 GENERAL #################### */
 
-export interface UserId { name?: string; email?: string; comment?: string; }
+export interface UserID { name?: string; email?: string; comment?: string; }
 export interface SessionKey { data: Uint8Array; algorithm: string; }
 
 
@@ -558,9 +559,9 @@ interface EncryptOptions {
   /** (optional) use a key ID of 0 instead of the public key IDs */
   wildcard?: boolean;
   /** (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
-  fromUserId?: UserId;
+  fromUserId?: UserID;
   /** (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
-  toUserId?: UserId;
+  toUserId?: UserID;
 }
 
 interface DecryptOptions {
@@ -592,7 +593,7 @@ interface SignOptions {
   dataType?: DataPacketType;
   detached?: boolean;
   date?: Date;
-  fromUserId?: UserId;
+  fromUserId?: UserID;
 }
 
 interface VerifyOptions {
@@ -620,7 +621,7 @@ interface KeyPair {
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
 interface KeyOptions {
-  userIds: UserId[]; // generating a key with no user defined results in error
+  userIds: UserID|UserID[];
   passphrase?: string;
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
@@ -889,10 +890,6 @@ declare namespace util {
    * @returns {String}
    */
   function hexToStr(hex: string): string;
-
-  function parseUserId(userid: string): UserId;
-
-  function formatUserId(userid: UserId): string;
 
   function normalizeDate(date: Date | null): Date | null;
 
