@@ -64,7 +64,7 @@ if (globalThis.ReadableStream) {
 /**
  * Generates a new OpenPGP key pair. Supports RSA and ECC keys. By default, primary and subkeys will be of same type.
  * @param  {ecc|rsa} type                  (optional) The primary key algorithm type: ECC (default) or RSA
- * @param  {Array<String|Object>} userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param  {Object|Array<Object>} userIds  User IDs as objects: { name:'Jo Doe', email:'info@jo.com' }
  * @param  {String} passphrase             (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} rsaBits                (optional) Number of bits for RSA keys, defaults to 4096
  * @param  {String} curve                  (optional) Elliptic curve for ECC keys:
@@ -104,7 +104,7 @@ export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBi
 /**
  * Reformats signature packets for a key and rewraps key object.
  * @param  {Key} privateKey                Private key to reformat
- * @param  {Array<String|Object>} userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param  {Object|Array<Object>} userIds  User IDs as objects: { name:'Jo Doe', email:'info@jo.com' }
  * @param  {String} passphrase             (optional) The passphrase used to encrypt the resulting private key
  * @param  {Number} keyExpirationTime      (optional) Number of seconds from the key creation time after which the key expires
  * @returns {Promise<Object>}         The generated key object in the form:
@@ -222,8 +222,8 @@ export function encryptKey({ privateKey, passphrase }) {
  * @param  {Signature} signature                      (optional) a detached signature to add to the encrypted message
  * @param  {Boolean} wildcard                         (optional) use a key ID of 0 instead of the public key IDs
  * @param  {Date} date                                (optional) override the creation date of the message signature
- * @param  {Array} fromUserIds                        (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @param  {Array} toUserIds                          (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+ * @param  {Array<Object>} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Array<Object>} toUserIds                  (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
  * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} (String if `armor` was true, the default; Uint8Array if `armor` was false)
  * @async
  * @static
@@ -312,7 +312,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param  {'web'|'ponyfill'|'node'|false} streaming  (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Boolean} detached                         (optional) if the return value should contain a detached signature
  * @param  {Date} date                                (optional) override the creation date of the signature
- * @param  {Array} fromUserIds                        (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Array<Object>} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} (String if `armor` was true, the default; Uint8Array if `armor` was false)
  * @async
  * @static

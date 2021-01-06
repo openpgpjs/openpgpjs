@@ -10,7 +10,7 @@ const expect = chai.expect;
 
 async function generateTestData() {
   const victimPrivKey = await key.generate({
-    userIds: ['Victim <victim@example.com>'],
+    userIds: [{ name: 'Victim', email: 'victim@example.com' }],
     type: 'rsa',
     rsaBits: 1024,
     subkeys: [{
@@ -20,7 +20,7 @@ async function generateTestData() {
   victimPrivKey.revocationSignatures = [];
 
   const attackerPrivKey = await key.generate({
-    userIds: ['Attacker <attacker@example.com>'],
+    userIds: [{ name: 'Attacker', email: 'attacker@example.com' }],
     type: 'rsa',
     rsaBits: 1024,
     subkeys: [],

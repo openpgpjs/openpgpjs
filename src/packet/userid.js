@@ -19,9 +19,11 @@
  * @requires enums
  * @requires util
  */
+import emailAddresses from 'email-addresses';
 
 import enums from '../enums';
 import util from '../util';
+import config from '../config';
 
 /**
  * Implementation of the User ID Packet (Tag 13)
@@ -48,19 +50,42 @@ class UserIDPacket {
   }
 
   /**
+   * Create UserIDPacket instance from object
+   * @param {Object} userId  object specifying userId name, email and comment
+   * @returns {module:userid.UserIDPacket}
+   * @static
+   */
+  static fromObject(userId) {
+    if (util.isString(userId) ||
+      (userId.name && !util.isString(userId.name)) ||
+      (userId.email && !util.isEmailAddress(userId.email)) ||
+      (userId.comment && !util.isString(userId.comment))) {
+      throw new Error('Invalid user ID format');
+    }
+    const packet = new UserIDPacket();
+    Object.assign(packet, userId);
+    const components = [];
+    if (packet.name) components.push(packet.name);
+    if (packet.comment) components.push(`(${packet.comment})`);
+    if (packet.email) components.push(`<${packet.email}>`);
+    packet.userid = components.join(' ');
+    return packet;
+  }
+
+  /**
    * Parsing function for a user id packet (tag 13).
    * @param {Uint8Array} input payload of a tag 13 packet
    */
   read(bytes) {
-    this.parse(util.decodeUtf8(bytes));
-  }
-
-  /**
-   * Parse userid string, e.g. 'John Doe <john@example.com>'
-   */
-  parse(userid) {
+    const userid = util.decodeUtf8(bytes);
+    if (userid.length > config.maxUseridLength) {
+      throw new Error('User ID string is too long');
+    }
     try {
-      Object.assign(this, util.parseUserId(userid));
+      const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userid, atInDisplayName: true });
+      this.comment = comments.replace(/^\(|\)$/g, '');
+      this.name = name;
+      this.email = email;
     } catch (e) {}
     this.userid = userid;
   }
@@ -71,17 +96,6 @@ class UserIDPacket {
    */
   write() {
     return util.encodeUtf8(this.userid);
-  }
-
-  /**
-   * Set userid string from object, e.g. { name:'Phil Zimmermann', email:'phil@openpgp.org' }
-   */
-  format(userid) {
-    if (util.isString(userid)) {
-      userid = util.parseUserId(userid);
-    }
-    Object.assign(this, userid);
-    this.userid = util.formatUserId(userid);
   }
 }
 
