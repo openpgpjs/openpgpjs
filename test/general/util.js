@@ -142,22 +142,6 @@ module.exports = () => describe('Util unit tests', function() {
     });
   });
 
-  describe('parseUserID', function() {
-    it('should parse email address', function() {
-      const email = "TestName Test  <test@example.com>";
-      const result = util.parseUserId(email);
-      expect(result.name).to.equal('TestName Test');
-      expect(result.email).to.equal('test@example.com');
-    });
-    it('should parse email address with @ in display name and comment', function() {
-      const email = "Test@Name Test (a comment) <test@example.com>";
-      const result = util.parseUserId(email);
-      expect(result.name).to.equal('Test@Name Test');
-      expect(result.email).to.equal('test@example.com');
-      expect(result.comment).to.equal('a comment');
-    });
-  });
-
   describe("Misc.", function() {
     it('util.readNumber should not overflow until full range of uint32', function () {
       const ints = [Math.pow(2, 20), Math.pow(2, 25), Math.pow(2, 30), Math.pow(2, 32) - 1];
