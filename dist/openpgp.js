@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.9 - 2020-12-07 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.10 - 2021-01-24 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -23532,7 +23532,7 @@ function modL(r, x) {
     carry = 0;
     for (j = i - 32, k = i - 12; j < k; ++j) {
       x[j] += carry - 16 * x[i] * L[j - (i - 32)];
-      carry = (x[j] + 128) >> 8;
+      carry = Math.floor((x[j] + 128) / 256);
       x[j] -= carry * 256;
     }
     x[j] += carry;
@@ -23633,12 +23633,11 @@ function unpackneg(r, p) {
 }
 
 function crypto_sign_open(m, sm, n, pk) {
-  var i, mlen;
+  var i;
   var t = new Uint8Array(32), h;
   var p = [gf(), gf(), gf(), gf()],
       q = [gf(), gf(), gf(), gf()];
 
-  mlen = -1;
   if (n < 64) return -1;
 
   if (unpackneg(q, pk)) return -1;
@@ -23660,8 +23659,7 @@ function crypto_sign_open(m, sm, n, pk) {
   }
 
   for (i = 0; i < n; i++) m[i] = sm[i + 64];
-  mlen = n;
-  return mlen;
+  return n;
 }
 
 var crypto_scalarmult_BYTES = 32,
@@ -25060,7 +25058,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.9",
+  versionstring: "OpenPGP.js v4.10.10",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
@@ -27228,8 +27226,9 @@ exports.default = {
           const c2 = data_params[1].toBN();
           const p = key_params[0].toBN();
           const x = key_params[3].toBN();
-          const result = new _mpi2.default((await _public_key2.default.elgamal.decrypt(c1, c2, p, x)));
-          return _pkcs2.default.eme.decode(result.toString());
+          const result = new _mpi2.default((await _public_key2.default.elgamal.decrypt(c1, c2, p, x))); // MPI and BN.js discard any leading zeros
+          return _pkcs2.default.eme.decode(_util2.default.Uint8Array_to_str(result.toUint8Array('be', p.byteLength())) // re-introduce leading zeros
+          );
         }
       case _enums2.default.publicKey.ecdh:
         {
@@ -28753,10 +28752,6 @@ eme.encode = async function (M, k) {
  * @returns {String} message, an octet string
  */
 eme.decode = function (EM) {
-  // leading zeros truncated by bn.js
-  if (EM.charCodeAt(0) !== 0) {
-    EM = String.fromCharCode(0) + EM;
-  }
   const firstOct = EM.charCodeAt(0);
   const secondOct = EM.charCodeAt(1);
   let i = 2;
@@ -29123,8 +29118,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @module crypto/public_key/elgamal
  */
 
-const zero = new _bn2.default(0);
-
 exports.default = {
   /**
    * ElGamal Encryption function
@@ -29140,8 +29133,9 @@ exports.default = {
     const mred = m.toRed(redp);
     const gred = g.toRed(redp);
     const yred = y.toRed(redp);
-    // See Section 11.5 here: https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf
-    const k = await _random2.default.getRandomBN(zero, p); // returns in [0, p-1]
+    // OpenPGP uses a "special" version of ElGamal where g is generator of the full group Z/pZ*
+    // hence g has order p-1, and to avoid that k = 0 mod p-1, we need to pick k in [1, p-2]
+    const k = await _random2.default.getRandomBN(new _bn2.default(1), p.subn(1));
     return {
       c1: gred.redPow(k).fromRed(),
       c2: yred.redPow(k).redMul(mred).fromRed()
@@ -31545,7 +31539,11 @@ exports.default = {
       });
       key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
     }
-    return _util2.default.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
+    try {
+      return _util2.default.Uint8Array_to_str(nodeCrypto.privateDecrypt(key, data));
+    } catch (err) {
+      throw new Error('Decryption error');
+    }
   },
 
   bnDecrypt: async function bnDecrypt(data, n, e, d, p, q, u) {
@@ -31584,7 +31582,8 @@ exports.default = {
       result = result.redMul(unblinder);
     }
 
-    return _pkcs2.default.eme.decode(new _mpi2.default(result).toString());
+    result = new _mpi2.default(result).toUint8Array('be', n.byteLength()); // preserve leading zeros
+    return _pkcs2.default.eme.decode(_util2.default.Uint8Array_to_str(result));
   },
 
   prime: _prime2.default
