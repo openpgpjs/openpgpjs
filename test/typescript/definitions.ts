@@ -6,7 +6,7 @@
  *  - if it fails to run, edit this file to match the actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
  */
 
-import { generateKey, readArmoredKey, readArmoredKeys, Key, readMessage, readArmoredMessage, Message, CleartextMessage, encrypt, decrypt, sign, verify } from '../..';
+import { generateKey, readKey, readKeys, Key, readMessage, Message, CleartextMessage, encrypt, decrypt, sign, verify } from '../..';
 import { expect } from 'chai';
 
 (async () => {
@@ -18,8 +18,8 @@ import { expect } from 'chai';
   const publicKeys = [key.toPublic()];
 
   // Parse keys
-  expect(await readArmoredKey(publicKeyArmored)).to.be.instanceOf(Key);
-  expect(await readArmoredKeys(publicKeyArmored)).to.have.lengthOf(1);
+  expect(await readKey({ armoredKey: publicKeyArmored })).to.be.instanceOf(Key);
+  expect(await readKeys({ armoredKeys: publicKeyArmored })).to.have.lengthOf(1);
 
   // Encrypt text message (armored)
   const text = 'hello';
@@ -36,19 +36,19 @@ import { expect } from 'chai';
   expect(encryptedBinary).to.be.instanceOf(Uint8Array);
 
   // Decrypt text message (armored)
-  const encryptedTextMessage = await readArmoredMessage(encryptedArmor);
+  const encryptedTextMessage = await readMessage({ armoredMessage: encryptedArmor });
   const decryptedText = await decrypt({ privateKeys, message: encryptedTextMessage });
   const decryptedTextData: string = decryptedText.data;
   expect(decryptedTextData).to.equal(text);
 
   // Decrypt binary message (unarmored)
-  const encryptedBinaryMessage = await readMessage(encryptedBinary);
+  const encryptedBinaryMessage = await readMessage({ binaryMessage: encryptedBinary });
   const decryptedBinary = await decrypt({ privateKeys, message: encryptedBinaryMessage, format: 'binary' });
   const decryptedBinaryData: Uint8Array = decryptedBinary.data;
   expect(decryptedBinaryData).to.deep.equal(binary);
 
   // Encrypt message (inspect packets)
-  const encryptedMessage = await readMessage(encryptedBinary);
+  const encryptedMessage = await readMessage({ binaryMessage: encryptedBinary });
   expect(encryptedMessage).to.be.instanceOf(Message);
 
   // Sign cleartext message (armored)
@@ -65,13 +65,13 @@ import { expect } from 'chai';
   expect(textSignedBinary).to.be.instanceOf(Uint8Array);
 
   // Verify signed text message (armored)
-  const signedMessage = await readArmoredMessage(textSignedArmor);
+  const signedMessage = await readMessage({ armoredMessage: textSignedArmor });
   const verifiedText = await verify({ publicKeys, message: signedMessage });
   const verifiedTextData: string = verifiedText.data;
   expect(verifiedTextData).to.equal(text);
 
   // Verify signed binary message (unarmored)
-  const message = await readMessage(textSignedBinary);
+  const message = await readMessage({ binaryMessage: textSignedBinary });
   const verifiedBinary = await verify({ publicKeys, message, format: 'binary' });
   const verifiedBinaryData: Uint8Array = verifiedBinary.data;
   expect(verifiedBinaryData).to.deep.equal(binary);

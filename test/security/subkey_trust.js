@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { readArmoredKey, Key, readArmoredCleartextMessage, CleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
+const { readKey, Key, readCleartextMessage, CleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
 const key = require('../../src/key');
 
 const chai = require('chai');
@@ -66,9 +66,9 @@ async function testSubkeyTrust() {
     fakeBindingSignature // faked key binding
   ]);
   let fakeKey = new Key(newList);
-  fakeKey = await readArmoredKey(await fakeKey.toPublic().armor());
+  fakeKey = await readKey({ armoredKey: await fakeKey.toPublic().armor() });
   const verifyAttackerIsBatman = await openpgp.verify({
-    message: (await readArmoredCleartextMessage(signed)),
+    message: await readCleartextMessage({ cleartextMessage: signed }),
     publicKeys: fakeKey,
     streaming: false
   });

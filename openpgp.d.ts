@@ -9,10 +9,10 @@
 
 /* ############## v5 KEY #################### */
 
-export function readArmoredKey(armoredText: string): Promise<Key>;
-export function readKey(data: Uint8Array): Promise<Key>;
-export function readArmoredKeys(armoredText: string): Promise<Key[]>;
-export function readKeys(data: Uint8Array): Promise<Key[]>;
+export function readKey(options: { armoredKey: string }): Promise<Key>;
+export function readKey(options: { binaryKey: Uint8Array }): Promise<Key>;
+export function readKeys(options: { armoredKeys: string }): Promise<Key[]>;
+export function readKeys(options: { binaryKeys: Uint8Array }): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
 export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserID[] }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
@@ -85,8 +85,8 @@ type AlgorithmInfo = {
 
 /* ############## v5 SIG #################### */
 
-export function readArmoredSignature(armoredText: string): Promise<Signature>;
-export function readSignature(input: Uint8Array): Promise<Signature>;
+export function readSignature(options: { armoredSignature: string }): Promise<Signature>;
+export function readSignature(options: { binarySignature: Uint8Array }): Promise<Signature>;
 
 export class Signature {
   public packets: PacketList<SignaturePacket>;
@@ -102,7 +102,7 @@ interface VerificationResult {
 
 /* ############## v5 CLEARTEXT #################### */
 
-export function readArmoredCleartextMessage(armoredText: string): Promise<CleartextMessage>;
+export function readCleartextMessage(options: { cleartextMessage: string }): Promise<CleartextMessage>;
 
 /** Class that represents an OpenPGP cleartext signed message.
  */
@@ -135,8 +135,8 @@ export class CleartextMessage {
 
 /* ############## v5 MSG #################### */
 
-export function readArmoredMessage<T extends MaybeStream<string>>(armoredText: T): Promise<Message<T>>;
-export function readMessage<T extends MaybeStream<Uint8Array>>(input: T): Promise<Message<T>>;
+export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T }): Promise<Message<T>>;
+export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binaryMessage: T }): Promise<Message<T>>;
 
 export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T, armor: false }): Promise<
   T extends 'web' ? WebStream<Uint8Array> :

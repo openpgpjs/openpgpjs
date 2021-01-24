@@ -2107,7 +2107,7 @@ function versionSpecificTests() {
     const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: 'hello' };
     return openpgp.generateKey(opt).then(async function(key) {
       testPref(key.key);
-      testPref(await openpgp.readArmoredKey(key.publicKeyArmored));
+      testPref(await openpgp.readKey({ armoredKey: key.publicKeyArmored }));
     });
   });
 
@@ -2153,7 +2153,7 @@ function versionSpecificTests() {
     try {
       const key = await openpgp.generateKey(opt);
       testPref(key.key);
-      testPref(await openpgp.readArmoredKey(key.publicKeyArmored));
+      testPref(await openpgp.readKey({ armoredKey: key.publicKeyArmored }));
     } finally {
       openpgp.config.encryptionCipher = encryptionCipherVal;
       openpgp.config.preferHashAlgorithm = preferHashAlgorithmVal;
@@ -2325,7 +2325,7 @@ function versionSpecificTests() {
     const userId = { name: 'test', email: 'a@b.com' };
     const opt = { userIds: [userId], passphrase: '123', subkeys:[{}, { sign: true }] };
     return openpgp.generateKey(opt).then(async function({ privateKeyArmored }) {
-      const key = await openpgp.readArmoredKey(privateKeyArmored);
+      const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
@@ -2344,7 +2344,7 @@ function versionSpecificTests() {
       await key.decrypt('123');
       return openpgp.reformatKey({ privateKey: key, userIds: [userId] });
     }).then(async function({ privateKeyArmored }) {
-      const key = await openpgp.readArmoredKey(privateKeyArmored);
+      const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
@@ -2417,8 +2417,8 @@ function versionSpecificTests() {
   });
 
   it('Sign and verify key - primary user', async function() {
-    let publicKey = await openpgp.readArmoredKey(pub_sig_test);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+    let publicKey = await openpgp.readKey({ armoredKey: pub_sig_test });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signPrimaryUser([privateKey]);
     const signatures = await publicKey.verifyPrimaryUser([privateKey]);
@@ -2432,9 +2432,9 @@ function versionSpecificTests() {
   });
 
   it('Sign key and verify with wrong key - primary user', async function() {
-    let publicKey = await openpgp.readArmoredKey(pub_sig_test);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
-    const wrongKey = await openpgp.readArmoredKey(wrong_key);
+    let publicKey = await openpgp.readKey({ armoredKey: pub_sig_test });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const wrongKey = await openpgp.readKey({ armoredKey: wrong_key });
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signPrimaryUser([privateKey]);
     const signatures = await publicKey.verifyPrimaryUser([wrongKey]);
@@ -2448,8 +2448,8 @@ function versionSpecificTests() {
   });
 
   it('Sign and verify key - all users', async function() {
-    let publicKey = await openpgp.readArmoredKey(multi_uid_key);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+    let publicKey = await openpgp.readKey({ armoredKey: multi_uid_key });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signAllUsers([privateKey]);
     const signatures = await publicKey.verifyAllUsers([privateKey]);
@@ -2471,9 +2471,9 @@ function versionSpecificTests() {
   });
 
   it('Sign key and verify with wrong key - all users', async function() {
-    let publicKey = await openpgp.readArmoredKey(multi_uid_key);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
-    const wrongKey = await openpgp.readArmoredKey(wrong_key);
+    let publicKey = await openpgp.readKey({ armoredKey: multi_uid_key });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const wrongKey = await openpgp.readKey({ armoredKey: wrong_key });
     await privateKey.decrypt('hello world');
     publicKey = await publicKey.signAllUsers([privateKey]);
     const signatures = await publicKey.verifyAllUsers([wrongKey]);
@@ -2516,7 +2516,7 @@ function versionSpecificTests() {
 
   it('Reformat key with no subkey with passphrase', async function() {
     const userId = { name: 'test', email: 'a@b.com' };
-    const key = await openpgp.readArmoredKey(key_without_subkey);
+    const key = await openpgp.readKey({ armoredKey: key_without_subkey });
     const opt = { privateKey: key, userIds: [userId], passphrase: "test" };
     return openpgp.reformatKey(opt).then(function(newKey) {
       newKey = newKey.key;
@@ -2550,7 +2550,7 @@ function versionSpecificTests() {
 
   it('Reformat key with no subkey without passphrase', async function() {
     const userId = { name: 'test', email: 'a@b.com' };
-    const key = await openpgp.readArmoredKey(key_without_subkey);
+    const key = await openpgp.readKey({ armoredKey: key_without_subkey });
     const opt = { privateKey: key, userIds: [userId] };
     return openpgp.reformatKey(opt).then(function(newKey) {
       newKey = newKey.key;
@@ -2559,7 +2559,7 @@ function versionSpecificTests() {
       expect(newKey.isDecrypted()).to.be.true;
       return openpgp.sign({ message: openpgp.CleartextMessage.fromText('hello'), privateKeys: newKey, armor: true }).then(async function(signed) {
         return openpgp.verify(
-          { message: await openpgp.readArmoredCleartextMessage(signed), publicKeys: newKey.toPublic() }
+          { message: await openpgp.readCleartextMessage({ cleartextMessage: signed }), publicKeys: newKey.toPublic() }
         ).then(async function(verified) {
           expect(verified.signatures[0].valid).to.be.true;
           const newSigningKey = await newKey.getSigningKey();
@@ -2602,7 +2602,7 @@ function versionSpecificTests() {
       return openpgp.reformatKey(opt).then(function(newKey) {
         newKey = newKey.key;
         return openpgp.encrypt({ message: openpgp.Message.fromText('hello'), publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true }).then(async function(encrypted) {
-          return openpgp.decrypt({ message: await openpgp.readArmoredMessage(encrypted), privateKeys: newKey, publicKeys: newKey.toPublic() }).then(function(decrypted) {
+          return openpgp.decrypt({ message: await openpgp.readMessage({ armoredMessage: encrypted }), privateKeys: newKey, publicKeys: newKey.toPublic() }).then(function(decrypted) {
             expect(decrypted.data).to.equal('hello');
             expect(decrypted.signatures[0].valid).to.be.true;
           });
@@ -2653,7 +2653,7 @@ function versionSpecificTests() {
     // uid                      emma.goldman@example.net
     // ssb   cv25519 2019-03-20 [E]
     //       E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965
-    const key = await openpgp.readArmoredKey(v5_sample_key);
+    const key = await openpgp.readKey({ armoredKey: v5_sample_key });
     expect(key.primaryKey.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
     expect(key.subKeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
     await key.verifyPrimaryKey();
@@ -2690,14 +2690,14 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Parsing armored text with RSA key and ECC subkey', async function() {
-    const pubKeys = await openpgp.readArmoredKeys(rsa_ecc_pub);
+    const pubKeys = await openpgp.readKeys({ armoredKeys: rsa_ecc_pub });
     expect(pubKeys).to.exist;
     expect(pubKeys).to.have.length(1);
     expect(pubKeys[0].getKeyId().toHex()).to.equal('b8e4105cc9dedc77');
   });
 
   it('Parsing armored text with two keys', async function() {
-    const pubKeys = await openpgp.readArmoredKeys(twoKeys);
+    const pubKeys = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKeys).to.exist;
     expect(pubKeys).to.have.length(2);
     expect(pubKeys[0].getKeyId().toHex()).to.equal('4a63613a4d6e4094');
@@ -2705,12 +2705,12 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Parsing armored key with an authorized revocation key in a User ID self-signature', async function() {
-    const pubKey = await openpgp.readArmoredKey(key_with_authorized_revocation_key);
+    const pubKey = await openpgp.readKey({ armoredKey: key_with_authorized_revocation_key });
     await expect(pubKey.getPrimaryUser()).to.be.rejectedWith('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
   });
 
   it('Parsing armored key with an authorized revocation key in a direct-key signature', async function() {
-    const pubKey = await openpgp.readArmoredKey(key_with_authorized_revocation_key_in_separate_sig);
+    const pubKey = await openpgp.readKey({ armoredKey: key_with_authorized_revocation_key_in_separate_sig });
     const primaryUser = await pubKey.getPrimaryUser();
     expect(primaryUser).to.exist;
   });
@@ -2731,7 +2731,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Testing key ID and fingerprint for V4 keys', async function() {
-    const pubKeysV4 = await openpgp.readArmoredKeys(twoKeys);
+    const pubKeysV4 = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKeysV4).to.exist;
     expect(pubKeysV4).to.have.length(2);
 
@@ -2743,14 +2743,14 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Create new key ID with fromId()', async function() {
-    const [pubKeyV4] = await openpgp.readArmoredKeys(twoKeys);
+    const [pubKeyV4] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const keyId = pubKeyV4.getKeyId();
     const newKeyId = keyId.constructor.fromId(keyId.toHex());
     expect(newKeyId.toHex()).to.equal(keyId.toHex());
   });
 
   it('Testing key method getSubkeys', async function() {
-    const pubKey = await openpgp.readArmoredKey(pub_sig_test);
+    const pubKey = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(pubKey).to.exist;
 
     const packetlist = new openpgp.PacketList();
@@ -2765,12 +2765,12 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Verify status of revoked primary key', async function() {
-    const pubKey = await openpgp.readArmoredKey(pub_revoked_subkeys);
+    const pubKey = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
     await expect(pubKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
   });
 
   it('Verify status of revoked subkey', async function() {
-    const pubKey = await openpgp.readArmoredKey(pub_sig_test);
+    const pubKey = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(pubKey).to.exist;
     expect(pubKey.subKeys).to.exist;
     expect(pubKey.subKeys).to.have.length(2);
@@ -2781,13 +2781,13 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Verify status of key with non-self revocation signature', async function() {
-    const pubKey = await openpgp.readArmoredKey(key_with_revoked_third_party_cert);
+    const pubKey = await openpgp.readKey({ armoredKey: key_with_revoked_third_party_cert });
     const [selfCertification] = await pubKey.verifyPrimaryUser();
     const publicSigningKey = await pubKey.getSigningKey();
     expect(selfCertification.keyid.toHex()).to.equal(publicSigningKey.getKeyId().toHex());
     expect(selfCertification.valid).to.be.true;
 
-    const certifyingKey = await openpgp.readArmoredKey(certifying_key);
+    const certifyingKey = await openpgp.readKey({ armoredKey: certifying_key });
     const certifyingSigningKey = await certifyingKey.getSigningKey();
     const signatures = await pubKey.verifyPrimaryUser([certifyingKey]);
     expect(signatures.length).to.equal(2);
@@ -2801,7 +2801,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Verify certificate of key with future creation date', async function() {
-    const pubKey = await openpgp.readArmoredKey(key_created_2030);
+    const pubKey = await openpgp.readKey({ armoredKey: key_created_2030 });
     const user = pubKey.users[0];
     await user.verifyCertificate(pubKey.primaryKey, user.selfCertifications[0], [pubKey], pubKey.primaryKey.created);
     const verifyAllResult = await user.verifyAllCertifications(pubKey.primaryKey, [pubKey], pubKey.primaryKey.created);
@@ -2810,7 +2810,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Evaluate key flags to find valid encryption key packet', async function() {
-    const pubKey = await openpgp.readArmoredKey(pub_sig_test);
+    const pubKey = await openpgp.readKey({ armoredKey: pub_sig_test });
     // remove subkeys
     pubKey.subKeys = [];
     // primary key has only key flags for signing
@@ -2818,7 +2818,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('should pad an ECDSA P-521 key with shorter secret key', async function() {
-    const key = await openpgp.readArmoredKey(shortP521Key);
+    const key = await openpgp.readKey({ armoredKey: shortP521Key });
     // secret key should be padded
     expect(key.keyPacket.privateParams.d.length === 66);
     // sanity check
@@ -2827,17 +2827,17 @@ module.exports = () => describe('Key', function() {
 
   it('should not decrypt using a sign-only RSA key, unless explicitly configured', async function () {
     const allowSigningKeyDecryption = openpgp.config.allowInsecureDecryptionWithSigningKeys;
-    const key = await openpgp.readArmoredKey(rsaSignOnly);
+    const key = await openpgp.readKey({ armoredKey: rsaSignOnly });
     try {
       openpgp.config.allowInsecureDecryptionWithSigningKeys = false;
       await expect(openpgp.decrypt({
-        message: await openpgp.readArmoredMessage(encryptedRsaSignOnly),
+        message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
         privateKeys: key
       })).to.be.rejectedWith(/Session key decryption failed/);
 
       openpgp.config.allowInsecureDecryptionWithSigningKeys = true;
       await expect(openpgp.decrypt({
-        message: await openpgp.readArmoredMessage(encryptedRsaSignOnly),
+        message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
         privateKeys: key
       })).to.be.fulfilled;
     } finally {
@@ -2846,7 +2846,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Method getExpirationTime V4 Key', async function() {
-    const [, pubKey] = await openpgp.readArmoredKeys(twoKeys);
+    const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.Key);
     const expirationTime = await pubKey.getExpirationTime();
@@ -2854,7 +2854,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Method getExpirationTime expired V4 Key', async function() {
-    const pubKey = await openpgp.readArmoredKey(expiredKey);
+    const pubKey = await openpgp.readKey({ armoredKey: expiredKey });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.Key);
     const expirationTime = await pubKey.getExpirationTime();
@@ -2862,7 +2862,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Method getExpirationTime V4 SubKey', async function() {
-    const [, pubKey] = await openpgp.readArmoredKeys(twoKeys);
+    const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.Key);
     const expirationTime = await pubKey.subKeys[0].getExpirationTime(pubKey.primaryKey);
@@ -2870,7 +2870,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Method getExpirationTime V4 Key with capabilities', async function() {
-    const pubKey = await openpgp.readArmoredKey(priv_key_2000_2008);
+    const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.Key);
     pubKey.users[0].selfCertifications[0].keyFlags = [1];
@@ -2881,7 +2881,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Method getExpirationTime V4 Key with capabilities - capable primary key', async function() {
-    const pubKey = await openpgp.readArmoredKey(priv_key_2000_2008);
+    const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.Key);
     const expirationTime = await pubKey.getExpirationTime();
@@ -2891,12 +2891,12 @@ module.exports = () => describe('Key', function() {
   });
 
   it("decrypt() - throw if key parameters don't correspond", async function() {
-    const key = await openpgp.readArmoredKey(mismatchingKeyParams);
+    const key = await openpgp.readKey({ armoredKey: mismatchingKeyParams });
     await expect(key.decrypt('userpass')).to.be.rejectedWith('Key is invalid');
   });
 
   it("decrypt(keyId) - throw if key parameters don't correspond", async function() {
-    const key = await openpgp.readArmoredKey(mismatchingKeyParams);
+    const key = await openpgp.readKey({ armoredKey: mismatchingKeyParams });
     const subKeyId = key.subKeys[0].getKeyId();
     await expect(key.decrypt('userpass', subKeyId)).to.be.rejectedWith('Key is invalid');
   });
@@ -2907,22 +2907,22 @@ module.exports = () => describe('Key', function() {
   });
 
   it("validate() - throw if all-gnu-dummy key", async function() {
-    const key = await openpgp.readArmoredKey(gnuDummyKey);
+    const key = await openpgp.readKey({ armoredKey: gnuDummyKey });
     await expect(key.validate()).to.be.rejectedWith('Cannot validate an all-gnu-dummy key');
   });
 
   it("validate() - gnu-dummy primary key with signing subkey", async function() {
-    const key = await openpgp.readArmoredKey(gnuDummyKeySigningSubkey);
+    const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
     await expect(key.validate()).to.not.be.rejected;
   });
 
   it("validate() - gnu-dummy primary key with encryption subkey", async function() {
-    const key = await openpgp.readArmoredKey(dsaGnuDummyKeyWithElGamalSubkey);
+    const key = await openpgp.readKey({ armoredKey: dsaGnuDummyKeyWithElGamalSubkey });
     await expect(key.validate()).to.not.be.rejected;
   });
 
   it("validate() - curve ed25519 (eddsa) cannot be used for ecdsa", async function() {
-    const key = await openpgp.readArmoredKey(eddsaKeyAsEcdsa);
+    const key = await openpgp.readKey({ armoredKey: eddsaKeyAsEcdsa });
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
@@ -2935,21 +2935,21 @@ module.exports = () => describe('Key', function() {
   });
 
   it("isDecrypted() - gnu-dummy primary key", async function() {
-    const key = await openpgp.readArmoredKey(gnuDummyKeySigningSubkey);
+    const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
     expect(key.isDecrypted()).to.be.true;
     await key.encrypt('12345678');
     expect(key.isDecrypted()).to.be.false;
   });
 
   it("isDecrypted() - all-gnu-dummy key", async function() {
-    const key = await openpgp.readArmoredKey(gnuDummyKey);
+    const key = await openpgp.readKey({ armoredKey: gnuDummyKey });
     expect(key.isDecrypted()).to.be.false;
   });
 
   it('makeDummy() - the converted key can be parsed', async function() {
     const { key } = await openpgp.generateKey({ userIds: { name: 'dummy', email: 'dummy@alice.com' } });
     key.primaryKey.makeDummy();
-    const parsedKeys = await openpgp.readArmoredKey(key.armor());
+    const parsedKeys = await openpgp.readKey({ armoredKey: key.armor() });
     expect(parsedKeys).to.not.be.empty;
   });
 
@@ -2965,7 +2965,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('makeDummy() - the converted key is valid but can no longer sign', async function() {
-    const key = await openpgp.readArmoredKey(priv_key_rsa);
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await key.decrypt('hello world');
     expect(key.primaryKey.isDummy()).to.be.false;
     key.primaryKey.makeDummy();
@@ -2975,7 +2975,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('makeDummy() - subkeys of the converted key can still sign', async function() {
-    const key = await openpgp.readArmoredKey(priv_key_rsa);
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await key.decrypt('hello world');
     expect(key.primaryKey.isDummy()).to.be.false;
     key.primaryKey.makeDummy();
@@ -2984,7 +2984,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('makeDummy() - should work for encrypted keys', async function() {
-    const key = await openpgp.readArmoredKey(priv_key_rsa);
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     expect(key.primaryKey.isDummy()).to.be.false;
     expect(key.primaryKey.makeDummy()).to.not.throw;
     expect(key.primaryKey.isDummy()).to.be.true;
@@ -2998,19 +2998,18 @@ module.exports = () => describe('Key', function() {
     expect(key.primaryKey.isEncrypted === null);
     expect(key.primaryKey.isDecrypted()).to.be.false;
     // confirm that the converted key can be parsed
-    const parsedKeys = (await openpgp.readArmoredKey(key.armor())).keys;
-    expect(parsedKeys).to.be.undefined;
+    await openpgp.readKey({ armoredKey: key.armor() });
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
-    const key = await openpgp.readArmoredKey(priv_key_rsa);
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await key.decrypt('hello world');
     await key.clearPrivateParams();
     await expect(key.validate()).to.be.rejectedWith('Key is not decrypted');
   });
 
   it('clearPrivateParams() - detect that private key parameters were removed', async function() {
-    const key = await openpgp.readArmoredKey(priv_key_rsa);
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await key.decrypt('hello world');
     const signingKeyPacket = key.subKeys[0].keyPacket;
     const privateParams = signingKeyPacket.privateParams;
@@ -3023,7 +3022,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('clearPrivateParams() - detect that private key parameters were zeroed out', async function() {
-    const key = await openpgp.readArmoredKey(priv_key_rsa);
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await key.decrypt('hello world');
     const signingKeyPacket = key.subKeys[0].keyPacket;
     const privateParams = {};
@@ -3039,15 +3038,15 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - throw error if fingerprints not equal', async function() {
-    const keys = await openpgp.readArmoredKeys(twoKeys);
+    const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     await expect(keys[0].update.bind(
       keys[0], keys[1]
     )()).to.be.rejectedWith('Key update method: fingerprints of keys not equal');
   });
 
   it('update() - merge revocation signatures', async function() {
-    const source = await openpgp.readArmoredKey(pub_revoked_subkeys);
-    const dest = await openpgp.readArmoredKey(pub_revoked_subkeys);
+    const source = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
+    const dest = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
     expect(source.revocationSignatures).to.exist;
     dest.revocationSignatures = [];
     return dest.update(source).then(() => {
@@ -3056,8 +3055,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge user', async function() {
-    const source = await openpgp.readArmoredKey(pub_sig_test);
-    const dest = await openpgp.readArmoredKey(pub_sig_test);
+    const source = await openpgp.readKey({ armoredKey: pub_sig_test });
+    const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.users[1]).to.exist;
     dest.users.pop();
     return dest.update(source).then(() => {
@@ -3067,8 +3066,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge user - other and certification revocation signatures', async function() {
-    const source = await openpgp.readArmoredKey(pub_sig_test);
-    const dest = await openpgp.readArmoredKey(pub_sig_test);
+    const source = await openpgp.readKey({ armoredKey: pub_sig_test });
+    const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.users[1].otherCertifications).to.exist;
     expect(source.users[1].revocationSignatures).to.exist;
     dest.users[1].otherCertifications = [];
@@ -3082,8 +3081,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge subkey', async function() {
-    const source = await openpgp.readArmoredKey(pub_sig_test);
-    const dest = await openpgp.readArmoredKey(pub_sig_test);
+    const source = await openpgp.readKey({ armoredKey: pub_sig_test });
+    const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.subKeys[1]).to.exist;
     dest.subKeys.pop();
     return dest.update(source).then(() => {
@@ -3095,8 +3094,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge subkey - revocation signature', async function() {
-    const source = await openpgp.readArmoredKey(pub_sig_test);
-    const dest = await openpgp.readArmoredKey(pub_sig_test);
+    const source = await openpgp.readKey({ armoredKey: pub_sig_test });
+    const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.subKeys[0].revocationSignatures).to.exist;
     dest.subKeys[0].revocationSignatures = [];
     return dest.update(source).then(() => {
@@ -3106,8 +3105,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge private key into public key', async function() {
-    const source = await openpgp.readArmoredKey(priv_key_rsa);
-    const [dest] = await openpgp.readArmoredKeys(twoKeys);
+    const source = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(dest.isPublic()).to.be.true;
     return dest.update(source).then(() => {
       expect(dest.isPrivate()).to.be.true;
@@ -3126,8 +3125,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge private key into public key - no subkeys', async function() {
-    const source = await openpgp.readArmoredKey(priv_key_rsa);
-    const [dest] = await openpgp.readArmoredKeys(twoKeys);
+    const source = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
     source.subKeys = [];
     dest.subKeys = [];
     expect(dest.isPublic()).to.be.true;
@@ -3149,8 +3148,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge private key into public key - mismatch throws error', async function() {
-    const source = await openpgp.readArmoredKey(priv_key_rsa);
-    const [dest] = await openpgp.readArmoredKeys(twoKeys);
+    const source = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
     source.subKeys = [];
     expect(dest.subKeys).to.exist;
     expect(dest.isPublic()).to.be.true;
@@ -3159,8 +3158,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge subkey binding signatures', async function() {
-    const source = await openpgp.readArmoredKey(pgp_desktop_pub);
-    const dest = await openpgp.readArmoredKey(pgp_desktop_priv);
+    const source = await openpgp.readKey({ armoredKey: pgp_desktop_pub });
+    const dest = await openpgp.readKey({ armoredKey: pgp_desktop_priv });
     expect(source.subKeys[0].bindingSignatures[0]).to.exist;
     await source.subKeys[0].verify(source.primaryKey);
     expect(dest.subKeys[0].bindingSignatures[0]).to.not.exist;
@@ -3170,8 +3169,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('update() - merge multiple subkey binding signatures', async function() {
-    const source = await openpgp.readArmoredKey(multipleBindingSignatures);
-    const dest = await openpgp.readArmoredKey(multipleBindingSignatures);
+    const source = await openpgp.readKey({ armoredKey: multipleBindingSignatures });
+    const dest = await openpgp.readKey({ armoredKey: multipleBindingSignatures });
     // remove last subkey binding signature of destination subkey
     dest.subKeys[0].bindingSignatures.length = 1;
     expect((await source.subKeys[0].getExpirationTime(source.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
@@ -3184,7 +3183,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('revoke() - primary key', async function() {
-    const privKey = await openpgp.readArmoredKey(priv_key_arm2);
+    const privKey = await openpgp.readKey({ armoredKey: priv_key_arm2 });
     await privKey.decrypt('hello world');
 
     await privKey.revoke({
@@ -3202,8 +3201,8 @@ module.exports = () => describe('Key', function() {
   });
 
   it('revoke() - subkey', async function() {
-    const pubKey = await openpgp.readArmoredKey(pub_key_arm2);
-    const privKey = await openpgp.readArmoredKey(priv_key_arm2);
+    const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
+    const privKey = await openpgp.readKey({ armoredKey: priv_key_arm2 });
     await privKey.decrypt('hello world');
 
     const subKey = pubKey.subKeys[0];
@@ -3221,15 +3220,15 @@ module.exports = () => describe('Key', function() {
   });
 
   it('applyRevocationCertificate() should produce the same revoked key as GnuPG', async function() {
-    const pubKey = await openpgp.readArmoredKey(pub_key_arm4);
+    const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm4 });
 
     return pubKey.applyRevocationCertificate(revocation_certificate_arm4).then(async revKey => {
-      expect(revKey.armor()).to.equal((await openpgp.readArmoredKey(revoked_key_arm4)).armor());
+      expect(revKey.armor()).to.equal((await openpgp.readKey({ armoredKey: revoked_key_arm4 })).armor());
     });
   });
 
   it('getRevocationCertificate() should produce the same revocation certificate as GnuPG', async function() {
-    const revKey = await openpgp.readArmoredKey(revoked_key_arm4);
+    const revKey = await openpgp.readKey({ armoredKey: revoked_key_arm4 });
     const revocationCertificate = await revKey.getRevocationCertificate();
 
     const input = await openpgp.unarmor(revocation_certificate_arm4);
@@ -3241,7 +3240,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it('getRevocationCertificate() should have an appropriate comment', async function() {
-    const revKey = await openpgp.readArmoredKey(revoked_key_arm4);
+    const revKey = await openpgp.readKey({ armoredKey: revoked_key_arm4 });
     const revocationCertificate = await revKey.getRevocationCertificate();
 
     expect(revocationCertificate).to.match(/Comment: This is a revocation certificate/);
@@ -3249,13 +3248,13 @@ module.exports = () => describe('Key', function() {
   });
 
   it("getPreferredAlgo('symmetric') - one key - AES256", async function() {
-    const [key1] = await openpgp.readArmoredKeys(twoKeys);
+    const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const prefAlgo = await key.getPreferredAlgo('symmetric', [key1]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
   });
 
   it("getPreferredAlgo('symmetric') - two key - AES192", async function() {
-    const keys = await openpgp.readArmoredKeys(twoKeys);
+    const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
@@ -3265,7 +3264,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it("getPreferredAlgo('symmetric') - two key - one without pref", async function() {
-    const keys = await openpgp.readArmoredKeys(twoKeys);
+    const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key2.getPrimaryUser();
@@ -3275,7 +3274,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it("getPreferredAlgo('aead') - one key - OCB", async function() {
-    const [key1] = await openpgp.readArmoredKeys(twoKeys);
+    const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
@@ -3286,7 +3285,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it("getPreferredAlgo('aead') - two key - one without pref", async function() {
-    const keys = await openpgp.readArmoredKeys(twoKeys);
+    const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
@@ -3301,7 +3300,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it("getPreferredAlgo('aead') - two key - one with no support", async function() {
-    const keys = await openpgp.readArmoredKeys(twoKeys);
+    const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
@@ -3314,13 +3313,13 @@ module.exports = () => describe('Key', function() {
   });
 
   it('User attribute packet read & write', async function() {
-    const key = await openpgp.readArmoredKey(user_attr_key);
-    const key2 = await openpgp.readArmoredKey(key.armor());
+    const key = await openpgp.readKey({ armoredKey: user_attr_key });
+    const key2 = await openpgp.readKey({ armoredKey: key.armor() });
     expect(key.users[1].userAttribute).eql(key2.users[1].userAttribute);
   });
 
   it('getPrimaryUser()', async function() {
-    const key = await openpgp.readArmoredKey(pub_sig_test);
+    const key = await openpgp.readKey({ armoredKey: pub_sig_test });
     const primUser = await key.getPrimaryUser();
     expect(primUser).to.exist;
     expect(primUser.user.userId.userid).to.equal('Signature Test <signature@test.com>');
@@ -3343,13 +3342,13 @@ Vz/bMCJoAShgybW1r6kRWejybzIjFSLnx/YA/iLZeo5UNdlXRJco+15RbFiNSAbw
 VYGdb3eNlV8CfoEC
 =FYbP
 -----END PGP PRIVATE KEY BLOCK-----`;
-    const key = await openpgp.readArmoredKey(keyWithoutUserID);
+    const key = await openpgp.readKey({ armoredKey: keyWithoutUserID });
     await expect(key.getPrimaryUser()).to.be.rejectedWith('Could not find valid self-signature in key 3ce893915c44212f');
   });
 
   it('Generate session key - latest created user', async function() {
-    const publicKey = await openpgp.readArmoredKey(multi_uid_key);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+    const publicKey = await openpgp.readKey({ armoredKey: multi_uid_key });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
     // Set second user to prefer aes128. We should select this user by default, since it was created later.
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
@@ -3358,8 +3357,8 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Generate session key - primary user', async function() {
-    const publicKey = await openpgp.readArmoredKey(multi_uid_key);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+    const publicKey = await openpgp.readKey({ armoredKey: multi_uid_key });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
     // Set first user to primary. We should select this user by default.
     publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
@@ -3370,8 +3369,8 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Generate session key - specific user', async function() {
-    const publicKey = await openpgp.readArmoredKey(multi_uid_key);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+    const publicKey = await openpgp.readKey({ armoredKey: multi_uid_key });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
     // Set first user to primary. We won't select this user, this is to test that.
     publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
@@ -3384,18 +3383,18 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Fails to encrypt to User ID-less key', async function() {
-    const publicKey = await openpgp.readArmoredKey(uidlessKey);
+    const publicKey = await openpgp.readKey({ armoredKey: uidlessKey });
     expect(publicKey.users.length).to.equal(0);
-    const privateKey = await openpgp.readArmoredKey(uidlessKey);
+    const privateKey = await openpgp.readKey({ armoredKey: uidlessKey });
     await privateKey.decrypt('correct horse battery staple');
     await expect(openpgp.encrypt({ message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, armor: false })).to.be.rejectedWith('Could not find primary user');
   });
 
   it('Sign - specific user', async function() {
-    const publicKey = await openpgp.readArmoredKey(multi_uid_key);
-    const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+    const publicKey = await openpgp.readKey({ armoredKey: multi_uid_key });
+    const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
-    const privateKeyClone = await openpgp.readArmoredKey(priv_key_rsa);
+    const privateKeyClone = await openpgp.readKey({ armoredKey: priv_key_rsa });
     // Duplicate user
     privateKey.users.push(privateKeyClone.users[0]);
     // Set first user to primary. We won't select this user, this is to test that.
@@ -3405,46 +3404,46 @@ VYGdb3eNlV8CfoEC
     // Set second user to prefer aes128. We will select this user.
     privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
     const signed = await openpgp.sign({ message: openpgp.Message.fromText('hello'), privateKeys: privateKey, fromUserIds: { name: 'Test McTestington', email: 'test@example.com' }, armor: false });
-    const signature = await openpgp.readMessage(signed);
+    const signature = await openpgp.readMessage({ binaryMessage: signed });
     expect(signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
     const encrypted = await openpgp.encrypt({ message: openpgp.Message.fromText('hello'), passwords: 'test', privateKeys: privateKey, fromUserIds: { name: 'Test McTestington', email: 'test@example.com' }, armor: false });
-    const { signatures } = await openpgp.decrypt({ message: await openpgp.readMessage(encrypted), passwords: 'test' });
+    const { signatures } = await openpgp.decrypt({ message: await openpgp.readMessage({ binaryMessage: encrypted }), passwords: 'test' });
     expect(signatures[0].signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
     await expect(openpgp.encrypt({ message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIds: { name: 'Not Test McTestington', email: 'test@example.com' }, armor: false })).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
   it('Find a valid subkey binding signature among many invalid ones', async function() {
-    const key = await openpgp.readArmoredKey(valid_binding_sig_among_many_expired_sigs_pub);
+    const key = await openpgp.readKey({ armoredKey: valid_binding_sig_among_many_expired_sigs_pub });
     expect(await key.getEncryptionKey()).to.not.be.null;
   });
 
   it('Selects the most recent subkey binding signature', async function() {
-    const key = await openpgp.readArmoredKey(multipleBindingSignatures);
+    const key = await openpgp.readKey({ armoredKey: multipleBindingSignatures });
     expect((await key.subKeys[0].getExpirationTime(key.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
   });
 
   it('Selects the most recent non-expired subkey binding signature', async function() {
-    const key = await openpgp.readArmoredKey(multipleBindingSignatures);
+    const key = await openpgp.readKey({ armoredKey: multipleBindingSignatures });
     key.subKeys[0].bindingSignatures[1].signatureNeverExpires = false;
     key.subKeys[0].bindingSignatures[1].signatureExpirationTime = 0;
     expect((await key.subKeys[0].getExpirationTime(key.primaryKey)).toISOString()).to.equal('2018-09-07T06:03:37.000Z');
   });
 
   it('Selects the most recent valid subkey binding signature', async function() {
-    const key = await openpgp.readArmoredKey(multipleBindingSignatures);
+    const key = await openpgp.readKey({ armoredKey: multipleBindingSignatures });
     key.subKeys[0].bindingSignatures[1].signatureData[0]++;
     expect((await key.subKeys[0].getExpirationTime(key.primaryKey)).toISOString()).to.equal('2018-09-07T06:03:37.000Z');
   });
 
   it('Handles a key with no valid subkey binding signatures gracefully', async function() {
-    const key = await openpgp.readArmoredKey(multipleBindingSignatures);
+    const key = await openpgp.readKey({ armoredKey: multipleBindingSignatures });
     key.subKeys[0].bindingSignatures[0].signatureData[0]++;
     key.subKeys[0].bindingSignatures[1].signatureData[0]++;
     expect(await key.subKeys[0].getExpirationTime(key.primaryKey)).to.be.null;
   });
 
   it('Reject encryption with revoked primary user', async function() {
-    const key = await openpgp.readArmoredKey(pub_revoked_subkeys);
+    const key = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
     return openpgp.encrypt({ publicKeys: [key], message: openpgp.Message.fromText('random data') }).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(function(error) {
@@ -3453,7 +3452,7 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Reject encryption with revoked subkey', async function() {
-    const key = await openpgp.readArmoredKey(pub_revoked_subkeys);
+    const key = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
     key.revocationSignatures = [];
     key.users[0].revocationSignatures = [];
     return openpgp.encrypt({ publicKeys: [key], message: openpgp.Message.fromText('random data'), date: new Date(1386842743000) }).then(() => {
@@ -3464,7 +3463,7 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Reject encryption with key revoked with appended revocation cert', async function() {
-    const key = await openpgp.readArmoredKey(pub_revoked_with_cert);
+    const key = await openpgp.readKey({ armoredKey: pub_revoked_with_cert });
     return openpgp.encrypt({ publicKeys: [key], message: openpgp.Message.fromText('random data') }).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(function(error) {
@@ -3473,8 +3472,8 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Merge key with another key with non-ID user attributes', async function() {
-    const key = await openpgp.readArmoredKey(mergeKey1);
-    const updateKey = await openpgp.readArmoredKey(mergeKey2);
+    const key = await openpgp.readKey({ armoredKey: mergeKey1 });
+    const updateKey = await openpgp.readKey({ armoredKey: mergeKey2 });
     expect(key).to.exist;
     expect(updateKey).to.exist;
     expect(key.users).to.have.length(1);
@@ -3489,7 +3488,7 @@ VYGdb3eNlV8CfoEC
   it("Should throw when trying to encrypt a key that's already encrypted", async function() {
     await expect((async function() {
       const { privateKeyArmored } = await openpgp.generateKey({ userIds: [{ email: 'hello@user.com' }], passphrase: 'pass' });
-      const k = await openpgp.readArmoredKey(privateKeyArmored);
+      const k = await openpgp.readKey({ armoredKey: privateKeyArmored });
       await k.decrypt('pass');
       await k.encrypt('pass');
       await k.encrypt('pass');
@@ -3509,12 +3508,12 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new rsa subkey to stored rsa key', async function() {
-      const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
       await privateKey.decrypt('hello world');
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey(rsaOpt);
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey).to.exist;
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
@@ -3547,7 +3546,7 @@ VYGdb3eNlV8CfoEC
     });
 
     it('Add a new default subkey to a dsa key', async function() {
-      const key = await openpgp.readArmoredKey(dsaPrivateKey);
+      const key = await openpgp.readKey({ armoredKey: dsaPrivateKey });
       const total = key.subKeys.length;
       const newKey = await key.addSubkey();
       expect(newKey.subKeys[total].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
@@ -3555,21 +3554,21 @@ VYGdb3eNlV8CfoEC
     });
 
     it('should throw when trying to encrypt a subkey separately from key', async function() {
-      const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
       await privateKey.decrypt('hello world');
       const opt = { rsaBits: rsaBits, passphrase: 'subkey passphrase' };
       await expect(privateKey.addSubkey(opt)).to.be.rejectedWith('Subkey could not be encrypted here, please encrypt whole key');
     });
 
     it('encrypt and decrypt key with added subkey', async function() {
-      const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
       await privateKey.decrypt('hello world');
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey(rsaOpt);
-      newPrivateKey = await openpgp.readArmoredKey(newPrivateKey.armor());
+      newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
       await newPrivateKey.encrypt('12345678');
       const armoredKey = newPrivateKey.armor();
-      const importedPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      const importedPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       await importedPrivateKey.decrypt('12345678');
       const subKey = importedPrivateKey.subKeys[total];
       expect(subKey).to.exist;
@@ -3587,7 +3586,7 @@ VYGdb3eNlV8CfoEC
       const subKey1 = newPrivateKey.subKeys[total];
       await newPrivateKey.encrypt('12345678');
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       await newPrivateKey.decrypt('12345678');
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey.isDecrypted()).to.be.true;
@@ -3607,7 +3606,7 @@ VYGdb3eNlV8CfoEC
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey({ curve: 'p256', sign: true });
-      newPrivateKey = await openpgp.readArmoredKey(newPrivateKey.armor());
+      newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey).to.exist;
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
@@ -3620,13 +3619,13 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new ecc subkey to a rsa key', async function() {
-      const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
       await privateKey.decrypt('hello world');
       const total = privateKey.subKeys.length;
       const opt2 = { type: 'ecc', curve: 'curve25519' };
       let newPrivateKey = await privateKey.addSubkey(opt2);
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey).to.exist;
@@ -3642,7 +3641,7 @@ VYGdb3eNlV8CfoEC
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey({ type: 'rsa' });
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey).to.exist;
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
@@ -3652,10 +3651,10 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new rsa subkey to a dsa key', async function() {
-      const privateKey = await openpgp.readArmoredKey(dsaPrivateKey);
+      const privateKey = await openpgp.readKey({ armoredKey: dsaPrivateKey });
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey({ type: 'rsa', rsaBits: 2048 });
-      newPrivateKey = await openpgp.readArmoredKey(newPrivateKey.armor());
+      newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey).to.exist;
@@ -3672,7 +3671,7 @@ VYGdb3eNlV8CfoEC
       const opt2 = { sign: true };
       let newPrivateKey = await privateKey.addSubkey(opt2);
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       const subKey = newPrivateKey.subKeys[total];
       const subkeyOid = subKey.keyPacket.publicParams.oid;
       const pkOid = newPrivateKey.primaryKey.publicParams.oid;
@@ -3681,7 +3680,7 @@ VYGdb3eNlV8CfoEC
       await subKey.verify(newPrivateKey.primaryKey);
       expect(await newPrivateKey.getSigningKey()).to.be.equal(subKey);
       const signed = await openpgp.sign({ message: openpgp.Message.fromText('the data to signed'), privateKeys: newPrivateKey, armor:false });
-      const message = await openpgp.readMessage(signed);
+      const message = await openpgp.readMessage({ binaryMessage: signed });
       const { signatures } = await openpgp.verify({ message, publicKeys: [newPrivateKey.toPublic()] });
       expect(signatures).to.exist;
       expect(signatures.length).to.be.equal(1);
@@ -3697,14 +3696,14 @@ VYGdb3eNlV8CfoEC
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey();
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       const subKey = newPrivateKey.subKeys[total];
       const publicKey = newPrivateKey.toPublic();
       await subKey.verify(newPrivateKey.primaryKey);
       expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subKey);
       const encrypted = await openpgp.encrypt({ message: openpgp.Message.fromText(vData), publicKeys: publicKey, armor:false });
       expect(encrypted).to.be.exist;
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const pkSessionKeys = message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
       expect(pkSessionKeys).to.exist;
       expect(pkSessionKeys.length).to.be.equal(1);
@@ -3715,19 +3714,19 @@ VYGdb3eNlV8CfoEC
     });
 
     it('sign/verify data with the new subkey correctly using rsa', async function() {
-      const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
       await privateKey.decrypt('hello world');
       const total = privateKey.subKeys.length;
       const opt2 = { sign: true, rsaBits: rsaBits };
       let newPrivateKey = await privateKey.addSubkey(opt2);
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       const subKey = newPrivateKey.subKeys[total];
       expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('rsaEncryptSign');
       await subKey.verify(newPrivateKey.primaryKey);
       expect(await newPrivateKey.getSigningKey()).to.be.equal(subKey);
       const signed = await openpgp.sign({ message: openpgp.Message.fromText('the data to signed'), privateKeys: newPrivateKey, armor:false });
-      const message = await openpgp.readMessage(signed);
+      const message = await openpgp.readMessage({ binaryMessage: signed });
       const { signatures } = await openpgp.verify({ message, publicKeys: [newPrivateKey.toPublic()] });
       expect(signatures).to.exist;
       expect(signatures.length).to.be.equal(1);
@@ -3736,19 +3735,19 @@ VYGdb3eNlV8CfoEC
     });
 
     it('encrypt/decrypt data with the new subkey correctly using rsa', async function() {
-      const privateKey = await openpgp.readArmoredKey(priv_key_rsa);
+      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
       await privateKey.decrypt('hello world');
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey(rsaOpt);
       const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readArmoredKey(armoredKey);
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
       const subKey = newPrivateKey.subKeys[total];
       const publicKey = newPrivateKey.toPublic();
       const vData = 'the data to encrypted!';
       expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subKey);
       const encrypted = await openpgp.encrypt({ message: openpgp.Message.fromText(vData), publicKeys: publicKey, armor:false });
       expect(encrypted).to.be.exist;
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const pkSessionKeys = message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
       expect(pkSessionKeys).to.exist;
       expect(pkSessionKeys.length).to.be.equal(1);

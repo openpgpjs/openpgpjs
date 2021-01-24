@@ -273,14 +273,14 @@ module.exports = () => describe("Keyring", async function() {
     const localstore2 = new openpgp.Keyring.localstore('my-custom-prefix-');
     const localstore3 = new openpgp.Keyring.localstore();
     await localstore3.storePublic([]);
-    const key = await openpgp.readArmoredKey(pubkey);
+    const key = await openpgp.readKey({ armoredKey: pubkey });
     await localstore1.storePublic([key]);
     expect((await localstore2.loadPublic())[0].getKeyId().equals(key.getKeyId())).to.be.true;
     expect(await localstore3.loadPublic()).to.have.length(0);
   });
 
   it('emptying keyring and storing removes keys', async function() {
-    const key = await openpgp.readArmoredKey(pubkey);
+    const key = await openpgp.readKey({ armoredKey: pubkey });
 
     const localstore = new openpgp.Keyring.localstore('remove-prefix-');
 

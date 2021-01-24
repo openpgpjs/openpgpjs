@@ -194,7 +194,7 @@ function tests() {
       passwords: ['test']
     });
     const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted);
-    const message = await openpgp.readArmoredMessage(msgAsciiArmored);
+    const message = await openpgp.readMessage({ armoredMessage: msgAsciiArmored });
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
       message
@@ -212,7 +212,7 @@ function tests() {
     dataArrived();
     reader.releaseLock();
     const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted);
-    const message = await openpgp.readArmoredMessage(msgAsciiArmored);
+    const message = await openpgp.readMessage({ armoredMessage: msgAsciiArmored });
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
       message,
@@ -257,7 +257,7 @@ function tests() {
     });
     expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-    const message = await openpgp.readMessage(encrypted);
+    const message = await openpgp.readMessage({ binaryMessage: encrypted });
     setTimeout(dataArrived, 3000); // Do not wait until data arrived, but wait a bit to check that it doesn't arrive early.
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
@@ -285,7 +285,7 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message,
@@ -316,7 +316,7 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         publicKeys: pubKey,
         privateKeys: privKey,
@@ -336,8 +336,8 @@ function tests() {
   it('Encrypt and decrypt larger message roundtrip using curve x25519 (allowUnauthenticatedStream=true)', async function() {
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
-    const priv = await openpgp.readArmoredKey(xPriv);
-    const pub = await openpgp.readArmoredKey(xPub);
+    const priv = await openpgp.readKey({ armoredKey: xPriv });
+    const pub = await openpgp.readKey({ armoredKey: xPub });
     await priv.decrypt(xPass);
     try {
       const encrypted = await openpgp.encrypt({
@@ -348,7 +348,7 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         publicKeys: pub,
         privateKeys: priv,
@@ -368,8 +368,8 @@ function tests() {
   it('Encrypt and decrypt larger message roundtrip using curve brainpool (allowUnauthenticatedStream=true)', async function() {
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
-    const priv = await openpgp.readArmoredKey(brainpoolPriv);
-    const pub = await openpgp.readArmoredKey(brainpoolPub);
+    const priv = await openpgp.readKey({ armoredKey: brainpoolPriv });
+    const pub = await openpgp.readKey({ armoredKey: brainpoolPub });
     await priv.decrypt(brainpoolPass);
     try {
       const encrypted = await openpgp.encrypt({
@@ -380,7 +380,7 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         publicKeys: pub,
         privateKeys: priv,
@@ -409,13 +409,15 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
-        value += '';
-        if (value === '=' || value.length === 6) return; // Remove checksum
-        const newlineIndex = value.indexOf('\n', 500);
-        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-        return value;
-      }));
+      const message = await openpgp.readMessage({
+        armoredMessage: openpgp.stream.transform(encrypted, value => {
+          value += '';
+          if (value === '=' || value.length === 6) return; // Remove checksum
+          const newlineIndex = value.indexOf('\n', 500);
+          if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
+          return value;
+        })
+      });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message,
@@ -445,12 +447,14 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
-        value += '';
-        const newlineIndex = value.indexOf('\n', 500);
-        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-        return value;
-      }));
+      const message = await openpgp.readMessage({
+        armoredMessage: openpgp.stream.transform(encrypted, value => {
+          value += '';
+          const newlineIndex = value.indexOf('\n', 500);
+          if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
+          return value;
+        })
+      });
       const decrypted = await openpgp.decrypt({
         publicKeys: pubKey,
         privateKeys: privKey,
@@ -480,12 +484,14 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readArmoredMessage(openpgp.stream.transform(encrypted, value => {
-        value += '';
-        const newlineIndex = value.indexOf('\n', 500);
-        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-        return value;
-      }));
+      const message = await openpgp.readMessage({
+        armoredMessage: openpgp.stream.transform(encrypted, value => {
+          value += '';
+          const newlineIndex = value.indexOf('\n', 500);
+          if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
+          return value;
+        })
+      });
       const decrypted = await openpgp.decrypt({
         privateKeys: privKey,
         message,
@@ -511,12 +517,14 @@ function tests() {
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
-    const message = await openpgp.readArmoredMessage(openpgp.stream.transform(signed, value => {
-      value += '';
-      const newlineIndex = value.indexOf('\n', 500);
-      if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-      return value;
-    }));
+    const message = await openpgp.readMessage({
+      armoredMessage: openpgp.stream.transform(signed, value => {
+        value += '';
+        const newlineIndex = value.indexOf('\n', 500);
+        if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
+        return value;
+      })
+    });
     const verified = await openpgp.verify({
       publicKeys: pubKey,
       message,
@@ -563,7 +571,7 @@ function tests() {
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
-    const message = await openpgp.readArmoredMessage(signed);
+    const message = await openpgp.readMessage({ armoredMessage: signed });
     const verified = await openpgp.verify({
       publicKeys: pubKey,
       message,
@@ -614,7 +622,7 @@ function tests() {
       privateKeys: privKey
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
-    const message = await openpgp.readArmoredMessage(signed);
+    const message = await openpgp.readMessage({ armoredMessage: signed });
     const verified = await openpgp.verify({
       publicKeys: pubKey,
       message,
@@ -644,8 +652,8 @@ function tests() {
       streaming: expectedType
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
-    const sigArmored = await openpgp.stream.readToEnd(signed);
-    const signature = await openpgp.readArmoredMessage(sigArmored);
+    const armoredSignature = await openpgp.stream.readToEnd(signed);
+    const signature = await openpgp.readSignature({ armoredSignature });
     const verified = await openpgp.verify({
       signature,
       publicKeys: pubKey,
@@ -673,7 +681,7 @@ function tests() {
       armor: false
     });
     expect(openpgp.stream.isStream(signed)).to.be.false;
-    const signature = await openpgp.readMessage(signed);
+    const signature = await openpgp.readMessage({ binaryMessage: signed });
     const verified = await openpgp.verify({
       signature,
       publicKeys: pubKey,
@@ -693,8 +701,8 @@ function tests() {
         controller.close();
       }
     });
-    const priv = await openpgp.readArmoredKey(brainpoolPriv);
-    const pub = await openpgp.readArmoredKey(brainpoolPub);
+    const priv = await openpgp.readKey({ armoredKey: brainpoolPriv });
+    const pub = await openpgp.readKey({ armoredKey: brainpoolPub });
     await priv.decrypt(brainpoolPass);
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
@@ -703,8 +711,8 @@ function tests() {
       streaming: expectedType
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
-    const sigArmored = await openpgp.stream.readToEnd(signed);
-    const signature = await openpgp.readArmoredMessage(sigArmored);
+    const armoredSignature = await openpgp.stream.readToEnd(signed);
+    const signature = await openpgp.readSignature({ armoredSignature });
     const verified = await openpgp.verify({
       signature,
       publicKeys: pub,
@@ -724,8 +732,8 @@ function tests() {
         controller.close();
       }
     });
-    const priv = await openpgp.readArmoredKey(xPriv);
-    const pub = await openpgp.readArmoredKey(xPub);
+    const priv = await openpgp.readKey({ armoredKey: xPriv });
+    const pub = await openpgp.readKey({ armoredKey: xPub });
     await priv.decrypt(xPass);
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
@@ -734,8 +742,8 @@ function tests() {
       streaming: expectedType
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
-    const sigArmored = await openpgp.stream.readToEnd(signed);
-    const signature = await openpgp.readArmoredMessage(sigArmored);
+    const armoredSignature = await openpgp.stream.readToEnd(signed);
+    const signature = await openpgp.readSignature({ armoredSignature });
     const verified = await openpgp.verify({
       signature,
       publicKeys: pub,
@@ -798,7 +806,7 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message,
@@ -835,7 +843,7 @@ function tests() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
-      const message = await openpgp.readArmoredMessage(encrypted);
+      const message = await openpgp.readMessage({ armoredMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message
@@ -863,7 +871,7 @@ function tests() {
           passwords: ['test']
         });
         expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
-        const message = await openpgp.readArmoredMessage(encrypted);
+        const message = await openpgp.readMessage({ armoredMessage: encrypted });
         const decrypted = await openpgp.decrypt({
           passwords: ['test'],
           message,
@@ -890,7 +898,7 @@ function tests() {
         passwords: ['test']
       });
 
-      const message = await openpgp.readArmoredMessage(encrypted);
+      const message = await openpgp.readMessage({ armoredMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message,
@@ -911,8 +919,8 @@ module.exports = () => describe('Streaming', function() {
   let currentTest = 0;
 
   before(async function() {
-    pubKey = await openpgp.readArmoredKey(pub_key);
-    privKey = await openpgp.readArmoredKey(priv_key);
+    pubKey = await openpgp.readKey({ armoredKey: pub_key });
+    privKey = await openpgp.readKey({ armoredKey: priv_key });
     await privKey.decrypt(passphrase);
   });
 
@@ -971,7 +979,7 @@ module.exports = () => describe('Streaming', function() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal('node');
 
-      const message = await openpgp.readArmoredMessage(encrypted);
+      const message = await openpgp.readMessage({ armoredMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message
@@ -991,7 +999,7 @@ module.exports = () => describe('Streaming', function() {
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal('node');
 
-      const message = await openpgp.readMessage(encrypted);
+      const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message,

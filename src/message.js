@@ -809,35 +809,28 @@ export async function createVerificationObjects(signatureList, literalDataList, 
 }
 
 /**
- * reads an OpenPGP armored message and returns a message object
- * @param {String | ReadableStream<String>} armoredText text to be parsed
- * @returns {Promise<module:message.Message>} new message object
+ * Reads an (optionally armored) OpenPGP message and returns a Message object
+ * @param {String | ReadableStream<String>} armoredMessage armored message to be parsed
+ * @param {Uint8Array | ReadableStream<Uint8Array>} binaryMessage binary to be parsed
+ * @returns {Promise<Message>} new message object
  * @async
  * @static
  */
-export async function readArmoredMessage(armoredText) {
-  //TODO how do we want to handle bad text? Exception throwing
-  //TODO don't accept non-message armored texts
-  const streamType = util.isStream(armoredText);
-  if (streamType === 'node') {
-    armoredText = stream.nodeToWeb(armoredText);
+export async function readMessage({ armoredMessage, binaryMessage }) {
+  let input = armoredMessage || binaryMessage;
+  if (!input) {
+    throw new Error('readMessage: must pass options object containing `armoredMessage` or `binaryMessage`');
   }
-  const input = await unarmor(armoredText);
-  return readMessage(input.data, streamType);
-}
-
-/**
- * reads an OpenPGP message as byte array and returns a message object
- * @param {Uint8Array | ReadableStream<Uint8Array>} input    binary message
- * @param {Boolean} fromStream  whether the message was created from a Stream
- * @returns {Promise<module:message.Message>} new message object
- * @async
- * @static
- */
-export async function readMessage(input, fromStream = util.isStream(input)) {
   const streamType = util.isStream(input);
   if (streamType === 'node') {
     input = stream.nodeToWeb(input);
+  }
+  if (armoredMessage) {
+    const { type, data } = await unarmor(input);
+    if (type !== enums.armor.message) {
+      throw new Error('Armored text not of type message');
+    }
+    input = data;
   }
   const packetlist = new PacketList();
   await packetlist.read(input, {
@@ -850,8 +843,8 @@ export async function readMessage(input, fromStream = util.isStream(input)) {
     SymEncryptedSessionKeyPacket,
     OnePassSignaturePacket,
     SignaturePacket
-  }, fromStream);
+  }, streamType);
   const message = new Message(packetlist);
-  message.fromStream = fromStream;
+  message.fromStream = streamType;
   return message;
 }

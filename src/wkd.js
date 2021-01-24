@@ -78,7 +78,7 @@ class WKD {
     if (options.rawBytes) {
       return rawBytes;
     }
-    return readKeys(rawBytes);
+    return readKeys({ binaryKeys: rawBytes });
   }
 }
 

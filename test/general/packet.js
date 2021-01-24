@@ -764,7 +764,7 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Reading signersUserId from armored signature', async function() {
-    const armored_sig =
+    const armoredSignature =
 `-----BEGIN PGP SIGNATURE-----
 
 iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
@@ -777,7 +777,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 =wEIR
 -----END PGP SIGNATURE-----`;
 
-    const signature = await openpgp.readArmoredSignature(armored_sig);
+    const signature = await openpgp.readSignature({ armoredSignature });
 
     expect(signature.packets[0].signersUserId).to.equal('test-wkd@metacode.biz');
   });
@@ -816,7 +816,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 =et/d
 -----END PGP PUBLIC KEY BLOCK-----`;
 
-    const key = await openpgp.readArmoredKey(pubkey);
+    const key = await openpgp.readKey({ armoredKey: pubkey });
 
     const { notations, rawNotations } = key.users[0].selfCertifications[0];
 

@@ -15,32 +15,25 @@ export {
  * @see module:key
  * @name module:openpgp.key
  */
-export {
-  readKey, readArmoredKey,
-  readKeys, readArmoredKeys,
-  Key
-} from './key';
+export { Key, readKey, readKeys } from './key';
 
 /**
  * @see module:signature
  * @name module:openpgp.signature
  */
-export * from './signature';
+export { Signature, readSignature } from './signature';
 
 /**
  * @see module:message
  * @name module:openpgp.message
  */
-export {
-  readMessage, readArmoredMessage,
-  Message
-} from './message';
+export { Message, readMessage } from './message';
 
 /**
  * @see module:cleartext
  * @name module:openpgp.cleartext
  */
-export * from './cleartext';
+export { CleartextMessage, readCleartextMessage } from './cleartext';
 
 /**
  * @see module:packet
