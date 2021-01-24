@@ -210,6 +210,9 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
  * @returns {module:packet/signature}         signature packet
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false) {
+  if (signingKeyPacket.isDummy()) {
+    throw new Error('Cannot sign with a gnu-dummy key.');
+  }
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }

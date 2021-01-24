@@ -47,7 +47,6 @@ import * as helper from './helper';
  * @borrows PublicKeyPacket#hasSameFingerprintAs as Key#hasSameFingerprintAs
  * @borrows PublicKeyPacket#getAlgorithmInfo as Key#getAlgorithmInfo
  * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
- * @borrows PublicKeyPacket#isDecrypted as Key#isDecrypted
  */
 class Key {
   /**
@@ -455,6 +454,14 @@ class Key {
       // The full key should be decrypted and we can validate it all
       await this.validate();
     }
+  }
+
+  /**
+   * Returns true if the primary key or any subkey is decrypted.
+   * A dummy key is considered encrypted.
+   */
+  isDecrypted() {
+    return this.getKeys().some(({ keyPacket }) => keyPacket.isDecrypted());
   }
 
   /**
@@ -883,6 +890,9 @@ class Key {
       throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${options.rsaBits}`);
     }
     const secretKeyPacket = this.primaryKey;
+    if (secretKeyPacket.isDummy()) {
+      throw new Error("Cannot add subkey to gnu-dummy primary key");
+    }
     if (!secretKeyPacket.isDecrypted()) {
       throw new Error("Key is not decrypted");
     }
@@ -900,7 +910,7 @@ class Key {
   }
 }
 
-['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted', 'hasSameFingerprintAs'].forEach(name => {
+['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name];
 });
