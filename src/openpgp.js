@@ -171,33 +171,62 @@ export function revokeKey({
 }
 
 /**
- * Unlock a private key with your passphrase.
- * @param  {Key} privateKey                    the private key that is to be decrypted
- * @param  {String|Array<String>} passphrase   the user's passphrase(s) chosen during key generation
- * @returns {Promise<Object>}                  the unlocked key object in the form: { key:Key }
+ * Unlock a private key with the given passphrase.
+ * This method does not change the original key.
+ * @param  {Key} privateKey                   the private key to decrypt
+ * @param  {String|Array<String>} passphrase  the user's passphrase(s)
+ * @returns {Promise<Key>}                    the unlocked key object
  * @async
  */
-export function decryptKey({ privateKey, passphrase }) {
-  return Promise.resolve().then(async function() {
-    const key = await privateKey.clone(true);
+export async function decryptKey({ privateKey, passphrase }) {
+  const key = await privateKey.clone();
+  // shallow clone is enough since the encrypted material is not changed in place by decryption
+  key.getKeys().forEach(k => {
+    k.keyPacket = Object.create(
+      Object.getPrototypeOf(k.keyPacket),
+      Object.getOwnPropertyDescriptors(k.keyPacket)
+    );
+  });
+  try {
     await key.decrypt(passphrase);
     return key;
-  }).catch(onError.bind(null, 'Error decrypting private key'));
+  } catch (err) {
+    key.clearPrivateParams();
+    return onError('Error decrypting private key', err);
+  }
 }
 
 /**
- * Lock a private key with your passphrase.
- * @param  {Key} privateKey                      the private key that is to be decrypted
- * @param  {String|Array<String>} passphrase     the user's passphrase(s) chosen during key generation
- * @returns {Promise<Object>}                    the locked key object in the form: { key:Key }
+ * Lock a private key with the given passphrase.
+ * This method does not change the original key.
+ * @param  {Key} privateKey                   the private key to encrypt
+ * @param  {String|Array<String>} passphrase  if multiple passphrases, they should be in the same order as the packets each should encrypt
+ * @returns {Promise<Key>}                    the locked key object
  * @async
  */
-export function encryptKey({ privateKey, passphrase }) {
-  return Promise.resolve().then(async function() {
-    const key = await privateKey.clone(true);
+export async function encryptKey({ privateKey, passphrase }) {
+  const key = await privateKey.clone();
+  key.getKeys().forEach(k => {
+    // shallow clone the key packets
+    k.keyPacket = Object.create(
+      Object.getPrototypeOf(k.keyPacket),
+      Object.getOwnPropertyDescriptors(k.keyPacket)
+    );
+    if (!k.keyPacket.isDecrypted()) return;
+    // deep clone the private params, which are cleared during encryption
+    const privateParams = {};
+    Object.keys(k.keyPacket.privateParams).forEach(name => {
+      privateParams[name] = new Uint8Array(k.keyPacket.privateParams[name]);
+    });
+    k.keyPacket.privateParams = privateParams;
+  });
+  try {
     await key.encrypt(passphrase);
     return key;
-  }).catch(onError.bind(null, 'Error encrypting private key'));
+  } catch (err) {
+    key.clearPrivateParams();
+    return onError('Error encrypting private key', err);
+  }
 }
 
 

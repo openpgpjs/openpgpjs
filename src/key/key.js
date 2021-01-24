@@ -166,16 +166,10 @@ class Key {
 
   /**
    * Clones the key object
-   * @param  {Boolean} deep Whether to clone each packet, in addition to the list of packets
-   * @returns {Promise<module:key.Key>} cloned key
+   * @returns {Promise<module:key.Key>} shallow clone of the key
    * @async
    */
-  async clone(deep = false) {
-    if (deep) {
-      const packetlist = new PacketList();
-      await packetlist.read(this.toPacketlist().write(), helper.allowedKeyPackets);
-      return new Key(packetlist);
-    }
+  async clone() {
     return new Key(this.toPacketlist());
   }
 

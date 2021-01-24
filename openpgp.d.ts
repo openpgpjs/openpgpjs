@@ -16,7 +16,7 @@ export function readKeys(data: Uint8Array): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
 export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserID[] }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
-export function encryptKey(options: { privateKey: Key; passphrase?: string | string[] }): Promise<Key>;
+export function encryptKey(options: { privateKey: Key; passphrase?: string | string[]; }): Promise<Key>;
 export function reformatKey(options: { privateKey: Key; userIds?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; }): Promise<KeyPair>;
 
 export class Key {
