@@ -2616,7 +2616,7 @@ function versionSpecificTests() {
       return openpgp.reformatKey({ privateKey: original.key, userIds: { name: 'test2', email: 'a@b.com' }, passphrase: '1234' }).then(function() {
         throw new Error('reformatKey should result in error when key not decrypted');
       }).catch(function(error) {
-        expect(error.message).to.equal('Error reformatting keypair: Key not decrypted');
+        expect(error.message).to.equal('Error reformatting keypair: Key is not decrypted');
       });
     });
   });
@@ -2925,6 +2925,26 @@ module.exports = () => describe('Key', function() {
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
+  it("isDecrypted() - should reflect whether all (sub)keys are encrypted", async function() {
+    const passphrase = '12345678';
+    const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519', passphrase });
+    expect(key.isDecrypted()).to.be.false;
+    await key.decrypt(passphrase, key.subKeys[0].getKeyId());
+    expect(key.isDecrypted()).to.be.true;
+  });
+
+  it("isDecrypted() - gnu-dummy primary key", async function() {
+    const key = await openpgp.readArmoredKey(gnuDummyKeySigningSubkey);
+    expect(key.isDecrypted()).to.be.true;
+    await key.encrypt('12345678');
+    expect(key.isDecrypted()).to.be.false;
+  });
+
+  it("isDecrypted() - all-gnu-dummy key", async function() {
+    const key = await openpgp.readArmoredKey(gnuDummyKey);
+    expect(key.isDecrypted()).to.be.false;
+  });
+
   it('makeDummy() - the converted key can be parsed', async function() {
     const { key } = await openpgp.generateKey({ userIds: { name: 'dummy', email: 'dummy@alice.com' } });
     key.primaryKey.makeDummy();
@@ -2950,7 +2970,7 @@ module.exports = () => describe('Key', function() {
     key.primaryKey.makeDummy();
     expect(key.primaryKey.isDummy()).to.be.true;
     await key.validate();
-    await expect(openpgp.reformatKey({ privateKey: key, userIds: { name: 'test', email: 'a@b.com' } })).to.be.rejectedWith(/Missing key parameters/);
+    await expect(openpgp.reformatKey({ privateKey: key, userIds: { name: 'test', email: 'a@b.com' } })).to.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
   });
 
   it('makeDummy() - subkeys of the converted key can still sign', async function() {
@@ -2960,6 +2980,25 @@ module.exports = () => describe('Key', function() {
     key.primaryKey.makeDummy();
     expect(key.primaryKey.isDummy()).to.be.true;
     await expect(openpgp.sign({ message: openpgp.Message.fromText('test'), privateKeys: [key] })).to.be.fulfilled;
+  });
+
+  it('makeDummy() - should work for encrypted keys', async function() {
+    const key = await openpgp.readArmoredKey(priv_key_rsa);
+    expect(key.primaryKey.isDummy()).to.be.false;
+    expect(key.primaryKey.makeDummy()).to.not.throw;
+    expect(key.primaryKey.isDummy()).to.be.true;
+    // dummy primary key should always be marked as not decrypted
+    await expect(key.decrypt('hello world')).to.be.fulfilled;
+    expect(key.primaryKey.isDummy()).to.be.true;
+    expect(key.primaryKey.isEncrypted === null);
+    expect(key.primaryKey.isDecrypted()).to.be.false;
+    await expect(key.encrypt('hello world')).to.be.fulfilled;
+    expect(key.primaryKey.isDummy()).to.be.true;
+    expect(key.primaryKey.isEncrypted === null);
+    expect(key.primaryKey.isDecrypted()).to.be.false;
+    // confirm that the converted key can be parsed
+    const parsedKeys = (await openpgp.readArmoredKey(key.armor())).keys;
+    expect(parsedKeys).to.be.undefined;
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {

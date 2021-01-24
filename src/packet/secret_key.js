@@ -228,7 +228,8 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
-   * Check whether secret-key data is available in decrypted form. Returns null for public keys.
+   * Check whether secret-key data is available in decrypted form.
+   * Returns false for gnu-dummy keys and null for public keys.
    * @returns {Boolean|null}
    */
   isDecrypted() {
@@ -244,20 +245,18 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
-   * Remove private key material, converting the key to a dummy one
-   * The resulting key cannot be used for signing/decrypting but can still verify signatures
+   * Remove private key material, converting the key to a dummy one.
+   * The resulting key cannot be used for signing/decrypting but can still verify signatures.
    */
   makeDummy() {
     if (this.isDummy()) {
       return;
     }
-    if (!this.isDecrypted()) {
-      // this is technically not needed, but makes the conversion simpler
-      throw new Error("Key is not decrypted");
+    if (this.isDecrypted()) {
+      this.clearPrivateParams();
     }
-    this.clearPrivateParams();
+    this.isEncrypted = null;
     this.keyMaterial = null;
-    this.isEncrypted = false;
     this.s2k = new type_s2k();
     this.s2k.algorithm = 0;
     this.s2k.c = 0;
@@ -325,8 +324,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    */
   async decrypt(passphrase) {
     if (this.isDummy()) {
-      this.isEncrypted = false;
-      return;
+      return false;
     }
 
     if (this.isDecrypted()) {
@@ -418,7 +416,6 @@ class SecretKeyPacket extends PublicKeyPacket {
    */
   clearPrivateParams() {
     if (this.isDummy()) {
-      this.isEncrypted = true;
       return;
     }
 
