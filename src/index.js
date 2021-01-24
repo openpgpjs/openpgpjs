@@ -9,7 +9,7 @@
  */
 export {
   encrypt, decrypt, sign, verify,
-  generateKey, reformatKey, revokeKey, decryptKey,
+  generateKey, reformatKey, revokeKey, decryptKey, encryptKey,
   generateSessionKey, encryptSessionKey, decryptSessionKeys
 } from './openpgp';
 
