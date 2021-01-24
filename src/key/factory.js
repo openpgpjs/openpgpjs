@@ -81,7 +81,7 @@ export async function reformat(options) {
     throw new Error('Cannot reformat a gnu-dummy primary key');
   }
 
-  const isDecrypted = options.privateKey.getKeys().every(key => key.isDecrypted());
+  const isDecrypted = options.privateKey.getKeys().every(({ keyPacket }) => keyPacket.isDecrypted());
   if (!isDecrypted) {
     throw new Error('Key is not decrypted');
   }
