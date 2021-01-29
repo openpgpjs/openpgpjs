@@ -149,6 +149,7 @@ module.exports = () => describe('BigInteger interface', function() {
     const n = new BigInteger(moduloBN.toString());
     const expected = baseBN.invm(moduloBN);
     expect(a.modInv(n).toString()).to.equal(expected.toString());
+    expect(() => a.mul(n).modInv(n)).to.throw('Inverse does not exist');
   });
 
   it('getBit is correct', async function() {
