@@ -28,7 +28,7 @@ export default class BigInteger {
    * BigInteger increment in place
    */
   iinc() {
-    this.value.iadd(one.value);
+    this.value.iadd(new BN(1));
     return this;
   }
 
@@ -44,7 +44,7 @@ export default class BigInteger {
    * BigInteger decrement in place
    */
   idec() {
-    this.value.isub(one.value);
+    this.value.isub(new BN(1));
     return this;
   }
 
@@ -151,8 +151,13 @@ export default class BigInteger {
    * Note: this and and n must be relatively prime
    * @param {BigInteger} n modulo
    * @return {BigInteger} x such that this*x = 1 mod n
+   * @throws {Error} if the inverse does not exist
    */
   modInv(n) {
+    // invm returns a wrong result if the inverse does not exist
+    if (!this.gcd(n).isOne()) {
+      throw new Error('Inverse does not exist');
+    }
     return new BigInteger(this.value.invm(n.value));
   }
 
@@ -251,7 +256,7 @@ export default class BigInteger {
   }
 
   isOne() {
-    return this.equal(one);
+    return this.value.eq(new BN(1));
   }
 
   isNegative() {
@@ -320,5 +325,3 @@ export default class BigInteger {
     return this.value.toArrayLike(Uint8Array, endian, length);
   }
 }
-
-const one = new BigInteger(1);
