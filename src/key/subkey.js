@@ -41,6 +41,22 @@ SubKey.prototype.toPacketlist = function() {
 };
 
 /**
+ * Returns true if this subkey is public
+ * @returns {Boolean}
+ */
+SubKey.prototype.isPublic = function() {
+  return this.keyPacket.tag === enums.packet.publicSubkey;
+};
+
+/**
+ * Returns true if this subkey is private
+ * @returns {Boolean}
+ */
+SubKey.prototype.isPrivate = function() {
+  return this.keyPacket.tag === enums.packet.secretSubkey;
+};
+
+/**
  * Checks if a binding signature of a subkey is revoked
  * @param  {module:packet.SecretKey|
  *          module:packet.PublicKey} primaryKey    The primary key packet
