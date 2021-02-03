@@ -62,6 +62,8 @@ class Key {
     this.directSignatures = [];
     this.users = [];
     this.subKeys = [];
+    this.selectedEncryptionKeyId = null;
+    this.selectedSigningKeyId = null;
     this.packetlist2structure(packetlist);
     if (!this.keyPacket) {
       throw new Error('Invalid key: need at least key packet');
@@ -278,6 +280,44 @@ class Key {
   }
 
   /**
+   * Returns the selected signing key id or null if not set
+   * @returns {module.type/keyid|null}
+   */
+  getSelectedSigningKeyId() {
+    return this.selectedSigningKeyId;
+  }
+
+  /**
+   * Sets the selected signing key id. Pass null to unselect it.
+   *  Selecting a signing key would affect high-level API calls to
+   *  openpgp as well as this.getSigningKey(). The latter would
+   *  return the selected signing key when the keyId parameter is null.
+   * @param {module.type/keyid|null} keyId
+   */
+  setSelectedSigningKeyId(keyId) {
+    this.selectedSigningKeyId = keyId;
+  }
+
+  /**
+   * Returns the selected encryption key id or null if not set.
+   * @returns {module.type/keyid|null}
+   */
+  getSelectedEncryptionKeyId() {
+    return this.selectedEncryptionKeyId;
+  }
+
+    /**
+   * Sets the selected encryption key id. Pass null to unselect it.
+   *  Selecting an encryption key would affect high-level API calls to
+   *  openpgp as well as this.getEncryptionKey(). The latter would
+   *  return the selected encryption key when the keyId parameter is null.
+   * @param {module.type/keyid|null} keyId
+   */
+  setSelectedEncryptionkeyId(keyId) {
+    this.selectedEncryptionKeyId = keyId;
+  }
+
+  /**
    * Returns last created key or key by given keyId that is available for signing and verification
    * @param  {module:type/keyid} keyId, optional
    * @param  {Date} date (optional) use the given date for verification instead of the current time
@@ -286,6 +326,9 @@ class Key {
    * @async
    */
   async getSigningKey(keyId = null, date = new Date(), userId = {}) {
+    if (! keyId) {
+      keyId = this.getSelectedSigningKeyId();
+    }
     await this.verifyPrimaryKey(date, userId);
     const primaryKey = this.keyPacket;
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
@@ -326,6 +369,9 @@ class Key {
    * @async
    */
   async getEncryptionKey(keyId, date = new Date(), userId = {}) {
+    if (! keyId) {
+      keyId = this.getSelectedEncryptionKeyId();
+    }
     await this.verifyPrimaryKey(date, userId);
     const primaryKey = this.keyPacket;
     // V4: by convention subkeys are preferred for encryption service
