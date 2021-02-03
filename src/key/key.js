@@ -288,13 +288,13 @@ class Key {
   }
 
   /**
-   * Sets the selected signing key id. Pass null to unselect it.
+   * Selects a signing key. Pass null to unselect it.
    *  Selecting a signing key would affect high-level API calls to
    *  openpgp as well as this.getSigningKey(). The latter would
    *  return the selected signing key when the keyId parameter is null.
    * @param {module.type/keyid|null} keyId
    */
-  setSelectedSigningKeyId(keyId) {
+  selectSigningKey(keyId) {
     this.selectedSigningKeyId = keyId;
   }
 
@@ -307,13 +307,13 @@ class Key {
   }
 
     /**
-   * Sets the selected encryption key id. Pass null to unselect it.
+   * Selects an encryption key. Pass null to unselect it.
    *  Selecting an encryption key would affect high-level API calls to
    *  openpgp as well as this.getEncryptionKey(). The latter would
    *  return the selected encryption key when the keyId parameter is null.
    * @param {module.type/keyid|null} keyId
    */
-  setSelectedEncryptionkeyId(keyId) {
+  selectEncryptionKey(keyId) {
     this.selectedEncryptionKeyId = keyId;
   }
 
