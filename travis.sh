@@ -22,10 +22,7 @@ elif [ $OPENPGPJSTEST = "unit" ]; then
 elif [ $OPENPGPJSTEST = "browserstack" ]; then
   echo "Running OpenPGP.js browser unit tests on Browserstack."
 
-  npm run build-test
-  echo -n "Using config: "
-  echo "{\"browsers\": [$BROWSER], \"test_framework\": \"mocha\", \"test_path\": [\"test/unittests.html?ci=true${LIGHTWEIGHT+&lightweight=true&grep=lightweight}\"], \"timeout\": 1800, \"exit_with_fail\": true, \"project\": \"openpgpjs/${TRAVIS_EVENT_TYPE:-push}${LIGHTWEIGHT:+/lightweight}\"}" > browserstack.json
-  cat browserstack.json
+  npm run build-test ${LIGHTWEIGHT+ -- --lightweight}
 
   result=0
   count=1
@@ -34,7 +31,7 @@ elif [ $OPENPGPJSTEST = "browserstack" ]; then
       echo -e "\nThe command failed. Retrying, $count of 3.\n" >&2
     }
 
-    browserstack-runner &
+    npm run browserstack &
     background_process_pid=$!
 
     # https://github.com/travis-ci/travis-ci/issues/4190
