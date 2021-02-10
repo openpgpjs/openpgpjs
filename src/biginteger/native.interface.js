@@ -175,9 +175,14 @@ export default class BigInteger {
    * Note: this and and n must be relatively prime
    * @param {BigInteger} n modulo
    * @return {BigInteger} x such that this*x = 1 mod n
+   * @throws {Error} if the inverse does not exist
    */
   modInv(n) {
-    return this._egcd(n).x.add(n).mod(n);
+    const { gcd, x } = this._egcd(n);
+    if (!gcd.isOne()) {
+      throw new Error('Inverse does not exist');
+    }
+    return x.add(n).mod(n);
   }
 
   /**
