@@ -76,6 +76,7 @@
     "karma": "^6.1.0",
     "karma-browserstack-launcher": "^1.6.0",
     "karma-mocha": "^2.0.1",
+    "karma-mocha-reporter": "^2.2.5",
     "mocha": "^5.0.0",
     "nyc": "^14.1.1",
     "pako": "github:openpgpjs/pako#f38f7368a5fa511e54b95add2f04444c3a9d803f",

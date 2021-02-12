@@ -12,7 +12,7 @@ module.exports = function(config) {
     frameworks: ['mocha'],
 
     // plugins
-    plugins: ['karma-mocha', 'karma-browserstack-launcher'],
+    plugins: ['karma-mocha', 'karma-mocha-reporter', 'karma-browserstack-launcher'],
 
     client: {
       mocha: {
@@ -57,7 +57,7 @@ module.exports = function(config) {
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress', 'BrowserStack'],
+    reporters: ['mocha', 'BrowserStack'],
 
     // web server host and port
     port: 9876,
