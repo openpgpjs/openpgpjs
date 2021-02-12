@@ -1,0 +1,40 @@
+name: Test on Browserstack
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  full:
+    name: Full Build
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+    - run: npm ci
+    - run: npm run build-test
+    - run: npm run browserstack
+
+  lightweight:
+    name: Lightweight Build
+
+    needs: full
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1
+    - run: npm ci
+    - run: npm run build-test --lightweight
+    - run: npm run browserstack
+      env:
+        LIGHTWEIGHT: true
+
+env:
+  BROWSERSTACK_USERNAME: danielhuigens2
+  BROWSERSTACK_KEY: aW2q1ms393QRorwBnfmW
