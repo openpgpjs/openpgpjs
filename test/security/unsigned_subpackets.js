@@ -49,7 +49,7 @@ Dc2vwS83Aja9iWrIEg==
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 async function getInvalidKey() {
-  return await readArmoredKey(INVALID_KEY);
+  return readArmoredKey(INVALID_KEY);
 }
 async function makeKeyValid() {
   /**

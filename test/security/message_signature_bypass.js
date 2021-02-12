@@ -68,7 +68,7 @@ fhGyl7nA7UCwgsqf7ZPBhRg=
 =nbjQ
 -----END PGP SIGNATURE-----`;
 async function getOtherPubKey() {
-  return await readArmoredKey(OTHERPUBKEY);
+  return readArmoredKey(OTHERPUBKEY);
 }
 
 /**

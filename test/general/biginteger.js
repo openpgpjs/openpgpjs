@@ -1,4 +1,3 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const random = require('../../src/crypto/random');
 const util = require('../../src/util');
 

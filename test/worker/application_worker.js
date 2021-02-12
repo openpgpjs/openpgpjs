@@ -18,7 +18,7 @@ function tests() {
     try {
       globalThis.eval('(async function() {})');
     } catch (e) {
-      console.error(e);
+      console.error(e); // eslint-disable-line no-console
       this.skip();
     }
     const worker = new Worker('./worker/worker_example.js');

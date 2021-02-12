@@ -9,21 +9,21 @@ module.exports = () => describe("ASCII armor", function() {
   function getArmor(headers, signatureHeaders) {
     return ['-----BEGIN PGP SIGNED MESSAGE-----']
       .concat(headers)
-      .concat(
-        ['',
+      .concat([
+        '',
         'sign this',
-        '-----BEGIN PGP SIGNATURE-----']
-      )
+        '-----BEGIN PGP SIGNATURE-----'
+      ])
       .concat(signatureHeaders || ['Version: GnuPG v2.0.22 (GNU/Linux)'])
-      .concat(
-        ['',
+      .concat([
+        '',
         'iJwEAQECAAYFAlMrPj0ACgkQ4IT3RGwgLJfYkQQAgHMQieazCVdfGAfzQM69Egm5',
         'HhcQszODD898wpoGCHgiNdNo1+5nujQAtXnkcxM+Vf7onfbTvUqut/siyO3fzqhK',
         'LQ9DiQUwJMBE8nOwVR7Mpc4kLNngMTNaHAjZaVaDpTCrklPY+TPHIZnu0B6Ur+6t',
         'skTzzVXIxMYw8ihbHfk=',
         '=e/eA',
-        '-----END PGP SIGNATURE-----']
-      ).join('\n');
+        '-----END PGP SIGNATURE-----'
+      ]).join('\n');
   }
 
   it('Parse cleartext signed message', async function () {
@@ -81,8 +81,8 @@ module.exports = () => describe("ASCII armor", function() {
   });
 
   it('Filter whitespace in blank line', async function () {
-    let msg =
-      ['-----BEGIN PGP SIGNED MESSAGE-----',
+    let msg = [
+      '-----BEGIN PGP SIGNED MESSAGE-----',
       'Hash: SHA1',
       ' \f\r\t\u00a0\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000',
       'sign this',
@@ -94,7 +94,8 @@ module.exports = () => describe("ASCII armor", function() {
       'LQ9DiQUwJMBE8nOwVR7Mpc4kLNngMTNaHAjZaVaDpTCrklPY+TPHIZnu0B6Ur+6t',
       'skTzzVXIxMYw8ihbHfk=',
       '=e/eA',
-      '-----END PGP SIGNATURE-----'].join('\n');
+      '-----END PGP SIGNATURE-----'
+    ].join('\n');
 
     msg = await openpgp.readArmoredCleartextMessage(msg);
     expect(msg).to.be.an.instanceof(openpgp.CleartextMessage);
@@ -127,8 +128,8 @@ module.exports = () => describe("ASCII armor", function() {
   });
 
   it('Exception if wrong armor header type', async function () {
-    let msg =
-      ['-----BEGIN PGP SIGNED MESSAGE\u2010\u2010\u2010\u2010\u2010\nHash:SHA1\n\nIs this properly-----',
+    let msg = [
+      '-----BEGIN PGP SIGNED MESSAGE\u2010\u2010\u2010\u2010\u2010\nHash:SHA1\n\nIs this properly-----',
       '',
       'sign this',
       '-----BEGIN PGP SIGNNATURE-----',
@@ -139,15 +140,16 @@ module.exports = () => describe("ASCII armor", function() {
       'LQ9DiQUwJMBE8nOwVR7Mpc4kLNngMTNaHAjZaVaDpTCrklPY+TPHIZnu0B6Ur+6t',
       'skTzzVXIxMYw8ihbHfk=',
       '=e/eA',
-      '-----END PGP SIGNNATURE-----'].join('\n');
+      '-----END PGP SIGNNATURE-----'
+    ].join('\n');
 
     msg = openpgp.readArmoredCleartextMessage(msg);
     await expect(msg).to.be.rejectedWith(Error, /Unknown ASCII armor type/);
   });
 
   it('Armor checksum validation - mismatch', async function () {
-    const privKey =
-      ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
+    const privKey = [
+      '-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: OpenPGP.js v0.3.0',
       'Comment: https://openpgpjs.org',
       '',
@@ -164,7 +166,8 @@ module.exports = () => describe("ASCII armor", function() {
       'ABMFAlLm1+4JEBD8MASZrpALAhsMAAC3IgD8DnLGbMnpLtrX72RCkPW1ffLq',
       '71vlXMJNXvoCeuejiRw=',
       '=wJN@',
-      '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
+      '-----END PGP PRIVATE KEY BLOCK-----'
+    ].join('\n');
 
     // try with default config
     await expect(openpgp.readArmoredKey(privKey)).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
@@ -289,8 +292,8 @@ module.exports = () => describe("ASCII armor", function() {
   });
 
   it('Accept header with trailing whitespace', async function () {
-    const privKey =
-      ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
+    const privKey = [
+      '-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: OpenPGP.js v0.3.0',
       'Comment: https://openpgpjs.org',
       '',
@@ -308,7 +311,8 @@ module.exports = () => describe("ASCII armor", function() {
       '71vlXMJNXvoCeuejiRw=',
       '=wJNM',
       '-----END PGP PRIVATE KEY BLOCK-----',
-      ''].join('\t \r\n');
+      ''
+    ].join('\t \r\n');
 
     const result = await openpgp.readArmoredKey(privKey);
     expect(result).to.be.an.instanceof(openpgp.Key);
@@ -321,7 +325,7 @@ module.exports = () => describe("ASCII armor", function() {
   });
 
   it('Do not add extraneous blank line when base64 ends on line break', async function () {
-    let pubKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+    const pubKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 
 xsFNBFuR4MABEACoJ9e8zvhj80mFWJzxDErNnD78taGh7hJTs/H1CIIAykjf
 NEvTWcnnDI2dsK7J+dBQq9R40G5YYDUvA2dMztqq5BuaUlJvdSiQtqMcirhF

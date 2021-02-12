@@ -24,12 +24,12 @@ module.exports = () => describe('Oid tests', function() {
       const oid = new OID();
       expect(oid.read(data)).to.equal(data.length);
       expect(oid.oid).to.exist;
-      expect(oid.oid).to.have.length(data.length-1);
+      expect(oid.oid).to.have.length(data.length - 1);
       expect(oid.toHex()).to.equal(util.uint8ArrayToHex(data.subarray(1)));
       const result = oid.write();
       expect(result).to.exist;
       expect(result).to.have.length(data.length);
-      expect(result[0]).to.equal(data.length-1);
+      expect(result[0]).to.equal(data.length - 1);
       expect(
         util.uint8ArrayToHex(result.subarray(1))
       ).to.equal(util.uint8ArrayToHex(data.subarray(1)));

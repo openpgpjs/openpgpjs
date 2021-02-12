@@ -174,7 +174,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const name = 'light';
     const randomData = input.createSomeMessage();
     const priv = await load_priv_key(name);
-    const signed = await openpgp.sign({ privateKeys: [priv], message: openpgp.CleartextMessage.fromText(randomData)});
+    const signed = await openpgp.sign({ privateKeys: [priv], message: openpgp.CleartextMessage.fromText(randomData) });
     const pub = await load_pub_key(name);
     const msg = await openpgp.readArmoredCleartextMessage(signed);
     const result = await openpgp.verify({ publicKeys: [pub], message: msg });

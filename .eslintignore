@@ -1,1 +1,2 @@
-src/compression
+dist
+test/lib/

@@ -4,6 +4,7 @@ const chai = require('chai');
 
 const { expect } = chai;
 
+/* eslint-disable no-invalid-this */
 module.exports = () => describe.skip('WKD unit tests', function() {
   this.timeout(60000);
 

@@ -1,3 +1,5 @@
+/* eslint-disable no-process-env */
+
 module.exports = function(config) {
   config.set({
 
@@ -36,13 +38,13 @@ module.exports = function(config) {
       {
         pattern: 'test/**/*',
         included: false
-      },
+      }
     ],
 
     proxies: {
       '/lib': '/base/test/lib',
       '/worker': '/base/test/worker',
-      '/dist': '/base/dist',
+      '/dist': '/base/dist'
     },
 
     // list of files to exclude
@@ -109,7 +111,7 @@ module.exports = function(config) {
         real_mobile: true,
         os: 'ios',
         os_version: '12'
-      },
+      }
     },
 
     captureTimeout: 6e5,
@@ -124,7 +126,7 @@ module.exports = function(config) {
       'bs_firefox_68',
       'bs_chrome_68',
       'bs_safari_11_1',
-      'bs_ios_12',
+      'bs_ios_12'
     ],
 
     // Continuous Integration mode

@@ -1,4 +1,3 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 
 const chai = require('chai');
@@ -42,7 +41,7 @@ module.exports = () => describe('Util unit tests', function() {
       expect(util.isArray(data)).to.be.true;
     });
     it('should return true for type Array', function() {
-      const data = Array();
+      const data = Array(); // eslint-disable-line no-array-constructor
       expect(util.isArray(data)).to.be.true;
     });
     it('should return true for inherited type of Array', function() {
@@ -144,8 +143,8 @@ module.exports = () => describe('Util unit tests', function() {
 
   describe("Misc.", function() {
     it('util.readNumber should not overflow until full range of uint32', function () {
-      const ints = [Math.pow(2, 20), Math.pow(2, 25), Math.pow(2, 30), Math.pow(2, 32) - 1];
-      for(let i = 0; i < ints.length; i++) {
+      const ints = [2 ** 20, 2 ** 25, 2 ** 30, 2 ** 32 - 1];
+      for (let i = 0; i < ints.length; i++) {
         expect(util.readNumber(util.writeNumber(ints[i], 4))).to.equal(ints[i]);
       }
     });
@@ -155,7 +154,7 @@ module.exports = () => describe('Util unit tests', function() {
     it('util.encodeZBase32 encodes correctly', function() {
       const encoded = util.encodeZBase32(util.strToUint8Array('test-wkd'));
       expect(encoded).to.equal('qt1zg7bpq7ise');
-    })
-  })
+    });
+  });
 
 });

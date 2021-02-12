@@ -1,5 +1,3 @@
-/* globals tryTests: true */
-
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 
@@ -11,7 +9,7 @@ const expect = chai.expect;
 module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', function () {
   if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
     before(function() {
-      this.skip();
+      this.skip(); // eslint-disable-line no-invalid-this
     });
   }
   const data = {
@@ -177,7 +175,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   it('Verify clear signed message', async function () {
     const pub = await load_pub_key('juliet');
     const msg = await openpgp.readArmoredCleartextMessage(data.juliet.message_signed);
-    return openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
+    return openpgp.verify({ publicKeys: [pub], message: msg }).then(function(result) {
       expect(result).to.exist;
       expect(result.data).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
@@ -186,10 +184,10 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   });
   it('Sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
-    const signed = await openpgp.sign({privateKeys: [romeoPrivate], message: openpgp.CleartextMessage.fromText(data.romeo.message)});
+    const signed = await openpgp.sign({ privateKeys: [romeoPrivate], message: openpgp.CleartextMessage.fromText(data.romeo.message) });
     const romeoPublic = await load_pub_key('romeo');
     const msg = await openpgp.readArmoredCleartextMessage(signed);
-    const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
+    const result = await openpgp.verify({ publicKeys: [romeoPublic], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
@@ -200,7 +198,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
     const juliet = await load_pub_key('juliet');
     const romeo = await load_priv_key('romeo');
     const msg = await openpgp.readArmoredMessage(data.juliet.message_encrypted);
-    const result = await openpgp.decrypt({privateKeys: romeo, publicKeys: [juliet], message: msg});
+    const result = await openpgp.decrypt({ privateKeys: romeo, publicKeys: [juliet], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.juliet.message);
@@ -210,12 +208,12 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = await load_pub_key('juliet');
-    const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: openpgp.Message.fromText(data.romeo.message)});
+    const encrypted = await openpgp.encrypt({ publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: openpgp.Message.fromText(data.romeo.message) });
 
     const message = await openpgp.readArmoredMessage(encrypted);
     const romeoPublic = await load_pub_key('romeo');
     const julietPrivate = await load_priv_key('juliet');
-    const result = await openpgp.decrypt({privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message});
+    const result = await openpgp.decrypt({ privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
@@ -224,7 +222,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   });
   it('Generate key', function () {
     const options = {
-      userIds: {name: "Hamlet (secp256k1)", email: "hamlet@example.net"},
+      userIds: { name: "Hamlet (secp256k1)", email: "hamlet@example.net" },
       curve: "secp256k1",
       passphrase: "ophelia"
     };

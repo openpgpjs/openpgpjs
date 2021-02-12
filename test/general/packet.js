@@ -1,3 +1,5 @@
+/* eslint-disable max-lines */
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const crypto = require('../../src/crypto');
 const util = require('../../src/util');
@@ -8,7 +10,6 @@ chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 const input = require('./testInputs.js');
-const { PacketList } = require('../../dist/node/openpgp.min');
 
 function stringify(array) {
   if (openpgp.stream.isStream(array)) {
@@ -154,7 +155,7 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Sym. encrypted AEAD protected packet (AEAD)', async function() {
-    let aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadProtectVal = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = true;
     const testText = input.createSomeMessage();
 
@@ -188,14 +189,14 @@ module.exports = () => describe("Packet", function() {
     cryptStub.onCall(0).callsFake(async function() {
       cryptCallsActive++;
       try {
-        return await crypt.apply(this, arguments);
+        return await crypt.apply(this, arguments); // eslint-disable-line no-invalid-this
       } finally {
         cryptCallsActive--;
       }
     });
     cryptStub.onCall(1).callsFake(function() {
       expect(cryptCallsActive).to.equal(1);
-      return crypt.apply(this, arguments);
+      return crypt.apply(this, arguments); // eslint-disable-line no-invalid-this
     });
     cryptStub.callThrough();
     return cryptStub;
@@ -207,8 +208,8 @@ module.exports = () => describe("Packet", function() {
     const encryptStub = cryptStub(webCrypto, 'encrypt');
     const decryptStub = cryptStub(webCrypto, 'decrypt');
 
-    let aeadProtectVal = openpgp.config.aeadProtect;
-    let aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
     openpgp.config.aeadProtect = true;
     openpgp.config.aeadChunkSizeByte = 0;
     const testText = input.createSomeMessage();
@@ -248,7 +249,7 @@ module.exports = () => describe("Packet", function() {
     const nodeCrypto = util.getNodeCrypto();
     if (!nodeCrypto) return;
 
-    let packetBytes = util.hexToUint8Array(`
+    const packetBytes = util.hexToUint8Array(`
       d4 4a 01 07 01 0e b7 32  37 9f 73 c4 92 8d e2 5f
       ac fe 65 17 ec 10 5d c1  1a 81 dc 0c b8 a2 f6 f3
       d9 00 16 38 4a 56 fc 82  1a e1 1a e8 db cb 49 86
@@ -256,8 +257,8 @@ module.exports = () => describe("Packet", function() {
       ab 01 3d e1 25 95 86 90  6e ab 24 76
     `.replace(/\s+/g, ''));
 
-    let aeadProtectVal = openpgp.config.aeadProtect;
-    let aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
     openpgp.config.aeadProtect = true;
     openpgp.config.aeadChunkSizeByte = 14;
 
@@ -276,7 +277,7 @@ module.exports = () => describe("Packet", function() {
 
     const msg2 = new openpgp.PacketList();
 
-    let randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    const randomBytesStub = stub(nodeCrypto, 'randomBytes');
     randomBytesStub.returns(iv);
 
     try {
@@ -485,7 +486,7 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Sym. encrypted session key reading/writing (AEAD)', async function() {
-    let aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadProtectVal = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = true;
 
     try {
@@ -529,25 +530,25 @@ module.exports = () => describe("Packet", function() {
     const nodeCrypto = util.getNodeCrypto();
     if (!nodeCrypto) return;
 
-    let aeadProtectVal = openpgp.config.aeadProtect;
-    let aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
-    let s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+    const s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
     openpgp.config.aeadProtect = true;
     openpgp.config.aeadChunkSizeByte = 14;
     openpgp.config.s2kIterationCountByte = 0x90;
 
-    let salt = util.hexToUint8Array(`cd5a9f70fbe0bc65`);
-    let sessionKey = util.hexToUint8Array(`86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d`.replace(/\s+/g, ''));
-    let sessionIV = util.hexToUint8Array(`bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35`.replace(/\s+/g, ''));
-    let dataIV = util.hexToUint8Array(`b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10`.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array(`cd5a9f70fbe0bc65`);
+    const sessionKey = util.hexToUint8Array(`86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d`.replace(/\s+/g, ''));
+    const sessionIV = util.hexToUint8Array(`bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35`.replace(/\s+/g, ''));
+    const dataIV = util.hexToUint8Array(`b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10`.replace(/\s+/g, ''));
 
-    let randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    const randomBytesStub = stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
     randomBytesStub.onCall(1).returns(sessionKey);
     randomBytesStub.onCall(2).returns(sessionIV);
     randomBytesStub.onCall(3).returns(dataIV);
 
-    let packetBytes = util.hexToUint8Array(`
+    const packetBytes = util.hexToUint8Array(`
       c3 3e 05 07 01 03 08 cd  5a 9f 70 fb e0 bc 65 90
       bc 66 9e 34 e5 00 dc ae  dc 5b 32 aa 2d ab 02 35
       9d ee 19 d0 7c 34 46 c4  31 2a 34 ae 19 67 a2 fb
@@ -607,25 +608,25 @@ module.exports = () => describe("Packet", function() {
     const nodeCrypto = util.getNodeCrypto();
     if (!nodeCrypto) return;
 
-    let aeadProtectVal = openpgp.config.aeadProtect;
-    let aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
-    let s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+    const s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
     openpgp.config.aeadProtect = true;
     openpgp.config.aeadChunkSizeByte = 14;
     openpgp.config.s2kIterationCountByte = 0x90;
 
-    let salt = util.hexToUint8Array(`9f0b7da3e5ea6477`);
-    let sessionKey = util.hexToUint8Array(`d1 f0 1b a3 0e 13 0a a7 d2 58 2c 16 e0 50 ae 44`.replace(/\s+/g, ''));
-    let sessionIV = util.hexToUint8Array(`99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c`.replace(/\s+/g, ''));
-    let dataIV = util.hexToUint8Array(`5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56`.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array(`9f0b7da3e5ea6477`);
+    const sessionKey = util.hexToUint8Array(`d1 f0 1b a3 0e 13 0a a7 d2 58 2c 16 e0 50 ae 44`.replace(/\s+/g, ''));
+    const sessionIV = util.hexToUint8Array(`99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c`.replace(/\s+/g, ''));
+    const dataIV = util.hexToUint8Array(`5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56`.replace(/\s+/g, ''));
 
-    let randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    const randomBytesStub = stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
     randomBytesStub.onCall(1).returns(sessionKey);
     randomBytesStub.onCall(2).returns(sessionIV);
     randomBytesStub.onCall(3).returns(dataIV);
 
-    let packetBytes = util.hexToUint8Array(`
+    const packetBytes = util.hexToUint8Array(`
       c3 3d 05 07 02 03 08 9f  0b 7d a3 e5 ea 64 77 90
       99 e3 26 e5 40 0a 90 93  6c ef b4 e8 eb a0 8c 67
       73 71 6d 1f 27 14 54 0a  38 fc ac 52 99 49 da c5

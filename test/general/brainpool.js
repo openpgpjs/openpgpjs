@@ -13,7 +13,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('Brainpool
   //only x25519 crypto is fully functional in lightbuild
   if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
     before(function() {
-      this.skip();
+      this.skip(); // eslint-disable-line no-invalid-this
     });
   }
   const data = {
@@ -38,7 +38,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('Brainpool
         'oml1QWkiI6BtbLD39Su6zQKR7u+Y',
         '=wB7z',
         '-----END PGP PUBLIC KEY BLOCK-----'
-        ].join('\n'),
+      ].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         '',
@@ -61,7 +61,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('Brainpool
         'v6i5Smbioml1QWkiI6BtbLD39Su6zQKR7u+Y',
         '=uGZP',
         '-----END PGP PRIVATE KEY BLOCK-----'
-        ].join('\n'),
+      ].join('\n'),
       message: 'test message\n',
       message_encrypted: [
         '-----BEGIN PGP MESSAGE-----',
@@ -108,7 +108,7 @@ tkYrARUF5n9K9+TEasU4z1k898YkS5cIzFyBSGMhGDzdj7t1K93EyOxXPc84
 EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
 =KDoL
 -----END PGP MESSAGE-----`,
-       message_with_leading_zero_in_hash_old_elliptic_implementation: 'test message\n199',
+      message_with_leading_zero_in_hash_old_elliptic_implementation: 'test message\n199'
     },
     juliet: {
       id: '37e16a986b8af99e',
@@ -128,7 +128,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
         'ziZiAP9mU1Kajp2PVmj3IPpd+Q+F/2U8H7nrRndo97c2vPqFtQ==',
         '=SwMu',
         '-----END PGP PUBLIC KEY BLOCK-----'
-        ].join('\n'),
+      ].join('\n'),
       priv: [
         '-----BEGIN PGP PRIVATE KEY BLOCK-----',
         '',
@@ -148,7 +148,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
         '60Z3aPe3Nrz6hbU=',
         '=3Dct',
         '-----END PGP PRIVATE KEY BLOCK-----'
-        ].join('\n'),
+      ].join('\n'),
       message: 'second test message\n',
       message_signed: [
         '-----BEGIN PGP SIGNED MESSAGE-----',
@@ -165,7 +165,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
         'upbAEX7k',
         '=obwy',
         '-----END PGP SIGNATURE-----'
-        ].join('\n')
+      ].join('\n')
 
     }
   };
@@ -201,7 +201,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   it('Verify clear signed message', async function () {
     const pub = await load_pub_key('juliet');
     const msg = await openpgp.readArmoredCleartextMessage(data.juliet.message_signed);
-    return openpgp.verify({publicKeys: [pub], message: msg}).then(function(result) {
+    return openpgp.verify({ publicKeys: [pub], message: msg }).then(function(result) {
       expect(result).to.exist;
       expect(result.data).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
@@ -210,10 +210,10 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   });
   it('Sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
-    const signed = await openpgp.sign({privateKeys: [romeoPrivate], message: openpgp.CleartextMessage.fromText(data.romeo.message)});
+    const signed = await openpgp.sign({ privateKeys: [romeoPrivate], message: openpgp.CleartextMessage.fromText(data.romeo.message) });
     const romeoPublic = await load_pub_key('romeo');
     const msg = await openpgp.readArmoredCleartextMessage(signed);
-    const result = await openpgp.verify({publicKeys: [romeoPublic], message: msg});
+    const result = await openpgp.verify({ publicKeys: [romeoPublic], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
@@ -235,7 +235,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     const juliet = await load_priv_key('juliet');
     const romeo = await load_pub_key('romeo');
     const msg = await openpgp.readArmoredMessage(data.romeo.message_encrypted_with_leading_zero_in_hash);
-    const result = await openpgp.decrypt({privateKeys: juliet, publicKeys: [romeo], message: msg});
+    const result = await openpgp.decrypt({ privateKeys: juliet, publicKeys: [romeo], message: msg });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message_with_leading_zero_in_hash);
@@ -248,8 +248,8 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     openpgp.config.useNative = false;
     const juliet = await load_priv_key('juliet');
     const romeo = await load_pub_key('romeo');
-    const msg = await openpgp.readArmoredMessage(data.romeo. message_encrypted_with_leading_zero_in_hash_signed_by_elliptic_with_old_implementation);
-    const result = await openpgp.decrypt({privateKeys: juliet, publicKeys: [romeo], message: msg});
+    const msg = await openpgp.readArmoredMessage(data.romeo.message_encrypted_with_leading_zero_in_hash_signed_by_elliptic_with_old_implementation);
+    const result = await openpgp.decrypt({ privateKeys: juliet, publicKeys: [romeo], message: msg });
     openpgp.config.useNative = useNative;
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message_with_leading_zero_in_hash_old_elliptic_implementation);
@@ -260,12 +260,12 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = await load_pub_key('juliet');
-    const encrypted = await openpgp.encrypt({publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: openpgp.Message.fromText(data.romeo.message)});
+    const encrypted = await openpgp.encrypt({ publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: openpgp.Message.fromText(data.romeo.message) });
 
     const message = await openpgp.readArmoredMessage(encrypted);
     const romeoPublic = await load_pub_key('romeo');
     const julietPrivate = await load_priv_key('juliet');
-    const result = await openpgp.decrypt({privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message});
+    const result = await openpgp.decrypt({ privateKeys: julietPrivate, publicKeys: [romeoPublic], message: message });
 
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);

@@ -44,7 +44,7 @@
     "browsertest": "npm start -- -o test/unittests.html",
     "browserstack": "karma start test/karma.conf.js",
     "coverage": "nyc npm test",
-    "lint": "eslint 'src/**/*.js' 'test/crypto/**/*.js'",
+    "lint": "eslint .",
     "docs": "jsdoc --configure .jsdocrc.js --destination docs --recurse README.md src",
     "preversion": "rm -rf dist docs node_modules && npm install && npm test",
     "version": "npm run docs && git add -A docs",
