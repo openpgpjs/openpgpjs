@@ -1,3 +1,5 @@
+/* globals openpgp: true */
+
 (typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
 
 (typeof window !== 'undefined' ? window : global).resolves = function(val) {
@@ -34,7 +36,7 @@ describe('Unit Tests', function () {
       if (key && key !== 'grep') {
         openpgp.config[key] = decodeURIComponent(value);
         try {
-          openpgp.config[key] = window.eval(openpgp.config[key]);
+          openpgp.config[key] = window.eval(openpgp.config[key]); // eslint-disable-line no-eval
         } catch (e) {}
       }
     });

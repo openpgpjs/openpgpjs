@@ -1,1 +1,3 @@
-src/compression
+dist
+test/lib/
+test/typescript/definitions.js

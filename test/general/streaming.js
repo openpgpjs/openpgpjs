@@ -1,3 +1,6 @@
+/* eslint-disable max-lines */
+/* globals tryTests: true */
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const random = require('../../src/crypto/random');
 const util = require('../../src/util');
@@ -11,11 +14,11 @@ const { expect } = chai;
 
 const { stream } = openpgp;
 
-const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })();
+const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
 const ReadableStream = useNativeStream ? global.ReadableStream : openpgp.stream.ReadableStream;
 
-const pub_key =
-  ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
+const pub_key = [
+  '-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
   '',
   'mI0EUmEvTgEEANyWtQQMOybQ9JltDqmaX0WnNPJeLILIM36sw6zL0nfTQ5zXSS3+',
@@ -37,10 +40,11 @@ const pub_key =
   'AtNTq6ihLMD5v1d82ZC7tNatdlDMGWnIdvEMCv2GZcuIqDQ9rXWs49e7tq1NncLY',
   'hz3tYjKhoFTKEIq3y3Pp',
   '=h/aX',
-  '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
+  '-----END PGP PUBLIC KEY BLOCK-----'
+].join('\n');
 
-const priv_key =
-  ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
+const priv_key = [
+  '-----BEGIN PGP PRIVATE KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
   '',
   'lQH+BFJhL04BBADclrUEDDsm0PSZbQ6pml9FpzTyXiyCyDN+rMOsy9J300Oc10kt',
@@ -77,7 +81,8 @@ const priv_key =
   'SXuqKcWqoEuO7OBSEFThCXBfUYMC01OrqKEswPm/V3zZkLu01q12UMwZach28QwK',
   '/YZly4ioND2tdazj17u2rU2dwtiHPe1iMqGgVMoQirfLc+k=',
   '=lw5e',
-  '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
+  '-----END PGP PRIVATE KEY BLOCK-----'
+].join('\n');
 
 const passphrase = 'hello world';
 
@@ -99,31 +104,31 @@ const brainpoolPub = [
   'oml1QWkiI6BtbLD39Su6zQKR7u+Y',
   '=wB7z',
   '-----END PGP PUBLIC KEY BLOCK-----'
-  ].join('\n');
+].join('\n');
 
 const brainpoolPriv = [
-    '-----BEGIN PGP PRIVATE KEY BLOCK-----',
-    '',
-    'lNYEWq8ruRMJKyQDAwIIAQELAwMEhi/66JLo1vMhpytb1bYvBhd/aKHde2Zwke7r',
-    'zWFTYBZQl/DUrpMrVAhkQhk5G3kqFWf98O/DpvVmY6EDr3IjmODWowNvGfC4Avc9',
-    'rYRgV8GbMBUVLIS+ytS1YNpAKW4v/gcDAtyjmSfDquSq5ffphtkwJ56Zz5jc+jSm',
-    'yZaPgmnPOwcgYhWy1g7BcBKYFPNKZlajnV4Rut2VUWkELwWrRmchX4ENJoAKZob0',
-    'l/zjgOPug3FtEGirOPmvi7nOkjDEFNJwtBlidW5ueSA8YnVubnlAYnVubnkuYnVu',
-    'bnk+iLAEExMKADgWIQSLliWLcmzBLxv2/X36PWTJvPM4vAUCWq8ruQIbAwULCQgH',
-    'AwUVCgkICwUWAgMBAAIeAQIXgAAKCRD6PWTJvPM4vIcVAYCIO41QylZkb9W4FP+k',
-    'd3bzb73xxwojWpCiw1bWV9Xe/dKA23DtCYhlmhF/Twjh9lkBfihHXs/negGMnqbA',
-    '8TQFU1IvBflDcA7yj677lgLkze/yd5hg/ZVx7M8XyUzcEm9xi5zaBFqvK7kSCSsk',
-    'AwMCCAEBCwMDBCkGskA01sBvG/B1bl0EN+yxF6xPn74WQoAMm7K4n1PlZ1u8RWg+',
-    'BJVGKna/88ZGcT5BZSUvRrYWgqb4/SPAPea5C1p6UYd+C0C0dVf0FaGv5z0gCtc/',
-    '+kwF3sLGLZh3rAMBCQn+BwMC6RvzFHWyKqPlVqrm6+j797Y9vHdZW1zixtmEK0Wg',
-    'lvQRpZF8AbpSzk/XolsoeQyic1e18C6ubFZFw7cI7ekINiRu/OXOvBnTbc5TdbDi',
-    'kKTuOkL+lEwWrUTEwdshbJ+ImAQYEwoAIBYhBIuWJYtybMEvG/b9ffo9ZMm88zi8',
-    'BQJaryu5AhsMAAoJEPo9ZMm88zi8w1QBfR4k1d5ElME3ef7viE+Mud4qGv1ra56p',
-    'Ka86hS9+l262twTxe1hk08/FySeJW08P3wF/WrhCrE9UDD6FQiZk1lqekhd9bf84',
-    'v6i5Smbioml1QWkiI6BtbLD39Su6zQKR7u+Y',
-    '=uGZP',
-    '-----END PGP PRIVATE KEY BLOCK-----'
-    ].join('\n');
+  '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+  '',
+  'lNYEWq8ruRMJKyQDAwIIAQELAwMEhi/66JLo1vMhpytb1bYvBhd/aKHde2Zwke7r',
+  'zWFTYBZQl/DUrpMrVAhkQhk5G3kqFWf98O/DpvVmY6EDr3IjmODWowNvGfC4Avc9',
+  'rYRgV8GbMBUVLIS+ytS1YNpAKW4v/gcDAtyjmSfDquSq5ffphtkwJ56Zz5jc+jSm',
+  'yZaPgmnPOwcgYhWy1g7BcBKYFPNKZlajnV4Rut2VUWkELwWrRmchX4ENJoAKZob0',
+  'l/zjgOPug3FtEGirOPmvi7nOkjDEFNJwtBlidW5ueSA8YnVubnlAYnVubnkuYnVu',
+  'bnk+iLAEExMKADgWIQSLliWLcmzBLxv2/X36PWTJvPM4vAUCWq8ruQIbAwULCQgH',
+  'AwUVCgkICwUWAgMBAAIeAQIXgAAKCRD6PWTJvPM4vIcVAYCIO41QylZkb9W4FP+k',
+  'd3bzb73xxwojWpCiw1bWV9Xe/dKA23DtCYhlmhF/Twjh9lkBfihHXs/negGMnqbA',
+  '8TQFU1IvBflDcA7yj677lgLkze/yd5hg/ZVx7M8XyUzcEm9xi5zaBFqvK7kSCSsk',
+  'AwMCCAEBCwMDBCkGskA01sBvG/B1bl0EN+yxF6xPn74WQoAMm7K4n1PlZ1u8RWg+',
+  'BJVGKna/88ZGcT5BZSUvRrYWgqb4/SPAPea5C1p6UYd+C0C0dVf0FaGv5z0gCtc/',
+  '+kwF3sLGLZh3rAMBCQn+BwMC6RvzFHWyKqPlVqrm6+j797Y9vHdZW1zixtmEK0Wg',
+  'lvQRpZF8AbpSzk/XolsoeQyic1e18C6ubFZFw7cI7ekINiRu/OXOvBnTbc5TdbDi',
+  'kKTuOkL+lEwWrUTEwdshbJ+ImAQYEwoAIBYhBIuWJYtybMEvG/b9ffo9ZMm88zi8',
+  'BQJaryu5AhsMAAoJEPo9ZMm88zi8w1QBfR4k1d5ElME3ef7viE+Mud4qGv1ra56p',
+  'Ka86hS9+l262twTxe1hk08/FySeJW08P3wF/WrhCrE9UDD6FQiZk1lqekhd9bf84',
+  'v6i5Smbioml1QWkiI6BtbLD39Su6zQKR7u+Y',
+  '=uGZP',
+  '-----END PGP PRIVATE KEY BLOCK-----'
+].join('\n');
 
 const brainpoolPass = '321';
 
@@ -165,7 +170,14 @@ const xPriv = [
 const xPass = 'sun';
 
 
-let privKey, pubKey, plaintext, data, i, canceled, expectedType, dataArrived;
+let privKey;
+let pubKey;
+let plaintext;
+let data;
+let i;
+let canceled;
+let expectedType;
+let dataArrived;
 
 function tests() {
   it('Encrypt small message', async function() {
@@ -179,7 +191,7 @@ function tests() {
     });
     const encrypted = await openpgp.encrypt({
       message: openpgp.Message.fromBinary(data),
-      passwords: ['test'],
+      passwords: ['test']
     });
     const msgAsciiArmored = await openpgp.stream.readToEnd(encrypted);
     const message = await openpgp.readArmoredMessage(msgAsciiArmored);
@@ -193,7 +205,7 @@ function tests() {
   it('Encrypt larger message', async function() {
     const encrypted = await openpgp.encrypt({
       message: openpgp.Message.fromBinary(data),
-      passwords: ['test'],
+      passwords: ['test']
     });
     const reader = openpgp.stream.getReader(encrypted);
     expect(await reader.peekBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\n/);
@@ -212,7 +224,7 @@ function tests() {
   it('Input stream should be canceled when canceling encrypted stream', async function() {
     const encrypted = await openpgp.encrypt({
       message: openpgp.Message.fromBinary(data),
-      passwords: ['test'],
+      passwords: ['test']
     });
     const reader = openpgp.stream.getReader(encrypted);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\n/);
@@ -236,7 +248,7 @@ function tests() {
   });
 
   it('Encrypt and decrypt larger message roundtrip', async function() {
-    let aeadProtectValue = openpgp.config.aeadProtect;
+    const aeadProtectValue = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = false;
     const encrypted = await openpgp.encrypt({
       message: openpgp.Message.fromBinary(data),
@@ -261,8 +273,8 @@ function tests() {
   });
 
   it('Encrypt and decrypt larger message roundtrip (allowUnauthenticatedStream=true)', async function() {
-    let aeadProtectValue = openpgp.config.aeadProtect;
-    let allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
+    const aeadProtectValue = openpgp.config.aeadProtect;
+    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.aeadProtect = false;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
@@ -293,7 +305,7 @@ function tests() {
   });
 
   it('Encrypt and decrypt larger message roundtrip using public keys (allowUnauthenticatedStream=true)', async function() {
-    let allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
+    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
       const encrypted = await openpgp.encrypt({
@@ -322,7 +334,7 @@ function tests() {
   });
 
   it('Encrypt and decrypt larger message roundtrip using curve x25519 (allowUnauthenticatedStream=true)', async function() {
-    let allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
+    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     const priv = await openpgp.readArmoredKey(xPriv);
     const pub = await openpgp.readArmoredKey(xPub);
@@ -354,7 +366,7 @@ function tests() {
   });
 
   it('Encrypt and decrypt larger message roundtrip using curve brainpool (allowUnauthenticatedStream=true)', async function() {
-    let allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
+    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     const priv = await openpgp.readArmoredKey(brainpoolPriv);
     const pub = await openpgp.readArmoredKey(brainpoolPub);
@@ -386,9 +398,9 @@ function tests() {
   });
 
   it('Detect MDC modifications (allowUnauthenticatedStream=true)', async function() {
-    let aeadProtectValue = openpgp.config.aeadProtect;
+    const aeadProtectValue = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = false;
-    let allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
+    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
       const encrypted = await openpgp.encrypt({
@@ -423,7 +435,7 @@ function tests() {
   });
 
   it('Detect armor checksum error (allowUnauthenticatedStream=true)', async function() {
-    let allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
+    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
       const encrypted = await openpgp.encrypt({
@@ -458,7 +470,7 @@ function tests() {
   });
 
   it('Detect armor checksum error when not passing public keys (allowUnauthenticatedStream=true)', async function() {
-    let allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
+    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
       const encrypted = await openpgp.encrypt({
@@ -802,13 +814,13 @@ function tests() {
     it('Encrypt and decrypt larger text message roundtrip (AEAD)', async function() {
       openpgp.config.aeadChunkSizeByte = 0;
 
-      let plaintext = [];
+      const plaintext = [];
       let i = 0;
       const data = new ReadableStream({
         async pull(controller) {
           await new Promise(resolve => setTimeout(resolve, 10));
           if (i++ < 10) {
-            let randomData = input.createSomeMessage();
+            const randomData = input.createSomeMessage();
             controller.enqueue(randomData);
             plaintext.push(randomData);
           } else {
@@ -875,7 +887,7 @@ function tests() {
     it('Input stream should be canceled when canceling decrypted stream (AEAD)', async function() {
       const encrypted = await openpgp.encrypt({
         message: openpgp.Message.fromBinary(data),
-        passwords: ['test'],
+        passwords: ['test']
       });
 
       const message = await openpgp.readArmoredMessage(encrypted);
@@ -905,9 +917,9 @@ module.exports = () => describe('Streaming', function() {
   });
 
   beforeEach(function() {
-    let test = ++currentTest;
+    const test = ++currentTest;
 
-    let dataArrivedPromise = new Promise(resolve => {
+    const dataArrivedPromise = new Promise(resolve => {
       dataArrived = resolve;
     });
     plaintext = [];
@@ -918,7 +930,7 @@ module.exports = () => describe('Streaming', function() {
         await new Promise(setTimeout);
         if (test === currentTest && i++ < 100) {
           if (i === 4) await dataArrivedPromise;
-          let randomBytes = await random.getRandomBytes(1024);
+          const randomBytes = await random.getRandomBytes(1024);
           controller.enqueue(randomBytes);
           plaintext.push(randomBytes);
         } else {
@@ -951,7 +963,7 @@ module.exports = () => describe('Streaming', function() {
 
     it('Node: Encrypt and decrypt text message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.
-      const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js'), 'utf8');
+      const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js'), 'utf8'); // eslint-disable-line no-sync
       const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'), { encoding: 'utf8' });
       const encrypted = await openpgp.encrypt({
         message: openpgp.Message.fromText(data),
@@ -970,7 +982,7 @@ module.exports = () => describe('Streaming', function() {
 
     it('Node: Encrypt and decrypt binary message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.
-      const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js'));
+      const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js')); // eslint-disable-line no-sync
       const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'));
       const encrypted = await openpgp.encrypt({
         message: openpgp.Message.fromBinary(data),

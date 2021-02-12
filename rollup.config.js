@@ -1,3 +1,5 @@
+/* eslint-disable no-process-env */
+
 import { builtinModules } from 'module';
 
 import resolve from '@rollup/plugin-node-resolve';
@@ -65,7 +67,7 @@ export default Object.assign([
       resolve(),
       commonjs(),
       replace({
-        'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
+        'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`
       })
     ]
   },
@@ -93,7 +95,7 @@ export default Object.assign([
   {
     input: 'test/unittests.js',
     output: [
-      { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true },
+      { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true }
     ],
     inlineDynamicImports: true,
     external: ['../..', '../../..'],

@@ -1,4 +1,3 @@
-/* eslint-disable callback-return */
 /**
  * @requires web-stream-tools
  * @requires packet/all_packets

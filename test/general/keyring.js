@@ -8,8 +8,8 @@ const keyring = new openpgp.Keyring();
 
 module.exports = () => describe("Keyring", async function() {
   const user = 'whiteout.test@t-online.de';
-  const passphrase = 'asdf';
-  const keySize = 512;
+  // const passphrase = 'asdf';
+  // const keySize = 512;
   const keyId = 'f6f60e9b42cdff4c';
   const keyFingerP = '5856cef789c3a307e8a1b976f6f60e9b42cdff4c';
   const pubkey = '-----BEGIN PGP PUBLIC KEY BLOCK-----\n' +

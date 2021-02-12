@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 /* globals tryTests: true */
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
@@ -94,7 +95,7 @@ nGHIp2NmbJZnYgl8Ps23qF+LKTa1eE+AmMQYzUHSGuka2lp6OglwWzg/dEw=
 =/vbH
 -----END PGP PUBLIC KEY BLOCK-----`;
 
-const priv_key_arm4 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+/* const priv_key_arm4 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 Version: GnuPG 2.1.15 (GNU/Linux)
 
 lQIGBFqaDSwBBADKDvHX5y77ws3tYY1nK/LdXzHZ3RUHNXwDO3ZurG6q3ZWgM/g2
@@ -128,7 +129,7 @@ uUrp9Qp76CnKqUsUjcVxq7DJBi/lewyGGYSVAFt6/0Xyg/8YTEa/c4Dri/HMOtrf
 bgjp/doIVaZLOXZYfqRcpy3z0M6BierOPB3D+fdaTfd7gIrQnGHIp2NmbJZnYgl8
 Ps23qF+LKTa1eE+AmMQYzUHSGuka2lp6OglwWzg/dEw=
 =mr3M
------END PGP PRIVATE KEY BLOCK-----`;
+-----END PGP PRIVATE KEY BLOCK-----`; */
 
 const revocation_certificate_arm4 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG 2.1.15 (GNU/Linux)
@@ -1407,7 +1408,7 @@ cKFQz1DDfFCfVpSIJRGozQ==
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
-const revoked_primary_user = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+/* const revoked_primary_user = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 
 mQENBE2V9vABCADR6780VEDx0P/Hk+qvGeDkGY/CDKkFIquksfVnWUatmN4mVfcS
 yqzmyZ08kAcXQVlU1i+/EeFSQ6vXEP/ZjH9en4YjOGrvmSIrNl4j4vhlJG3Mbao0
@@ -1688,7 +1689,7 @@ dh1PTAyfau1IRO3V/ivRaYs32jvMno6zP575CKLJOIyLREm8dbQRRd7h1+ZBxtQf
 Jn9lY1FGcIqjyOYanmsOEsSsKZS/exyNIjwi0WRPze+SASRzE/8=
 =qfwW
 -----END PGP PUBLIC KEY BLOCK-----
-`;
+`; */
 
 const key_created_2030 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 

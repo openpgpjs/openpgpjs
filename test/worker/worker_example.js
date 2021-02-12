@@ -1,3 +1,5 @@
+/* globals openpgp: true */
+
 importScripts('../../dist/openpgp.js');
 
 const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -71,7 +73,7 @@ onmessage = async function({ data: { action, message }, ports: [port] }) {
     }
     port.postMessage({ result });
   } catch (e) {
-    console.error(e);
+    console.error(e); // eslint-disable-line no-console
     port.postMessage({ error: e.message });
   }
 };

@@ -1,11 +1,9 @@
-/* eslint-disable import/newline-after-import, import/first */
-
 /**
  * Export high level API functions.
  * Usage:
  *
- *   import { encrypt } from 'openpgp'
- *   encrypt({ message, publicKeys })
+ *   import { encrypt } from 'openpgp';
+ *   encrypt({ message, publicKeys });
  */
 export {
   encrypt, decrypt, sign, verify,
