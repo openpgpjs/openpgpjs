@@ -75,7 +75,9 @@ module.exports = function(config) {
     browserStack: {
       username: process.env.BROWSERSTACK_USERNAME,
       accessKey: process.env.BROWSERSTACK_KEY,
-      project: `openpgpjs/${process.env.TRAVIS_EVENT_TYPE || 'push'}${process.env.LIGHTWEIGHT ? '/lightweight' : ''}`
+      build: process.env.GITHUB_SHA,
+      name: process.env.GITHUB_WORKFLOW,
+      project: `openpgpjs/${process.env.GITHUB_EVENT_NAME || 'push'}${process.env.LIGHTWEIGHT ? '/lightweight' : ''}`
     },
 
     // define browsers
