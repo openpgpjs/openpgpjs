@@ -96,14 +96,16 @@ export default Object.assign([
       { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true },
     ],
     inlineDynamicImports: true,
+    external: ['../..', '../../..'],
     plugins: [
       resolve({
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies).concat(['../..', '../../..'])
+        ignore: builtinModules.concat(nodeDependencies)
       }),
       replace({
+        "import openpgpjs from '../../..';": `import * as openpgpjs from '/dist/${process.env.npm_config_lightweight ? 'lightweight/' : ''}openpgp.mjs'; window.openpgp = openpgpjs;`,
         'require(': 'void(',
         delimiters: ['', '']
       })
