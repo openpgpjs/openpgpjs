@@ -240,24 +240,26 @@ export async function encryptKey({ privateKey, passphrase }) {
 /**
  * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
  *   must be specified. If private keys are specified, those will be used to sign the message.
- * @param  {Message} message                          message to be encrypted as created by openpgp.Message.fromText or openpgp.Message.fromBinary
- * @param  {Key|Array<Key>} publicKeys                (optional) array of keys or single key, used to encrypt the message
- * @param  {Key|Array<Key>} privateKeys               (optional) private keys for signing. If omitted message will not be signed
- * @param  {String|Array<String>} passwords           (optional) array of passwords or a single password to encrypt the message
- * @param  {Object} sessionKey                        (optional) session key in the form: { data:Uint8Array, algorithm:String }
- * @param  {module:enums.compression} compression     (optional) which compression algorithm to compress the message with, defaults to what is specified in config
- * @param  {Boolean} armor                            (optional) whether the return values should be ascii armored (true, the default) or binary (false)
- * @param  {'web'|'ponyfill'|'node'|false} streaming  (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
- * @param  {Signature} signature                      (optional) a detached signature to add to the encrypted message
- * @param  {Boolean} wildcard                         (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date                                (optional) override the creation date of the message signature
- * @param  {Array<Object>} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @param  {Array<Object>} toUserIds                  (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+ * @param  {Message} message                            message to be encrypted as created by openpgp.Message.fromText or openpgp.Message.fromBinary
+ * @param  {Key|Array<Key>} publicKeys                  (optional) array of keys or single key, used to encrypt the message
+ * @param  {Key|Array<Key>} privateKeys                 (optional) private keys for signing. If omitted message will not be signed
+ * @param  {String|Array<String>} passwords             (optional) array of passwords or a single password to encrypt the message
+ * @param  {Object} sessionKey                          (optional) session key in the form: { data:Uint8Array, algorithm:String }
+ * @param  {module:enums.compression} compression       (optional) which compression algorithm to compress the message with, defaults to what is specified in config
+ * @param  {Boolean} armor                              (optional) whether the return values should be ascii armored (true, the default) or binary (false)
+ * @param  {'web'|'ponyfill'|'node'|false} streaming    (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
+ * @param  {Signature} signature                        (optional) a detached signature to add to the encrypted message
+ * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Date} date                                  (optional) override the creation date of the message signature
+ * @param  {Array<Object>} fromUserIds                  (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Array<Object>} toUserIds                    (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+ * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
+ * @param  {Array<module:type/keyid>} signingKeyIds     (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} (String if `armor` was true, the default; Uint8Array if `armor` was false)
  * @async
  * @static
  */
-export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [] }) {
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [], encryptionKeyIds = [], signingKeyIds = []}) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIds = toArray(fromUserIds); toUserIds = toArray(toUserIds);
   if (detached) {
     throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");
@@ -268,10 +270,10 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
       privateKeys = [];
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
-      message = await message.sign(privateKeys, signature, date, fromUserIds, message.fromStream);
+      message = await message.sign(privateKeys, signature, date, fromUserIds, message.fromStream, signingKeyIds);
     }
     message = message.compress(compression);
-    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserIds, streaming);
+    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserIds, streaming, encryptionKeyIds);
     const data = armor ? message.armor() : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
   }).catch(onError.bind(null, 'Error encrypting message'));
@@ -342,11 +344,12 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param  {Boolean} detached                         (optional) if the return value should contain a detached signature
  * @param  {Date} date                                (optional) override the creation date of the signature
  * @param  {Array<Object>} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Array<module:type/keyid>} signingKeyIds   (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} (String if `armor` was true, the default; Uint8Array if `armor` was false)
  * @async
  * @static
  */
-export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [] }) {
+export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [], signingKeyIds = [] }) {
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
   if (message instanceof CleartextMessage && detached) throw new Error("Can't sign detached cleartext message");
@@ -355,9 +358,9 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
   return Promise.resolve().then(async function() {
     let signature;
     if (detached) {
-      signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, message.fromStream);
+      signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, message.fromStream, signingKeyIds);
     } else {
-      signature = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream);
+      signature = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream, signingKeyIds);
     }
     signature = armor ? signature.armor() : signature.write();
     if (detached) {
