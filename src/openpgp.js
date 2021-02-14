@@ -259,7 +259,7 @@ export async function encryptKey({ privateKey, passphrase }) {
  * @async
  * @static
  */
-export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [], encryptionKeyIds = [], signingKeyIds = []}) {
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [], encryptionKeyIds = [], signingKeyIds = [] }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIds = toArray(fromUserIds); toUserIds = toArray(toUserIds);
   if (detached) {
     throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");

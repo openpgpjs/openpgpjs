@@ -2708,20 +2708,21 @@ amnR6g==
       const encryptionKeyIds = [
         keyIdType.fromId("87EAE0977B2185EA"),
         keyIdType.fromId("F94F9B34AF93FA14"),
-        keyIdType.fromId("08F7D4C7C59545C0"),
+        keyIdType.fromId("08F7D4C7C59545C0")
       ];
       const signingKeyIds = [
         keyIdType.fromId("663277AF60400638"),
         keyIdType.fromId("BBE14491E6EE6366"),
-        keyIdType.fromId("3E0F20F1A71D6DFD"),
+        keyIdType.fromId("3E0F20F1A71D6DFD")
       ];
-      const getPrimaryKey = async () => await openpgp.readArmoredKey(
+      const getPrimaryKey = async () => openpgp.readArmoredKey(
         multipleEncryptionAndSigningSubkeys
       );
 
       it('Encrypt message with a specific encryption key id', async function () {
         const primaryKey = await getPrimaryKey();
-        let m, p;
+        let m;
+        let p;
         for (let i = 0; i < encryptionKeyIds.length; i++) {
           m = await openpgp.readArmoredMessage(await openpgp.encrypt({
             message: openpgp.Message.fromText("Hello World\n"),
@@ -2732,11 +2733,12 @@ amnR6g==
           expect(p.length).equals(1);
           expect(p[0].publicKeyId.equals(encryptionKeyIds[i])).to.be.true;
         }
-      })
+      });
 
       it('Sign message with a specific signing key id', async function () {
         const primaryKey = await getPrimaryKey();
-        let s, p;
+        let s;
+        let p;
         for (let i = 0; i < signingKeyIds.length; i++) {
           s = await openpgp.readArmoredSignature(await openpgp.sign({
             message: openpgp.Message.fromText("Hello World\n"),
@@ -2748,14 +2750,38 @@ amnR6g==
           expect(p.length).equals(1);
           expect(p[0].issuerKeyId.equals(signingKeyIds[i])).to.be.true;
         }
-      })
+      });
 
       it('Encrypt and sign with specific encryption/signing key ids', async function () {
         const primaryKey = await getPrimaryKey();
         const latestEncryptionKeyId = (await primaryKey.getEncryptionKey()).getKeyId();
         const latestSigningKeyId = (await primaryKey.getSigningKey()).getKeyId();
         const plaintextMessage = openpgp.Message.fromText("Hello World\n");
-        let d, m, s, pList, kIds, sIds;
+
+        const checkEncryptedPackets = (encryptionKeyIds, pKESKList) => {
+          pKESKList.forEach(({ publicKeyId }, i) => {
+            if (!encryptionKeyIds[i]) {
+              expect(publicKeyId.equals(latestEncryptionKeyId)).to.be.true;
+              return;
+            }
+            expect(publicKeyId.equals(encryptionKeyIds[i])).to.be.true;
+          });
+        };
+        const checkSignatures = (signingKeyIds, signatures) => {
+          signatures.forEach(({ keyid }, i) => {
+            if (!signingKeyIds[i]) {
+              expect(keyid.equals(latestSigningKeyId)).to.be.true;
+              return;
+            }
+            expect(keyid.equals(signingKeyIds[i])).to.be.true;
+          });
+        };
+
+        let d;
+        let m;
+        let pList;
+        let kIds;
+        let sIds;
         // select every tuple of every 2 pair from each set.
         for (let u = 0; u < encryptionKeyIds.length; u++) {
           for (let v = 0; v < encryptionKeyIds.length; v++) {
@@ -2777,30 +2803,18 @@ amnR6g==
                 m = await openpgp.readArmoredMessage(d);
                 pList = m.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
                 expect(pList.length).equals(3);
-                pList.forEach((p, i) => {
-                  if (! kIds[i]) {
-                    expect(p.publicKeyId.equals(latestEncryptionKeyId)).to.be.true;
-                    return;
-                  }
-                  expect(p.publicKeyId.equals(kIds[i])).to.be.true;
-                })
+                checkEncryptedPackets(kIds, pList);
                 const { signatures } = await openpgp.decrypt({
                   message: m,
                   privateKeys: [primaryKey, primaryKey, primaryKey]
                 });
-                signatures.forEach(({ keyid }, i) => {
-                  if (! sIds[i]) {
-                    expect(keyid.equals(latestSigningKeyId)).to.be.true;
-                    return;
-                  }
-                  expect(keyid.equals(sIds[i])).to.be.true;
-                })
+                checkSignatures(sIds, signatures);
               }
             }
           }
         }
       });
-    })
+    });
   });
 
 });

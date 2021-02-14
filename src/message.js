@@ -465,9 +465,9 @@ export class Message {
       if (privateKey.isPublic()) {
         throw new Error('Need private key for signing');
       }
-      const signingKeyId = privateKeys.length - 1 - i >= 0
-        ? signingKeyIds[privateKeys.length - 1 - i]
-        : signingKeyIds[0];
+      const signingKeyId = privateKeys.length - 1 - i >= 0 ?
+        signingKeyIds[privateKeys.length - 1 - i] :
+        signingKeyIds[0];
       const signingKey = await privateKey.getSigningKey(signingKeyId, date, userIds);
       const onePassSig = new OnePassSignaturePacket();
       onePassSig.signatureType = signatureType;
