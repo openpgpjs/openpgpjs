@@ -2777,42 +2777,24 @@ amnR6g==
           });
         };
 
-        let d;
-        let m;
-        let pList;
-        let kIds;
-        let sIds;
-        // select every tuple of every 2 pair from each set.
-        for (let u = 0; u < encryptionKeyIds.length; u++) {
-          for (let v = 0; v < encryptionKeyIds.length; v++) {
-            for (let w = 0; w < signingKeyIds.length; w++) {
-              for (let z = 0; z < signingKeyIds.length; z++) {
-                kIds = [];
-                sIds = [];
-                kIds[u] = encryptionKeyIds[u];
-                kIds[v] = encryptionKeyIds[v];
-                sIds[w] = signingKeyIds[w];
-                sIds[z] = signingKeyIds[z];
-                d = await openpgp.encrypt({
-                  message: plaintextMessage,
-                  privateKeys: [primaryKey, primaryKey, primaryKey],
-                  publicKeys: [primaryKey, primaryKey, primaryKey],
-                  encryptionKeyIds: kIds,
-                  signingKeyIds: sIds
-                });
-                m = await openpgp.readArmoredMessage(d);
-                pList = m.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
-                expect(pList.length).equals(3);
-                checkEncryptedPackets(kIds, pList);
-                const { signatures } = await openpgp.decrypt({
-                  message: m,
-                  privateKeys: [primaryKey, primaryKey, primaryKey]
-                });
-                checkSignatures(sIds, signatures);
-              }
-            }
-          }
-        }
+        const kIds = [encryptionKeyIds[1], encryptionKeyIds[0], encryptionKeyIds[2]];
+        const sIds = [signingKeyIds[2], signingKeyIds[1], signingKeyIds[0]];
+        const message = await openpgp.readArmoredMessage(await openpgp.encrypt({
+          message: plaintextMessage,
+          privateKeys: [primaryKey, primaryKey, primaryKey],
+          publicKeys: [primaryKey, primaryKey, primaryKey],
+          encryptionKeyIds: kIds,
+          signingKeyIds: sIds
+        }));
+        const pKESKList = message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
+        expect(pKESKList.length).equals(3);
+        checkEncryptedPackets(kIds, pKESKList);
+        const { signatures } = await openpgp.decrypt({
+          message,
+          privateKeys: [primaryKey, primaryKey, primaryKey]
+        });
+        expect(signatures.length).equals(3);
+        checkSignatures(sIds, signatures);
       });
     });
   });
