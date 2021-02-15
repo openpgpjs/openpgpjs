@@ -250,16 +250,16 @@ export async function encryptKey({ privateKey, passphrase }) {
  * @param  {'web'|'ponyfill'|'node'|false} streaming    (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Signature} signature                        (optional) a detached signature to add to the encrypted message
  * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Array<module:type/keyid>} signingKeyIds     (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+ * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
  * @param  {Date} date                                  (optional) override the creation date of the message signature
  * @param  {Array<Object>} fromUserIds                  (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param  {Array<Object>} toUserIds                    (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
- * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
- * @param  {Array<module:type/keyid>} signingKeyIds     (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} (String if `armor` was true, the default; Uint8Array if `armor` was false)
  * @async
  * @static
  */
-export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, date = new Date(), fromUserIds = [], toUserIds = [], encryptionKeyIds = [], signingKeyIds = [] }) {
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, compression = config.compression, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, signingKeyIds = [], encryptionKeyIds = [], date = new Date(), fromUserIds = [], toUserIds = [] }) {
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIds = toArray(fromUserIds); toUserIds = toArray(toUserIds);
   if (detached) {
     throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");
@@ -273,7 +273,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
       message = await message.sign(privateKeys, signature, date, fromUserIds, message.fromStream, signingKeyIds);
     }
     message = message.compress(compression);
-    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, date, toUserIds, streaming, encryptionKeyIds);
+    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIds, date, toUserIds, streaming);
     const data = armor ? message.armor() : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
   }).catch(onError.bind(null, 'Error encrypting message'));

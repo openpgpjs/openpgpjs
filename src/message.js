@@ -308,14 +308,14 @@ export class Message {
    * @param  {Array<String>} passwords                    (optional) password(s) for message encryption
    * @param  {Object} sessionKey                          (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
+   * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
    * @param  {Date} date                                  (optional) override the creation date of the literal package
    * @param  {Array<Object>} userIds                      (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
    * @param  {Boolean} streaming                          (optional) whether to process data as a stream
-   * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
    * @returns {Promise<Message>}                   new message with encrypted content
    * @async
    */
-  async encrypt(keys, passwords, sessionKey, wildcard = false, date = new Date(), userIds = [], streaming, encryptionKeyIds = []) {
+  async encrypt(keys, passwords, sessionKey, wildcard = false, encryptionKeyIds = [], date = new Date(), userIds = [], streaming) {
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
