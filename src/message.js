@@ -368,8 +368,8 @@ export class Message {
     const packetlist = new PacketList();
 
     if (publicKeys) {
-      const results = await Promise.all(publicKeys.map(async function(publicKey, index) {
-        const encryptionKey = await publicKey.getEncryptionKey(encryptionKeyIds[index], date, userIds);
+      const results = await Promise.all(publicKeys.map(async function(publicKey, i) {
+        const encryptionKey = await publicKey.getEncryptionKey(encryptionKeyIds[i], date, userIds);
         const pkESKeyPacket = new PublicKeyEncryptedSessionKeyPacket();
         pkESKeyPacket.publicKeyId = wildcard ? type_keyid.wildcard() : encryptionKey.getKeyId();
         pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
