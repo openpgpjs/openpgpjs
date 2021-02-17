@@ -66,29 +66,31 @@ export class CleartextMessage {
    * Sign the cleartext message
    * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
    * @param  {Signature} signature             (optional) any existing detached signature
+   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                       (optional) The creation time of the signature that should be created
    * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
    * @async
    */
-  async sign(privateKeys, signature = null, date = new Date(), userIds = []) {
-    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, date, userIds));
+  async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = []) {
+    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, signingKeyIds, date, userIds));
   }
 
   /**
    * Sign the cleartext message
    * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
    * @param  {Signature} signature             (optional) any existing detached signature
+   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                       (optional) The creation time of the signature that should be created
    * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @returns {Promise<module:signature.Signature>}      new detached signature of message content
    * @async
    */
-  async signDetached(privateKeys, signature = null, date = new Date(), userIds = []) {
+  async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = []) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
 
-    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true));
+    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, true));
   }
 
   /**
