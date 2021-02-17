@@ -2760,19 +2760,11 @@ amnR6g==
 
         const checkEncryptedPackets = (encryptionKeyIds, pKESKList) => {
           pKESKList.forEach(({ publicKeyId }, i) => {
-            if (!encryptionKeyIds[i]) {
-              expect(publicKeyId.equals(latestEncryptionKeyId)).to.be.true;
-              return;
-            }
             expect(publicKeyId.equals(encryptionKeyIds[i])).to.be.true;
           });
         };
         const checkSignatures = (signingKeyIds, signatures) => {
           signatures.forEach(({ keyid }, i) => {
-            if (!signingKeyIds[i]) {
-              expect(keyid.equals(latestSigningKeyId)).to.be.true;
-              return;
-            }
             expect(keyid.equals(signingKeyIds[i])).to.be.true;
           });
         };
