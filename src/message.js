@@ -330,7 +330,7 @@ export class Message {
 
     const { data: sessionKeyData, algorithm, aeadAlgorithm } = sessionKey;
 
-    const msg = await Message.encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, keys, passwords, wildcard, date, userIds, encryptionKeyIds);
+    const msg = await Message.encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, keys, passwords, wildcard, encryptionKeyIds, date, userIds);
 
     let symEncryptedPacket;
     if (aeadAlgorithm) {
@@ -358,13 +358,13 @@ export class Message {
    * @param  {Array<Key>} publicKeys                      (optional) public key(s) for message encryption
    * @param  {Array<String>} passwords                    (optional) for message encryption
    * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
+   * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
    * @param  {Date} date                                  (optional) override the date
    * @param  {Array} userIds                              (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
-   * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
    * @returns {Promise<Message>}                          new message with encrypted content
    * @async
    */
-  static async encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, date = new Date(), userIds = [], encryptionKeyIds = []) {
+  static async encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, encryptionKeyIds = [], date = new Date(), userIds = []) {
     const packetlist = new PacketList();
 
     if (publicKeys) {

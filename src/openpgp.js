@@ -444,25 +444,26 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = 
 /**
  * Encrypt a symmetric session key with public keys, passwords, or both at once. At least either public keys
  *   or passwords must be specified.
- * @param  {Uint8Array} data                  the session key to be encrypted e.g. 16 random bytes (for aes128)
- * @param  {String} algorithm                 algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
- * @param  {String} aeadAlgorithm             (optional) aead algorithm, e.g. 'eax' or 'ocb'
- * @param  {Key|Array<Key>} publicKeys        (optional) array of public keys or single key, used to encrypt the key
- * @param  {String|Array<String>} passwords   (optional) passwords for the message
- * @param  {Boolean} armor                    (optional) whether the return values should be ascii armored (true, the default) or binary (false)
- * @param  {Boolean} wildcard                 (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Date} date                        (optional) override the date
- * @param  {Array} toUserIds                  (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
+ * @param  {Uint8Array} data                            the session key to be encrypted e.g. 16 random bytes (for aes128)
+ * @param  {String} algorithm                           algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
+ * @param  {String} aeadAlgorithm                       (optional) aead algorithm, e.g. 'eax' or 'ocb'
+ * @param  {Key|Array<Key>} publicKeys                  (optional) array of public keys or single key, used to encrypt the key
+ * @param  {String|Array<String>} passwords             (optional) passwords for the message
+ * @param  {Boolean} armor                              (optional) whether the return values should be ascii armored (true, the default) or binary (false)
+ * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
+ * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
+ * @param  {Date} date                                  (optional) override the date
+ * @param  {Array} toUserIds                            (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @returns {Promise<String|Uint8Array>} (String if `armor` was true, the default; Uint8Array if `armor` was false)
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, armor = true, wildcard = false, date = new Date(), toUserIds = [] }) {
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, armor = true, wildcard = false, encryptionKeyIds = [], date = new Date(), toUserIds = [] }) {
   checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords); toUserIds = toArray(toUserIds);
 
   return Promise.resolve().then(async function() {
 
-    const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, date, toUserIds);
+    const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, encryptionKeyIds, date, toUserIds);
     return armor ? message.armor() : message.write();
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
