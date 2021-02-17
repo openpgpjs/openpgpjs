@@ -424,14 +424,14 @@ export class Message {
    * Sign the message (the literal data packet of the message)
    * @param  {Array<module:key.Key>} privateKeys      private keys with decrypted secret key data for signing
    * @param  {Signature} signature                    (optional) any existing detached signature to add to the message
+   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                              (optional) override the creation time of the signature
    * @param  {Array} userIds                          (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param  {Boolean} streaming                      (optional) whether to process data as a stream
-   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @returns {Promise<Message>}                      new message with signed content
    * @async
    */
-  async sign(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false, signingKeyIds = []) {
+  async sign(privateKeys = [], signature = null, signingKeyIds = [], date = new Date(), userIds = [], streaming = false) {
     const packetlist = new PacketList();
 
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
@@ -481,7 +481,7 @@ export class Message {
     });
 
     packetlist.push(literalDataPacket);
-    packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, false, streaming, signingKeyIds));
+    packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, false, streaming));
 
     return new Message(packetlist);
   }
@@ -510,19 +510,19 @@ export class Message {
    * Create a detached signature for the message (the literal data packet of the message)
    * @param  {Array<module:key.Key>}               privateKeys private keys with decrypted secret key data for signing
    * @param  {Signature} signature                 (optional) any existing detached signature
+   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                           (optional) override the creation time of the signature
    * @param  {Array} userIds                       (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param  {Boolean} streaming                   (optional) whether to process data as a stream
-   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @returns {Promise<module:signature.Signature>} new detached signature of message content
    * @async
    */
-  async signDetached(privateKeys = [], signature = null, date = new Date(), userIds = [], streaming = false, signingKeyIds = []) {
+  async signDetached(privateKeys = [], signature = null, signingKeyIds = [], date = new Date(), userIds = [], streaming = false) {
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
     if (!literalDataPacket) {
       throw new Error('No literal data packet to sign.');
     }
-    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, date, userIds, true, streaming, signingKeyIds));
+    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, true, streaming));
   }
 
   /**
@@ -694,15 +694,15 @@ export class Message {
  * @param  {LiteralDataPacket}                 literalDataPacket the literal data packet to sign
  * @param  {Array<module:key.Key>}             privateKeys private keys with decrypted secret key data for signing
  * @param  {Signature} signature               (optional) any existing detached signature to append
+ * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @param  {Date} date                         (optional) override the creationtime of the signature
  * @param  {Array} userIds                     (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param  {Boolean} detached                  (optional) whether to create detached signature packets
  * @param  {Boolean} streaming                 (optional) whether to process data as a stream
- * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @returns {Promise<module:PacketList>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, date = new Date(), userIds = [], detached = false, streaming = false, signingKeyIds = []) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], detached = false, streaming = false) {
   const packetlist = new PacketList();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text

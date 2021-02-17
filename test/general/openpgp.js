@@ -2754,8 +2754,6 @@ amnR6g==
 
       it('Encrypt and sign with specific encryption/signing key ids', async function () {
         const primaryKey = await getPrimaryKey();
-        const latestEncryptionKeyId = (await primaryKey.getEncryptionKey()).getKeyId();
-        const latestSigningKeyId = (await primaryKey.getSigningKey()).getKeyId();
         const plaintextMessage = openpgp.Message.fromText("Hello World\n");
 
         const checkEncryptedPackets = (encryptionKeyIds, pKESKList) => {

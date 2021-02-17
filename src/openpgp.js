@@ -270,7 +270,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
       privateKeys = [];
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
-      message = await message.sign(privateKeys, signature, date, fromUserIds, message.fromStream, signingKeyIds);
+      message = await message.sign(privateKeys, signature, signingKeyIds, date, fromUserIds, message.fromStream);
     }
     message = message.compress(compression);
     message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIds, date, toUserIds, streaming);
@@ -342,14 +342,14 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param  {Boolean} armor                            (optional) whether the return values should be ascii armored (true, the default) or binary (false)
  * @param  {'web'|'ponyfill'|'node'|false} streaming  (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Boolean} detached                         (optional) if the return value should contain a detached signature
+ * @param  {Array<module:type/keyid>} signingKeyIds   (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @param  {Date} date                                (optional) override the creation date of the signature
  * @param  {Array<Object>} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @param  {Array<module:type/keyid>} signingKeyIds   (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} (String if `armor` was true, the default; Uint8Array if `armor` was false)
  * @async
  * @static
  */
-export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, date = new Date(), fromUserIds = [], signingKeyIds = [] }) {
+export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, signingKeyIds = [], date = new Date(), fromUserIds = [] }) {
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
   if (message instanceof CleartextMessage && detached) throw new Error("Can't sign detached cleartext message");
@@ -358,9 +358,9 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
   return Promise.resolve().then(async function() {
     let signature;
     if (detached) {
-      signature = await message.signDetached(privateKeys, undefined, date, fromUserIds, message.fromStream, signingKeyIds);
+      signature = await message.signDetached(privateKeys, undefined, signingKeyIds, date, fromUserIds, message.fromStream);
     } else {
-      signature = await message.sign(privateKeys, undefined, date, fromUserIds, message.fromStream, signingKeyIds);
+      signature = await message.sign(privateKeys, undefined, signingKeyIds, date, fromUserIds, message.fromStream);
     }
     signature = armor ? signature.armor() : signature.write();
     if (detached) {
