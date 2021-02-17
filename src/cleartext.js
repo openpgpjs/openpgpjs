@@ -157,14 +157,17 @@ export class CleartextMessage {
 
 
 /**
- * reads an OpenPGP cleartext signed message and returns a CleartextMessage object
- * @param {String | ReadableStream<String>} armoredText text to be parsed
+ * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
+ * @param {String | ReadableStream<String>} cleartextMessage text to be parsed
  * @returns {module:cleartext.CleartextMessage} new cleartext message object
  * @async
  * @static
  */
-export async function readArmoredCleartextMessage(armoredText) {
-  const input = await unarmor(armoredText);
+export async function readCleartextMessage({ cleartextMessage }) {
+  if (!cleartextMessage) {
+    throw new Error('readCleartextMessage: must pass options object containing `cleartextMessage`');
+  }
+  const input = await unarmor(cleartextMessage);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }

@@ -55,25 +55,25 @@ export class Signature {
 }
 
 /**
- * reads an OpenPGP armored signature and returns a signature object
- * @param {String | ReadableStream<String>} armoredText text to be parsed
+ * reads an (optionally armored) OpenPGP signature and returns a signature object
+ * @param {String | ReadableStream<String>} armoredSignature armored signature to be parsed
+ * @param {Uint8Array | ReadableStream<Uint8Array>} binarySignature binary signature to be parsed
  * @returns {Signature} new signature object
  * @async
  * @static
  */
-export async function readArmoredSignature(armoredText) {
-  const input = await unarmor(armoredText);
-  return readSignature(input.data);
-}
-
-/**
- * reads an OpenPGP signature as byte array and returns a signature object
- * @param {Uint8Array | ReadableStream<Uint8Array>} input   binary signature
- * @returns {Signature}         new signature object
- * @async
- * @static
- */
-export async function readSignature(input) {
+export async function readSignature({ armoredSignature, binarySignature }) {
+  let input = armoredSignature || binarySignature;
+  if (!input) {
+    throw new Error('readSignature: must pass options object containing `armoredSignature` or `binarySignature`');
+  }
+  if (armoredSignature) {
+    const { type, data } = await unarmor(input);
+    if (type !== enums.armor.signature) {
+      throw new Error('Armored text not of type signature');
+    }
+    input = data;
+  }
   const packetlist = new PacketList();
   await packetlist.read(input, { SignaturePacket });
   return new Signature(packetlist);

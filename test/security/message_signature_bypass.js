@@ -1,7 +1,7 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 
-const { readArmoredKey, readArmoredCleartextMessage, SignaturePacket } = openpgp;
+const { readKey, readCleartextMessage, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -68,7 +68,7 @@ fhGyl7nA7UCwgsqf7ZPBhRg=
 =nbjQ
 -----END PGP SIGNATURE-----`;
 async function getOtherPubKey() {
-  return readArmoredKey(OTHERPUBKEY);
+  return readKey({ armoredKey: OTHERPUBKEY });
 }
 
 /**
@@ -78,10 +78,11 @@ const STANDALONE_PKT = util.hexToUint8Array(`04020108001005025bab730a091055208b2
 async function fakeSignature() {
   // read the template and modify the text to
   // invalidate the signature.
-  let fake = await readArmoredCleartextMessage(
-    ORIGINAL.replace(
+  let fake = await readCleartextMessage({
+    cleartextMessage: ORIGINAL.replace(
       'You owe me',
-      'I owe you'));
+      'I owe you')
+  });
   // read the standalone signature packet
   const tmp = new SignaturePacket();
   await tmp.read(STANDALONE_PKT);
@@ -92,7 +93,7 @@ async function fakeSignature() {
   const faked_armored = await fake.armor();
   // re-read the message to eliminate any
   // behaviour due to cached values.
-  fake = await readArmoredCleartextMessage(faked_armored);
+  fake = await readCleartextMessage({ cleartextMessage: faked_armored });
   // faked message now verifies correctly
   const res = await openpgp.verify({
     message: fake,

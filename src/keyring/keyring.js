@@ -22,7 +22,7 @@
  * @module keyring/keyring
  */
 
-import { readArmoredKeys } from '../key';
+import { readKeys } from '../key';
 import LocalStore from './localstore';
 
 /**
@@ -80,7 +80,7 @@ class KeyArray {
    * @async
    */
   async importKey(armored) {
-    const imported = await readArmoredKeys(armored);
+    const imported = await readKeys({ armoredKeys: armored });
     for (let i = 0; i < imported.length; i++) {
       const key = imported[i];
       // check if key already in key array

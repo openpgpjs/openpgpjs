@@ -152,9 +152,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       privateKey.subKeys[0].keyPacket.publicParams.Q = Q2;
       privateKey.subKeys[0].keyPacket.privateParams.d = d2;
       privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
       await expect(
-        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
       ).to.be.rejectedWith('Error decrypting message: Key Data Integrity failed');
     });
     it('Invalid fingerprint', async function () {
@@ -165,9 +165,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       privateKey.subKeys[0].keyPacket.publicParams.Q = Q2;
       privateKey.subKeys[0].keyPacket.privateParams.d = d2;
       privateKey.subKeys[0].keyPacket.fingerprint = fingerprint2;
-      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
       await expect(
-        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
       ).to.be.rejectedWith('Error decrypting message: Session key decryption failed');
     });
     it('Different keys', async function () {
@@ -178,9 +178,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       privateKey.subKeys[0].keyPacket.publicParams.Q = Q1;
       privateKey.subKeys[0].keyPacket.privateParams.d = d1;
       privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
       await expect(
-        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
       ).to.be.rejectedWith('Error decrypting message: Key Data Integrity failed');
     });
     it('Successful exchange curve25519', async function () {
@@ -191,9 +191,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       privateKey.subKeys[0].keyPacket.publicParams.Q = Q1;
       privateKey.subKeys[0].keyPacket.privateParams.d = d1;
       privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
       expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
       ).data).to.equal('test');
     });
     it('Successful exchange NIST P256', async function () {
@@ -204,9 +204,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p256.pub;
       privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p256.priv;
       privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
       expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
       ).data).to.equal('test');
     });
     it('Successful exchange NIST P384', async function () {
@@ -217,9 +217,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p384.pub;
       privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p384.priv;
       privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
       expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
       ).data).to.equal('test');
     });
     it('Successful exchange NIST P521', async function () {
@@ -230,9 +230,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p521.pub;
       privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p521.priv;
       privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
       expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
       ).data).to.equal('test');
     });
 
@@ -246,15 +246,15 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
         privateKey.subKeys[0].keyPacket.publicParams.Q = key_data[name].pub;
         privateKey.subKeys[0].keyPacket.privateParams.d = key_data[name].priv;
         privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-        const message = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+        const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
         expect((
-          await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+          await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
         ).data).to.equal('test');
         const useNative = openpgp.config.useNative;
         openpgp.config.useNative = !useNative;
         try {
           expect((
-            await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readArmoredMessage(message) })
+            await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
           ).data).to.equal('test');
         } finally {
           openpgp.config.useNative = useNative;
