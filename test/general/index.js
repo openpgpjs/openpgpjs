@@ -7,6 +7,7 @@ module.exports = () => describe('General', function () {
   require('./signature.js')();
   require('./key.js')();
   require('./openpgp.js')();
+  require('./config.js')();
   require('./hkp.js')();
   require('./wkd.js')();
   require('./oid.js')();
