@@ -25,7 +25,6 @@
  */
 
 import stream from 'web-stream-tools';
-import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -63,11 +62,6 @@ class SymmetricallyEncryptedDataPacket {
      * @type {PacketList}
      */
     this.packets = null;
-    /**
-     * When true, decrypt fails if message is not integrity protected
-     * @see module:config.ignoreMdcError
-     */
-    this.ignoreMdcError = config.ignoreMdcError;
   }
 
   read(bytes) {
@@ -86,9 +80,9 @@ class SymmetricallyEncryptedDataPacket {
    * @throws {Error} if decryption was not successful
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key, streaming) {
+  async decrypt(sessionKeyAlgorithm, key, streaming, config) {
     // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
-    if (!this.ignoreMdcError) {
+    if (!config.ignoreMdcError) {
       throw new Error('Decryption failed due to missing MDC.');
     }
 
@@ -114,12 +108,12 @@ class SymmetricallyEncryptedDataPacket {
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(algo, key) {
+  async encrypt(algo, key, streaming, config) {
     const data = this.packets.write();
 
     const prefix = await crypto.getPrefixRandom(algo);
-    const FRE = await crypto.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize));
-    const ciphertext = await crypto.cfb.encrypt(algo, key, data, FRE.subarray(2));
+    const FRE = await crypto.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize), config);
+    const ciphertext = await crypto.cfb.encrypt(algo, key, data, FRE.subarray(2), config);
     this.encrypted = util.concat([FRE, ciphertext]);
   }
 }

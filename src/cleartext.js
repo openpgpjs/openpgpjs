@@ -30,6 +30,7 @@ import util from './util';
 import { PacketList, LiteralDataPacket, SignaturePacket } from './packet';
 import { Signature } from './signature';
 import { createVerificationObjects, createSignaturePackets } from './message';
+import defaultConfig from './config';
 
 /**
  * Class that represents an OpenPGP cleartext signed message.
@@ -72,8 +73,8 @@ export class CleartextMessage {
    * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
    * @async
    */
-  async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = []) {
-    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, signingKeyIds, date, userIds));
+  async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], streaming, config = defaultConfig) {
+    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, signingKeyIds, date, userIds, undefined, config));
   }
 
   /**
@@ -86,11 +87,11 @@ export class CleartextMessage {
    * @returns {Promise<module:signature.Signature>}      new detached signature of message content
    * @async
    */
-  async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = []) {
+  async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], streaming, config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
 
-    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, true));
+    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, true, undefined, config));
   }
 
   /**
@@ -100,8 +101,8 @@ export class CleartextMessage {
    * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
-  verify(keys, date = new Date()) {
-    return this.verifyDetached(this.signature, keys, date);
+  verify(keys, date = new Date(), streaming, config) {
+    return this.verifyDetached(this.signature, keys, date, null, config);
   }
 
   /**
@@ -111,12 +112,12 @@ export class CleartextMessage {
    * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
-  verifyDetached(signature, keys, date = new Date()) {
+  verifyDetached(signature, keys, date = new Date(), streaming, config = defaultConfig) {
     const signatureList = signature.packets;
     const literalDataPacket = new LiteralDataPacket();
     // we assume that cleartext signature is generated based on UTF8 cleartext
     literalDataPacket.setText(this.text);
-    return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true);
+    return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true, undefined, config);
   }
 
   /**
@@ -132,7 +133,7 @@ export class CleartextMessage {
    * Returns ASCII armored text of cleartext signed message
    * @returns {String | ReadableStream<String>} ASCII armor
    */
-  armor() {
+  armor(config = defaultConfig) {
     let hashes = this.signature.packets.map(function(packet) {
       return enums.read(enums.hash, packet.hashAlgorithm).toUpperCase();
     });
@@ -142,7 +143,7 @@ export class CleartextMessage {
       text: this.text,
       data: this.signature.packets.write()
     };
-    return armor(enums.armor.signed, body);
+    return armor(enums.armor.signed, body, null, null, null, config);
   }
 
   /**
@@ -163,7 +164,7 @@ export class CleartextMessage {
  * @async
  * @static
  */
-export async function readCleartextMessage({ cleartextMessage }) {
+export async function readCleartextMessage({ cleartextMessage, config = defaultConfig }) {
   if (!cleartextMessage) {
     throw new Error('readCleartextMessage: must pass options object containing `cleartextMessage`');
   }
@@ -172,7 +173,7 @@ export async function readCleartextMessage({ cleartextMessage }) {
     throw new Error('No cleartext signed message.');
   }
   const packetlist = new PacketList();
-  await packetlist.read(input.data, { SignaturePacket });
+  await packetlist.read(input.data, { SignaturePacket }, undefined, config);
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
   return new CleartextMessage(input.text, signature);

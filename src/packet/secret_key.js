@@ -29,6 +29,7 @@ import type_s2k from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import defaultConfig from '../config';
 
 /**
  * A Secret-Key packet contains all the information that is found in a
@@ -38,8 +39,8 @@ import util from '../util';
  * @extends PublicKeyPacket
  */
 class SecretKeyPacket extends PublicKeyPacket {
-  constructor(date = new Date()) {
-    super(date);
+  constructor(date = new Date(), config = defaultConfig) {
+    super(date, config);
     /**
      * Packet type
      * @type {module:enums.packet}
@@ -248,7 +249,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Remove private key material, converting the key to a dummy one.
    * The resulting key cannot be used for signing/decrypting but can still verify signatures.
    */
-  makeDummy() {
+  makeDummy(config = defaultConfig) {
     if (this.isDummy()) {
       return;
     }
@@ -257,7 +258,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
     this.isEncrypted = null;
     this.keyMaterial = null;
-    this.s2k = new type_s2k();
+    this.s2k = new type_s2k(config);
     this.s2k.algorithm = 0;
     this.s2k.c = 0;
     this.s2k.type = 'gnu-dummy';
@@ -274,7 +275,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(passphrase) {
+  async encrypt(passphrase, config) {
     if (this.isDummy()) {
       return;
     }
@@ -290,7 +291,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('The key must be decrypted before removing passphrase protection.');
     }
 
-    this.s2k = new type_s2k();
+    this.s2k = new type_s2k(config);
     this.s2k.salt = await crypto.random.getRandomBytes(8);
     const algo = enums.write(enums.publicKey, this.algorithm);
     const cleartext = crypto.serializeParams(algo, this.privateParams);
@@ -309,8 +310,8 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.s2k_usage = 254;
       this.keyMaterial = await crypto.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
         cleartext,
-        await crypto.hash.sha1(cleartext)
-      ]), this.iv);
+        await crypto.hash.sha1(cleartext, config)
+      ]), this.iv, config);
     }
   }
 

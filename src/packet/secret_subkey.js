@@ -22,6 +22,7 @@
 
 import SecretKeyPacket from './secret_key';
 import enums from '../enums';
+import defaultConfig from '../config';
 
 /**
  * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
@@ -30,8 +31,8 @@ import enums from '../enums';
  * @extends SecretKeyPacket
  */
 class SecretSubkeyPacket extends SecretKeyPacket {
-  constructor(date = new Date()) {
-    super(date);
+  constructor(date = new Date(), config = defaultConfig) {
+    super(date, config);
     this.tag = enums.packet.secretSubkey;
   }
 }

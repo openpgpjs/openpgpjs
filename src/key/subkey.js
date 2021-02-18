@@ -8,6 +8,7 @@
 import enums from '../enums';
 import * as helper from './helper';
 import { PacketList } from '../packet';
+import defaultConfig from '../config';
 
 /**
  * Class that represents a subkey packet and the relevant signatures.
@@ -53,12 +54,12 @@ class SubKey {
    * @returns {Promise<Boolean>}                      True if the binding signature is revoked
    * @async
    */
-  async isRevoked(primaryKey, signature, key, date = new Date()) {
+  async isRevoked(primaryKey, signature, key, date = new Date(), config) {
     return helper.isDataRevoked(
       primaryKey, enums.signature.subkeyRevocation, {
         key: primaryKey,
         bind: this.keyPacket
-      }, this.revocationSignatures, signature, key, date
+      }, this.revocationSignatures, signature, key, date, config
     );
   }
 
@@ -72,12 +73,12 @@ class SubKey {
    * @throws {Error}           if the subkey is invalid.
    * @async
    */
-  async verify(primaryKey, date = new Date()) {
+  async verify(primaryKey, date = new Date(), config = defaultConfig) {
     const dataToVerify = { key: primaryKey, bind: this.keyPacket };
     // check subkey binding signatures
-    const bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
+    const bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
     // check binding signature is not revoked
-    if (bindingSignature.revoked || await this.isRevoked(primaryKey, bindingSignature, null, date)) {
+    if (bindingSignature.revoked || await this.isRevoked(primaryKey, bindingSignature, null, date, config)) {
       throw new Error('Subkey is revoked');
     }
     // check for expiration time
@@ -96,11 +97,11 @@ class SubKey {
    * @returns {Promise<Date | Infinity | null>}
    * @async
    */
-  async getExpirationTime(primaryKey, date = new Date()) {
+  async getExpirationTime(primaryKey, date = new Date(), config = defaultConfig) {
     const dataToVerify = { key: primaryKey, bind: this.keyPacket };
     let bindingSignature;
     try {
-      bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
+      bindingSignature = await helper.getLatestValidSignature(this.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
     } catch (e) {
       return null;
     }
@@ -117,7 +118,7 @@ class SubKey {
    * @throws {Error} if update failed
    * @async
    */
-  async update(subKey, primaryKey) {
+  async update(subKey, primaryKey, config) {
     if (!this.hasSameFingerprintAs(subKey)) {
       throw new Error('SubKey update method: fingerprints of subkeys not equal');
     }
@@ -139,7 +140,7 @@ class SubKey {
         }
       }
       try {
-        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify);
+        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, undefined, undefined, config);
         return true;
       } catch (e) {
         return false;
@@ -147,7 +148,7 @@ class SubKey {
     });
     // revocation signatures
     await helper.mergeSignatures(subKey, this, 'revocationSignatures', function(srcRevSig) {
-      return helper.isDataRevoked(primaryKey, enums.signature.subkeyRevocation, dataToVerify, [srcRevSig]);
+      return helper.isDataRevoked(primaryKey, enums.signature.subkeyRevocation, dataToVerify, [srcRevSig], undefined, undefined, undefined, config);
     });
   }
 
@@ -167,7 +168,8 @@ class SubKey {
       flag: reasonForRevocationFlag = enums.reasonForRevocation.noReason,
       string: reasonForRevocationString = ''
     } = {},
-    date = new Date()
+    date = new Date(),
+    config = defaultConfig
   ) {
     const dataToSign = { key: primaryKey, bind: this.keyPacket };
     const subKey = new SubKey(this.keyPacket);
@@ -175,7 +177,7 @@ class SubKey {
       signatureType: enums.signature.subkeyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
-    }, date));
+    }, date, undefined, undefined, undefined, config));
     await subKey.update(this, primaryKey);
     return subKey;
   }

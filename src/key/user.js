@@ -10,6 +10,7 @@ import enums from '../enums';
 import util from '../util';
 import { PacketList } from '../packet';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper';
+import defaultConfig from '../config';
 
 /**
  * Class that represents an user ID or attribute packet and the relevant signatures.
@@ -47,7 +48,7 @@ class User {
    * @returns {Promise<module:key.Key>}             New user with new certificate signatures
    * @async
    */
-  async sign(primaryKey, privateKeys) {
+  async sign(primaryKey, privateKeys, config) {
     const dataToSign = {
       userId: this.userId,
       userAttribute: this.userAttribute,
@@ -61,12 +62,12 @@ class User {
       if (privateKey.hasSameFingerprintAs(primaryKey)) {
         throw new Error('Not implemented for self signing');
       }
-      const signingKey = await privateKey.getSigningKey();
+      const signingKey = await privateKey.getSigningKey(undefined, undefined, undefined, config);
       return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
-      });
+      }, undefined, undefined, undefined, undefined, config);
     }));
     await user.update(this, primaryKey);
     return user;
@@ -85,13 +86,13 @@ class User {
    * @returns {Promise<Boolean>}                      True if the certificate is revoked
    * @async
    */
-  async isRevoked(primaryKey, certificate, key, date = new Date()) {
+  async isRevoked(primaryKey, certificate, key, date = new Date(), config) {
     return isDataRevoked(
       primaryKey, enums.signature.certRevocation, {
         key: primaryKey,
         userId: this.userId,
         userAttribute: this.userAttribute
-      }, this.revocationSignatures, certificate, key, date
+      }, this.revocationSignatures, certificate, key, date, config
     );
   }
 
@@ -105,7 +106,7 @@ class User {
    * @returns {Promise<true|null>}   status of the certificate
    * @async
    */
-  async verifyCertificate(primaryKey, certificate, keys, date = new Date()) {
+  async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config = defaultConfig) {
     const that = this;
     const keyid = certificate.issuerKeyId;
     const dataToVerify = {
@@ -117,12 +118,12 @@ class User {
       if (!key.getKeyIds().some(id => id.equals(keyid))) {
         return null;
       }
-      const signingKey = await key.getSigningKey(keyid, date);
-      if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date)) {
+      const signingKey = await key.getSigningKey(keyid, date, undefined, config);
+      if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
       try {
-        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify);
+        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
       } catch (e) {
         throw util.wrapError('User certificate is invalid', e);
       }
@@ -144,13 +145,13 @@ class User {
    *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
    * @async
    */
-  async verifyAllCertifications(primaryKey, keys, date = new Date()) {
+  async verifyAllCertifications(primaryKey, keys, date = new Date(), config) {
     const that = this;
     const certifications = this.selfCertifications.concat(this.otherCertifications);
     return Promise.all(certifications.map(async function(certification) {
       return {
         keyid: certification.issuerKeyId,
-        valid: await that.verifyCertificate(primaryKey, certification, keys, date).catch(() => false)
+        valid: await that.verifyCertificate(primaryKey, certification, keys, date, config).catch(() => false)
       };
     }));
   }
@@ -165,7 +166,7 @@ class User {
    * @throws {Error} if there are no valid self signatures.
    * @async
    */
-  async verify(primaryKey, date = new Date()) {
+  async verify(primaryKey, date = new Date(), config = defaultConfig) {
     if (!this.selfCertifications.length) {
       throw new Error('No self-certifications');
     }
@@ -180,11 +181,11 @@ class User {
     for (let i = this.selfCertifications.length - 1; i >= 0; i--) {
       try {
         const selfCertification = this.selfCertifications[i];
-        if (selfCertification.revoked || await that.isRevoked(primaryKey, selfCertification, undefined, date)) {
+        if (selfCertification.revoked || await that.isRevoked(primaryKey, selfCertification, undefined, date, config)) {
           throw new Error('Self-certification is revoked');
         }
         try {
-          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify);
+          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
         } catch (e) {
           throw util.wrapError('Self-certification is invalid', e);
         }
@@ -207,7 +208,7 @@ class User {
    * @returns {Promise<undefined>}
    * @async
    */
-  async update(user, primaryKey) {
+  async update(user, primaryKey, config) {
     const dataToVerify = {
       userId: this.userId,
       userAttribute: this.userAttribute,
@@ -216,7 +217,7 @@ class User {
     // self signatures
     await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
       try {
-        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify);
+        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
         return true;
       } catch (e) {
         return false;
@@ -226,7 +227,7 @@ class User {
     await mergeSignatures(user, this, 'otherCertifications');
     // revocation signatures
     await mergeSignatures(user, this, 'revocationSignatures', function(srcRevSig) {
-      return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig]);
+      return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig], undefined, undefined, undefined, config);
     });
   }
 }

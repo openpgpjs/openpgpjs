@@ -23,6 +23,7 @@
  */
 
 import { readKeys } from '../key';
+import defaultConfig from '../config';
 import LocalStore from './localstore';
 
 /**
@@ -79,8 +80,8 @@ class KeyArray {
    * @param {String} armored message to read the keys/key from
    * @async
    */
-  async importKey(armored) {
-    const imported = await readKeys({ armoredKeys: armored });
+  async importKey(armored, config = defaultConfig) {
+    const imported = await readKeys({ armoredKeys: armored, config });
     for (let i = 0; i < imported.length; i++) {
       const key = imported[i];
       // check if key already in key array
@@ -124,8 +125,8 @@ class Keyring {
    * Initialization routine for the keyring.
    * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
    */
-  constructor(storeHandler) {
-    this.storeHandler = storeHandler || new LocalStore();
+  constructor(storeHandler, config = defaultConfig) {
+    this.storeHandler = storeHandler || new LocalStore(undefined, config);
   }
 
   /**

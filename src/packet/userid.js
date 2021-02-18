@@ -23,7 +23,6 @@ import emailAddresses from 'email-addresses';
 
 import enums from '../enums';
 import util from '../util';
-import config from '../config';
 
 /**
  * Implementation of the User ID Packet (Tag 13)
@@ -76,7 +75,7 @@ class UserIDPacket {
    * Parsing function for a user id packet (tag 13).
    * @param {Uint8Array} input payload of a tag 13 packet
    */
-  read(bytes) {
+  read(bytes, config) {
     const userid = util.decodeUtf8(bytes);
     if (userid.length > config.maxUseridLength) {
       throw new Error('User ID string is too long');

@@ -25,7 +25,6 @@
  */
 
 import stream from 'web-stream-tools';
-import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -110,7 +109,7 @@ class AEADEncryptedDataPacket {
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(sessionKeyAlgorithm, key, streaming) {
+  async encrypt(sessionKeyAlgorithm, key, streaming, config) {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
     this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
     const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];

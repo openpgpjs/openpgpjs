@@ -33,8 +33,8 @@ import enums from '../enums';
  * @extends PublicKeyPacket
  */
 class PublicSubkeyPacket extends PublicKeyPacket {
-  constructor() {
-    super();
+  constructor(date, config) {
+    super(date, config);
     this.tag = enums.packet.publicSubkey;
   }
 }

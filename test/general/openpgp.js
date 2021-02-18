@@ -685,7 +685,7 @@ function withCompression(tests) {
 
       tests(
         function(options) {
-          options.compression = compression;
+          options.config = { ...openpgp.config, compression };
           return options;
         },
         function() {
@@ -2389,7 +2389,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
           const message = await openpgp.readMessage({ binaryMessage: encrypted });
-          return message.decrypt([privateKey_2038_2045]);
+          return message.decrypt([privateKey_2038_2045], undefined, undefined, undefined, openpgp.config);
         }).then(async function (packets) {
           const literals = packets.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
@@ -2410,7 +2410,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
           const message = await openpgp.readMessage({ binaryMessage: encrypted });
-          return message.decrypt([privateKey_2000_2008]);
+          return message.decrypt([privateKey_2000_2008], undefined, undefined, undefined, openpgp.config);
         }).then(async function (packets) {
           const literals = packets.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
@@ -2431,12 +2431,12 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
           const message = await openpgp.readMessage({ binaryMessage: encrypted });
-          return message.decrypt([privateKey_2000_2008]);
+          return message.decrypt([privateKey_2000_2008], undefined, undefined, undefined, openpgp.config);
         }).then(async function (message) {
           const literals = message.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
           expect(+literals[0].date).to.equal(+past);
-          const signatures = await message.verify([publicKey_2000_2008], past);
+          const signatures = await message.verify([publicKey_2000_2008], past, undefined, openpgp.config);
           expect(await openpgp.stream.readToEnd(message.getText())).to.equal(plaintext);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+past);
           expect(await signatures[0].verified).to.be.true;
@@ -2459,13 +2459,13 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
           const message = await openpgp.readMessage({ binaryMessage: encrypted });
-          return message.decrypt([privateKey_2038_2045]);
+          return message.decrypt([privateKey_2038_2045], undefined, undefined, undefined, openpgp.config);
         }).then(async function (message) {
           const literals = message.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
           expect(literals[0].format).to.equal('binary');
           expect(+literals[0].date).to.equal(+future);
-          const signatures = await message.verify([publicKey_2038_2045], future);
+          const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
           expect(await openpgp.stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
           expect(await signatures[0].verified).to.be.true;
@@ -2488,13 +2488,13 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
           const message = await openpgp.readMessage({ binaryMessage: encrypted });
-          return message.decrypt([privateKey_2038_2045]);
+          return message.decrypt([privateKey_2038_2045], undefined, undefined, undefined, openpgp.config);
         }).then(async function (message) {
           const literals = message.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
           expect(literals[0].format).to.equal('mime');
           expect(+literals[0].date).to.equal(+future);
-          const signatures = await message.verify([publicKey_2038_2045], future);
+          const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
           expect(await openpgp.stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
           expect(await signatures[0].verified).to.be.true;

@@ -32,7 +32,7 @@ import Key from './key';
 import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
-import config from '../config';
+import defaultConfig from '../config';
 import { unarmor } from '../encoding/armor';
 
 /**
@@ -51,14 +51,13 @@ import { unarmor } from '../encoding/armor';
  * @async
  * @static
  */
-export async function generate(options) {
+export async function generate(options, config) {
   options.sign = true; // primary key is always a signing key
   options = helper.sanitizeKeyOptions(options);
-  options.subkeys = options.subkeys.map(function(subkey, index) { return helper.sanitizeKeyOptions(options.subkeys[index], options); });
-
-  let promises = [helper.generateSecretKey(options)];
-  promises = promises.concat(options.subkeys.map(helper.generateSecretSubkey));
-  return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options));
+  options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));
+  let promises = [helper.generateSecretKey(options, config)];
+  promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config)));
+  return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options, config));
 }
 
 /**
@@ -74,7 +73,7 @@ export async function generate(options) {
  * @async
  * @static
  */
-export async function reformat(options) {
+export async function reformat(options, config) {
   options = sanitize(options);
 
   if (options.privateKey.primaryKey.isDummy()) {
@@ -102,8 +101,8 @@ export async function reformat(options) {
 
   if (!options.subkeys) {
     options.subkeys = await Promise.all(secretSubkeyPackets.map(async secretSubkeyPacket => ({
-      sign: await options.privateKey.getSigningKey(secretSubkeyPacket.getKeyId(), null).catch(() => {}) &&
-          !await options.privateKey.getEncryptionKey(secretSubkeyPacket.getKeyId(), null).catch(() => {})
+      sign: await options.privateKey.getSigningKey(secretSubkeyPacket.getKeyId(), null, undefined, config).catch(() => {}) &&
+          !await options.privateKey.getEncryptionKey(secretSubkeyPacket.getKeyId(), null, undefined, config).catch(() => {})
     })));
   }
 
@@ -113,7 +112,7 @@ export async function reformat(options) {
 
   options.subkeys = options.subkeys.map(function(subkey, index) { return sanitize(options.subkeys[index], options); });
 
-  return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options);
+  return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config);
 
   function sanitize(options, subkeyDefaults = {}) {
     options.keyExpirationTime = options.keyExpirationTime || subkeyDefaults.keyExpirationTime;
@@ -125,16 +124,16 @@ export async function reformat(options) {
 }
 
 
-async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
+async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config) {
   // set passphrase protection
   if (options.passphrase) {
-    await secretKeyPacket.encrypt(options.passphrase);
+    await secretKeyPacket.encrypt(options.passphrase, config);
   }
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyPassphrase = options.subkeys[index].passphrase;
     if (subkeyPassphrase) {
-      await secretSubkeyPacket.encrypt(subkeyPassphrase);
+      await secretSubkeyPacket.encrypt(subkeyPassphrase, config);
     }
   }));
 
@@ -163,7 +162,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     const signaturePacket = new SignaturePacket(options.date);
     signaturePacket.signatureType = enums.signature.certGeneric;
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket);
+    signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
     signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
     signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
@@ -218,7 +217,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];
-    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions);
+    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config);
     return { secretSubkeyPacket, subkeySignaturePacket };
   })).then(packets => {
     packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
@@ -234,7 +233,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
     signatureType: enums.signature.keyRevocation,
     reasonForRevocationFlag: enums.reasonForRevocation.noReason,
     reasonForRevocationString: ''
-  }, options.date));
+  }, options.date, undefined, undefined, undefined, config));
 
   // set passphrase protection
   if (options.passphrase) {
@@ -259,13 +258,13 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options) {
  * @async
  * @static
  */
-export async function readKey({ armoredKey, binaryKey }) {
+export async function readKey({ armoredKey, binaryKey, config = defaultConfig }) {
   if (!armoredKey && !binaryKey) {
     throw new Error('readKey: must pass options object containing `armoredKey` or `binaryKey`');
   }
   let input;
   if (armoredKey) {
-    const { type, data } = await unarmor(armoredKey);
+    const { type, data } = await unarmor(armoredKey, config);
     if (!(type === enums.armor.publicKey || type === enums.armor.privateKey)) {
       throw new Error('Armored text not of type key');
     }
@@ -274,7 +273,7 @@ export async function readKey({ armoredKey, binaryKey }) {
     input = binaryKey;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets);
+  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
   return new Key(packetlist);
 }
 
@@ -286,13 +285,13 @@ export async function readKey({ armoredKey, binaryKey }) {
  * @async
  * @static
  */
-export async function readKeys({ armoredKeys, binaryKeys }) {
+export async function readKeys({ armoredKeys, binaryKeys, config = defaultConfig }) {
   let input = armoredKeys || binaryKeys;
   if (!input) {
     throw new Error('readKeys: must pass options object containing `armoredKeys` or `binaryKeys`');
   }
   if (armoredKeys) {
-    const { type, data } = await unarmor(armoredKeys);
+    const { type, data } = await unarmor(armoredKeys, config);
     if (type !== enums.armor.publicKey && type !== enums.armor.privateKey) {
       throw new Error('Armored text not of type key');
     }
@@ -300,7 +299,7 @@ export async function readKeys({ armoredKeys, binaryKeys }) {
   }
   const keys = [];
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets);
+  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');

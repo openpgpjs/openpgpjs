@@ -27,8 +27,8 @@
 import stream from 'web-stream-tools';
 import * as base64 from './base64.js';
 import enums from '../enums.js';
-import config from '../config';
 import util from '../util';
+import defaultConfig from '../config';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.
@@ -100,7 +100,7 @@ function getType(text) {
  * @param {String} customComment (optional) additional comment to add to the armored string
  * @returns {String} The header information
  */
-function addheader(customComment) {
+function addheader(customComment, config) {
   let result = "";
   if (config.showVersion) {
     result += "Version: " + config.versionString + '\n';
@@ -233,7 +233,7 @@ function splitChecksum(text) {
  * @async
  * @static
  */
-export function unarmor(input) {
+export function unarmor(input, config = defaultConfig) {
   return new Promise(async (resolve, reject) => {
     try {
       const reSplit = /^-----[^-]+-----$/m;
@@ -359,7 +359,7 @@ export function unarmor(input) {
  * @returns {String | ReadableStream<String>} Armored text
  * @static
  */
-export function armor(messagetype, body, partindex, parttotal, customComment) {
+export function armor(messagetype, body, partindex, parttotal, customComment, config = defaultConfig) {
   let text;
   let hash;
   if (messagetype === enums.armor.signed) {
@@ -372,14 +372,14 @@ export function armor(messagetype, body, partindex, parttotal, customComment) {
   switch (messagetype) {
     case enums.armor.multipartSection:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\n");
-      result.push(addheader(customComment));
+      result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\n");
       break;
     case enums.armor.multipartLast:
       result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "-----\n");
-      result.push(addheader(customComment));
+      result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE, PART " + partindex + "-----\n");
@@ -389,35 +389,35 @@ export function armor(messagetype, body, partindex, parttotal, customComment) {
       result.push("Hash: " + hash + "\n\n");
       result.push(text.replace(/^-/mg, "- -"));
       result.push("\n-----BEGIN PGP SIGNATURE-----\n");
-      result.push(addheader(customComment));
+      result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP SIGNATURE-----\n");
       break;
     case enums.armor.message:
       result.push("-----BEGIN PGP MESSAGE-----\n");
-      result.push(addheader(customComment));
+      result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP MESSAGE-----\n");
       break;
     case enums.armor.publicKey:
       result.push("-----BEGIN PGP PUBLIC KEY BLOCK-----\n");
-      result.push(addheader(customComment));
+      result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP PUBLIC KEY BLOCK-----\n");
       break;
     case enums.armor.privateKey:
       result.push("-----BEGIN PGP PRIVATE KEY BLOCK-----\n");
-      result.push(addheader(customComment));
+      result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP PRIVATE KEY BLOCK-----\n");
       break;
     case enums.armor.signature:
       result.push("-----BEGIN PGP SIGNATURE-----\n");
-      result.push(addheader(customComment));
+      result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
       result.push("-----END PGP SIGNATURE-----\n");

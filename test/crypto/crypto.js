@@ -242,7 +242,7 @@ module.exports = () => describe('API functional testing', function() {
       await Promise.all(symmAlgos.map(async function(algo) {
         const symmKey = await crypto.generateSessionKey(algo);
         const IV = new Uint8Array(crypto.cipher[algo].blockSize);
-        const symmencData = await crypto.cfb.encrypt(algo, symmKey, util.strToUint8Array(plaintext), IV);
+        const symmencData = await crypto.cfb.encrypt(algo, symmKey, util.strToUint8Array(plaintext), IV, openpgp.config);
         const text = util.uint8ArrayToStr(await crypto.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(crypto.cipher[algo].blockSize)));
         expect(text).to.equal(plaintext);
       }));

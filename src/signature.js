@@ -25,6 +25,7 @@
 import { armor, unarmor } from './encoding/armor';
 import { PacketList, SignaturePacket } from './packet';
 import enums from './enums';
+import defaultConfig from './config';
 
 /**
  * Class that represents an OpenPGP signature.
@@ -49,8 +50,8 @@ export class Signature {
    * Returns ASCII armored text of signature
    * @returns {ReadableStream<String>} ASCII armor
    */
-  armor() {
-    return armor(enums.armor.signature, this.write());
+  armor(config = defaultConfig) {
+    return armor(enums.armor.signature, this.write(), undefined, undefined, undefined, config);
   }
 }
 
@@ -62,19 +63,19 @@ export class Signature {
  * @async
  * @static
  */
-export async function readSignature({ armoredSignature, binarySignature }) {
+export async function readSignature({ armoredSignature, binarySignature, config = defaultConfig }) {
   let input = armoredSignature || binarySignature;
   if (!input) {
     throw new Error('readSignature: must pass options object containing `armoredSignature` or `binarySignature`');
   }
   if (armoredSignature) {
-    const { type, data } = await unarmor(input);
+    const { type, data } = await unarmor(input, config);
     if (type !== enums.armor.signature) {
       throw new Error('Armored text not of type signature');
     }
     input = data;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, { SignaturePacket });
+  await packetlist.read(input, { SignaturePacket }, undefined, config);
   return new Signature(packetlist);
 }

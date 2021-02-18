@@ -24,8 +24,8 @@
  */
 
 import stream from 'web-stream-tools';
-import config from '../config';
 import { readKey } from '../key';
+import defaultConfig from '../config';
 
 /**
  * The class that deals with storage of the keyring.
@@ -35,7 +35,7 @@ class LocalStore {
   /**
    * @param {String} prefix prefix for itemnames in localstore
    */
-  constructor(prefix) {
+  constructor(prefix, config = defaultConfig) {
     prefix = prefix || 'openpgp-';
     this.publicKeysItem = prefix + this.publicKeysItem;
     this.privateKeysItem = prefix + this.privateKeysItem;
@@ -51,8 +51,8 @@ class LocalStore {
    * @returns {Array<module:key.Key>} array of keys retrieved from localstore
    * @async
    */
-  async loadPublic() {
-    return loadKeys(this.storage, this.publicKeysItem);
+  async loadPublic(config = defaultConfig) {
+    return loadKeys(this.storage, this.publicKeysItem, config);
   }
 
   /**
@@ -60,8 +60,8 @@ class LocalStore {
    * @returns {Array<module:key.Key>} array of keys retrieved from localstore
    * @async
    */
-  async loadPrivate() {
-    return loadKeys(this.storage, this.privateKeysItem);
+  async loadPrivate(config = defaultConfig) {
+    return loadKeys(this.storage, this.privateKeysItem, config);
   }
 
   /**
@@ -70,8 +70,8 @@ class LocalStore {
    * @param {Array<module:key.Key>} keys array of keys to save in localstore
    * @async
    */
-  async storePublic(keys) {
-    await storeKeys(this.storage, this.publicKeysItem, keys);
+  async storePublic(keys, config = defaultConfig) {
+    await storeKeys(this.storage, this.publicKeysItem, keys, config);
   }
 
   /**
@@ -80,8 +80,8 @@ class LocalStore {
    * @param {Array<module:key.Key>} keys array of keys to save in localstore
    * @async
    */
-  async storePrivate(keys) {
-    await storeKeys(this.storage, this.privateKeysItem, keys);
+  async storePrivate(keys, config = defaultConfig) {
+    await storeKeys(this.storage, this.privateKeysItem, keys, config);
   }
 }
 
@@ -91,22 +91,22 @@ class LocalStore {
 LocalStore.prototype.publicKeysItem = 'public-keys';
 LocalStore.prototype.privateKeysItem = 'private-keys';
 
-async function loadKeys(storage, itemname) {
+async function loadKeys(storage, itemname, config) {
   const armoredKeys = JSON.parse(storage.getItem(itemname));
   const keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     let key;
     for (let i = 0; i < armoredKeys.length; i++) {
-      key = await readKey({ armoredKey: armoredKeys[i] });
+      key = await readKey({ armoredKey: armoredKeys[i], config });
       keys.push(key);
     }
   }
   return keys;
 }
 
-async function storeKeys(storage, itemname, keys) {
+async function storeKeys(storage, itemname, keys, config) {
   if (keys.length) {
-    const armoredKeys = await Promise.all(keys.map(key => stream.readToEnd(key.armor())));
+    const armoredKeys = await Promise.all(keys.map(key => stream.readToEnd(key.armor(config))));
     storage.setItem(itemname, JSON.stringify(armoredKeys));
   } else {
     storage.removeItem(itemname);

@@ -31,6 +31,8 @@ import config from './config';
 import util from './util'; // re-import module to access util functions
 import { getBigInteger } from './biginteger';
 
+const debugMode = globalThis.process && globalThis.process.env.NODE_ENV === 'development';
+
 export default {
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
@@ -358,11 +360,10 @@ export default {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
    */
   printDebug: function (str) {
-    if (config.debug) {
+    if (debugMode) {
       console.log(str);
     }
   },
@@ -370,12 +371,11 @@ export default {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * Different than print_debug because will call Uint8ArrayToHex iff necessary.
    * @param {String} str String of the debug message
    */
   printDebugHexArrayDump: function (str, arrToHex) {
-    if (config.debug) {
+    if (debugMode) {
       str += ': ' + util.uint8ArrayToHex(arrToHex);
       console.log(str);
     }
@@ -384,12 +384,11 @@ export default {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * Different than print_debug because will call strToHex iff necessary.
    * @param {String} str String of the debug message
    */
   printDebugHexStrDump: function (str, strToHex) {
-    if (config.debug) {
+    if (debugMode) {
       str += util.strToHex(strToHex);
       console.log(str);
     }
@@ -398,11 +397,10 @@ export default {
   /**
    * Helper function to print a debug error. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
    */
   printDebugError: function (error) {
-    if (config.debug) {
+    if (debugMode) {
       console.error(error);
     }
   },

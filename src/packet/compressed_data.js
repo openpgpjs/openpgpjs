@@ -30,9 +30,9 @@ import { Inflate } from 'pako/lib/inflate';
 import { Z_SYNC_FLUSH, Z_FINISH } from 'pako/lib/zlib/constants';
 import { decode as BunzipDecode } from 'seek-bzip';
 import stream from 'web-stream-tools';
-import config from '../config';
 import enums from '../enums';
 import util from '../util';
+import defaultConfig from '../config';
 import {
   LiteralDataPacket,
   OnePassSignaturePacket,
@@ -49,7 +49,7 @@ import {
  * @memberof module:packet
  */
 class CompressedDataPacket {
-  constructor() {
+  constructor(config = defaultConfig) {
     /**
      * Packet type
      * @type {module:enums.packet}
@@ -64,13 +64,18 @@ class CompressedDataPacket {
      * Compression algorithm
      * @type {compression}
      */
-    this.algorithm = 'zip';
+    this.algorithm = enums.read(enums.compression, config.compression);
 
     /**
      * Compressed packet data
      * @type {Uint8Array | ReadableStream<Uint8Array>}
      */
     this.compressed = null;
+
+    /**
+     * zip/zlib compression level, between 1 and 9
+     */
+    this.deflateLevel = config.deflateLevel;
   }
 
   /**
@@ -125,12 +130,11 @@ class CompressedDataPacket {
    * Compress the packet data (member decompressedData)
    */
   compress() {
-
     if (!compress_fns[this.algorithm]) {
       throw new Error(this.algorithm + ' compression not supported');
     }
 
-    this.compressed = compress_fns[this.algorithm](this.packets.write());
+    this.compressed = compress_fns[this.algorithm](this.packets.write(), this.deflateLevel);
   }
 }
 
@@ -179,11 +183,11 @@ function bzip2(func) {
 }
 
 const compress_fns = nodeZlib ? {
-  zip: /*#__PURE__*/ node_zlib(nodeZlib.createDeflateRaw, { level: config.deflateLevel }),
-  zlib: /*#__PURE__*/ node_zlib(nodeZlib.createDeflate, { level: config.deflateLevel })
+  zip: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.createDeflateRaw, { level })(compressed),
+  zlib: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.createDeflate, { level })(compressed)
 } : {
-  zip: /*#__PURE__*/ pako_zlib(Deflate, { raw: true, level: config.deflateLevel }),
-  zlib: /*#__PURE__*/ pako_zlib(Deflate, { level: config.deflateLevel })
+  zip: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { raw: true, level })(compressed),
+  zlib: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { level })(compressed)
 };
 
 const decompress_fns = nodeZlib ? {

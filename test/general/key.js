@@ -2162,16 +2162,17 @@ function versionSpecificTests() {
     }
   });
 
-  it('Generated key is not unlocked by default', function() {
+  it('Generated key is not unlocked by default', async function() {
     const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: '123' };
-    let key;
-    return openpgp.generateKey(opt).then(function(newKey) {
-      key = newKey.key;
-      return openpgp.Message.fromText('hello').encrypt([key]);
-    }).then(function(msg) {
-      return msg.decrypt([key]);
-    }).catch(function(err) {
-      expect(err.message).to.equal('Private key is not decrypted.');
+    const { key } = await openpgp.generateKey(opt);
+    return openpgp.encrypt({
+      message: openpgp.Message.fromText('hello'),
+      publicKeys: key
+    }).then(async armoredMessage => openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage }),
+      privateKeys: key
+    })).catch(function(err) {
+      expect(err.message).to.match(/Private key is not decrypted./);
     });
   });
 
@@ -2725,7 +2726,7 @@ module.exports = () => describe('Key', function() {
     `.replace(/\s+/g, ''));
 
     const packetlist = new openpgp.PacketList();
-    await packetlist.read(packetBytes, { PublicKeyPacket: openpgp.PublicKeyPacket });
+    await packetlist.read(packetBytes, { PublicKeyPacket: openpgp.PublicKeyPacket }, undefined, openpgp.config);
     const key = packetlist[0];
     expect(key).to.exist;
   });
@@ -2755,7 +2756,7 @@ module.exports = () => describe('Key', function() {
 
     const packetlist = new openpgp.PacketList();
 
-    await packetlist.read((await openpgp.unarmor(pub_sig_test)).data, openpgp);
+    await packetlist.read((await openpgp.unarmor(pub_sig_test)).data, openpgp, undefined, openpgp.config);
 
     const subkeys = pubKey.getSubkeys();
     expect(subkeys).to.exist;
@@ -3233,7 +3234,7 @@ module.exports = () => describe('Key', function() {
 
     const input = await openpgp.unarmor(revocation_certificate_arm4);
     const packetlist = new openpgp.PacketList();
-    await packetlist.read(input.data, { SignaturePacket: openpgp.SignaturePacket });
+    await packetlist.read(input.data, { SignaturePacket: openpgp.SignaturePacket }, undefined, openpgp.config);
     const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write());
 
     expect(revocationCertificate.replace(/^Comment: .*$\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\n/mg, ''));

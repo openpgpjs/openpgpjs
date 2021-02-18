@@ -26,7 +26,6 @@
  */
 
 import stream from 'web-stream-tools';
-import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -93,7 +92,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @returns {Promise<Boolean>}
    * @async
    */
-  async encrypt(sessionKeyAlgorithm, key, streaming) {
+  async encrypt(sessionKeyAlgorithm, key, streaming, config) {
     let bytes = this.packets.write();
     if (!streaming) bytes = await stream.readToEnd(bytes);
     const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
@@ -103,7 +102,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
     const plaintext = util.concat([tohash, hash]);
 
-    this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+    this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
     return true;
   }
 
@@ -115,7 +114,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @returns {Promise<Boolean>}
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key, streaming) {
+  async decrypt(sessionKeyAlgorithm, key, streaming, config) {
     let encrypted = stream.clone(this.encrypted);
     if (!streaming) encrypted = await stream.readToEnd(encrypted);
     const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));

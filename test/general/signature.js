@@ -1638,9 +1638,8 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const opt = { userIds: { name:'test', email:'a@b.com' }, passphrase: null };
     return openpgp.generateKey(opt).then(function(gen) {
       const key = gen.key;
-      let message = openpgp.Message.fromText('hello world');
-      message = message.sign([key]);
-      expect(message).to.exist;
+      const message = openpgp.Message.fromText('hello world');
+      return message.sign([key]);
     });
   });
 

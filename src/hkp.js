@@ -21,7 +21,7 @@
  * @module hkp
  */
 
-import config from './config';
+import defaultConfig from './config';
 
 class HKP {
   /**
@@ -30,7 +30,7 @@ class HKP {
    *   the protocol to use, e.g. 'https://pgp.mit.edu'; defaults to
    *   openpgp.config.keyserver (https://keyserver.ubuntu.com)
    */
-  constructor(keyServerBaseUrl) {
+  constructor(keyServerBaseUrl, config = defaultConfig) {
     this._baseUrl = keyServerBaseUrl || config.keyserver;
     this._fetch = typeof globalThis.fetch === 'function' ? globalThis.fetch : require('node-fetch');
   }
