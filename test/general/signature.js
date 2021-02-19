@@ -919,8 +919,8 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 
   it('Checks for critical bit in non-human-readable notations', async function() {
     try {
-      openpgp.config.tolerant = false;
       await openpgp.readSignature({
+        config: { tolerant: false },
         armoredSignature: `-----BEGIN PGP SIGNATURE-----
 
 wsEfBAABCABJBYJfKDH0K5QAAAAAAB0ABXVua25vd25AdGVzdHMuc2VxdW9pYS1w
@@ -940,8 +940,6 @@ bwM=
       throw new Error('openpgp.readSignature should throw but it did not.');
     } catch (e) {
       expect(e.message).to.equal('Unknown critical notation: unknown@tests.sequoia-pgp.org');
-    } finally {
-      openpgp.config.tolerant = true;
     }
   });
 

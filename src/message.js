@@ -810,11 +810,13 @@ export async function createVerificationObjects(signatureList, literalDataList, 
  * Reads an (optionally armored) OpenPGP message and returns a Message object
  * @param {String | ReadableStream<String>} armoredMessage armored message to be parsed
  * @param {Uint8Array | ReadableStream<Uint8Array>} binaryMessage binary to be parsed
+ * @param  {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
  * @returns {Promise<Message>} new message object
  * @async
  * @static
  */
-export async function readMessage({ armoredMessage, binaryMessage, config = defaultConfig }) {
+export async function readMessage({ armoredMessage, binaryMessage, config }) {
+  config = { ...defaultConfig, ...config };
   let input = armoredMessage || binaryMessage;
   if (!input) {
     throw new Error('readMessage: must pass options object containing `armoredMessage` or `binaryMessage`');

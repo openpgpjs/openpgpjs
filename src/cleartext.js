@@ -143,7 +143,7 @@ export class CleartextMessage {
       text: this.text,
       data: this.signature.packets.write()
     };
-    return armor(enums.armor.signed, body, null, null, null, config);
+    return armor(enums.armor.signed, body, undefined, undefined, undefined, config);
   }
 
   /**
@@ -164,7 +164,8 @@ export class CleartextMessage {
  * @async
  * @static
  */
-export async function readCleartextMessage({ cleartextMessage, config = defaultConfig }) {
+export async function readCleartextMessage({ cleartextMessage, config }) {
+  config = { ...defaultConfig, ...config };
   if (!cleartextMessage) {
     throw new Error('readCleartextMessage: must pass options object containing `cleartextMessage`');
   }

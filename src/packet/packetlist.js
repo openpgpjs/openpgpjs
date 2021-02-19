@@ -42,7 +42,7 @@ class PacketList extends Array {
               const packet = packets.newPacketFromTag(tag, allowedPackets);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
-              await packet.read(parsed.packet, parsed.tag === enums.packet.compressedData ? streaming : config);
+              await packet.read(parsed.packet, config, streaming);
               await writer.write(packet);
             } catch (e) {
               if (!config.tolerant || supportsStreaming(parsed.tag)) {

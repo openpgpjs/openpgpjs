@@ -82,7 +82,7 @@ class CompressedDataPacket {
    * Parsing function for the packet.
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
    */
-  async read(bytes, streaming) {
+  async read(bytes, config, streaming) {
     await stream.parse(bytes, async reader => {
 
       // One octet that gives the algorithm used to compress the packet.

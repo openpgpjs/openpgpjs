@@ -2827,23 +2827,18 @@ module.exports = () => describe('Key', function() {
   });
 
   it('should not decrypt using a sign-only RSA key, unless explicitly configured', async function () {
-    const allowSigningKeyDecryption = openpgp.config.allowInsecureDecryptionWithSigningKeys;
     const key = await openpgp.readKey({ armoredKey: rsaSignOnly });
-    try {
-      openpgp.config.allowInsecureDecryptionWithSigningKeys = false;
-      await expect(openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
-        privateKeys: key
-      })).to.be.rejectedWith(/Session key decryption failed/);
 
-      openpgp.config.allowInsecureDecryptionWithSigningKeys = true;
-      await expect(openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
-        privateKeys: key
-      })).to.be.fulfilled;
-    } finally {
-      openpgp.config.allowInsecureDecryptionWithSigningKeys = allowSigningKeyDecryption;
-    }
+    await expect(openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
+      privateKeys: key
+    })).to.be.rejectedWith(/Session key decryption failed/);
+
+    await expect(openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
+      privateKeys: key,
+      config: { allowInsecureDecryptionWithSigningKeys: true }
+    })).to.be.fulfilled;
   });
 
   it('Method getExpirationTime V4 Key', async function() {
