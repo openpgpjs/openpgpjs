@@ -44,6 +44,7 @@ export class Key {
   public getEncryptionKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
   public getSigningKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
   public getKeys(keyId?: Keyid): (Key | SubKey)[];
+  public getSubkeys(keyId?: Keyid): SubKey[];
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
@@ -51,6 +52,7 @@ export class Key {
   public getKeyId(): Keyid;
   public getLatestValidSignature(subKey: SubKey, date?: Date): Promise<SignaturePacket>;
   public getDirectKeySignature(): SignaturePacket;
+  public getSubkeyCapabilities(subKey: SubKey, date?: Date): Promise<enums.keyFlags>
 }
 
 export class SubKey {

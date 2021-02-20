@@ -311,7 +311,7 @@ class Key {
     }
     const primaryUser = await this.getPrimaryUser(date, userId);
     if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification)) {
+      helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification)) {
       return this;
     }
     throw util.wrapError('Could not find valid signing key packet in key ' + this.getKeyId().toHex(), exception);
@@ -348,7 +348,7 @@ class Key {
     // if no valid subkey for encryption, evaluate primary key
     const primaryUser = await this.getPrimaryUser(date, userId);
     if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+      helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
       return this;
     }
     throw util.wrapError('Could not find valid encryption key packet in key ' + this.getKeyId().toHex(), exception);
@@ -374,14 +374,14 @@ class Key {
           if (bindingSignature && helper.isValidDecryptionKeyPacket(bindingSignature)) {
             keys.push(this.subKeys[i]);
           }
-        } catch (e) {}
+        } catch (e) { }
       }
     }
 
     // evaluate primary key
     const primaryUser = await this.getPrimaryUser(date, userId);
     if ((!keyId || primaryKey.getKeyId().equals(keyId, true)) &&
-        helper.isValidDecryptionKeyPacket(primaryUser.selfCertification)) {
+      helper.isValidDecryptionKeyPacket(primaryUser.selfCertification)) {
       keys.push(this);
     }
 
@@ -406,7 +406,7 @@ class Key {
       throw new Error("Invalid number of passphrases for key");
     }
 
-    await Promise.all(keys.map(async function(key, i) {
+    await Promise.all(keys.map(async function (key, i) {
       const { keyPacket } = key;
       await keyPacket.encrypt(passphrases[i]);
       keyPacket.clearPrivateParams();
@@ -426,10 +426,10 @@ class Key {
     }
     passphrases = util.isArray(passphrases) ? passphrases : [passphrases];
 
-    await Promise.all(this.getKeys(keyId).map(async function(key) {
+    await Promise.all(this.getKeys(keyId).map(async function (key) {
       let decrypted = false;
       let error = null;
-      await Promise.all(passphrases.map(async function(passphrase) {
+      await Promise.all(passphrases.map(async function (passphrase) {
         try {
           await key.keyPacket.decrypt(passphrase);
           // If we are decrypting a single key packet, we also validate it directly
@@ -572,16 +572,16 @@ class Key {
     let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
     if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
       const encryptKey =
-        await this.getEncryptionKey(keyId, expiry, userId).catch(() => {}) ||
-        await this.getEncryptionKey(keyId, null, userId).catch(() => {});
+        await this.getEncryptionKey(keyId, expiry, userId).catch(() => { }) ||
+        await this.getEncryptionKey(keyId, null, userId).catch(() => { });
       if (!encryptKey) return null;
       const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket);
       if (encryptExpiry < expiry) expiry = encryptExpiry;
     }
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
       const signKey =
-        await this.getSigningKey(keyId, expiry, userId).catch(() => {}) ||
-        await this.getSigningKey(keyId, null, userId).catch(() => {});
+        await this.getSigningKey(keyId, expiry, userId).catch(() => { }) ||
+        await this.getSigningKey(keyId, null, userId).catch(() => { });
       if (!signKey) return null;
       const signExpiry = await signKey.getExpirationTime(this.keyPacket);
       if (signExpiry < expiry) expiry = signExpiry;
@@ -630,7 +630,7 @@ class Key {
       return a.user.revoked || a.user.isRevoked(primaryKey, a.selfCertification, null, date);
     }));
     // sort by primary user flag and signature creation time
-    const primaryUser = users.sort(function(a, b) {
+    const primaryUser = users.sort(function (a, b) {
       const A = a.selfCertification;
       const B = b.selfCertification;
       return B.revoked - A.revoked || A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
@@ -660,11 +660,11 @@ class Key {
     if (this.isPublic() && key.isPrivate()) {
       // check for equal subkey packets
       const equal = (this.subKeys.length === key.subKeys.length) &&
-            (this.subKeys.every(destSubKey => {
-              return key.subKeys.some(srcSubKey => {
-                return destSubKey.hasSameFingerprintAs(srcSubKey);
-              });
-            }));
+        (this.subKeys.every(destSubKey => {
+          return key.subKeys.some(srcSubKey => {
+            return destSubKey.hasSameFingerprintAs(srcSubKey);
+          });
+        }));
       if (!equal) {
         throw new Error('Cannot update public key with private key if subkey mismatch');
       }
@@ -682,8 +682,8 @@ class Key {
       let found = false;
       await Promise.all(this.users.map(async dstUser => {
         if ((srcUser.userId && dstUser.userId &&
-              (srcUser.userId.userid === dstUser.userId.userid)) ||
-            (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
+          (srcUser.userId.userid === dstUser.userId.userid)) ||
+          (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
           await dstUser.update(srcUser, this.keyPacket);
           found = true;
         }
@@ -809,7 +809,7 @@ class Key {
   async signAllUsers(privateKeys) {
     const that = this;
     const key = await this.clone();
-    key.users = await Promise.all(this.users.map(function(user) {
+    key.users = await Promise.all(this.users.map(function (user) {
       return user.sign(that.keyPacket, privateKeys);
     }));
     return key;
@@ -847,7 +847,7 @@ class Key {
   async verifyAllUsers(keys) {
     const results = [];
     const primaryKey = this.keyPacket;
-    await Promise.all(this.users.map(async function(user) {
+    await Promise.all(this.users.map(async function (user) {
       const signatures = keys ? await user.verifyAllCertifications(primaryKey, keys) :
         [{ keyid: primaryKey.keyid, valid: await user.verify(primaryKey).catch(() => false) }];
       signatures.forEach(signature => {
@@ -906,7 +906,7 @@ class Key {
   /**
    * Retrieves the latest valid signature for a subkey
    * @param {SubKey} key
-   * @param  {Date} date, optional
+   * @param {Date} date optional
    * @returns {Promise<SignaturePacket>}
    * @async
    */
@@ -928,11 +928,21 @@ class Key {
     }
     throw new Error("Unable to find direct signature!");
   }
+
+  /**
+   * @param {SubKey} key
+   * @param {Date} date   optional
+   * @returns {Promise<enums.keyFlags>}
+   */
+  async getSubkeyCapabilities(subKey, date = new Date()) {
+    const bindingSignature = await this.getLatestValidSignature(subKey, date);
+    return bindingSignature.keyFlags;
+  }
 }
 
 ['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
   Key.prototype[name] =
-  SubKey.prototype[name];
+    SubKey.prototype[name];
 });
 
 export default Key;
