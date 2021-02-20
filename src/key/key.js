@@ -902,6 +902,32 @@ class Key {
     packetList.push(bindingSignature);
     return new Key(packetList);
   }
+
+  /**
+   * Retrieves the latest valid signature for a subkey
+   * @param {SubKey} key
+   * @param  {Date} date, optional
+   * @returns {Promise<SignaturePacket>}
+   * @async
+   */
+  async getLatestValidSignature(subKey, date = new Date()) {
+    const primaryKey = this.keyPacket;
+    await subKey.verify(primaryKey, date);
+    const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
+    return helper.getLatestValidSignature(subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date);
+  }
+
+  /**
+   * @returns {Promise<SignaturePacket>}
+   */
+  getDirectKeySignature() {
+    for (let i = 0; i < this.directSignatures.length; i++) {
+      if (this.directSignatures[i].tag === enums.signature.key) {
+        return this.directSignatures[i];
+      }
+    }
+    throw new Error("Unable to find direct signature!");
+  }
 }
 
 ['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {

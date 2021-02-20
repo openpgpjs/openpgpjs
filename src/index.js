@@ -42,6 +42,12 @@ export { CleartextMessage, readCleartextMessage } from './cleartext';
 export * from './packet';
 
 /**
+ * @see module:crypto
+ * @name module:openpgp.crypto
+ */
+export { default as crypto } from './crypto';
+
+/**
  * @see streams
  * @name module:openpgp.stream
  */

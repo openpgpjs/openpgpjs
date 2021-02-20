@@ -49,6 +49,8 @@ export class Key {
   public getCreationTime(): Date;
   public getAlgorithmInfo(): AlgorithmInfo;
   public getKeyId(): Keyid;
+  public getLatestValidSignature(subKey: SubKey, date?: Date): Promise<SignaturePacket>;
+  public getDirectKeySignature(): SignaturePacket;
 }
 
 export class SubKey {
@@ -419,6 +421,9 @@ export class OnePassSignaturePacket extends BasePacket {
 export class UserIDPacket extends BasePacket {
   public tag: enums.packet.userID;
   public userid: string;
+  public getName(): string | undefined;
+  public getComment(): string | undefined;
+  public getEmail(): string | undefined;
   static fromObject(userId: UserID): UserIDPacket;
 }
 
@@ -634,6 +639,7 @@ interface KeyOptions {
 declare class Keyid {
   bytes: string;
   equals(keyid: Keyid, matchWildcard?: boolean): boolean;
+  static fromId(hex: string): Keyid;
   toHex(): string;
 }
 

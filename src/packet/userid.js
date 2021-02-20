@@ -97,6 +97,27 @@ class UserIDPacket {
   write() {
     return util.encodeUtf8(this.userid);
   }
+
+  /**
+   * @returns {string|undefined}
+   */
+  getName() {
+    return this.name;
+  }
+
+  /**
+   * @returns {string|undefined}
+   */
+  getComment() {
+    return this.comment;
+  }
+
+  /**
+   * @returns {string|undefined}
+   */
+  getEmail() {
+    return this.email;
+  }
 }
 
 export default UserIDPacket;
