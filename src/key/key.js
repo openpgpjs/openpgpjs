@@ -932,11 +932,17 @@ class Key {
   /**
    * @param {SubKey} key
    * @param {Date} date   optional
-   * @returns {Promise<enums.keyFlags>}
+   * @returns {Promise<enums.keyFlags[]>}
    */
   async getSubkeyCapabilities(subKey, date = new Date()) {
     const bindingSignature = await this.getLatestValidSignature(subKey, date);
-    return bindingSignature.keyFlags;
+    const flags = [];
+    Object.keys(enums.keyFlags).forEach(flag => {
+      if (bindingSignature.keyFlags[0] & enums.keyFlags[flag]) {
+        flags.push(enums.keyFlags[flag]);
+      }
+    });
+    return flags;
   }
 }
 

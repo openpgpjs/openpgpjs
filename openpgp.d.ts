@@ -52,7 +52,7 @@ export class Key {
   public getKeyId(): Keyid;
   public getLatestValidSignature(subKey: SubKey, date?: Date): Promise<SignaturePacket>;
   public getDirectKeySignature(): SignaturePacket;
-  public getSubkeyCapabilities(subKey: SubKey, date?: Date): Promise<enums.keyFlags>
+  public getSubkeyCapabilities(subKey: SubKey, date?: Date): Promise<enums.keyFlags[]>
 }
 
 export class SubKey {
