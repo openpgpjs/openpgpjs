@@ -7,6 +7,7 @@ module.exports = () => describe('Crypto', function () {
   require('./ecdh.js')();
   require('./pkcs5.js')();
   require('./aes_kw.js')();
+  require('./gcm.js')();
   require('./eax.js')();
   require('./ocb.js')();
   require('./rsa.js')();

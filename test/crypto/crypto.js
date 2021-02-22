@@ -247,72 +247,11 @@ module.exports = () => describe('API functional testing', function() {
         expect(text).to.equal(plaintext);
       }));
     }
-
-    function testAESGCM(plaintext, nativeDecrypt) {
-      symmAlgos.forEach(function(algo) {
-        if (algo.substr(0,3) === 'aes') {
-          it(algo, async function() {
-            const key = await crypto.generateSessionKey(algo);
-            const iv = await crypto.random.getRandomBytes(crypto.gcm.ivLength);
-            let modeInstance = await crypto.gcm(algo, key);
-
-            const ciphertext = await modeInstance.encrypt(util.strToUint8Array(plaintext), iv);
-
-            openpgp.config.useNative = nativeDecrypt;
-            modeInstance = await crypto.gcm(algo, key);
-
-            const decrypted = await modeInstance.decrypt(util.strToUint8Array(util.uint8ArrayToStr(ciphertext)), iv);
-            const decryptedStr = util.uint8ArrayToStr(decrypted);
-            expect(decryptedStr).to.equal(plaintext);
-          });
-        }
-      });
-    }
-
     it("Symmetric with OpenPGP CFB", async function () {
       await testCFB("hello");
       await testCFB("1234567");
       await testCFB("foobarfoobar1234567890");
       await testCFB("12345678901234567890123456789012345678901234567890");
-    });
-
-    describe('Symmetric AES-GCM (native)', function() {
-      let useNativeVal;
-      beforeEach(function() {
-        useNativeVal = openpgp.config.useNative;
-        openpgp.config.useNative = true;
-      });
-      afterEach(function() {
-        openpgp.config.useNative = useNativeVal;
-      });
-
-      testAESGCM("12345678901234567890123456789012345678901234567890", true);
-    });
-
-    describe('Symmetric AES-GCM (asm.js fallback)', function() {
-      let useNativeVal;
-      beforeEach(function() {
-        useNativeVal = openpgp.config.useNative;
-        openpgp.config.useNative = false;
-      });
-      afterEach(function() {
-        openpgp.config.useNative = useNativeVal;
-      });
-
-      testAESGCM("12345678901234567890123456789012345678901234567890", false);
-    });
-
-    describe('Symmetric AES-GCM (native encrypt, asm.js decrypt)', function() {
-      let useNativeVal;
-      beforeEach(function() {
-        useNativeVal = openpgp.config.useNative;
-        openpgp.config.useNative = true;
-      });
-      afterEach(function() {
-        openpgp.config.useNative = useNativeVal;
-      });
-
-      testAESGCM("12345678901234567890123456789012345678901234567890", false);
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', async function () {
