@@ -28,12 +28,11 @@
 
 import stream from 'web-stream-tools';
 import config from './config';
-import util from './util'; // re-import module to access util functions
 import { getBigInteger } from './biginteger';
 
 const debugMode = globalThis.process && globalThis.process.env.NODE_ENV === 'development';
 
-export default {
+const util = {
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
   },
@@ -741,3 +740,5 @@ export default {
     return error;
   }
 };
+
+export default util;

@@ -2,10 +2,10 @@
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const EAX = require('../../src/crypto/eax');
 const util = require('../../src/util');
 
+const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -125,30 +125,42 @@ function testAESEAX() {
   });
 }
 
-module.exports = () => {
+module.exports = () => describe('Symmetric AES-EAX', function() {
+  let getWebCryptoStub;
+  let getNodeCryptoStub;
+
+  const disableNative = () => {
+    enableNative();
+    // stubbed functions return undefined
+    getWebCryptoStub = stub(util, "getWebCrypto");
+    getNodeCryptoStub = stub(util, "getNodeCrypto");
+  };
+  const enableNative = () => {
+    getWebCryptoStub && getWebCryptoStub.restore();
+    getNodeCryptoStub && getNodeCryptoStub.restore();
+  };
+
   describe('Symmetric AES-EAX (native)', function() {
-    let useNativeVal;
-    beforeEach(function() {
-      useNativeVal = openpgp.config.useNative;
-      openpgp.config.useNative = true;
+    beforeEach(function () {
+      enableNative();
     });
-    afterEach(function() {
-      openpgp.config.useNative = useNativeVal;
+
+    afterEach(function () {
+      enableNative();
     });
 
     testAESEAX();
   });
 
   describe('Symmetric AES-EAX (asm.js fallback)', function() {
-    let useNativeVal;
-    beforeEach(function() {
-      useNativeVal = openpgp.config.useNative;
-      openpgp.config.useNative = false;
+    beforeEach(function () {
+      disableNative();
     });
-    afterEach(function() {
-      openpgp.config.useNative = useNativeVal;
+
+    afterEach(function () {
+      enableNative();
     });
 
     testAESEAX();
   });
-};
+});

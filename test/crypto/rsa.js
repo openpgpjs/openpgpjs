@@ -3,6 +3,7 @@ const crypto = require('../../src/crypto');
 const random = require('../../src/crypto/random');
 const util = require('../../src/util');
 
+const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 
 chai.use(require('chai-as-promised'));
@@ -13,6 +14,27 @@ const expect = chai.expect;
 /* eslint-disable no-invalid-this */
 const native = util.getWebCrypto() || util.getNodeCrypto();
 module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptography with native crypto', function () {
+  let getWebCryptoStub;
+  let getNodeCryptoStub;
+  const disableNative = () => {
+    enableNative();
+    // stubbed functions return undefined
+    getWebCryptoStub = stub(util, "getWebCrypto");
+    getNodeCryptoStub = stub(util, "getNodeCrypto");
+  };
+  const enableNative = () => {
+    getWebCryptoStub && getWebCryptoStub.restore();
+    getNodeCryptoStub && getNodeCryptoStub.restore();
+  };
+
+  beforeEach(function () {
+    enableNative();
+  });
+
+  afterEach(function () {
+    enableNative();
+  });
+
   it('generate rsa key', async function() {
     const bits = 1024;
     const keyObject = await crypto.publicKey.rsa.generate(bits, 65537);
@@ -49,29 +71,28 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
 
   it('decrypt nodeCrypto by bnCrypto and vice versa', async function() {
     if (!util.getNodeCrypto()) {
-      this.skip();
+      this.skip(); // webcrypto does not implement RSA PKCS#1 v.15 decryption
     }
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await crypto.generateSessionKey('aes256');
-    const useNative = openpgp.config.useNative;
     try {
-      openpgp.config.useNative = false;
+      disableNative();
       const encryptedBn = await crypto.publicKey.rsa.encrypt(message, n, e);
-      openpgp.config.useNative = true;
+      enableNative();
       const decrypted1 = await crypto.publicKey.rsa.decrypt(encryptedBn, n, e, d, p, q, u);
       expect(decrypted1).to.deep.equal(message);
       const encryptedNode = await crypto.publicKey.rsa.encrypt(message, n, e);
-      openpgp.config.useNative = false;
+      disableNative();
       const decrypted2 = await crypto.publicKey.rsa.decrypt(encryptedNode, n, e, d, p, q, u);
       expect(decrypted2).to.deep.equal(message);
     } finally {
-      openpgp.config.useNative = useNative;
+      enableNative();
     }
   });
 
-  it('compare native crypto and bn math sign', async function() {
+  it('compare native crypto and bnSign', async function() {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -79,25 +100,18 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await crypto.hash.digest(hash_algo, message);
-    const useNative = openpgp.config.useNative;
     try {
-      openpgp.config.useNative = true;
-      let signatureWeb;
-      try {
-        signatureWeb = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
-      } catch (error) {
-        util.printDebugError('web crypto error');
-        this.skip();
-      }
-      openpgp.config.useNative = false;
+      enableNative();
+      const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+      disableNative();
       const signatureBN = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
-      expect(util.uint8ArrayToHex(signatureWeb)).to.be.equal(util.uint8ArrayToHex(signatureBN));
+      expect(util.uint8ArrayToHex(signatureNative)).to.be.equal(util.uint8ArrayToHex(signatureBN));
     } finally {
-      openpgp.config.useNative = useNative;
+      enableNative();
     }
   });
 
-  it('compare native crypto and bn math verify', async function() {
+  it('compare native crypto and bnVerify', async function() {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -105,24 +119,16 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await crypto.hash.digest(hash_algo, message);
-    let verifyWeb;
-    let signature;
-    const useNative = openpgp.config.useNative;
     try {
-      openpgp.config.useNative = true;
-      try {
-        signature = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
-        verifyWeb = await crypto.publicKey.rsa.verify(hash_algo, message, signature, n, e);
-      } catch (error) {
-        util.printDebugError('web crypto error');
-        this.skip();
-      }
-      openpgp.config.useNative = false;
-      const verifyBN = await crypto.publicKey.rsa.verify(hash_algo, message, signature, n, e, hashed);
-      expect(verifyWeb).to.be.true;
+      enableNative();
+      const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+      const verifyNative = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e);
+      disableNative();
+      const verifyBN = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e, hashed);
+      expect(verifyNative).to.be.true;
       expect(verifyBN).to.be.true;
     } finally {
-      openpgp.config.useNative = useNative;
+      enableNative();
     }
   });
 });

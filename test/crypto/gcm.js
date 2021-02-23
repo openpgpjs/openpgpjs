@@ -1,9 +1,9 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const crypto = require('../../src/crypto');
 const util = require('../../src/util');
+
 const stub = require('sinon/lib/sinon/stub');
 const spy = require('sinon/lib/sinon/spy');
-
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -17,10 +17,9 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
 
   const disableNative = () => {
     enableNative();
+    // stubbed functions return undefined
     getWebCryptoStub = stub(util, "getWebCrypto");
     getNodeCryptoStub = stub(util, "getNodeCrypto");
-    getWebCryptoStub.returns(null);
-    getNodeCryptoStub.returns(null);
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
