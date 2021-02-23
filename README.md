@@ -147,7 +147,7 @@ Encryption will use the algorithm specified in config.encryptionCipher (defaults
 
 ```js
 (async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x01, 0x01]));
+    const message = openpgp.message.fromBinary(new Uint8Array([0x01, 0x01, 0x01]));
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -190,7 +190,7 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     await privateKey.decrypt(passphrase);
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText('Hello, World!'), // input as Message object
+        message: openpgp.message.fromText('Hello, World!'), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -231,7 +231,7 @@ Encrypt with multiple public keys:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase)
 
-    const message = openpgp.Message.fromText(message);
+    const message = openpgp.message.fromText(message);
     const encrypted = await openpgp.encrypt({
         message:, // input as Message object
         publicKeys, // for encryption
@@ -249,7 +249,7 @@ Either set the `compression` parameter in the options object when calling `encry
 
 ```js
 (async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])); // or .fromText('string')
+    const message = openpgp.message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])); // or .fromText('string')
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
@@ -280,7 +280,7 @@ Where the value can be any of:
         }
     });
 
-    const message = openpgp.Message.fromBinary(readableStream);
+    const message = openpgp.message.fromBinary(readableStream);
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -335,7 +335,7 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
     });
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText(readableStream), // input as Message object
+        message: openpgp.message.fromText(readableStream), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -543,7 +543,7 @@ Using the private key:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase);
 
-    const message = openpgp.Message.fromBinary(readableStream); // or .fromText(readableStream: ReadableStream<String>)
+    const message = openpgp.message.fromBinary(readableStream); // or .fromText(readableStream: ReadableStream<String>)
     const signatureArmored = await openpgp.sign({
         message,
         privateKeys: privateKey // for signing
