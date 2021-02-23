@@ -1623,8 +1623,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const privKey2 = await openpgp.readKey({ armoredKey: priv_key_arm2 });
     await privKey2.decrypt('hello world');
 
-    const opt = { rsaBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null };
-    if (util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = { rsaBits: 2048, userIds: { name:'test', email:'a@b.com' }, passphrase: null };
     const { key: generatedKey } = await openpgp.generateKey(opt);
     const detachedSig = await msg.signDetached([generatedKey, privKey2]);
     const result = await msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]);

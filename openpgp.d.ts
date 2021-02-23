@@ -314,7 +314,6 @@ export namespace config {
   let minRsaBits: number;
   let passwordCollisionCheck: boolean;
   let revocationsExpire: boolean;
-  let useNative: boolean;
   let zeroCopy: boolean;
   let tolerant: boolean;
   let versionString: string;

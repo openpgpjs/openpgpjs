@@ -21,13 +21,11 @@
  * This object contains utility functions
  * @requires email-addresses
  * @requires web-stream-tools
- * @requires config
  * @requires encoding/base64
  * @module util
  */
 
 import stream from 'web-stream-tools';
-import config from './config';
 import { getBigInteger } from './biginteger';
 
 const debugMode = globalThis.process && globalThis.process.env.NODE_ENV === 'development';
@@ -487,38 +485,10 @@ const util = {
 
   /**
    * Get native Web Cryptography api, only the current version of the spec.
-   * The default configuration is to use the api when available. But it can
-   * be deactivated with config.useNative
    * @returns {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
-    if (!config.useNative) {
-      return;
-    }
-
     return typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
-  },
-
-  /**
-   * Get native Web Cryptography api for all browsers, including legacy
-   * implementations of the spec e.g IE11 and Safari 8/9. The default
-   * configuration is to use the api when available. But it can be deactivated
-   * with config.useNative
-   * @returns {Object}   The SubtleCrypto api or 'undefined'
-   */
-  getWebCryptoAll: function() {
-    if (!config.useNative) {
-      return;
-    }
-
-    if (typeof globalThis !== 'undefined') {
-      if (globalThis.crypto) {
-        return globalThis.crypto.subtle || globalThis.crypto.webkitSubtle;
-      }
-      if (globalThis.msCrypto) {
-        return globalThis.msCrypto.subtle;
-      }
-    }
   },
 
   /**
@@ -544,23 +514,14 @@ const util = {
   getBigInteger,
 
   /**
-   * Get native Node.js crypto api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useNative
+   * Get native Node.js crypto api.
    * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!config.useNative) {
-      return;
-    }
-
     return require('crypto');
   },
 
   getNodeZlib: function() {
-    if (!config.useNative) {
-      return;
-    }
-
     return require('zlib');
   },
 

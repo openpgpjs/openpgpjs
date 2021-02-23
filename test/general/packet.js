@@ -305,7 +305,7 @@ module.exports = () => describe("Packet", function() {
 
   it('Public key encrypted symmetric key packet', function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
-    const keySize = util.getWebCryptoAll() ? 2048 : 512; // webkit webcrypto accepts minimum 2048 bit keys
+    const keySize = 1024;
 
     return crypto.generateParams(rsa, keySize, 65537).then(function({ publicParams, privateParams }) {
       const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();

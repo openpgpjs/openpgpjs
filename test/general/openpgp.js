@@ -798,31 +798,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - integration tests', function() {
-    let useNativeVal;
-
-    beforeEach(function() {
-      useNativeVal = openpgp.config.useNative;
-    });
-
-    afterEach(function() {
-      openpgp.config.useNative = useNativeVal;
-    });
-
-    it('should work in JS', function() {
-      openpgp.config.useNative = false;
-      const opt = {
-        userIds: [{ name: 'Test User', email: 'text@example.com' }]
-      };
-
-      return openpgp.generateKey(opt).then(function(newKey) {
-        expect(newKey.key.getUserIds()[0]).to.equal('Test User <text@example.com>');
-        expect(newKey.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
-        expect(newKey.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
-      });
-    });
-
-    it('should work in with native crypto', function() {
-      openpgp.config.useNative = true;
+    it('should work', function() {
       const opt = {
         userIds: [{ name: 'Test User', email: 'text@example.com' }]
       };
@@ -845,7 +821,6 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     let privateKey;
     let publicKey;
     let publicKeyNoAEAD;
-    let useNativeVal;
     let aeadProtectVal;
     let aeadModeVal;
     let aeadChunkSizeByteVal;
@@ -864,7 +839,6 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       publicKey_1337 = privateKey_1337.toPublic();
       privateKeyMismatchingParams = await openpgp.readKey({ armoredKey: mismatchingKeyParams });
 
-      useNativeVal = openpgp.config.useNative;
       aeadProtectVal = openpgp.config.aeadProtect;
       aeadModeVal = openpgp.config.aeadMode;
       aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
@@ -872,7 +846,6 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
 
     afterEach(function() {
-      openpgp.config.useNative = useNativeVal;
       openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.aeadMode = aeadModeVal;
       openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;

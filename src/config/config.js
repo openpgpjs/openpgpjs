@@ -131,11 +131,6 @@ export default {
 
   /**
    * @memberof module:config
-   * @property {Boolean} useNative Use native Node.js crypto/zlib and WebCrypto APIs when available
-   */
-  useNative: true, // TODO remove
-  /**
-   * @memberof module:config
    * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
    */
   minBytesForWebCrypto: 1000,
