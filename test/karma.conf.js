@@ -20,7 +20,7 @@ module.exports = function(config) {
       mocha: {
         reporter: 'html',
         ui: 'bdd',
-        timeout: 10000,
+        timeout: 30000,
         grep: process.env.LIGHTWEIGHT ? '@lightweight' : undefined
       }
     },
