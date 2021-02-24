@@ -49,6 +49,9 @@ import {
  * @memberof module:packet
  */
 class CompressedDataPacket {
+  /**
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
+   */
   constructor(config = defaultConfig) {
     /**
      * Packet type

@@ -70,6 +70,7 @@ export class CleartextMessage {
    * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                       (optional) The creation time of the signature that should be created
    * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Object} config                   (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
    * @async
    */
@@ -84,6 +85,7 @@ export class CleartextMessage {
    * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                       (optional) The creation time of the signature that should be created
    * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Object} config                   (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<module:signature.Signature>}      new detached signature of message content
    * @async
    */
@@ -98,10 +100,11 @@ export class CleartextMessage {
    * Verify signatures of cleartext signed message
    * @param {Array<module:key.Key>} keys array of keys to verify signatures
    * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
-  verify(keys, date = new Date(), streaming, config) {
+  verify(keys, date = new Date(), streaming, config = defaultConfig) {
     return this.verifyDetached(this.signature, keys, date, null, config);
   }
 
@@ -109,6 +112,7 @@ export class CleartextMessage {
    * Verify signatures of cleartext signed message
    * @param {Array<module:key.Key>} keys array of keys to verify signatures
    * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
@@ -131,6 +135,7 @@ export class CleartextMessage {
 
   /**
    * Returns ASCII armored text of cleartext signed message
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {String | ReadableStream<String>} ASCII armor
    */
   armor(config = defaultConfig) {
@@ -160,6 +165,7 @@ export class CleartextMessage {
 /**
  * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String | ReadableStream<String>} cleartextMessage text to be parsed
+ * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
  * @returns {module:cleartext.CleartextMessage} new cleartext message object
  * @async
  * @static

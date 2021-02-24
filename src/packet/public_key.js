@@ -46,6 +46,10 @@ import util from '../util';
  * @memberof module:packet
  */
 class PublicKeyPacket {
+  /**
+   * @param {Date} date      (optional) creation date
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   */
   constructor(date = new Date(), config = defaultConfig) {
     /**
      * Packet type

@@ -48,6 +48,7 @@ export class Signature {
 
   /**
    * Returns ASCII armored text of signature
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {ReadableStream<String>} ASCII armor
    */
   armor(config = defaultConfig) {

@@ -106,10 +106,11 @@ export class Message {
    * @param  {Array<String>} passwords    (optional) passwords used to decrypt
    * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param  {Boolean} streaming          (optional) whether to process data as a stream
+   * @param  {Object} config              (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}             new message with decrypted content
    * @async
    */
-  async decrypt(privateKeys, passwords, sessionKeys, streaming, config) {
+  async decrypt(privateKeys, passwords, sessionKeys, streaming, config = defaultConfig) {
     const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords, config);
 
     const symEncryptedPacketlist = this.packets.filterByTag(
@@ -155,11 +156,12 @@ export class Message {
    * Decrypt encrypted session keys either with private keys or passwords.
    * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
    * @param  {Array<String>} passwords   (optional) passwords used to decrypt
+   * @param  {Object} config             (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{ data:      Uint8Array,
                                algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
   * @async
   */
-  async decryptSessionKeys(privateKeys, passwords, config) {
+  async decryptSessionKeys(privateKeys, passwords, config = defaultConfig) {
     let keyPackets = [];
 
     let exception;
@@ -290,10 +292,11 @@ export class Message {
    * @param  {Array<Key>} keys           (optional) public key(s) to select algorithm preferences for
    * @param  {Date} date                 (optional) date to select algorithm preferences at
    * @param  {Array<Object>} userIds     (optional) user IDs to select algorithm preferences for
+   * @param  {Object} config             (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<{ data: Uint8Array, algorithm: String }>} object with session key data and algorithm
    * @async
    */
-  static async generateSessionKey(keys = [], date = new Date(), userIds = [], config) {
+  static async generateSessionKey(keys = [], date = new Date(), userIds = [], config = defaultConfig) {
     const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds, config));
     const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIds, config) ?
       enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds, config)) :
@@ -312,10 +315,11 @@ export class Message {
    * @param  {Date} date                                  (optional) override the creation date of the literal package
    * @param  {Array<Object>} userIds                      (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
    * @param  {Boolean} streaming                          (optional) whether to process data as a stream
+   * @param  {Object} config                              (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}                   new message with encrypted content
    * @async
    */
-  async encrypt(keys, passwords, sessionKey, wildcard = false, encryptionKeyIds = [], date = new Date(), userIds = [], streaming, config) {
+  async encrypt(keys, passwords, sessionKey, wildcard = false, encryptionKeyIds = [], date = new Date(), userIds = [], streaming, config = defaultConfig) {
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
@@ -361,10 +365,11 @@ export class Message {
    * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
    * @param  {Date} date                                  (optional) override the date
    * @param  {Array} userIds                              (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+   * @param  {Object} config                              (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}                          new message with encrypted content
    * @async
    */
-  static async encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, encryptionKeyIds = [], date = new Date(), userIds = [], config) {
+  static async encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, encryptionKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
     const packetlist = new PacketList();
 
     if (publicKeys) {
@@ -428,6 +433,7 @@ export class Message {
    * @param  {Date} date                              (optional) override the creation time of the signature
    * @param  {Array} userIds                          (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param  {Boolean} streaming                      (optional) whether to process data as a stream
+   * @param  {Object} config                          (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}                      new message with signed content
    * @async
    */
@@ -488,9 +494,10 @@ export class Message {
 
   /**
    * Compresses the message (the literal and -if signed- signature data packets of the message)
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {module:message.Message}       new message with compressed content
    */
-  compress(config) {
+  compress(config = defaultConfig) {
     if (config.compression === enums.compression.uncompressed) {
       return this;
     }
@@ -512,6 +519,7 @@ export class Message {
    * @param  {Date} date                           (optional) override the creation time of the signature
    * @param  {Array} userIds                       (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param  {Boolean} streaming                   (optional) whether to process data as a stream
+   * @param  {Object} config                       (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<module:signature.Signature>} new detached signature of message content
    * @async
    */
@@ -528,10 +536,11 @@ export class Message {
    * @param {Array<module:key.Key>} keys array of keys to verify signatures
    * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param  {Boolean} streaming (optional) whether to process data as a stream
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
    * @async
    */
-  async verify(keys, date = new Date(), streaming, config) {
+  async verify(keys, date = new Date(), streaming, config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
@@ -580,6 +589,7 @@ export class Message {
    * @param {Array<module:key.Key>} keys array of keys to verify signatures
    * @param {Signature} signature
    * @param {Date} date Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Array<({keyid: module:type/keyid, valid: Boolean})>>} list of signer's keyid and validity of signature
    * @async
    */
@@ -623,6 +633,7 @@ export class Message {
 
   /**
    * Returns ASCII armored text of message
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {ReadableStream<String>} ASCII armor
    */
   armor(config = defaultConfig) {
@@ -697,10 +708,11 @@ export class Message {
  * @param  {Array} userIds                     (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param  {Boolean} detached                  (optional) whether to create detached signature packets
  * @param  {Boolean} streaming                 (optional) whether to process data as a stream
+ * @param  {Object} config                     (optional) full configuration, defaults to openpgp.config
  * @returns {Promise<module:PacketList>} list of signature packets
  * @async
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], detached = false, streaming = false, config) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], detached = false, streaming = false, config = defaultConfig) {
   const packetlist = new PacketList();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -733,11 +745,12 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} detached (optional) whether to verify detached signature packets
+ * @param {Object} config (optional) full configuration, defaults to openpgp.config
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean|null}>>} list of signer's keyid and validity of signature
  * @async
  */
-async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, streaming = false, config) {
+async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, streaming = false, config = defaultConfig) {
   let primaryKey = null;
   let signingKey = null;
   await Promise.all(keys.map(async function(key) {
@@ -794,11 +807,12 @@ async function createVerificationObject(signature, literalDataList, keys, date =
  * @param {Date} date Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} detached (optional) whether to verify detached signature packets
+ * @param {Object} config (optional) full configuration, defaults to openpgp.config
  * @returns {Promise<Array<{keyid: module:type/keyid,
  *                          valid: Boolean}>>} list of signer's keyid and validity of signature
  * @async
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date(), detached = false, streaming = false, config) {
+export async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date(), detached = false, streaming = false, config = defaultConfig) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
@@ -810,7 +824,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
  * Reads an (optionally armored) OpenPGP message and returns a Message object
  * @param {String | ReadableStream<String>} armoredMessage armored message to be parsed
  * @param {Uint8Array | ReadableStream<Uint8Array>} binaryMessage binary to be parsed
- * @param  {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
+ * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
  * @returns {Promise<Message>} new message object
  * @async
  * @static

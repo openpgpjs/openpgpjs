@@ -51,6 +51,7 @@ export async function generateSecretKey(options, config) {
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
  * @param  {Array<SignaturePacket>}         signatures  List of signatures
  * @param  {Date}                           date        Use the given date instead of the current time
+ * @param  {Object} config full configuration
  * @returns {Promise<SignaturePacket>} The latest valid signature
  * @async
  */
@@ -97,6 +98,7 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
  * @param {SecretSubkeyPacket} subkey Subkey key packet
  * @param {SecretKeyPacket} primaryKey Primary key packet
  * @param {Object} options
+ * @param {Object} config full configuration
  */
 export async function createBindingSignature(subkey, primaryKey, options, config) {
   const dataToSign = {};
@@ -128,6 +130,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @param  {SecretKeyPacket|SecretSubkeyPacket} keyPacket key packet used for signing
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID
+ * @param  {Object} config full configuration
  * @returns {Promise<String>}
  * @async
  */
@@ -164,6 +167,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Array} userIds (optional) user IDs
+ * @param  {Object} config (optional) full configuration, defaults to openpgp.config
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
@@ -207,6 +211,7 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
  * @param  {Object} userId                   (optional) user ID
  * @param  {Object} detached                 (optional) whether to create a detached signature packet
  * @param  {Boolean} streaming               (optional) whether to process data as a stream
+ * @param  {Object} config                   full configuration
  * @returns {module:packet/signature}         signature packet
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false, config) {
@@ -262,6 +267,7 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
  *          PublicKeyPacket|
  *          SecretKeyPacket} key, optional The key packet to check the signature
  * @param  {Date}                     date          Use the given date instead of the current time
+ * @param {Object} config full configuration
  * @returns {Promise<Boolean>}                      True if the signature revokes the data
  * @async
  */
@@ -313,6 +319,7 @@ export function getExpirationTime(keyPacket, signature) {
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Array} userIds (optional) user IDs
+ * @param  {Object} config full configuration
  * @returns {Promise<Boolean>}
  * @async
  */

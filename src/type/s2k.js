@@ -37,6 +37,9 @@ import enums from '../enums.js';
 import util from '../util.js';
 
 class S2K {
+  /**
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   */
   constructor(config = defaultConfig) {
     /** @type {module:enums.hash} */
     this.algorithm = 'sha256';

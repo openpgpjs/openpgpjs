@@ -29,6 +29,7 @@ class HKP {
    * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
    *   the protocol to use, e.g. 'https://pgp.mit.edu'; defaults to
    *   openpgp.config.keyserver (https://keyserver.ubuntu.com)
+   * @param {Object}    config (optional) full configuration, defaults to openpgp.config
    */
   constructor(keyServerBaseUrl, config = defaultConfig) {
     this._baseUrl = keyServerBaseUrl || config.keyserver;

@@ -44,6 +44,9 @@ import util from '../util';
  * @memberof module:packet
  */
 class SymEncryptedSessionKeyPacket {
+  /**
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   */
   constructor(config = defaultConfig) {
     this.tag = enums.packet.symEncryptedSessionKey;
     this.version = config.aeadProtect ? 5 : 4;
@@ -154,10 +157,11 @@ class SymEncryptedSessionKeyPacket {
   /**
    * Encrypts the session key
    * @param {String} passphrase The passphrase in string form
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(passphrase, config) {
+  async encrypt(passphrase, config = defaultConfig) {
     const algo = this.sessionKeyEncryptionAlgorithm !== null ?
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;

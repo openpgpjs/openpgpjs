@@ -78,6 +78,7 @@ class KeyArray {
   /**
    * Imports a key from an ascii armored message
    * @param {String} armored message to read the keys/key from
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @async
    */
   async importKey(armored, config = defaultConfig) {
@@ -124,6 +125,7 @@ class Keyring {
   /**
    * Initialization routine for the keyring.
    * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    */
   constructor(storeHandler, config = defaultConfig) {
     this.storeHandler = storeHandler || new LocalStore(undefined, config);

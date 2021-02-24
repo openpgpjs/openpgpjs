@@ -99,9 +99,10 @@ class SignaturePacket {
   /**
    * parsing function for a signature packet (tag 2).
    * @param {String} bytes payload of a tag 2 packet
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @returns {SignaturePacket} object representation
    */
-  read(bytes, config) {
+  read(bytes, config = defaultConfig) {
     let i = 0;
     this.version = bytes[i++];
 
@@ -671,6 +672,7 @@ class SignaturePacket {
    * @param {String|Object} data data which on the signature applies
    * @param {Boolean} detached (optional) whether to verify a detached signature
    * @param {Boolean} streaming (optional) whether to process data as a stream
+   * @param {Object}  config (optional) full configuration, defaults to openpgp.config
    * @throws {Error} if signature validation failed
    * @async
    */

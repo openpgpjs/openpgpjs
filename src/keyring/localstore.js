@@ -34,6 +34,7 @@ import defaultConfig from '../config';
 class LocalStore {
   /**
    * @param {String} prefix prefix for itemnames in localstore
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    */
   constructor(prefix, config = defaultConfig) {
     prefix = prefix || 'openpgp-';
@@ -57,6 +58,7 @@ class LocalStore {
 
   /**
    * Load the private keys from HTML5 local storage.
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @returns {Array<module:key.Key>} array of keys retrieved from localstore
    * @async
    */
@@ -68,6 +70,7 @@ class LocalStore {
    * Saves the current state of the public keys to HTML5 local storage.
    * The key array gets stringified using JSON
    * @param {Array<module:key.Key>} keys array of keys to save in localstore
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @async
    */
   async storePublic(keys, config = defaultConfig) {
@@ -78,6 +81,7 @@ class LocalStore {
    * Saves the current state of the private keys to HTML5 local storage.
    * The key array gets stringified using JSON
    * @param {Array<module:key.Key>} keys array of keys to save in localstore
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @async
    */
   async storePrivate(keys, config = defaultConfig) {

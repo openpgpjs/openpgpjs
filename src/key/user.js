@@ -45,6 +45,7 @@ class User {
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket}          primaryKey  The primary key packet
    * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
+   * @param  {Object}                   config      Full configuration
    * @returns {Promise<module:key.Key>}             New user with new certificate signatures
    * @async
    */
@@ -83,6 +84,7 @@ class User {
    *          PublicKeyPacket|
    *          SecretKeyPacket} key, optional The key to verify the signature
    * @param  {Date}                     date          Use the given date instead of the current time
+   * @param  {Object}          config Full configuration
    * @returns {Promise<Boolean>}                      True if the certificate is revoked
    * @async
    */
@@ -103,10 +105,11 @@ class User {
    * @param  {SignaturePacket}  certificate A certificate of this user
    * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
    * @param  {Date}                     date        Use the given date instead of the current time
+   * @param  {Object}                   config      Full configuration
    * @returns {Promise<true|null>}   status of the certificate
    * @async
    */
-  async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config = defaultConfig) {
+  async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config) {
     const that = this;
     const keyid = certificate.issuerKeyId;
     const dataToVerify = {
@@ -140,7 +143,8 @@ class User {
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
-   * @param  {Date}                     date        Use the given date instead of the current time
+   * @param  {Date}                     date       Use the given date instead of the current time
+   * @param  {Object}                   config     Full configuration
    * @returns {Promise<Array<{keyid: module:type/keyid,
    *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
    * @async
@@ -162,11 +166,12 @@ class User {
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param  {Date}            date       Use the given date instead of the current time
+   * @param  {Object}          config     Full configuration
    * @returns {Promise<true>}             Status of user
    * @throws {Error} if there are no valid self signatures.
    * @async
    */
-  async verify(primaryKey, date = new Date(), config = defaultConfig) {
+  async verify(primaryKey, date = new Date(), config) {
     if (!this.selfCertifications.length) {
       throw new Error('No self-certifications');
     }
@@ -205,6 +210,7 @@ class User {
    * @param  {module:key.User}    user       Source user to merge
    * @param  {SecretKeyPacket|
    *          SecretSubkeyPacket} primaryKey primary key used for validation
+   * @param  {Object}             config Full configuration
    * @returns {Promise<undefined>}
    * @async
    */
