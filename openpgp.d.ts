@@ -57,7 +57,7 @@ export class SubKey {
   public keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
   public bindingSignatures: SignaturePacket[];
   public revocationSignatures: SignaturePacket[];
-  public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<enums.keyStatus>;
+  public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<SignaturePacket>;
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
