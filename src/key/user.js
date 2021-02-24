@@ -10,7 +10,6 @@ import enums from '../enums';
 import util from '../util';
 import { PacketList } from '../packet';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper';
-import defaultConfig from '../config';
 
 /**
  * Class that represents an user ID or attribute packet and the relevant signatures.
