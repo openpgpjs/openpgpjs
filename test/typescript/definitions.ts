@@ -6,16 +6,18 @@
  *  - if it fails to run, edit this file to match the actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
  */
 
-import { generateKey, readKey, readKeys, Key, readMessage, Message, CleartextMessage, encrypt, decrypt, sign, verify } from '../..';
+import { generateKey, readKey, readKeys, Key, readMessage, Message, CleartextMessage, encrypt, decrypt, sign, verify, config } from '../..';
+
 import { expect } from 'chai';
 
 (async () => {
 
   // Generate keys
-  const { publicKeyArmored, key } = await generateKey({ userIds: [{ email: "user@corp.co" }] });
+  const { publicKeyArmored, key } = await generateKey({ userIds: [{ email: "user@corp.co" }], config: { v5Keys: true } });
   expect(key).to.be.instanceOf(Key);
   const privateKeys = [key];
   const publicKeys = [key.toPublic()];
+  expect(key.toPublic().armor(config)).to.equal(publicKeyArmored);
 
   // Parse keys
   expect(await readKey({ armoredKey: publicKeyArmored })).to.be.instanceOf(Key);
