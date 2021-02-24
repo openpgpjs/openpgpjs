@@ -338,7 +338,7 @@ declare abstract class BasePacket {
  * - A Subkey Packet cannot always be used when a Primary Key Packet is expected (and vice versa).
  */
 declare abstract class BasePublicKeyPacket extends BasePacket {
-  public algorithm: enums.publicKey;
+  public algorithm: enums.publicKeyNames;
   public created: Date;
   public version: number;
   public getAlgorithmInfo(): AlgorithmInfo;
