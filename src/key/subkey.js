@@ -83,6 +83,7 @@ class SubKey {
     if (helper.isDataExpired(this.keyPacket, bindingSignature, date)) {
       throw new Error('Subkey is expired');
     }
+    return bindingSignature;
   }
 
   /**

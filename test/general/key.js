@@ -3758,4 +3758,15 @@ VYGdb3eNlV8CfoEC
     });
   });
 
+  it('Subkey.verify returns the latest valid signature', async function () {
+    const { key: encryptionKey } = await openpgp.generateKey({ userIds: { name: "purple" } });
+    const encryptionKeySignature = await encryptionKey.getSubkeys()[0].verify(encryptionKey);
+    expect(encryptionKeySignature instanceof openpgp.SignaturePacket).to.be.true;
+    expect(encryptionKeySignature.keyFlags[0] & openpgp.enums.keyFlags.encryptCommunication).to.be.equals(openpgp.enums.keyFlags.encryptCommunication);
+    expect(encryptionKeySignature.keyFlags[0] & openpgp.enums.keyFlags.encryptStorage).to.be.equals(openpgp.enums.keyFlags.encryptStorage);
+    const { key: signingKey } = await openpgp.generateKey({ userIds: { name: "purple" }, subkeys: [{ sign: true }] });
+    const signingKeySignature = await signingKey.getSubkeys()[0].verify(signingKey);
+    expect(signingKeySignature instanceof openpgp.SignaturePacket).to.be.true;
+    expect(signingKeySignature.keyFlags[0] & openpgp.enums.keyFlags.signData).to.be.equals(openpgp.enums.keyFlags.signData);
+  });
 });

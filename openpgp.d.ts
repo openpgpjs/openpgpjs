@@ -44,6 +44,7 @@ export class Key {
   public getEncryptionKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
   public getSigningKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
   public getKeys(keyId?: Keyid): (Key | SubKey)[];
+  public getSubkeys(keyId?: Keyid): SubKey[];
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
@@ -417,8 +418,11 @@ export class OnePassSignaturePacket extends BasePacket {
 }
 
 export class UserIDPacket extends BasePacket {
-  public tag: enums.packet.userID;
-  public userid: string;
+  public readonly tag: enums.packet.userID;
+  public readonly name: string;
+  public readonly comment: string;
+  public readonly email: string;
+  public readonly userid: string;
   static fromObject(userId: UserID): UserIDPacket;
 }
 
@@ -635,6 +639,7 @@ declare class Keyid {
   bytes: string;
   equals(keyid: Keyid, matchWildcard?: boolean): boolean;
   toHex(): string;
+  static fromId(hex: string): Keyid;
 }
 
 interface DecryptMessageResult {
