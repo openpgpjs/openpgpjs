@@ -74,8 +74,8 @@ export class CleartextMessage {
    * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
    * @async
    */
-  async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], streaming, config = defaultConfig) {
-    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, signingKeyIds, date, userIds, undefined, config));
+  async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
+    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, signingKeyIds, date, userIds, config));
   }
 
   /**
@@ -89,7 +89,7 @@ export class CleartextMessage {
    * @returns {Promise<module:signature.Signature>}      new detached signature of message content
    * @async
    */
-  async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], streaming, config = defaultConfig) {
+  async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
 
@@ -104,8 +104,8 @@ export class CleartextMessage {
    * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
-  verify(keys, date = new Date(), streaming, config = defaultConfig) {
-    return this.verifyDetached(this.signature, keys, date, null, config);
+  verify(keys, date = new Date(), config = defaultConfig) {
+    return this.verifyDetached(this.signature, keys, date, config);
   }
 
   /**
@@ -116,7 +116,7 @@ export class CleartextMessage {
    * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
-  verifyDetached(signature, keys, date = new Date(), streaming, config = defaultConfig) {
+  verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
     const signatureList = signature.packets;
     const literalDataPacket = new LiteralDataPacket();
     // we assume that cleartext signature is generated based on UTF8 cleartext

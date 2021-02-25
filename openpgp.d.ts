@@ -35,7 +35,7 @@ export class Key {
   public getUserIds(): string[];
   public isPrivate(): boolean;
   public isPublic(): boolean;
-  public toPublic(config?: Config): Key;
+  public toPublic(): Key;
   public update(key: Key, config?: Config): void;
   public verifyPrimaryKey(date?: Date, userId?: UserID, config?: Config): Promise<void>; // throws on error
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
@@ -125,12 +125,12 @@ export class CleartextMessage {
    *
    *  @param privateKeys private keys with decrypted secret key data for signing
    */
-  sign(privateKeys: Key[], signature?: Signature, signingKeyIds?: Keyid[], date?: Date, userIds?: UserID[], streaming?: boolean, config?: Config): void;
+  sign(privateKeys: Key[], signature?: Signature, signingKeyIds?: Keyid[], date?: Date, userIds?: UserID[], config?: Config): void;
 
   /** Verify signatures of cleartext signed message
    *  @param keys array of keys to verify signatures
    */
-  verify(keys: Key[], date?: Date, streaming?: boolean, config?: Config): Promise<VerificationResult[]>;
+  verify(keys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
 
   static fromText(text: string): CleartextMessage;
 }

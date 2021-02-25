@@ -242,7 +242,7 @@ class Key {
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {module:key.Key} new public Key
    */
-  toPublic(config = defaultConfig) {
+  toPublic() {
     const packetlist = new PacketList();
     const keyPackets = this.toPacketlist();
     let bytes;
@@ -252,13 +252,13 @@ class Key {
       switch (keyPackets[i].tag) {
         case enums.packet.secretKey:
           bytes = keyPackets[i].writePublicKey();
-          pubKeyPacket = new PublicKeyPacket(undefined, config);
+          pubKeyPacket = new PublicKeyPacket();
           pubKeyPacket.read(bytes);
           packetlist.push(pubKeyPacket);
           break;
         case enums.packet.secretSubkey:
           bytes = keyPackets[i].writePublicKey();
-          pubSubkeyPacket = new PublicSubkeyPacket(undefined, config);
+          pubSubkeyPacket = new PublicSubkeyPacket();
           pubSubkeyPacket.read(bytes);
           packetlist.push(pubSubkeyPacket);
           break;

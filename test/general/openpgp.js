@@ -685,7 +685,7 @@ function withCompression(tests) {
 
       tests(
         function(options) {
-          options.config = { ...openpgp.config, compression };
+          options.config = { compression };
           return options;
         },
         function() {

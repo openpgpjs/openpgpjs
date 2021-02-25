@@ -96,7 +96,7 @@ export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBi
 
       key: key,
       privateKeyArmored: key.armor(config),
-      publicKeyArmored: key.toPublic(config).armor(config),
+      publicKeyArmored: key.toPublic().armor(config),
       revocationCertificate: revocationCertificate
 
     };
@@ -128,7 +128,7 @@ export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpi
 
       key: key,
       privateKeyArmored: key.armor(config),
-      publicKeyArmored: key.toPublic(config).armor(config),
+      publicKeyArmored: key.toPublic().armor(config),
       revocationCertificate: revocationCertificate
 
     };
@@ -160,7 +160,7 @@ export function revokeKey({ key, revocationCertificate, reasonForRevocation, con
     }
   }).then(async key => {
     if (key.isPrivate()) {
-      const publicKey = key.toPublic(config);
+      const publicKey = key.toPublic();
       return {
         privateKey: key,
         privateKeyArmored: key.armor(config),
@@ -371,7 +371,9 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
 
   return Promise.resolve().then(async function() {
     let signature;
-    if (detached) {
+    if (message instanceof CleartextMessage) {
+      signature = await message.sign(privateKeys, undefined, signingKeyIds, date, fromUserIds, config);
+    } else if (detached) {
       signature = await message.signDetached(privateKeys, undefined, signingKeyIds, date, fromUserIds, message.fromStream, config);
     } else {
       signature = await message.sign(privateKeys, undefined, signingKeyIds, date, fromUserIds, message.fromStream, config);
@@ -422,7 +424,11 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
 
   return Promise.resolve().then(async function() {
     const result = {};
-    result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming, config) : await message.verify(publicKeys, date, streaming, config);
+    if (message instanceof CleartextMessage) {
+      result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, config) : await message.verify(publicKeys, date, config);
+    } else {
+      result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming, config) : await message.verify(publicKeys, date, streaming, config);
+    }
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     if (streaming) linkStreams(result, message);
     result.data = await convertStream(result.data, streaming, format);
