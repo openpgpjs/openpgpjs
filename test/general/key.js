@@ -3108,17 +3108,17 @@ module.exports = () => describe('Key', function() {
     const source = await openpgp.readKey({ armoredKey: priv_key_rsa });
     const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(dest.isPublic()).to.be.true;
-    return dest.update(source).then(() => {
+    return dest.update(source).then(async () => {
       expect(dest.isPrivate()).to.be.true;
       return Promise.all([
-        dest.verifyPrimaryKey().then(result => {
-          expect(source.verifyPrimaryKey()).to.eventually.equal(result);
+        dest.verifyPrimaryKey().then(async result => {
+          await expect(source.verifyPrimaryKey()).to.eventually.equal(result);
         }),
-        dest.users[0].verify(dest.primaryKey).then(result => {
-          expect(source.users[0].verify(source.primaryKey)).to.eventually.equal(result);
+        dest.users[0].verify(dest.primaryKey).then(async result => {
+          await expect(source.users[0].verify(source.primaryKey)).to.eventually.equal(result);
         }),
-        dest.subKeys[0].verify(dest.primaryKey).then(result => {
-          expect(source.subKeys[0].verify(source.primaryKey)).to.eventually.equal(result);
+        dest.subKeys[0].verify(dest.primaryKey).then(async result => {
+          await expect(source.subKeys[0].verify(source.primaryKey)).to.eventually.deep.equal(result);
         })
       ]);
     });
