@@ -40,6 +40,11 @@ describe('Unit Tests', function () {
         } catch (e) {}
       }
     });
+  } else {
+    process.on('unhandledRejection', error => {
+      console.error(error);
+      process.exit(1); // eslint-disable-line no-process-exit
+    });
   }
 
   require('./crypto')();
