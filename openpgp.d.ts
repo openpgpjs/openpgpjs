@@ -624,11 +624,6 @@ interface KeyPair {
 
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
-interface SubkeyOptions {
-  sign?: boolean;
-  passphrase?: string;
-}
-
 interface KeyOptions {
   userIds: UserID|UserID[];
   passphrase?: string;
@@ -637,7 +632,7 @@ interface KeyOptions {
   rsaBits?: number;
   keyExpirationTime?: number;
   date?: Date;
-  subkeys?: SubkeyOptions[];
+  subkeys?: KeyOptions[];
 }
 
 declare class Keyid {
