@@ -42,7 +42,7 @@ describe('Unit Tests', function () {
     });
   } else {
     process.on('unhandledRejection', error => {
-      console.error(error);
+      console.error(error); // eslint-disable-line no-console
       process.exit(1); // eslint-disable-line no-process-exit
     });
   }
