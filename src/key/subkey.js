@@ -68,6 +68,7 @@ class SubKey {
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param  {Date}            date       Use the given date instead of the current time
+   * @returns {Promise<SignaturePacket>}
    * @throws {Error}           if the subkey is invalid.
    * @async
    */
@@ -83,6 +84,7 @@ class SubKey {
     if (helper.isDataExpired(this.keyPacket, bindingSignature, date)) {
       throw new Error('Subkey is expired');
     }
+    return bindingSignature;
   }
 
   /**

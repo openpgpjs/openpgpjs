@@ -44,6 +44,7 @@ export class Key {
   public getEncryptionKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
   public getSigningKey(keyid?: Keyid, date?: Date | null, userId?: UserID): Promise<Key | SubKey>;
   public getKeys(keyId?: Keyid): (Key | SubKey)[];
+  public getSubkeys(keyId?: Keyid): SubKey[];
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
@@ -56,7 +57,7 @@ export class SubKey {
   public keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
   public bindingSignatures: SignaturePacket[];
   public revocationSignatures: SignaturePacket[];
-  public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<enums.keyStatus>;
+  public verify(primaryKey: PublicKeyPacket | SecretKeyPacket): Promise<SignaturePacket>;
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
@@ -337,7 +338,7 @@ declare abstract class BasePacket {
  * - A Subkey Packet cannot always be used when a Primary Key Packet is expected (and vice versa).
  */
 declare abstract class BasePublicKeyPacket extends BasePacket {
-  public algorithm: enums.publicKey;
+  public algorithm: enums.publicKeyNames;
   public created: Date;
   public version: number;
   public getAlgorithmInfo(): AlgorithmInfo;
@@ -417,8 +418,11 @@ export class OnePassSignaturePacket extends BasePacket {
 }
 
 export class UserIDPacket extends BasePacket {
-  public tag: enums.packet.userID;
-  public userid: string;
+  public readonly tag: enums.packet.userID;
+  public readonly name: string;
+  public readonly comment: string;
+  public readonly email: string;
+  public readonly userid: string;
   static fromObject(userId: UserID): UserIDPacket;
 }
 
@@ -635,6 +639,7 @@ declare class Keyid {
   bytes: string;
   equals(keyid: Keyid, matchWildcard?: boolean): boolean;
   toHex(): string;
+  static fromId(hex: string): Keyid;
 }
 
 interface DecryptMessageResult {
