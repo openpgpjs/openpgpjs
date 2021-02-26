@@ -4,7 +4,7 @@ const hashMod = require('../../src/crypto/hash');
 const config = require('../../src/config');
 const util = require('../../src/util');
 
-const stub = require('sinon/lib/sinon/stub');
+const sandbox = require('sinon/lib/sinon/sandbox');
 const chai = require('chai');
 
 const elliptic_data = require('./elliptic_data');
@@ -100,22 +100,28 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
     });
   });
   describe('ECDSA signature', function () {
+    let sinonSandbox;
     let getWebCryptoStub;
     let getNodeCryptoStub;
+
+    beforeEach(function () {
+      sinonSandbox = sandbox.create();
+    });
+
+    afterEach(function () {
+      sinonSandbox.restore();
+    });
+
     const disableNative = () => {
       enableNative();
       // stubbed functions return undefined
-      getWebCryptoStub = stub(util, "getWebCrypto");
-      getNodeCryptoStub = stub(util, "getNodeCrypto");
+      getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
+      getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
     };
     const enableNative = () => {
       getWebCryptoStub && getWebCryptoStub.restore();
       getNodeCryptoStub && getNodeCryptoStub.restore();
     };
-
-    afterEach(function () {
-      enableNative();
-    });
 
     const verify_signature = async function (oid, hash, r, s, message, pub) {
       if (util.isString(message)) {
@@ -181,16 +187,12 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       }
       if (config.useIndutnyElliptic) {
         disableNative();
-        try {
-          await expect(verify_signature(
-            'secp256k1', 8, [], [], [], []
-          )).to.be.rejectedWith(Error, /Unknown point format/);
-          await expect(verify_signature(
-            'secp256k1', 8, [], [], [], secp256k1_invalid_point_format
-          )).to.be.rejectedWith(Error, /Unknown point format/);
-        } finally {
-          enableNative();
-        }
+        await expect(verify_signature(
+          'secp256k1', 8, [], [], [], []
+        )).to.be.rejectedWith(Error, /Unknown point format/);
+        await expect(verify_signature(
+          'secp256k1', 8, [], [], [], secp256k1_invalid_point_format
+        )).to.be.rejectedWith(Error, /Unknown point format/);
       }
     });
     it('Invalid point', async function () {
@@ -204,13 +206,9 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       }
       if (config.useIndutnyElliptic) {
         disableNative();
-        try {
-          await expect(verify_signature(
-            'secp256k1', 8, [], [], [], secp256k1_invalid_point
-          )).to.be.rejectedWith(Error, /Invalid elliptic public key/);
-        } finally {
-          enableNative();
-        }
+        await expect(verify_signature(
+          'secp256k1', 8, [], [], [], secp256k1_invalid_point
+        )).to.be.rejectedWith(Error, /Invalid elliptic public key/);
       }
     });
     it('Invalid signature', function (done) {

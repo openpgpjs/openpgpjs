@@ -3,7 +3,7 @@ const crypto = require('../../src/crypto');
 const random = require('../../src/crypto/random');
 const util = require('../../src/util');
 
-const stub = require('sinon/lib/sinon/stub');
+const sandbox = require('sinon/lib/sinon/sandbox');
 const chai = require('chai');
 
 chai.use(require('chai-as-promised'));
@@ -14,26 +14,29 @@ const expect = chai.expect;
 /* eslint-disable no-invalid-this */
 const native = util.getWebCrypto() || util.getNodeCrypto();
 module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptography with native crypto', function () {
+  let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;
+
+  beforeEach(function () {
+    sinonSandbox = sandbox.create();
+    enableNative();
+  });
+
+  afterEach(function () {
+    sinonSandbox.restore();
+  });
+
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
-    getWebCryptoStub = stub(util, "getWebCrypto");
-    getNodeCryptoStub = stub(util, "getNodeCrypto");
+    getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
+    getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
     getNodeCryptoStub && getNodeCryptoStub.restore();
   };
-
-  beforeEach(function () {
-    enableNative();
-  });
-
-  afterEach(function () {
-    enableNative();
-  });
 
   it('generate rsa key', async function() {
     const bits = 1024;
@@ -77,19 +80,15 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await crypto.generateSessionKey('aes256');
-    try {
-      disableNative();
-      const encryptedBn = await crypto.publicKey.rsa.encrypt(message, n, e);
-      enableNative();
-      const decrypted1 = await crypto.publicKey.rsa.decrypt(encryptedBn, n, e, d, p, q, u);
-      expect(decrypted1).to.deep.equal(message);
-      const encryptedNode = await crypto.publicKey.rsa.encrypt(message, n, e);
-      disableNative();
-      const decrypted2 = await crypto.publicKey.rsa.decrypt(encryptedNode, n, e, d, p, q, u);
-      expect(decrypted2).to.deep.equal(message);
-    } finally {
-      enableNative();
-    }
+    disableNative();
+    const encryptedBn = await crypto.publicKey.rsa.encrypt(message, n, e);
+    enableNative();
+    const decrypted1 = await crypto.publicKey.rsa.decrypt(encryptedBn, n, e, d, p, q, u);
+    expect(decrypted1).to.deep.equal(message);
+    const encryptedNode = await crypto.publicKey.rsa.encrypt(message, n, e);
+    disableNative();
+    const decrypted2 = await crypto.publicKey.rsa.decrypt(encryptedNode, n, e, d, p, q, u);
+    expect(decrypted2).to.deep.equal(message);
   });
 
   it('compare native crypto and bnSign', async function() {
@@ -100,15 +99,11 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await crypto.hash.digest(hash_algo, message);
-    try {
-      enableNative();
-      const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
-      disableNative();
-      const signatureBN = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
-      expect(util.uint8ArrayToHex(signatureNative)).to.be.equal(util.uint8ArrayToHex(signatureBN));
-    } finally {
-      enableNative();
-    }
+    enableNative();
+    const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+    disableNative();
+    const signatureBN = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+    expect(util.uint8ArrayToHex(signatureNative)).to.be.equal(util.uint8ArrayToHex(signatureBN));
   });
 
   it('compare native crypto and bnVerify', async function() {
@@ -119,16 +114,12 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const hashName = 'sha256';
     const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await crypto.hash.digest(hash_algo, message);
-    try {
-      enableNative();
-      const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
-      const verifyNative = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e);
-      disableNative();
-      const verifyBN = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e, hashed);
-      expect(verifyNative).to.be.true;
-      expect(verifyBN).to.be.true;
-    } finally {
-      enableNative();
-    }
+    enableNative();
+    const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+    const verifyNative = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e);
+    disableNative();
+    const verifyBN = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e, hashed);
+    expect(verifyNative).to.be.true;
+    expect(verifyBN).to.be.true;
   });
 });

@@ -4,8 +4,7 @@ const KDFParams = require('../../src/type/kdf_params');
 const elliptic_curves = require('../../src/crypto/public_key/elliptic');
 const util = require('../../src/util');
 
-const stub = require('sinon/lib/sinon/stub');
-const spy = require('sinon/lib/sinon/spy');
+const sandbox = require('sinon/lib/sinon/sandbox');
 const chai = require('chai');
 const elliptic_data = require('./elliptic_data');
 
@@ -178,19 +177,6 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       expect(await ecdh.decrypt(oid, kdfParams, V, C, Q1, d1, fingerprint1)).to.deep.equal(data);
     });
 
-    let getWebCryptoStub;
-    let getNodeCryptoStub;
-    const disableNative = () => {
-      enableNative();
-      // stubbed functions return undefined
-      getWebCryptoStub = stub(util, "getWebCrypto");
-      getNodeCryptoStub = stub(util, "getNodeCrypto");
-    };
-    const enableNative = () => {
-      getWebCryptoStub && getWebCryptoStub.restore();
-      getNodeCryptoStub && getNodeCryptoStub.restore();
-    };
-
     ['p256', 'p384', 'p521'].forEach(curveName => {
       it(`NIST ${curveName} - Successful exchange`, async function () {
         const curve = new elliptic_curves.Curve(curveName);
@@ -202,31 +188,53 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
         const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
         expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
       });
+    });
 
-      it(`NIST ${curveName} - Comparing decrypting with and without native crypto`, async function () {
-        const nodeCrypto = util.getNodeCrypto();
-        const webCrypto = util.getWebCrypto();
+    describe('Comparing decrypting with and without native crypto', () => {
+      let sinonSandbox;
+      let getWebCryptoStub;
+      let getNodeCryptoStub;
 
-        const curve = new elliptic_curves.Curve(curveName);
-        const oid = new OID(curve.oid);
-        const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-        const data = util.strToUint8Array('test');
-        const Q = key_data[curveName].pub;
-        const d = key_data[curveName].priv;
-        const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
+      beforeEach(function () {
+        sinonSandbox = sandbox.create();
+      });
 
-        const nativeDecryptSpy = webCrypto ? spy(webCrypto, 'deriveBits') : spy(nodeCrypto, 'createECDH');
-        expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
-        disableNative();
-        try {
+      afterEach(function () {
+        sinonSandbox.restore();
+      });
+
+      const disableNative = () => {
+        enableNative();
+        // stubbed functions return undefined
+        getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
+        getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
+      };
+      const enableNative = () => {
+        getWebCryptoStub && getWebCryptoStub.restore();
+        getNodeCryptoStub && getNodeCryptoStub.restore();
+      };
+
+      ['p256', 'p384', 'p521'].forEach(curveName => {
+        it(`NIST ${curveName}`, async function () {
+          const nodeCrypto = util.getNodeCrypto();
+          const webCrypto = util.getWebCrypto();
+
+          const curve = new elliptic_curves.Curve(curveName);
+          const oid = new OID(curve.oid);
+          const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+          const data = util.strToUint8Array('test');
+          const Q = key_data[curveName].pub;
+          const d = key_data[curveName].priv;
+          const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
+
+          const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH');
+          expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
+          disableNative();
           expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
           if (curveName !== 'p521') { // safari does not implement p521 in webcrypto
             expect(nativeDecryptSpy.calledOnce).to.be.true;
           }
-        } finally {
-          enableNative();
-          nativeDecryptSpy.restore();
-        }
+        });
       });
     });
   });

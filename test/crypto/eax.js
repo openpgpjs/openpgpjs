@@ -5,7 +5,7 @@
 const EAX = require('../../src/crypto/eax');
 const util = require('../../src/util');
 
-const stub = require('sinon/lib/sinon/stub');
+const sandbox = require('sinon/lib/sinon/sandbox');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -126,14 +126,15 @@ function testAESEAX() {
 }
 
 module.exports = () => describe('Symmetric AES-EAX', function() {
+  let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;
 
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
-    getWebCryptoStub = stub(util, "getWebCrypto");
-    getNodeCryptoStub = stub(util, "getNodeCrypto");
+    getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
+    getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
@@ -142,11 +143,12 @@ module.exports = () => describe('Symmetric AES-EAX', function() {
 
   describe('Symmetric AES-EAX (native)', function() {
     beforeEach(function () {
+      sinonSandbox = sandbox.create();
       enableNative();
     });
 
     afterEach(function () {
-      enableNative();
+      sinonSandbox.restore();
     });
 
     testAESEAX();
@@ -154,11 +156,12 @@ module.exports = () => describe('Symmetric AES-EAX', function() {
 
   describe('Symmetric AES-EAX (asm.js fallback)', function() {
     beforeEach(function () {
+      sinonSandbox = sandbox.create();
       disableNative();
     });
 
     afterEach(function () {
-      enableNative();
+      sinonSandbox.restore();
     });
 
     testAESEAX();
