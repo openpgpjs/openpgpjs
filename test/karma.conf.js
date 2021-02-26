@@ -7,7 +7,7 @@ module.exports = function(config) {
     basePath: '..',
 
     // hostname for local
-    hostname: 'localhost',
+    hostname: '127.0.0.1',
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
