@@ -84,10 +84,10 @@ module.exports = function(config) {
 
     // define browsers
     customLaunchers: {
-      bs_firefox_85: {
+      bs_firefox_84: {
         base: 'BrowserStack',
         browser: 'Firefox',
-        browser_version: '85.0',
+        browser_version: '84.0',
         os: 'OS X',
         os_version: 'Big Sur'
       },
@@ -130,7 +130,7 @@ module.exports = function(config) {
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: [
-      'bs_firefox_85',
+      'bs_firefox_84',
       'bs_chrome_88',
       'bs_safari_13_1',
       'bs_safari_14',
