@@ -21,7 +21,6 @@ import { Message } from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat } from './key';
 import defaultConfig from './config';
-import './polyfills';
 import util from './util';
 
 let toNativeReadable;

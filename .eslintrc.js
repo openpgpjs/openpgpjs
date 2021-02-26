@@ -328,6 +328,7 @@ module.exports = {
     // eslint-plugin-import rules:
     "import/extensions": "never",
     "import/no-extraneous-dependencies": ["error", {"devDependencies": true, "optionalDependencies": false, "peerDependencies": false}],
+    "import/no-unassigned-import": "error",
 
     // Custom silencers:
     "camelcase": 0,

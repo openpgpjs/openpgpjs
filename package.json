@@ -84,7 +84,6 @@
     "rollup-plugin-terser": "^5.3.0",
     "seek-bzip": "github:openpgpjs/seek-bzip#4b89457f20c0e1921b4689106a31c99782c29829",
     "sinon": "^4.3.0",
-    "text-encoding-utf-8": "^1.0.2",
     "tweetnacl": "github:openpgpjs/tweetnacl-js#3dae25bd3eaa77173f3405676b595721dde92eec",
     "typescript": "^4.1.2",
     "web-stream-tools": "github:openpgpjs/web-stream-tools#5e6cb1a976d50c421091907615cf7cce77ac4f2a",
