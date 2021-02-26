@@ -15,15 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires web-stream-tools
- * @requires config
- * @requires crypto
- * @requires enums
- * @requires util
- * @requires packet
- */
-
 import stream from 'web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -44,7 +35,6 @@ const VERSION = 1; // A one-octet version number of the data packet.
  *
  * {@link https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1}:
  * AEAD Protected Data Packet
- * @memberof module:packet
  */
 class AEADEncryptedDataPacket {
   constructor() {

@@ -15,18 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @fileoverview Provides factory methods for key creation
- * @requires packet
- * @requires key/Key
- * @requires key/helper
- * @requires enums
- * @requires util
- * @requires config
- * @requires armor
- * @module key/factory
- */
-
 import { PacketList, UserIDPacket, SignaturePacket } from '../packet';
 import Key from './key';
 import * as helper from './helper';
@@ -48,9 +36,10 @@ import { unarmor } from '../encoding/armor';
  * @param {Object}  config                        Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @returns {Promise<module:key.Key>}
+ * @returns {Promise<Key>}
  * @async
  * @static
+ * @private
  */
 export async function generate(options, config) {
   options.sign = true; // primary key is always a signing key
@@ -63,7 +52,7 @@ export async function generate(options, config) {
 
 /**
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
- * @param {module:key.Key} options.privateKey     The private key to reformat
+ * @param {Key} options.privateKey     The private key to reformat
  * @param {Array<String|Object>} options.userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key
  * @param {Number} options.keyExpirationTime      Number of seconds from the key creation time after which the key expires
@@ -71,9 +60,10 @@ export async function generate(options, config) {
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  * @param {Object} config                         Full configuration
  *
- * @returns {Promise<module:key.Key>}
+ * @returns {Promise<Key>}
  * @async
  * @static
+ * @private
  */
 export async function reformat(options, config) {
   options = sanitize(options);

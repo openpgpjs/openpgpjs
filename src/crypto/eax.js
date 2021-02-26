@@ -18,10 +18,8 @@
 /**
  * @fileoverview This module implements AES-EAX en/decryption on top of
  * native AES-CTR using either the WebCrypto API or Node.js' crypto API.
- * @requires asmcrypto.js
- * @requires crypto/cmac
- * @requires util
  * @module crypto/eax
+ * @private
  */
 
 import { AES_CTR } from 'asmcrypto.js/dist_es8/aes/ctr';

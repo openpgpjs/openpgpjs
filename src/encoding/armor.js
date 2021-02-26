@@ -15,15 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires web-stream-tools
- * @requires encoding/base64
- * @requires enums
- * @requires config
- * @requires util
- * @module encoding/armor
- */
-
 import stream from 'web-stream-tools';
 import * as base64 from './base64.js';
 import enums from '../enums.js';
@@ -32,7 +23,6 @@ import defaultConfig from '../config';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.
- * @private
  * @param {String} text [String] ascii armored text
  * @returns {Integer} 0 = MESSAGE PART n of m
  *         1 = MESSAGE PART n
@@ -41,6 +31,7 @@ import defaultConfig from '../config';
  *         4 = PUBLIC KEY BLOCK
  *         5 = PRIVATE KEY BLOCK
  *         6 = SIGNATURE
+ * @private
  */
 function getType(text) {
   const reHeader = /^-----BEGIN PGP (MESSAGE, PART \d+\/\d+|MESSAGE, PART \d+|SIGNED MESSAGE|MESSAGE|PUBLIC KEY BLOCK|PRIVATE KEY BLOCK|SIGNATURE)-----$/m;
@@ -99,6 +90,7 @@ function getType(text) {
  * @version 2011-12-16
  * @param {String} customComment (optional) additional comment to add to the armored string
  * @returns {String} The header information
+ * @private
  */
 function addheader(customComment, config) {
   let result = "";
@@ -120,6 +112,7 @@ function addheader(customComment, config) {
  * Calculates a checksum over the given data and returns it base64 encoded
  * @param {String | ReadableStream<String>} data Data to create a CRC-24 checksum for
  * @returns {String | ReadableStream<String>} Base64 encoded checksum
+ * @private
  */
 function getCheckSum(data) {
   const crc = createcrc24(data);
@@ -167,6 +160,7 @@ const isLittleEndian = (function() {
  * Internal function to calculate a CRC-24 checksum over a given string (data)
  * @param {String | ReadableStream<String>} data Data to create a CRC-24 checksum for
  * @returns {Uint8Array | ReadableStream<Uint8Array>} The CRC-24 checksum
+ * @private
  */
 function createcrc24(input) {
   let crc = 0xCE04B7;
@@ -209,6 +203,7 @@ function verifyHeaders(headers) {
  * @param {String} text OpenPGP armored message part
  * @returns {Object} An object with attribute "body" containing the body
  * and an attribute "checksum" containing the checksum.
+ * @private
  */
 function splitChecksum(text) {
   let body = text;

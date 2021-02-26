@@ -15,10 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires enums
- * @requires util
- */
 import emailAddresses from 'email-addresses';
 
 import enums from '../enums';
@@ -33,7 +29,6 @@ import defaultConfig from '../config';
  * includes an RFC 2822 [RFC2822] mail name-addr, but there are no
  * restrictions on its content.  The packet length in the header
  * specifies the length of the User ID.
- * @memberof module:packet
  */
 class UserIDPacket {
   constructor() {
@@ -52,7 +47,7 @@ class UserIDPacket {
   /**
    * Create UserIDPacket instance from object
    * @param {Object} userId  object specifying userId name, email and comment
-   * @returns {module:userid.UserIDPacket}
+   * @returns {UserIDPacket}
    * @static
    */
   static fromObject(userId) {

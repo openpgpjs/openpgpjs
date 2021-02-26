@@ -1,9 +1,6 @@
 /**
- * @requires enums
- * @requires util
- * @requires packet
- * @requires key/helper
  * @module key/User
+ * @private
  */
 
 import enums from '../enums';
@@ -43,9 +40,9 @@ class User {
    * Signs user
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket}          primaryKey  The primary key packet
-   * @param  {Array<module:key.Key>}    privateKeys Decrypted private keys for signing
+   * @param  {Array<Key>}    privateKeys Decrypted private keys for signing
    * @param  {Object}                   config      Full configuration
-   * @returns {Promise<module:key.Key>}             New user with new certificate signatures
+   * @returns {Promise<Key>}             New user with new certificate signatures
    * @async
    */
   async sign(primaryKey, privateKeys, config) {
@@ -102,7 +99,7 @@ class User {
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey  The primary key packet
    * @param  {SignaturePacket}  certificate A certificate of this user
-   * @param  {Array<module:key.Key>}    keys        Array of keys to verify certificate signatures
+   * @param  {Array<Key>}    keys        Array of keys to verify certificate signatures
    * @param  {Date}                     date        Use the given date instead of the current time
    * @param  {Object}                   config      Full configuration
    * @returns {Promise<true|null>}   status of the certificate
@@ -141,10 +138,10 @@ class User {
    * Verifies all user certificates
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
-   * @param  {Array<module:key.Key>}    keys       Array of keys to verify certificate signatures
+   * @param  {Array<Key>}    keys       Array of keys to verify certificate signatures
    * @param  {Date}                     date       Use the given date instead of the current time
    * @param  {Object}                   config     Full configuration
-   * @returns {Promise<Array<{keyid: module:type/keyid,
+   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
    *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
    * @async
    */
@@ -206,7 +203,7 @@ class User {
 
   /**
    * Update user with new components from specified user
-   * @param  {module:key.User}    user       Source user to merge
+   * @param  {User}    user       Source user to merge
    * @param  {SecretKeyPacket|
    *          SecretSubkeyPacket} primaryKey primary key used for validation
    * @param  {Object}             config Full configuration

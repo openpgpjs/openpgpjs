@@ -18,10 +18,8 @@
  */
 
 /**
- * @requires web-stream-tools
- * @requires crypto/cipher
- * @requires util
  * @module crypto/cfb
+ * @private
  */
 
 import { AES_CFB } from 'asmcrypto.js/dist_es8/aes/cfb';

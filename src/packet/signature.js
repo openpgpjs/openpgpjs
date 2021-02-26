@@ -15,15 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires web-stream-tools
- * @requires packet/packet
- * @requires type/keyid
- * @requires crypto
- * @requires enums
- * @requires util
- */
-
 import stream from 'web-stream-tools';
 import { readSimpleLength, writeSimpleLength } from './packet';
 import type_keyid from '../type/keyid.js';
@@ -39,7 +30,6 @@ import defaultConfig from '../config';
  * A Signature packet describes a binding between some public key and
  * some data.  The most common signatures are a signature of a file or a
  * block of text, and a signature that is a certification of a User ID.
- * @memberof module:packet
  */
 class SignaturePacket {
   /**

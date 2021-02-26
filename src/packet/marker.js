@@ -17,10 +17,6 @@
 
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["read"] }] */
 
-/**
- * @requires enums
- */
-
 import enums from '../enums';
 
 /**
@@ -33,7 +29,6 @@ import enums from '../enums';
  * the Marker packet.
  *
  * Such a packet MUST be ignored when received.
- * @memberof module:packet
  */
 class MarkerPacket {
   constructor() {

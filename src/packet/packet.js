@@ -19,10 +19,8 @@
 
 /**
  * @fileoverview Functions for reading and writing packets
- * @requires web-stream-tools
- * @requires enums
- * @requires util
  * @module packet/packet
+ * @private
  */
 
 import stream from 'web-stream-tools';

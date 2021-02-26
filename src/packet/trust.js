@@ -1,9 +1,5 @@
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["read"] }] */
 
-/**
- * @requires enums
- */
-
 import enums from '../enums';
 
 /**
@@ -20,7 +16,6 @@ import enums from '../enums';
  * Trust packets SHOULD NOT be emitted to output streams that are
  * transferred to other users, and they SHOULD be ignored on any input
  * other than local keyring files.
- * @memberof module:packet
  */
 class TrustPacket {
   constructor() {

@@ -12,10 +12,6 @@
  * warranty of any kind.
  */
 
-/**
- * @requires util
- */
-
 import util from '../../util';
 
 // MD5 Digest

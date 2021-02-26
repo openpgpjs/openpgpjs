@@ -1,7 +1,3 @@
-/**
- * @module polyfills
- */
-
 if (typeof TextEncoder === 'undefined') {
   const nodeUtil = require('util') || {};
   globalThis.TextEncoder = nodeUtil.TextEncoder;

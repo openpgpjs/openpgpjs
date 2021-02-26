@@ -17,9 +17,8 @@
 
 /**
  * @fileoverview ElGamal implementation
- * @requires crypto/random
- * @requires util
  * @module crypto/public_key/elgamal
+ * @private
  */
 
 import util from '../../util';

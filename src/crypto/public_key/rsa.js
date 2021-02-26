@@ -17,11 +17,8 @@
 
 /**
  * @fileoverview RSA implementation
- * @requires crypto/public_key/prime
- * @requires crypto/random
- * @requires config
- * @requires util
  * @module crypto/public_key/rsa
+ * @private
  */
 
 import { randomProbablePrime } from './prime';

@@ -1,8 +1,3 @@
-/**
- * @fileoverview helper, factory methods, constructors dealing with openPGP key object
- * @module key
- */
-
 import {
   readKey,
   readKeys,

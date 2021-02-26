@@ -20,15 +20,8 @@
 /**
  * @fileoverview Provides functions for asymmetric encryption and decryption as
  * well as key generation and parameter handling for all public-key cryptosystems.
- * @requires crypto/public_key
- * @requires crypto/cipher
- * @requires crypto/random
- * @requires type/ecdh_symkey
- * @requires type/kdf_params
- * @requires type/oid
- * @requires enums
- * @requires util
  * @module crypto/crypto
+ * @private
  */
 
 import publicKey from './public_key';

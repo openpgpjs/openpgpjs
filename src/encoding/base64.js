@@ -12,9 +12,8 @@
  */
 
 /**
- * @requires web-stream-tools
- * @requires util
  * @module encoding/base64
+ * @private
  */
 
 import stream from 'web-stream-tools';

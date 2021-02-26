@@ -15,16 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires web-stream-tools
- * @requires pako
- * @requires seek-bzip
- * @requires config
- * @requires enums
- * @requires util
- * @requires packet
- */
-
 import { Deflate } from 'pako/lib/deflate';
 import { Inflate } from 'pako/lib/inflate';
 import { Z_SYNC_FLUSH, Z_FINISH } from 'pako/lib/zlib/constants';
@@ -46,7 +36,6 @@ import {
  * The Compressed Data packet contains compressed data.  Typically,
  * this packet is found as the contents of an encrypted packet, or following
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
- * @memberof module:packet
  */
 class CompressedDataPacket {
   /**

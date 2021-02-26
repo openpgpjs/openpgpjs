@@ -1,11 +1,7 @@
 /**
  * @fileoverview Asymmetric cryptography functions
- * @requires tweetnacl
- * @requires crypto/public_key/dsa
- * @requires crypto/public_key/elgamal
- * @requires crypto/public_key/elliptic
- * @requires crypto/public_key/rsa
  * @module crypto/public_key
+ * @private
  */
 
 import nacl from 'tweetnacl/nacl-fast-light.js';

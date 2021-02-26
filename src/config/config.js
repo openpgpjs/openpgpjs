@@ -17,7 +17,6 @@
 
 /**
  * Global configuration values.
- * @requires enums
  */
 
 import enums from '../enums';

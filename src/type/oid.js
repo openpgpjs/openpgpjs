@@ -29,9 +29,8 @@
  * 86 48 CE 3D 03 01 07", from which the first entry in the table above
  * is constructed by omitting the first two octets.  Only the truncated
  * sequence of octets is the valid representation of a curve OID.
- * @requires util
- * @requires enums
  * @module type/oid
+ * @private
  */
 
 import util from '../util';

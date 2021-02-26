@@ -21,6 +21,7 @@ import util from '../util';
  * @fileoverview Functions to add and remove PKCS5 padding
  * @see PublicKeyEncryptedSessionKeyPacket
  * @module crypto/pkcs5
+ * @private
  */
 
 /**

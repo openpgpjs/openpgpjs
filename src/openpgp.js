@@ -15,29 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @fileoverview The openpgp base module should provide all of the functionality
- * to consume the openpgp.js library. All additional classes are documented
- * for extending and developing on top of the base library.
- * @requires web-stream-tools
- * @requires message
- * @requires cleartext
- * @requires key
- * @requires config
- * @requires enums
- * @requires util
- * @requires polyfills
- * @module openpgp
- */
-
-// This file intentionally has two separate file overviews so that
-// a reference to this module appears at the end of doc/index.html.
-
-/**
- * @fileoverview To view the full API documentation, start from
- * {@link module:openpgp}
- */
-
 import stream from 'web-stream-tools';
 import { createReadableStreamWrapper } from '@mattiasbuelens/web-streams-adapter';
 import { Message } from './message';
@@ -258,8 +235,8 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @param  {'web'|'ponyfill'|'node'|false} streaming    (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Signature} signature                        (optional) a detached signature to add to the encrypted message
  * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Array<module:type/keyid>} signingKeyIds     (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
- * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
+ * @param  {Array<module:type/keyid~Keyid>} signingKeyIds     (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+ * @param  {Array<module:type/keyid~Keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
  * @param  {Date} date                                  (optional) override the creation date of the message signature
  * @param  {Array<Object>} fromUserIds                  (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param  {Array<Object>} toUserIds                    (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
@@ -310,7 +287,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  *       filename: String,
  *       signatures: [
  *         {
- *           keyid: module:type/keyid,
+ *           keyid: module:type/keyid~Keyid,
  *           verified: Promise<Boolean>,
  *           valid: Boolean (if streaming was false)
  *         }, ...
@@ -354,7 +331,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param  {Boolean} armor                            (optional) whether the return values should be ascii armored (true, the default) or binary (false)
  * @param  {'web'|'ponyfill'|'node'|false} streaming  (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param  {Boolean} detached                         (optional) if the return value should contain a detached signature
- * @param  {Array<module:type/keyid>} signingKeyIds   (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+ * @param  {Array<module:type/keyid~Keyid>} signingKeyIds   (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
  * @param  {Date} date                                (optional) override the creation date of the signature
  * @param  {Array<Object>} fromUserIds                (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param  {Object} config                            (optional) custom configuration settings to overwrite those in openpgp.config
@@ -407,7 +384,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
  *       data: Uint8Array|ReadableStream<Uint8Array>|NodeStream, (if `message` was a Message)
  *       signatures: [
  *         {
- *           keyid: module:type/keyid,
+ *           keyid: module:type/keyid~Keyid,
  *           verified: Promise<Boolean>,
  *           valid: Boolean (if `streaming` was false)
  *         }, ...
@@ -475,7 +452,7 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = 
  * @param  {String|Array<String>} passwords             (optional) passwords for the message
  * @param  {Boolean} armor                              (optional) whether the return values should be ascii armored (true, the default) or binary (false)
  * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
- * @param  {Array<module:type/keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
+ * @param  {Array<module:type/keyid~Keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
  * @param  {Date} date                                  (optional) override the date
  * @param  {Array} toUserIds                            (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]
  * @param  {Object} config                              (optional) custom configuration settings to overwrite those in openpgp.config
@@ -529,6 +506,7 @@ export function decryptSessionKeys({ message, privateKeys, passwords, config }) 
 
 /**
  * Input validation
+ * @private
  */
 function checkString(data, name) {
   if (!util.isString(data)) {
@@ -555,6 +533,7 @@ function checkCleartextOrMessage(message) {
  * Normalize parameter to an array if it is not undefined.
  * @param  {Object} param              the parameter to be normalized
  * @returns {Array<Object>|undefined}   the resulting array or undefined
+ * @private
  */
 function toArray(param) {
   if (param && !util.isArray(param)) {
@@ -569,6 +548,7 @@ function toArray(param) {
  * @param  {'web'|'ponyfill'|'node'|false} streaming  (optional) whether to return a ReadableStream, and of what type
  * @param  {'utf8'|'binary'} encoding                 (optional) how to return data in Node Readable streams
  * @returns {Object}                                  the data in the respective format
+ * @private
  */
 async function convertStream(data, streaming, encoding = 'utf8') {
   let streamType = util.isStream(data);
@@ -596,6 +576,7 @@ async function convertStream(data, streaming, encoding = 'utf8') {
  * @param  {Object} result                  the data to convert
  * @param  {Message} message                message object
  * @returns {Object}
+ * @private
  */
 function linkStreams(result, message) {
   result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
@@ -616,6 +597,7 @@ function linkStreams(result, message) {
 /**
  * Wait until signature objects have been verified
  * @param  {Object} signatures              list of signatures
+ * @private
  */
 async function prepareSignatures(signatures) {
   await Promise.all(signatures.map(async signature => {
@@ -635,6 +617,7 @@ async function prepareSignatures(signatures) {
  * Global error handler that logs the stack trace and rethrows a high lvl error message.
  * @param {String} message   A human readable high level error Message
  * @param {Error} error      The internal error that caused the failure
+ * @private
  */
 function onError(message, error) {
   // log the stack trace

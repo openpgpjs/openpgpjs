@@ -15,12 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires packet
- * @requires enums
- * @requires util
- */
-
 import { readSimpleLength, writeSimpleLength } from './packet';
 import enums from '../enums';
 import util from '../util';
@@ -41,7 +35,6 @@ import util from '../util';
  * User Attribute packet.  A simple way to do this is by treating the
  * User Attribute packet as a User ID packet with opaque contents, but
  * an implementation may use any method desired.
- * @memberof module:packet
  */
 class UserAttributePacket {
   constructor() {

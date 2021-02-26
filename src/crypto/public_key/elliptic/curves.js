@@ -17,14 +17,8 @@
 
 /**
  * @fileoverview Wrapper of an instance of an Elliptic Curve
- * @requires tweetnacl
- * @requires crypto/public_key/elliptic/key
- * @requires crypto/random
- * @requires enums
- * @requires util
- * @requires type/oid
- * @requires config
  * @module crypto/public_key/elliptic/curve
+ * @private
  */
 
 import nacl from 'tweetnacl/nacl-fast-light.js';

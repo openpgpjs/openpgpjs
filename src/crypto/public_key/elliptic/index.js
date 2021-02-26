@@ -22,6 +22,7 @@
  * @see module:crypto/public_key/elliptic/ecdsa
  * @see module:crypto/public_key/elliptic/eddsa
  * @module crypto/public_key/elliptic
+ * @private
  */
 
 import { Curve, generate, getPreferredHashAlgo } from './curves';

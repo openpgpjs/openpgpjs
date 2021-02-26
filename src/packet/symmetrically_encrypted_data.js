@@ -15,15 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires web-stream-tools
- * @requires config
- * @requires crypto
- * @requires enums
- * @requires util
- * @requires packet
- */
-
 import stream from 'web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -45,7 +36,6 @@ import defaultConfig from '../config';
  * packets (usually a literal data packet or compressed data packet, but in
  * theory other Symmetrically Encrypted Data packets or sequences of packets
  * that form whole OpenPGP messages).
- * @memberof module:packet
  */
 class SymmetricallyEncryptedDataPacket {
   constructor() {

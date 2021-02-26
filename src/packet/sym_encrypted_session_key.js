@@ -15,14 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires type/s2k
- * @requires config
- * @requires crypto
- * @requires enums
- * @requires util
- */
-
 import type_s2k from '../type/s2k';
 import defaultConfig from '../config';
 import crypto from '../crypto';
@@ -41,7 +33,6 @@ import util from '../util';
  * The message is encrypted with a session key, and the session key is
  * itself encrypted and stored in the Encrypted Session Key packet or
  * the Symmetric-Key Encrypted Session Key packet.
- * @memberof module:packet
  */
 class SymEncryptedSessionKeyPacket {
   /**

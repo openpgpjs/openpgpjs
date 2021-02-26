@@ -17,9 +17,8 @@
 
 /**
  * @fileoverview A Digital signature algorithm implementation
- * @requires crypto/random
- * @requires util
  * @module crypto/public_key/dsa
+ * @private
  */
 import { getRandomBigInteger } from '../random';
 import util from '../../util';

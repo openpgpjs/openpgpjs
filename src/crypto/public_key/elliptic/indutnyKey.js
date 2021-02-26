@@ -17,9 +17,8 @@
 
 /**
  * @fileoverview Wrapper for a KeyPair of an curve from indutny/elliptic library
- * @requires enums
- * @requires asn1.js
  * @module crypto/public_key/elliptic/indutnyKey
+ * @private
  */
 
 import config from '../../../config';

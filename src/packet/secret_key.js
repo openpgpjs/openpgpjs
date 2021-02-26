@@ -15,15 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires packet/public_key
- * @requires type/keyid
- * @requires type/s2k
- * @requires crypto
- * @requires enums
- * @requires util
- */
-
 import PublicKeyPacket from './public_key';
 import type_s2k from '../type/s2k';
 import crypto from '../crypto';
@@ -35,7 +26,6 @@ import defaultConfig from '../config';
  * A Secret-Key packet contains all the information that is found in a
  * Public-Key packet, including the public-key material, but also
  * includes the secret-key material after all the public-key fields.
- * @memberof module:packet
  * @extends PublicKeyPacket
  */
 class SecretKeyPacket extends PublicKeyPacket {

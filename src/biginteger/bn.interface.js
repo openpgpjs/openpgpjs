@@ -1,8 +1,15 @@
 import BN from 'bn.js';
 
 /**
+ * @fileoverview
  * BigInteger implementation of basic operations
  * Wrapper of bn.js library (wwww.github.com/indutny/bn.js)
+ * @module biginteger/bn
+ * @private
+ */
+
+/**
+ * @private
  */
 export default class BigInteger {
   /**

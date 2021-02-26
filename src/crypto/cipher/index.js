@@ -1,11 +1,7 @@
 /**
  * @fileoverview Symmetric cryptography functions
- * @requires crypto/cipher/aes
- * @requires crypto/cipher/des
- * @requires crypto/cipher/cast5
- * @requires crypto/cipher/twofish
- * @requires crypto/cipher/blowfish
  * @module crypto/cipher
+ * @private
  */
 
 import aes from './aes';
@@ -21,7 +17,6 @@ import BF from './blowfish';
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
  * @returns {Object}
- * @requires asmcrypto.js
  */
 export const aes128 = aes(128);
 /**
@@ -31,7 +26,6 @@ export const aes128 = aes(128);
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
  * @returns {Object}
- * @requires asmcrypto.js
  */
 export const aes192 = aes(192);
 /**
@@ -41,7 +35,6 @@ export const aes192 = aes(192);
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
  * @returns {Object}
- * @requires asmcrypto.js
  */
 export const aes256 = aes(256);
 // Not in OpenPGP specifications

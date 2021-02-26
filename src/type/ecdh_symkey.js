@@ -18,8 +18,8 @@
 /**
  * Encoded symmetric key for ECDH
  *
- * @requires util
  * @module type/ecdh_symkey
+ * @private
  */
 
 import util from '../util';

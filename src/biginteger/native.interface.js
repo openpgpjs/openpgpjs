@@ -1,10 +1,17 @@
 /* eslint-disable new-cap */
 
 /**
+ * @fileoverview
  * BigInteger implementation of basic operations
  * that wraps the native BigInt library.
  * Operations are not constant time,
  * but we try and limit timing leakage where we can
+ * @module biginteger/native
+ * @private
+ */
+
+/**
+ * @private
  */
 export default class BigInteger {
   /**
@@ -189,7 +196,7 @@ export default class BigInteger {
    * Extended Eucleadian algorithm (http://anh.cs.luc.edu/331/notes/xgcd.pdf)
    * Given a = this and b, compute (x, y) such that ax + by = gdc(a, b)
    * @param {BigInteger} b second operand
-   * @returns { gcd, x, y: BigInteger }
+   * @returns {{ gcd, x, y: BigInteger }}
    */
   _egcd(b) {
     let x = BigInt(0);

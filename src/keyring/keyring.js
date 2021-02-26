@@ -15,13 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @fileoverview Provides the Keyring class
- * @requires key
- * @requires keyring/localstore
- * @module keyring/keyring
- */
-
 import { readKeys } from '../key';
 import defaultConfig from '../config';
 import LocalStore from './localstore';
@@ -31,7 +24,7 @@ import LocalStore from './localstore';
  */
 class KeyArray {
   /**
-   * @param {Array<module:key.Key>} keys The keys to store in this array
+   * @param {Array<Key>} keys The keys to store in this array
    */
   constructor(keys) {
     this.keys = keys;
@@ -40,7 +33,7 @@ class KeyArray {
   /**
    * Searches all keys in the KeyArray matching the address or address part of the user ids
    * @param {String} email email address to search for
-   * @returns {Array<module:key.Key>} The public keys associated with provided email address.
+   * @returns {Array<Key>} The public keys associated with provided email address.
    */
   getForAddress(email) {
     const results = [];
@@ -57,7 +50,7 @@ class KeyArray {
    * @param {String} keyId provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
    * @param  {Boolean} deep if true search also in subkeys
-   * @returns {module:key.Key|null} key found or null
+   * @returns {Key|null} key found or null
    */
   getForId(keyId, deep) {
     for (let i = 0; i < this.keys.length; i++) {
@@ -98,7 +91,7 @@ class KeyArray {
 
   /**
    * Add key to KeyArray
-   * @param {module:key.Key} key The key that will be added to the keyring
+   * @param {Key} key The key that will be added to the keyring
    * @returns {Number} The new length of the KeyArray
    */
   push(key) {
@@ -109,7 +102,7 @@ class KeyArray {
    * Removes a key with the specified keyid from the keyring
    * @param {String} keyId provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @returns {module:key.Key|null} The key object which has been removed or null
+   * @returns {Key|null} The key object which has been removed or null
    */
   removeForId(keyId) {
     for (let i = 0; i < this.keys.length; i++) {
@@ -164,7 +157,7 @@ class Keyring {
    * @param {String} keyId provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
    * @param  {Boolean} deep if true search also in subkeys
-   * @returns {Array<module:key.Key>|null} keys found or null
+   * @returns {Array<Key>|null} keys found or null
    */
   getKeysForId(keyId, deep) {
     let result = [];
@@ -177,7 +170,7 @@ class Keyring {
    * Removes keys having the specified key id from the keyring
    * @param {String} keyId provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @returns {Array<module:key.Key>|null} keys found or null
+   * @returns {Array<Key>|null} keys found or null
    */
   removeKeysForId(keyId) {
     let result = [];
@@ -188,7 +181,7 @@ class Keyring {
 
   /**
    * Get all public and private keys
-   * @returns {Array<module:key.Key>} all keys
+   * @returns {Array<Key>} all keys
    */
   getAllKeys() {
     return this.publicKeys.keys.concat(this.privateKeys.keys);
@@ -199,7 +192,7 @@ class Keyring {
  * Checks a key to see if it matches the specified email address
  * @private
  * @param {String} email email address to search for
- * @param {module:key.Key} key The key to be checked.
+ * @param {Key} key The key to be checked.
  * @returns {Boolean} True if the email address is defined in the specified key
  */
 function emailCheck(email, key) {
@@ -222,8 +215,9 @@ function emailCheck(email, key) {
  * @private
  * @param {String} keyId provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @param {module:key.Key|module:key.SubKey} key The key to be checked
+ * @param {Key|SubKey} key The key to be checked
  * @returns {Boolean} True if key has the specified keyid
+ * @private
  */
 function keyIdCheck(keyId, key) {
   if (keyId.length === 16) {

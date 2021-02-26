@@ -15,16 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires asmcrypto.js
- * @requires web-stream-tools
- * @requires config
- * @requires crypto
- * @requires enums
- * @requires util
- * @requires packet
- */
-
 import stream from 'web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -48,7 +38,6 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * created for OpenPGP that addresses the problem of detecting a modification to
  * encrypted data. It is used in combination with a Modification Detection Code
  * packet.
- * @memberof module:packet
  */
 class SymEncryptedIntegrityProtectedDataPacket {
   constructor() {

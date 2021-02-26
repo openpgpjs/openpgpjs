@@ -20,9 +20,8 @@
  * @see module:crypto/public_key/rsa
  * @see module:crypto/public_key/elliptic/ecdh
  * @see PublicKeyEncryptedSessionKeyPacket
- * @requires crypto/random
- * @requires crypto/hash
  * @module crypto/pkcs1
+ * @private
  */
 
 import { getRandomBytes } from './random';

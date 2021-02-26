@@ -15,12 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires web-stream-tools
- * @requires enums
- * @requires util
- */
-
 import stream from 'web-stream-tools';
 import enums from '../enums';
 import util from '../util';
@@ -31,7 +25,6 @@ import util from '../util';
  * {@link https://tools.ietf.org/html/rfc4880#section-5.9|RFC4880 5.9}:
  * A Literal Data packet contains the body of a message; data that is not to be
  * further interpreted.
- * @memberof module:packet
  */
 class LiteralDataPacket {
   /**

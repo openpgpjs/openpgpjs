@@ -1,12 +1,3 @@
-/**
- * @requires web-stream-tools
- * @requires packet/all_packets
- * @requires packet/packet
- * @requires config
- * @requires enums
- * @requires util
- */
-
 import stream from 'web-stream-tools';
 import * as packets from './all_packets';
 import {
@@ -22,7 +13,6 @@ import defaultConfig from '../config';
  * This class represents a list of openpgp packets.
  * Take care when iterating over it - the packets themselves
  * are stored as numerical indices.
- * @memberof module:packet
  * @extends Array
  */
 class PacketList extends Array {
@@ -159,7 +149,7 @@ class PacketList extends Array {
   /**
    * Traverses packet tree and returns first matching packet
    * @param  {module:enums.packet} type The packet type
-   * @returns {module:packet/packet|undefined}
+   * @returns {Packet|undefined}
    */
   findPacket(type) {
     return this.find(packet => packet.tag === type);

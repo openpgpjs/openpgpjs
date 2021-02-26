@@ -1,10 +1,7 @@
 /**
  * @fileoverview Provides helpers methods for key module
- * @requires packet
- * @requires enums
- * @requires config
- * @requires crypto
  * @module key/helper
+ * @private
  */
 
 import {
@@ -126,7 +123,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
 
 /**
  * Returns the preferred signature hash algorithm of a key
- * @param  {module:key.Key} key (optional) the key to get preferences from
+ * @param  {Key} key (optional) the key to get preferences from
  * @param  {SecretKeyPacket|SecretSubkeyPacket} keyPacket key packet used for signing
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID
@@ -164,7 +161,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
 /**
  * Returns the preferred symmetric/aead algorithm for a set of keys
  * @param  {symmetric|aead} type Type of preference to return
- * @param  {Array<module:key.Key>} keys Set of keys
+ * @param  {Array<Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Array} userIds (optional) user IDs
  * @param  {Object} config (optional) full configuration, defaults to openpgp.config
@@ -212,7 +209,7 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
  * @param  {Object} detached                 (optional) whether to create a detached signature packet
  * @param  {Boolean} streaming               (optional) whether to process data as a stream
  * @param  {Object} config                   full configuration
- * @returns {module:packet/signature}         signature packet
+ * @returns {Promise<SignaturePacket>}       signature packet
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false, config) {
   if (signingKeyPacket.isDummy()) {
@@ -231,7 +228,6 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
 
 /**
  * Merges signatures from source[attr] to dest[attr]
- * @private
  * @param  {Object} source
  * @param  {Object} dest
  * @param  {String} attr
@@ -316,7 +312,7 @@ export function getExpirationTime(keyPacket, signature) {
 
 /**
  * Returns whether aead is supported by all keys in the set
- * @param  {Array<module:key.Key>} keys Set of keys
+ * @param  {Array<Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Array} userIds (optional) user IDs
  * @param  {Object} config full configuration

@@ -19,10 +19,8 @@
 
 /**
  * This object contains utility functions
- * @requires email-addresses
- * @requires web-stream-tools
- * @requires encoding/base64
  * @module util
+ * @private
  */
 
 import stream from 'web-stream-tools';

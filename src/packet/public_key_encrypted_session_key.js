@@ -15,13 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires type/keyid
- * @requires crypto
- * @requires enums
- * @requires util
- */
-
 import type_keyid from '../type/keyid';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -42,7 +35,6 @@ import util from '../util';
  * The recipient of the message finds a session key that is encrypted to their
  * public key, decrypts the session key, and then uses the session key to
  * decrypt the message.
- * @memberof module:packet
  */
 class PublicKeyEncryptedSessionKeyPacket {
   constructor() {

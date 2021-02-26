@@ -1,8 +1,6 @@
 /**
- * @requires enums
- * @requires key/helper
- * @requires packet
  * @module key/SubKey
+ * @private
  */
 
 import enums from '../enums';
@@ -115,7 +113,7 @@ class SubKey {
 
   /**
    * Update subkey with new components from specified subkey
-   * @param  {module:key~SubKey}  subKey     Source subkey to merge
+   * @param  {SubKey}  subKey     Source subkey to merge
    * @param  {SecretKeyPacket|
               SecretSubkeyPacket} primaryKey primary key used for validation
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
@@ -164,7 +162,7 @@ class SubKey {
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
    * @param  {Date} date optional, override the creationtime of the revocation signature
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:key~SubKey>} new subkey with revocation signature
+   * @returns {Promise<SubKey>} new subkey with revocation signature
    * @async
    */
   async revoke(

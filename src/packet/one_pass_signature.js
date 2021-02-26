@@ -15,14 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires web-stream-tools
- * @requires packet/signature
- * @requires type/keyid
- * @requires enums
- * @requires util
- */
-
 import stream from 'web-stream-tools';
 import SignaturePacket from './signature';
 import type_keyid from '../type/keyid';
@@ -38,7 +30,6 @@ import util from '../util';
  * hashes needed to verify the signature.  It allows the Signature
  * packet to be placed at the end of the message, so that the signer
  * can compute the entire signed message in one pass.
- * @memberof module:packet
  */
 class OnePassSignaturePacket {
   constructor() {

@@ -16,11 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @fileoverview Provides the LocalStore class
- * @requires web-stream-tools
- * @requires config
- * @requires key
  * @module keyring/localstore
+ * @private
  */
 
 import stream from 'web-stream-tools';
@@ -30,6 +27,7 @@ import defaultConfig from '../config';
 /**
  * The class that deals with storage of the keyring.
  * Currently the only option is to use HTML5 local storage.
+ * @private
  */
 class LocalStore {
   /**
@@ -49,7 +47,7 @@ class LocalStore {
 
   /**
    * Load the public keys from HTML5 local storage.
-   * @returns {Array<module:key.Key>} array of keys retrieved from localstore
+   * @returns {Array<Key>} array of keys retrieved from localstore
    * @async
    */
   async loadPublic(config = defaultConfig) {
@@ -59,7 +57,7 @@ class LocalStore {
   /**
    * Load the private keys from HTML5 local storage.
    * @param {Object} config  (optional) full configuration, defaults to openpgp.config
-   * @returns {Array<module:key.Key>} array of keys retrieved from localstore
+   * @returns {Array<Key>} array of keys retrieved from localstore
    * @async
    */
   async loadPrivate(config = defaultConfig) {
@@ -69,7 +67,7 @@ class LocalStore {
   /**
    * Saves the current state of the public keys to HTML5 local storage.
    * The key array gets stringified using JSON
-   * @param {Array<module:key.Key>} keys array of keys to save in localstore
+   * @param {Array<Key>} keys array of keys to save in localstore
    * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @async
    */
@@ -80,7 +78,7 @@ class LocalStore {
   /**
    * Saves the current state of the private keys to HTML5 local storage.
    * The key array gets stringified using JSON
-   * @param {Array<module:key.Key>} keys array of keys to save in localstore
+   * @param {Array<Key>} keys array of keys to save in localstore
    * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @async
    */

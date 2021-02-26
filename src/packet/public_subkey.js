@@ -15,11 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires packet/public_key
- * @requires enums
- */
-
 import PublicKeyPacket from './public_key';
 import enums from '../enums';
 
@@ -29,7 +24,6 @@ import enums from '../enums';
  * associated with a top-level key.  By convention, the top-level key
  * provides signature services, and the subkeys provide encryption
  * services.
- * @memberof module:packet
  * @extends PublicKeyPacket
  */
 class PublicSubkeyPacket extends PublicKeyPacket {

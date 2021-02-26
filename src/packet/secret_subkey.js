@@ -15,11 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires packet/secret_key
- * @requires enums
- */
-
 import SecretKeyPacket from './secret_key';
 import enums from '../enums';
 import defaultConfig from '../config';
@@ -27,7 +22,6 @@ import defaultConfig from '../config';
 /**
  * A Secret-Subkey packet (tag 7) is the subkey analog of the Secret
  * Key packet and has exactly the same format.
- * @memberof module:packet
  * @extends SecretKeyPacket
  */
 class SecretSubkeyPacket extends SecretKeyPacket {

@@ -17,14 +17,6 @@
 
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["isDecrypted"] }] */
 
-/**
- * @requires type/keyid
- * @requires config
- * @requires crypto
- * @requires enums
- * @requires util
- */
-
 import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
 import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import type_keyid from '../type/keyid';
@@ -43,7 +35,6 @@ import util from '../util';
  *
  * A Public-Key packet starts a series of packets that forms an OpenPGP
  * key (sometimes called an OpenPGP certificate).
- * @memberof module:packet
  */
 class PublicKeyPacket {
   /**
@@ -88,7 +79,7 @@ class PublicKeyPacket {
     this.fingerprint = null;
     /**
      * Keyid
-     * @type {module:type/keyid}
+     * @type {module:type/keyid~Keyid}
      */
     this.keyid = null;
   }
@@ -185,7 +176,7 @@ class PublicKeyPacket {
 
   /**
    * Calculates the key id of the key
-   * @returns {module:type/keyid} A 8 byte key id
+   * @returns {module:type/keyid~Keyid} A 8 byte key id
    */
   getKeyId() {
     if (this.keyid) {

@@ -15,14 +15,12 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @fileoverview This class implements a client for the OpenPGP HTTP Keyserver Protocol (HKP)
- * in order to lookup and upload keys on standard public key servers.
- * @module hkp
- */
-
 import defaultConfig from './config';
 
+/**
+ * This class implements a client for the OpenPGP HTTP Keyserver Protocol (HKP)
+ * in order to lookup and upload keys on standard public key servers.
+ */
 class HKP {
   /**
    * Initialize the HKP client and configure it with the key server url and fetch function.

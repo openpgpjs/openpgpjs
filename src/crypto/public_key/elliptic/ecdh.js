@@ -17,16 +17,8 @@
 
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
- * @requires tweetnacl
- * @requires crypto/public_key/elliptic/curve
- * @requires crypto/aes_kw
- * @requires crypto/cipher
- * @requires crypto/random
- * @requires crypto/hash
- * @requires type/kdf_params
- * @requires enums
- * @requires util
  * @module crypto/public_key/elliptic/ecdh
+ * @private
  */
 
 import nacl from 'tweetnacl/nacl-fast-light.js';

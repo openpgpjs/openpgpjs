@@ -15,16 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires encoding/armor
- * @requires packet
- * @requires enums
- * @requires util
- * @requires key/User
- * @requires key/Subkey
- * @module key/Key
- */
-
 import { armor, unarmor } from '../encoding/armor';
 import {
   PacketList,
@@ -166,7 +156,7 @@ class Key {
 
   /**
    * Clones the key object
-   * @returns {Promise<module:key.Key>} shallow clone of the key
+   * @returns {Promise<Key>} shallow clone of the key
    * @async
    */
   async clone() {
@@ -177,7 +167,7 @@ class Key {
    * Returns an array containing all public or private subkeys matching keyId;
    * If keyId is not present, returns all subkeys.
    * @param  {type/keyid} keyId
-   * @returns {Array<module:key~SubKey>}
+   * @returns {Array<SubKey>}
    */
   getSubkeys(keyId = null) {
     const subKeys = [];
@@ -193,7 +183,7 @@ class Key {
    * Returns an array containing all public or private keys matching keyId.
    * If keyId is not present, returns all keys starting with the primary key.
    * @param  {type/keyid} keyId
-   * @returns {Array<module:key.Key|module:key~SubKey>}
+   * @returns {Array<Key|SubKey>}
    */
   getKeys(keyId = null) {
     const keys = [];
@@ -205,7 +195,7 @@ class Key {
 
   /**
    * Returns key IDs of all keys
-   * @returns {Array<module:type/keyid>}
+   * @returns {Array<module:type/keyid~Keyid>}
    */
   getKeyIds() {
     return this.getKeys().map(key => key.getKeyId());
@@ -240,7 +230,7 @@ class Key {
   /**
    * Returns key as public key (shallow copy)
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {module:key.Key} new public Key
+   * @returns {Key} new public Key
    */
   toPublic() {
     const packetlist = new PacketList();
@@ -281,11 +271,11 @@ class Key {
 
   /**
    * Returns last created key or key by given keyId that is available for signing and verification
-   * @param  {module:type/keyid} keyId, optional
+   * @param  {module:type/keyid~Keyid} keyId, optional
    * @param  {Date} date (optional) use the given date for verification instead of the current time
    * @param  {Object} userId, optional user ID
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no signing key has been found
+   * @returns {Promise<Key|SubKey|null>} key or null if no signing key has been found
    * @async
    */
   async getSigningKey(keyId = null, date = new Date(), userId = {}, config = defaultConfig) {
@@ -322,11 +312,11 @@ class Key {
 
   /**
    * Returns last created key or key by given keyId that is available for encryption or decryption
-   * @param  {module:type/keyid} keyId, optional
+   * @param  {module:type/keyid~Keyid} keyId, optional
    * @param  {Date}              date, optional
    * @param  {String}            userId, optional
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:key.Key|module:key~SubKey|null>} key or null if no encryption key has been found
+   * @returns {Promise<Key|SubKey|null>} key or null if no encryption key has been found
    * @async
    */
   async getEncryptionKey(keyId, date = new Date(), userId = {}, config = defaultConfig) {
@@ -361,11 +351,11 @@ class Key {
   /**
    * Returns all keys that are available for decryption, matching the keyId when given
    * This is useful to retrieve keys for session key decryption
-   * @param  {module:type/keyid} keyId, optional
+   * @param  {module:type/keyid~Keyid} keyId, optional
    * @param  {Date}              date, optional
    * @param  {String}            userId, optional
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<module:key.Key|module:key~SubKey>>} array of decryption keys
+   * @returns {Promise<Array<Key|SubKey>>} array of decryption keys
    * @async
    */
   async getDecryptionKeys(keyId, date = new Date(), userId = {}, config = defaultConfig) {
@@ -396,7 +386,7 @@ class Key {
   /**
    * Encrypts all secret key and subkey packets matching keyId
    * @param  {String|Array<String>} passphrases - if multiple passphrases, then should be in same order as packets each should encrypt
-   * @param  {module:type/keyid} keyId
+   * @param  {module:type/keyid~Keyid} keyId
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @throws {Error} if encryption failed for any key or subkey
    * @async
@@ -422,7 +412,7 @@ class Key {
   /**
    * Decrypts all secret key and subkey packets matching keyId
    * @param  {String|Array<String>} passphrases
-   * @param  {module:type/keyid} keyId
+   * @param  {module:type/keyid~Keyid} keyId
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @throws {Error} if any matching key or subkey packets did not decrypt successfully
    * @async
@@ -569,7 +559,7 @@ class Key {
    * Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
    * Returns Infinity if the key doesn't expire.
    * @param  {encrypt|sign|encrypt_sign} capabilities, optional
-   * @param  {module:type/keyid} keyId, optional
+   * @param  {module:type/keyid~Keyid} keyId, optional
    * @param  {Object} userId, optional user ID
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Date | Infinity | null>}
@@ -607,7 +597,7 @@ class Key {
    * @param  {Date} date (optional) use the given date for verification instead of the current time
    * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<{user: module:key.User,
+   * @returns {Promise<{user: User,
    *                    selfCertification: SignaturePacket}>} The primary user and the self signature
    * @async
    */
@@ -661,7 +651,7 @@ class Key {
    *
    * If the specified key is a private key and the destination key is public,
    * the destination key is transformed to a private key.
-   * @param  {module:key.Key} key Source key to merge
+   * @param  {Key} key Source key to merge
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<undefined>}
    * @async
@@ -728,7 +718,7 @@ class Key {
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
    * @param  {Date} date optional, override the creationtime of the revocation signature
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:key.Key>} new key with revocation signature
+   * @returns {Promise<Key>} new key with revocation signature
    * @async
    */
   async revoke(
@@ -774,7 +764,7 @@ class Key {
    * if it is a valid revocation signature.
    * @param  {String} revocationCertificate armored revocation certificate
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:key.Key>} new revoked key
+   * @returns {Promise<Key>} new revoked key
    * @async
    */
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
@@ -803,11 +793,11 @@ class Key {
 
   /**
    * Signs primary user of key
-   * @param  {Array<module:key.Key>} privateKeys decrypted private keys for signing
+   * @param  {Array<Key>} privateKeys decrypted private keys for signing
    * @param  {Date} date (optional) use the given date for verification instead of the current time
    * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:key.Key>} new public key with new certificate signature
+   * @returns {Promise<Key>} new public key with new certificate signature
    * @async
    */
   async signPrimaryUser(privateKeys, date, userId, config = defaultConfig) {
@@ -820,9 +810,9 @@ class Key {
 
   /**
    * Signs all users of key
-   * @param  {Array<module:key.Key>} privateKeys decrypted private keys for signing
+   * @param  {Array<Key>} privateKeys decrypted private keys for signing
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:key.Key>} new public key with new certificate signature
+   * @returns {Promise<Key>} new public key with new certificate signature
    * @async
    */
   async signAllUsers(privateKeys, config = defaultConfig) {
@@ -838,11 +828,11 @@ class Key {
    * Verifies primary user of key
    * - if no arguments are given, verifies the self certificates;
    * - otherwise, verifies all certificates signed with given keys.
-   * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
+   * @param  {Array<Key>} keys array of keys to verify certificate signatures
    * @param  {Date} date (optional) use the given date for verification instead of the current time
    * @param  {Object} userId (optional) user ID to get instead of the primary user, if it exists
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid,
+   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
    *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
    * @async
    */
@@ -858,10 +848,10 @@ class Key {
    * Verifies all users of key
    * - if no arguments are given, verifies the self certificates;
    * - otherwise, verifies all certificates signed with given keys.
-   * @param  {Array<module:key.Key>} keys array of keys to verify certificate signatures
+   * @param  {Array<Key>} keys array of keys to verify certificate signatures
    * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{userid: String,
-   *                          keyid: module:type/keyid,
+   *                          keyid: module:type/keyid~Keyid,
    *                          valid: Boolean}>>} list of userid, signer's keyid and validity of signature
    * @async
    */
@@ -892,7 +882,7 @@ class Key {
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in openpgp.config
-   * @returns {Promise<module:key.Key>}
+   * @returns {Promise<Key>}
    * @async
    */
   async addSubkey(options = {}) {

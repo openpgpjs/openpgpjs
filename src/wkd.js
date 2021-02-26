@@ -15,17 +15,15 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @fileoverview This class implements a client for the Web Key Directory (wkd) protocol
- * in order to lookup keys on designated servers.
- * See: https://datatracker.ietf.org/doc/draft-koch-openpgp-webkey-service/
- * @module wkd
- */
-
 import util from './util';
 import crypto from './crypto';
 import { readKeys } from './key';
 
+/**
+ * This class implements a client for the Web Key Directory (WKD) protocol
+ * in order to lookup keys on designated servers.
+ * @see https://datatracker.ietf.org/doc/draft-koch-openpgp-webkey-service/
+ */
 class WKD {
   /**
    * Initialize the WKD client
@@ -39,7 +37,7 @@ class WKD {
    * @param   {String}   options.email         User's email.
    * @param   {Boolean}  options.rawBytes      Returns Uint8Array instead of parsed key.
    * @returns {Promise<Uint8Array|
-   *           {keys: Array<module:key.Key>,
+   *           {keys: Array<Key>,
    *            err: (Array<Error>|null)}>}     The public key.
    * @async
    */

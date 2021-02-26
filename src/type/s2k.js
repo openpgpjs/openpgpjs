@@ -24,11 +24,8 @@
  * places, currently: to encrypt the secret part of private keys in the
  * private keyring, and to convert passphrases to encryption keys for
  * symmetrically encrypted messages.
- * @requires config
- * @requires crypto
- * @requires enums
- * @requires util
  * @module type/s2k
+ * @private
  */
 
 import defaultConfig from '../config';

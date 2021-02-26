@@ -2,12 +2,8 @@
  * @fileoverview Provides an interface to hashing functions available in Node.js or external libraries.
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://github.com/indutny/hash.js|hash.js}
- * @requires asmcrypto.js
- * @requires hash.js
- * @requires web-stream-tools
- * @requires crypto/hash/md5
- * @requires util
  * @module crypto/hash
+ * @private
  */
 
 import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';

@@ -15,15 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * @requires encoding/armor
- * @requires enums
- * @requires util
- * @requires packet
- * @requires signature
- * @module cleartext
- */
-
 import { armor, unarmor } from './encoding/armor';
 import enums from './enums';
 import util from './util';
@@ -38,8 +29,8 @@ import defaultConfig from './config';
  */
 export class CleartextMessage {
   /**
-   * @param  {String}           text       The cleartext of the signed message
-   * @param  {module:signature.Signature} signature  The detached signature or an empty signature for unsigned messages
+   * @param  {String}    text       The cleartext of the signed message
+   * @param  {Signature} signature  The detached signature or an empty signature for unsigned messages
    */
   constructor(text, signature) {
     // normalize EOL to canonical form <CR><LF>
@@ -52,7 +43,7 @@ export class CleartextMessage {
 
   /**
    * Returns the key IDs of the keys that signed the cleartext message
-   * @returns {Array<module:type/keyid>} array of keyid objects
+   * @returns {Array<module:type/keyid~Keyid>} array of keyid objects
    */
   getSigningKeyIds() {
     const keyIds = [];
@@ -65,13 +56,13 @@ export class CleartextMessage {
 
   /**
    * Sign the cleartext message
-   * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
+   * @param  {Array<Key>} privateKeys          private keys with decrypted secret key data for signing
    * @param  {Signature} signature             (optional) any existing detached signature
-   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+   * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                       (optional) The creation time of the signature that should be created
    * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param  {Object} config                   (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:cleartext.CleartextMessage>} new cleartext message with signed content
+   * @returns {Promise<CleartextMessage>}      new cleartext message with signed content
    * @async
    */
   async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
@@ -80,13 +71,13 @@ export class CleartextMessage {
 
   /**
    * Sign the cleartext message
-   * @param  {Array<module:key.Key>} privateKeys private keys with decrypted secret key data for signing
+   * @param  {Array<Key>} privateKeys          private keys with decrypted secret key data for signing
    * @param  {Signature} signature             (optional) any existing detached signature
-   * @param  {Array<module:type/keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+   * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
    * @param  {Date} date                       (optional) The creation time of the signature that should be created
    * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param  {Object} config                   (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<module:signature.Signature>}      new detached signature of message content
+   * @returns {Promise<Signature>}             new detached signature of message content
    * @async
    */
   async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
@@ -98,10 +89,10 @@ export class CleartextMessage {
 
   /**
    * Verify signatures of cleartext signed message
-   * @param {Array<module:key.Key>} keys array of keys to verify signatures
+   * @param {Array<Key>} keys array of keys to verify signatures
    * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {
@@ -110,10 +101,10 @@ export class CleartextMessage {
 
   /**
    * Verify signatures of cleartext signed message
-   * @param {Array<module:key.Key>} keys array of keys to verify signatures
+   * @param {Array<Key>} keys array of keys to verify signatures
    * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
    * @async
    */
   verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
@@ -166,7 +157,7 @@ export class CleartextMessage {
  * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {String | ReadableStream<String>} cleartextMessage text to be parsed
  * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
- * @returns {module:cleartext.CleartextMessage} new cleartext message object
+ * @returns {CleartextMessage} new cleartext message object
  * @async
  * @static
  */

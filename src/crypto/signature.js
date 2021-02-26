@@ -1,10 +1,8 @@
 /**
  * @fileoverview Provides functions for asymmetric signing and signature verification
- * @requires crypto/public_key
- * @requires enums
- * @requires util
  * @module crypto/signature
-*/
+ * @private
+ */
 
 import publicKey from './public_key';
 import enums from '../enums';
