@@ -25,6 +25,7 @@
 import { armor, unarmor } from './encoding/armor';
 import { PacketList, SignaturePacket } from './packet';
 import enums from './enums';
+import defaultConfig from './config';
 
 /**
  * Class that represents an OpenPGP signature.
@@ -47,10 +48,11 @@ export class Signature {
 
   /**
    * Returns ASCII armored text of signature
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
    * @returns {ReadableStream<String>} ASCII armor
    */
-  armor() {
-    return armor(enums.armor.signature, this.write());
+  armor(config = defaultConfig) {
+    return armor(enums.armor.signature, this.write(), undefined, undefined, undefined, config);
   }
 }
 
@@ -58,23 +60,25 @@ export class Signature {
  * reads an (optionally armored) OpenPGP signature and returns a signature object
  * @param {String | ReadableStream<String>} armoredSignature armored signature to be parsed
  * @param {Uint8Array | ReadableStream<Uint8Array>} binarySignature binary signature to be parsed
+ * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
  * @returns {Signature} new signature object
  * @async
  * @static
  */
-export async function readSignature({ armoredSignature, binarySignature }) {
+export async function readSignature({ armoredSignature, binarySignature, config }) {
+  config = { ...defaultConfig, ...config };
   let input = armoredSignature || binarySignature;
   if (!input) {
     throw new Error('readSignature: must pass options object containing `armoredSignature` or `binarySignature`');
   }
   if (armoredSignature) {
-    const { type, data } = await unarmor(input);
+    const { type, data } = await unarmor(input, config);
     if (type !== enums.armor.signature) {
       throw new Error('Armored text not of type signature');
     }
     input = data;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, { SignaturePacket });
+  await packetlist.read(input, { SignaturePacket }, undefined, config);
   return new Signature(packetlist);
 }

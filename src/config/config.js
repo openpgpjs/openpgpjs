@@ -105,11 +105,6 @@ export default {
   checksumRequired: false,
   /**
    * @memberof module:config
-   * @property {Boolean} rsaBlinding
-   */
-  rsaBlinding: true,
-  /**
-   * @memberof module:config
    * @property {Number} minRsaBits Minimum RSA key size allowed for key generation
    */
   minRsaBits: 2048,
@@ -136,19 +131,9 @@ export default {
 
   /**
    * @memberof module:config
-   * @property {Boolean} useNative Use native Node.js crypto/zlib and WebCrypto APIs when available
-   */
-  useNative: true,
-  /**
-   * @memberof module:config
    * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
    */
   minBytesForWebCrypto: 1000,
-  /**
-   * @memberof module:config
-   * @property {Boolean} debug If enabled, debug messages will be printed
-   */
-  debug: false,
   /**
    * @memberof module:config
    * @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error

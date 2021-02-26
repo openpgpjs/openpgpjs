@@ -24,7 +24,7 @@
  */
 
 import type_s2k from '../type/s2k';
-import config from '../config';
+import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -44,7 +44,10 @@ import util from '../util';
  * @memberof module:packet
  */
 class SymEncryptedSessionKeyPacket {
-  constructor() {
+  /**
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   */
+  constructor(config = defaultConfig) {
     this.tag = enums.packet.symEncryptedSessionKey;
     this.version = config.aeadProtect ? 5 : 4;
     this.sessionKey = null;
@@ -154,17 +157,18 @@ class SymEncryptedSessionKeyPacket {
   /**
    * Encrypts the session key
    * @param {String} passphrase The passphrase in string form
+   * @param {Object} config (optional) full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(passphrase) {
+  async encrypt(passphrase, config = defaultConfig) {
     const algo = this.sessionKeyEncryptionAlgorithm !== null ?
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
     this.sessionKeyEncryptionAlgorithm = algo;
 
-    this.s2k = new type_s2k();
+    this.s2k = new type_s2k(config);
     this.s2k.salt = await crypto.random.getRandomBytes(8);
 
     const length = crypto.cipher[algo].keySize;
@@ -183,7 +187,7 @@ class SymEncryptedSessionKeyPacket {
     } else {
       const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
       const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
-      this.encrypted = await crypto.cfb.encrypt(algo, key, private_key, new Uint8Array(crypto.cipher[algo].blockSize));
+      this.encrypted = await crypto.cfb.encrypt(algo, key, private_key, new Uint8Array(crypto.cipher[algo].blockSize), config);
     }
   }
 }

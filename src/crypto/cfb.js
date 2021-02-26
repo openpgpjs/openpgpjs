@@ -28,7 +28,6 @@ import { AES_CFB } from 'asmcrypto.js/dist_es8/aes/cfb';
 
 import stream from 'web-stream-tools';
 import * as cipher from './cipher';
-import config from '../config';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto();
@@ -47,12 +46,12 @@ const nodeAlgos = {
   /* twofish is not implemented in OpenSSL */
 };
 
-export async function encrypt(algo, key, plaintext, iv) {
+export async function encrypt(algo, key, plaintext, iv, config) {
   if (util.getNodeCrypto() && nodeAlgos[algo]) { // Node crypto library.
     return nodeEncrypt(algo, key, plaintext, iv);
   }
   if (algo.substr(0, 3) === 'aes') {
-    return aesEncrypt(algo, key, plaintext, iv);
+    return aesEncrypt(algo, key, plaintext, iv, config);
   }
 
   const cipherfn = new cipher[algo](key);
@@ -113,7 +112,7 @@ export async function decrypt(algo, key, ciphertext, iv) {
   return stream.transform(ciphertext, process, process);
 }
 
-function aesEncrypt(algo, key, pt, iv) {
+function aesEncrypt(algo, key, pt, iv, config) {
   if (
     util.getWebCrypto() &&
     key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support

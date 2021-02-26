@@ -30,7 +30,7 @@ import type_keyid from '../type/keyid.js';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import config from '../config';
+import defaultConfig from '../config';
 
 /**
  * Implementation of the Signature Packet (Tag 2)
@@ -99,9 +99,10 @@ class SignaturePacket {
   /**
    * parsing function for a signature packet (tag 2).
    * @param {String} bytes payload of a tag 2 packet
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @returns {SignaturePacket} object representation
    */
-  read(bytes) {
+  read(bytes, config = defaultConfig) {
     let i = 0;
     this.version = bytes[i++];
 
@@ -114,7 +115,7 @@ class SignaturePacket {
     this.hashAlgorithm = bytes[i++];
 
     // hashed subpackets
-    i += this.read_sub_packets(bytes.subarray(i, bytes.length), true);
+    i += this.read_sub_packets(bytes.subarray(i, bytes.length), true, config);
 
     // A V4 signature hashes the packet body
     // starting from its first field, the version number, through the end
@@ -125,7 +126,7 @@ class SignaturePacket {
     this.signatureData = bytes.subarray(0, i);
 
     // unhashed subpackets
-    i += this.read_sub_packets(bytes.subarray(i, bytes.length), false);
+    i += this.read_sub_packets(bytes.subarray(i, bytes.length), false, config);
 
     // Two-octet field holding left 16 bits of signed hash value.
     this.signedHashValue = bytes.subarray(i, i + 2);
@@ -340,7 +341,7 @@ class SignaturePacket {
 
   // V4 signature sub packets
 
-  read_sub_packet(bytes, trusted = true) {
+  read_sub_packet(bytes, trusted = true, config) {
     let mypos = 0;
 
     const read_array = (prop, bytes) => {
@@ -536,7 +537,7 @@ class SignaturePacket {
     }
   }
 
-  read_sub_packets(bytes, trusted = true) {
+  read_sub_packets(bytes, trusted = true, config) {
     // Two-octet scalar octet count for following subpacket data.
     const subpacket_length = util.readNumber(bytes.subarray(0, 2));
 
@@ -547,7 +548,7 @@ class SignaturePacket {
       const len = readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
-      this.read_sub_packet(bytes.subarray(i, i + len.len), trusted);
+      this.read_sub_packet(bytes.subarray(i, i + len.len), trusted, config);
 
       i += len.len;
     }
@@ -671,10 +672,11 @@ class SignaturePacket {
    * @param {String|Object} data data which on the signature applies
    * @param {Boolean} detached (optional) whether to verify a detached signature
    * @param {Boolean} streaming (optional) whether to process data as a stream
+   * @param {Object}  config (optional) full configuration, defaults to openpgp.config
    * @throws {Error} if signature validation failed
    * @async
    */
-  async verify(key, signatureType, data, detached = false, streaming = false) {
+  async verify(key, signatureType, data, detached = false, streaming = false, config = defaultConfig) {
     const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 

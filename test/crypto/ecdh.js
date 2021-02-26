@@ -4,6 +4,7 @@ const KDFParams = require('../../src/type/kdf_params');
 const elliptic_curves = require('../../src/crypto/public_key/elliptic');
 const util = require('../../src/util');
 
+const sandbox = require('sinon/lib/sinon/sandbox');
 const chai = require('chai');
 const elliptic_data = require('./elliptic_data');
 
@@ -133,133 +134,111 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
   ]);
 
   describe('ECDHE key generation', function () {
+    const ecdh = elliptic_curves.ecdh;
+
     it('Invalid curve', async function () {
       if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
         this.skip();
       }
-      const { key: publicKey } = await openpgp.generateKey({ curve: "secp256k1", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      await expect(
-        openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') })
+      const curve = new elliptic_curves.Curve('secp256k1');
+      const oid = new OID(curve.oid);
+      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+      const data = util.strToUint8Array('test');
+      expect(
+        ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1)
       ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/);
     });
-    it('Invalid public part of ephemeral key and private key', async function () {
-      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      privateKey.subKeys[0].keyPacket.publicParams.Q = Q2;
-      privateKey.subKeys[0].keyPacket.privateParams.d = d2;
-      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+    it('Different keys', async function () {
+      const curve = new elliptic_curves.Curve('curve25519');
+      const oid = new OID(curve.oid);
+      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+      const data = util.strToUint8Array('test');
+      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
       await expect(
-        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-      ).to.be.rejectedWith('Error decrypting message: Key Data Integrity failed');
+        ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint1)
+      ).to.be.rejectedWith(/Key Data Integrity failed/);
     });
     it('Invalid fingerprint', async function () {
-      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      privateKey.subKeys[0].keyPacket.publicParams.Q = Q2;
-      privateKey.subKeys[0].keyPacket.privateParams.d = d2;
-      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint2;
-      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
+      const curve = new elliptic_curves.Curve('curve25519');
+      const oid = new OID(curve.oid);
+      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+      const data = util.strToUint8Array('test');
+      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q2, fingerprint1);
       await expect(
-        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-      ).to.be.rejectedWith('Error decrypting message: Session key decryption failed');
-    });
-    it('Different keys', async function () {
-      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = Q2;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      privateKey.subKeys[0].keyPacket.publicParams.Q = Q1;
-      privateKey.subKeys[0].keyPacket.privateParams.d = d1;
-      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
-      await expect(
-        openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-      ).to.be.rejectedWith('Error decrypting message: Key Data Integrity failed');
+        ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint2)
+      ).to.be.rejectedWith(/Key Data Integrity failed/);
     });
     it('Successful exchange curve25519', async function () {
-      const { key: publicKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = Q1;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const { key: privateKey } = await openpgp.generateKey({ curve: "curve25519", userIds: [{ name: 'Test' }] });
-      privateKey.subKeys[0].keyPacket.publicParams.Q = Q1;
-      privateKey.subKeys[0].keyPacket.privateParams.d = d1;
-      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
-      expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-      ).data).to.equal('test');
-    });
-    it('Successful exchange NIST P256', async function () {
-      const { key: publicKey } = await openpgp.generateKey({ curve: "p256", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = key_data.p256.pub;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const { key: privateKey } = await openpgp.generateKey({ curve: "p256", userIds: [{ name: 'Test' }] });
-      privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p256.pub;
-      privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p256.priv;
-      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
-      expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-      ).data).to.equal('test');
-    });
-    it('Successful exchange NIST P384', async function () {
-      const { key: publicKey } = await openpgp.generateKey({ curve: "p384", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = key_data.p384.pub;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const { key: privateKey } = await openpgp.generateKey({ curve: "p384", userIds: [{ name: 'Test' }] });
-      privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p384.pub;
-      privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p384.priv;
-      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
-      expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-      ).data).to.equal('test');
-    });
-    it('Successful exchange NIST P521', async function () {
-      const { key: publicKey } = await openpgp.generateKey({ curve: "p521", userIds: [{ name: 'Test' }] });
-      publicKey.subKeys[0].keyPacket.publicParams.Q = key_data.p521.pub;
-      publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const { key: privateKey } = await openpgp.generateKey({ curve: "p521", userIds: [{ name: 'Test' }] });
-      privateKey.subKeys[0].keyPacket.publicParams.Q = key_data.p521.pub;
-      privateKey.subKeys[0].keyPacket.privateParams.d = key_data.p521.priv;
-      privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-      const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
-      expect((
-        await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-      ).data).to.equal('test');
+      const curve = new elliptic_curves.Curve('curve25519');
+      const oid = new OID(curve.oid);
+      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+      const data = util.strToUint8Array('test');
+      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
+      expect(await ecdh.decrypt(oid, kdfParams, V, C, Q1, d1, fingerprint1)).to.deep.equal(data);
     });
 
-    it('Comparing decrypting with useNative = true and false', async function () {
-      const names = ["p256", "p384", "p521"];
-      return Promise.all(names.map(async function (name) {
-        const { key: publicKey } = await openpgp.generateKey({ curve: name, userIds: [{ name: 'Test' }] });
-        publicKey.subKeys[0].keyPacket.publicParams.Q = key_data[name].pub;
-        publicKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-        const { key: privateKey } = await openpgp.generateKey({ curve: name, userIds: [{ name: 'Test' }] });
-        privateKey.subKeys[0].keyPacket.publicParams.Q = key_data[name].pub;
-        privateKey.subKeys[0].keyPacket.privateParams.d = key_data[name].priv;
-        privateKey.subKeys[0].keyPacket.fingerprint = fingerprint1;
-        const armoredMessage = await openpgp.encrypt({ publicKeys: [publicKey], message: openpgp.Message.fromText('test') });
-        expect((
-          await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-        ).data).to.equal('test');
-        const useNative = openpgp.config.useNative;
-        openpgp.config.useNative = !useNative;
-        try {
-          expect((
-            await openpgp.decrypt({ privateKeys: [privateKey], message: await openpgp.readMessage({ armoredMessage }) })
-          ).data).to.equal('test');
-        } finally {
-          openpgp.config.useNative = useNative;
-        }
-      }));
+    ['p256', 'p384', 'p521'].forEach(curveName => {
+      it(`NIST ${curveName} - Successful exchange`, async function () {
+        const curve = new elliptic_curves.Curve(curveName);
+        const oid = new OID(curve.oid);
+        const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+        const data = util.strToUint8Array('test');
+        const Q = key_data[curveName].pub;
+        const d = key_data[curveName].priv;
+        const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
+        expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
+      });
+    });
+
+    describe('Comparing decrypting with and without native crypto', () => {
+      let sinonSandbox;
+      let getWebCryptoStub;
+      let getNodeCryptoStub;
+
+      beforeEach(function () {
+        sinonSandbox = sandbox.create();
+      });
+
+      afterEach(function () {
+        sinonSandbox.restore();
+      });
+
+      const disableNative = () => {
+        enableNative();
+        // stubbed functions return undefined
+        getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
+        getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
+      };
+      const enableNative = () => {
+        getWebCryptoStub && getWebCryptoStub.restore();
+        getNodeCryptoStub && getNodeCryptoStub.restore();
+      };
+
+      ['p256', 'p384', 'p521'].forEach(curveName => {
+        it(`NIST ${curveName}`, async function () {
+          const nodeCrypto = util.getNodeCrypto();
+          const webCrypto = util.getWebCrypto();
+          if (!nodeCrypto && !webCrypto) {
+            this.skip();
+          }
+
+          const curve = new elliptic_curves.Curve(curveName);
+          const oid = new OID(curve.oid);
+          const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+          const data = util.strToUint8Array('test');
+          const Q = key_data[curveName].pub;
+          const d = key_data[curveName].priv;
+          const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
+
+          const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH');
+          expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
+          disableNative();
+          expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
+          if (curveName !== 'p521') { // safari does not implement p521 in webcrypto
+            expect(nativeDecryptSpy.calledOnce).to.be.true;
+          }
+        });
+      });
     });
   });
 });

@@ -919,8 +919,8 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 
   it('Checks for critical bit in non-human-readable notations', async function() {
     try {
-      openpgp.config.tolerant = false;
       await openpgp.readSignature({
+        config: { tolerant: false },
         armoredSignature: `-----BEGIN PGP SIGNATURE-----
 
 wsEfBAABCABJBYJfKDH0K5QAAAAAAB0ABXVua25vd25AdGVzdHMuc2VxdW9pYS1w
@@ -940,8 +940,6 @@ bwM=
       throw new Error('openpgp.readSignature should throw but it did not.');
     } catch (e) {
       expect(e.message).to.equal('Unknown critical notation: unknown@tests.sequoia-pgp.org');
-    } finally {
-      openpgp.config.tolerant = true;
     }
   });
 
@@ -1625,8 +1623,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const privKey2 = await openpgp.readKey({ armoredKey: priv_key_arm2 });
     await privKey2.decrypt('hello world');
 
-    const opt = { rsaBits: 512, userIds: { name:'test', email:'a@b.com' }, passphrase: null };
-    if (util.getWebCryptoAll()) { opt.rsaBits = 2048; } // webkit webcrypto accepts minimum 2048 bit keys
+    const opt = { rsaBits: 2048, userIds: { name:'test', email:'a@b.com' }, passphrase: null };
     const { key: generatedKey } = await openpgp.generateKey(opt);
     const detachedSig = await msg.signDetached([generatedKey, privKey2]);
     const result = await msg.verifyDetached(detachedSig, [generatedKey.toPublic(), pubKey2]);
@@ -1638,9 +1635,8 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const opt = { userIds: { name:'test', email:'a@b.com' }, passphrase: null };
     return openpgp.generateKey(opt).then(function(gen) {
       const key = gen.key;
-      let message = openpgp.Message.fromText('hello world');
-      message = message.sign([key]);
-      expect(message).to.exist;
+      const message = openpgp.Message.fromText('hello world');
+      return message.sign([key]);
     });
   });
 

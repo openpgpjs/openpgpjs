@@ -14,9 +14,9 @@ import {
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength
 } from './packet';
-import config from '../config';
 import enums from '../enums';
 import util from '../util';
+import defaultConfig from '../config';
 
 /**
  * This class represents a list of openpgp packets.
@@ -30,7 +30,7 @@ class PacketList extends Array {
    * Reads a stream of binary data and interprets it as a list of packets.
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes A Uint8Array of bytes.
    */
-  async read(bytes, allowedPackets, streaming) {
+  async read(bytes, allowedPackets, streaming, config = defaultConfig) {
     this.stream = stream.transformPair(bytes, async (readable, writable) => {
       const writer = stream.getWriter(writable);
       try {
@@ -42,7 +42,7 @@ class PacketList extends Array {
               const packet = packets.newPacketFromTag(tag, allowedPackets);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
-              await packet.read(parsed.packet, streaming);
+              await packet.read(parsed.packet, config, streaming);
               await writer.write(packet);
             } catch (e) {
               if (!config.tolerant || supportsStreaming(parsed.tag)) {

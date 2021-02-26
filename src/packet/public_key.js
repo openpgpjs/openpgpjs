@@ -28,7 +28,7 @@
 import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
 import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
 import type_keyid from '../type/keyid';
-import config from '../config';
+import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -46,7 +46,11 @@ import util from '../util';
  * @memberof module:packet
  */
 class PublicKeyPacket {
-  constructor(date = new Date()) {
+  /**
+   * @param {Date} date      (optional) creation date
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   */
+  constructor(date = new Date(), config = defaultConfig) {
     /**
      * Packet type
      * @type {module:enums.packet}

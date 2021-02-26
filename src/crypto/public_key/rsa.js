@@ -26,7 +26,6 @@
 
 import { randomProbablePrime } from './prime';
 import { getRandomBigInteger } from '../random';
-import config from '../../config';
 import util from '../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64';
 import { emsaEncode, emeEncode, emeDecode } from '../pkcs1';
@@ -528,13 +527,10 @@ async function bnDecrypt(data, n, e, d, p, q, u) {
   const dq = d.mod(q.dec()); // d mod (q-1)
   const dp = d.mod(p.dec()); // d mod (p-1)
 
-  let blinder;
-  let unblinder;
-  if (config.rsaBlinding) {
-    unblinder = (await getRandomBigInteger(new BigInteger(2), n)).mod(n);
-    blinder = unblinder.modInv(n).modExp(e, n);
-    data = data.mul(blinder).mod(n);
-  }
+  const unblinder = (await getRandomBigInteger(new BigInteger(2), n)).mod(n);
+  const blinder = unblinder.modInv(n).modExp(e, n);
+  data = data.mul(blinder).mod(n);
+
 
   const mp = data.modExp(dp, p); // data**{d mod (q-1)} mod p
   const mq = data.modExp(dq, q); // data**{d mod (p-1)} mod q
@@ -542,9 +538,8 @@ async function bnDecrypt(data, n, e, d, p, q, u) {
 
   let result = h.mul(p).add(mp); // result < n due to relations above
 
-  if (config.rsaBlinding) {
-    result = result.mul(unblinder).mod(n);
-  }
+  result = result.mul(unblinder).mod(n);
+
 
   return emeDecode(result.toUint8Array('be', n.byteLength()));
 }

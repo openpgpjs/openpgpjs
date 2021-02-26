@@ -1,7 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const { readKey, Key, readCleartextMessage, CleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
-const key = require('../../src/key');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -9,23 +8,23 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 
 async function generateTestData() {
-  const victimPrivKey = await key.generate({
+  const victimPrivKey = (await openpgp.generateKey({
     userIds: [{ name: 'Victim', email: 'victim@example.com' }],
     type: 'rsa',
-    rsaBits: 1024,
+    rsaBits: 2048,
     subkeys: [{
       sign: true
     }]
-  });
+  })).key;
   victimPrivKey.revocationSignatures = [];
 
-  const attackerPrivKey = await key.generate({
+  const attackerPrivKey = (await openpgp.generateKey({
     userIds: [{ name: 'Attacker', email: 'attacker@example.com' }],
     type: 'rsa',
-    rsaBits: 1024,
+    rsaBits: 2048,
     subkeys: [],
     sign: false
-  });
+  })).key;
   attackerPrivKey.revocationSignatures = [];
   const signed = await openpgp.sign({
     message: await CleartextMessage.fromText('I am batman'),

@@ -25,7 +25,6 @@
  */
 
 import stream from 'web-stream-tools';
-import config from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -35,6 +34,7 @@ import {
   OnePassSignaturePacket,
   SignaturePacket
 } from '../packet';
+import defaultConfig from '../config';
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -107,10 +107,11 @@ class AEADEncryptedDataPacket {
    * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
    * @param  {Uint8Array} key               The session key used to encrypt the payload
    * @param  {Boolean} streaming            Whether the top-level function will return a stream
+   * @param  {Object} config                (optional) full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(sessionKeyAlgorithm, key, streaming) {
+  async encrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
     this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
     const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];

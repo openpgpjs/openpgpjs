@@ -24,8 +24,8 @@
  */
 
 import stream from 'web-stream-tools';
-import config from '../config';
 import { readKey } from '../key';
+import defaultConfig from '../config';
 
 /**
  * The class that deals with storage of the keyring.
@@ -34,8 +34,9 @@ import { readKey } from '../key';
 class LocalStore {
   /**
    * @param {String} prefix prefix for itemnames in localstore
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    */
-  constructor(prefix) {
+  constructor(prefix, config = defaultConfig) {
     prefix = prefix || 'openpgp-';
     this.publicKeysItem = prefix + this.publicKeysItem;
     this.privateKeysItem = prefix + this.privateKeysItem;
@@ -51,37 +52,40 @@ class LocalStore {
    * @returns {Array<module:key.Key>} array of keys retrieved from localstore
    * @async
    */
-  async loadPublic() {
-    return loadKeys(this.storage, this.publicKeysItem);
+  async loadPublic(config = defaultConfig) {
+    return loadKeys(this.storage, this.publicKeysItem, config);
   }
 
   /**
    * Load the private keys from HTML5 local storage.
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @returns {Array<module:key.Key>} array of keys retrieved from localstore
    * @async
    */
-  async loadPrivate() {
-    return loadKeys(this.storage, this.privateKeysItem);
+  async loadPrivate(config = defaultConfig) {
+    return loadKeys(this.storage, this.privateKeysItem, config);
   }
 
   /**
    * Saves the current state of the public keys to HTML5 local storage.
    * The key array gets stringified using JSON
    * @param {Array<module:key.Key>} keys array of keys to save in localstore
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @async
    */
-  async storePublic(keys) {
-    await storeKeys(this.storage, this.publicKeysItem, keys);
+  async storePublic(keys, config = defaultConfig) {
+    await storeKeys(this.storage, this.publicKeysItem, keys, config);
   }
 
   /**
    * Saves the current state of the private keys to HTML5 local storage.
    * The key array gets stringified using JSON
    * @param {Array<module:key.Key>} keys array of keys to save in localstore
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
    * @async
    */
-  async storePrivate(keys) {
-    await storeKeys(this.storage, this.privateKeysItem, keys);
+  async storePrivate(keys, config = defaultConfig) {
+    await storeKeys(this.storage, this.privateKeysItem, keys, config);
   }
 }
 
@@ -91,22 +95,22 @@ class LocalStore {
 LocalStore.prototype.publicKeysItem = 'public-keys';
 LocalStore.prototype.privateKeysItem = 'private-keys';
 
-async function loadKeys(storage, itemname) {
+async function loadKeys(storage, itemname, config) {
   const armoredKeys = JSON.parse(storage.getItem(itemname));
   const keys = [];
   if (armoredKeys !== null && armoredKeys.length !== 0) {
     let key;
     for (let i = 0; i < armoredKeys.length; i++) {
-      key = await readKey({ armoredKey: armoredKeys[i] });
+      key = await readKey({ armoredKey: armoredKeys[i], config });
       keys.push(key);
     }
   }
   return keys;
 }
 
-async function storeKeys(storage, itemname, keys) {
+async function storeKeys(storage, itemname, keys, config) {
   if (keys.length) {
-    const armoredKeys = await Promise.all(keys.map(key => stream.readToEnd(key.armor())));
+    const armoredKeys = await Promise.all(keys.map(key => stream.readToEnd(key.armor(config))));
     storage.setItem(itemname, JSON.stringify(armoredKeys));
   } else {
     storage.removeItem(itemname);

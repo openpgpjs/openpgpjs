@@ -33,8 +33,12 @@ import enums from '../enums';
  * @extends PublicKeyPacket
  */
 class PublicSubkeyPacket extends PublicKeyPacket {
-  constructor() {
-    super();
+  /**
+   * @param {Date} date      (optional) creation date
+   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   */
+  constructor(date, config) {
+    super(date, config);
     this.tag = enums.packet.publicSubkey;
   }
 }

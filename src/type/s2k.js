@@ -31,13 +31,16 @@
  * @module type/s2k
  */
 
-import config from '../config';
+import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums.js';
 import util from '../util.js';
 
 class S2K {
-  constructor() {
+  /**
+   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   */
+  constructor(config = defaultConfig) {
     /** @type {module:enums.hash} */
     this.algorithm = 'sha256';
     /** @type {module:enums.s2k} */

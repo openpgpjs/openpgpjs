@@ -24,8 +24,7 @@
  */
 import util from '../util';
 
-// Do not use util.getNodeCrypto because we need this regardless of useNative setting
-const nodeCrypto = util.detectNode() && require('crypto');
+const nodeCrypto = util.getNodeCrypto();
 
 /**
  * Buffer for secure random numbers

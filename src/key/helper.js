@@ -17,9 +17,9 @@ import {
   SignaturePacket
 } from '../packet';
 import enums from '../enums';
-import config from '../config';
 import crypto from '../crypto';
 import util from '../util';
+import defaultConfig from '../config';
 
 export const allowedKeyPackets = {
   PublicKeyPacket,
@@ -31,19 +31,19 @@ export const allowedKeyPackets = {
   SignaturePacket
 };
 
-export async function generateSecretSubkey(options) {
-  const secretSubkeyPacket = new SecretSubkeyPacket(options.date);
+export async function generateSecretSubkey(options, config) {
+  const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
   await secretSubkeyPacket.generate(options.rsaBits, options.curve);
   return secretSubkeyPacket;
 }
 
-export async function generateSecretKey(options) {
-  const secretKeyPacket = new SecretKeyPacket(options.date);
+export async function generateSecretKey(options, config) {
+  const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
   return secretKeyPacket;
 }
 
@@ -51,10 +51,11 @@ export async function generateSecretKey(options) {
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
  * @param  {Array<SignaturePacket>}         signatures  List of signatures
  * @param  {Date}                           date        Use the given date instead of the current time
+ * @param  {Object} config full configuration
  * @returns {Promise<SignaturePacket>} The latest valid signature
  * @async
  */
-export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date()) {
+export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date(), config) {
   let signature;
   let exception;
   for (let i = signatures.length - 1; i >= 0; i--) {
@@ -65,7 +66,7 @@ export async function getLatestValidSignature(signatures, primaryKey, signatureT
         !signatures[i].isExpired(date)
       ) {
         // check binding signature is verified
-        signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify);
+        signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify, undefined, undefined, config);
         signature = signatures[i];
       }
     } catch (e) {
@@ -97,20 +98,21 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
  * @param {SecretSubkeyPacket} subkey Subkey key packet
  * @param {SecretKeyPacket} primaryKey Primary key packet
  * @param {Object} options
+ * @param {Object} config full configuration
  */
-export async function createBindingSignature(subkey, primaryKey, options) {
+export async function createBindingSignature(subkey, primaryKey, options, config) {
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
   const subkeySignaturePacket = new SignaturePacket(options.date);
   subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
   subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
-  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey);
+  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey, undefined, undefined, config);
   if (options.sign) {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
     subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
       signatureType: enums.signature.keyBinding
-    }, options.date);
+    }, options.date, undefined, undefined, undefined, config);
   } else {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
   }
@@ -128,14 +130,15 @@ export async function createBindingSignature(subkey, primaryKey, options) {
  * @param  {SecretKeyPacket|SecretSubkeyPacket} keyPacket key packet used for signing
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Object} userId (optional) user ID
+ * @param  {Object} config full configuration
  * @returns {Promise<String>}
  * @async
  */
-export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = {}) {
+export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = {}, config) {
   let hash_algo = config.preferHashAlgorithm;
   let pref_algo = hash_algo;
   if (key) {
-    const primaryUser = await key.getPrimaryUser(date, userId);
+    const primaryUser = await key.getPrimaryUser(date, userId, config);
     if (primaryUser.selfCertification.preferredHashAlgorithms) {
       [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
       hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
@@ -164,15 +167,16 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Array} userIds (optional) user IDs
+ * @param  {Object} config (optional) full configuration, defaults to openpgp.config
  * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys, date = new Date(), userIds = []) {
+export async function getPreferredAlgo(type, keys, date = new Date(), userIds = [], config = defaultConfig) {
   const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
   const defaultAlgo = type === 'symmetric' ? enums.symmetric.aes128 : enums.aead.eax;
   const prioMap = {};
   await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
+    const primaryUser = await key.getPrimaryUser(date, userIds[i], config);
     if (!primaryUser.selfCertification[prefProperty]) {
       return defaultAlgo;
     }
@@ -207,9 +211,10 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
  * @param  {Object} userId                   (optional) user ID
  * @param  {Object} detached                 (optional) whether to create a detached signature packet
  * @param  {Boolean} streaming               (optional) whether to process data as a stream
+ * @param  {Object} config                   full configuration
  * @returns {module:packet/signature}         signature packet
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false, config) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
@@ -219,7 +224,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   const signaturePacket = new SignaturePacket(date);
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId);
+  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId, config);
   await signaturePacket.sign(signingKeyPacket, dataToSign, detached, streaming);
   return signaturePacket;
 }
@@ -262,10 +267,11 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
  *          PublicKeyPacket|
  *          SecretKeyPacket} key, optional The key packet to check the signature
  * @param  {Date}                     date          Use the given date instead of the current time
+ * @param {Object} config full configuration
  * @returns {Promise<Boolean>}                      True if the signature revokes the data
  * @async
  */
-export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date()) {
+export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
   key = key || primaryKey;
   const normDate = util.normalizeDate(date);
   const revocationKeyIds = [];
@@ -283,7 +289,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
         !(config.revocationsExpire && revocationSignature.isExpired(normDate))
       ) {
-        revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify);
+        revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify, undefined, undefined, config);
 
         // TODO get an identifier of the revoked object instead
         revocationKeyIds.push(revocationSignature.issuerKeyId);
@@ -313,14 +319,15 @@ export function getExpirationTime(keyPacket, signature) {
  * @param  {Array<module:key.Key>} keys Set of keys
  * @param  {Date} date (optional) use the given date for verification instead of the current time
  * @param  {Array} userIds (optional) user IDs
+ * @param  {Object} config full configuration
  * @returns {Promise<Boolean>}
  * @async
  */
-export async function isAeadSupported(keys, date = new Date(), userIds = []) {
+export async function isAeadSupported(keys, date = new Date(), userIds = [], config = defaultConfig) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIds[i]);
+    const primaryUser = await key.getPrimaryUser(date, userIds[i], config);
     if (!primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;
@@ -388,7 +395,7 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
       (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0);
 }
 
-export function isValidDecryptionKeyPacket(signature) {
+export function isValidDecryptionKeyPacket(signature, config) {
   if (!signature.verified) { // Sanity check
     throw new Error('Signature not verified');
   }

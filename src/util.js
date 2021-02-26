@@ -21,17 +21,16 @@
  * This object contains utility functions
  * @requires email-addresses
  * @requires web-stream-tools
- * @requires config
  * @requires encoding/base64
  * @module util
  */
 
 import stream from 'web-stream-tools';
-import config from './config';
-import util from './util'; // re-import module to access util functions
 import { getBigInteger } from './biginteger';
 
-export default {
+const debugMode = globalThis.process && globalThis.process.env.NODE_ENV === 'development';
+
+const util = {
   isString: function(data) {
     return typeof data === 'string' || String.prototype.isPrototypeOf(data);
   },
@@ -358,11 +357,10 @@ export default {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
    */
   printDebug: function (str) {
-    if (config.debug) {
+    if (debugMode) {
       console.log(str);
     }
   },
@@ -370,12 +368,11 @@ export default {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * Different than print_debug because will call Uint8ArrayToHex iff necessary.
    * @param {String} str String of the debug message
    */
   printDebugHexArrayDump: function (str, arrToHex) {
-    if (config.debug) {
+    if (debugMode) {
       str += ': ' + util.uint8ArrayToHex(arrToHex);
       console.log(str);
     }
@@ -384,12 +381,11 @@ export default {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * Different than print_debug because will call strToHex iff necessary.
    * @param {String} str String of the debug message
    */
   printDebugHexStrDump: function (str, strToHex) {
-    if (config.debug) {
+    if (debugMode) {
       str += util.strToHex(strToHex);
       console.log(str);
     }
@@ -398,11 +394,10 @@ export default {
   /**
    * Helper function to print a debug error. Debug
    * messages are only printed if
-   * @link module:config/config.debug is set to true.
    * @param {String} str String of the debug message
    */
   printDebugError: function (error) {
-    if (config.debug) {
+    if (debugMode) {
       console.error(error);
     }
   },
@@ -490,38 +485,10 @@ export default {
 
   /**
    * Get native Web Cryptography api, only the current version of the spec.
-   * The default configuration is to use the api when available. But it can
-   * be deactivated with config.useNative
    * @returns {Object}   The SubtleCrypto api or 'undefined'
    */
   getWebCrypto: function() {
-    if (!config.useNative) {
-      return;
-    }
-
     return typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
-  },
-
-  /**
-   * Get native Web Cryptography api for all browsers, including legacy
-   * implementations of the spec e.g IE11 and Safari 8/9. The default
-   * configuration is to use the api when available. But it can be deactivated
-   * with config.useNative
-   * @returns {Object}   The SubtleCrypto api or 'undefined'
-   */
-  getWebCryptoAll: function() {
-    if (!config.useNative) {
-      return;
-    }
-
-    if (typeof globalThis !== 'undefined') {
-      if (globalThis.crypto) {
-        return globalThis.crypto.subtle || globalThis.crypto.webkitSubtle;
-      }
-      if (globalThis.msCrypto) {
-        return globalThis.msCrypto.subtle;
-      }
-    }
   },
 
   /**
@@ -547,23 +514,14 @@ export default {
   getBigInteger,
 
   /**
-   * Get native Node.js crypto api. The default configuration is to use
-   * the api when available. But it can also be deactivated with config.useNative
+   * Get native Node.js crypto api.
    * @returns {Object}   The crypto module or 'undefined'
    */
   getNodeCrypto: function() {
-    if (!config.useNative) {
-      return;
-    }
-
     return require('crypto');
   },
 
   getNodeZlib: function() {
-    if (!config.useNative) {
-      return;
-    }
-
     return require('zlib');
   },
 
@@ -743,3 +701,5 @@ export default {
     return error;
   }
 };
+
+export default util;
