@@ -39,11 +39,14 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
     );
     aesAlgos.forEach(function(algo) {
       it(algo, async function() {
+        const nodeCrypto = util.getNodeCrypto();
+        const webCrypto = util.getWebCrypto();
+        if (!nodeCrypto && !webCrypto) {
+          this.skip(); // eslint-disable-line no-invalid-this
+        }
         const key = await crypto.generateSessionKey(algo);
         const iv = await crypto.random.getRandomBytes(crypto.gcm.ivLength);
 
-        const nodeCrypto = util.getNodeCrypto();
-        const webCrypto = util.getWebCrypto();
         const nativeEncryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'encrypt') : sinonSandbox.spy(nodeCrypto, 'createCipheriv');
         const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'decrypt') : sinonSandbox.spy(nodeCrypto, 'createDecipheriv');
 

@@ -218,6 +218,9 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
         it(`NIST ${curveName}`, async function () {
           const nodeCrypto = util.getNodeCrypto();
           const webCrypto = util.getWebCrypto();
+          if (!nodeCrypto && !webCrypto) {
+            this.skip();
+          }
 
           const curve = new elliptic_curves.Curve(curveName);
           const oid = new OID(curve.oid);
