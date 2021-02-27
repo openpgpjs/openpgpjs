@@ -7,6 +7,7 @@ module.exports = {
     },
     templates: {
         default: {
+            includeDate: false,
             outputSourceFiles: false,
             externalSourceLinks: {
                 urlPrefix: `${pkg.repository.url}/blob/v${pkg.version}/src/`
