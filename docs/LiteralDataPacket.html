@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Class: LiteralDataPacket</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Class: LiteralDataPacket</h1>
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2><span class="attribs"><span class="type-signature"></span></span>LiteralDataPacket<span class="signature">(date)</span><span class="type-signature"></span></h2>
+        
+            <div class="class-description"><p>Implementation of the Literal Data Packet (Tag 11)</p>
+<p><a href="https://tools.ietf.org/html/rfc4880#section-5.9">RFC4880 5.9</a>:
+A Literal Data packet contains the body of a message; data that is not to be
+further interpreted.</p></div>
+        
+    
+</header>
+
+<article>
+    <div class="container-overview">
+    
+        
+
+    
+    <h2>Constructor</h2>
+    
+
+    
+    <h4 class="name" id="LiteralDataPacket"><span class="type-signature"></span>new LiteralDataPacket<span class="signature">(date)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>date</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Date</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>the creation date of the literal package</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L33">line 33</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getBytes"><span class="type-signature"></span>getBytes<span class="signature">(clone)</span><span class="type-signature"> &rarr; {Uint8Array|ReadableStream.&lt;Uint8Array>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Get the byte sequence representing the literal packet data</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>clone</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>(optional) Whether to return a clone so that getBytes/getText can be called again</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L84">line 84</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>A sequence of bytes</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getFilename"><span class="type-signature"></span>getFilename<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Get the filename of the literal packet data</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L109">line 109</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>filename</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">String</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getText"><span class="type-signature"></span>getText<span class="signature">(clone)</span><span class="type-signature"> &rarr; {String|ReadableStream.&lt;String>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Returns literal data packets as native JavaScript string
+with normalized end of line to \n</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>clone</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>(optional) Whether to return a clone so that getBytes/getText can be called again</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L60">line 60</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>literal data as text</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">String</span>
+|
+
+<span class="param-type">ReadableStream.&lt;String></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="read"><span class="type-signature">(async) </span>read<span class="signature">(input)</span><span class="type-signature"> &rarr; {<a href="LiteralDataPacket.html">LiteralDataPacket</a>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Parsing function for a literal data packet (tag 11).</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>input</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Payload of a tag 11 packet</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L120">line 120</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>object representation</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="LiteralDataPacket.html">LiteralDataPacket</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="setBytes"><span class="type-signature"></span>setBytes<span class="signature">(bytes, format)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Set the packet data to value represented by the provided string of bytes.</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>bytes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The string of bytes</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>format</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">utf8</span>
+|
+
+<span class="param-type">binary</span>
+|
+
+<span class="param-type">text</span>
+|
+
+<span class="param-type">mime</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The format of the string of bytes</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L72">line 72</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="setFilename"><span class="type-signature"></span>setFilename<span class="signature">(filename)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Sets the filename of the literal packet data</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filename</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Any native javascript string</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L100">line 100</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="setText"><span class="type-signature"></span>setText<span class="signature">(text, format)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Set the packet data to a javascript native string, end of line
+will be normalized to \r\n and by default text is converted to UTF8</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>text</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+|
+
+<span class="param-type">ReadableStream.&lt;String></span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Any native javascript string</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>format</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">utf8</span>
+|
+
+<span class="param-type">binary</span>
+|
+
+<span class="param-type">text</span>
+|
+
+<span class="param-type">mime</span>
+
+
+            
+            </td>
+
+            
+
+            
+                <td class="default">
+                
+                    utf8
+                
+                </td>
+            
+
+            <td class="description last"><p>(optional) The format of the string of bytes</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L48">line 48</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="write"><span class="type-signature"></span>write<span class="signature">()</span><span class="type-signature"> &rarr; {Uint8Array|ReadableStream.&lt;Uint8Array>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Creates a Uint8Array representation of the packet</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L156">line 156</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Uint8Array representation of the packet</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="writeHeader"><span class="type-signature"></span>writeHeader<span class="signature">()</span><span class="type-signature"> &rarr; {Uint8Array}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Creates a Uint8Array representation of the packet, excluding the data</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js">packet/literal_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/packet/literal_data.js#L141">line 141</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Uint8Array representation of the packet</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Uint8Array</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="HKP.html">HKP</a></li><li><a href="Key.html">Key</a></li><li><a href="KeyArray.html">KeyArray</a></li><li><a href="Keyring.html">Keyring</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-Keyid.html">Keyid</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li><li><a href="WKD.html">WKD</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Sat Feb 27 2021 01:25:52 GMT+0100 (Midden-Europese standaardtijd)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
