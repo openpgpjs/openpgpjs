@@ -101,7 +101,8 @@ export default {
    * Create a hash on the specified data using the specified algorithm
    * @param {module:enums.hash} algo - Hash algorithm type (see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {Uint8Array} data - Data to be hashed
-   * @returns {Promise<Uint8Array>} Hash value.
+   * @returns {Uint8Array} Hash value.
+   * @async
    */
   digest: function(algo, data) {
     switch (algo) {

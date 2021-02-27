@@ -42,7 +42,7 @@ class User {
    *          PublicKeyPacket}          primaryKey  The primary key packet
    * @param {Array<Key>} privateKeys - Decrypted private keys for signing
    * @param {Object} config - Full configuration
-   * @returns {Promise<Key>} New user with new certificate signatures.
+   * @returns {Key} New user with new certificate signatures.
    * @async
    */
   async sign(primaryKey, privateKeys, config) {
@@ -81,7 +81,7 @@ class User {
    *          SecretKeyPacket} key, optional The key to verify the signature
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<Boolean>} True if the certificate is revoked.
+   * @returns {Boolean} True if the certificate is revoked.
    * @async
    */
   async isRevoked(primaryKey, certificate, key, date = new Date(), config) {
@@ -102,7 +102,7 @@ class User {
    * @param {Array<Key>} keys - Array of keys to verify certificate signatures
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<true|null>} Status of the certificate.
+   * @returns {true|null} Status of the certificate.
    * @async
    */
   async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config) {
@@ -163,7 +163,7 @@ class User {
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<true>} Status of user.
+   * @returns {true} Status of user.
    * @throws {Error} if there are no valid self signatures.
    * @async
    */
@@ -207,7 +207,7 @@ class User {
    * @param  {SecretKeyPacket|
    *          SecretSubkeyPacket} primaryKey primary key used for validation
    * @param {Object} config - Full configuration
-   * @returns {Promise<undefined>}
+   * @returns {undefined}
    * @async
    */
   async update(user, primaryKey, config) {

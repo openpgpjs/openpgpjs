@@ -50,7 +50,7 @@ class SubKey {
    *          SecretKeyPacket} key, optional The key to verify the signature
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Boolean>} True if the binding signature is revoked.
+   * @returns {Boolean} True if the binding signature is revoked.
    * @async
    */
   async isRevoked(primaryKey, signature, key, date = new Date(), config = defaultConfig) {
@@ -69,7 +69,7 @@ class SubKey {
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<SignaturePacket>}
+   * @returns {SignaturePacket}
    * @throws {Error}           if the subkey is invalid.
    * @async
    */
@@ -95,7 +95,7 @@ class SubKey {
    *          PublicKeyPacket} primaryKey  The primary key packet
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Date | Infinity | null>}
+   * @returns {Date | Infinity | null}
    * @async
    */
   async getExpirationTime(primaryKey, date = new Date(), config = defaultConfig) {
@@ -162,7 +162,7 @@ class SubKey {
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
    * @param {Date} date - optional, override the creationtime of the revocation signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<SubKey>} New subkey with revocation signature.
+   * @returns {SubKey} New subkey with revocation signature.
    * @async
    */
   async revoke(

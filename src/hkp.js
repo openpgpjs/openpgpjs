@@ -39,7 +39,7 @@ class HKP {
    * @param  {String}   options.keyId   The long public key ID.
    * @param  {String}   options.query   This can be any part of the key user ID such as name
    *   or email address.
-   * @returns {Promise<String>} The ascii armored public key.
+   * @returns {String} The ascii armored public key.
    * @async
    */
   lookup(options) {

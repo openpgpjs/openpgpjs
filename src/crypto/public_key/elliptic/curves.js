@@ -231,7 +231,7 @@ function getPreferredHashAlgo(oid) {
  * @param {module:type/oid} oid - EC object identifier
  * @param {Uint8Array} Q - EC public point
  * @param {Uint8Array} d - EC secret scalar
- * @returns {Promise<Boolean>} Whether params are valid.
+ * @returns {Boolean} Whether params are valid.
  * @async
  */
 async function validateStandardParams(algo, oid, Q, d) {

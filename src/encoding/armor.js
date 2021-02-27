@@ -223,7 +223,7 @@ function splitChecksum(text) {
  * Dearmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} input - OpenPGP armored message
- * @returns {Promise<Object>} An object with attribute "text" containing the message text,
+ * @returns {Object} An object with attribute "text" containing the message text,
  * an attribute "data" containing a stream of bytes and "type" for the ASCII armor type
  * @async
  * @static

@@ -36,7 +36,7 @@ import { unarmor } from '../encoding/armor';
  * @param {Object} config - Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @returns {Promise<Key>}
+ * @returns {Key}
  * @async
  * @static
  * @private
@@ -60,7 +60,7 @@ export async function generate(options, config) {
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  * @param {Object} config - Full configuration
  *
- * @returns {Promise<Key>}
+ * @returns {Key}
  * @async
  * @static
  * @private
@@ -248,7 +248,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
  * @param {String | ReadableStream<String>} [options.armoredKey] - Armored key to be parsed
  * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKey] - Binary key to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Key>} Key object.
+ * @returns {Key} Key object.
  * @async
  * @static
  */
@@ -278,7 +278,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
  * @param {String | ReadableStream<String>} [options.armoredKeys] - Armored keys to be parsed
  * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKeys] - Binary keys to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Array<Key>>} Key objects.
+ * @returns {Array<Key>} Key objects.
  * @async
  * @static
  */

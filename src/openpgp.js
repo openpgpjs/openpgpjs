@@ -52,7 +52,7 @@ if (globalThis.ReadableStream) {
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey, default to main key options. e.g. `[{sign: true, passphrase: '123'}]`
  *                                             sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} The generated key object in the form:
+ * @returns {Object} The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
@@ -88,7 +88,7 @@ export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBi
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} The generated key object in the form:
+ * @returns {Object} The generated key object in the form:
  *                                     { key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
@@ -123,7 +123,7 @@ export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpi
  * @param {module:enums.reasonForRevocation} [options.reasonForRevocation.flag=[noReason]{@link module:enums.reasonForRevocation}] - Flag indicating the reason for revocation
  * @param {String} [options.reasonForRevocation.string=""] - String explaining the reason for revocation
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} The revoked key object in the form:
+ * @returns {Object} The revoked key object in the form:
  *                                     `{ privateKey:Key, privateKeyArmored:String, publicKey:Key, publicKeyArmored:String }`
  *                                     (if private key is passed) or `{ publicKey:Key, publicKeyArmored:String }` (otherwise)
  * @async
@@ -161,7 +161,7 @@ export function revokeKey({ key, revocationCertificate, reasonForRevocation, con
  * @param {Key} options.privateKey - The private key to decrypt
  * @param {String|Array<String>} options.passphrase - The user's passphrase(s)
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Key>} The unlocked key object.
+ * @returns {Key} The unlocked key object.
  * @async
  */
 export async function decryptKey({ privateKey, passphrase, config }) {
@@ -190,7 +190,7 @@ export async function decryptKey({ privateKey, passphrase, config }) {
  * @param {Key} options.privateKey - The private key to encrypt
  * @param {String|Array<String>} options.passphrase - If multiple passphrases, they should be in the same order as the packets each should encrypt
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Key>} The locked key object.
+ * @returns {Key} The locked key object.
  * @async
  */
 export async function encryptKey({ privateKey, passphrase, config }) {
@@ -246,7 +246,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @param {Array<Object>} [options.fromUserIds=primary user IDs] - Array of user IDs to sign with, one per key in `privateKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Array<Object>} [options.toUserIds=primary user IDs] - Array of user IDs to encrypt for, one per key in `publicKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} Encrypted message (string if `armor` was true, the default; Uint8Array if `armor` was false).
+ * @returns {String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>} Encrypted message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
@@ -285,7 +285,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} Object containing decrypted and verified message in the form:
+ * @returns {Object} Object containing decrypted and verified message in the form:
  *
  *     {
  *       data: String|ReadableStream<String>|NodeStream, (if format was 'utf8', the default)
@@ -342,7 +342,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param {Date} [options.date=current date] - Override the creation date of the signature
  * @param {Array<Object>} [options.fromUserIds=primary user IDs] - Array of user IDs to sign with, one per key in `privateKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
+ * @returns {String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
@@ -385,7 +385,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} Object containing verified message in the form:
+ * @returns {Object} Object containing verified message in the form:
  *
  *     {
  *       data: String|ReadableStream<String>|NodeStream, (if `message` was a CleartextMessage)
@@ -436,7 +436,7 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
  * @param {Date} [options.date=current date] - Date to select algorithm preferences at
  * @param {Array} [options.toUserIds=primary user IDs] - User IDs to select algorithm preferences for
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<{ data: Uint8Array, algorithm: String }>} Object with session key data and algorithm.
+ * @returns {{ data: Uint8Array, algorithm: String }} Object with session key data and algorithm.
  * @async
  * @static
  */
@@ -466,7 +466,7 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = 
  * @param {Date} [options.date=current date] - Override the date
  * @param {Array} [options.toUserIds=primary user IDs] - Array of user IDs to encrypt for, one per key in `publicKeys`, e.g. `[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<String|Uint8Array>} Encrypted session keys (string if `armor` was true, the default; Uint8Array if `armor` was false).
+ * @returns {String|Uint8Array} Encrypted session keys (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
@@ -490,7 +490,7 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, 
  * @param {Key|Array<Key>} [options.privateKeys] - Private keys with decrypted secret key data
  * @param {String|Array<String>} [options.passwords] - Passwords to decrypt the session key
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object|undefined>} Array of decrypted session key, algorithm pairs in the form:
+ * @returns {Object|undefined} Array of decrypted session key, algorithm pairs in the form:
  *                                            { data:Uint8Array, algorithm:String }
  *                                            or 'undefined' if no key packets found
  * @async

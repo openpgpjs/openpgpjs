@@ -156,7 +156,7 @@ class Key {
 
   /**
    * Clones the key object
-   * @returns {Promise<Key>} Shallow clone of the key.
+   * @returns {Key} Shallow clone of the key.
    * @async
    */
   async clone() {
@@ -275,7 +275,7 @@ class Key {
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param  {Object} userId, optional user ID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey|null>} Key or null if no signing key has been found.
+   * @returns {Key|SubKey|null} Key or null if no signing key has been found.
    * @async
    */
   async getSigningKey(keyId = null, date = new Date(), userId = {}, config = defaultConfig) {
@@ -316,7 +316,7 @@ class Key {
    * @param  {Date}              date, optional
    * @param  {String}            userId, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey|null>} Key or null if no encryption key has been found.
+   * @returns {Key|SubKey|null} Key or null if no encryption key has been found.
    * @async
    */
   async getEncryptionKey(keyId, date = new Date(), userId = {}, config = defaultConfig) {
@@ -355,7 +355,7 @@ class Key {
    * @param  {Date}              date, optional
    * @param  {String}            userId, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<Key|SubKey>>} Array of decryption keys.
+   * @returns {Array<Key|SubKey>} Array of decryption keys.
    * @async
    */
   async getDecryptionKeys(keyId, date = new Date(), userId = {}, config = defaultConfig) {
@@ -521,7 +521,7 @@ class Key {
    *          SecretKeyPacket} key, optional The key to verify the signature
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Boolean>} True if the certificate is revoked.
+   * @returns {Boolean} True if the certificate is revoked.
    * @async
    */
   async isRevoked(signature, key, date = new Date(), config = defaultConfig) {
@@ -562,7 +562,7 @@ class Key {
    * @param  {module:type/keyid~Keyid} keyId, optional
    * @param  {Object} userId, optional user ID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Date | Infinity | null>}
+   * @returns {Date | Infinity | null}
    * @async
    */
   async getExpirationTime(capabilities, keyId, userId, config = defaultConfig) {
@@ -653,7 +653,7 @@ class Key {
    * the destination key is transformed to a private key.
    * @param {Key} key - Source key to merge
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<undefined>}
+   * @returns {undefined}
    * @async
    */
   async update(key, config = defaultConfig) {
@@ -718,7 +718,7 @@ class Key {
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
    * @param {Date} date - optional, override the creationtime of the revocation signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New key with revocation signature.
+   * @returns {Key} New key with revocation signature.
    * @async
    */
   async revoke(
@@ -747,7 +747,7 @@ class Key {
    *   (To get a revocation certificate for an unrevoked key, call revoke() first.)
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<String>} Armored revocation certificate.
+   * @returns {String} Armored revocation certificate.
    * @async
    */
   async getRevocationCertificate(date = new Date(), config = defaultConfig) {
@@ -764,7 +764,7 @@ class Key {
    * if it is a valid revocation signature.
    * @param {String} revocationCertificate - armored revocation certificate
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New revoked key.
+   * @returns {Key} New revoked key.
    * @async
    */
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
@@ -797,7 +797,7 @@ class Key {
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [userId] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New public key with new certificate signature.
+   * @returns {Key} New public key with new certificate signature.
    * @async
    */
   async signPrimaryUser(privateKeys, date, userId, config = defaultConfig) {
@@ -812,7 +812,7 @@ class Key {
    * Signs all users of key
    * @param {Array<Key>} privateKeys - decrypted private keys for signing
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New public key with new certificate signature.
+   * @returns {Key} New public key with new certificate signature.
    * @async
    */
   async signAllUsers(privateKeys, config = defaultConfig) {
@@ -882,7 +882,7 @@ class Key {
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in [config]{@link module:config}
-   * @returns {Promise<Key>}
+   * @returns {Key}
    * @async
    */
   async addSubkey(options = {}) {

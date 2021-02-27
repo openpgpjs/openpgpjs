@@ -62,7 +62,7 @@ export class CleartextMessage {
    * @param {Date} [date] - The creation time of the signature that should be created
    * @param {Array} [userIds] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
+   * @returns {CleartextMessage} New cleartext message with signed content.
    * @async
    */
   async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
@@ -77,7 +77,7 @@ export class CleartextMessage {
    * @param {Date} [date] - The creation time of the signature that should be created
    * @param {Array} [userIds] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Signature>} New detached signature of message content.
+   * @returns {Signature} New detached signature of message content.
    * @async
    */
   async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
@@ -92,7 +92,7 @@ export class CleartextMessage {
    * @param {Array<Key>} keys - Array of keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} List of signer's keyid and validity of signature.
+   * @returns {Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>} List of signer's keyid and validity of signature.
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {
@@ -104,7 +104,7 @@ export class CleartextMessage {
    * @param {Array<Key>} keys - Array of keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} List of signer's keyid and validity of signature.
+   * @returns {Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>} List of signer's keyid and validity of signature.
    * @async
    */
   verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {

@@ -298,7 +298,7 @@ export function generateParams(algo, bits, oid) {
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Object} publicParams - Algorithm-specific public key parameters
  * @param {Object} privateParams - Algorithm-specific private key parameters
- * @returns {Promise<Boolean>} Whether the parameters are valid.
+ * @returns {Boolean} Whether the parameters are valid.
  * @async
  */
 export async function validateParams(algo, publicParams, privateParams) {
