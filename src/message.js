@@ -629,7 +629,7 @@ export class Message {
   /**
    * Creates new message object from text.
    * @param {String | ReadableStream<String>} text
-   * @param {String} [filename="msg.txt"]
+   * @param {String} [filename=""]
    * @param {Date} [date=current date]
    * @param {utf8|binary|text|mime} [type] - Data packet type
    * @returns {Message} New message object.
@@ -656,7 +656,7 @@ export class Message {
   /**
    * Creates new message object from binary data.
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
-   * @param {String} [filename="msg.txt"]
+   * @param {String} [filename=""]
    * @param {Date} [date=current date]
    * @param {utf8|binary|text|mime} [type] - Data packet type
    * @returns {Message} New message object.

@@ -36,7 +36,7 @@ class LiteralDataPacket {
     this.date = util.normalizeDate(date);
     this.text = null; // textual data representation
     this.data = null; // literal data representation
-    this.filename = 'msg.txt';
+    this.filename = '';
   }
 
   /**

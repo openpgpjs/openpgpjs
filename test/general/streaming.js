@@ -404,7 +404,7 @@ function tests() {
     openpgp.config.allowUnauthenticatedStream = true;
     try {
       const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromBinary(data),
+        message: openpgp.Message.fromBinary(data, 'msg.bin'),
         passwords: ['test']
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
