@@ -28,7 +28,7 @@ import util from '../util';
  */
 class LiteralDataPacket {
   /**
-   * @param {Date} date the creation date of the literal package
+   * @param {Date} date - The creation date of the literal package
    */
   constructor(date = new Date()) {
     this.tag = enums.packet.literalData;
@@ -42,8 +42,8 @@ class LiteralDataPacket {
   /**
    * Set the packet data to a javascript native string, end of line
    * will be normalized to \r\n and by default text is converted to UTF8
-   * @param {String | ReadableStream<String>} text Any native javascript string
-   * @param {utf8|binary|text|mime} format (optional) The format of the string of bytes
+   * @param {String | ReadableStream<String>} text - Any native javascript string
+   * @param {utf8|binary|text|mime} [format] - The format of the string of bytes
    */
   setText(text, format = 'utf8') {
     this.format = format;
@@ -54,8 +54,8 @@ class LiteralDataPacket {
   /**
    * Returns literal data packets as native JavaScript string
    * with normalized end of line to \n
-   * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
-   * @returns {String | ReadableStream<String>} literal data as text
+   * @param {Boolean} [clone] - Whether to return a clone so that getBytes/getText can be called again
+   * @returns {String | ReadableStream<String>} Literal data as text.
    */
   getText(clone = false) {
     if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
@@ -66,8 +66,8 @@ class LiteralDataPacket {
 
   /**
    * Set the packet data to value represented by the provided string of bytes.
-   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes The string of bytes
-   * @param {utf8|binary|text|mime} format The format of the string of bytes
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - The string of bytes
+   * @param {utf8|binary|text|mime} format - The format of the string of bytes
    */
   setBytes(bytes, format) {
     this.format = format;
@@ -78,8 +78,8 @@ class LiteralDataPacket {
 
   /**
    * Get the byte sequence representing the literal packet data
-   * @param {Boolean} clone (optional) Whether to return a clone so that getBytes/getText can be called again
-   * @returns {Uint8Array | ReadableStream<Uint8Array>} A sequence of bytes
+   * @param {Boolean} [clone] - Whether to return a clone so that getBytes/getText can be called again
+   * @returns {Uint8Array | ReadableStream<Uint8Array>} A sequence of bytes.
    */
   getBytes(clone = false) {
     if (this.data === null) {
@@ -95,7 +95,7 @@ class LiteralDataPacket {
 
   /**
    * Sets the filename of the literal packet data
-   * @param {String} filename Any native javascript string
+   * @param {String} filename - Any native javascript string
    */
   setFilename(filename) {
     this.filename = filename;
@@ -104,7 +104,7 @@ class LiteralDataPacket {
 
   /**
    * Get the filename of the literal packet data
-   * @returns {String} filename
+   * @returns {String} Filename.
    */
   getFilename() {
     return this.filename;
@@ -114,8 +114,8 @@ class LiteralDataPacket {
   /**
    * Parsing function for a literal data packet (tag 11).
    *
-   * @param {Uint8Array | ReadableStream<Uint8Array>} input Payload of a tag 11 packet
-   * @returns {LiteralDataPacket} object representation
+   * @param {Uint8Array | ReadableStream<Uint8Array>} input - Payload of a tag 11 packet
+   * @returns {LiteralDataPacket} Object representation.
    */
   async read(bytes) {
     await stream.parse(bytes, async reader => {
@@ -136,7 +136,7 @@ class LiteralDataPacket {
   /**
    * Creates a Uint8Array representation of the packet, excluding the data
    *
-   * @returns {Uint8Array} Uint8Array representation of the packet
+   * @returns {Uint8Array} Uint8Array representation of the packet.
    */
   writeHeader() {
     const filename = util.encodeUtf8(this.filename);
@@ -151,7 +151,7 @@ class LiteralDataPacket {
   /**
    * Creates a Uint8Array representation of the packet
    *
-   * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet
+   * @returns {Uint8Array | ReadableStream<Uint8Array>} Uint8Array representation of the packet.
    */
   write() {
     const header = this.writeHeader();

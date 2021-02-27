@@ -59,8 +59,8 @@ const one = new Uint8Array([1]);
 
 /**
  * Class to en/decrypt using OCB mode.
- * @param  {String}     cipher      The symmetric cipher algorithm to use e.g. 'aes128'
- * @param  {Uint8Array} key         The encryption key
+ * @param {String} cipher - The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param {Uint8Array} key - The encryption key
  */
 async function OCB(cipher, key) {
 
@@ -132,11 +132,11 @@ async function OCB(cipher, key) {
 
   /**
    * Encrypt/decrypt data.
-   * @param  {encipher|decipher} fn   Encryption/decryption block cipher function
-   * @param  {Uint8Array} text        The cleartext or ciphertext (without tag) input
-   * @param  {Uint8Array} nonce       The nonce (15 bytes)
-   * @param  {Uint8Array} adata       Associated data to sign
-   * @returns {Promise<Uint8Array>}    The ciphertext or plaintext output, with tag appended in both cases
+   * @param {encipher|decipher} fn - Encryption/decryption block cipher function
+   * @param {Uint8Array} text - The cleartext or ciphertext (without tag) input
+   * @param {Uint8Array} nonce - The nonce (15 bytes)
+   * @param {Uint8Array} adata - Associated data to sign
+   * @returns {Promise<Uint8Array>} The ciphertext or plaintext output, with tag appended in both cases.
    */
   function crypt(fn, text, nonce, adata) {
     //
@@ -220,10 +220,10 @@ async function OCB(cipher, key) {
   return {
     /**
      * Encrypt plaintext input.
-     * @param  {Uint8Array} plaintext   The cleartext input to be encrypted
-     * @param  {Uint8Array} nonce       The nonce (15 bytes)
-     * @param  {Uint8Array} adata       Associated data to sign
-     * @returns {Promise<Uint8Array>}    The ciphertext output
+     * @param {Uint8Array} plaintext - The cleartext input to be encrypted
+     * @param {Uint8Array} nonce - The nonce (15 bytes)
+     * @param {Uint8Array} adata - Associated data to sign
+     * @returns {Promise<Uint8Array>} The ciphertext output.
      */
     encrypt: async function(plaintext, nonce, adata) {
       return crypt(encipher, plaintext, nonce, adata);
@@ -231,10 +231,10 @@ async function OCB(cipher, key) {
 
     /**
      * Decrypt ciphertext input.
-     * @param  {Uint8Array} ciphertext  The ciphertext input to be decrypted
-     * @param  {Uint8Array} nonce       The nonce (15 bytes)
-     * @param  {Uint8Array} adata       Associated data to sign
-     * @returns {Promise<Uint8Array>}    The ciphertext output
+     * @param {Uint8Array} ciphertext - The ciphertext input to be decrypted
+     * @param {Uint8Array} nonce - The nonce (15 bytes)
+     * @param {Uint8Array} adata - Associated data to sign
+     * @returns {Promise<Uint8Array>} The ciphertext output.
      */
     decrypt: async function(ciphertext, nonce, adata) {
       if (ciphertext.length < tagLength) throw new Error('Invalid OCB ciphertext');
@@ -255,8 +255,8 @@ async function OCB(cipher, key) {
 
 /**
  * Get OCB nonce as defined by {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.16.2|RFC4880bis-04, section 5.16.2}.
- * @param  {Uint8Array} iv           The initialization vector (15 bytes)
- * @param  {Uint8Array} chunkIndex   The chunk index (8 bytes)
+ * @param {Uint8Array} iv - The initialization vector (15 bytes)
+ * @param {Uint8Array} chunkIndex - The chunk index (8 bytes)
  */
 OCB.getNonce = function(iv, chunkIndex) {
   const nonce = iv.slice();

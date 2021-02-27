@@ -26,8 +26,8 @@ import util from '../util';
 
 /**
  * Add pkcs5 padding to a message
- * @param  {Uint8Array}  message  message to pad
- * @returns {Uint8Array}  padded message
+ * @param {Uint8Array} message - message to pad
+ * @returns {Uint8Array} Padded message.
  */
 export function encode(message) {
   const c = 8 - (message.length % 8);
@@ -38,8 +38,8 @@ export function encode(message) {
 
 /**
  * Remove pkcs5 padding from a message
- * @param  {Uint8Array}  message  message to remove padding from
- * @returns {Uint8Array} message without padding
+ * @param {Uint8Array} message - message to remove padding from
+ * @returns {Uint8Array} Message without padding.
  */
 export function decode(message) {
   const len = message.length;

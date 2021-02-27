@@ -25,7 +25,7 @@ class TrustPacket {
   /**
    * Parsing function for a trust packet (tag 12).
    * Currently not implemented as we ignore trust packets
-   * @param {String} byptes payload of a tag 12 packet
+   * @param {String} byptes - Payload of a tag 12 packet
    */
   read() {} // TODO
 }

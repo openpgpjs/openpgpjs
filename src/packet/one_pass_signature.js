@@ -68,8 +68,8 @@ class OnePassSignaturePacket {
 
   /**
    * parsing function for a one-pass signature packet (tag 4).
-   * @param {Uint8Array} bytes payload of a tag 4 packet
-   * @returns {OnePassSignaturePacket} object representation
+   * @param {Uint8Array} bytes - Payload of a tag 4 packet
+   * @returns {OnePassSignaturePacket} Object representation.
    */
   read(bytes) {
     let mypos = 0;
@@ -101,7 +101,7 @@ class OnePassSignaturePacket {
 
   /**
    * creates a string representation of a one-pass signature packet
-   * @returns {Uint8Array} a Uint8Array representation of a one-pass signature packet
+   * @returns {Uint8Array} A Uint8Array representation of a one-pass signature packet.
    */
   write() {
     const start = new Uint8Array([3, enums.write(enums.signature, this.signatureType),

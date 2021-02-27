@@ -39,7 +39,7 @@ import {
  */
 class CompressedDataPacket {
   /**
-   * @param {Object} config (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(config = defaultConfig) {
     /**
@@ -72,7 +72,7 @@ class CompressedDataPacket {
 
   /**
    * Parsing function for the packet.
-   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes Payload of a tag 8 packet
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - Payload of a tag 8 packet
    */
   async read(bytes, config, streaming) {
     await stream.parse(bytes, async reader => {
@@ -90,7 +90,7 @@ class CompressedDataPacket {
 
   /**
    * Return the compressed packet.
-   * @returns {Uint8Array | ReadableStream<Uint8Array>} binary compressed packet
+   * @returns {Uint8Array | ReadableStream<Uint8Array>} Binary compressed packet.
    */
   write() {
     if (this.compressed === null) {

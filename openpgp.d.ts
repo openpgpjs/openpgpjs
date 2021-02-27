@@ -288,7 +288,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /**
    * Append signature to unencrypted message object
-   * @param {String|Uint8Array} detachedSignature The detached ASCII-armored or Uint8Array PGP signature
+   * @param {String|Uint8Array} detachedSignature - The detached ASCII-armored or Uint8Array PGP signature
    */
   public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
 
@@ -868,22 +868,22 @@ declare namespace util {
 
   /**
    * Convert a string to an array of 8-bit integers
-   * @param {String} str String to convert
-   * @returns {Uint8Array} An array of 8-bit integers
+   * @param {String} str - String to convert
+   * @returns {Uint8Array} An array of 8-bit integers.
    */
   function strToUint8Array(str: string): Uint8Array;
 
   /**
    * Convert an array of 8-bit integers to a string
-   * @param {Uint8Array} bytes An array of 8-bit integers to convert
-   * @returns {String} String representation of the array
+   * @param {Uint8Array} bytes - An array of 8-bit integers to convert
+   * @returns {String} String representation of the array.
    */
   function uint8ArrayToStr(bin: Uint8Array): string;
 
   /**
    * Convert an array of 8-bit integers to a hex string
-   * @param {Uint8Array} bytes Array of 8-bit integers to convert
-   * @returns {String} Hexadecimal representation of the array
+   * @param {Uint8Array} bytes - Array of 8-bit integers to convert
+   * @returns {String} Hexadecimal representation of the array.
    */
   function uint8ArrayToHex(bytes: Uint8Array): string;
 
@@ -893,21 +893,21 @@ declare namespace util {
 
   /**
    * Convert a hex string to an array of 8-bit integers
-   * @param {String} hex  A hex string to convert
-   * @returns {Uint8Array} An array of 8-bit integers
+   * @param {String} hex - A hex string to convert
+   * @returns {Uint8Array} An array of 8-bit integers.
    */
   function hexToUint8Array(hex: string): Uint8Array;
 
   /**
    * Create hex string from a binary
-   * @param {String} str String to convert
-   * @returns {String} String containing the hexadecimal values
+   * @param {String} str - String to convert
+   * @returns {String} String containing the hexadecimal values.
    */
   function strToHex(str: string): string;
 
   /**
    * Create binary string from a hex encoded string
-   * @param {String} str Hex string to convert
+   * @param {String} str - Hex string to convert
    * @returns {String}
    */
   function hexToStr(hex: string): string;
@@ -918,8 +918,8 @@ declare namespace util {
    * Encode input buffer using Z-Base32 encoding.
    * See: https://tools.ietf.org/html/rfc6189#section-5.1.6
    *
-   * @param {Uint8Array} data The binary data to encode
-   * @returns {String} Binary data encoded using Z-Base32
+   * @param {Uint8Array} data - The binary data to encode
+   * @returns {String} Binary data encoded using Z-Base32.
    */
   function encodeZBase32(data: Uint8Array): string;
 }

@@ -29,8 +29,8 @@
 
 class KDFParams {
   /**
-   * @param  {enums.hash}       hash    Hash algorithm
-   * @param  {enums.symmetric}  cipher  Symmetric algorithm
+   * @param {enums.hash} hash - Hash algorithm
+   * @param {enums.symmetric} cipher - Symmetric algorithm
    */
   constructor(data) {
     if (data) {
@@ -45,8 +45,8 @@ class KDFParams {
 
   /**
    * Read KDFParams from an Uint8Array
-   * @param  {Uint8Array}  input  Where to read the KDFParams from
-   * @returns {Number}             Number of read bytes
+   * @param {Uint8Array} input - Where to read the KDFParams from
+   * @returns {Number} Number of read bytes.
    */
   read(input) {
     if (input.length < 4 || input[0] !== 3 || input[1] !== 1) {

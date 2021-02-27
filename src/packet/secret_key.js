@@ -30,8 +30,8 @@ import defaultConfig from '../config';
  */
 class SecretKeyPacket extends PublicKeyPacket {
   /**
-   * @param {Date} [date] - creation date
-   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {Date} [date] - Creation date
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
     super(date, config);
@@ -80,7 +80,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   /**
    * Internal parser for private keys as specified in
    * {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.5.3|RFC4880bis-04 section 5.5.3}
-   * @param {String} bytes Input string to read the packet from
+   * @param {String} bytes - Input string to read the packet from
    */
   read(bytes) {
     // - A Public-Key or Public-Subkey packet, as described above.
@@ -166,7 +166,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
   /**
    * Creates an OpenPGP key packet for the given key.
-   * @returns {Uint8Array} A string of bytes containing the secret key OpenPGP packet
+   * @returns {Uint8Array} A string of bytes containing the secret key OpenPGP packet.
    */
   write() {
     const arr = [this.writePublicKey()];
@@ -242,7 +242,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   /**
    * Remove private key material, converting the key to a dummy one.
    * The resulting key cannot be used for signing/decrypting but can still verify signatures.
-   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   makeDummy(config = defaultConfig) {
     if (this.isDummy()) {
@@ -267,7 +267,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * and the passphrase is empty or undefined, the key will be set as not encrypted.
    * This can be used to remove passphrase protection after calling decrypt().
    * @param {String} passphrase
-   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */
@@ -315,7 +315,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Decrypts the private key params which are needed to use the key.
    * {@link SecretKeyPacket.isDecrypted} should be false, as
    * otherwise calls to this function will throw an error.
-   * @param {String} passphrase The passphrase for this private key as string
+   * @param {String} passphrase - The passphrase for this private key as string
    * @throws {Error} if decryption was not successful
    * @async
    */

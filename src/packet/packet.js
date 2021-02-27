@@ -54,8 +54,8 @@ export function readSimpleLength(bytes) {
  * Encodes a given integer of length to the openpgp length specifier to a
  * string
  *
- * @param {Integer} length The length to encode
- * @returns {Uint8Array} String with openpgp length representation
+ * @param {Integer} length - The length to encode
+ * @returns {Uint8Array} String with openpgp length representation.
  */
 export function writeSimpleLength(length) {
   if (length < 192) {
@@ -86,9 +86,9 @@ export function writeTag(tag_type) {
  * Writes a packet header version 4 with the given tag_type and length to a
  * string
  *
- * @param {Integer} tag_type Tag type
- * @param {Integer} length Length of the payload
- * @returns {String} String of the header
+ * @param {Integer} tag_type - Tag type
+ * @param {Integer} length - Length of the payload
+ * @returns {String} String of the header.
  */
 export function writeHeader(tag_type, length) {
   /* we're only generating v4 packet headers here */
@@ -97,8 +97,8 @@ export function writeHeader(tag_type, length) {
 
 /**
  * Whether the packet type supports partial lengths per RFC4880
- * @param {Integer} tag_type Tag type
- * @returns {Boolean} String of the header
+ * @param {Integer} tag_type - Tag type
+ * @returns {Boolean} String of the header.
  */
 export function supportsStreaming(tag_type) {
   return [
@@ -113,8 +113,8 @@ export function supportsStreaming(tag_type) {
 /**
  * Generic static Packet Parser function
  *
- * @param {Uint8Array | ReadableStream<Uint8Array>} input Input stream as string
- * @param {Function} callback Function to call with the parsed packet
+ * @param {Uint8Array | ReadableStream<Uint8Array>} input - Input stream as string
+ * @param {Function} callback - Function to call with the parsed packet
  * @returns {Boolean} Returns false if the stream was empty and parsing is done, and true otherwise.
  */
 export async function readPackets(input, streaming, callback) {

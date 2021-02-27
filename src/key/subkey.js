@@ -43,14 +43,14 @@ class SubKey {
    * Checks if a binding signature of a subkey is revoked
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey    The primary key packet
-   * @param  {SignaturePacket}  signature     The binding signature to verify
+   * @param {SignaturePacket} signature - The binding signature to verify
    * @param  {PublicSubkeyPacket|
    *          SecretSubkeyPacket|
    *          PublicKeyPacket|
    *          SecretKeyPacket} key, optional The key to verify the signature
-   * @param  {Date}                     date          Use the given date instead of the current time
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<Boolean>}                      True if the binding signature is revoked
+   * @param {Date} date - Use the given date instead of the current time
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Boolean>} True if the binding signature is revoked.
    * @async
    */
   async isRevoked(primaryKey, signature, key, date = new Date(), config = defaultConfig) {
@@ -67,8 +67,8 @@ class SubKey {
    * and valid binding signature.
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
-   * @param  {Date}            date       Use the given date instead of the current time
-   * @param  {Object}          config (optional) full configuration, defaults to openpgp.config
+   * @param {Date} date - Use the given date instead of the current time
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<SignaturePacket>}
    * @throws {Error}           if the subkey is invalid.
    * @async
@@ -93,8 +93,8 @@ class SubKey {
    * Returns null if the subkey is invalid.
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey  The primary key packet
-   * @param  {Date}            date        Use the given date instead of the current time
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   * @param {Date} date - Use the given date instead of the current time
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Date | Infinity | null>}
    * @async
    */
@@ -113,10 +113,10 @@ class SubKey {
 
   /**
    * Update subkey with new components from specified subkey
-   * @param  {SubKey}  subKey     Source subkey to merge
+   * @param {SubKey} subKey - Source subkey to merge
    * @param  {SecretKeyPacket|
               SecretSubkeyPacket} primaryKey primary key used for validation
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if update failed
    * @async
    */
@@ -156,13 +156,13 @@ class SubKey {
 
   /**
    * Revokes the subkey
-   * @param  {SecretKeyPacket} primaryKey decrypted private primary key for revocation
-   * @param  {Object} reasonForRevocation optional, object indicating the reason for revocation
+   * @param {SecretKeyPacket} primaryKey - decrypted private primary key for revocation
+   * @param {Object} reasonForRevocation - optional, object indicating the reason for revocation
    * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
-   * @param  {Date} date optional, override the creationtime of the revocation signature
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<SubKey>} new subkey with revocation signature
+   * @param {Date} date - optional, override the creationtime of the revocation signature
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<SubKey>} New subkey with revocation signature.
    * @async
    */
   async revoke(

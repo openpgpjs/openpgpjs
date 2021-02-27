@@ -46,7 +46,7 @@ class UserIDPacket {
 
   /**
    * Create UserIDPacket instance from object
-   * @param {Object} userId  object specifying userId name, email and comment
+   * @param {Object} userId - Object specifying userId name, email and comment
    * @returns {UserIDPacket}
    * @static
    */
@@ -69,7 +69,7 @@ class UserIDPacket {
 
   /**
    * Parsing function for a user id packet (tag 13).
-   * @param {Uint8Array} input payload of a tag 13 packet
+   * @param {Uint8Array} input - Payload of a tag 13 packet
    */
   read(bytes, config = defaultConfig) {
     const userid = util.decodeUtf8(bytes);
@@ -87,7 +87,7 @@ class UserIDPacket {
 
   /**
    * Creates a binary representation of the user id packet
-   * @returns {Uint8Array} binary representation
+   * @returns {Uint8Array} Binary representation.
    */
   write() {
     return util.encodeUtf8(this.userid);

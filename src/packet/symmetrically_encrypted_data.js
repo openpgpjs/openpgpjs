@@ -66,9 +66,9 @@ class SymmetricallyEncryptedDataPacket {
   /**
    * Decrypt the symmetrically-encrypted packet data
    * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
-   * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
-   * @param {Uint8Array} key    The key of cipher blocksize length to be used
-   * @param {Object}     config (optional) full configuration, defaults to openpgp.config
+   * @param {module:enums.symmetric} sessionKeyAlgorithm - Symmetric key algorithm to use
+   * @param {Uint8Array} key - The key of cipher blocksize length to be used
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
 
    * @throws {Error} if decryption was not successful
    * @async
@@ -96,9 +96,9 @@ class SymmetricallyEncryptedDataPacket {
   /**
    * Encrypt the symmetrically-encrypted packet data
    * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
-   * @param {module:enums.symmetric} sessionKeyAlgorithm Symmetric key algorithm to use
-   * @param {Uint8Array} key    The key of cipher blocksize length to be used
-   * @param {Object}     config (optional) full configuration, defaults to openpgp.config
+   * @param {module:enums.symmetric} sessionKeyAlgorithm - Symmetric key algorithm to use
+   * @param {Uint8Array} key - The key of cipher blocksize length to be used
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */

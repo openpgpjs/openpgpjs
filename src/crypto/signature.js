@@ -14,9 +14,9 @@ import util from '../util';
  * depends on the key params, hence we delegate the padding to the signature verification function.
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1}
  * See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2|RFC 4880 5.2.2.}
- * @param {module:enums.publicKey} algo       Public key algorithm
- * @param {Uint8Array}             signature  Data for which the signature was created
- * @returns {Object}                          True if signature is valid
+ * @param {module:enums.publicKey} algo - Public key algorithm
+ * @param {Uint8Array} signature - Data for which the signature was created
+ * @returns {Object} True if signature is valid.
  * @async
  */
 export function parseSignatureParams(algo, signature) {
@@ -64,13 +64,13 @@ export function parseSignatureParams(algo, signature) {
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1}
  * and {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4}
  * for public key and hash algorithms.
- * @param {module:enums.publicKey}  algo          Public key algorithm
- * @param {module:enums.hash}       hashAlgo      Hash algorithm
- * @param {Object}                  signature     Named algorithm-specific signature parameters
- * @param {Object}                  publicParams  Algorithm-specific public key parameters
- * @param {Uint8Array}              data          Data for which the signature was created
- * @param {Uint8Array}              hashed        The hashed data
- * @returns {Boolean}                             True if signature is valid
+ * @param {module:enums.publicKey} algo - Public key algorithm
+ * @param {module:enums.hash} hashAlgo - Hash algorithm
+ * @param {Object} signature - Named algorithm-specific signature parameters
+ * @param {Object} publicParams - Algorithm-specific public key parameters
+ * @param {Uint8Array} data - Data for which the signature was created
+ * @param {Uint8Array} hashed - The hashed data
+ * @returns {Boolean} True if signature is valid.
  * @async
  */
 export async function verify(algo, hashAlgo, signature, publicParams, data, hashed) {
@@ -110,13 +110,13 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1}
  * and {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4}
  * for public key and hash algorithms.
- * @param {module:enums.publicKey} algo             Public key algorithm
- * @param {module:enums.hash}      hashAlgo         Hash algorithm
- * @param {Object}                 publicKeyParams  Algorithm-specific public and private key parameters
- * @param {Object}                 privateKeyParams Algorithm-specific public and private key parameters
- * @param {Uint8Array}             data             Data to be signed
- * @param {Uint8Array}             hashed           The hashed data
- * @returns {Object} Signature                      Object containing named signature parameters
+ * @param {module:enums.publicKey} algo - Public key algorithm
+ * @param {module:enums.hash} hashAlgo - Hash algorithm
+ * @param {Object} publicKeyParams - Algorithm-specific public and private key parameters
+ * @param {Object} privateKeyParams - Algorithm-specific public and private key parameters
+ * @param {Uint8Array} data - Data to be signed
+ * @param {Uint8Array} hashed - The hashed data
+ * @returns {Object} Signature                      Object containing named signature parameters.
  * @async
  */
 export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, data, hashed) {

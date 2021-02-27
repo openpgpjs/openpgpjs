@@ -71,16 +71,16 @@ const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function (
 /* eslint-enable no-invalid-this */
 
 /** Create signature
- * @param {module:enums.hash} hash_algo Hash algorithm
- * @param {Uint8Array} data message
- * @param {Uint8Array} n RSA public modulus
- * @param {Uint8Array} e RSA public exponent
- * @param {Uint8Array} d RSA private exponent
- * @param {Uint8Array} p RSA private prime p
- * @param {Uint8Array} q RSA private prime q
- * @param {Uint8Array} u RSA private coefficient
- * @param {Uint8Array} hashed hashed message
- * @returns {Uint8Array} RSA Signature
+ * @param {module:enums.hash} hash_algo - Hash algorithm
+ * @param {Uint8Array} data - Message
+ * @param {Uint8Array} n - RSA public modulus
+ * @param {Uint8Array} e - RSA public exponent
+ * @param {Uint8Array} d - RSA private exponent
+ * @param {Uint8Array} p - RSA private prime p
+ * @param {Uint8Array} q - RSA private prime q
+ * @param {Uint8Array} u - RSA private coefficient
+ * @param {Uint8Array} hashed - Hashed message
+ * @returns {Uint8Array} RSA Signature.
  * @async
  */
 export async function sign(hash_algo, data, n, e, d, p, q, u, hashed) {
@@ -100,12 +100,12 @@ export async function sign(hash_algo, data, n, e, d, p, q, u, hashed) {
 
 /**
  * Verify signature
- * @param {module:enums.hash} hash_algo Hash algorithm
- * @param {Uint8Array} data message
- * @param {Uint8Array} s signature
- * @param {Uint8Array} n RSA public modulus
- * @param {Uint8Array} e RSA public exponent
- * @param {Uint8Array} hashed  hashed message
+ * @param {module:enums.hash} hash_algo - Hash algorithm
+ * @param {Uint8Array} data - Message
+ * @param {Uint8Array} s - Signature
+ * @param {Uint8Array} n - RSA public modulus
+ * @param {Uint8Array} e - RSA public exponent
+ * @param {Uint8Array} hashed - Hashed message
  * @returns {Boolean}
  * @async
  */
@@ -126,10 +126,10 @@ export async function verify(hash_algo, data, s, n, e, hashed) {
 
 /**
  * Encrypt message
- * @param {Uint8Array} data message
- * @param {Uint8Array} n RSA public modulus
- * @param {Uint8Array} e RSA public exponent
- * @returns {Uint8Array} RSA Ciphertext
+ * @param {Uint8Array} data - Message
+ * @param {Uint8Array} n - RSA public modulus
+ * @param {Uint8Array} e - RSA public exponent
+ * @returns {Uint8Array} RSA Ciphertext.
  * @async
  */
 export async function encrypt(data, n, e) {
@@ -141,14 +141,14 @@ export async function encrypt(data, n, e) {
 
 /**
  * Decrypt RSA message
- * @param {Uint8Array} m message
- * @param {Uint8Array} n RSA public modulus
- * @param {Uint8Array} e RSA public exponent
- * @param {Uint8Array} d RSA private exponent
- * @param {Uint8Array} p RSA private prime p
- * @param {Uint8Array} q RSA private prime q
- * @param {Uint8Array} u RSA private coefficient
- * @returns {String} RSA Plaintext
+ * @param {Uint8Array} m - Message
+ * @param {Uint8Array} n - RSA public modulus
+ * @param {Uint8Array} e - RSA public exponent
+ * @param {Uint8Array} d - RSA private exponent
+ * @param {Uint8Array} p - RSA private prime p
+ * @param {Uint8Array} q - RSA private prime q
+ * @param {Uint8Array} u - RSA private coefficient
+ * @returns {String} RSA Plaintext.
  * @async
  */
 export async function decrypt(data, n, e, d, p, q, u) {
@@ -164,8 +164,8 @@ export async function decrypt(data, n, e, d, p, q, u) {
  * When possible, webCrypto or nodeCrypto is used. Otherwise, primes are generated using
  * 40 rounds of the Miller-Rabin probabilistic random prime generation algorithm.
  * @see module:crypto/public_key/prime
- * @param {Integer} bits RSA bit length
- * @param {Integer} e    RSA public exponent
+ * @param {Integer} bits - RSA bit length
+ * @param {Integer} e - RSA public exponent
  * @returns {{n, e, d,
  *            p, q ,u: Uint8Array}} RSA public modulus, RSA public exponent, RSA private exponent,
  *                                  RSA private prime p, RSA private prime q, u = p ** -1 mod q
@@ -282,13 +282,13 @@ export async function generate(bits, e) {
 
 /**
  * Validate RSA parameters
- * @param {Uint8Array}         n RSA public modulus
- * @param {Uint8Array}         e RSA public exponent
- * @param {Uint8Array}         d RSA private exponent
- * @param {Uint8Array}         p RSA private prime p
- * @param {Uint8Array}         q RSA private prime q
- * @param {Uint8Array}         u RSA inverse of p w.r.t. q
- * @returns {Promise<Boolean>} whether params are valid
+ * @param {Uint8Array} n - RSA public modulus
+ * @param {Uint8Array} e - RSA public exponent
+ * @param {Uint8Array} d - RSA private exponent
+ * @param {Uint8Array} p - RSA private prime p
+ * @param {Uint8Array} q - RSA private prime q
+ * @param {Uint8Array} u - RSA inverse of p w.r.t. q
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(n, e, d, p, q, u) {

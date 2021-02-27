@@ -69,7 +69,7 @@ class AEADEncryptedDataPacket {
 
   /**
    * Write the encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
-   * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload
+   * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload.
    */
   write() {
     return util.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
@@ -77,9 +77,9 @@ class AEADEncryptedDataPacket {
 
   /**
    * Decrypt the encrypted payload.
-   * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
-   * @param  {Uint8Array} key               The session key used to encrypt the payload
-   * @param  {Boolean} streaming            Whether the top-level function will return a stream
+   * @param {String} sessionKeyAlgorithm - The session key's cipher algorithm e.g. 'aes128'
+   * @param {Uint8Array} key - The session key used to encrypt the payload
+   * @param {Boolean} streaming - Whether the top-level function will return a stream
    * @throws {Error} if decryption was not successful
    * @async
    */
@@ -94,10 +94,10 @@ class AEADEncryptedDataPacket {
 
   /**
    * Encrypt the packet list payload.
-   * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
-   * @param  {Uint8Array} key               The session key used to encrypt the payload
-   * @param  {Boolean} streaming            Whether the top-level function will return a stream
-   * @param  {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {String} sessionKeyAlgorithm - The session key's cipher algorithm e.g. 'aes128'
+   * @param {Uint8Array} key - The session key used to encrypt the payload
+   * @param {Boolean} streaming - Whether the top-level function will return a stream
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */
@@ -113,10 +113,10 @@ class AEADEncryptedDataPacket {
 
   /**
    * En/decrypt the payload.
-   * @param  {encrypt|decrypt} fn      Whether to encrypt or decrypt
-   * @param  {Uint8Array} key          The session key used to en/decrypt the payload
-   * @param  {Uint8Array | ReadableStream<Uint8Array>} data         The data to en/decrypt
-   * @param  {Boolean} streaming        Whether the top-level function will return a stream
+   * @param {encrypt|decrypt} fn - Whether to encrypt or decrypt
+   * @param {Uint8Array} key - The session key used to en/decrypt the payload
+   * @param {Uint8Array | ReadableStream<Uint8Array>} data - The data to en/decrypt
+   * @param {Boolean} streaming - Whether the top-level function will return a stream
    * @returns {Uint8Array | ReadableStream<Uint8Array>}
    * @async
    */

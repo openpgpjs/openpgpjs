@@ -28,7 +28,7 @@ import { emeEncode, emeDecode } from '../pkcs1';
 /**
  * ElGamal Encryption function
  * Note that in OpenPGP, the message needs to be padded with PKCS#1 (same as RSA)
- * @param {Uint8Array} data to be padded and encrypted
+ * @param {Uint8Array} data - To be padded and encrypted
  * @param {Uint8Array} p
  * @param {Uint8Array} g
  * @param {Uint8Array} y
@@ -59,7 +59,7 @@ export async function encrypt(data, p, g, y) {
  * @param {Uint8Array} c2
  * @param {Uint8Array} p
  * @param {Uint8Array} x
- * @returns {Uint8Array} unpadded message
+ * @returns {Uint8Array} Unpadded message.
  * @async
  */
 export async function decrypt(c1, c2, p, x) {
@@ -75,11 +75,11 @@ export async function decrypt(c1, c2, p, x) {
 
 /**
  * Validate ElGamal parameters
- * @param {Uint8Array}         p ElGamal prime
- * @param {Uint8Array}         g ElGamal group generator
- * @param {Uint8Array}         y ElGamal public key
- * @param {Uint8Array}         x ElGamal private exponent
- * @returns {Promise<Boolean>} whether params are valid
+ * @param {Uint8Array} p - ElGamal prime
+ * @param {Uint8Array} g - ElGamal group generator
+ * @param {Uint8Array} y - ElGamal public key
+ * @param {Uint8Array} x - ElGamal private exponent
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(p, g, y, x) {

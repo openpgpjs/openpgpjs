@@ -16,7 +16,7 @@
 export default class BigInteger {
   /**
    * Get a BigInteger (input must be big endian for strings and arrays)
-   * @param {Number|String|Uint8Array} n value to convert
+   * @param {Number|String|Uint8Array} n - Value to convert
    * @throws {Error} on null or undefined input
    */
   constructor(n) {
@@ -51,7 +51,7 @@ export default class BigInteger {
 
   /**
    * BigInteger increment
-   * @returns {BigInteger} this + 1
+   * @returns {BigInteger} this + 1.
    */
   inc() {
     return this.clone().iinc();
@@ -67,7 +67,7 @@ export default class BigInteger {
 
   /**
    * BigInteger decrement
-   * @returns {BigInteger} this - 1
+   * @returns {BigInteger} this - 1.
    */
   dec() {
     return this.clone().idec();
@@ -75,7 +75,7 @@ export default class BigInteger {
 
   /**
    * BigInteger addition in place
-   * @param {BigInteger} x value to add
+   * @param {BigInteger} x - Value to add
    */
   iadd(x) {
     this.value += x.value;
@@ -84,8 +84,8 @@ export default class BigInteger {
 
   /**
    * BigInteger addition
-   * @param {BigInteger} x value to add
-   * @returns {BigInteger} this + x
+   * @param {BigInteger} x - Value to add
+   * @returns {BigInteger} this + x.
    */
   add(x) {
     return this.clone().iadd(x);
@@ -93,7 +93,7 @@ export default class BigInteger {
 
   /**
    * BigInteger subtraction in place
-   * @param {BigInteger} x value to subtract
+   * @param {BigInteger} x - Value to subtract
    */
   isub(x) {
     this.value -= x.value;
@@ -102,8 +102,8 @@ export default class BigInteger {
 
   /**
    * BigInteger subtraction
-   * @param {BigInteger} x value to subtract
-   * @returns {BigInteger} this - x
+   * @param {BigInteger} x - Value to subtract
+   * @returns {BigInteger} this - x.
    */
   sub(x) {
     return this.clone().isub(x);
@@ -111,7 +111,7 @@ export default class BigInteger {
 
   /**
    * BigInteger multiplication in place
-   * @param {BigInteger} x value to multiply
+   * @param {BigInteger} x - Value to multiply
    */
   imul(x) {
     this.value *= x.value;
@@ -120,8 +120,8 @@ export default class BigInteger {
 
   /**
    * BigInteger multiplication
-   * @param {BigInteger} x value to multiply
-   * @returns {BigInteger} this * x
+   * @param {BigInteger} x - Value to multiply
+   * @returns {BigInteger} this * x.
    */
   mul(x) {
     return this.clone().imul(x);
@@ -129,7 +129,7 @@ export default class BigInteger {
 
   /**
    * Compute value modulo m, in place
-   * @param {BigInteger} m modulo
+   * @param {BigInteger} m - Modulo
    */
   imod(m) {
     this.value %= m.value;
@@ -141,8 +141,8 @@ export default class BigInteger {
 
   /**
    * Compute value modulo m
-   * @param {BigInteger} m modulo
-   * @returns {BigInteger} this mod m
+   * @param {BigInteger} m - Modulo
+   * @returns {BigInteger} this mod m.
    */
   mod(m) {
     return this.clone().imod(m);
@@ -150,9 +150,9 @@ export default class BigInteger {
 
   /**
    * Compute modular exponentiation using square and multiply
-   * @param {BigInteger} e exponent
-   * @param {BigInteger} n modulo
-   * @returns {BigInteger} this ** e mod n
+   * @param {BigInteger} e - Exponent
+   * @param {BigInteger} n - Modulo
+   * @returns {BigInteger} this ** e mod n.
    */
   modExp(e, n) {
     if (n.isZero()) throw Error("Modulo cannot be zero");
@@ -180,8 +180,8 @@ export default class BigInteger {
   /**
    * Compute the inverse of this value modulo n
    * Note: this and and n must be relatively prime
-   * @param {BigInteger} n modulo
-   * @return {BigInteger} x such that this*x = 1 mod n
+   * @param {BigInteger} n - Modulo
+   * @returns {BigInteger} x such that this*x = 1 mod n
    * @throws {Error} if the inverse does not exist
    */
   modInv(n) {
@@ -195,7 +195,7 @@ export default class BigInteger {
   /**
    * Extended Eucleadian algorithm (http://anh.cs.luc.edu/331/notes/xgcd.pdf)
    * Given a = this and b, compute (x, y) such that ax + by = gdc(a, b)
-   * @param {BigInteger} b second operand
+   * @param {BigInteger} b - Second operand
    * @returns {{ gcd, x, y: BigInteger }}
    */
   _egcd(b) {
@@ -231,8 +231,8 @@ export default class BigInteger {
 
   /**
    * Compute greatest common divisor between this and n
-   * @param {BigInteger} b operand
-   * @return {BigInteger} gcd
+   * @param {BigInteger} b - Operand
+   * @returns {BigInteger} gcd
    */
   gcd(b) {
     let a = this.value;
@@ -247,7 +247,7 @@ export default class BigInteger {
 
   /**
    * Shift this to the left by x, in place
-   * @param {BigInteger} x shift value
+   * @param {BigInteger} x - Shift value
    */
   ileftShift(x) {
     this.value <<= x.value;
@@ -256,8 +256,8 @@ export default class BigInteger {
 
   /**
    * Shift this to the left by x
-   * @param {BigInteger} x shift value
-   * @returns {BigInteger} this << x
+   * @param {BigInteger} x - Shift value
+   * @returns {BigInteger} this << x.
    */
   leftShift(x) {
     return this.clone().ileftShift(x);
@@ -265,7 +265,7 @@ export default class BigInteger {
 
   /**
    * Shift this to the right by x, in place
-   * @param {BigInteger} x shift value
+   * @param {BigInteger} x - Shift value
    */
   irightShift(x) {
     this.value >>= x.value;
@@ -274,8 +274,8 @@ export default class BigInteger {
 
   /**
    * Shift this to the right by x
-   * @param {BigInteger} x shift value
-   * @returns {BigInteger} this >> x
+   * @param {BigInteger} x - Shift value
+   * @returns {BigInteger} this >> x.
    */
   rightShift(x) {
     return this.clone().irightShift(x);
@@ -352,7 +352,7 @@ export default class BigInteger {
 
   /**
    * Get this value as a string
-   * @returns {String} this value
+   * @returns {String} this value.
    */
   toString() {
     return this.value.toString();
@@ -361,7 +361,7 @@ export default class BigInteger {
   /**
    * Get this value as an exact Number (max 53 bits)
    * Fails if this value is too large
-   * @return {Number}
+   * @returns {Number}
    */
   toNumber() {
     const number = Number(this.value);
@@ -374,8 +374,8 @@ export default class BigInteger {
 
   /**
    * Get value of i-th bit
-   * @param {Number} i bit index
-   * @returns {Number} bit value
+   * @param {Number} i - Bit index
+   * @returns {Number} Bit value.
    */
   getBit(i) {
     const bit = (this.value >> BigInt(i)) & BigInt(1);
@@ -384,7 +384,7 @@ export default class BigInteger {
 
   /**
    * Compute bit length
-   * @returns {Number} bit length
+   * @returns {Number} Bit length.
    */
   bitLength() {
     const zero = new BigInteger(0);
@@ -404,7 +404,7 @@ export default class BigInteger {
 
   /**
    * Compute byte length
-   * @returns {Number} byte length
+   * @returns {Number} Byte length.
    */
   byteLength() {
     const zero = new BigInteger(0);
@@ -422,9 +422,9 @@ export default class BigInteger {
 
   /**
    * Get Uint8Array representation of this number
-   * @param {String} endian endianess of output array (defaults to 'be')
-   * @param {Number} length of output array
-   * @return {Uint8Array}
+   * @param {String} endian - Endianess of output array (defaults to 'be')
+   * @param {Number} length - Of output array
+   * @returns {Uint8Array}
    */
   toUint8Array(endian = 'be', length) {
     // we get and parse the hex string (https://coolaj86.com/articles/convert-js-bigints-to-typedarrays/)

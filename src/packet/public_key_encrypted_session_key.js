@@ -54,7 +54,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   /**
    * Parsing function for a publickey encrypted session key packet (tag 1).
    *
-   * @param {Uint8Array} bytes Payload of a tag 1 packet
+   * @param {Uint8Array} bytes - Payload of a tag 1 packet
    */
   read(bytes) {
     this.version = bytes[0];
@@ -68,7 +68,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   /**
    * Create a binary representation of a tag 1 packet
    *
-   * @returns {Uint8Array} The Uint8Array representation
+   * @returns {Uint8Array} The Uint8Array representation.
    */
   write() {
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
@@ -85,7 +85,7 @@ class PublicKeyEncryptedSessionKeyPacket {
 
   /**
    * Encrypt session key packet
-   * @param {PublicKeyPacket} key Public key
+   * @param {PublicKeyPacket} key - Public key
    * @returns {Promise<Boolean>}
    * @async
    */

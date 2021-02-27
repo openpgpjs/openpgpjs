@@ -35,7 +35,7 @@ import util from '../util.js';
 
 class S2K {
   /**
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(config = defaultConfig) {
     /** @type {module:enums.hash} */
@@ -59,8 +59,8 @@ class S2K {
 
   /**
    * Parsing function for a string-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
-   * @param {String} bytes Payload of string-to-key specifier
-   * @returns {Integer} Actual length of the object
+   * @param {String} bytes - Payload of string-to-key specifier
+   * @returns {Integer} Actual length of the object.
    */
   read(bytes) {
     let i = 0;
@@ -111,7 +111,7 @@ class S2K {
 
   /**
    * Serializes s2k information
-   * @returns {Uint8Array} binary representation of s2k
+   * @returns {Uint8Array} Binary representation of s2k.
    */
   write() {
     if (this.type === 'gnu-dummy') {
@@ -142,8 +142,8 @@ class S2K {
   /**
    * Produces a key using the specified passphrase and the defined
    * hashAlgorithm
-   * @param {String} passphrase Passphrase containing user input
-   * @returns {Uint8Array} Produced key with a length corresponding to
+   * @param {String} passphrase - Passphrase containing user input
+   * @returns {Uint8Array} Produced key with a length corresponding to.
    * hashAlgorithm hash length
    */
   async produce_key(passphrase, numBytes) {

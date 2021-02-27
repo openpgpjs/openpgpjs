@@ -24,10 +24,10 @@ import defaultConfig from './config';
 class HKP {
   /**
    * Initialize the HKP client and configure it with the key server url and fetch function.
-   * @param {String}    keyServerBaseUrl  (optional) The HKP key server base url including
+   * @param {String} [keyServerBaseUrl] - The HKP key server base url including
    *   the protocol to use, e.g. 'https://pgp.mit.edu'; defaults to
    *   openpgp.config.keyserver (https://keyserver.ubuntu.com)
-   * @param {Object}    config (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(keyServerBaseUrl, config = defaultConfig) {
     this._baseUrl = keyServerBaseUrl || config.keyserver;
@@ -39,7 +39,7 @@ class HKP {
    * @param  {String}   options.keyId   The long public key ID.
    * @param  {String}   options.query   This can be any part of the key user ID such as name
    *   or email address.
-   * @returns {Promise<String>}          The ascii armored public key.
+   * @returns {Promise<String>} The ascii armored public key.
    * @async
    */
   lookup(options) {
@@ -68,7 +68,7 @@ class HKP {
 
   /**
    * Upload a public key to the server.
-   * @param  {String}   publicKeyArmored  An ascii armored public key to be uploaded.
+   * @param {String} publicKeyArmored - An ascii armored public key to be uploaded.
    * @returns {Promise}
    * @async
    */

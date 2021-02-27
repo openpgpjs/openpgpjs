@@ -40,9 +40,9 @@ class User {
    * Signs user
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket}          primaryKey  The primary key packet
-   * @param  {Array<Key>}    privateKeys Decrypted private keys for signing
-   * @param  {Object}                   config      Full configuration
-   * @returns {Promise<Key>}             New user with new certificate signatures
+   * @param {Array<Key>} privateKeys - Decrypted private keys for signing
+   * @param {Object} config - Full configuration
+   * @returns {Promise<Key>} New user with new certificate signatures.
    * @async
    */
   async sign(primaryKey, privateKeys, config) {
@@ -74,14 +74,14 @@ class User {
    * Checks if a given certificate of the user is revoked
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey    The primary key packet
-   * @param  {SignaturePacket}  certificate   The certificate to verify
+   * @param {SignaturePacket} certificate - The certificate to verify
    * @param  {PublicSubkeyPacket|
    *          SecretSubkeyPacket|
    *          PublicKeyPacket|
    *          SecretKeyPacket} key, optional The key to verify the signature
-   * @param  {Date}                     date          Use the given date instead of the current time
-   * @param  {Object}          config Full configuration
-   * @returns {Promise<Boolean>}                      True if the certificate is revoked
+   * @param {Date} date - Use the given date instead of the current time
+   * @param {Object} config - Full configuration
+   * @returns {Promise<Boolean>} True if the certificate is revoked.
    * @async
    */
   async isRevoked(primaryKey, certificate, key, date = new Date(), config) {
@@ -98,11 +98,11 @@ class User {
    * Verifies the user certificate. Throws if the user certificate is invalid.
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey  The primary key packet
-   * @param  {SignaturePacket}  certificate A certificate of this user
-   * @param  {Array<Key>}    keys        Array of keys to verify certificate signatures
-   * @param  {Date}                     date        Use the given date instead of the current time
-   * @param  {Object}                   config      Full configuration
-   * @returns {Promise<true|null>}   status of the certificate
+   * @param {SignaturePacket} certificate - A certificate of this user
+   * @param {Array<Key>} keys - Array of keys to verify certificate signatures
+   * @param {Date} date - Use the given date instead of the current time
+   * @param {Object} config - Full configuration
+   * @returns {Promise<true|null>} Status of the certificate.
    * @async
    */
   async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config) {
@@ -138,9 +138,9 @@ class User {
    * Verifies all user certificates
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
-   * @param  {Array<Key>}    keys       Array of keys to verify certificate signatures
-   * @param  {Date}                     date       Use the given date instead of the current time
-   * @param  {Object}                   config     Full configuration
+   * @param {Array<Key>} keys - Array of keys to verify certificate signatures
+   * @param {Date} date - Use the given date instead of the current time
+   * @param {Object} config - Full configuration
    * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
    *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
    * @async
@@ -161,9 +161,9 @@ class User {
    * and validity of self signature.
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket} primaryKey The primary key packet
-   * @param  {Date}            date       Use the given date instead of the current time
-   * @param  {Object}          config     Full configuration
-   * @returns {Promise<true>}             Status of user
+   * @param {Date} date - Use the given date instead of the current time
+   * @param {Object} config - Full configuration
+   * @returns {Promise<true>} Status of user.
    * @throws {Error} if there are no valid self signatures.
    * @async
    */
@@ -203,10 +203,10 @@ class User {
 
   /**
    * Update user with new components from specified user
-   * @param  {User}    user       Source user to merge
+   * @param {User} user - Source user to merge
    * @param  {SecretKeyPacket|
    *          SecretSubkeyPacket} primaryKey primary key used for validation
-   * @param  {Object}             config Full configuration
+   * @param {Object} config - Full configuration
    * @returns {Promise<undefined>}
    * @async
    */

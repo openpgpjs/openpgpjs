@@ -36,8 +36,8 @@ const ALGO = 'AES-GCM';
 
 /**
  * Class to en/decrypt using GCM mode.
- * @param  {String}     cipher      The symmetric cipher algorithm to use e.g. 'aes128'
- * @param  {Uint8Array} key         The encryption key
+ * @param {String} cipher - The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param {Uint8Array} key - The encryption key
  */
 async function GCM(cipher, key) {
   if (cipher.substr(0, 3) !== 'aes') {
@@ -122,8 +122,8 @@ async function GCM(cipher, key) {
  * A future version of the standard may define GCM mode differently,
  * hopefully under a different ID (we use Private/Experimental algorithm
  * ID 100) so that we can maintain backwards compatibility.
- * @param  {Uint8Array} iv           The initialization vector (12 bytes)
- * @param  {Uint8Array} chunkIndex   The chunk index (8 bytes)
+ * @param {Uint8Array} iv - The initialization vector (12 bytes)
+ * @param {Uint8Array} chunkIndex - The chunk index (8 bytes)
  */
 GCM.getNonce = function(iv, chunkIndex) {
   const nonce = iv.slice();

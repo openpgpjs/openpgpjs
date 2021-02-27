@@ -36,8 +36,8 @@ if (Buffer) {
 
 /**
  * Convert binary array to radix-64
- * @param {Uint8Array | ReadableStream<Uint8Array>} data Uint8Array to convert
- * @returns {String | ReadableStream<String>} radix-64 version of input string
+ * @param {Uint8Array | ReadableStream<Uint8Array>} data - Uint8Array to convert
+ * @returns {String | ReadableStream<String>} Radix-64 version of input string.
  * @static
  */
 export function encode(data) {
@@ -60,8 +60,8 @@ export function encode(data) {
 
 /**
  * Convert radix-64 to binary array
- * @param {String | ReadableStream<String>} data radix-64 string to convert
- * @returns {Uint8Array | ReadableStream<Uint8Array>} binary array version of input string
+ * @param {String | ReadableStream<String>} data - Radix-64 string to convert
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} Binary array version of input string.
  * @static
  */
 export function decode(data) {
@@ -96,8 +96,8 @@ export function decode(data) {
  * Convert a Base-64 encoded string an array of 8-bit integer
  *
  * Note: accepts both Radix-64 and URL-safe strings
- * @param {String} base64 Base-64 encoded string to convert
- * @returns {Uint8Array} An array of 8-bit integers
+ * @param {String} base64 - Base-64 encoded string to convert
+ * @returns {Uint8Array} An array of 8-bit integers.
  */
 export function b64ToUint8Array(base64) {
   return decode(base64.replace(/-/g, '+').replace(/_/g, '/'));
@@ -105,9 +105,9 @@ export function b64ToUint8Array(base64) {
 
 /**
  * Convert an array of 8-bit integer to a Base-64 encoded string
- * @param {Uint8Array} bytes An array of 8-bit integers to convert
- * @param {bool}       url   If true, output is URL-safe
- * @returns {String}          Base-64 encoded string
+ * @param {Uint8Array} bytes - An array of 8-bit integers to convert
+ * @param {bool} url - If true, output is URL-safe
+ * @returns {String} Base-64 encoded string.
  */
 export function uint8ArrayToB64(bytes, url) {
   let encoded = encode(bytes).replace(/[\r\n]/g, '');

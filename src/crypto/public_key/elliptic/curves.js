@@ -227,11 +227,11 @@ function getPreferredHashAlgo(oid) {
 /**
  * Validate ECDH and EcDSA parameters
  * Not suitable for EdDSA (different secret key format)
- * @param {module:enums.publicKey}  algo EC algorithm, to filter supported curves
- * @param {module:type/oid}         oid  EC object identifier
- * @param {Uint8Array}              Q    EC public point
- * @param {Uint8Array}              d    EC secret scalar
- * @returns {Promise<Boolean>}      whether params are valid
+ * @param {module:enums.publicKey} algo - EC algorithm, to filter supported curves
+ * @param {module:type/oid} oid - EC object identifier
+ * @param {Uint8Array} Q - EC public point
+ * @param {Uint8Array} d - EC secret scalar
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 async function validateStandardParams(algo, oid, Q, d) {
@@ -327,9 +327,9 @@ async function nodeGenKeyPair(name) {
 //////////////////////////
 
 /**
- * @param  {JsonWebKey}                jwk  key for conversion
+ * @param {JsonWebKey} jwk - key for conversion
  *
- * @returns {Uint8Array}                    raw public key
+ * @returns {Uint8Array} Raw public key.
  */
 function jwkToRawPublic(jwk) {
   const bufX = b64ToUint8Array(jwk.x);
@@ -342,11 +342,11 @@ function jwkToRawPublic(jwk) {
 }
 
 /**
- * @param  {Integer}                payloadSize  ec payload size
- * @param  {String}                 name         curve name
- * @param  {Uint8Array}             publicKey    public key
+ * @param {Integer} payloadSize - ec payload size
+ * @param {String} name - curve name
+ * @param {Uint8Array} publicKey - public key
  *
- * @returns {JsonWebKey}                         public key in jwk format
+ * @returns {JsonWebKey} Public key in jwk format.
  */
 function rawPublicToJwk(payloadSize, name, publicKey) {
   const len = payloadSize;
@@ -364,12 +364,12 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
 }
 
 /**
- * @param  {Integer}                payloadSize  ec payload size
- * @param  {String}                 name         curve name
- * @param  {Uint8Array}             publicKey    public key
- * @param  {Uint8Array}             privateKey   private key
+ * @param {Integer} payloadSize - ec payload size
+ * @param {String} name - curve name
+ * @param {Uint8Array} publicKey - public key
+ * @param {Uint8Array} privateKey - private key
  *
- * @returns {JsonWebKey}                         private key in jwk format
+ * @returns {JsonWebKey} Private key in jwk format.
  */
 function privateToJwk(payloadSize, name, publicKey, privateKey) {
   const jwk = rawPublicToJwk(payloadSize, name, publicKey);

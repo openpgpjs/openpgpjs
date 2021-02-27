@@ -18,7 +18,7 @@ import defaultConfig from '../config';
 class PacketList extends Array {
   /**
    * Reads a stream of binary data and interprets it as a list of packets.
-   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes A Uint8Array of bytes.
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - A Uint8Array of bytes.
    */
   async read(bytes, allowedPackets, streaming, config = defaultConfig) {
     this.stream = stream.transformPair(bytes, async (readable, writable) => {
@@ -117,7 +117,7 @@ class PacketList extends Array {
   /**
    * Adds a packet to the list. This is the only supported method of doing so;
    * writing to packetlist[i] directly will result in an error.
-   * @param {Object} packet Packet to push
+   * @param {Object} packet - Packet to push
    */
   push(packet) {
     if (!packet) {
@@ -148,7 +148,7 @@ class PacketList extends Array {
 
   /**
    * Traverses packet tree and returns first matching packet
-   * @param  {module:enums.packet} type The packet type
+   * @param {module:enums.packet} type - The packet type
    * @returns {Packet|undefined}
    */
   findPacket(type) {

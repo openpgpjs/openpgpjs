@@ -38,8 +38,8 @@ class ECDHSymmetricKey {
 
   /**
    * Read an ECDHSymmetricKey from an Uint8Array
-   * @param  {Uint8Array}  input  Where to read the encoded symmetric key from
-   * @returns {Number}             Number of read bytes
+   * @param {Uint8Array} input - Where to read the encoded symmetric key from
+   * @returns {Number} Number of read bytes.
    */
   read(input) {
     if (input.length >= 1) {

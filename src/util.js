@@ -55,7 +55,7 @@ const util = {
 
   /**
    * Convert MessagePorts back to ReadableStreams
-   * @param  {Object} obj
+   * @param {Object} obj
    * @returns {Object}
    */
   restoreStreams: function(obj, streaming) {
@@ -128,8 +128,8 @@ const util = {
 
   /**
    * Create hex string from a binary
-   * @param {String} str String to convert
-   * @returns {String} String containing the hexadecimal values
+   * @param {String} str - String to convert
+   * @returns {String} String containing the hexadecimal values.
    */
   strToHex: function (str) {
     if (str === null) {
@@ -151,7 +151,7 @@ const util = {
 
   /**
    * Create binary string from a hex encoded string
-   * @param {String} str Hex string to convert
+   * @param {String} str - Hex string to convert
    * @returns {String}
    */
   hexToStr: function (hex) {
@@ -164,8 +164,8 @@ const util = {
 
   /**
    * Read one MPI from bytes in input
-   * @param {Uint8Array} bytes  input data to parse
-   * @returns {Uint8Array} parsed MPI
+   * @param {Uint8Array} bytes - Input data to parse
+   * @returns {Uint8Array} Parsed MPI.
    */
   readMPI: function (bytes) {
     const bits = (bytes[0] << 8) | bytes[1];
@@ -175,9 +175,9 @@ const util = {
 
   /**
    * Left-pad Uint8Array to length by adding 0x0 bytes
-   * @param {Uint8Array} bytes      data to pad
-   * @param {Number}     length     padded length
-   * @return {Uint8Array} padded bytes
+   * @param {Uint8Array} bytes - Data to pad
+   * @param {Number} length - Padded length
+   * @returns {Uint8Array} Padded bytes.
    */
   leftPad(bytes, length) {
     const padded = new Uint8Array(length);
@@ -188,8 +188,8 @@ const util = {
 
   /**
    * Convert a Uint8Array to an MPI-formatted Uint8Array.
-   * @param {Uint8Array} bin An array of 8-bit integers to convert
-   * @returns {Uint8Array} MPI-formatted Uint8Array
+   * @param {Uint8Array} bin - An array of 8-bit integers to convert
+   * @returns {Uint8Array} MPI-formatted Uint8Array.
    */
   uint8ArrayToMpi: function (bin) {
     let i; // index of leading non-zero byte
@@ -205,8 +205,8 @@ const util = {
 
   /**
    * Convert a hex string to an array of 8-bit integers
-   * @param {String} hex  A hex string to convert
-   * @returns {Uint8Array} An array of 8-bit integers
+   * @param {String} hex - A hex string to convert
+   * @returns {Uint8Array} An array of 8-bit integers.
    */
   hexToUint8Array: function (hex) {
     const result = new Uint8Array(hex.length >> 1);
@@ -218,8 +218,8 @@ const util = {
 
   /**
    * Convert an array of 8-bit integers to a hex string
-   * @param {Uint8Array} bytes Array of 8-bit integers to convert
-   * @returns {String} Hexadecimal representation of the array
+   * @param {Uint8Array} bytes - Array of 8-bit integers to convert
+   * @returns {String} Hexadecimal representation of the array.
    */
   uint8ArrayToHex: function (bytes) {
     const r = [];
@@ -238,8 +238,8 @@ const util = {
 
   /**
    * Convert a string to an array of 8-bit integers
-   * @param {String} str String to convert
-   * @returns {Uint8Array} An array of 8-bit integers
+   * @param {String} str - String to convert
+   * @returns {Uint8Array} An array of 8-bit integers.
    */
   strToUint8Array: function (str) {
     return stream.transform(str, str => {
@@ -257,8 +257,8 @@ const util = {
 
   /**
    * Convert an array of 8-bit integers to a string
-   * @param {Uint8Array} bytes An array of 8-bit integers to convert
-   * @returns {String} String representation of the array
+   * @param {Uint8Array} bytes - An array of 8-bit integers to convert
+   * @returns {String} String representation of the array.
    */
   uint8ArrayToStr: function (bytes) {
     bytes = new Uint8Array(bytes);
@@ -274,8 +274,8 @@ const util = {
 
   /**
    * Convert a native javascript string to a Uint8Array of utf8 bytes
-   * @param {String|ReadableStream} str The string to convert
-   * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes
+   * @param {String|ReadableStream} str - The string to convert
+   * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes.
    */
   encodeUtf8: function (str) {
     const encoder = new TextEncoder('utf-8');
@@ -288,8 +288,8 @@ const util = {
 
   /**
    * Convert a Uint8Array of utf8 bytes to a native javascript string
-   * @param {Uint8Array|ReadableStream} utf8 A valid squence of utf8 bytes
-   * @returns {String|ReadableStream} A native javascript string
+   * @param {Uint8Array|ReadableStream} utf8 - A valid squence of utf8 bytes
+   * @returns {String|ReadableStream} A native javascript string.
    */
   decodeUtf8: function (utf8) {
     const decoder = new TextDecoder('utf-8');
@@ -303,23 +303,23 @@ const util = {
   /**
    * Concat a list of Uint8Arrays, Strings or Streams
    * The caller must not mix Uint8Arrays with Strings, but may mix Streams with non-Streams.
-   * @param {Array<Uint8Array|String|ReadableStream>} Array of Uint8Arrays/Strings/Streams to concatenate
-   * @returns {Uint8Array|String|ReadableStream} Concatenated array
+   * @param {Array<Uint8Array|String|ReadableStream>} Array - Of Uint8Arrays/Strings/Streams to concatenate
+   * @returns {Uint8Array|String|ReadableStream} Concatenated array.
    */
   concat: stream.concat,
 
   /**
    * Concat Uint8Arrays
-   * @param {Array<Uint8Array>} Array of Uint8Arrays to concatenate
-   * @returns {Uint8Array} Concatenated array
+   * @param {Array<Uint8Array>} Array - Of Uint8Arrays to concatenate
+   * @returns {Uint8Array} Concatenated array.
    */
   concatUint8Array: stream.concatUint8Array,
 
   /**
    * Check Uint8Array equality
-   * @param {Uint8Array} array1 first array
-   * @param {Uint8Array} array2 second array
-   * @returns {Boolean} equality
+   * @param {Uint8Array} array1 - First array
+   * @param {Uint8Array} array2 - Second array
+   * @returns {Boolean} Equality.
    */
   equalsUint8Array: function (array1, array2) {
     if (!util.isUint8Array(array1) || !util.isUint8Array(array2)) {
@@ -341,8 +341,8 @@ const util = {
   /**
    * Calculates a 16bit sum of a Uint8Array by adding each character
    * codes modulus 65535
-   * @param {Uint8Array} Uint8Array to create a sum of
-   * @returns {Uint8Array} 2 bytes containing the sum of all charcodes % 65535
+   * @param {Uint8Array} Uint8Array - To create a sum of
+   * @returns {Uint8Array} 2 bytes containing the sum of all charcodes % 65535.
    */
   writeChecksum: function (text) {
     let s = 0;
@@ -355,7 +355,7 @@ const util = {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * @param {String} str String of the debug message
+   * @param {String} str - String of the debug message
    */
   printDebug: function (str) {
     if (debugMode) {
@@ -367,7 +367,7 @@ const util = {
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * Different than print_debug because will call Uint8ArrayToHex iff necessary.
-   * @param {String} str String of the debug message
+   * @param {String} str - String of the debug message
    */
   printDebugHexArrayDump: function (str, arrToHex) {
     if (debugMode) {
@@ -380,7 +380,7 @@ const util = {
    * Helper function to print a debug message. Debug
    * messages are only printed if
    * Different than print_debug because will call strToHex iff necessary.
-   * @param {String} str String of the debug message
+   * @param {String} str - String of the debug message
    */
   printDebugHexStrDump: function (str, strToHex) {
     if (debugMode) {
@@ -392,7 +392,7 @@ const util = {
   /**
    * Helper function to print a debug error. Debug
    * messages are only printed if
-   * @param {String} str String of the debug message
+   * @param {String} str - String of the debug message
    */
   printDebugError: function (error) {
     if (debugMode) {
@@ -402,9 +402,9 @@ const util = {
 
   /**
    * Read a stream to the end and print it to the console when it's closed.
-   * @param {String} str String of the debug message
-   * @param {ReadableStream|Uint8array|String} input Stream to print
-   * @param {Function} concat Function to concatenate chunks of the stream (defaults to util.concat).
+   * @param {String} str - String of the debug message
+   * @param {ReadableStream|Uint8array|String} input - Stream to print
+   * @param {Function} concat - Function to concatenate chunks of the stream (defaults to util.concat).
    */
   printEntireStream: function (str, input, concat) {
     stream.readToEnd(stream.clone(input), concat).then(result => {
@@ -464,8 +464,8 @@ const util = {
 
   /**
    * Shift a Uint8Array to the right by n bits
-   * @param {Uint8Array} array The array to shift
-   * @param {Integer} bits Amount of bits to shift (MUST be smaller
+   * @param {Uint8Array} array - The array to shift
+   * @param {Integer} bits - Amount of bits to shift (MUST be smaller
    * than 8)
    * @returns {String} Resulting array.
    */
@@ -483,7 +483,7 @@ const util = {
 
   /**
    * Get native Web Cryptography api, only the current version of the spec.
-   * @returns {Object}   The SubtleCrypto api or 'undefined'
+   * @returns {Object} The SubtleCrypto api or 'undefined'.
    */
   getWebCrypto: function() {
     return typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
@@ -513,7 +513,7 @@ const util = {
 
   /**
    * Get native Node.js crypto api.
-   * @returns {Object}   The crypto module or 'undefined'
+   * @returns {Object} The crypto module or 'undefined'.
    */
   getNodeCrypto: function() {
     return require('crypto');
@@ -526,7 +526,7 @@ const util = {
   /**
    * Get native Node.js Buffer constructor. This should be used since
    * Buffer is not available under browserify.
-   * @returns {Function}   The Buffer constructor or 'undefined'
+   * @returns {Function} The Buffer constructor or 'undefined'.
    */
   getNodeBuffer: function() {
     return (require('buffer') || {}).Buffer;
@@ -654,8 +654,8 @@ const util = {
    * Encode input buffer using Z-Base32 encoding.
    * See: https://tools.ietf.org/html/rfc6189#section-5.1.6
    *
-   * @param {Uint8Array} data The binary data to encode
-   * @returns {String} Binary data encoded using Z-Base32
+   * @param {Uint8Array} data - The binary data to encode
+   * @returns {String} Binary data encoded using Z-Base32.
    */
   encodeZBase32: function(data) {
     if (data.length === 0) {

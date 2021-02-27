@@ -57,8 +57,8 @@ class OID {
 
   /**
    * Method to read an OID object
-   * @param  {Uint8Array}  input  Where to read the OID from
-   * @returns {Number}             Number of read bytes
+   * @param {Uint8Array} input - Where to read the OID from
+   * @returns {Number} Number of read bytes.
    */
   read(input) {
     if (input.length >= 1) {
@@ -73,7 +73,7 @@ class OID {
 
   /**
    * Serialize an OID object
-   * @returns {Uint8Array} Array with the serialized value the OID
+   * @returns {Uint8Array} Array with the serialized value the OID.
    */
   write() {
     return util.concatUint8Array([new Uint8Array([this.oid.length]), this.oid]);
@@ -81,7 +81,7 @@ class OID {
 
   /**
    * Serialize an OID object as a hex string
-   * @returns {string} String with the hex value of the OID
+   * @returns {string} String with the hex value of the OID.
    */
   toHex() {
     return util.uint8ArrayToHex(this.oid);
@@ -89,7 +89,7 @@ class OID {
 
   /**
    * If a known curve object identifier, return the canonical name of the curve
-   * @returns {string} String with the canonical name of the curve
+   * @returns {string} String with the canonical name of the curve.
    */
   getName() {
     const hex = this.toHex();

@@ -46,10 +46,10 @@ export async function generateSecretKey(options, config) {
 
 /**
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
- * @param  {Array<SignaturePacket>}         signatures  List of signatures
- * @param  {Date}                           date        Use the given date instead of the current time
- * @param  {Object} config full configuration
- * @returns {Promise<SignaturePacket>} The latest valid signature
+ * @param {Array<SignaturePacket>} signatures - List of signatures
+ * @param {Date} date - Use the given date instead of the current time
+ * @param {Object} config - full configuration
+ * @returns {Promise<SignaturePacket>} The latest valid signature.
  * @async
  */
 export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date(), config) {
@@ -92,10 +92,10 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
 
 /**
  * Create Binding signature to the key according to the {@link https://tools.ietf.org/html/rfc4880#section-5.2.1}
- * @param {SecretSubkeyPacket} subkey Subkey key packet
- * @param {SecretKeyPacket} primaryKey Primary key packet
+ * @param {SecretSubkeyPacket} subkey - Subkey key packet
+ * @param {SecretKeyPacket} primaryKey - Primary key packet
  * @param {Object} options
- * @param {Object} config full configuration
+ * @param {Object} config - Full configuration
  */
 export async function createBindingSignature(subkey, primaryKey, options, config) {
   const dataToSign = {};
@@ -123,11 +123,11 @@ export async function createBindingSignature(subkey, primaryKey, options, config
 
 /**
  * Returns the preferred signature hash algorithm of a key
- * @param  {Key} key (optional) the key to get preferences from
- * @param  {SecretKeyPacket|SecretSubkeyPacket} keyPacket key packet used for signing
- * @param  {Date} date (optional) use the given date for verification instead of the current time
- * @param  {Object} userId (optional) user ID
- * @param  {Object} config full configuration
+ * @param {Key} [key] - The key to get preferences from
+ * @param {SecretKeyPacket|SecretSubkeyPacket} keyPacket - key packet used for signing
+ * @param {Date} [date] - Use the given date for verification instead of the current time
+ * @param {Object} [userId] - User ID
+ * @param {Object} config - full configuration
  * @returns {Promise<String>}
  * @async
  */
@@ -160,12 +160,12 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
 
 /**
  * Returns the preferred symmetric/aead algorithm for a set of keys
- * @param  {symmetric|aead} type Type of preference to return
- * @param  {Array<Key>} keys Set of keys
- * @param  {Date} date (optional) use the given date for verification instead of the current time
- * @param  {Array} userIds (optional) user IDs
- * @param  {Object} config (optional) full configuration, defaults to openpgp.config
- * @returns {Promise<module:enums.symmetric>}   Preferred symmetric algorithm
+ * @param {symmetric|aead} type - Type of preference to return
+ * @param {Array<Key>} keys - Set of keys
+ * @param {Date} [date] - Use the given date for verification instead of the current time
+ * @param {Array} [userIds] - User IDs
+ * @param {Object} [config] - Full configuration, defaults to openpgp.config
+ * @returns {Promise<module:enums.symmetric>} Preferred symmetric algorithm.
  * @async
  */
 export async function getPreferredAlgo(type, keys, date = new Date(), userIds = [], config = defaultConfig) {
@@ -200,16 +200,16 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
 
 /**
  * Create signature packet
- * @param  {Object}                          dataToSign Contains packets to be signed
+ * @param {Object} dataToSign - Contains packets to be signed
  * @param  {SecretKeyPacket|
  *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
- * @param  {Object} [signatureProperties] - properties to write on the signature packet before signing
- * @param  {Date} [date] - override the creationtime of the signature
- * @param  {Object} [userId] - user ID
- * @param  {Object} [detached] - whether to create a detached signature packet
- * @param  {Boolean} [streaming] - whether to process data as a stream
- * @param  {Object} config                   full configuration
- * @returns {Promise<SignaturePacket>}       signature packet
+ * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing
+ * @param {Date} [date] - Override the creationtime of the signature
+ * @param {Object} [userId] - User ID
+ * @param {Object} [detached] - Whether to create a detached signature packet
+ * @param {Boolean} [streaming] - Whether to process data as a stream
+ * @param {Object} config - full configuration
+ * @returns {Promise<SignaturePacket>} Signature packet.
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false, config) {
   if (signingKeyPacket.isDummy()) {
@@ -228,10 +228,10 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
 
 /**
  * Merges signatures from source[attr] to dest[attr]
- * @param  {Object} source
- * @param  {Object} dest
- * @param  {String} attr
- * @param  {Function} checkFn optional, signature only merged if true
+ * @param {Object} source
+ * @param {Object} dest
+ * @param {String} attr
+ * @param {Function} checkFn - optional, signature only merged if true
  */
 export async function mergeSignatures(source, dest, attr, checkFn) {
   source = source[attr];
@@ -255,16 +255,16 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
  * Checks if a given certificate or binding signature is revoked
  * @param  {SecretKeyPacket|
  *          PublicKeyPacket}        primaryKey   The primary key packet
- * @param  {Object}                 dataToVerify The data to check
- * @param  {Array<SignaturePacket>} revocations  The revocation signatures to check
- * @param  {SignaturePacket}        signature    The certificate or signature to check
+ * @param {Object} dataToVerify - The data to check
+ * @param {Array<SignaturePacket>} revocations - The revocation signatures to check
+ * @param {SignaturePacket} signature - The certificate or signature to check
  * @param  {PublicSubkeyPacket|
  *          SecretSubkeyPacket|
  *          PublicKeyPacket|
  *          SecretKeyPacket} key, optional The key packet to check the signature
- * @param  {Date}                     date          Use the given date instead of the current time
- * @param {Object} config full configuration
- * @returns {Promise<Boolean>}                      True if the signature revokes the data
+ * @param {Date} date - Use the given date instead of the current time
+ * @param {Object} config - Full configuration
+ * @returns {Promise<Boolean>} True if the signature revokes the data.
  * @async
  */
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
@@ -312,10 +312,10 @@ export function getExpirationTime(keyPacket, signature) {
 
 /**
  * Returns whether aead is supported by all keys in the set
- * @param  {Array<Key>} keys Set of keys
- * @param  {Date} date (optional) use the given date for verification instead of the current time
- * @param  {Array} userIds (optional) user IDs
- * @param  {Object} config full configuration
+ * @param {Array<Key>} keys - Set of keys
+ * @param {Date} [date] - Use the given date for verification instead of the current time
+ * @param {Array} [userIds] - User IDs
+ * @param {Object} config - full configuration
  * @returns {Promise<Boolean>}
  * @async
  */

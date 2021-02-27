@@ -38,10 +38,10 @@ const nodeCrypto = util.getNodeCrypto();
 
 /**
  * Validate ECDH parameters
- * @param {module:type/oid}    oid Elliptic curve object identifier
- * @param {Uint8Array}         Q   ECDH public point
- * @param {Uint8Array}         d   ECDH secret scalar
- * @returns {Promise<Boolean>} whether params are valid
+ * @param {module:type/oid} oid - Elliptic curve object identifier
+ * @param {Uint8Array} Q - ECDH public point
+ * @param {Uint8Array} d - ECDH secret scalar
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(oid, Q, d) {
@@ -86,8 +86,8 @@ async function kdf(hash_algo, X, length, param, stripLeading = false, stripTrail
 /**
  * Generate ECDHE ephemeral key and secret from public key
  *
- * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             Q            Recipient public key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} Q - Recipient public key
  * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
@@ -118,11 +118,11 @@ async function genPublicEphemeralKey(curve, Q) {
 /**
  * Encrypt and wrap a session key
  *
- * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
- * @param  {Uint8Array}             data         Unpadded session key data
- * @param  {Uint8Array}             Q            Recipient public key
- * @param  {Uint8Array}             fingerprint  Recipient fingerprint
+ * @param {module:type/oid} oid - Elliptic curve object identifier
+ * @param {module:type/kdf_params} kdfParams - KDF params including cipher and algorithm to use
+ * @param {Uint8Array} data - Unpadded session key data
+ * @param {Uint8Array} Q - Recipient public key
+ * @param {Uint8Array} fingerprint - Recipient fingerprint
  * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
@@ -141,10 +141,10 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
 /**
  * Generate ECDHE secret from private key and public part of ephemeral key
  *
- * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             V            Public part of ephemeral key
- * @param  {Uint8Array}             Q            Recipient public key
- * @param  {Uint8Array}             d            Recipient private key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} V - Public part of ephemeral key
+ * @param {Uint8Array} Q - Recipient public key
+ * @param {Uint8Array} d - Recipient private key
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
@@ -178,14 +178,14 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
 /**
  * Decrypt and unwrap the value derived from session key
  *
- * @param  {module:type/oid}        oid          Elliptic curve object identifier
- * @param  {module:type/kdf_params} kdfParams    KDF params including cipher and algorithm to use
- * @param  {Uint8Array}             V            Public part of ephemeral key
- * @param  {Uint8Array}             C            Encrypted and wrapped value derived from session key
- * @param  {Uint8Array}             Q            Recipient public key
- * @param  {Uint8Array}             d            Recipient private key
- * @param  {Uint8Array}             fingerprint  Recipient fingerprint
- * @returns {Promise<Uint8Array>}   Value derived from session key
+ * @param {module:type/oid} oid - Elliptic curve object identifier
+ * @param {module:type/kdf_params} kdfParams - KDF params including cipher and algorithm to use
+ * @param {Uint8Array} V - Public part of ephemeral key
+ * @param {Uint8Array} C - Encrypted and wrapped value derived from session key
+ * @param {Uint8Array} Q - Recipient public key
+ * @param {Uint8Array} d - Recipient private key
+ * @param {Uint8Array} fingerprint - Recipient fingerprint
+ * @returns {Promise<Uint8Array>} Value derived from session key.
  * @async
  */
 export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
@@ -209,10 +209,10 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
 /**
  * Generate ECDHE secret from private key and public part of ephemeral key using webCrypto
  *
- * @param  {Curve}                  curve         Elliptic curve object
- * @param  {Uint8Array}             V             Public part of ephemeral key
- * @param  {Uint8Array}             Q             Recipient public key
- * @param  {Uint8Array}             d             Recipient private key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} V - Public part of ephemeral key
+ * @param {Uint8Array} Q - Recipient public key
+ * @param {Uint8Array} d - Recipient private key
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
@@ -262,8 +262,8 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
 /**
  * Generate ECDHE ephemeral key and secret from public key using webCrypto
  *
- * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             Q            Recipient public key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} Q - Recipient public key
  * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
@@ -310,9 +310,9 @@ async function webPublicEphemeralKey(curve, Q) {
 /**
  * Generate ECDHE secret from private key and public part of ephemeral key using indutny/elliptic
  *
- * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             V            Public part of ephemeral key
- * @param  {Uint8Array}             d            Recipient private key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} V - Public part of ephemeral key
+ * @param {Uint8Array} d - Recipient private key
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
@@ -330,8 +330,8 @@ async function ellipticPrivateEphemeralKey(curve, V, d) {
 /**
  * Generate ECDHE ephemeral key and secret from public key using indutny/elliptic
  *
- * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             Q            Recipient public key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} Q - Recipient public key
  * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
@@ -350,9 +350,9 @@ async function ellipticPublicEphemeralKey(curve, Q) {
 /**
  * Generate ECDHE secret from private key and public part of ephemeral key using nodeCrypto
  *
- * @param  {Curve}                  curve          Elliptic curve object
- * @param  {Uint8Array}             V              Public part of ephemeral key
- * @param  {Uint8Array}             d              Recipient private key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} V - Public part of ephemeral key
+ * @param {Uint8Array} d - Recipient private key
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
@@ -367,8 +367,8 @@ async function nodePrivateEphemeralKey(curve, V, d) {
 /**
  * Generate ECDHE ephemeral key and secret from public key using nodeCrypto
  *
- * @param  {Curve}                  curve        Elliptic curve object
- * @param  {Uint8Array}             Q            Recipient public key
+ * @param {Curve} curve - Elliptic curve object
+ * @param {Uint8Array} Q - Recipient public key
  * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */

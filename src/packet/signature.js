@@ -33,7 +33,7 @@ import defaultConfig from '../config';
  */
 class SignaturePacket {
   /**
-   * @param {Date} date the creation date of the signature
+   * @param {Date} date - The creation date of the signature
    */
   constructor(date = new Date()) {
     this.tag = enums.packet.signature;
@@ -88,9 +88,9 @@ class SignaturePacket {
 
   /**
    * parsing function for a signature packet (tag 2).
-   * @param {String} bytes payload of a tag 2 packet
-   * @param {Object} [config] - full configuration, defaults to openpgp.config
-   * @returns {SignaturePacket} object representation
+   * @param {String} bytes - Payload of a tag 2 packet
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {SignaturePacket} Object representation.
    */
   read(bytes, config = defaultConfig) {
     let i = 0;
@@ -148,10 +148,10 @@ class SignaturePacket {
 
   /**
    * Signs provided data. This needs to be done prior to serialization.
-   * @param {SecretKeyPacket} key private key used to sign the message.
-   * @param {Object} data Contains packets to be signed.
-   * @param {Boolean} detached (optional) whether to create a detached signature
-   * @param {Boolean} streaming (optional) whether to process data as a stream
+   * @param {SecretKeyPacket} key - Private key used to sign the message.
+   * @param {Object} data - Contains packets to be signed.
+   * @param {Boolean} [detached] - Whether to create a detached signature
+   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @throws {Error} if signing failed
    * @async
    */
@@ -196,7 +196,7 @@ class SignaturePacket {
 
   /**
    * Creates Uint8Array of bytes of all subpacket data except Issuer and Embedded Signature subpackets
-   * @returns {Uint8Array} subpacket data
+   * @returns {Uint8Array} Subpacket data.
    */
   write_hashed_sub_packets() {
     const sub = enums.signatureSubpacket;
@@ -299,7 +299,7 @@ class SignaturePacket {
 
   /**
    * Creates Uint8Array of bytes of Issuer and Embedded Signature subpackets
-   * @returns {Uint8Array} subpacket data
+   * @returns {Uint8Array} Subpacket data.
    */
   write_unhashed_sub_packets() {
     const sub = enums.signatureSubpacket;
@@ -658,11 +658,11 @@ class SignaturePacket {
    * verifies the signature packet. Note: not all signature types are implemented
    * @param {PublicSubkeyPacket|PublicKeyPacket|
    *         SecretSubkeyPacket|SecretKeyPacket} key the public key to verify the signature
-   * @param {module:enums.signature} signatureType expected signature type
-   * @param {String|Object} data data which on the signature applies
-   * @param {Boolean} detached (optional) whether to verify a detached signature
-   * @param {Boolean} streaming (optional) whether to process data as a stream
-   * @param {Object}  config (optional) full configuration, defaults to openpgp.config
+   * @param {module:enums.signature} signatureType - Expected signature type
+   * @param {String|Object} data - Data which on the signature applies
+   * @param {Boolean} [detached] - Whether to verify a detached signature
+   * @param {Boolean} [streaming] - Whether to process data as a stream
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if signature validation failed
    * @async
    */
@@ -713,8 +713,8 @@ class SignaturePacket {
 
   /**
    * Verifies signature expiration date
-   * @param {Date} date (optional) use the given date for verification instead of the current time
-   * @returns {Boolean} true if expired
+   * @param {Date} [date] - Use the given date for verification instead of the current time
+   * @returns {Boolean} True if expired.
    */
   isExpired(date = new Date()) {
     const normDate = util.normalizeDate(date);
@@ -727,7 +727,7 @@ class SignaturePacket {
 
   /**
    * Returns the expiration time of the signature or Infinity if signature does not expire
-   * @returns {Date} expiration time
+   * @returns {Date} Expiration time.
    */
   getExpirationTime() {
     return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime * 1000) : Infinity;
@@ -738,9 +738,9 @@ class SignaturePacket {
  * Creates a string representation of a sub signature packet
  * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC4880 5.2.3.1}
  * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 5.2.3.2}
- * @param {Integer} type subpacket signature type.
- * @param {String} data data to be included
- * @returns {String} a string-representation of a sub signature packet
+ * @param {Integer} type - Subpacket signature type.
+ * @param {String} data - Data to be included
+ * @returns {String} A string-representation of a sub signature packet.
  * @private
  */
 function write_sub_packet(type, data) {

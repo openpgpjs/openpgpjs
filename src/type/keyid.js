@@ -38,7 +38,7 @@ class Keyid {
 
   /**
    * Parsing method for a key id
-   * @param {Uint8Array} bytes Input to read the key id from
+   * @param {Uint8Array} bytes - Input to read the key id from
    */
   read(bytes) {
     this.bytes = util.uint8ArrayToStr(bytes.subarray(0, 8));
@@ -46,7 +46,7 @@ class Keyid {
 
   /**
    * Serializes the Key ID
-   * @returns {Uint8Array} Key ID as a Uint8Array
+   * @returns {Uint8Array} Key ID as a Uint8Array.
    */
   write() {
     return util.strToUint8Array(this.bytes);
@@ -54,7 +54,7 @@ class Keyid {
 
   /**
    * Returns the Key ID represented as a hexadecimal string
-   * @returns {String} Key ID as a hexadecimal string
+   * @returns {String} Key ID as a hexadecimal string.
    */
   toHex() {
     return util.strToHex(this.bytes);
@@ -63,7 +63,7 @@ class Keyid {
   /**
    * Checks equality of Key ID's
    * @param {Keyid} keyid
-   * @param {Boolean} matchWildcard Indicates whether to check if either keyid is a wildcard
+   * @param {Boolean} matchWildcard - Indicates whether to check if either keyid is a wildcard
    */
   equals(keyid, matchWildcard = false) {
     return (matchWildcard && (keyid.isWildcard() || this.isWildcard())) || this.bytes === keyid.bytes;
@@ -71,7 +71,7 @@ class Keyid {
 
   /**
    * Checks to see if the Key ID is unset
-   * @returns {Boolean} true if the Key ID is null
+   * @returns {Boolean} True if the Key ID is null.
    */
   isNull() {
     return this.bytes === '';
@@ -79,7 +79,7 @@ class Keyid {
 
   /**
    * Checks to see if the Key ID is a "wildcard" Key ID (all zeros)
-   * @returns {Boolean} true if this is a wildcard Key ID
+   * @returns {Boolean} True if this is a wildcard Key ID.
    */
   isWildcard() {
     return /^0+$/.test(this.toHex());

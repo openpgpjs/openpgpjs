@@ -38,8 +38,8 @@ import util from '../util';
  */
 class PublicKeyPacket {
   /**
-   * @param {Date} [date] - creation date
-   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {Date} [date] - Creation date
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
     /**
@@ -87,8 +87,8 @@ class PublicKeyPacket {
   /**
    * Internal Parser for public keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
    * called by read_tag&lt;num&gt;
-   * @param {Uint8Array} bytes Input array to read the packet from
-   * @returns {Object} This object with attributes set by the parser
+   * @param {Uint8Array} bytes - Input array to read the packet from
+   * @returns {Object} This object with attributes set by the parser.
    */
   read(bytes) {
     let pos = 0;
@@ -125,7 +125,7 @@ class PublicKeyPacket {
 
   /**
    * Creates an OpenPGP public key packet for the given key.
-   * @returns {Uint8Array} Bytes encoding the public key OpenPGP packet
+   * @returns {Uint8Array} Bytes encoding the public key OpenPGP packet.
    */
   write() {
     const arr = [];
@@ -176,7 +176,7 @@ class PublicKeyPacket {
 
   /**
    * Calculates the key id of the key
-   * @returns {module:type/keyid~Keyid} A 8 byte key id
+   * @returns {module:type/keyid~Keyid} A 8 byte key id.
    */
   getKeyId() {
     if (this.keyid) {
@@ -193,7 +193,7 @@ class PublicKeyPacket {
 
   /**
    * Calculates the fingerprint of the key
-   * @returns {Uint8Array} A Uint8Array containing the fingerprint
+   * @returns {Uint8Array} A Uint8Array containing the fingerprint.
    */
   getFingerprintBytes() {
     if (this.fingerprint) {
@@ -210,7 +210,7 @@ class PublicKeyPacket {
 
   /**
    * Calculates the fingerprint of the key
-   * @returns {String} A string containing the fingerprint in lowercase hex
+   * @returns {String} A string containing the fingerprint in lowercase hex.
    */
   getFingerprint() {
     return util.uint8ArrayToHex(this.getFingerprintBytes());
@@ -218,7 +218,7 @@ class PublicKeyPacket {
 
   /**
    * Calculates whether two keys have the same fingerprint without actually calculating the fingerprint
-   * @returns {Boolean} Whether the two keys have the same version and public key data
+   * @returns {Boolean} Whether the two keys have the same version and public key data.
    */
   hasSameFingerprintAs(other) {
     return this.version === other.version && util.equalsUint8Array(this.writePublicKey(), other.writePublicKey());
@@ -226,7 +226,7 @@ class PublicKeyPacket {
 
   /**
    * Returns algorithm information
-   * @returns {Object} An object of the form {algorithm: String, bits:int, curve:String}
+   * @returns {Object} An object of the form {algorithm: String, bits:int, curve:String}.
    */
   getAlgorithmInfo() {
     const result = {};

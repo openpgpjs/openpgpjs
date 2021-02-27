@@ -26,9 +26,9 @@ import { getRandomBigInteger } from '../random';
 
 /**
  * Probabilistic random number generator
- * @param {Integer} bits Bit length of the prime
- * @param {BigInteger}      e    Optional RSA exponent to check against the prime
- * @param {Integer} k    Optional number of iterations of Miller-Rabin test
+ * @param {Integer} bits - Bit length of the prime
+ * @param {BigInteger} e - Optional RSA exponent to check against the prime
+ * @param {Integer} k - Optional number of iterations of Miller-Rabin test
  * @returns BigInteger
  * @async
  */
@@ -62,9 +62,9 @@ export async function randomProbablePrime(bits, e, k) {
 
 /**
  * Probabilistic primality testing
- * @param {BigInteger} n Number to test
- * @param {BigInteger} e Optional RSA exponent to check against the prime
- * @param {Integer}    k Optional number of iterations of Miller-Rabin test
+ * @param {BigInteger} n - Number to test
+ * @param {BigInteger} e - Optional RSA exponent to check against the prime
+ * @param {Integer} k - Optional number of iterations of Miller-Rabin test
  * @returns {boolean}
  * @async
  */
@@ -89,8 +89,8 @@ export async function isProbablePrime(n, e, k) {
 /**
  * Tests whether n is probably prime or not using Fermat's test with b = 2.
  * Fails if b^(n-1) mod n != 1.
- * @param {BigInteger} n Number to test
- * @param {BigInteger} b Optional Fermat test base
+ * @param {BigInteger} n - Number to test
+ * @param {BigInteger} b - Optional Fermat test base
  * @returns {boolean}
  */
 export async function fermat(n, b) {
@@ -222,9 +222,9 @@ const smallPrimes = [
 /**
  * Tests whether n is probably prime or not using the Miller-Rabin test.
  * See HAC Remark 4.28.
- * @param {BigInteger} n Number to test
- * @param {Integer}    k Optional number of iterations of Miller-Rabin test
- * @param {Function}   rand Optional function to generate potential witnesses
+ * @param {BigInteger} n - Number to test
+ * @param {Integer} k - Optional number of iterations of Miller-Rabin test
+ * @param {Function} rand - Optional function to generate potential witnesses
  * @returns {boolean}
  * @async
  */

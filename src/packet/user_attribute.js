@@ -44,7 +44,7 @@ class UserAttributePacket {
 
   /**
    * parsing function for a user attribute packet (tag 17).
-   * @param {Uint8Array} input payload of a tag 17 packet
+   * @param {Uint8Array} input - Payload of a tag 17 packet
    */
   read(bytes) {
     let i = 0;
@@ -59,7 +59,7 @@ class UserAttributePacket {
 
   /**
    * Creates a binary representation of the user attribute packet
-   * @returns {Uint8Array} string representation
+   * @returns {Uint8Array} String representation.
    */
   write() {
     const arr = [];
@@ -72,8 +72,8 @@ class UserAttributePacket {
 
   /**
    * Compare for equality
-   * @param  {UserAttributePacket} usrAttr
-   * @returns {Boolean}         true if equal
+   * @param {UserAttributePacket} usrAttr
+   * @returns {Boolean} True if equal.
    */
   equals(usrAttr) {
     if (!usrAttr || !(usrAttr instanceof UserAttributePacket)) {

@@ -24,7 +24,7 @@ import LocalStore from './localstore';
  */
 class KeyArray {
   /**
-   * @param {Array<Key>} keys The keys to store in this array
+   * @param {Array<Key>} keys - The keys to store in this array
    */
   constructor(keys) {
     this.keys = keys;
@@ -32,7 +32,7 @@ class KeyArray {
 
   /**
    * Searches all keys in the KeyArray matching the address or address part of the user ids
-   * @param {String} email email address to search for
+   * @param {String} email - Email address to search for
    * @returns {Array<Key>} The public keys associated with provided email address.
    */
   getForAddress(email) {
@@ -47,10 +47,10 @@ class KeyArray {
 
   /**
    * Searches the KeyArray for a key having the specified key id
-   * @param {String} keyId provided as string of lowercase hex number
+   * @param {String} keyId - Provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @param  {Boolean} deep if true search also in subkeys
-   * @returns {Key|null} key found or null
+   * @param {Boolean} deep - if true search also in subkeys
+   * @returns {Key|null} Key found or null.
    */
   getForId(keyId, deep) {
     for (let i = 0; i < this.keys.length; i++) {
@@ -70,8 +70,8 @@ class KeyArray {
 
   /**
    * Imports a key from an ascii armored message
-   * @param {String} armored message to read the keys/key from
-   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {String} armored - Message to read the keys/key from
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @async
    */
   async importKey(armored, config = defaultConfig) {
@@ -91,8 +91,8 @@ class KeyArray {
 
   /**
    * Add key to KeyArray
-   * @param {Key} key The key that will be added to the keyring
-   * @returns {Number} The new length of the KeyArray
+   * @param {Key} key - The key that will be added to the keyring
+   * @returns {Number} The new length of the KeyArray.
    */
   push(key) {
     return this.keys.push(key);
@@ -100,9 +100,9 @@ class KeyArray {
 
   /**
    * Removes a key with the specified keyid from the keyring
-   * @param {String} keyId provided as string of lowercase hex number
+   * @param {String} keyId - Provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @returns {Key|null} The key object which has been removed or null
+   * @returns {Key|null} The key object which has been removed or null.
    */
   removeForId(keyId) {
     for (let i = 0; i < this.keys.length; i++) {
@@ -118,7 +118,7 @@ class Keyring {
   /**
    * Initialization routine for the keyring.
    * @param {keyring/localstore} [storeHandler] class implementing loadPublic(), loadPrivate(), storePublic(), and storePrivate() methods
-   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(storeHandler, config = defaultConfig) {
     this.storeHandler = storeHandler || new LocalStore(undefined, config);
@@ -154,10 +154,10 @@ class Keyring {
 
   /**
    * Searches the keyring for keys having the specified key id
-   * @param {String} keyId provided as string of lowercase hex number
+   * @param {String} keyId - Provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @param  {Boolean} deep if true search also in subkeys
-   * @returns {Array<Key>|null} keys found or null
+   * @param {Boolean} deep - if true search also in subkeys
+   * @returns {Array<Key>|null} Keys found or null.
    */
   getKeysForId(keyId, deep) {
     let result = [];
@@ -168,9 +168,9 @@ class Keyring {
 
   /**
    * Removes keys having the specified key id from the keyring
-   * @param {String} keyId provided as string of lowercase hex number
+   * @param {String} keyId - Provided as string of lowercase hex number
    * withouth 0x prefix (can be 16-character key ID or fingerprint)
-   * @returns {Array<Key>|null} keys found or null
+   * @returns {Array<Key>|null} Keys found or null.
    */
   removeKeysForId(keyId) {
     let result = [];
@@ -181,7 +181,7 @@ class Keyring {
 
   /**
    * Get all public and private keys
-   * @returns {Array<Key>} all keys
+   * @returns {Array<Key>} All keys.
    */
   getAllKeys() {
     return this.publicKeys.keys.concat(this.privateKeys.keys);
@@ -191,9 +191,9 @@ class Keyring {
 /**
  * Checks a key to see if it matches the specified email address
  * @private
- * @param {String} email email address to search for
- * @param {Key} key The key to be checked.
- * @returns {Boolean} True if the email address is defined in the specified key
+ * @param {String} email - Email address to search for
+ * @param {Key} key - The key to be checked.
+ * @returns {Boolean} True if the email address is defined in the specified key.
  */
 function emailCheck(email, key) {
   email = email.toLowerCase();
@@ -213,10 +213,10 @@ function emailCheck(email, key) {
 /**
  * Checks a key to see if it matches the specified keyid
  * @private
- * @param {String} keyId provided as string of lowercase hex number
+ * @param {String} keyId - Provided as string of lowercase hex number
  * withouth 0x prefix (can be 16-character key ID or fingerprint)
- * @param {Key|SubKey} key The key to be checked
- * @returns {Boolean} True if key has the specified keyid
+ * @param {Key|SubKey} key - The key to be checked
+ * @returns {Boolean} True if key has the specified keyid.
  * @private
  */
 function keyIdCheck(keyId, key) {

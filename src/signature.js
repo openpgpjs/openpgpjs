@@ -25,7 +25,7 @@ import defaultConfig from './config';
  */
 export class Signature {
   /**
-   * @param  {PacketList} packetlist The signature packets
+   * @param {PacketList} packetlist - The signature packets
    */
   constructor(packetlist) {
     this.packets = packetlist || new PacketList();
@@ -33,7 +33,7 @@ export class Signature {
 
   /**
    * Returns binary encoded signature
-   * @returns {ReadableStream<Uint8Array>} binary signature
+   * @returns {ReadableStream<Uint8Array>} Binary signature.
    */
   write() {
     return this.packets.write();
@@ -41,8 +41,8 @@ export class Signature {
 
   /**
    * Returns ASCII armored text of signature
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {ReadableStream<String>} ASCII armor
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
     return armor(enums.armor.signature, this.write(), undefined, undefined, undefined, config);
@@ -51,10 +51,11 @@ export class Signature {
 
 /**
  * reads an (optionally armored) OpenPGP signature and returns a signature object
- * @param {String | ReadableStream<String>} armoredSignature armored signature to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} binarySignature binary signature to be parsed
- * @param {Object} config (optional) custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Signature} new signature object
+ * @param {Object} options
+ * @param {String | ReadableStream<String>} [options.armoredSignature] - Armored signature to be parsed
+ * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binarySignature] - Binary signature to be parsed
+ * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
+ * @returns {Signature} New signature object.
  * @async
  * @static
  */

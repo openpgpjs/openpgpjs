@@ -24,7 +24,7 @@ import defaultConfig from '../config';
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.
  * @param {String} text - ascii armored text
- * @returns {Integer} 0 = MESSAGE PART n of m
+ * @returns {Integer} 0 = MESSAGE PART n of m.
  *         1 = MESSAGE PART n
  *         2 = SIGNED MESSAGE
  *         3 = PGP MESSAGE
@@ -88,8 +88,8 @@ function getType(text) {
  * packet block.
  * @author  Alex
  * @version 2011-12-16
- * @param {String} [customComment] - additional comment to add to the armored string
- * @returns {String} The header information
+ * @param {String} [customComment] - Additional comment to add to the armored string
+ * @returns {String} The header information.
  * @private
  */
 function addheader(customComment, config) {
@@ -110,8 +110,8 @@ function addheader(customComment, config) {
 
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
- * @param {String | ReadableStream<String>} data Data to create a CRC-24 checksum for
- * @returns {String | ReadableStream<String>} Base64 encoded checksum
+ * @param {String | ReadableStream<String>} data - Data to create a CRC-24 checksum for
+ * @returns {String | ReadableStream<String>} Base64 encoded checksum.
  * @private
  */
 function getCheckSum(data) {
@@ -158,8 +158,8 @@ const isLittleEndian = (function() {
 
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
- * @param {String | ReadableStream<String>} input Data to create a CRC-24 checksum for
- * @returns {Uint8Array | ReadableStream<Uint8Array>} The CRC-24 checksum
+ * @param {String | ReadableStream<String>} input - Data to create a CRC-24 checksum for
+ * @returns {Uint8Array | ReadableStream<Uint8Array>} The CRC-24 checksum.
  * @private
  */
 function createcrc24(input) {
@@ -185,7 +185,7 @@ function createcrc24(input) {
  * Verify armored headers. RFC4880, section 6.3: "OpenPGP should consider improperly formatted
  * Armor Headers to be corruption of the ASCII Armor."
  * @private
- * @param  {Array<String>} headers Armor headers
+ * @param {Array<String>} headers - Armor headers
  */
 function verifyHeaders(headers) {
   for (let i = 0; i < headers.length; i++) {
@@ -200,8 +200,8 @@ function verifyHeaders(headers) {
 
 /**
  * Splits a message into two parts, the body and the checksum. This is an internal function
- * @param {String} text OpenPGP armored message part
- * @returns {Object} An object with attribute "body" containing the body
+ * @param {String} text - OpenPGP armored message part
+ * @returns {Object} An object with attribute "body" containing the body.
  * and an attribute "checksum" containing the checksum.
  * @private
  */
@@ -222,7 +222,7 @@ function splitChecksum(text) {
 /**
  * Dearmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
- * @param {String} input OpenPGP armored message
+ * @param {String} input - OpenPGP armored message
  * @returns {Promise<Object>} An object with attribute "text" containing the message text,
  * an attribute "data" containing a stream of bytes and "type" for the ASCII armor type
  * @async
@@ -346,12 +346,12 @@ export function unarmor(input, config = defaultConfig) {
 
 /**
  * Armor an OpenPGP binary packet block
- * @param {module:enums.armor} messageType type of the message
- * @param {Uint8Array | ReadableStream<Uint8Array>} body the message body to armor
+ * @param {module:enums.armor} messageType - Type of the message
+ * @param {Uint8Array | ReadableStream<Uint8Array>} body - The message body to armor
  * @param {Integer} [partIndex]
  * @param {Integer} [partTotal]
- * @param {String} [customComment] - additional comment to add to the armored string
- * @returns {String | ReadableStream<String>} Armored text
+ * @param {String} [customComment] - Additional comment to add to the armored string
+ * @returns {String | ReadableStream<String>} Armored text.
  * @static
  */
 export function armor(messageType, body, partIndex, partTotal, customComment, config = defaultConfig) {

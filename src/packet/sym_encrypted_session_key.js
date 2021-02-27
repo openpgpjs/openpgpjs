@@ -36,7 +36,7 @@ import util from '../util';
  */
 class SymEncryptedSessionKeyPacket {
   /**
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(config = defaultConfig) {
     this.tag = enums.packet.symEncryptedSessionKey;
@@ -53,7 +53,7 @@ class SymEncryptedSessionKeyPacket {
   /**
    * Parsing function for a symmetric encrypted session key packet (tag 3).
    *
-   * @param {Uint8Array} bytes Payload of a tag 3 packet
+   * @param {Uint8Array} bytes - Payload of a tag 3 packet
    */
   read(bytes) {
     let offset = 0;
@@ -94,7 +94,7 @@ class SymEncryptedSessionKeyPacket {
   /**
    * Create a binary representation of a tag 3 packet
    *
-   * @returns {Uint8Array} The Uint8Array representation
+   * @returns {Uint8Array} The Uint8Array representation.
   */
   write() {
     const algo = this.encrypted === null ?
@@ -118,7 +118,7 @@ class SymEncryptedSessionKeyPacket {
 
   /**
    * Decrypts the session key
-   * @param {String} passphrase The passphrase in string form
+   * @param {String} passphrase - The passphrase in string form
    * @throws {Error} if decryption was not successful
    * @async
    */
@@ -147,8 +147,8 @@ class SymEncryptedSessionKeyPacket {
 
   /**
    * Encrypts the session key
-   * @param {String} passphrase The passphrase in string form
-   * @param {Object} config (optional) full configuration, defaults to openpgp.config
+   * @param {String} passphrase - The passphrase in string form
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */

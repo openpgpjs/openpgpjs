@@ -38,13 +38,13 @@ class MarkerPacket {
   /**
    * Parsing function for a literal data packet (tag 10).
    *
-   * @param {String} input Payload of a tag 10 packet
+   * @param {String} input - Payload of a tag 10 packet
    * @param {Integer} position
    *            Position to start reading from the input string
    * @param {Integer} len
    *            Length of the packet or the remaining length of
    *            input at position
-   * @returns {MarkerPacket} Object representation
+   * @returns {MarkerPacket} Object representation.
    */
   read(bytes) {
     if (bytes[0] === 0x50 && // P

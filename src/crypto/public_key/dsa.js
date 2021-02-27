@@ -135,12 +135,12 @@ export async function verify(hash_algo, r, s, hashed, g, p, q, y) {
 
 /**
  * Validate DSA parameters
- * @param {Uint8Array}         p DSA prime
- * @param {Uint8Array}         q DSA group order
- * @param {Uint8Array}         g DSA sub-group generator
- * @param {Uint8Array}         y DSA public key
- * @param {Uint8Array}         x DSA private key
- * @returns {Promise<Boolean>} whether params are valid
+ * @param {Uint8Array} p - DSA prime
+ * @param {Uint8Array} q - DSA group order
+ * @param {Uint8Array} g - DSA sub-group generator
+ * @param {Uint8Array} y - DSA public key
+ * @param {Uint8Array} x - DSA private key
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(p, q, g, y, x) {

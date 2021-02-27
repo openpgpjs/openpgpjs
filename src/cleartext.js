@@ -29,8 +29,8 @@ import defaultConfig from './config';
  */
 export class CleartextMessage {
   /**
-   * @param  {String}    text       The cleartext of the signed message
-   * @param  {Signature} signature  The detached signature or an empty signature for unsigned messages
+   * @param {String} text - The cleartext of the signed message
+   * @param {Signature} signature - The detached signature or an empty signature for unsigned messages
    */
   constructor(text, signature) {
     // normalize EOL to canonical form <CR><LF>
@@ -43,7 +43,7 @@ export class CleartextMessage {
 
   /**
    * Returns the key IDs of the keys that signed the cleartext message
-   * @returns {Array<module:type/keyid~Keyid>} array of keyid objects
+   * @returns {Array<module:type/keyid~Keyid>} Array of keyid objects.
    */
   getSigningKeyIds() {
     const keyIds = [];
@@ -56,13 +56,13 @@ export class CleartextMessage {
 
   /**
    * Sign the cleartext message
-   * @param  {Array<Key>} privateKeys          private keys with decrypted secret key data for signing
-   * @param  {Signature} [signature] - any existing detached signature
-   * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
-   * @param  {Date} [date] - The creation time of the signature that should be created
-   * @param  {Array} [userIds] - user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param  {Object} [config] - full configuration, defaults to openpgp.config
-   * @returns {Promise<CleartextMessage>}      new cleartext message with signed content
+   * @param {Array<Key>} privateKeys - private keys with decrypted secret key data for signing
+   * @param {Signature} [signature] - Any existing detached signature
+   * @param {Array<module:type/keyid~Keyid>} [signingKeyIds] - Array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+   * @param {Date} [date] - The creation time of the signature that should be created
+   * @param {Array} [userIds] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
    * @async
    */
   async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
@@ -71,13 +71,13 @@ export class CleartextMessage {
 
   /**
    * Sign the cleartext message
-   * @param  {Array<Key>} privateKeys          private keys with decrypted secret key data for signing
-   * @param  {Signature} [signature] - any existing detached signature
-   * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
-   * @param  {Date} [date] - The creation time of the signature that should be created
-   * @param  {Array} [userIds] - user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param  {Object} [config] - full configuration, defaults to openpgp.config
-   * @returns {Promise<Signature>}             new detached signature of message content
+   * @param {Array<Key>} privateKeys - private keys with decrypted secret key data for signing
+   * @param {Signature} [signature] - Any existing detached signature
+   * @param {Array<module:type/keyid~Keyid>} [signingKeyIds] - Array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+   * @param {Date} [date] - The creation time of the signature that should be created
+   * @param {Array} [userIds] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Signature>} New detached signature of message content.
    * @async
    */
   async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
@@ -89,10 +89,10 @@ export class CleartextMessage {
 
   /**
    * Verify signatures of cleartext signed message
-   * @param {Array<Key>} keys array of keys to verify signatures
-   * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
-   * @param {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+   * @param {Array<Key>} keys - Array of keys to verify signatures
+   * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} List of signer's keyid and validity of signature.
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {
@@ -101,10 +101,10 @@ export class CleartextMessage {
 
   /**
    * Verify signatures of cleartext signed message
-   * @param {Array<Key>} keys array of keys to verify signatures
-   * @param {Date} date (optional) Verify the signature against the given date, i.e. check signature creation time < date < expiration time
-   * @param {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} list of signer's keyid and validity of signature
+   * @param {Array<Key>} keys - Array of keys to verify signatures
+   * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>>} List of signer's keyid and validity of signature.
    * @async
    */
   verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
@@ -117,7 +117,7 @@ export class CleartextMessage {
 
   /**
    * Get cleartext
-   * @returns {String} cleartext of message
+   * @returns {String} Cleartext of message.
    */
   getText() {
     // normalize end of line to \n
@@ -126,8 +126,8 @@ export class CleartextMessage {
 
   /**
    * Returns ASCII armored text of cleartext signed message
-   * @param  {Object} config (optional) full configuration, defaults to openpgp.config
-   * @returns {String | ReadableStream<String>} ASCII armor
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {String | ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
     let hashes = this.signature.packets.map(function(packet) {
@@ -156,9 +156,9 @@ export class CleartextMessage {
 /**
  * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {Object} options
- * @param {String | ReadableStream<String>} options.cleartextMessage - text to be parsed
- * @param {Object} [options.config] - custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {CleartextMessage} new cleartext message object
+ * @param {String | ReadableStream<String>} options.cleartextMessage - Text to be parsed
+ * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
+ * @returns {CleartextMessage} New cleartext message object.
  * @async
  * @static
  */
@@ -180,8 +180,8 @@ export async function readCleartextMessage({ cleartextMessage, config }) {
 
 /**
  * Compare hash algorithm specified in the armor header with signatures
- * @param  {Array<String>} headers    Armor headers
- * @param  {PacketList} packetlist    The packetlist with signature packets
+ * @param {Array<String>} headers - Armor headers
+ * @param {PacketList} packetlist - The packetlist with signature packets
  * @private
  */
 function verifyHeaders(headers, packetlist) {

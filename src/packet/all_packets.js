@@ -25,8 +25,8 @@ export { default as TrustPacket } from './trust.js';
 /**
  * Allocate a new packet
  * @function newPacketFromTag
- * @param {String} tag property name from {@link module:enums.packet}
- * @returns {Object} new packet object with type based on tag
+ * @param {String} tag - Property name from {@link module:enums.packet}
+ * @returns {Object} New packet object with type based on tag.
  */
 export function newPacketFromTag(tag, allowedPackets) {
   const className = packetClassFromTagName(tag);
@@ -38,7 +38,7 @@ export function newPacketFromTag(tag, allowedPackets) {
 
 /**
  * Convert tag name to class name
- * @param {String} tag property name from {@link module:enums.packet}
+ * @param {String} tag - Property name from {@link module:enums.packet}
  * @returns {String}
  * @private
  */

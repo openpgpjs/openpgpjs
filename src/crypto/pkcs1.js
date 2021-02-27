@@ -48,8 +48,8 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
 /**
  * Create padding with secure random data
  * @private
- * @param  {Integer}      length Length of the padding in bytes
- * @returns {Uint8Array}  Random padding
+ * @param {Integer} length - Length of the padding in bytes
+ * @returns {Uint8Array} Random padding.
  * @async
  */
 async function getPkcs1Padding(length) {
@@ -69,9 +69,9 @@ async function getPkcs1Padding(length) {
 /**
  * Create a EME-PKCS1-v1_5 padded message
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1}
- * @param {Uint8Array} message message to be encoded
- * @param {Integer} keyLength the length in octets of the key modulus
- * @returns {Promise<Uint8Array>} EME-PKCS1 padded message
+ * @param {Uint8Array} message - Message to be encoded
+ * @param {Integer} keyLength - The length in octets of the key modulus
+ * @returns {Promise<Uint8Array>} EME-PKCS1 padded message.
  * @async
  */
 export async function emeEncode(message, keyLength) {
@@ -97,8 +97,8 @@ export async function emeEncode(message, keyLength) {
 /**
  * Decode a EME-PKCS1-v1_5 padded message
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2}
- * @param {Uint8Array} encoded encoded message bytes
- * @returns {Uint8Array} message
+ * @param {Uint8Array} encoded - Encoded message bytes
+ * @returns {Uint8Array} Message.
  */
 export function emeDecode(encoded) {
   let i = 2;
@@ -116,10 +116,10 @@ export function emeDecode(encoded) {
 /**
  * Create a EMSA-PKCS1-v1_5 padded message
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.3|RFC 4880 13.1.3}
- * @param {Integer} algo Hash algorithm type used
- * @param {Uint8Array} hashed message to be encoded
- * @param {Integer} emLen intended length in octets of the encoded message
- * @returns {Uint8Array} encoded message
+ * @param {Integer} algo - Hash algorithm type used
+ * @param {Uint8Array} hashed - Message to be encoded
+ * @param {Integer} emLen - Intended length in octets of the encoded message
+ * @returns {Uint8Array} Encoded message.
  */
 export async function emsaEncode(algo, hashed, emLen) {
   let i;

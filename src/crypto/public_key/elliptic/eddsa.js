@@ -29,12 +29,12 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 
 /**
  * Sign a message using the provided key
- * @param  {module:type/oid}   oid          Elliptic curve object identifier
- * @param  {module:enums.hash} hash_algo    Hash algorithm used to sign
- * @param  {Uint8Array}        message      Message to sign
- * @param  {Uint8Array}        publicKey    Public key
- * @param  {Uint8Array}        privateKey   Private key used to sign the message
- * @param  {Uint8Array}        hashed       The hashed message
+ * @param {module:type/oid} oid - Elliptic curve object identifier
+ * @param {module:enums.hash} hash_algo - Hash algorithm used to sign
+ * @param {Uint8Array} message - Message to sign
+ * @param {Uint8Array} publicKey - Public key
+ * @param {Uint8Array} privateKey - Private key used to sign the message
+ * @param {Uint8Array} hashed - The hashed message
  * @returns {{r: Uint8Array,
  *            s: Uint8Array}}               Signature of the message
  * @async
@@ -51,13 +51,13 @@ export async function sign(oid, hash_algo, message, publicKey, privateKey, hashe
 
 /**
  * Verifies if a signature is valid for a message
- * @param  {module:type/oid}   oid       Elliptic curve object identifier
- * @param  {module:enums.hash} hash_algo Hash algorithm used in the signature
+ * @param {module:type/oid} oid - Elliptic curve object identifier
+ * @param {module:enums.hash} hash_algo - Hash algorithm used in the signature
  * @param  {{r: Uint8Array,
              s: Uint8Array}}   signature Signature to verify the message
- * @param  {Uint8Array}        m         Message to verify
- * @param  {Uint8Array}        publicKey Public key used to verify the message
- * @param  {Uint8Array}        hashed    The hashed message
+ * @param {Uint8Array} m - Message to verify
+ * @param {Uint8Array} publicKey - Public key used to verify the message
+ * @param {Uint8Array} hashed - The hashed message
  * @returns {Boolean}
  * @async
  */
@@ -67,10 +67,10 @@ export async function verify(oid, hash_algo, { r, s }, m, publicKey, hashed) {
 }
 /**
  * Validate EdDSA parameters
- * @param {module:type/oid}    oid Elliptic curve object identifier
- * @param {Uint8Array}         Q   EdDSA public point
- * @param {Uint8Array}         k   EdDSA secret seed
- * @returns {Promise<Boolean>} whether params are valid
+ * @param {module:type/oid} oid - Elliptic curve object identifier
+ * @param {Uint8Array} Q - EdDSA public point
+ * @param {Uint8Array} k - EdDSA secret seed
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(oid, Q, k) {
