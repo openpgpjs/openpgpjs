@@ -26,8 +26,8 @@ import defaultConfig from '../config';
  */
 class SecretSubkeyPacket extends SecretKeyPacket {
   /**
-   * @param {Date} date      (optional) creation date
-   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   * @param {Date} [date] - creation date
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
     super(date, config);

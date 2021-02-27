@@ -57,11 +57,11 @@ export class CleartextMessage {
   /**
    * Sign the cleartext message
    * @param  {Array<Key>} privateKeys          private keys with decrypted secret key data for signing
-   * @param  {Signature} signature             (optional) any existing detached signature
+   * @param  {Signature} [signature] - any existing detached signature
    * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
-   * @param  {Date} date                       (optional) The creation time of the signature that should be created
-   * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param  {Object} config                   (optional) full configuration, defaults to openpgp.config
+   * @param  {Date} [date] - The creation time of the signature that should be created
+   * @param  {Array} [userIds] - user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<CleartextMessage>}      new cleartext message with signed content
    * @async
    */
@@ -72,11 +72,11 @@ export class CleartextMessage {
   /**
    * Sign the cleartext message
    * @param  {Array<Key>} privateKeys          private keys with decrypted secret key data for signing
-   * @param  {Signature} signature             (optional) any existing detached signature
+   * @param  {Signature} [signature] - any existing detached signature
    * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
-   * @param  {Date} date                       (optional) The creation time of the signature that should be created
-   * @param  {Array} userIds                   (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param  {Object} config                   (optional) full configuration, defaults to openpgp.config
+   * @param  {Date} [date] - The creation time of the signature that should be created
+   * @param  {Array} [userIds] - user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Signature>}             new detached signature of message content
    * @async
    */
@@ -155,8 +155,9 @@ export class CleartextMessage {
 
 /**
  * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
- * @param {String | ReadableStream<String>} cleartextMessage text to be parsed
- * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
+ * @param {Object} options
+ * @param {String | ReadableStream<String>} options.cleartextMessage - text to be parsed
+ * @param {Object} [options.config] - custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {CleartextMessage} new cleartext message object
  * @async
  * @static

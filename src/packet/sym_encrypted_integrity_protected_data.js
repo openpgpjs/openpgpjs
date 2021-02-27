@@ -79,7 +79,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param  {Uint8Array} key               The key of cipher blocksize length to be used
    * @param  {Boolean} streaming            Whether to set this.encrypted to a stream
-   * @param  {Object} config                (optional) full configuration, defaults to openpgp.config
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>}
    * @async
    */
@@ -102,7 +102,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @param  {String} sessionKeyAlgorithm   The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param  {Uint8Array} key               The key of cipher blocksize length to be used
    * @param  {Boolean} streaming            Whether to read this.encrypted as a stream
-   * @param  {Object} config               (optional) full configuration, defaults to openpgp.config
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>}
    * @async
    */

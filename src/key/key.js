@@ -881,7 +881,7 @@ class Key {
    * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
-   * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in openpgp.config
+   * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in [config]{@link module:config}
    * @returns {Promise<Key>}
    * @async
    */

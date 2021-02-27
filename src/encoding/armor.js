@@ -23,7 +23,7 @@ import defaultConfig from '../config';
 
 /**
  * Finds out which Ascii Armoring type is used. Throws error if unknown type.
- * @param {String} text [String] ascii armored text
+ * @param {String} text - ascii armored text
  * @returns {Integer} 0 = MESSAGE PART n of m
  *         1 = MESSAGE PART n
  *         2 = SIGNED MESSAGE
@@ -88,7 +88,7 @@ function getType(text) {
  * packet block.
  * @author  Alex
  * @version 2011-12-16
- * @param {String} customComment (optional) additional comment to add to the armored string
+ * @param {String} [customComment] - additional comment to add to the armored string
  * @returns {String} The header information
  * @private
  */
@@ -158,7 +158,7 @@ const isLittleEndian = (function() {
 
 /**
  * Internal function to calculate a CRC-24 checksum over a given string (data)
- * @param {String | ReadableStream<String>} data Data to create a CRC-24 checksum for
+ * @param {String | ReadableStream<String>} input Data to create a CRC-24 checksum for
  * @returns {Uint8Array | ReadableStream<Uint8Array>} The CRC-24 checksum
  * @private
  */
@@ -220,9 +220,9 @@ function splitChecksum(text) {
 }
 
 /**
- * DeArmor an OpenPGP armored message; verify the checksum and return
+ * Dearmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
- * @param {String} text OpenPGP armored message
+ * @param {String} input OpenPGP armored message
  * @returns {Promise<Object>} An object with attribute "text" containing the message text,
  * an attribute "data" containing a stream of bytes and "type" for the ASCII armor type
  * @async
@@ -346,38 +346,38 @@ export function unarmor(input, config = defaultConfig) {
 
 /**
  * Armor an OpenPGP binary packet block
- * @param {Integer} messagetype type of the message
- * @param body
- * @param {Integer} partindex
- * @param {Integer} parttotal
- * @param {String} customComment (optional) additional comment to add to the armored string
+ * @param {module:enums.armor} messageType type of the message
+ * @param {Uint8Array | ReadableStream<Uint8Array>} body the message body to armor
+ * @param {Integer} [partIndex]
+ * @param {Integer} [partTotal]
+ * @param {String} [customComment] - additional comment to add to the armored string
  * @returns {String | ReadableStream<String>} Armored text
  * @static
  */
-export function armor(messagetype, body, partindex, parttotal, customComment, config = defaultConfig) {
+export function armor(messageType, body, partIndex, partTotal, customComment, config = defaultConfig) {
   let text;
   let hash;
-  if (messagetype === enums.armor.signed) {
+  if (messageType === enums.armor.signed) {
     text = body.text;
     hash = body.hash;
     body = body.data;
   }
   const bodyClone = stream.passiveClone(body);
   const result = [];
-  switch (messagetype) {
+  switch (messageType) {
     case enums.armor.multipartSection:
-      result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\n");
+      result.push("-----BEGIN PGP MESSAGE, PART " + partIndex + "/" + partTotal + "-----\n");
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
-      result.push("-----END PGP MESSAGE, PART " + partindex + "/" + parttotal + "-----\n");
+      result.push("-----END PGP MESSAGE, PART " + partIndex + "/" + partTotal + "-----\n");
       break;
     case enums.armor.multipartLast:
-      result.push("-----BEGIN PGP MESSAGE, PART " + partindex + "-----\n");
+      result.push("-----BEGIN PGP MESSAGE, PART " + partIndex + "-----\n");
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
       result.push("=", getCheckSum(bodyClone));
-      result.push("-----END PGP MESSAGE, PART " + partindex + "-----\n");
+      result.push("-----END PGP MESSAGE, PART " + partIndex + "-----\n");
       break;
     case enums.armor.signed:
       result.push("\n-----BEGIN PGP SIGNED MESSAGE-----\n");

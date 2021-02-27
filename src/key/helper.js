@@ -203,11 +203,11 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
  * @param  {Object}                          dataToSign Contains packets to be signed
  * @param  {SecretKeyPacket|
  *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
- * @param  {Object} signatureProperties      (optional) properties to write on the signature packet before signing
- * @param  {Date} date                       (optional) override the creationtime of the signature
- * @param  {Object} userId                   (optional) user ID
- * @param  {Object} detached                 (optional) whether to create a detached signature packet
- * @param  {Boolean} streaming               (optional) whether to process data as a stream
+ * @param  {Object} [signatureProperties] - properties to write on the signature packet before signing
+ * @param  {Date} [date] - override the creationtime of the signature
+ * @param  {Object} [userId] - user ID
+ * @param  {Object} [detached] - whether to create a detached signature packet
+ * @param  {Boolean} [streaming] - whether to process data as a stream
  * @param  {Object} config                   full configuration
  * @returns {Promise<SignaturePacket>}       signature packet
  */

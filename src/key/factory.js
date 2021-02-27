@@ -244,9 +244,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
 /**
  * Reads an (optionally armored) OpenPGP key and returns a key object
- * @param {String} armoredKey armored key to be parsed
- * @param {Uint8Array} binaryKey binary key to be parsed
- * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
+ * @param {Object} options
+ * @param {String | ReadableStream<String>} [options.armoredKey] - armored key to be parsed
+ * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKey] - binary key to be parsed
+ * @param {Object} [options.config] - custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Key>} key object
  * @async
  * @static
@@ -273,9 +274,10 @@ export async function readKey({ armoredKey, binaryKey, config }) {
 
 /**
  * Reads an (optionally armored) OpenPGP key block and returns a list of key objects
- * @param {String | ReadableStream<String>} armoredKeys armored keys to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} binaryKeys binary keys to be parsed
- * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
+ * @param {Object} options
+ * @param {String | ReadableStream<String>} [options.armoredKeys] - armored keys to be parsed
+ * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKeys] - binary keys to be parsed
+ * @param {Object} [options.config] - custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Array<Key>>} key objects
  * @async
  * @static

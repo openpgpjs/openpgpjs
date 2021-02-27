@@ -97,7 +97,7 @@ class AEADEncryptedDataPacket {
    * @param  {String} sessionKeyAlgorithm   The session key's cipher algorithm e.g. 'aes128'
    * @param  {Uint8Array} key               The session key used to encrypt the payload
    * @param  {Boolean} streaming            Whether the top-level function will return a stream
-   * @param  {Object} config                (optional) full configuration, defaults to openpgp.config
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */

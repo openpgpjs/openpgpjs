@@ -89,7 +89,7 @@ class SignaturePacket {
   /**
    * parsing function for a signature packet (tag 2).
    * @param {String} bytes payload of a tag 2 packet
-   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {SignaturePacket} object representation
    */
   read(bytes, config = defaultConfig) {

@@ -53,7 +53,7 @@ export class Signature {
  * reads an (optionally armored) OpenPGP signature and returns a signature object
  * @param {String | ReadableStream<String>} armoredSignature armored signature to be parsed
  * @param {Uint8Array | ReadableStream<Uint8Array>} binarySignature binary signature to be parsed
- * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
+ * @param {Object} config (optional) custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Signature} new signature object
  * @async
  * @static

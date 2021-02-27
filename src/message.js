@@ -88,11 +88,11 @@ export class Message {
 
   /**
    * Decrypt the message. Either a private key, a session key, or a password must be specified.
-   * @param  {Array<Key>} privateKeys     (optional) private keys with decrypted secret data
-   * @param  {Array<String>} passwords    (optional) passwords used to decrypt
-   * @param  {Array<Object>} sessionKeys  (optional) session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
-   * @param  {Boolean} streaming          (optional) whether to process data as a stream
-   * @param  {Object} config              (optional) full configuration, defaults to openpgp.config
+   * @param  {Array<Key>} [privateKeys] - private keys with decrypted secret data
+   * @param  {Array<String>} [passwords] - passwords used to decrypt
+   * @param  {Array<Object>} [sessionKeys] - session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
+   * @param  {Boolean} [streaming] - whether to process data as a stream
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}             new message with decrypted content
    * @async
    */
@@ -140,9 +140,9 @@ export class Message {
 
   /**
    * Decrypt encrypted session keys either with private keys or passwords.
-   * @param  {Array<Key>} privateKeys    (optional) private keys with decrypted secret data
-   * @param  {Array<String>} passwords   (optional) passwords used to decrypt
-   * @param  {Object} config             (optional) full configuration, defaults to openpgp.config
+   * @param  {Array<Key>} [privateKeys] - private keys with decrypted secret data
+   * @param  {Array<String>} [passwords] - passwords used to decrypt
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{ data:      Uint8Array,
                                algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
   * @async
@@ -275,10 +275,10 @@ export class Message {
 
   /**
    * Generate a new session key object, taking the algorithm preferences of the passed public keys into account, if any.
-   * @param  {Array<Key>} keys           (optional) public key(s) to select algorithm preferences for
-   * @param  {Date} date                 (optional) date to select algorithm preferences at
-   * @param  {Array<Object>} userIds     (optional) user IDs to select algorithm preferences for
-   * @param  {Object} config             (optional) full configuration, defaults to openpgp.config
+   * @param  {Array<Key>} [keys] - public key(s) to select algorithm preferences for
+   * @param  {Date} [date] - date to select algorithm preferences at
+   * @param  {Array<Object>} [userIds] - user IDs to select algorithm preferences for
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<{ data: Uint8Array, algorithm: String }>} object with session key data and algorithm
    * @async
    */
@@ -293,15 +293,15 @@ export class Message {
 
   /**
    * Encrypt the message either with public keys, passwords, or both at once.
-   * @param  {Array<Key>} keys                            (optional) public key(s) for message encryption
-   * @param  {Array<String>} passwords                    (optional) password(s) for message encryption
-   * @param  {Object} sessionKey                          (optional) session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
-   * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
-   * @param  {Array<module:type/keyid~Keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
-   * @param  {Date} date                                  (optional) override the creation date of the literal package
-   * @param  {Array<Object>} userIds                      (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
-   * @param  {Boolean} streaming                          (optional) whether to process data as a stream
-   * @param  {Object} config                              (optional) full configuration, defaults to openpgp.config
+   * @param  {Array<Key>} [keys] - public key(s) for message encryption
+   * @param  {Array<String>} [passwords] - password(s) for message encryption
+   * @param  {Object} [sessionKey] - session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
+   * @param  {Boolean} [wildcard] - use a key ID of 0 instead of the public key IDs
+   * @param  {Array<module:type/keyid~Keyid>} [encryptionKeyIds] - array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
+   * @param  {Date} [date] - override the creation date of the literal package
+   * @param  {Array<Object>} [userIds] - user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+   * @param  {Boolean} [streaming] - whether to process data as a stream
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}                   new message with encrypted content
    * @async
    */
@@ -344,14 +344,14 @@ export class Message {
    * Encrypt a session key either with public keys, passwords, or both at once.
    * @param  {Uint8Array} sessionKey                      session key for encryption
    * @param  {String} algorithm                           session key algorithm
-   * @param  {String} aeadAlgorithm                       (optional) aead algorithm, e.g. 'eax' or 'ocb'
-   * @param  {Array<Key>} publicKeys                      (optional) public key(s) for message encryption
-   * @param  {Array<String>} passwords                    (optional) for message encryption
-   * @param  {Boolean} wildcard                           (optional) use a key ID of 0 instead of the public key IDs
-   * @param  {Array<module:type/keyid~Keyid>} encryptionKeyIds  (optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
-   * @param  {Date} date                                  (optional) override the date
-   * @param  {Array} userIds                              (optional) user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
-   * @param  {Object} config                              (optional) full configuration, defaults to openpgp.config
+   * @param  {String} [aeadAlgorithm] - aead algorithm, e.g. 'eax' or 'ocb'
+   * @param  {Array<Key>} [publicKeys] - public key(s) for message encryption
+   * @param  {Array<String>} [passwords] - for message encryption
+   * @param  {Boolean} [wildcard] - use a key ID of 0 instead of the public key IDs
+   * @param  {Array<module:type/keyid~Keyid>} [encryptionKeyIds] - array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]
+   * @param  {Date} [date] - override the date
+   * @param  {Array} [userIds] - user IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}                          new message with encrypted content
    * @async
    */
@@ -414,12 +414,12 @@ export class Message {
   /**
    * Sign the message (the literal data packet of the message)
    * @param  {Array<Key>} privateKeys                 private keys with decrypted secret key data for signing
-   * @param  {Signature} signature                    (optional) any existing detached signature to add to the message
+   * @param  {Signature} [signature] - any existing detached signature to add to the message
    * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
-   * @param  {Date} date                              (optional) override the creation time of the signature
-   * @param  {Array} userIds                          (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param  {Boolean} streaming                      (optional) whether to process data as a stream
-   * @param  {Object} config                          (optional) full configuration, defaults to openpgp.config
+   * @param  {Date} [date] - override the creation time of the signature
+   * @param  {Array} [userIds] - user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Boolean} [streaming] - whether to process data as a stream
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Message>}                      new message with signed content
    * @async
    */
@@ -500,12 +500,12 @@ export class Message {
   /**
    * Create a detached signature for the message (the literal data packet of the message)
    * @param  {Array<Key>}               privateKeys private keys with decrypted secret key data for signing
-   * @param  {Signature} signature                 (optional) any existing detached signature
+   * @param  {Signature} [signature] - any existing detached signature
    * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
-   * @param  {Date} date                           (optional) override the creation time of the signature
-   * @param  {Array} userIds                       (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param  {Boolean} streaming                   (optional) whether to process data as a stream
-   * @param  {Object} config                       (optional) full configuration, defaults to openpgp.config
+   * @param  {Date} [date] - override the creation time of the signature
+   * @param  {Array} [userIds] - user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param  {Boolean} [streaming] - whether to process data as a stream
+   * @param  {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {Promise<Signature>} new detached signature of message content
    * @async
    */
@@ -688,13 +688,13 @@ export class Message {
  * Create signature packets for the message
  * @param  {LiteralDataPacket} literalDataPacket the literal data packet to sign
  * @param  {Array<Key>} privateKeys            private keys with decrypted secret key data for signing
- * @param  {Signature} signature               (optional) any existing detached signature to append
+ * @param  {Signature} [signature] - any existing detached signature to append
  * @param  {Array<module:type/keyid~Keyid>} signingKeyIds (optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
- * @param  {Date} date                         (optional) override the creationtime of the signature
- * @param  {Array} userIds                     (optional) user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @param  {Boolean} detached                  (optional) whether to create detached signature packets
- * @param  {Boolean} streaming                 (optional) whether to process data as a stream
- * @param  {Object} config                     (optional) full configuration, defaults to openpgp.config
+ * @param  {Date} [date] - override the creationtime of the signature
+ * @param  {Array} [userIds] - user IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+ * @param  {Boolean} [detached] - whether to create detached signature packets
+ * @param  {Boolean} [streaming] - whether to process data as a stream
+ * @param  {Object} [config] - full configuration, defaults to openpgp.config
  * @returns {Promise<PacketList>} list of signature packets
  * @async
  * @private
@@ -811,9 +811,10 @@ export async function createVerificationObjects(signatureList, literalDataList, 
 
 /**
  * Reads an (optionally armored) OpenPGP message and returns a Message object
- * @param {String | ReadableStream<String>} armoredMessage armored message to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} binaryMessage binary to be parsed
- * @param {Object} config (optional) custom configuration settings to overwrite those in openpgp.config
+ * @param {Object} options
+ * @param {String | ReadableStream<String>} [options.armoredMessage] - armored message to be parsed
+ * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryMessage] - binary to be parsed
+ * @param {Object} [options.config] - custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Message>} new message object
  * @async
  * @static

@@ -30,8 +30,8 @@ import defaultConfig from '../config';
  */
 class SecretKeyPacket extends PublicKeyPacket {
   /**
-   * @param {Date} date      (optional) creation date
-   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   * @param {Date} [date] - creation date
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
     super(date, config);
@@ -242,7 +242,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   /**
    * Remove private key material, converting the key to a dummy one.
    * The resulting key cannot be used for signing/decrypting but can still verify signatures.
-   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
    */
   makeDummy(config = defaultConfig) {
     if (this.isDummy()) {
@@ -267,7 +267,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * and the passphrase is empty or undefined, the key will be set as not encrypted.
    * This can be used to remove passphrase protection after calling decrypt().
    * @param {String} passphrase
-   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */

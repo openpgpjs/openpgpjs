@@ -28,8 +28,8 @@ import enums from '../enums';
  */
 class PublicSubkeyPacket extends PublicKeyPacket {
   /**
-   * @param {Date} date      (optional) creation date
-   * @param {Object} config  (optional) full configuration, defaults to openpgp.config
+   * @param {Date} [date] - creation date
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
    */
   constructor(date, config) {
     super(date, config);
