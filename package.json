@@ -86,7 +86,7 @@
     "sinon": "^4.3.0",
     "tweetnacl": "github:openpgpjs/tweetnacl-js#3dae25bd3eaa77173f3405676b595721dde92eec",
     "typescript": "^4.1.2",
-    "web-stream-tools": "github:openpgpjs/web-stream-tools#5e6cb1a976d50c421091907615cf7cce77ac4f2a",
+    "web-stream-tools": "github:openpgpjs/web-stream-tools#a60cfd8a4ae883e718440524151480b0d3d318c8",
     "whatwg-fetch": "^2.0.3"
   },
   "dependencies": {
