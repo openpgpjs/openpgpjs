@@ -65,7 +65,6 @@
     "@types/chai": "^4.2.14",
     "babel-eslint": "^10.1.0",
     "bn.js": "^4.11.8",
-    "buffer": "^5.0.8",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
     "email-addresses": "3.1.0",
@@ -86,8 +85,7 @@
     "rollup": "^2.38.5",
     "rollup-plugin-terser": "^5.3.0",
     "sinon": "^4.3.0",
-    "typescript": "^4.1.2",
-    "whatwg-fetch": "^2.0.3"
+    "typescript": "^4.1.2"
   },
   "dependencies": {
     "asn1.js": "^5.0.0",
