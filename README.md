@@ -20,8 +20,6 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
         - [Streaming encrypt and decrypt *String* data with PGP keys](#streaming-encrypt-and-decrypt-string-data-with-pgp-keys)
         - [Generate new key pair](#generate-new-key-pair)
         - [Revoke a key](#revoke-a-key)
-        - [Lookup public key on HKP server](#lookup-public-key-on-hkp-server)
-        - [Upload public key to HKP server](#upload-public-key-to-hkp-server)
         - [Sign and verify cleartext messages](#sign-and-verify-cleartext-messages)
         - [Create and verify *detached* signatures](#create-and-verify-detached-signatures)
         - [Streaming sign and verify *Uint8Array* data](#streaming-sign-and-verify-uint8array-data)
@@ -439,33 +437,6 @@ Using the private key:
     const { publicKeyArmored, publicKey } = await openpgp.revokeKey({
         key: await openpgp.readKey({ armoredKey: privateKeyArmored })
     });
-})();
-```
-
-#### Lookup public key on HKP server
-
-```js
-(async () => {
-    var hkp = new openpgp.HKP(); // Defaults to https://keyserver.ubuntu.com, or pass another keyserver URL as a string
-
-    let publicKeyArmored = await hkp.lookup({
-        query: 'alice@example.com'
-    });
-    let publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
-})();
-```
-
-#### Upload public key to HKP server
-
-```js
-(async () => {
-    var hkp = new openpgp.HKP('https://pgp.mit.edu');
-
-    var publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
-...
------END PGP PUBLIC KEY BLOCK-----`;
-
-    await hkp.upload(publicKeyArmored);
 })();
 ```
 

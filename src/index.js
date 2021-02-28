@@ -31,6 +31,4 @@ export { default as config } from './config/config';
 
 export { default as Keyring } from './keyring';
 
-export { default as HKP } from './hkp';
-
 export { default as WKD } from './wkd';

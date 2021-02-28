@@ -680,11 +680,6 @@ export function armor(messagetype: enums.armor, body: object, partindex: number,
  */
 export function unarmor(input: string, config?: Config): Promise<{ text: string, data: Stream<Uint8Array>, type: enums.armor }>;
 
-export class HKP {
-  constructor(keyServerBaseUrl?: string, config?: Config);
-  public lookup(options: { keyid?: string, query?: string }): Promise<string | undefined>;
-}
-
 /* ############## v5 ENUMS #################### */
 
 export namespace enums {
