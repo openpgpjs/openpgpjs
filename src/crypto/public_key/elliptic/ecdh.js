@@ -21,7 +21,7 @@
  * @private
  */
 
-import nacl from 'tweetnacl/nacl-fast-light.js';
+import nacl from '@openpgp/tweetnacl/nacl-fast-light.js';
 import { Curve, jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams } from './curves';
 import * as aes_kw from '../../aes_kw';
 import * as cipher from '../../cipher';

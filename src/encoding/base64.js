@@ -16,7 +16,7 @@
  * @private
  */
 
-import stream from 'web-stream-tools';
+import stream from '@openpgp/web-stream-tools';
 import util from '../util';
 
 const Buffer = util.getNodeBuffer();

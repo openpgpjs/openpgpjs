@@ -22,7 +22,7 @@
  * @private
  */
 
-import { AES_GCM } from 'asmcrypto.js/dist_es8/aes/gcm';
+import { AES_GCM } from '@openpgp/asmcrypto.js/dist_es8/aes/gcm';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9

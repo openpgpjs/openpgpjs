@@ -4,7 +4,7 @@ const signature = require('../../src/crypto/signature');
 const OID = require('../../src/type/oid');
 const util = require('../../src/util');
 
-const nacl = require('tweetnacl');
+const nacl = require('@openpgp/tweetnacl');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));

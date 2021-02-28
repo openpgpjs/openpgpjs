@@ -23,7 +23,7 @@
  * @private
  */
 
-import stream from 'web-stream-tools';
+import stream from '@openpgp/web-stream-tools';
 import { getBigInteger } from './biginteger';
 
 const debugMode = globalThis.process && globalThis.process.env.NODE_ENV === 'development';

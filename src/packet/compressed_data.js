@@ -15,11 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { Deflate } from 'pako/lib/deflate';
-import { Inflate } from 'pako/lib/inflate';
-import { Z_SYNC_FLUSH, Z_FINISH } from 'pako/lib/zlib/constants';
-import { decode as BunzipDecode } from 'seek-bzip';
-import stream from 'web-stream-tools';
+import { Deflate } from '@openpgp/pako/lib/deflate';
+import { Inflate } from '@openpgp/pako/lib/inflate';
+import { Z_SYNC_FLUSH, Z_FINISH } from '@openpgp/pako/lib/zlib/constants';
+import { decode as BunzipDecode } from '@openpgp/seek-bzip';
+import stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';

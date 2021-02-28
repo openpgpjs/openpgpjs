@@ -6,13 +6,13 @@
  * @private
  */
 
-import { Sha1 } from 'asmcrypto.js/dist_es8/hash/sha1/sha1';
-import { Sha256 } from 'asmcrypto.js/dist_es8/hash/sha256/sha256';
+import { Sha1 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha1/sha1';
+import { Sha256 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha256/sha256';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
-import stream from 'web-stream-tools';
+import stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
 import defaultConfig from '../../config';

@@ -21,7 +21,7 @@ export { CleartextMessage, readCleartextMessage } from './cleartext';
 
 export * from './packet';
 
-export { default as stream } from 'web-stream-tools';
+export { default as stream } from '@openpgp/web-stream-tools';
 
 export * from './encoding/armor';
 

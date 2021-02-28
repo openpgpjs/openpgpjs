@@ -20,7 +20,7 @@
  * @private
  */
 
-import stream from 'web-stream-tools';
+import stream from '@openpgp/web-stream-tools';
 import { readKey } from '../key';
 import defaultConfig from '../config';
 

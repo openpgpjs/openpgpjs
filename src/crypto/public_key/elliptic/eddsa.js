@@ -22,7 +22,7 @@
  */
 
 import sha512 from 'hash.js/lib/hash/sha/512';
-import nacl from 'tweetnacl/nacl-fast-light.js';
+import nacl from '@openpgp/tweetnacl/nacl-fast-light.js';
 import util from '../../../util';
 
 nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
