@@ -316,7 +316,6 @@ interface Config {
   tolerant: boolean;
   versionString: string;
   commentString: string;
-  nodeStore: string;
   allowInsecureDecryptionWithSigningKeys: boolean;
   v5Keys: boolean;
 }

@@ -161,11 +161,6 @@ export default {
   commentString: "https://openpgpjs.org",
 
   /**
-   * @memberof module:config
-   * @property {String} nodeStore
-   */
-  nodeStore: "./openpgp.store",
-  /**
    * Max userid string length (used for parsing)
    * @memberof module:config
    * @property {Integer} maxUseridLength
