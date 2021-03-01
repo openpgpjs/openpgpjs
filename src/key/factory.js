@@ -181,10 +181,9 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
     }
-    if (config.integrityProtect) {
-      signaturePacket.features = [0];
-      signaturePacket.features[0] |= enums.features.modificationDetection;
-    }
+    // integrity protection always enabled
+    signaturePacket.features = [0];
+    signaturePacket.features[0] |= enums.features.modificationDetection;
     if (config.aeadProtect) {
       signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.aead;
