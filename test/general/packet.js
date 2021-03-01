@@ -838,12 +838,12 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const { privateParams, publicParams } = await crypto.generateParams(rsa, 1024, 65537);
 
-    const secretKeyPacket = new openpgp.SecretKeyPacket(undefined, { ...openpgp.config, v5Keys: true });
+    const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
     secretKeyPacket.algorithm = "rsaSign";
     secretKeyPacket.isEncrypted = false;
-    await secretKeyPacket.encrypt('hello', openpgp.config);
+    await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: true });
     expect(secretKeyPacket.s2k_usage).to.equal(253);
 
     const raw = new openpgp.PacketList();
@@ -860,12 +860,12 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   it('Writing and encryption of a secret key packet (CFB)', async function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const { privateParams, publicParams } = await crypto.generateParams(rsa, 1024, 65537);
-    const secretKeyPacket = new openpgp.SecretKeyPacket(undefined, { ...openpgp.config, v5Keys: false });
+    const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
     secretKeyPacket.algorithm = "rsaSign";
     secretKeyPacket.isEncrypted = false;
-    await secretKeyPacket.encrypt('hello', openpgp.config);
+    await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: false });
     expect(secretKeyPacket.s2k_usage).to.equal(254);
 
     const raw = new openpgp.PacketList();
