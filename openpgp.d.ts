@@ -305,10 +305,10 @@ interface Config {
   compression: enums.compression;
   showVersion: boolean;
   showComment: boolean;
-  integrityProtect: boolean;
   deflateLevel: number;
   aeadProtect: boolean;
-  ignoreMdcError: boolean;
+  allowUnauthenticatedMessages: boolean;
+  allowUnauthenticatedStream: boolean;
   checksumRequired: boolean;
   minRsaBits: number;
   passwordCollisionCheck: boolean;

@@ -67,9 +67,9 @@ module.exports = () => describe("Packet", function() {
 
   it('Symmetrically encrypted packet without integrity protection - allow decryption', async function() {
     const aeadProtectVal = openpgp.config.aeadProtect;
-    const ignoreMdcErrorVal = openpgp.config.ignoreMdcError;
+    const allowUnauthenticatedMessagesVal = openpgp.config.allowUnauthenticatedMessages;
     openpgp.config.aeadProtect = false;
-    openpgp.config.ignoreMdcError = true;
+    openpgp.config.allowUnauthenticatedMessages = true;
 
     const message = new openpgp.PacketList();
     const testText = input.createSomeMessage();
@@ -94,7 +94,7 @@ module.exports = () => describe("Packet", function() {
       expect(await stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
-      openpgp.config.ignoreMdcError = ignoreMdcErrorVal;
+      openpgp.config.allowUnauthenticatedMessages = allowUnauthenticatedMessagesVal;
     }
   });
 
