@@ -3,7 +3,6 @@ module.exports = () => describe('General', function () {
   require('./biginteger.js')();
   require('./armor.js')();
   require('./packet.js')();
-  require('./keyring.js')();
   require('./signature.js')();
   require('./key.js')();
   require('./openpgp.js')();
