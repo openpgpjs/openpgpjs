@@ -150,11 +150,4 @@ module.exports = () => describe('Util unit tests', function() {
     });
   });
 
-  describe("Zbase32", function() {
-    it('util.encodeZBase32 encodes correctly', function() {
-      const encoded = util.encodeZBase32(util.strToUint8Array('test-wkd'));
-      expect(encoded).to.equal('qt1zg7bpq7ise');
-    });
-  });
-
 });

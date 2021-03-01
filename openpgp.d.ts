@@ -908,13 +908,4 @@ declare namespace util {
   function hexToStr(hex: string): string;
 
   function normalizeDate(date: Date | null): Date | null;
-
-  /**
-   * Encode input buffer using Z-Base32 encoding.
-   * See: https://tools.ietf.org/html/rfc6189#section-5.1.6
-   *
-   * @param {Uint8Array} data - The binary data to encode
-   * @returns {String} Binary data encoded using Z-Base32.
-   */
-  function encodeZBase32(data: Uint8Array): string;
 }
