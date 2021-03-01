@@ -162,11 +162,6 @@ export default {
 
   /**
    * @memberof module:config
-   * @property {String} keyserver
-   */
-  keyserver: "https://keyserver.ubuntu.com",
-  /**
-   * @memberof module:config
    * @property {String} nodeStore
    */
   nodeStore: "./openpgp.store",
