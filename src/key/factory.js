@@ -134,17 +134,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIds.map(async function(userId, index) {
-    function createdPreferredAlgos(algos, configAlgo) {
-      if (configAlgo) { // Not `uncompressed` / `plaintext`
-        const configIndex = algos.indexOf(configAlgo);
-        if (configIndex >= 1) { // If it is included and not in first place,
-          algos.splice(configIndex, 1); // remove it.
-        }
-        if (configIndex !== 0) { // If it was included and not in first place, or wasn't included,
-          algos.unshift(configAlgo); // add it to the front.
-        }
-      }
-      return algos;
+    function createdPreferredAlgos(algos, preferredAlgo) {
+      return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
     }
 
     const userIdPacket = UserIDPacket.fromObject(userId);
@@ -166,7 +157,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
-      ], config.preferredAEADAlgorithm);
+      ], config.preferredAeadAlgorithm);
     }
     signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
@@ -174,9 +165,9 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.hash.sha512
     ], config.preferredHashAlgorithm);
     signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
+      enums.compression.uncompressed,
       enums.compression.zlib,
-      enums.compression.zip,
-      enums.compression.uncompressed
+      enums.compression.zip
     ], config.compression);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
