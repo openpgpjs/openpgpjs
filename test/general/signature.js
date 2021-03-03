@@ -1023,6 +1023,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     const message = await openpgp.readMessage({ armoredMessage: signature_with_critical_notation });
     const key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
     const { signatures: [sig] } = await openpgp.verify({ message, publicKeys: key });
+    expect(sig.valid).to.be.false;
     expect(sig.error).to.match(/Unknown critical notation: test@example.com/);
   });
 

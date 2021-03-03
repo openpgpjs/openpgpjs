@@ -669,12 +669,6 @@ class SignaturePacket {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
     }
 
-    this.rawNotations.forEach(({ name, critical }) => {
-      if (critical && (config.knownNotations.indexOf(name) < 0)) {
-        throw new Error(`Unknown critical notation: ${name}`);
-      }
-    });
-
     let toHash;
     let hash;
     if (this.hashed) {
@@ -706,6 +700,11 @@ class SignaturePacket {
       [enums.signature.binary, enums.signature.text].includes(this.signatureType)) {
       throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
     }
+    this.rawNotations.forEach(({ name, critical }) => {
+      if (critical && (config.knownNotations.indexOf(name) < 0)) {
+        throw new Error(`Unknown critical notation: ${name}`);
+      }
+    });
     if (this.revocationKeyClass !== null) {
       throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
     }
