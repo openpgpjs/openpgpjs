@@ -120,7 +120,7 @@ module.exports = () => describe("Packet", function() {
 
       const msg2 = new openpgp.PacketList();
       await msg2.read(message.write(), { SymmetricallyEncryptedDataPacket: openpgp.SymmetricallyEncryptedDataPacket });
-      await expect(msg2[0].decrypt(algo, key, undefined, openpgp.config)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC.');
+      await expect(msg2[0].decrypt(algo, key, undefined, openpgp.config)).to.eventually.be.rejectedWith('Message is not authenticated.');
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
     }
