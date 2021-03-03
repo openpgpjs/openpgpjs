@@ -106,7 +106,7 @@
     
 
     
-    <h4 class="name" id="armor"><span class="type-signature"></span>armor<span class="signature">(messagetype, body, partindex, parttotal, customComment)</span><span class="type-signature"> &rarr; {String|ReadableStream.&lt;String>}</span></h4>
+    <h4 class="name" id="armor"><span class="type-signature"></span>armor<span class="signature">(messageType, body, partIndex<span class="signature-attributes">opt</span>, partTotal<span class="signature-attributes">opt</span>, customComment<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {String|ReadableStream.&lt;String>}</span></h4>
     
 
     
@@ -138,6 +138,8 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -150,23 +152,31 @@
 
         <tr>
             
-                <td class="name"><code>messagetype</code></td>
+                <td class="name"><code>messageType</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Integer</span>
+<span class="param-type"><a href="module-enums.html#.armor">module:enums.armor</a></span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>type of the message</p></td>
+            <td class="description last"><p>Type of the message</p></td>
         </tr>
 
     
@@ -178,20 +188,36 @@
 
             <td class="type">
             
+                
+<span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
+
+
+            
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"></td>
+            <td class="description last"><p>The message body to armor</p></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>partindex</code></td>
+                <td class="name"><code>partIndex</code></td>
             
 
             <td class="type">
@@ -204,6 +230,16 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -214,7 +250,7 @@
 
         <tr>
             
-                <td class="name"><code>parttotal</code></td>
+                <td class="name"><code>partTotal</code></td>
             
 
             <td class="type">
@@ -226,6 +262,16 @@
             
             </td>
 
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -250,10 +296,20 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) additional comment to add to the armored string</p></td>
+            <td class="description last"><p>Additional comment to add to the armored string</p></td>
         </tr>
 
     
@@ -296,7 +352,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/encoding/armor.js#L357">line 357</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/encoding/armor.js#L357">line 357</a>
     </li></ul></dd>
     
 
@@ -325,7 +381,7 @@
 
         
 <div class="param-desc">
-    <p>Armored text</p>
+    <p>Armored text.</p>
 </div>
 
 
@@ -357,7 +413,7 @@
     
 
     
-    <h4 class="name" id="decrypt"><span class="type-signature">(async) </span>decrypt<span class="signature">(message, privateKeys, passwords, sessionKeys, publicKeys, format, streaming, signature, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+    <h4 class="name" id="decrypt"><span class="type-signature">(async) </span>decrypt<span class="signature">(options)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -402,6 +458,52 @@ a session key or a password must be specified.</p>
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>message</code></td>
             
 
@@ -415,10 +517,22 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>the message object with the encrypted data</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>The message object with the encrypted data</p></td>
         </tr>
 
     
@@ -441,10 +555,24 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) private keys with decrypted secret key data or session key</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Private keys with decrypted secret key data or session key</p></td>
         </tr>
 
     
@@ -467,10 +595,24 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) passwords to decrypt the message</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Passwords to decrypt the message</p></td>
         </tr>
 
     
@@ -493,10 +635,24 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) session keys in the form: { data:Uint8Array, algorithm:String }</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Session keys in the form: { data:Uint8Array, algorithm:String }</p></td>
         </tr>
 
     
@@ -519,10 +675,24 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of public keys or single key, to verify signatures</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of public keys or single key, to verify signatures</p></td>
         </tr>
 
     
@@ -545,10 +715,26 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.</p></td>
+            
+                <td class="default">
+                
+                    'utf8'
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.</p></td>
         </tr>
 
     
@@ -577,10 +763,26 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether to return data as a stream. Defaults to the type of stream <code>message</code> was created from, if any.</p></td>
+            
+                <td class="default">
+                
+                    type of stream `message` was created from, if any
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to return data as a stream. Defaults to the type of stream <code>message</code> was created from, if any.</p></td>
         </tr>
 
     
@@ -600,10 +802,24 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) detached signature for verification</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Detached signature for verification</p></td>
         </tr>
 
     
@@ -623,10 +839,26 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) use the given date for verification instead of the current time</p></td>
+            
+                <td class="default">
+                
+                    current date
+                
+                </td>
+            
+
+            <td class="description last"><p>Use the given date for verification instead of the current time</p></td>
         </tr>
 
     
@@ -646,10 +878,31 @@ a session key or a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -692,7 +945,7 @@ a session key or a password must be specified.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L298">line 298</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L305">line 305</a>
     </li></ul></dd>
     
 
@@ -744,7 +997,7 @@ a session key or a password must be specified.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Object></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -762,7 +1015,7 @@ a session key or a password must be specified.</p>
     
 
     
-    <h4 class="name" id="decryptKey"><span class="type-signature">(async) </span>decryptKey<span class="signature">(privateKey, passphrase, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
+    <h4 class="name" id="decryptKey"><span class="type-signature">(async) </span>decryptKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {<a href="Key.html">Key</a>}</span></h4>
     
 
     
@@ -807,6 +1060,50 @@ This method does not change the original key.</p>
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>privateKey</code></td>
             
 
@@ -820,10 +1117,18 @@ This method does not change the original key.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>the private key to decrypt</p></td>
+            <td class="description last"><p>The private key to decrypt</p></td>
         </tr>
 
     
@@ -846,10 +1151,18 @@ This method does not change the original key.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>the user's passphrase(s)</p></td>
+            <td class="description last"><p>The user's passphrase(s)</p></td>
         </tr>
 
     
@@ -869,10 +1182,27 @@ This method does not change the original key.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -915,7 +1245,7 @@ This method does not change the original key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L163">line 163</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L167">line 167</a>
     </li></ul></dd>
     
 
@@ -944,7 +1274,7 @@ This method does not change the original key.</p>
 
         
 <div class="param-desc">
-    <p>the unlocked key object</p>
+    <p>The unlocked key object.</p>
 </div>
 
 
@@ -955,7 +1285,7 @@ This method does not change the original key.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type"><a href="Key.html">Key</a></span>
 
 
     </dd>
@@ -973,7 +1303,7 @@ This method does not change the original key.</p>
     
 
     
-    <h4 class="name" id="decryptSessionKeys"><span class="type-signature">(async) </span>decryptSessionKeys<span class="signature">(message, privateKeys, passwords, config)</span><span class="type-signature"> &rarr; {Promise.&lt;(Object|undefined)>}</span></h4>
+    <h4 class="name" id="decryptSessionKeys"><span class="type-signature">(async) </span>decryptSessionKeys<span class="signature">(options)</span><span class="type-signature"> &rarr; {Object|undefined}</span></h4>
     
 
     
@@ -1018,6 +1348,50 @@ a password must be specified.</p>
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>message</code></td>
             
 
@@ -1031,10 +1405,18 @@ a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>a message object containing the encrypted session key packets</p></td>
+            <td class="description last"><p>A message object containing the encrypted session key packets</p></td>
         </tr>
 
     
@@ -1057,10 +1439,20 @@ a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) private keys with decrypted secret key data</p></td>
+            <td class="description last"><p>Private keys with decrypted secret key data</p></td>
         </tr>
 
     
@@ -1083,10 +1475,20 @@ a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) passwords to decrypt the session key</p></td>
+            <td class="description last"><p>Passwords to decrypt the session key</p></td>
         </tr>
 
     
@@ -1106,10 +1508,27 @@ a password must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -1152,7 +1571,7 @@ a password must be specified.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L487">line 487</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L499">line 499</a>
     </li></ul></dd>
     
 
@@ -1181,7 +1600,7 @@ a password must be specified.</p>
 
         
 <div class="param-desc">
-    <p>Array of decrypted session key, algorithm pairs in form:
+    <p>Array of decrypted session key, algorithm pairs in the form:
 { data:Uint8Array, algorithm:String }
 or 'undefined' if no key packets found</p>
 </div>
@@ -1194,7 +1613,10 @@ or 'undefined' if no key packets found</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(Object|undefined)></span>
+<span class="param-type">Object</span>
+|
+
+<span class="param-type">undefined</span>
 
 
     </dd>
@@ -1212,7 +1634,7 @@ or 'undefined' if no key packets found</p>
     
 
     
-    <h4 class="name" id="encrypt"><span class="type-signature">(async) </span>encrypt<span class="signature">(message, publicKeys, privateKeys, passwords, sessionKey, armor, streaming, signature, wildcard, signingKeyIds, encryptionKeyIds, date, fromUserIds, toUserIds, config)</span><span class="type-signature"> &rarr; {Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)>}</span></h4>
+    <h4 class="name" id="encrypt"><span class="type-signature">(async) </span>encrypt<span class="signature">(options)</span><span class="type-signature"> &rarr; {String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>}</span></h4>
     
 
     
@@ -1257,6 +1679,52 @@ must be specified. If private keys are specified, those will be used to sign the
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>message</code></td>
             
 
@@ -1270,10 +1738,22 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>message to be encrypted as created by openpgp.Message.fromText or openpgp.Message.fromBinary</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Message to be encrypted as created by <a href="Message.html#.fromText">Message.fromText</a> or <a href="Message.html#.fromBinary">Message.fromBinary</a></p></td>
         </tr>
 
     
@@ -1296,10 +1776,24 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of keys or single key, used to encrypt the message</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of keys or single key, used to encrypt the message</p></td>
         </tr>
 
     
@@ -1322,10 +1816,24 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) private keys for signing. If omitted message will not be signed</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Private keys for signing. If omitted message will not be signed</p></td>
         </tr>
 
     
@@ -1348,10 +1856,24 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of passwords or a single password to encrypt the message</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of passwords or a single password to encrypt the message</p></td>
         </tr>
 
     
@@ -1371,10 +1893,24 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) session key in the form: { data:Uint8Array, algorithm:String }</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Session key in the form: <code>{ data:Uint8Array, algorithm:String }</code></p></td>
         </tr>
 
     
@@ -1394,10 +1930,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether the return values should be ascii armored (true, the default) or binary (false)</p></td>
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether the return values should be ascii armored (true, the default) or binary (false)</p></td>
         </tr>
 
     
@@ -1426,10 +1978,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether to return data as a stream. Defaults to the type of stream <code>message</code> was created from, if any.</p></td>
+            
+                <td class="default">
+                
+                    type of stream `message` was created from, if any
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to return data as a stream</p></td>
         </tr>
 
     
@@ -1449,10 +2017,24 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) a detached signature to add to the encrypted message</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>A detached signature to add to the encrypted message</p></td>
         </tr>
 
     
@@ -1472,10 +2054,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) use a key ID of 0 instead of the public key IDs</p></td>
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Use a key ID of 0 instead of the public key IDs</p></td>
         </tr>
 
     
@@ -1495,10 +2093,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]</p></td>
+            
+                <td class="default">
+                
+                    latest-created valid signing (sub)keys
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of key IDs to use for signing. Each <code>signingKeyIds[i]</code> corresponds to <code>privateKeys[i]</code></p></td>
         </tr>
 
     
@@ -1518,10 +2132,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]</p></td>
+            
+                <td class="default">
+                
+                    latest-created valid encryption (sub)keys
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of key IDs to use for encryption. Each <code>encryptionKeyIds[i]</code> corresponds to <code>publicKeys[i]</code></p></td>
         </tr>
 
     
@@ -1541,10 +2171,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) override the creation date of the message signature</p></td>
+            
+                <td class="default">
+                
+                    current date
+                
+                </td>
+            
+
+            <td class="description last"><p>Override the creation date of the message signature</p></td>
         </tr>
 
     
@@ -1564,10 +2210,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of user IDs to sign with, one per key in <code>privateKeys</code>, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]</p></td>
+            
+                <td class="default">
+                
+                    primary user IDs
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of user IDs to sign with, one per key in <code>privateKeys</code>, e.g. <code>[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]</code></p></td>
         </tr>
 
     
@@ -1587,10 +2249,26 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of user IDs to encrypt for, one per key in <code>publicKeys</code>, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]</p></td>
+            
+                <td class="default">
+                
+                    primary user IDs
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of user IDs to encrypt for, one per key in <code>publicKeys</code>, e.g. <code>[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]</code></p></td>
         </tr>
 
     
@@ -1610,10 +2288,31 @@ must be specified. If private keys are specified, those will be used to sign the
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -1656,7 +2355,7 @@ must be specified. If private keys are specified, those will be used to sign the
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L247">line 247</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L253">line 253</a>
     </li></ul></dd>
     
 
@@ -1685,7 +2384,7 @@ must be specified. If private keys are specified, those will be used to sign the
 
         
 <div class="param-desc">
-    <p>(String if <code>armor</code> was true, the default; Uint8Array if <code>armor</code> was false)</p>
+    <p>Encrypted message (string if <code>armor</code> was true, the default; Uint8Array if <code>armor</code> was false).</p>
 </div>
 
 
@@ -1696,7 +2395,22 @@ must be specified. If private keys are specified, those will be used to sign the
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)></span>
+<span class="param-type">String</span>
+|
+
+<span class="param-type">ReadableStream.&lt;String></span>
+|
+
+<span class="param-type">NodeStream.&lt;String></span>
+|
+
+<span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
+|
+
+<span class="param-type">NodeStream.&lt;Uint8Array></span>
 
 
     </dd>
@@ -1714,7 +2428,7 @@ must be specified. If private keys are specified, those will be used to sign the
     
 
     
-    <h4 class="name" id="encryptKey"><span class="type-signature">(async) </span>encryptKey<span class="signature">(privateKey, passphrase, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
+    <h4 class="name" id="encryptKey"><span class="type-signature">(async) </span>encryptKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {<a href="Key.html">Key</a>}</span></h4>
     
 
     
@@ -1759,6 +2473,50 @@ This method does not change the original key.</p>
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>privateKey</code></td>
             
 
@@ -1772,10 +2530,18 @@ This method does not change the original key.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>the private key to encrypt</p></td>
+            <td class="description last"><p>The private key to encrypt</p></td>
         </tr>
 
     
@@ -1798,10 +2564,18 @@ This method does not change the original key.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>if multiple passphrases, they should be in the same order as the packets each should encrypt</p></td>
+            <td class="description last"><p>If multiple passphrases, they should be in the same order as the packets each should encrypt</p></td>
         </tr>
 
     
@@ -1821,10 +2595,27 @@ This method does not change the original key.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -1867,7 +2658,7 @@ This method does not change the original key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L191">line 191</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L196">line 196</a>
     </li></ul></dd>
     
 
@@ -1896,7 +2687,7 @@ This method does not change the original key.</p>
 
         
 <div class="param-desc">
-    <p>the locked key object</p>
+    <p>The locked key object.</p>
 </div>
 
 
@@ -1907,7 +2698,7 @@ This method does not change the original key.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type"><a href="Key.html">Key</a></span>
 
 
     </dd>
@@ -1925,7 +2716,7 @@ This method does not change the original key.</p>
     
 
     
-    <h4 class="name" id="encryptSessionKey"><span class="type-signature">(async) </span>encryptSessionKey<span class="signature">(data, algorithm, aeadAlgorithm, publicKeys, passwords, armor, wildcard, encryptionKeyIds, date, toUserIds, config)</span><span class="type-signature"> &rarr; {Promise.&lt;(String|Uint8Array)>}</span></h4>
+    <h4 class="name" id="encryptSessionKey"><span class="type-signature">(async) </span>encryptSessionKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {String|Uint8Array}</span></h4>
     
 
     
@@ -1970,6 +2761,52 @@ or passwords must be specified.</p>
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>data</code></td>
             
 
@@ -1983,10 +2820,22 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>the session key to be encrypted e.g. 16 random bytes (for aes128)</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>The session key to be encrypted e.g. 16 random bytes (for aes128)</p></td>
         </tr>
 
     
@@ -2006,10 +2855,22 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>algorithm of the symmetric session key e.g. 'aes128' or 'aes256'</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Algorithm of the symmetric session key e.g. 'aes128' or 'aes256'</p></td>
         </tr>
 
     
@@ -2029,10 +2890,24 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) aead algorithm, e.g. 'eax' or 'ocb'</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Aead algorithm, e.g. 'eax' or 'ocb'</p></td>
         </tr>
 
     
@@ -2055,10 +2930,24 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of public keys or single key, used to encrypt the key</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of public keys or single key, used to encrypt the key</p></td>
         </tr>
 
     
@@ -2081,10 +2970,24 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) passwords for the message</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Passwords for the message</p></td>
         </tr>
 
     
@@ -2104,10 +3007,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether the return values should be ascii armored (true, the default) or binary (false)</p></td>
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether the return values should be ascii armored (true, the default) or binary (false)</p></td>
         </tr>
 
     
@@ -2127,10 +3046,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) use a key ID of 0 instead of the public key IDs</p></td>
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>Use a key ID of 0 instead of the public key IDs</p></td>
         </tr>
 
     
@@ -2150,10 +3085,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]</p></td>
+            
+                <td class="default">
+                
+                    latest-created valid encryption (sub)keys
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]</p></td>
         </tr>
 
     
@@ -2173,10 +3124,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) override the date</p></td>
+            
+                <td class="default">
+                
+                    current date
+                
+                </td>
+            
+
+            <td class="description last"><p>Override the date</p></td>
         </tr>
 
     
@@ -2196,10 +3163,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of user IDs to encrypt for, one per key in <code>publicKeys</code>, e.g. [{ name:'Phil Zimmermann', email:'phil@openpgp.org' }]</p></td>
+            
+                <td class="default">
+                
+                    primary user IDs
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of user IDs to encrypt for, one per key in <code>publicKeys</code>, e.g. <code>[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]</code></p></td>
         </tr>
 
     
@@ -2219,10 +3202,31 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -2265,7 +3269,7 @@ or passwords must be specified.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L462">line 462</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L473">line 473</a>
     </li></ul></dd>
     
 
@@ -2294,7 +3298,7 @@ or passwords must be specified.</p>
 
         
 <div class="param-desc">
-    <p>(String if <code>armor</code> was true, the default; Uint8Array if <code>armor</code> was false)</p>
+    <p>Encrypted session keys (string if <code>armor</code> was true, the default; Uint8Array if <code>armor</code> was false).</p>
 </div>
 
 
@@ -2305,7 +3309,10 @@ or passwords must be specified.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(String|Uint8Array)></span>
+<span class="param-type">String</span>
+|
+
+<span class="param-type">Uint8Array</span>
 
 
     </dd>
@@ -2323,7 +3330,7 @@ or passwords must be specified.</p>
     
 
     
-    <h4 class="name" id="generateKey"><span class="type-signature">(async) </span>generateKey<span class="signature">(type, userIds, passphrase, rsaBits, curve, date, keyExpirationTime, subkeys, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+    <h4 class="name" id="generateKey"><span class="type-signature">(async) </span>generateKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -2367,16 +3374,13 @@ or passwords must be specified.</p>
 
         <tr>
             
-                <td class="name"><code>type</code></td>
+                <td class="name"><code>options</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">ecc</span>
-|
-
-<span class="param-type">rsa</span>
+<span class="param-type">Object</span>
 
 
             
@@ -2386,7 +3390,72 @@ or passwords must be specified.</p>
 
             
 
-            <td class="description last"><p>(optional) The primary key algorithm type: ECC (default) or RSA</p></td>
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">'ecc'</span>
+|
+
+<span class="param-type">'rsa'</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    'ecc'
+                
+                </td>
+            
+
+            <td class="description last"><p>The primary key algorithm type: ECC (default) or RSA</p></td>
         </tr>
 
     
@@ -2409,10 +3478,22 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>User IDs as objects: { name:'Jo Doe', email:'info@jo.com' }</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>User IDs as objects: <code>{ name: 'Jo Doe', email: 'info@jo.com' }</code></p></td>
         </tr>
 
     
@@ -2432,10 +3513,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) The passphrase used to encrypt the resulting private key</p></td>
+            
+                <td class="default">
+                
+                    (not protected)
+                
+                </td>
+            
+
+            <td class="description last"><p>The passphrase used to encrypt the generated private key</p></td>
         </tr>
 
     
@@ -2455,10 +3552,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) Number of bits for RSA keys, defaults to 4096</p></td>
+            
+                <td class="default">
+                
+                    4096
+                
+                </td>
+            
+
+            <td class="description last"><p>Number of bits for RSA keys</p></td>
         </tr>
 
     
@@ -2478,10 +3591,26 @@ or passwords must be specified.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) Elliptic curve for ECC keys:
+            
+                <td class="default">
+                
+                    'curve25519'
+                
+                </td>
+            
+
+            <td class="description last"><p>Elliptic curve for ECC keys:
 curve25519 (default), p256, p384, p521, secp256k1,
 brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1</p></td>
         </tr>
@@ -2503,10 +3632,26 @@ brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1</p></td>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) Override the creation date of the key and the key signatures</p></td>
+            
+                <td class="default">
+                
+                    current date
+                
+                </td>
+            
+
+            <td class="description last"><p>Override the creation date of the key and the key signatures</p></td>
         </tr>
 
     
@@ -2526,10 +3671,26 @@ brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1</p></td>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) Number of seconds from the key creation time after which the key expires</p></td>
+            
+                <td class="default">
+                
+                    0 (never expires)
+                
+                </td>
+            
+
+            <td class="description last"><p>Number of seconds from the key creation time after which the key expires</p></td>
         </tr>
 
     
@@ -2549,10 +3710,26 @@ brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1</p></td>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) Options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+            
+                <td class="default">
+                
+                    a single encryption subkey
+                
+                </td>
+            
+
+            <td class="description last"><p>Options for each subkey, default to main key options. e.g. <code>[{sign: true, passphrase: '123'}]</code>
 sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt</p></td>
         </tr>
 
@@ -2573,10 +3750,31 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -2619,7 +3817,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L59">line 59</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L60">line 60</a>
     </li></ul></dd>
     
 
@@ -2660,7 +3858,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Object></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -2678,7 +3876,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="generateSessionKey"><span class="type-signature">(async) </span>generateSessionKey<span class="signature">(publicKeys, date, toUserIds, config)</span><span class="type-signature"> &rarr; {Promise.&lt;{data: Uint8Array, algorithm: String}>}</span></h4>
+    <h4 class="name" id="generateSessionKey"><span class="type-signature">(async) </span>generateSessionKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -2722,6 +3920,52 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>publicKeys</code></td>
             
 
@@ -2738,10 +3982,22 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>array of public keys or single key used to select algorithm preferences for</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of public keys or single key used to select algorithm preferences for</p></td>
         </tr>
 
     
@@ -2761,10 +4017,26 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) date to select algorithm preferences at</p></td>
+            
+                <td class="default">
+                
+                    current date
+                
+                </td>
+            
+
+            <td class="description last"><p>Date to select algorithm preferences at</p></td>
         </tr>
 
     
@@ -2784,10 +4056,26 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) user IDs to select algorithm preferences for</p></td>
+            
+                <td class="default">
+                
+                    primary user IDs
+                
+                </td>
+            
+
+            <td class="description last"><p>User IDs to select algorithm preferences for</p></td>
         </tr>
 
     
@@ -2807,10 +4095,31 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -2853,7 +4162,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L433">line 433</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L443">line 443</a>
     </li></ul></dd>
     
 
@@ -2882,7 +4191,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         
 <div class="param-desc">
-    <p>object with session key data and algorithm</p>
+    <p>Object with session key data and algorithm.</p>
 </div>
 
 
@@ -2893,7 +4202,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;{data: Uint8Array, algorithm: String}></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -2911,7 +4220,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="readCleartextMessage"><span class="type-signature">(async) </span>readCleartextMessage<span class="signature">(cleartextMessage, config)</span><span class="type-signature"> &rarr; {<a href="CleartextMessage.html">CleartextMessage</a>}</span></h4>
+    <h4 class="name" id="readCleartextMessage"><span class="type-signature">(async) </span>readCleartextMessage<span class="signature">(options)</span><span class="type-signature"> &rarr; {<a href="CleartextMessage.html">CleartextMessage</a>}</span></h4>
     
 
     
@@ -2955,6 +4264,50 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>cleartextMessage</code></td>
             
 
@@ -2971,10 +4324,18 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>text to be parsed</p></td>
+            <td class="description last"><p>Text to be parsed</p></td>
         </tr>
 
     
@@ -2994,10 +4355,27 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -3040,7 +4418,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/cleartext.js#L164">line 164</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/cleartext.js#L165">line 165</a>
     </li></ul></dd>
     
 
@@ -3069,7 +4447,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         
 <div class="param-desc">
-    <p>new cleartext message object</p>
+    <p>New cleartext message object.</p>
 </div>
 
 
@@ -3098,7 +4476,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="readKey"><span class="type-signature">(async) </span>readKey<span class="signature">(armoredKey, binaryKey, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
+    <h4 class="name" id="readKey"><span class="type-signature">(async) </span>readKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {<a href="Key.html">Key</a>}</span></h4>
     
 
     
@@ -3142,13 +4520,13 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
-                <td class="name"><code>armoredKey</code></td>
+                <td class="name"><code>options</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">String</span>
+<span class="param-type">Object</span>
 
 
             
@@ -3158,7 +4536,64 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
             
 
-            <td class="description last"><p>armored key to be parsed</p></td>
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>armoredKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+|
+
+<span class="param-type">ReadableStream.&lt;String></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Armored key to be parsed</p></td>
         </tr>
 
     
@@ -3172,16 +4607,29 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             
                 
 <span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
 
 
             
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>binary key to be parsed</p></td>
+            <td class="description last"><p>Binary key to be parsed</p></td>
         </tr>
 
     
@@ -3201,10 +4649,27 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -3247,7 +4712,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/key/factory.js#L254">line 254</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/key/factory.js#L252">line 252</a>
     </li></ul></dd>
     
 
@@ -3276,7 +4741,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         
 <div class="param-desc">
-    <p>key object</p>
+    <p>Key object.</p>
 </div>
 
 
@@ -3287,7 +4752,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type"><a href="Key.html">Key</a></span>
 
 
     </dd>
@@ -3305,7 +4770,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="readKeys"><span class="type-signature">(async) </span>readKeys<span class="signature">(armoredKeys, binaryKeys, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Array.&lt;<a href="Key.html">Key</a>>>}</span></h4>
+    <h4 class="name" id="readKeys"><span class="type-signature">(async) </span>readKeys<span class="signature">(options)</span><span class="type-signature"> &rarr; {Array.&lt;<a href="Key.html">Key</a>>}</span></h4>
     
 
     
@@ -3349,6 +4814,50 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>armoredKeys</code></td>
             
 
@@ -3365,10 +4874,20 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>armored keys to be parsed</p></td>
+            <td class="description last"><p>Armored keys to be parsed</p></td>
         </tr>
 
     
@@ -3391,10 +4910,20 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>binary keys to be parsed</p></td>
+            <td class="description last"><p>Binary keys to be parsed</p></td>
         </tr>
 
     
@@ -3414,10 +4943,27 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -3460,7 +5006,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/key/factory.js#L283">line 283</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/key/factory.js#L282">line 282</a>
     </li></ul></dd>
     
 
@@ -3489,7 +5035,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         
 <div class="param-desc">
-    <p>key objects</p>
+    <p>Key objects.</p>
 </div>
 
 
@@ -3500,7 +5046,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Array.&lt;<a href="Key.html">Key</a>>></span>
+<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
 
 
     </dd>
@@ -3518,7 +5064,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="readMessage"><span class="type-signature">(async) </span>readMessage<span class="signature">(armoredMessage, binaryMessage, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Message.html">Message</a>>}</span></h4>
+    <h4 class="name" id="readMessage"><span class="type-signature">(async) </span>readMessage<span class="signature">(options)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
     
 
     
@@ -3562,6 +5108,50 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>armoredMessage</code></td>
             
 
@@ -3578,10 +5168,20 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>armored message to be parsed</p></td>
+            <td class="description last"><p>Armored message to be parsed</p></td>
         </tr>
 
     
@@ -3604,10 +5204,20 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>binary to be parsed</p></td>
+            <td class="description last"><p>Binary to be parsed</p></td>
         </tr>
 
     
@@ -3627,10 +5237,27 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -3673,7 +5300,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/message.js#L821">line 821</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L820">line 820</a>
     </li></ul></dd>
     
 
@@ -3702,7 +5329,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         
 <div class="param-desc">
-    <p>new message object</p>
+    <p>New message object.</p>
 </div>
 
 
@@ -3713,7 +5340,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;<a href="Message.html">Message</a>></span>
+<span class="param-type"><a href="Message.html">Message</a></span>
 
 
     </dd>
@@ -3731,7 +5358,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="readSignature"><span class="type-signature">(async) </span>readSignature<span class="signature">(armoredSignature, binarySignature, config)</span><span class="type-signature"> &rarr; {<a href="Signature.html">Signature</a>}</span></h4>
+    <h4 class="name" id="readSignature"><span class="type-signature">(async) </span>readSignature<span class="signature">(options)</span><span class="type-signature"> &rarr; {<a href="Signature.html">Signature</a>}</span></h4>
     
 
     
@@ -3775,6 +5402,50 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>armoredSignature</code></td>
             
 
@@ -3791,10 +5462,20 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>armored signature to be parsed</p></td>
+            <td class="description last"><p>Armored signature to be parsed</p></td>
         </tr>
 
     
@@ -3817,10 +5498,20 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>binary signature to be parsed</p></td>
+            <td class="description last"><p>Binary signature to be parsed</p></td>
         </tr>
 
     
@@ -3840,10 +5531,27 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -3886,7 +5594,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/signature.js">signature.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/signature.js#L61">line 61</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/signature.js">signature.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/signature.js#L62">line 62</a>
     </li></ul></dd>
     
 
@@ -3915,7 +5623,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         
 <div class="param-desc">
-    <p>new signature object</p>
+    <p>New signature object.</p>
 </div>
 
 
@@ -3944,7 +5652,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="reformatKey"><span class="type-signature">(async) </span>reformatKey<span class="signature">(privateKey, userIds, passphrase, keyExpirationTime, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+    <h4 class="name" id="reformatKey"><span class="type-signature">(async) </span>reformatKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -3988,6 +5696,52 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>privateKey</code></td>
             
 
@@ -4001,7 +5755,19 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>Private key to reformat</p></td>
@@ -4027,10 +5793,22 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>User IDs as objects: { name:'Jo Doe', email:'info@jo.com' }</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>User IDs as objects: <code>{ name: 'Jo Doe', email: 'info@jo.com' }</code></p></td>
         </tr>
 
     
@@ -4050,10 +5828,26 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) The passphrase used to encrypt the resulting private key</p></td>
+            
+                <td class="default">
+                
+                    (not protected)
+                
+                </td>
+            
+
+            <td class="description last"><p>The passphrase used to encrypt the generated private key</p></td>
         </tr>
 
     
@@ -4073,10 +5867,26 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) Number of seconds from the key creation time after which the key expires</p></td>
+            
+                <td class="default">
+                
+                    0 (never expires)
+                
+                </td>
+            
+
+            <td class="description last"><p>Number of seconds from the key creation time after which the key expires</p></td>
         </tr>
 
     
@@ -4096,10 +5906,31 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -4142,7 +5973,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L94">line 94</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L96">line 96</a>
     </li></ul></dd>
     
 
@@ -4183,7 +6014,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Object></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -4201,7 +6032,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
 
     
-    <h4 class="name" id="revokeKey"><span class="type-signature">(async) </span>revokeKey<span class="signature">(key, revocationCertificate, reasonForRevocation, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+    <h4 class="name" id="revokeKey"><span class="type-signature">(async) </span>revokeKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -4210,7 +6041,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
 <div class="description">
     <p>Revokes a key. Requires either a private key or a revocation certificate.
-If a revocation certificate is passed, the reasonForRevocation parameters will be ignored.</p>
+If a revocation certificate is passed, the reasonForRevocation parameter will be ignored.</p>
 </div>
 
 
@@ -4246,6 +6077,50 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>key</code></td>
             
 
@@ -4259,10 +6134,18 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) public or private key to revoke</p></td>
+            <td class="description last"><p>Public or private key to revoke</p></td>
         </tr>
 
     
@@ -4282,10 +6165,20 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) revocation certificate to revoke the key with</p></td>
+            <td class="description last"><p>Revocation certificate to revoke the key with</p></td>
         </tr>
 
     
@@ -4305,10 +6198,20 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) object indicating the reason for revocation</p>
+            <td class="description last"><p>Object indicating the reason for revocation</p>
                 <h6>Properties</h6>
                 
 
@@ -4322,7 +6225,11 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
+        
+        <th>Default</th>
         
 
         <th class="last">Description</th>
@@ -4347,10 +6254,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) flag indicating the reason for revocation</p></td>
+            
+                <td class="default">
+                
+                    <a href="module-enums.html#.reasonForRevocation">noReason</a>
+                
+                </td>
+            
+
+            <td class="description last"><p>Flag indicating the reason for revocation</p></td>
         </tr>
 
     
@@ -4370,10 +6293,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) string explaining the reason for revocation</p></td>
+            
+                <td class="default">
+                
+                    ""
+                
+                </td>
+            
+
+            <td class="description last"><p>String explaining the reason for revocation</p></td>
         </tr>
 
     
@@ -4400,10 +6339,27 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -4446,7 +6402,7 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L129">line 129</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L132">line 132</a>
     </li></ul></dd>
     
 
@@ -4476,8 +6432,8 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
         
 <div class="param-desc">
     <p>The revoked key object in the form:
-{ privateKey:Key, privateKeyArmored:String, publicKey:Key, publicKeyArmored:String }
-(if private key is passed) or { publicKey:Key, publicKeyArmored:String } (otherwise)</p>
+<code>{ privateKey:Key, privateKeyArmored:String, publicKey:Key, publicKeyArmored:String }</code>
+(if private key is passed) or <code>{ publicKey:Key, publicKeyArmored:String }</code> (otherwise)</p>
 </div>
 
 
@@ -4488,7 +6444,7 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Object></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -4506,7 +6462,7 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
     
 
     
-    <h4 class="name" id="sign"><span class="type-signature">(async) </span>sign<span class="signature">(message, privateKeys, armor, streaming, detached, signingKeyIds, date, fromUserIds, config)</span><span class="type-signature"> &rarr; {Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)>}</span></h4>
+    <h4 class="name" id="sign"><span class="type-signature">(async) </span>sign<span class="signature">(options)</span><span class="type-signature"> &rarr; {String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>}</span></h4>
     
 
     
@@ -4550,6 +6506,52 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>message</code></td>
             
 
@@ -4566,7 +6568,19 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>(cleartext) message to be signed</p></td>
@@ -4592,10 +6606,22 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>array of keys or single key with decrypted secret key data to sign cleartext</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of keys or single key with decrypted secret key data to sign cleartext</p></td>
         </tr>
 
     
@@ -4615,10 +6641,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether the return values should be ascii armored (true, the default) or binary (false)</p></td>
+            
+                <td class="default">
+                
+                    true
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether the return values should be ascii armored (true, the default) or binary (false)</p></td>
         </tr>
 
     
@@ -4647,10 +6689,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether to return data as a stream. Defaults to the type of stream <code>message</code> was created from, if any.</p></td>
+            
+                <td class="default">
+                
+                    type of stream `message` was created from, if any
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to return data as a stream. Defaults to the type of stream <code>message</code> was created from, if any.</p></td>
         </tr>
 
     
@@ -4670,10 +6728,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) if the return value should contain a detached signature</p></td>
+            
+                <td class="default">
+                
+                    false
+                
+                </td>
+            
+
+            <td class="description last"><p>If the return value should contain a detached signature</p></td>
         </tr>
 
     
@@ -4693,10 +6767,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]</p></td>
+            
+                <td class="default">
+                
+                    latest-created valid signing (sub)keys
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]</p></td>
         </tr>
 
     
@@ -4716,10 +6806,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) override the creation date of the signature</p></td>
+            
+                <td class="default">
+                
+                    current date
+                
+                </td>
+            
+
+            <td class="description last"><p>Override the creation date of the signature</p></td>
         </tr>
 
     
@@ -4739,10 +6845,26 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) array of user IDs to sign with, one per key in <code>privateKeys</code>, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]</p></td>
+            
+                <td class="default">
+                
+                    primary user IDs
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of user IDs to sign with, one per key in <code>privateKeys</code>, e.g. <code>[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]</code></p></td>
         </tr>
 
     
@@ -4762,10 +6884,31 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -4808,7 +6951,7 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L341">line 341</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L349">line 349</a>
     </li></ul></dd>
     
 
@@ -4837,7 +6980,7 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
 
         
 <div class="param-desc">
-    <p>(String if <code>armor</code> was true, the default; Uint8Array if <code>armor</code> was false)</p>
+    <p>Signed message (string if <code>armor</code> was true, the default; Uint8Array if <code>armor</code> was false).</p>
 </div>
 
 
@@ -4848,7 +6991,22 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)></span>
+<span class="param-type">String</span>
+|
+
+<span class="param-type">ReadableStream.&lt;String></span>
+|
+
+<span class="param-type">NodeStream.&lt;String></span>
+|
+
+<span class="param-type">Uint8Array</span>
+|
+
+<span class="param-type">ReadableStream.&lt;Uint8Array></span>
+|
+
+<span class="param-type">NodeStream.&lt;Uint8Array></span>
 
 
     </dd>
@@ -4866,7 +7024,7 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
     
 
     
-    <h4 class="name" id="unarmor"><span class="type-signature">(async) </span>unarmor<span class="signature">(text)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+    <h4 class="name" id="unarmor"><span class="type-signature">(async) </span>unarmor<span class="signature">(input)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -4874,7 +7032,7 @@ If a revocation certificate is passed, the reasonForRevocation parameters will b
 
 
 <div class="description">
-    <p>DeArmor an OpenPGP armored message; verify the checksum and return
+    <p>Dearmor an OpenPGP armored message; verify the checksum and return
 the encoded bytes</p>
 </div>
 
@@ -4911,7 +7069,7 @@ the encoded bytes</p>
 
         <tr>
             
-                <td class="name"><code>text</code></td>
+                <td class="name"><code>input</code></td>
             
 
             <td class="type">
@@ -4970,7 +7128,7 @@ the encoded bytes</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/encoding/armor.js#L231">line 231</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/encoding/armor.js#L231">line 231</a>
     </li></ul></dd>
     
 
@@ -5011,7 +7169,7 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Object></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -5029,7 +7187,7 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
     
 
     
-    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(publicKeys, message, format, streaming, signature, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
+    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(options)</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
     
@@ -5073,6 +7231,52 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
 
         <tr>
             
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
                 <td class="name"><code>publicKeys</code></td>
             
 
@@ -5089,10 +7293,22 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>array of publicKeys or single key, to verify signatures</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Array of publicKeys or single key, to verify signatures</p></td>
         </tr>
 
     
@@ -5115,7 +7331,19 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
             </td>
 
             
+                <td class="attributes">
+                
 
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
             
 
             <td class="description last"><p>(cleartext) message object with signatures</p></td>
@@ -5141,10 +7369,26 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.</p></td>
+            
+                <td class="default">
+                
+                    'utf8'
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.</p></td>
         </tr>
 
     
@@ -5173,10 +7417,26 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) whether to return data as a stream. Defaults to the type of stream <code>message</code> was created from, if any.</p></td>
+            
+                <td class="default">
+                
+                    type of stream `message` was created from, if any
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to return data as a stream. Defaults to the type of stream <code>message</code> was created from, if any.</p></td>
         </tr>
 
     
@@ -5196,10 +7456,24 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) detached signature for verification</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Detached signature for verification</p></td>
         </tr>
 
     
@@ -5219,10 +7493,26 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) use the given date for verification instead of the current time</p></td>
+            
+                <td class="default">
+                
+                    current date
+                
+                </td>
+            
+
+            <td class="description last"><p>Use the given date for verification instead of the current time</p></td>
         </tr>
 
     
@@ -5242,10 +7532,31 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
             
 
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in openpgp.config</p></td>
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -5288,7 +7599,7 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-0/src/openpgp.js#L395">line 395</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/openpgp.js#L404">line 404</a>
     </li></ul></dd>
     
 
@@ -5339,7 +7650,7 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Object></span>
+<span class="param-type">Object</span>
 
 
     </dd>
@@ -5367,13 +7678,13 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="HKP.html">HKP</a></li><li><a href="Key.html">Key</a></li><li><a href="KeyArray.html">KeyArray</a></li><li><a href="Keyring.html">Keyring</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-Keyid.html">Keyid</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li><li><a href="WKD.html">WKD</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-Keyid.html">Keyid</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a> on Sat Feb 27 2021 01:25:52 GMT+0100 (Midden-Europese standaardtijd)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a>
 </footer>
 
 <script> prettyPrint(); </script>
