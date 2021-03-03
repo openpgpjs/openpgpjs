@@ -89,10 +89,9 @@ class SignaturePacket {
   /**
    * parsing function for a signature packet (tag 2).
    * @param {String} bytes - Payload of a tag 2 packet
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {SignaturePacket} Object representation.
    */
-  read(bytes, config = defaultConfig) {
+  read(bytes) {
     let i = 0;
     this.version = bytes[i++];
 
@@ -105,7 +104,7 @@ class SignaturePacket {
     this.hashAlgorithm = bytes[i++];
 
     // hashed subpackets
-    i += this.read_sub_packets(bytes.subarray(i, bytes.length), true, config);
+    i += this.read_sub_packets(bytes.subarray(i, bytes.length), true);
 
     // A V4 signature hashes the packet body
     // starting from its first field, the version number, through the end
@@ -116,7 +115,7 @@ class SignaturePacket {
     this.signatureData = bytes.subarray(0, i);
 
     // unhashed subpackets
-    i += this.read_sub_packets(bytes.subarray(i, bytes.length), false, config);
+    i += this.read_sub_packets(bytes.subarray(i, bytes.length), false);
 
     // Two-octet field holding left 16 bits of signed hash value.
     this.signedHashValue = bytes.subarray(i, i + 2);
@@ -331,7 +330,7 @@ class SignaturePacket {
 
   // V4 signature sub packets
 
-  read_sub_packet(bytes, trusted = true, config) {
+  read_sub_packet(bytes, trusted = true) {
     let mypos = 0;
 
     const read_array = (prop, bytes) => {
@@ -434,14 +433,10 @@ class SignaturePacket {
         const name = util.uint8ArrayToStr(bytes.subarray(mypos, mypos + m));
         const value = bytes.subarray(mypos + m, mypos + m + n);
 
-        this.rawNotations.push({ name, humanReadable, value });
+        this.rawNotations.push({ name, humanReadable, value, critical });
 
         if (humanReadable) {
           this.notations[name] = util.uint8ArrayToStr(value);
-        }
-
-        if (critical && (config.knownNotations.indexOf(name) === -1)) {
-          throw new Error("Unknown critical notation: " + name);
         }
         break;
       }
@@ -705,6 +700,11 @@ class SignaturePacket {
       [enums.signature.binary, enums.signature.text].includes(this.signatureType)) {
       throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
     }
+    this.rawNotations.forEach(({ name, critical }) => {
+      if (critical && (config.knownNotations.indexOf(name) < 0)) {
+        throw new Error(`Unknown critical notation: ${name}`);
+      }
+    });
     if (this.revocationKeyClass !== null) {
       throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
     }
