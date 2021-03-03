@@ -326,10 +326,8 @@ export class Message {
     if (aeadAlgorithm) {
       symEncryptedPacket = new AEADEncryptedDataPacket();
       symEncryptedPacket.aeadAlgorithm = aeadAlgorithm;
-    } else if (config.integrityProtect) {
-      symEncryptedPacket = new SymEncryptedIntegrityProtectedDataPacket();
     } else {
-      symEncryptedPacket = new SymmetricallyEncryptedDataPacket();
+      symEncryptedPacket = new SymEncryptedIntegrityProtectedDataPacket();
     }
     symEncryptedPacket.packets = this.packets;
 

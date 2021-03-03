@@ -82,19 +82,20 @@ export default {
    * @property {Integer} s2kIterationCountByte
    */
   s2kIterationCountByte: 224,
-  /** Use integrity protection for symmetric encryption
-   * @memberof module:config
-   * @property {Boolean} integrityProtect
-   */
-  integrityProtect: true,
   /**
+   * Allow decryption of messages without integrity protection.
+   * This is an **insecure** setting:
+   *  - message modifications cannot be detected, thus processing the decrypted data is potentially unsafe.
+   *  - it enables downgrade attacks against integrity-protected messages.
    * @memberof module:config
-   * @property {Boolean} ignoreMdcError Fail on decrypt if message is not integrity protected
+   * @property {Boolean} allowUnauthenticatedMessages
    */
-  ignoreMdcError: false,
+  allowUnauthenticatedMessages: false,
   /**
+   * Allow streaming unauthenticated data before its integrity has been checked.
+   * This setting is **insecure** if the partially decrypted message is processed further or displayed to the user.
    * @memberof module:config
-   * @property {Boolean} allowUnauthenticatedStream Stream unauthenticated data before integrity has been checked
+   * @property {Boolean} allowUnauthenticatedStream
    */
   allowUnauthenticatedStream: false,
   /**

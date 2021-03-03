@@ -75,8 +75,8 @@ class SymmetricallyEncryptedDataPacket {
    */
   async decrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
     // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
-    if (!config.ignoreMdcError) {
-      throw new Error('Decryption failed due to missing MDC.');
+    if (!config.allowUnauthenticatedMessages) {
+      throw new Error('Message is not authenticated.');
     }
 
     this.encrypted = await stream.readToEnd(this.encrypted);

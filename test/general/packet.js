@@ -67,9 +67,9 @@ module.exports = () => describe("Packet", function() {
 
   it('Symmetrically encrypted packet without integrity protection - allow decryption', async function() {
     const aeadProtectVal = openpgp.config.aeadProtect;
-    const ignoreMdcErrorVal = openpgp.config.ignoreMdcError;
+    const allowUnauthenticatedMessagesVal = openpgp.config.allowUnauthenticatedMessages;
     openpgp.config.aeadProtect = false;
-    openpgp.config.ignoreMdcError = true;
+    openpgp.config.allowUnauthenticatedMessages = true;
 
     const message = new openpgp.PacketList();
     const testText = input.createSomeMessage();
@@ -94,7 +94,7 @@ module.exports = () => describe("Packet", function() {
       expect(await stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
-      openpgp.config.ignoreMdcError = ignoreMdcErrorVal;
+      openpgp.config.allowUnauthenticatedMessages = allowUnauthenticatedMessagesVal;
     }
   });
 
@@ -120,7 +120,7 @@ module.exports = () => describe("Packet", function() {
 
       const msg2 = new openpgp.PacketList();
       await msg2.read(message.write(), { SymmetricallyEncryptedDataPacket: openpgp.SymmetricallyEncryptedDataPacket });
-      await expect(msg2[0].decrypt(algo, key, undefined, openpgp.config)).to.eventually.be.rejectedWith('Decryption failed due to missing MDC.');
+      await expect(msg2[0].decrypt(algo, key, undefined, openpgp.config)).to.eventually.be.rejectedWith('Message is not authenticated.');
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
     }
@@ -838,12 +838,12 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const { privateParams, publicParams } = await crypto.generateParams(rsa, 1024, 65537);
 
-    const secretKeyPacket = new openpgp.SecretKeyPacket(undefined, { ...openpgp.config, v5Keys: true });
+    const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
     secretKeyPacket.algorithm = "rsaSign";
     secretKeyPacket.isEncrypted = false;
-    await secretKeyPacket.encrypt('hello', openpgp.config);
+    await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: true });
     expect(secretKeyPacket.s2k_usage).to.equal(253);
 
     const raw = new openpgp.PacketList();
@@ -860,12 +860,12 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   it('Writing and encryption of a secret key packet (CFB)', async function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const { privateParams, publicParams } = await crypto.generateParams(rsa, 1024, 65537);
-    const secretKeyPacket = new openpgp.SecretKeyPacket(undefined, { ...openpgp.config, v5Keys: false });
+    const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
     secretKeyPacket.algorithm = "rsaSign";
     secretKeyPacket.isEncrypted = false;
-    await secretKeyPacket.encrypt('hello', openpgp.config);
+    await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: false });
     expect(secretKeyPacket.s2k_usage).to.equal(254);
 
     const raw = new openpgp.PacketList();
