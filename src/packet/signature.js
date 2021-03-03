@@ -434,14 +434,10 @@ class SignaturePacket {
         const name = util.uint8ArrayToStr(bytes.subarray(mypos, mypos + m));
         const value = bytes.subarray(mypos + m, mypos + m + n);
 
-        this.rawNotations.push({ name, humanReadable, value });
+        this.rawNotations.push({ name, humanReadable, value, critical });
 
         if (humanReadable) {
           this.notations[name] = util.uint8ArrayToStr(value);
-        }
-
-        if (critical && (config.knownNotations.indexOf(name) === -1)) {
-          throw new Error("Unknown critical notation: " + name);
         }
         break;
       }
@@ -673,6 +669,12 @@ class SignaturePacket {
     if (publicKeyAlgorithm !== enums.write(enums.publicKey, key.algorithm)) {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
     }
+
+    this.rawNotations.forEach(({ name, critical }) => {
+      if (critical && (config.knownNotations.indexOf(name) < 0)) {
+        throw new Error(`Unknown critical notation: ${name}`);
+      }
+    });
 
     let toHash;
     let hash;

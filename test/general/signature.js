@@ -917,32 +917,6 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(notation.humanReadable).to.equal(false);
   });
 
-  it('Checks for critical bit in non-human-readable notations', async function() {
-    try {
-      await openpgp.readSignature({
-        config: { tolerant: false },
-        armoredSignature: `-----BEGIN PGP SIGNATURE-----
-
-wsEfBAABCABJBYJfKDH0K5QAAAAAAB0ABXVua25vd25AdGVzdHMuc2VxdW9pYS1w
-Z3Aub3JndmFsdWUWIQTRpm4aI7GCyZgPeIz7/MgqAV5zMAAKCRD7/MgqAV5zMLBK
-C/9Vdte8yq8QFp7Bo3mWWXiUDJ2vOdEpJs9PB12hN97wewjFKWvKcWRHofBrK+0v
-P4/sixMjqSXB75iz/lzCbPjkmgmaGKN6Smq6Pj5kIdpWIdtfjNoa+OEn1emrxpY1
-dT0Pe7r8w3Y/JmfK1ZoFfiq5YBP+rsjmAXf6BQ9RH+kMUsOgOVCjqzI5vPibTD91
-Aefm7XS35Wlj/O/zFXR9tiZyE/dKIujohB3bsV6sAmYzPxZVuZCYaj+6afRlAuWg
-IYs+aFmldMg4p1t1Ab/bRHbBxIlzhtbNE6IyOfc17mgOcjQzVJBc/EaxD7S3KjU2
-4aFmOaLyWDrvAJu1Ror2b+zekEiq90CnCtAUiAq6/qbWlGCGX4zFKWyHousDJcEB
-1n0xDkFUhndisMZanaU3S1hwzawMnpHi1RHI2a/etPPk0Ryrzo2rFi8ZdAHLWY6o
-4ymAWpppg47NhCwuYh/EG5G1P4ccxksRj1GX2r5HxH8ZeAQWWdviINErgrUONWHy
-bwM=
-=0x2S
------END PGP SIGNATURE-----`
-      });
-      throw new Error('openpgp.readSignature should throw but it did not.');
-    } catch (e) {
-      expect(e.message).to.equal('Unknown critical notation: unknown@tests.sequoia-pgp.org');
-    }
-  });
-
   it('Verify V4 signature. Hash: SHA1. PK: RSA. Signature Type: 0x00 (binary document)', async function() {
     const { rejectMessageHashAlgorithms } = openpgp.config;
     Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
@@ -1046,36 +1020,18 @@ bwM=
   });
 
   it('Verify fails with signed message with critical notations', async function() {
-    let testFailed = true;
-    try {
-      openpgp.config.tolerant = false;
-      const sMsg = await openpgp.readMessage({ armoredMessage: signature_with_critical_notation });
-      const pub_key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
-      const verified = await sMsg.verify([pub_key]);
-      await verified[0].verified;
-      testFailed = false;
-    } catch (e) {
-      expect(e.message).to.equal('Unknown critical notation: test@example.com');
-    } finally {
-      openpgp.config.tolerant = true;
-    }
-    // fail the test if execution does not throw an exception
-    expect(testFailed).to.be.true;
+    const message = await openpgp.readMessage({ armoredMessage: signature_with_critical_notation });
+    const key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
+    const { signatures: [sig] } = await openpgp.verify({ message, publicKeys: key });
+    expect(sig.error).to.match(/Unknown critical notation: test@example.com/);
   });
 
   it('Verify succeeds with known signed message with critical notations', async function() {
-    openpgp.config.tolerant = false;
-    openpgp.config.knownNotations.push('test@example.com');
-    try {
-      const sMsg = await openpgp.readMessage({ armoredMessage: signature_with_critical_notation });
-      const pub_key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
-      const verified = await sMsg.verify([pub_key]);
-      openpgp.stream.pipe(sMsg.getLiteralData(), new openpgp.stream.WritableStream());
-      expect(await verified[0].verified).to.be.true;
-    } finally {
-      openpgp.config.knownNotations.pop();
-      openpgp.config.tolerant = true;
-    }
+    const config = { knownNotations: ['test@example.com'] };
+    const message = await openpgp.readMessage({ armoredMessage: signature_with_critical_notation });
+    const key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
+    const { signatures: [sig] } = await openpgp.verify({ message, publicKeys: key, config });
+    expect(sig.valid).to.be.true;
   });
 
   it('Verify cleartext signed message with two signatures with openpgp.verify', async function() {
