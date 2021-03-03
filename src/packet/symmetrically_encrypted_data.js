@@ -79,10 +79,10 @@ class SymmetricallyEncryptedDataPacket {
       throw new Error('Message is not authenticated.');
     }
 
-    this.encrypted = await stream.readToEnd(this.encrypted);
+    const encrypted = await stream.readToEnd(stream.clone(this.encrypted));
     const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key,
-      this.encrypted.subarray(crypto.cipher[sessionKeyAlgorithm].blockSize + 2),
-      this.encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
+      encrypted.subarray(crypto.cipher[sessionKeyAlgorithm].blockSize + 2),
+      encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
     );
 
     await this.packets.read(decrypted, {
