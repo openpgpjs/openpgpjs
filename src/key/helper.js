@@ -132,7 +132,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @async
  */
 export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = {}, config) {
-  let hash_algo = config.preferHashAlgorithm;
+  let hash_algo = config.preferredHashAlgorithm;
   let pref_algo = hash_algo;
   if (key) {
     const primaryUser = await key.getPrimaryUser(date, userId, config);

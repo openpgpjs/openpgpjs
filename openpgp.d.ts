@@ -300,8 +300,8 @@ export class Message<T extends MaybeStream<Data>> {
 /* ############## v5 CONFIG #################### */
 
 interface Config {
-  preferHashAlgorithm: enums.hash;
-  encryptionCipher: enums.symmetric;
+  preferredHashAlgorithm: enums.hash;
+  preferredCipherAlgorithm: enums.symmetric;
   compression: enums.compression;
   showVersion: boolean;
   showComment: boolean;

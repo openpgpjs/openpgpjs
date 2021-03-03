@@ -161,18 +161,18 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.symmetric.aes256,
       enums.symmetric.aes128,
       enums.symmetric.aes192
-    ], config.encryptionCipher);
+    ], config.preferredCipherAlgorithm);
     if (config.aeadProtect) {
       signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
-      ], config.aeadMode);
+      ], config.preferredAEADAlgorithm);
     }
     signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
       enums.hash.sha256,
       enums.hash.sha512
-    ], config.preferHashAlgorithm);
+    ], config.preferredHashAlgorithm);
     signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
       enums.compression.zlib,
       enums.compression.zip,

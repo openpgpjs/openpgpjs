@@ -2112,14 +2112,14 @@ function versionSpecificTests() {
   });
 
   it('Preferences of generated key - with config values', async function() {
-    const encryptionCipherVal = openpgp.config.encryptionCipher;
-    const preferHashAlgorithmVal = openpgp.config.preferHashAlgorithm;
+    const preferredCipherAlgorithmVal = openpgp.config.preferredCipherAlgorithm;
+    const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;
     const compressionVal = openpgp.config.compression;
-    const aeadModeVal = openpgp.config.aeadMode;
-    openpgp.config.encryptionCipher = openpgp.enums.symmetric.aes192;
-    openpgp.config.preferHashAlgorithm = openpgp.enums.hash.sha224;
+    const preferredAEADAlgorithmVal = openpgp.config.preferredAEADAlgorithm;
+    openpgp.config.preferredCipherAlgorithm = openpgp.enums.symmetric.aes192;
+    openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
     openpgp.config.compression = openpgp.enums.compression.zlib;
-    openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm;
+    openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGcm;
 
     const testPref = function(key) {
       // key flags
@@ -2155,10 +2155,10 @@ function versionSpecificTests() {
       testPref(key.key);
       testPref(await openpgp.readKey({ armoredKey: key.publicKeyArmored }));
     } finally {
-      openpgp.config.encryptionCipher = encryptionCipherVal;
-      openpgp.config.preferHashAlgorithm = preferHashAlgorithmVal;
+      openpgp.config.preferredCipherAlgorithm = preferredCipherAlgorithmVal;
+      openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
       openpgp.config.compression = compressionVal;
-      openpgp.config.aeadMode = aeadModeVal;
+      openpgp.config.preferredAEADAlgorithm = preferredAEADAlgorithmVal;
     }
   });
 

@@ -24,14 +24,14 @@ import enums from '../enums';
 export default {
   /**
    * @memberof module:config
-   * @property {Integer} preferHashAlgorithm Default hash algorithm {@link module:enums.hash}
+   * @property {Integer} preferredHashAlgorithm Default hash algorithm {@link module:enums.hash}
    */
-  preferHashAlgorithm: enums.hash.sha256,
+  preferredHashAlgorithm: enums.hash.sha256,
   /**
    * @memberof module:config
-   * @property {Integer} encryptionCipher Default encryption cipher {@link module:enums.symmetric}
+   * @property {Integer} preferredCipherAlgorithm Default encryption cipher {@link module:enums.symmetric}
    */
-  encryptionCipher: enums.symmetric.aes256,
+  preferredCipherAlgorithm: enums.symmetric.aes256,
   /**
    * @memberof module:config
    * @property {Integer} compression Default compression algorithm {@link module:enums.compression}
@@ -56,9 +56,9 @@ export default {
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aeadProtect is set to true.
    * @memberof module:config
-   * @property {Integer} aeadMode Default AEAD mode {@link module:enums.aead}
+   * @property {Integer} preferredAEADAlgorithm Default AEAD mode {@link module:enums.aead}
    */
-  aeadMode: enums.aead.eax,
+  preferredAEADAlgorithm: enums.aead.eax,
   /**
    * Chunk Size Byte for Authenticated Encryption with Additional Data (AEAD) mode
    * Only has an effect when aeadProtect is set to true.

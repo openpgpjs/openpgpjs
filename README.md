@@ -79,9 +79,9 @@ library to convert back and forth between them.
   You can change the AEAD mode by setting one of the following options:
 
   ```
-  openpgp.config.aeadMode = openpgp.enums.aead.eax // Default, native
-  openpgp.config.aeadMode = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax // Default, native
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb // Non-native
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
   ```
 
 * For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256.
@@ -169,7 +169,7 @@ Here are some examples of how to use OpenPGP.js v5. For more elaborate examples 
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
-Encryption will use the algorithm specified in config.encryptionCipher (defaults to aes256), and decryption will use the algorithm used for encryption.
+Encryption will use the algorithm specified in config.preferredCipherAlgorithm (defaults to aes256), and decryption will use the algorithm used for encryption.
 
 ```js
 (async () => {
