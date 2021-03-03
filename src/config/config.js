@@ -88,7 +88,7 @@ export default {
    *  - message modifications cannot be detected, thus processing the decrypted data is potentially unsafe.
    *  - it enables downgrade attacks against integrity-protected messages.
    * @memberof module:config
-   * @property {Boolean} allowUnauthenticatedMessages Allow decrytion of messages without integrity protection
+   * @property {Boolean} allowUnauthenticatedMessages
    */
   allowUnauthenticatedMessages: false,
   /**

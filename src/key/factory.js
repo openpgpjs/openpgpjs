@@ -185,11 +185,9 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signaturePacket.features = [0];
     signaturePacket.features[0] |= enums.features.modificationDetection;
     if (config.aeadProtect) {
-      signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.aead;
     }
     if (config.v5Keys) {
-      signaturePacket.features || (signaturePacket.features = [0]);
       signaturePacket.features[0] |= enums.features.v5Keys;
     }
     if (options.keyExpirationTime > 0) {
