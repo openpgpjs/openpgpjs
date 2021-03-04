@@ -169,33 +169,30 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @async
  */
 export async function getPreferredAlgo(type, keys, date = new Date(), userIds = [], config = defaultConfig) {
-  const prefProperty = type === 'symmetric' ? 'preferredSymmetricAlgorithms' : 'preferredAeadAlgorithms';
-  const defaultAlgo = type === 'symmetric' ? enums.symmetric.aes128 : enums.aead.eax;
-  const prioMap = {};
-  await Promise.all(keys.map(async function(key, i) {
+  const defaultAlgo = { // these are all must-implement
+    'symmetric': enums.symmetric.aes128,
+    'aead': enums.aead.eax,
+    'compression': enums.compression.uncompressed
+  }[type];
+  const preferredSenderAlgo = {
+    'symmetric': config.preferredCipherAlgorithm,
+    'aead': config.preferredAeadAlgorithm,
+    'compression': config.compression
+  }[type];
+  const prefPropertyName = {
+    'symmetric': 'preferredSymmetricAlgorithms',
+    'aead': 'preferredAeadAlgorithms',
+    'compression': 'preferredCompressionAlgorithms'
+  }[type];
+
+  // if preferredSenderAlgo appears in the prefs of all recipient, we pick it
+  // otherwise we use the default algo
+  const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i], config);
-    if (!primaryUser.selfCertification[prefProperty]) {
-      return defaultAlgo;
-    }
-    primaryUser.selfCertification[prefProperty].forEach(function(algo, index) {
-      const entry = prioMap[algo] || (prioMap[algo] = { prio: 0, count: 0, algo: algo });
-      entry.prio += 64 >> index;
-      entry.count++;
-    });
+    const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
+    return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
-  let prefAlgo = { prio: 0, algo: defaultAlgo };
-  Object.values(prioMap).forEach(({ prio, count, algo }) => {
-    try {
-      if (algo !== enums[type].plaintext &&
-          algo !== enums[type].idea && // not implemented
-          enums.read(enums[type], algo) && // known algorithm
-          count === keys.length && // available for all keys
-          prio > prefAlgo.prio) {
-        prefAlgo = prioMap[algo];
-      }
-    } catch (e) {}
-  });
-  return prefAlgo.algo;
+  return (senderAlgoSupport.length > 0 && senderAlgoSupport.every(Boolean)) ? preferredSenderAlgo : defaultAlgo;
 }
 
 /**
