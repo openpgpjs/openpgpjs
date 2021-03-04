@@ -279,7 +279,7 @@ Either set the `compression` parameter in the options object when calling `encry
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
-        compression: openpgp.enums.compression.zip // compress the data with zip
+        preferredCompressionAlgorithm: openpgp.enums.compression.zip // compress the data with zip
     });
 })();
 ```
@@ -287,7 +287,7 @@ Either set the `compression` parameter in the options object when calling `encry
 Or, override the config to enable compression:
 
 ```js
-openpgp.config.compression = openpgp.enums.compression.zlib;
+openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib;
 ```
 
 Where the value can be any of:

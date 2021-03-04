@@ -266,7 +266,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
     }
     const compressionAlgo = (publicKeys && publicKeys.length > 0) ?
       await getPreferredAlgo('compression', publicKeys || [], date, toUserIds, config) :
-      config.compression;
+      config.preferredCompressionAlgorithm;
     message = message.compress(compressionAlgo, config);
     message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIds, date, toUserIds, streaming, config);
     const data = armor ? message.armor(config) : message.write();

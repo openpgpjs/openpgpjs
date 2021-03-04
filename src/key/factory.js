@@ -168,7 +168,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.compression.uncompressed,
       enums.compression.zlib,
       enums.compression.zip
-    ], config.compression);
+    ], config.preferredCompressionAlgorithm);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
     }

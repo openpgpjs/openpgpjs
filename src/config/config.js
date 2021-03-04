@@ -36,7 +36,7 @@ export default {
    * @memberof module:config
    * @property {Integer} compression Default compression algorithm {@link module:enums.compression}
    */
-  compression: enums.compression.uncompressed,
+  preferredCompressionAlgorithm: enums.compression.uncompressed,
   /**
    * @memberof module:config
    * @property {Integer} deflateLevel Default zip/zlib compression level, between 1 and 9

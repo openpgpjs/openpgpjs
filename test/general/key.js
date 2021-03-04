@@ -2114,11 +2114,11 @@ function versionSpecificTests() {
   it('Preferences of generated key - with config values', async function() {
     const preferredCipherAlgorithmVal = openpgp.config.preferredCipherAlgorithm;
     const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;
-    const compressionVal = openpgp.config.compression;
+    const preferredCompressionAlgorithmVal = openpgp.config.preferredCompressionAlgorithm;
     const preferredAeadAlgorithmVal = openpgp.config.preferredAeadAlgorithm;
     openpgp.config.preferredCipherAlgorithm = openpgp.enums.symmetric.aes192;
     openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
-    openpgp.config.compression = openpgp.enums.compression.zlib;
+    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib;
     openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.experimentalGcm;
 
     const testPref = function(key) {
@@ -2157,7 +2157,7 @@ function versionSpecificTests() {
     } finally {
       openpgp.config.preferredCipherAlgorithm = preferredCipherAlgorithmVal;
       openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
-      openpgp.config.compression = compressionVal;
+      openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
       openpgp.config.preferredAeadAlgorithm = preferredAeadAlgorithmVal;
     }
   });

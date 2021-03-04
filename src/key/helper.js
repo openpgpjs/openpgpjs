@@ -177,7 +177,7 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
   const preferredSenderAlgo = {
     'symmetric': config.preferredCipherAlgorithm,
     'aead': config.preferredAeadAlgorithm,
-    'compression': config.compression
+    'compression': config.preferredCompressionAlgorithm
   }[type];
   const prefPropertyName = {
     'symmetric': 'preferredSymmetricAlgorithms',

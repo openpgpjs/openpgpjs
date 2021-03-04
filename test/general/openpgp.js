@@ -685,7 +685,7 @@ function withCompression(tests) {
 
       tests(
         function(options) {
-          options.config = { compression };
+          options.config = { preferredCompressionAlgorithm: compression };
           return options;
         },
         function() {
