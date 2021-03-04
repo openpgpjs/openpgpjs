@@ -159,13 +159,13 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
 }
 
 /**
- * Returns the preferred symmetric/aead algorithm for a set of keys
- * @param {symmetric|aead} type - Type of preference to return
+ * Returns the preferred symmetric/aead/compression algorithm for a set of keys
+ * @param {symmetric|aead|compression} type - Type of preference to return
  * @param {Array<Key>} keys - Set of keys
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Array} [userIds] - User IDs
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {module:enums.symmetric} Preferred symmetric algorithm.
+ * @returns {module:enums.symmetric|aead|compression} Preferred algorithm
  * @async
  */
 export async function getPreferredAlgo(type, keys, date = new Date(), userIds = [], config = defaultConfig) {
@@ -185,7 +185,7 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
     'compression': 'preferredCompressionAlgorithms'
   }[type];
 
-  // if preferredSenderAlgo appears in the prefs of all recipient, we pick it
+  // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
   const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i], config);

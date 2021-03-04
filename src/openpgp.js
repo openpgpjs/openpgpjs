@@ -19,7 +19,7 @@ import stream from '@openpgp/web-stream-tools';
 import { createReadableStreamWrapper } from '@mattiasbuelens/web-streams-adapter';
 import { Message } from './message';
 import { CleartextMessage } from './cleartext';
-import { generate, reformat } from './key';
+import { generate, reformat, getPreferredAlgo } from './key';
 import defaultConfig from './config';
 import util from './util';
 
@@ -264,7 +264,10 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       message = await message.sign(privateKeys, signature, signingKeyIds, date, fromUserIds, message.fromStream, config);
     }
-    message = message.compress(config);
+    const compressionAlgo = (publicKeys && publicKeys.length > 0) ?
+      await getPreferredAlgo('compression', publicKeys || [], date, toUserIds, config) :
+      config.compression;
+    message = message.compress(compressionAlgo, config);
     message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIds, date, toUserIds, streaming, config);
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
