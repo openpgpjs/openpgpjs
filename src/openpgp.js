@@ -265,7 +265,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
       message = await message.sign(privateKeys, signature, signingKeyIds, date, fromUserIds, message.fromStream, config);
     }
     message = message.compress(
-      await getPreferredAlgo('compression', publicKeys || [], date, toUserIds, config),
+      await getPreferredAlgo('compression', publicKeys, date, toUserIds, config),
       config
     );
     message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIds, date, toUserIds, streaming, config);

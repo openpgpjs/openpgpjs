@@ -278,20 +278,20 @@ It's possible to change that behaviour by enabling compression through the confi
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
-        config: { preferredCompressionAlgorithm: openpgp.enums.compression.zip } // compress the data with zip
+        config: { preferredCompressionAlgorithm: openpgp.enums.compression.zlib } // compress the data with zlib
     });
 })();
 ```
 
 or by changing the default global configuration:
 ```js
-openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zip
+openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib
 ```
 
 Where the value can be any of:
  * `openpgp.enums.compression.zip`
  * `openpgp.enums.compression.zlib`
- * `openpgp.enums.compression.uncompressed`
+ * `openpgp.enums.compression.uncompressed` (default)
 
 
 

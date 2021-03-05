@@ -161,14 +161,14 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
 /**
  * Returns the preferred symmetric/aead/compression algorithm for a set of keys
  * @param {symmetric|aead|compression} type - Type of preference to return
- * @param {Array<Key>} keys - Set of keys
+ * @param {Array<Key>} [keys] - Set of keys
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Array} [userIds] - User IDs
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {module:enums.symmetric|aead|compression} Preferred algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys, date = new Date(), userIds = [], config = defaultConfig) {
+export async function getPreferredAlgo(type, keys = [], date = new Date(), userIds = [], config = defaultConfig) {
   const defaultAlgo = { // these are all must-implement
     'symmetric': enums.symmetric.aes128,
     'aead': enums.aead.eax,
