@@ -187,12 +187,13 @@ export async function getPreferredAlgo(type, keys, date = new Date(), userIds = 
 
   // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
+  // if no keys are available, preferredSenderAlgo is returned
   const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
     const primaryUser = await key.getPrimaryUser(date, userIds[i], config);
     const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
     return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
-  return (senderAlgoSupport.length > 0 && senderAlgoSupport.every(Boolean)) ? preferredSenderAlgo : defaultAlgo;
+  return senderAlgoSupport.every(Boolean) ? preferredSenderAlgo : defaultAlgo;
 }
 
 /**

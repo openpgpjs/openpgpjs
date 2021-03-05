@@ -264,10 +264,10 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
       message = await message.sign(privateKeys, signature, signingKeyIds, date, fromUserIds, message.fromStream, config);
     }
-    const compressionAlgo = (publicKeys && publicKeys.length > 0) ?
-      await getPreferredAlgo('compression', publicKeys || [], date, toUserIds, config) :
-      config.preferredCompressionAlgorithm;
-    message = message.compress(compressionAlgo, config);
+    message = message.compress(
+      await getPreferredAlgo('compression', publicKeys || [], date, toUserIds, config),
+      config
+    );
     message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIds, date, toUserIds, streaming, config);
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');

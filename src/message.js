@@ -282,17 +282,10 @@ export class Message {
    * @async
    */
   static async generateSessionKey(keys = [], date = new Date(), userIds = [], config = defaultConfig) {
-    let algorithm;
-    let aeadAlgorithm;
-    if (keys && keys.length) {
-      algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds, config));
-      aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIds, config) ?
-        enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds, config)) :
-        undefined;
-    } else {
-      algorithm = enums.read(enums.symmetric, config.preferredCipherAlgorithm);
-      aeadAlgorithm = config.aeadProtect ? enums.read(enums.aead, config.preferredAeadAlgorithm) : undefined;
-    }
+    const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIds, config));
+    const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIds, config) ?
+      enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds, config)) :
+      undefined;
 
     const sessionKeyData = await crypto.generateSessionKey(algorithm);
     return { data: sessionKeyData, algorithm, aeadAlgorithm };

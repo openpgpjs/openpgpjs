@@ -2118,7 +2118,7 @@ function versionSpecificTests() {
     const preferredAeadAlgorithmVal = openpgp.config.preferredAeadAlgorithm;
     openpgp.config.preferredCipherAlgorithm = openpgp.enums.symmetric.aes192;
     openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
-    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib;
+    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zip;
     openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.experimentalGcm;
 
     const testPref = function(key) {
@@ -2137,7 +2137,7 @@ function versionSpecificTests() {
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
       const compr = openpgp.enums.compression;
-      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.uncompressed, compr.zip]);
+      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zip, compr.zlib, compr.uncompressed]);
 
       let expectedFeatures;
       if (openpgp.config.v5Keys) {

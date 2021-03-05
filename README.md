@@ -267,11 +267,10 @@ Encrypt with multiple public keys:
 })();
 ```
 
-#### Encrypt with compression
+#### Encrypt symmetrically with compression
 
-By default, `encrypt` will not use any compression. It's possible to override that behavior in two ways:
-
-Either set the `compression` parameter in the options object when calling `encrypt`.
+By default, `encrypt` will not use any compression when encrypting symmetrically only (i.e. when no `publicKeys` are given).
+It's possible to change that behaviour by enabling compression through the config, either for the single encryption:
 
 ```js
 (async () => {
@@ -279,20 +278,21 @@ Either set the `compression` parameter in the options object when calling `encry
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
-        preferredCompressionAlgorithm: openpgp.enums.compression.zip // compress the data with zip
+        config: { preferredCompressionAlgorithm: openpgp.enums.compression.zip } // compress the data with zip
     });
 })();
 ```
 
-Or, override the config to enable compression:
-
+or by changing the default global configuration:
 ```js
-openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib;
+openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zip
 ```
 
 Where the value can be any of:
  * `openpgp.enums.compression.zip`
  * `openpgp.enums.compression.zlib`
+ * `openpgp.enums.compression.uncompressed`
+
 
 
 #### Streaming encrypt *Uint8Array* data with a password

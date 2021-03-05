@@ -134,7 +134,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIds.map(async function(userId, index) {
-    function createdPreferredAlgos(algos, preferredAlgo) {
+    function createPreferredAlgos(algos, preferredAlgo) {
       return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
     }
 
@@ -147,27 +147,27 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
     signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
-    signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
+    signaturePacket.preferredSymmetricAlgorithms = createPreferredAlgos([
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       enums.symmetric.aes256,
       enums.symmetric.aes128,
       enums.symmetric.aes192
     ], config.preferredCipherAlgorithm);
     if (config.aeadProtect) {
-      signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
+      signaturePacket.preferredAeadAlgorithms = createPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
       ], config.preferredAeadAlgorithm);
     }
-    signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
+    signaturePacket.preferredHashAlgorithms = createPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
       enums.hash.sha256,
       enums.hash.sha512
     ], config.preferredHashAlgorithm);
-    signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
-      enums.compression.uncompressed,
+    signaturePacket.preferredCompressionAlgorithms = createPreferredAlgos([
       enums.compression.zlib,
-      enums.compression.zip
+      enums.compression.zip,
+      enums.compression.uncompressed
     ], config.preferredCompressionAlgorithm);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
