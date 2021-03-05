@@ -24,13 +24,15 @@
 import sha512 from 'hash.js/lib/hash/sha/512';
 import nacl from '@openpgp/tweetnacl/nacl-fast-light.js';
 import util from '../../../util';
+import enums from '../../../enums';
+import hash from '../../hash';
 
 nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 
 /**
  * Sign a message using the provided key
  * @param {module:type/oid} oid - Elliptic curve object identifier
- * @param {module:enums.hash} hash_algo - Hash algorithm used to sign
+ * @param {module:enums.hash} hash_algo - Hash algorithm used to sign (sha256 or stronger)
  * @param {Uint8Array} message - Message to sign
  * @param {Uint8Array} publicKey - Public key
  * @param {Uint8Array} privateKey - Private key used to sign the message
@@ -40,6 +42,10 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
  * @async
  */
 export async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
+  if (hash.getHashByteLength(hash_algo) < hash.getHashByteLength(enums.hash.sha256)) {
+    // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
+    throw new Error('Hash algorithm too weak: sha256 or stronger is required for EdDSA.');
+  }
   const secretKey = util.concatUint8Array([privateKey, publicKey.subarray(1)]);
   const signature = nacl.sign.detached(hashed, secretKey);
   // EdDSA signature params are returned in little-endian format
