@@ -234,7 +234,7 @@ class PublicKeyPacket {
     // RSA, DSA or ElGamal public modulo
     const modulo = this.publicParams.n || this.publicParams.p;
     if (modulo) {
-      result.bits = modulo.length * 8;
+      result.bits = util.uint8ArrayBitLength(modulo);
     } else {
       result.curve = this.publicParams.oid.getName();
     }

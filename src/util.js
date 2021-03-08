@@ -192,15 +192,28 @@ const util = {
    * @returns {Uint8Array} MPI-formatted Uint8Array.
    */
   uint8ArrayToMpi: function (bin) {
+    const bitSize = util.uint8ArrayBitLength(bin);
+    if (bitSize === 0) {
+      throw new Error('Zero MPI');
+    }
+    const stripped = bin.subarray(bin.length - ((bitSize + 7) / 8));
+    const prefix = Uint8Array.from([(bitSize & 0xFF00) >> 8, bitSize & 0xFF]);
+    return util.concatUint8Array([prefix, stripped]);
+  },
+
+  /**
+   * Return bit length of the input data
+   * @param {Uint8Array} bin input data (big endian)
+   * @returns bit length
+   */
+  uint8ArrayBitLength: function (bin) {
     let i; // index of leading non-zero byte
     for (i = 0; i < bin.length; i++) if (bin[i] !== 0) break;
     if (i === bin.length) {
-      throw new Error('Zero MPI');
+      return 0;
     }
     const stripped = bin.subarray(i);
-    const size = (stripped.length - 1) * 8 + util.nbits(stripped[0]);
-    const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
-    return util.concatUint8Array([prefix, stripped]);
+    return (stripped.length - 1) * 8 + util.nbits(stripped[0]);
   },
 
   /**

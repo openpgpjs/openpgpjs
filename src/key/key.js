@@ -300,7 +300,7 @@ class Key {
           if (
             bindingSignature &&
             bindingSignature.embeddedSignature &&
-            helper.isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature) &&
+            helper.isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, config) &&
             await helper.getLatestValidSignature([bindingSignature.embeddedSignature], subKeys[i].keyPacket, enums.signature.keyBinding, dataToVerify, date, config)
           ) {
             return subKeys[i];
@@ -312,7 +312,7 @@ class Key {
     }
     const primaryUser = await this.getPrimaryUser(date, userId, config);
     if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification)) {
+        helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
       return this;
     }
     throw util.wrapError('Could not find valid signing key packet in key ' + this.getKeyId().toHex(), exception);
@@ -339,7 +339,7 @@ class Key {
           await subKeys[i].verify(primaryKey, date, config);
           const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (bindingSignature && helper.isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature)) {
+          if (bindingSignature && helper.isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature, config)) {
             return subKeys[i];
           }
         } catch (e) {
@@ -350,7 +350,7 @@ class Key {
     // if no valid subkey for encryption, evaluate primary key
     const primaryUser = await this.getPrimaryUser(date, userId, config);
     if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+        helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
       return this;
     }
     throw util.wrapError('Could not find valid encryption key packet in key ' + this.getKeyId().toHex(), exception);
@@ -589,8 +589,8 @@ class Key {
     }
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
       const signKey =
-        await this.getSigningKey(keyId, expiry, userId, config).catch(() => {}) ||
-        await this.getSigningKey(keyId, null, userId, config).catch(() => {});
+        await this.getSigningKey(keyId, expiry, userId, { ...config, rejectPublicKeyAlgorithms: new Set([]) }).catch(() => {}) ||
+        await this.getSigningKey(keyId, null, userId, { ...config, rejectPublicKeyAlgorithms: new Set([]) }).catch(() => {});
       if (!signKey) return null;
       const signExpiry = await signKey.getExpirationTime(this.keyPacket, undefined, config);
       if (signExpiry < expiry) expiry = signExpiry;

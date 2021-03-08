@@ -105,7 +105,7 @@ export default {
   checksumRequired: false,
   /**
    * @memberof module:config
-   * @property {Number} minRsaBits Minimum RSA key size allowed for key generation
+   * @property {Number} minRsaBits Minimum RSA key size allowed for key generation and message signing, verification and encryption
    */
   minRsaBits: 2048,
   /**
@@ -180,13 +180,21 @@ export default {
    */
   useIndutnyElliptic: true,
   /**
+   * Reject insecure hash algorithms
    * @memberof module:config
-   * @property {Set<Integer>} reject_hash_algorithms Reject insecure hash algorithms {@link module:enums.hash}
+   * @property {Set<Integer>} rejectHashAlgorithms {@link module:enums.hash}
    */
-  rejectHashAlgorithms: new globalThis.Set([enums.hash.md5, enums.hash.ripemd]),
+  rejectHashAlgorithms: new Set([enums.hash.md5, enums.hash.ripemd]),
   /**
+   * Reject insecure message hash algorithms
    * @memberof module:config
-   * @property {Set<Integer>} reject_message_hash_algorithms Reject insecure message hash algorithms {@link module:enums.hash}
+   * @property {Set<Integer>} rejectMessageHashAlgorithms {@link module:enums.hash}
    */
-  rejectMessageHashAlgorithms: new globalThis.Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1])
+  rejectMessageHashAlgorithms: new Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1]),
+  /**
+   * Reject insecure public key algorithms for message encryption, signing or verification
+   * @memberof module:config
+   * @property {Set<Integer>} rejectPublicKeyAlgorithms {@link module:enums.publicKey} {@link module:enums.hash}
+   */
+  rejectPublicKeyAlgorithms: new Set([enums.publicKey.elgamal, enums.publicKey.dsa])
 };

@@ -59,7 +59,10 @@ class User {
       if (privateKey.hasSameFingerprintAs(primaryKey)) {
         throw new Error('Not implemented for self signing');
       }
-      const signingKey = await privateKey.getSigningKey(undefined, undefined, undefined, config);
+      const signingKey = await privateKey.getSigningKey(
+        undefined, undefined, undefined,
+        { ...config, rejectPublicKeyAlgorithms: new Set([]) }
+      );
       return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
@@ -117,7 +120,7 @@ class User {
       if (!key.getKeyIds().some(id => id.equals(keyid))) {
         return null;
       }
-      const signingKey = await key.getSigningKey(keyid, date, undefined, config);
+      const signingKey = await key.getSigningKey(keyid, date, undefined, { ...config, rejectPublicKeyAlgorithms: new Set([]) });
       if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
