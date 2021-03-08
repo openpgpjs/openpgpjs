@@ -32,7 +32,7 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 /**
  * Sign a message using the provided key
  * @param {module:type/oid} oid - Elliptic curve object identifier
- * @param {module:enums.hash} hash_algo - Hash algorithm used to sign (sha256 or stronger)
+ * @param {module:enums.hash} hash_algo - Hash algorithm used to sign (must be sha256 or stronger)
  * @param {Uint8Array} message - Message to sign
  * @param {Uint8Array} publicKey - Public key
  * @param {Uint8Array} privateKey - Private key used to sign the message

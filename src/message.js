@@ -479,7 +479,7 @@ export class Message {
   }
 
   /**
-   * Compresses the message (the literal and -if signed - signature data packets of the message)
+   * Compresses the message (the literal and -if signed- signature data packets of the message)
    * @param {module:enums.compression} algo - compression algorithm
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Message} New message with compressed content.

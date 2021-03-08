@@ -169,7 +169,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @async
  */
 export async function getPreferredAlgo(type, keys = [], date = new Date(), userIds = [], config = defaultConfig) {
-  const defaultAlgo = { // these are all must-implement
+  const defaultAlgo = { // these are all must-implement in rfc4880bis
     'symmetric': enums.symmetric.aes128,
     'aead': enums.aead.eax,
     'compression': enums.compression.uncompressed
