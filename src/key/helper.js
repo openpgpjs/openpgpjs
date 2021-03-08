@@ -401,7 +401,7 @@ export function isValidDecryptionKeyPacket(signature, config) {
   }
 
   if (config.allowInsecureDecryptionWithSigningKeys) {
-    // This is only relevant for RSA keys, all other signing ciphers cannot decrypt
+    // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
     return true;
   }
 

@@ -739,22 +739,28 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @private
  */
 async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, streaming = false, config = defaultConfig) {
-  let primaryKey = null;
-  let signingKey = null;
-  await Promise.all(keys.map(async function(key) {
-    // Look for the unique key that matches issuerKeyId of signature
-    try {
-      signingKey = await key.getSigningKey(signature.issuerKeyId, null, undefined, config);
+  let primaryKey;
+  let signingKey;
+
+  for (const key of keys) {
+    const issuerKeys = key.getKeys(signature.issuerKeyId);
+    if (issuerKeys.length > 0) {
       primaryKey = key;
-    } catch (e) {}
-  }));
+      break;
+    }
+  }
 
   const signaturePacket = signature.correspondingSig || signature;
   const verifiedSig = {
     keyid: signature.issuerKeyId,
     verified: (async () => {
-      if (!signingKey) {
-        return null;
+      if (!primaryKey) {
+        throw new Error(`Could not find key with id ${signature.issuerKeyId.toHex()}`);
+      }
+      try {
+        signingKey = await primaryKey.getSigningKey(signature.issuerKeyId, null, undefined, config);
+      } catch (e) {
+        throw new Error(`Key with id ${signature.issuerKeyId.toHex()} is not suitable for verification: ${e.message}`);
       }
       await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, streaming, config);
       const sig = await signaturePacket;

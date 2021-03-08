@@ -215,7 +215,7 @@ module.exports = {
     "no-restricted-imports": "error",
     "no-restricted-modules": "error",
     "no-restricted-properties": "error",
-    "no-restricted-syntax": "error",
+    "no-restricted-syntax": ["error", "ForInStatement", "LabeledStatement", "WithStatement"],
     "no-return-assign": "error",
     "no-return-await": "error",
     "no-script-url": "error",
