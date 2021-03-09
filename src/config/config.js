@@ -194,7 +194,7 @@ export default {
   /**
    * Reject insecure public key algorithms for message encryption, signing or verification
    * @memberof module:config
-   * @property {Set<Integer>} rejectPublicKeyAlgorithms {@link module:enums.publicKey} {@link module:enums.hash}
+   * @property {Set<Integer>} rejectPublicKeyAlgorithms {@link module:enums.publicKey}
    */
   rejectPublicKeyAlgorithms: new Set([enums.publicKey.elgamal, enums.publicKey.dsa])
 };

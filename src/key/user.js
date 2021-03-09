@@ -61,7 +61,7 @@ class User {
       }
       const signingKey = await privateKey.getSigningKey(
         undefined, undefined, undefined,
-        { ...config, rejectPublicKeyAlgorithms: new Set([]) }
+        { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }
       );
       return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
@@ -120,7 +120,7 @@ class User {
       if (!key.getKeyIds().some(id => id.equals(keyid))) {
         return null;
       }
-      const signingKey = await key.getSigningKey(keyid, date, undefined, { ...config, rejectPublicKeyAlgorithms: new Set([]) });
+      const signingKey = await key.getSigningKey(keyid, date, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 });
       if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }

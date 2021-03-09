@@ -92,13 +92,15 @@ export async function reformat(options, config) {
   }
 
   if (!options.subkeys) {
-    options.subkeys = await Promise.all(secretSubkeyPackets.map(async secretSubkeyPacket => ({
-      sign: await options.privateKey.getSigningKey(
-        secretSubkeyPacket.getKeyId(), null, undefined,
-        { ...config, rejectPublicKeyAlgorithms: new Set([]) }
-      ).catch(() => {}) &&
-          !await options.privateKey.getEncryptionKey(secretSubkeyPacket.getKeyId(), null, undefined, config).catch(() => {})
-    })));
+    options.subkeys = await Promise.all(secretSubkeyPackets.map(async secretSubkeyPacket => {
+      const canSign = await options.privateKey.getSigningKey(
+        secretSubkeyPacket.getKeyId(), null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }
+      ).catch(() => {});
+      const canEncrypt = await options.privateKey.getEncryptionKey(
+        secretSubkeyPacket.getKeyId(), null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }
+      ).catch(() => {});
+      return { sign: canSign && !canEncrypt };
+    }));
   }
 
   if (options.subkeys.length !== secretSubkeyPackets.length) {
