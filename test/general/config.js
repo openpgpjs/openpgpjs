@@ -62,7 +62,8 @@ module.exports = () => describe('Custom configuration', function() {
       const config = {
         showComment: true,
         preferredCompressionAlgorithm: openpgp.enums.compression.zip,
-        preferredHashAlgorithm: openpgp.enums.hash.sha512
+        preferredHashAlgorithm: openpgp.enums.hash.sha512,
+        rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) // should not matter in this context
       };
       const opt2 = { privateKey: origKey, userIds, config };
       const { key: refKey2, privateKeyArmored: refKeyArmored2 } = await openpgp.reformatKey(opt2);
@@ -171,10 +172,52 @@ module.exports = () => describe('Custom configuration', function() {
       const { packets: [compressed] } = await encrypted2.decrypt(null, passwords, null, encrypted2.fromStream, openpgp.config);
       expect(compressed.tag).to.equal(openpgp.enums.packet.compressedData);
       expect(compressed.algorithm).to.equal("zip");
+
+      const userIds = { name: 'Test User', email: 'text2@example.com' };
+      const { key } = await openpgp.generateKey({ userIds });
+      await expect(openpgp.encrypt({
+        message, publicKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.ecdh]) }
+      })).to.be.eventually.rejectedWith(/ecdh keys are considered too weak/);
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
     }
+  });
+
+  it('openpgp.decrypt', async function() {
+    const plaintext = 'test';
+    const message = openpgp.Message.fromText(plaintext);
+    const userIds = { name: 'Test User', email: 'text2@example.com' };
+    const { key } = await openpgp.generateKey({ userIds, type: 'rsa', rsaBits: 2048 });
+
+    const armoredMessage = await openpgp.encrypt({ message, publicKeys:[key], privateKeys: [key] });
+    const { data, signatures } = await openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage }),
+      privateKeys: [key],
+      publicKeys: [key]
+    });
+    expect(data).to.equal(plaintext);
+    expect(signatures[0].valid).to.be.true;
+
+    const { data: data2, signatures: signatures2 } = await openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage }),
+      privateKeys: [key],
+      publicKeys: [key],
+      config: { minRsaBits: 4096 }
+    });
+    expect(data2).to.equal(plaintext);
+    expect(signatures2[0].valid).to.be.false;
+    expect(signatures2[0].error).to.match(/keys shorter than 4096 bits are considered too weak/);
+
+    const { data: data3, signatures: signatures3 } = await openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage }),
+      privateKeys: [key],
+      publicKeys: [key],
+      config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.rsaEncryptSign]) }
+    });
+    expect(data3).to.equal(plaintext);
+    expect(signatures3[0].valid).to.be.false;
+    expect(signatures3[0].error).to.match(/rsaEncryptSign keys are considered too weak/);
   });
 
   it('openpgp.sign', async function() {
@@ -199,6 +242,10 @@ module.exports = () => describe('Custom configuration', function() {
       config: { rejectHashAlgorithms: new Set([openpgp.enums.hash.sha256, openpgp.enums.hash.sha512]) }
     };
     await expect(openpgp.sign(opt2)).to.be.rejectedWith(/Insecure hash algorithm/);
+
+    await expect(openpgp.sign({
+      message, privateKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
+    })).to.be.eventually.rejectedWith(/eddsa keys are considered too weak/);
   });
 
   it('openpgp.verify', async function() {
@@ -237,6 +284,14 @@ module.exports = () => describe('Custom configuration', function() {
     const { signatures: [sig3] } = await openpgp.verify(opt3);
     await expect(sig3.error).to.match(/Insecure message hash algorithm/);
 
+    const opt4 = {
+      message: await openpgp.readMessage({ armoredMessage: signed }),
+      publicKeys: [key],
+      config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
+    };
+    const { signatures: [sig4] } = await openpgp.verify(opt4);
+    await expect(sig4.valid).to.be.false;
+    await expect(sig4.error).to.match(/eddsa keys are considered too weak/);
   });
 
 });

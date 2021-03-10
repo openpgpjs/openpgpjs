@@ -72,7 +72,8 @@ async function testSubkeyTrust() {
     streaming: false
   });
   expect(verifyAttackerIsBatman.signatures[0].keyid.equals(victimPubKey.subKeys[0].getKeyId())).to.be.true;
-  expect(verifyAttackerIsBatman.signatures[0].valid).to.be.null;
+  expect(verifyAttackerIsBatman.signatures[0].valid).to.be.false;
+  expect(verifyAttackerIsBatman.signatures[0].error).to.match(/Could not find valid signing key packet/);
 }
 
 module.exports = () => it('Does not trust subkeys without Primary Key Binding Signature', testSubkeyTrust);
