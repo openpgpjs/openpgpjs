@@ -134,17 +134,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIds.map(async function(userId, index) {
-    function createdPreferredAlgos(algos, configAlgo) {
-      if (configAlgo) { // Not `uncompressed` / `plaintext`
-        const configIndex = algos.indexOf(configAlgo);
-        if (configIndex >= 1) { // If it is included and not in first place,
-          algos.splice(configIndex, 1); // remove it.
-        }
-        if (configIndex !== 0) { // If it was included and not in first place, or wasn't included,
-          algos.unshift(configAlgo); // add it to the front.
-        }
-      }
-      return algos;
+    function createPreferredAlgos(algos, preferredAlgo) {
+      return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
     }
 
     const userIdPacket = UserIDPacket.fromObject(userId);
@@ -156,28 +147,28 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
     signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
-    signaturePacket.preferredSymmetricAlgorithms = createdPreferredAlgos([
+    signaturePacket.preferredSymmetricAlgorithms = createPreferredAlgos([
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       enums.symmetric.aes256,
       enums.symmetric.aes128,
       enums.symmetric.aes192
-    ], config.encryptionCipher);
+    ], config.preferredSymmetricAlgorithm);
     if (config.aeadProtect) {
-      signaturePacket.preferredAeadAlgorithms = createdPreferredAlgos([
+      signaturePacket.preferredAeadAlgorithms = createPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
-      ], config.aeadMode);
+      ], config.preferredAeadAlgorithm);
     }
-    signaturePacket.preferredHashAlgorithms = createdPreferredAlgos([
+    signaturePacket.preferredHashAlgorithms = createPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
       enums.hash.sha256,
       enums.hash.sha512
-    ], config.preferHashAlgorithm);
-    signaturePacket.preferredCompressionAlgorithms = createdPreferredAlgos([
+    ], config.preferredHashAlgorithm);
+    signaturePacket.preferredCompressionAlgorithms = createPreferredAlgos([
       enums.compression.zlib,
       enums.compression.zip,
       enums.compression.uncompressed
-    ], config.compression);
+    ], config.preferredCompressionAlgorithm);
     if (index === 0) {
       signaturePacket.isPrimaryUserID = true;
     }

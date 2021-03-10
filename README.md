@@ -79,9 +79,9 @@ library to convert back and forth between them.
   You can change the AEAD mode by setting one of the following options:
 
   ```
-  openpgp.config.aeadMode = openpgp.enums.aead.eax // Default, native
-  openpgp.config.aeadMode = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
+  openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.eax // Default, native
+  openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.ocb // Non-native
+  openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
   ```
 
 * For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256.
@@ -169,7 +169,7 @@ Here are some examples of how to use OpenPGP.js v5. For more elaborate examples 
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
-Encryption will use the algorithm specified in config.encryptionCipher (defaults to aes256), and decryption will use the algorithm used for encryption.
+Encryption will use the algorithm specified in config.preferredSymmetricAlgorithm (defaults to aes256), and decryption will use the algorithm used for encryption.
 
 ```js
 (async () => {
@@ -267,11 +267,10 @@ Encrypt with multiple public keys:
 })();
 ```
 
-#### Encrypt with compression
+#### Encrypt symmetrically with compression
 
-By default, `encrypt` will not use any compression. It's possible to override that behavior in two ways:
-
-Either set the `compression` parameter in the options object when calling `encrypt`.
+By default, `encrypt` will not use any compression when encrypting symmetrically only (i.e. when no `publicKeys` are given).
+It's possible to change that behaviour by enabling compression through the config, either for the single encryption:
 
 ```js
 (async () => {
@@ -279,20 +278,21 @@ Either set the `compression` parameter in the options object when calling `encry
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
-        compression: openpgp.enums.compression.zip // compress the data with zip
+        config: { preferredCompressionAlgorithm: openpgp.enums.compression.zlib } // compress the data with zlib
     });
 })();
 ```
 
-Or, override the config to enable compression:
-
+or by changing the default global configuration:
 ```js
-openpgp.config.compression = openpgp.enums.compression.zlib;
+openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib
 ```
 
 Where the value can be any of:
  * `openpgp.enums.compression.zip`
  * `openpgp.enums.compression.zlib`
+ * `openpgp.enums.compression.uncompressed` (default)
+
 
 
 #### Streaming encrypt *Uint8Array* data with a password

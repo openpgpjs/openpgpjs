@@ -56,7 +56,7 @@ class CompressedDataPacket {
      * Compression algorithm
      * @type {compression}
      */
-    this.algorithm = enums.read(enums.compression, config.compression);
+    this.algorithm = enums.read(enums.compression, config.preferredCompressionAlgorithm);
 
     /**
      * Compressed packet data

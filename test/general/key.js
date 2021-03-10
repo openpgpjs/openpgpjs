@@ -2092,7 +2092,7 @@ function versionSpecificTests() {
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512]);
       const compr = openpgp.enums.compression;
-      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
+      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.uncompressed, compr.zlib, compr.zip]);
 
       let expectedFeatures;
       if (openpgp.config.v5Keys) {
@@ -2112,14 +2112,14 @@ function versionSpecificTests() {
   });
 
   it('Preferences of generated key - with config values', async function() {
-    const encryptionCipherVal = openpgp.config.encryptionCipher;
-    const preferHashAlgorithmVal = openpgp.config.preferHashAlgorithm;
-    const compressionVal = openpgp.config.compression;
-    const aeadModeVal = openpgp.config.aeadMode;
-    openpgp.config.encryptionCipher = openpgp.enums.symmetric.aes192;
-    openpgp.config.preferHashAlgorithm = openpgp.enums.hash.sha224;
-    openpgp.config.compression = openpgp.enums.compression.zlib;
-    openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm;
+    const preferredSymmetricAlgorithmVal = openpgp.config.preferredSymmetricAlgorithm;
+    const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;
+    const preferredCompressionAlgorithmVal = openpgp.config.preferredCompressionAlgorithm;
+    const preferredAeadAlgorithmVal = openpgp.config.preferredAeadAlgorithm;
+    openpgp.config.preferredSymmetricAlgorithm = openpgp.enums.symmetric.aes192;
+    openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
+    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zip;
+    openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.experimentalGcm;
 
     const testPref = function(key) {
       // key flags
@@ -2137,7 +2137,7 @@ function versionSpecificTests() {
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
       const compr = openpgp.enums.compression;
-      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zlib, compr.zip, compr.uncompressed]);
+      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zip, compr.zlib, compr.uncompressed]);
 
       let expectedFeatures;
       if (openpgp.config.v5Keys) {
@@ -2155,10 +2155,10 @@ function versionSpecificTests() {
       testPref(key.key);
       testPref(await openpgp.readKey({ armoredKey: key.publicKeyArmored }));
     } finally {
-      openpgp.config.encryptionCipher = encryptionCipherVal;
-      openpgp.config.preferHashAlgorithm = preferHashAlgorithmVal;
-      openpgp.config.compression = compressionVal;
-      openpgp.config.aeadMode = aeadModeVal;
+      openpgp.config.preferredSymmetricAlgorithm = preferredSymmetricAlgorithmVal;
+      openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
+      openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
+      openpgp.config.preferredAeadAlgorithm = preferredAeadAlgorithmVal;
     }
   });
 
@@ -3243,26 +3243,31 @@ module.exports = () => describe('Key', function() {
     expect(revKey.armor()).not.to.match(/Comment: This is a revocation certificate/);
   });
 
-  it("getPreferredAlgo('symmetric') - one key - AES256", async function() {
+  it("getPreferredAlgo('symmetric') - one key", async function() {
     const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
-    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1]);
+    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1], undefined, undefined, {
+      ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256
+    });
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
   });
 
-  it("getPreferredAlgo('symmetric') - two key - AES192", async function() {
-    const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
-    const key1 = keys[0];
-    const key2 = keys[1];
+  it("getPreferredAlgo('symmetric') - two key", async function() {
+    const { aes128, aes192, cast5 } = openpgp.enums.symmetric;
+    const [key1, key2] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key2.getPrimaryUser();
-    primaryUser.selfCertification.preferredSymmetricAlgorithms = [6,8,3];
-    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1, key2]);
-    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes192);
+    primaryUser.selfCertification.preferredSymmetricAlgorithms = [6, aes192, cast5];
+    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
+      ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes192
+    });
+    expect(prefAlgo).to.equal(aes192);
+    const prefAlgo2 = await key.getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
+      ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256
+    });
+    expect(prefAlgo2).to.equal(aes128);
   });
 
   it("getPreferredAlgo('symmetric') - two key - one without pref", async function() {
-    const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
-    const key1 = keys[0];
-    const key2 = keys[1];
+    const [key1, key2] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = null;
     const prefAlgo = await key.getPreferredAlgo('symmetric', [key1, key2]);
@@ -3274,7 +3279,9 @@ module.exports = () => describe('Key', function() {
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
-    const prefAlgo = await key.getPreferredAlgo('aead', [key1]);
+    const prefAlgo = await key.getPreferredAlgo('aead', [key1], undefined, undefined, {
+      ...openpgp.config, preferredAeadAlgorithm: openpgp.enums.aead.ocb
+    });
     expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
     const supported = await key.isAeadSupported([key1]);
     expect(supported).to.be.true;

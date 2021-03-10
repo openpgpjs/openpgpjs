@@ -412,7 +412,7 @@ function tests() {
       const message = await openpgp.readMessage({
         armoredMessage: openpgp.stream.transform(encrypted, value => {
           value += '';
-          if (value === '=' || value.length === 6) return; // Remove checksum
+          if (value === '=' || value.length === 5) return; // Remove checksum
           const newlineIndex = value.indexOf('\n', 500);
           if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
           return value;

@@ -231,11 +231,11 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       const R = util.hexToUint8Array(vector.SIGNATURE.R);
       const S = util.hexToUint8Array(vector.SIGNATURE.S);
       return Promise.all([
-        signature.sign(22, undefined, publicParams, privateParams, undefined, data).then(({ r, s }) => {
+        signature.sign(22, openpgp.enums.hash.sha256, publicParams, privateParams, undefined, data).then(({ r, s }) => {
           expect(R).to.deep.eq(r);
           expect(S).to.deep.eq(s);
         }),
-        signature.verify(22, undefined, { r: R, s: S }, publicParams, undefined, data).then(result => {
+        signature.verify(22, openpgp.enums.hash.sha256, { r: R, s: S }, publicParams, undefined, data).then(result => {
           expect(result).to.be.true;
         })
       ]);

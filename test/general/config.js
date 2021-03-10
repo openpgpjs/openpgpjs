@@ -5,10 +5,10 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 module.exports = () => describe('Custom configuration', function() {
   it('openpgp.generateKey', async function() {
     const v5KeysVal = openpgp.config.v5Keys;
-    const preferHashAlgorithmVal = openpgp.config.preferHashAlgorithm;
+    const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;
     const showCommentVal = openpgp.config.showComment;
     openpgp.config.v5Keys = false;
-    openpgp.config.preferHashAlgorithm = openpgp.enums.hash.sha256;
+    openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha256;
     openpgp.config.showComment = false;
 
     try {
@@ -18,12 +18,12 @@ module.exports = () => describe('Custom configuration', function() {
       const { key, privateKeyArmored } = await openpgp.generateKey(opt);
       expect(key.keyPacket.version).to.equal(4);
       expect(privateKeyArmored.indexOf(openpgp.config.commentString) > 0).to.be.false;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms[0]).to.equal(openpgp.config.preferHashAlgorithm);
+      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms[0]).to.equal(openpgp.config.preferredHashAlgorithm);
 
       const config = {
         v5Keys: true,
         showComment: true,
-        preferHashAlgorithm: openpgp.enums.hash.sha512
+        preferredHashAlgorithm: openpgp.enums.hash.sha512
       };
       const opt2 = {
         userIds: { name: 'Test User', email: 'text@example.com' },
@@ -32,20 +32,20 @@ module.exports = () => describe('Custom configuration', function() {
       const { key: key2, privateKeyArmored: privateKeyArmored2 } = await openpgp.generateKey(opt2);
       expect(key2.keyPacket.version).to.equal(5);
       expect(privateKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
-      expect(key2.users[0].selfCertifications[0].preferredHashAlgorithms[0]).to.equal(config.preferHashAlgorithm);
+      expect(key2.users[0].selfCertifications[0].preferredHashAlgorithms[0]).to.equal(config.preferredHashAlgorithm);
     } finally {
       openpgp.config.v5Keys = v5KeysVal;
-      openpgp.config.preferHashAlgorithm = preferHashAlgorithmVal;
+      openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
       openpgp.config.showComment = showCommentVal;
     }
   });
 
   it('openpgp.reformatKey', async function() {
-    const compressionVal = openpgp.config.compression;
-    const preferHashAlgorithmVal = openpgp.config.preferHashAlgorithm;
+    const preferredCompressionAlgorithmVal = openpgp.config.preferredCompressionAlgorithm;
+    const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;
     const showCommentVal = openpgp.config.showComment;
-    openpgp.config.compression = openpgp.enums.compression.bzip2;
-    openpgp.config.preferHashAlgorithm = openpgp.enums.hash.sha256;
+    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.bzip2;
+    openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha256;
     openpgp.config.showComment = false;
 
     try {
@@ -55,24 +55,24 @@ module.exports = () => describe('Custom configuration', function() {
       const opt = { privateKey: origKey, userIds };
       const { key: refKey, privateKeyArmored: refKeyArmored } = await openpgp.reformatKey(opt);
       const prefs = refKey.users[0].selfCertifications[0];
-      expect(prefs.preferredCompressionAlgorithms[0]).to.equal(openpgp.config.compression);
-      expect(prefs.preferredHashAlgorithms[0]).to.equal(openpgp.config.preferHashAlgorithm);
+      expect(prefs.preferredCompressionAlgorithms[0]).to.equal(openpgp.config.preferredCompressionAlgorithm);
+      expect(prefs.preferredHashAlgorithms[0]).to.equal(openpgp.config.preferredHashAlgorithm);
       expect(refKeyArmored.indexOf(openpgp.config.commentString) > 0).to.be.false;
 
       const config = {
         showComment: true,
-        compression: openpgp.enums.compression.zip,
-        preferHashAlgorithm: openpgp.enums.hash.sha512
+        preferredCompressionAlgorithm: openpgp.enums.compression.zip,
+        preferredHashAlgorithm: openpgp.enums.hash.sha512
       };
       const opt2 = { privateKey: origKey, userIds, config };
       const { key: refKey2, privateKeyArmored: refKeyArmored2 } = await openpgp.reformatKey(opt2);
       const prefs2 = refKey2.users[0].selfCertifications[0];
-      expect(prefs2.preferredCompressionAlgorithms[0]).to.equal(config.compression);
-      expect(prefs2.preferredHashAlgorithms[0]).to.equal(config.preferHashAlgorithm);
+      expect(prefs2.preferredCompressionAlgorithms[0]).to.equal(config.preferredCompressionAlgorithm);
+      expect(prefs2.preferredHashAlgorithms[0]).to.equal(config.preferredHashAlgorithm);
       expect(refKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
     } finally {
-      openpgp.config.compression = compressionVal;
-      openpgp.config.preferHashAlgorithm = preferHashAlgorithmVal;
+      openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
+      openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
       openpgp.config.showComment = showCommentVal;
     }
   });
@@ -142,9 +142,9 @@ module.exports = () => describe('Custom configuration', function() {
 
   it('openpgp.encrypt', async function() {
     const aeadProtectVal = openpgp.config.aeadProtect;
-    const compressionVal = openpgp.config.compression;
+    const preferredCompressionAlgorithmVal = openpgp.config.preferredCompressionAlgorithm;
     openpgp.config.aeadProtect = false;
-    openpgp.config.compression = openpgp.enums.compression.uncompressed;
+    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.uncompressed;
 
     try {
       const passwords = ['12345678'];
@@ -160,7 +160,7 @@ module.exports = () => describe('Custom configuration', function() {
 
       const config = {
         aeadProtect: true,
-        compression: openpgp.enums.compression.zip,
+        preferredCompressionAlgorithm: openpgp.enums.compression.zip,
         deflateLevel: 1
       };
       const armored2 = await openpgp.encrypt({ message, passwords, config });
@@ -173,7 +173,7 @@ module.exports = () => describe('Custom configuration', function() {
       expect(compressed.algorithm).to.equal("zip");
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
-      openpgp.config.compression = compressionVal;
+      openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
     }
   });
 

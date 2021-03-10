@@ -37,7 +37,6 @@ import {
 import { Signature } from './signature';
 import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported, createSignaturePacket } from './key';
 
-
 /**
  * Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
@@ -287,6 +286,7 @@ export class Message {
     const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIds, config) ?
       enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIds, config)) :
       undefined;
+
     const sessionKeyData = await crypto.generateSessionKey(algorithm);
     return { data: sessionKeyData, algorithm, aeadAlgorithm };
   }
@@ -478,15 +478,17 @@ export class Message {
 
   /**
    * Compresses the message (the literal and -if signed- signature data packets of the message)
+   * @param {module:enums.compression} algo - compression algorithm
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Message} New message with compressed content.
    */
-  compress(config = defaultConfig) {
-    if (config.compression === enums.compression.uncompressed) {
+  compress(algo, config = defaultConfig) {
+    if (algo === enums.compression.uncompressed) {
       return this;
     }
 
     const compressed = new CompressedDataPacket(config);
+    compressed.algorithm = enums.read(enums.compression, algo);
     compressed.packets = this.packets;
 
     const packetList = new PacketList();

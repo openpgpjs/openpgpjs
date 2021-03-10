@@ -44,7 +44,7 @@ class SymEncryptedSessionKeyPacket {
     this.sessionKey = null;
     this.sessionKeyEncryptionAlgorithm = null;
     this.sessionKeyAlgorithm = 'aes256';
-    this.aeadAlgorithm = enums.read(enums.aead, config.aeadMode);
+    this.aeadAlgorithm = enums.read(enums.aead, config.preferredAeadAlgorithm);
     this.encrypted = null;
     this.s2k = null;
     this.iv = null;

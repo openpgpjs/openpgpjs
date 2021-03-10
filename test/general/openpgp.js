@@ -685,7 +685,7 @@ function withCompression(tests) {
 
       tests(
         function(options) {
-          options.config = { compression };
+          options.config = { preferredCompressionAlgorithm: compression };
           return options;
         },
         function() {
@@ -822,7 +822,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     let publicKey;
     let publicKeyNoAEAD;
     let aeadProtectVal;
-    let aeadModeVal;
+    let preferredAeadAlgorithmVal;
     let aeadChunkSizeByteVal;
     let v5KeysVal;
     let privateKeyMismatchingParams;
@@ -840,14 +840,14 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       privateKeyMismatchingParams = await openpgp.readKey({ armoredKey: mismatchingKeyParams });
 
       aeadProtectVal = openpgp.config.aeadProtect;
-      aeadModeVal = openpgp.config.aeadMode;
+      preferredAeadAlgorithmVal = openpgp.config.preferredAeadAlgorithm;
       aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
       v5KeysVal = openpgp.config.v5Keys;
     });
 
     afterEach(function() {
       openpgp.config.aeadProtect = aeadProtectVal;
-      openpgp.config.aeadMode = aeadModeVal;
+      openpgp.config.preferredAeadAlgorithm = preferredAeadAlgorithmVal;
       openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
       openpgp.config.v5Keys = v5KeysVal;
     });
@@ -1035,7 +1035,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
-        openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm;
+        openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.experimentalGcm;
         openpgp.config.v5Keys = true;
 
         // Monkey-patch AEAD feature flag
@@ -1062,7 +1062,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       if: !openpgp.config.ci,
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
-        openpgp.config.aeadMode = openpgp.enums.aead.ocb;
+        openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.ocb;
 
         // Monkey-patch AEAD feature flag
         publicKey.users[0].selfCertifications[0].features = [7];
