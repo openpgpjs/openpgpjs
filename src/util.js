@@ -196,7 +196,7 @@ const util = {
     if (bitSize === 0) {
       throw new Error('Zero MPI');
     }
-    const stripped = bin.subarray(bin.length - ((bitSize + 7) / 8));
+    const stripped = bin.subarray(bin.length - Math.ceil(bitSize / 8));
     const prefix = Uint8Array.from([(bitSize & 0xFF00) >> 8, bitSize & 0xFF]);
     return util.concatUint8Array([prefix, stripped]);
   },
