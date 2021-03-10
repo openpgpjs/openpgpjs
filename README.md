@@ -169,7 +169,7 @@ Here are some examples of how to use OpenPGP.js v5. For more elaborate examples 
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
-Encryption will use the algorithm specified in config.preferredCipherAlgorithm (defaults to aes256), and decryption will use the algorithm used for encryption.
+Encryption will use the algorithm specified in config.preferredSymmetricAlgorithm (defaults to aes256), and decryption will use the algorithm used for encryption.
 
 ```js
 (async () => {

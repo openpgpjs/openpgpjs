@@ -29,9 +29,9 @@ export default {
   preferredHashAlgorithm: enums.hash.sha256,
   /**
    * @memberof module:config
-   * @property {Integer} preferredCipherAlgorithm Default encryption cipher {@link module:enums.symmetric}
+   * @property {Integer} preferredSymmetricAlgorithm Default encryption cipher {@link module:enums.symmetric}
    */
-  preferredCipherAlgorithm: enums.symmetric.aes256,
+  preferredSymmetricAlgorithm: enums.symmetric.aes256,
   /**
    * @memberof module:config
    * @property {Integer} compression Default compression algorithm {@link module:enums.compression}

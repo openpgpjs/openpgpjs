@@ -175,7 +175,7 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
     'compression': enums.compression.uncompressed
   }[type];
   const preferredSenderAlgo = {
-    'symmetric': config.preferredCipherAlgorithm,
+    'symmetric': config.preferredSymmetricAlgorithm,
     'aead': config.preferredAeadAlgorithm,
     'compression': config.preferredCompressionAlgorithm
   }[type];

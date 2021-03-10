@@ -152,7 +152,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.symmetric.aes256,
       enums.symmetric.aes128,
       enums.symmetric.aes192
-    ], config.preferredCipherAlgorithm);
+    ], config.preferredSymmetricAlgorithm);
     if (config.aeadProtect) {
       signaturePacket.preferredAeadAlgorithms = createPreferredAlgos([
         enums.aead.eax,
