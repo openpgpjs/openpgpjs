@@ -3381,7 +3381,7 @@ VYGdb3eNlV8CfoEC
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
     const sessionKey = await openpgp.generateSessionKey({ publicKeys: publicKey, toUserIds: { name: 'Test User', email: 'b@c.com' } });
     expect(sessionKey.algorithm).to.equal('aes128');
-    const config = { minRsaBits: 1024 }
+    const config = { minRsaBits: 1024 };
     await openpgp.encrypt({
       message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: { name: 'Test User', email: 'b@c.com' }, armor: false, config
     });
