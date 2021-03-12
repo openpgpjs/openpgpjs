@@ -18,6 +18,8 @@ jobs:
       with:
         poll-interval-seconds: 30
         abort-after-seconds: 900
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - uses: actions/setup-node@v1
     - run: npm ci
     - run: npm run build-test
