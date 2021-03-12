@@ -120,7 +120,7 @@ class User {
       if (!key.getKeyIds().some(id => id.equals(keyid))) {
         return null;
       }
-      const signingKey = await key.getSigningKey(keyid, date, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 });
+      const signingKey = await key.getSigningKey(keyid, date, undefined, config);
       if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }

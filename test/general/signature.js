@@ -1630,7 +1630,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
     const signedKey = await openpgp.readKey({ armoredKey: signedArmor });
     const signerKey = await openpgp.readKey({ armoredKey: priv_key_arm1 });
-    return signedKey.verifyPrimaryUser([signerKey]).then(signatures => {
+    return signedKey.verifyPrimaryUser([signerKey], undefined, undefined, { ...openpgp.config, rejectPublicKeyAlgorithms: new Set() }).then(signatures => {
       expect(signatures[0].valid).to.be.null;
       expect(signatures[0].keyid.toHex()).to.equal(signedKey.getKeyId().toHex());
       expect(signatures[1].valid).to.be.true;
