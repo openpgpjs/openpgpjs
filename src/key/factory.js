@@ -67,47 +67,40 @@ export async function generate(options, config) {
  */
 export async function reformat(options, config) {
   options = sanitize(options);
+  const { privateKey } = options;
 
-  if (options.privateKey.primaryKey.isDummy()) {
+  if (privateKey.isPublic()) {
+    throw new Error('Cannot reformat a public key');
+  }
+
+  if (privateKey.primaryKey.isDummy()) {
     throw new Error('Cannot reformat a gnu-dummy primary key');
   }
 
-  const isDecrypted = options.privateKey.getKeys().every(({ keyPacket }) => keyPacket.isDecrypted());
+  const isDecrypted = privateKey.getKeys().every(({ keyPacket }) => keyPacket.isDecrypted());
   if (!isDecrypted) {
     throw new Error('Key is not decrypted');
   }
 
-  const packetlist = options.privateKey.toPacketlist();
-  let secretKeyPacket;
-  const secretSubkeyPackets = [];
-  for (let i = 0; i < packetlist.length; i++) {
-    if (packetlist[i].tag === enums.packet.secretKey) {
-      secretKeyPacket = packetlist[i];
-    } else if (packetlist[i].tag === enums.packet.secretSubkey) {
-      secretSubkeyPackets.push(packetlist[i]);
-    }
-  }
-  if (!secretKeyPacket) {
-    throw new Error('Key does not contain a secret key packet');
-  }
+  const secretKeyPacket = privateKey.keyPacket;
 
   if (!options.subkeys) {
-    options.subkeys = await Promise.all(secretSubkeyPackets.map(async secretSubkeyPacket => {
-      const canSign = await options.privateKey.getSigningKey(
-        secretSubkeyPacket.getKeyId(), null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }
-      ).catch(() => {});
-      const canEncrypt = await options.privateKey.getEncryptionKey(
-        secretSubkeyPacket.getKeyId(), null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }
-      ).catch(() => {});
-      return { sign: canSign && !canEncrypt };
+    options.subkeys = await Promise.all(privateKey.subKeys.map(async subkey => {
+      const secretSubkeyPacket = subkey.keyPacket;
+      const dataToVerify = { key: secretKeyPacket, bind: secretSubkeyPacket };
+      const bindingSignature = await helper.getLatestValidSignature(subkey.bindingSignatures, secretKeyPacket, enums.signature.subkeyBinding, dataToVerify, null, config);
+      return {
+        sign: bindingSignature.keyFlags && (bindingSignature.keyFlags[0] & enums.keyFlags.signData)
+      };
     }));
   }
 
+  const secretSubkeyPackets = privateKey.subKeys.map(subkey => subkey.keyPacket);
   if (options.subkeys.length !== secretSubkeyPackets.length) {
     throw new Error('Number of subkey options does not match number of subkeys');
   }
 
-  options.subkeys = options.subkeys.map(function(subkey, index) { return sanitize(options.subkeys[index], options); });
+  options.subkeys = options.subkeys.map(subkeyOptions => sanitize(subkeyOptions, options));
 
   return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config);
 

@@ -366,27 +366,25 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   return options;
 }
 
-export function isValidSigningKeyPacket(keyPacket, signature, config) {
+export function isValidSigningKeyPacket(keyPacket, signature) {
   if (!signature.verified || signature.revoked !== false) { // Sanity check
     throw new Error('Signature not verified');
   }
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
-  return checkKeyStrength(keyPacket, config) &&
-    keyAlgo !== enums.publicKey.rsaEncrypt &&
+  return keyAlgo !== enums.publicKey.rsaEncrypt &&
     keyAlgo !== enums.publicKey.elgamal &&
     keyAlgo !== enums.publicKey.ecdh &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.signData) !== 0);
 }
 
-export function isValidEncryptionKeyPacket(keyPacket, signature, config) {
+export function isValidEncryptionKeyPacket(keyPacket, signature) {
   if (!signature.verified || signature.revoked !== false) { // Sanity check
     throw new Error('Signature not verified');
   }
 
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
-  return checkKeyStrength(keyPacket, config) &&
-    keyAlgo !== enums.publicKey.dsa &&
+  return keyAlgo !== enums.publicKey.dsa &&
     keyAlgo !== enums.publicKey.rsaSign &&
     keyAlgo !== enums.publicKey.ecdsa &&
     keyAlgo !== enums.publicKey.eddsa &&
@@ -410,7 +408,7 @@ export function isValidDecryptionKeyPacket(signature, config) {
     (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
 }
 
-function checkKeyStrength(keyPacket, config) {
+export function assertKeyStrength(keyPacket, config) {
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   if (config.rejectPublicKeyAlgorithms.has(keyAlgo)) {
     throw new Error(`${keyPacket.algorithm} keys are considered too weak.`);

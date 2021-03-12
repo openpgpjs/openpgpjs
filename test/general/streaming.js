@@ -508,7 +508,7 @@ function tests() {
       dataArrived();
       await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
-      await expect(decrypted.signatures[0].verified).to.be.eventually.rejectedWith(/Could not find key/);
+      await expect(decrypted.signatures[0].verified).to.be.eventually.rejectedWith(/Could not find signing key/);
     } finally {
       openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStreamValue;
     }

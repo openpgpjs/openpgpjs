@@ -291,20 +291,26 @@ class Key {
     const primaryKey = this.keyPacket;
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
-    for (let i = 0; i < subKeys.length; i++) {
-      if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
+    for (const subKey of subKeys) {
+      if (!keyId || subKey.getKeyId().equals(keyId)) {
         try {
-          await subKeys[i].verify(primaryKey, date, config);
-          const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (
-            bindingSignature &&
-            bindingSignature.embeddedSignature &&
-            helper.isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature, config) &&
-            await helper.getLatestValidSignature([bindingSignature.embeddedSignature], subKeys[i].keyPacket, enums.signature.keyBinding, dataToVerify, date, config)
-          ) {
-            return subKeys[i];
+          await subKey.verify(primaryKey, date, config);
+          const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
+          const bindingSignature = await helper.getLatestValidSignature(
+            subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
+          );
+          if (!bindingSignature || !helper.isValidSigningKeyPacket(subKey.keyPacket, bindingSignature)) {
+            continue;
           }
+          if (!bindingSignature.embeddedSignature) {
+            throw new Error('Missing embedded signature');
+          }
+          // verify embedded signature
+          await helper.getLatestValidSignature(
+            [bindingSignature.embeddedSignature], subKey.keyPacket, enums.signature.keyBinding, dataToVerify, date, config
+          );
+          helper.assertKeyStrength(subKey.keyPacket, config);
+          return subKey;
         } catch (e) {
           exception = e;
         }
@@ -313,6 +319,7 @@ class Key {
     const primaryUser = await this.getPrimaryUser(date, userId, config);
     if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
         helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
+      helper.assertKeyStrength(primaryKey, config);
       return this;
     }
     throw util.wrapError('Could not find valid signing key packet in key ' + this.getKeyId().toHex(), exception);
@@ -333,25 +340,32 @@ class Key {
     // V4: by convention subkeys are preferred for encryption service
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
-    for (let i = 0; i < subKeys.length; i++) {
-      if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
+    for (const subKey of subKeys) {
+      if (!keyId || subKey.getKeyId().equals(keyId)) {
         try {
-          await subKeys[i].verify(primaryKey, date, config);
-          const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (bindingSignature && helper.isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature, config)) {
-            return subKeys[i];
+          await subKey.verify(primaryKey, date, config);
+          const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
+          const bindingSignature = await helper.getLatestValidSignature(subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
+          if (bindingSignature && helper.isValidEncryptionKeyPacket(subKey.keyPacket, bindingSignature)) {
+            helper.assertKeyStrength(subKey.keyPacket, config);
+            return subKey;
           }
         } catch (e) {
           exception = e;
         }
       }
     }
-    // if no valid subkey for encryption, evaluate primary key
-    const primaryUser = await this.getPrimaryUser(date, userId, config);
-    if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
-      return this;
+
+    try {
+      // if no valid subkey for encryption, evaluate primary key
+      const primaryUser = await this.getPrimaryUser(date, userId, config);
+      if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
+          helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+        helper.assertKeyStrength(primaryKey, config);
+        return this;
+      }
+    } catch (e) {
+      exception = e;
     }
     throw util.wrapError('Could not find valid encryption key packet in key ' + this.getKeyId().toHex(), exception);
   }

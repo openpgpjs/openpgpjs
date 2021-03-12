@@ -1630,7 +1630,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           }).then(async function ({ signatures, data }) {
             expect(data).to.equal(plaintext);
             expect(signatures[0].valid).to.be.false;
-            expect(signatures[0].error).to.match(/Could not find key/);
+            expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
             expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
@@ -1653,7 +1653,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           }).then(async function ({ signatures, data }) {
             expect(data).to.equal(plaintext);
             expect(signatures[0].valid).to.be.false;
-            expect(signatures[0].error).to.match(/Could not find key/);
+            expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
             expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
@@ -1676,7 +1676,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           }).then(async function ({ signatures, data }) {
             expect(data).to.equal('');
             expect(signatures[0].valid).to.be.false;
-            expect(signatures[0].error).to.match(/Could not find key/);
+            expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
             expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
@@ -1698,7 +1698,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           }).then(async function ({ signatures, data }) {
             expect(data).to.equal(plaintext);
             expect(signatures[0].valid).to.be.false;
-            expect(signatures[0].error).to.match(/Could not find key/);
+            expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
             expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
@@ -1723,7 +1723,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           });
           expect(data).to.equal(plaintext);
           expect(signatures[0].valid).to.be.false;
-          expect(signatures[0].error).to.match(/Could not find key/);
+          expect(signatures[0].error).to.match(/Could not find signing key/);
           const signingKey = await privateKey.getSigningKey();
           expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
           expect(signatures[0].signature.packets.length).to.equal(1);
@@ -2184,7 +2184,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         }).then(async function ({ data, signatures }) {
           expect(data).to.equal(plaintext.replace(/[ \t]+$/mg, ''));
           expect(signatures[0].valid).to.be.false;
-          expect(signatures[0].error).to.match(/Could not find key/);
+          expect(signatures[0].error).to.match(/Could not find signing key/);
           const signingKey = await privateKey.getSigningKey();
           expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
           expect(signatures[0].signature.packets.length).to.equal(1);
@@ -2208,7 +2208,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         }).then(async function ({ data, signatures }) {
           expect(data).to.equal(plaintext);
           expect(signatures[0].valid).to.be.false;
-          expect(signatures[0].error).to.match(/Could not find key/);
+          expect(signatures[0].error).to.match(/Could not find signing key/);
           const signingKey = await privateKey.getSigningKey();
           expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
           expect(signatures[0].signature.packets.length).to.equal(1);

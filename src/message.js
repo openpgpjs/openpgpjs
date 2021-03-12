@@ -756,12 +756,12 @@ async function createVerificationObject(signature, literalDataList, keys, date =
     }
   }
   if (!primaryKey) {
-    keyError = new Error(`Could not find key with id ${signature.issuerKeyId.toHex()}`);
+    keyError = new Error(`Could not find signing key with key ID ${signature.issuerKeyId.toHex()}`);
   } else {
     try {
       signingKey = await primaryKey.getSigningKey(signature.issuerKeyId, null, undefined, config);
     } catch (e) {
-      keyError = new Error(`Key with id ${signature.issuerKeyId.toHex()} is not suitable for verification: ${e.message}`);
+      keyError = e;
     }
   }
   const signaturePacket = signature.correspondingSig || signature;
