@@ -353,7 +353,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
-  if (message instanceof CleartextMessage && detached) throw new Error("Can't sign detached cleartext message");
+  if (message instanceof CleartextMessage && detached) throw new Error("Can't detach-sign a cleartext message");
   privateKeys = toArray(privateKeys); fromUserIds = toArray(fromUserIds);
 
   return Promise.resolve().then(async function() {
@@ -408,12 +408,13 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && format === 'binary') throw new Error("Can't return cleartext message data as binary");
+  if (message instanceof CleartextMessage && signature) throw new Error("Can't verify detached cleartext signature");
   publicKeys = toArray(publicKeys);
 
   return Promise.resolve().then(async function() {
     const result = {};
     if (message instanceof CleartextMessage) {
-      result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, config) : await message.verify(publicKeys, date, config);
+      result.signatures = await message.verify(publicKeys, date, config);
     } else {
       result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming, config) : await message.verify(publicKeys, date, streaming, config);
     }
