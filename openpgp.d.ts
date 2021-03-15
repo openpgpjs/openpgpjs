@@ -26,6 +26,7 @@ export class Key {
   public users: User[];
   public revocationSignatures: SignaturePacket[];
   public keyPacket: PublicKeyPacket | SecretKeyPacket;
+  public write(): Uint8Array;
   public armor(config?: Config): string;
   public decrypt(passphrase: string | string[], keyId?: Keyid, config?: Config): Promise<void>; // throws on error
   public encrypt(passphrase: string | string[], keyId?: Keyid, config?: Config): Promise<void>; // throws on error
@@ -93,6 +94,7 @@ export function readSignature(options: { binarySignature: Uint8Array, config?: P
 export class Signature {
   public packets: PacketList<SignaturePacket>;
   constructor(packetlist: PacketList<SignaturePacket>);
+  public write(): MaybeStream<Uint8Array>;
   public armor(config?: Config): string;
 }
 
@@ -239,6 +241,10 @@ export class Message<T extends MaybeStream<Data>> {
 
   public packets: PacketList<AnyPacket>;
   constructor(packetlist: PacketList<AnyPacket>);
+
+  /** Returns binary representation of message
+   */
+  public write(): MaybeStream<Uint8Array>;
 
   /** Returns ASCII armored text of message
    */
