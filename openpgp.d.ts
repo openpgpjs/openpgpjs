@@ -38,7 +38,11 @@ export class Key {
   public isPublic(): boolean;
   public toPublic(): Key;
   public update(key: Key, config?: Config): void;
+  public signPrimaryUser(privateKeys: Key[], date?: Date, userId?: UserID, config?: Config): Promise<Key>
+  public signAllUsers(privateKeys: Key[], config?: Config): Promise<Key>
   public verifyPrimaryKey(date?: Date, userId?: UserID, config?: Config): Promise<void>; // throws on error
+  public verifyPrimaryUser(publicKeys: Key[], date?: Date, userIds?: UserID, config?: Config): Promise<{ keyid: Keyid, valid: boolean | null }[]>;
+  public verifyAllUsers(publicKeys: Key[], config?: Config): Promise<{ userid:string, keyid: Keyid, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date, config?: Config): Promise<Key>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
