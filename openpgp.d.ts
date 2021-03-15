@@ -25,7 +25,7 @@ export class Key {
   public subKeys: SubKey[];
   public users: User[];
   public revocationSignatures: SignaturePacket[];
-  public keyPacket: PublicKeyPacket | SecretKeyPacket;
+  private keyPacket: PublicKeyPacket | SecretKeyPacket;
   public write(): Uint8Array;
   public armor(config?: Config): string;
   public decrypt(passphrase: string | string[], keyId?: Keyid, config?: Config): Promise<void>; // throws on error
@@ -42,7 +42,7 @@ export class Key {
   public signAllUsers(privateKeys: Key[], config?: Config): Promise<Key>
   public verifyPrimaryKey(date?: Date, userId?: UserID, config?: Config): Promise<void>; // throws on error
   public verifyPrimaryUser(publicKeys: Key[], date?: Date, userIds?: UserID, config?: Config): Promise<{ keyid: Keyid, valid: boolean | null }[]>;
-  public verifyAllUsers(publicKeys: Key[], config?: Config): Promise<{ userid:string, keyid: Keyid, valid: boolean | null }[]>;
+  public verifyAllUsers(publicKeys: Key[], config?: Config): Promise<{ userid: string, keyid: Keyid, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date, config?: Config): Promise<Key>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
@@ -60,7 +60,7 @@ export class Key {
 
 export class SubKey {
   constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
-  public keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
+  private keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
   public bindingSignatures: SignaturePacket[];
   public revocationSignatures: SignaturePacket[];
   public verify(primaryKey: PublicKeyPacket | SecretKeyPacket, date?: Date, config?: Config): Promise<SignaturePacket>;
@@ -96,7 +96,7 @@ export function readSignature(options: { armoredSignature: string, config?: Part
 export function readSignature(options: { binarySignature: Uint8Array, config?: PartialConfig }): Promise<Signature>;
 
 export class Signature {
-  public packets: PacketList<SignaturePacket>;
+  private packets: PacketList<SignaturePacket>;
   constructor(packetlist: PacketList<SignaturePacket>);
   public write(): MaybeStream<Uint8Array>;
   public armor(config?: Config): string;
@@ -243,7 +243,7 @@ export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { m
  */
 export class Message<T extends MaybeStream<Data>> {
 
-  public packets: PacketList<AnyPacket>;
+  private packets: PacketList<AnyPacket>;
   constructor(packetlist: PacketList<AnyPacket>);
 
   /** Returns binary representation of message
