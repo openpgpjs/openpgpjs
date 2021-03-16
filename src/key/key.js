@@ -260,6 +260,14 @@ class Key {
   }
 
   /**
+   * Returns binary encoded key
+   * @returns {Uint8Array} Binary key.
+   */
+  write() {
+    return this.toPacketlist().write();
+  }
+
+  /**
    * Returns ASCII armored text of key
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {ReadableStream<String>} ASCII armor.
