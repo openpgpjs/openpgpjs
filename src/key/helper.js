@@ -176,12 +176,12 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
   }[type];
   const preferredSenderAlgo = {
     'symmetric': config.preferredSymmetricAlgorithm,
-    'aead': config.preferredAeadAlgorithm,
+    'aead': config.preferredAEADAlgorithm,
     'compression': config.preferredCompressionAlgorithm
   }[type];
   const prefPropertyName = {
     'symmetric': 'preferredSymmetricAlgorithms',
-    'aead': 'preferredAeadAlgorithms',
+    'aead': 'preferredAEADAlgorithms',
     'compression': 'preferredCompressionAlgorithms'
   }[type];
 
@@ -415,7 +415,7 @@ export function checkKeyStrength(keyPacket, config) {
     throw new Error(`${keyPacket.algorithm} keys are considered too weak.`);
   }
   const rsaAlgos = new Set([enums.publicKey.rsaEncryptSign, enums.publicKey.rsaSign, enums.publicKey.rsaEncrypt]);
-  if (rsaAlgos.has(keyAlgo) && util.uint8ArrayBitLength(keyPacket.publicParams.n) < config.minRsaBits) {
-    throw new Error(`RSA keys shorter than ${config.minRsaBits} bits are considered too weak.`);
+  if (rsaAlgos.has(keyAlgo) && util.uint8ArrayBitLength(keyPacket.publicParams.n) < config.minRSABits) {
+    throw new Error(`RSA keys shorter than ${config.minRSABits} bits are considered too weak.`);
   }
 }

@@ -238,7 +238,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     const reader = openpgp.stream.getReader(signed);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\n/);
@@ -249,8 +249,8 @@ function tests() {
   });
 
   it('Encrypt and decrypt larger message roundtrip', async function() {
-    const aeadProtectValue = openpgp.config.aeadProtect;
-    openpgp.config.aeadProtect = false;
+    const AEADProtectValue = openpgp.config.AEADProtect;
+    openpgp.config.AEADProtect = false;
     const encrypted = await openpgp.encrypt({
       message: openpgp.Message.fromBinary(data),
       passwords: ['test'],
@@ -270,13 +270,13 @@ function tests() {
     expect(await reader.peekBytes(1024)).to.deep.equal(plaintext[0]);
     if (i <= 10) throw new Error('Data arrived early.');
     expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
-    openpgp.config.aeadProtect = aeadProtectValue;
+    openpgp.config.AEADProtect = AEADProtectValue;
   });
 
   it('Encrypt and decrypt larger message roundtrip (allowUnauthenticatedStream=true)', async function() {
-    const aeadProtectValue = openpgp.config.aeadProtect;
+    const AEADProtectValue = openpgp.config.AEADProtect;
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
-    openpgp.config.aeadProtect = false;
+    openpgp.config.AEADProtect = false;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
       const encrypted = await openpgp.encrypt({
@@ -300,7 +300,7 @@ function tests() {
       expect(await reader.readToEnd()).to.deep.equal(util.concatUint8Array(plaintext));
       expect(decrypted.signatures).to.exist.and.have.length(0);
     } finally {
-      openpgp.config.aeadProtect = aeadProtectValue;
+      openpgp.config.AEADProtect = AEADProtectValue;
       openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStreamValue;
     }
   });
@@ -314,7 +314,7 @@ function tests() {
         publicKeys: pubKey,
         privateKeys: privKey,
         armor: false,
-        config: { minRsaBits: 1024 }
+        config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -400,8 +400,8 @@ function tests() {
   });
 
   it('Detect MDC modifications (allowUnauthenticatedStream=true)', async function() {
-    const aeadProtectValue = openpgp.config.aeadProtect;
-    openpgp.config.aeadProtect = false;
+    const AEADProtectValue = openpgp.config.AEADProtect;
+    openpgp.config.AEADProtect = false;
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
@@ -433,7 +433,7 @@ function tests() {
       await expect(reader.readToEnd()).to.be.rejectedWith('Modification detected.');
       expect(decrypted.signatures).to.exist.and.have.length(0);
     } finally {
-      openpgp.config.aeadProtect = aeadProtectValue;
+      openpgp.config.AEADProtect = AEADProtectValue;
       openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStreamValue;
     }
   });
@@ -446,7 +446,7 @@ function tests() {
         message: openpgp.Message.fromBinary(data),
         publicKeys: pubKey,
         privateKeys: privKey,
-        config: { minRsaBits: 1024 }
+        config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -484,7 +484,7 @@ function tests() {
         message: openpgp.Message.fromBinary(data),
         publicKeys: pubKey,
         privateKeys: privKey,
-        config: { minRsaBits: 1024 }
+        config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -518,7 +518,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
@@ -535,7 +535,7 @@ function tests() {
       message,
       streaming: expectedType,
       format: 'binary',
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(verified.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(verified.data);
@@ -574,7 +574,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
@@ -583,7 +583,7 @@ function tests() {
       publicKeys: pubKey,
       message,
       format: 'binary',
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(verified.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(verified.data);
@@ -614,7 +614,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
@@ -629,7 +629,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const message = await openpgp.readMessage({ armoredMessage: signed });
@@ -660,7 +660,7 @@ function tests() {
       privateKeys: privKey,
       detached: true,
       streaming: expectedType,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const armoredSignature = await openpgp.stream.readToEnd(signed);
@@ -669,7 +669,7 @@ function tests() {
       signature,
       publicKeys: pubKey,
       message: openpgp.Message.fromText('hello world'),
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);
@@ -691,7 +691,7 @@ function tests() {
       detached: true,
       streaming: false,
       armor: false,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.be.false;
     const signature = await openpgp.readMessage({ binaryMessage: signed });
@@ -699,7 +699,7 @@ function tests() {
       signature,
       publicKeys: pubKey,
       message: openpgp.Message.fromText('hello world'),
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);
@@ -773,7 +773,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
       detached: true,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);
@@ -788,7 +788,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
       detached: true,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);
@@ -800,17 +800,17 @@ function tests() {
   });
 
   describe('AEAD', function() {
-    let aeadProtectValue;
-    let aeadChunkSizeByteValue;
+    let AEADProtectValue;
+    let AEADChunkSizeByteValue;
     beforeEach(function() {
-      aeadProtectValue = openpgp.config.aeadProtect;
-      aeadChunkSizeByteValue = openpgp.config.aeadChunkSizeByte;
-      openpgp.config.aeadProtect = true;
-      openpgp.config.aeadChunkSizeByte = 4;
+      AEADProtectValue = openpgp.config.AEADProtect;
+      AEADChunkSizeByteValue = openpgp.config.AEADChunkSizeByte;
+      openpgp.config.AEADProtect = true;
+      openpgp.config.AEADChunkSizeByte = 4;
     });
     afterEach(function() {
-      openpgp.config.aeadProtect = aeadProtectValue;
-      openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteValue;
+      openpgp.config.AEADProtect = AEADProtectValue;
+      openpgp.config.AEADChunkSizeByte = AEADChunkSizeByteValue;
     });
 
 
@@ -836,7 +836,7 @@ function tests() {
     });
 
     it('Encrypt and decrypt larger text message roundtrip (AEAD)', async function() {
-      openpgp.config.aeadChunkSizeByte = 0;
+      openpgp.config.AEADChunkSizeByte = 0;
 
       const plaintext = [];
       let i = 0;

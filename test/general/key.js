@@ -2085,9 +2085,9 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192]);
-      if (openpgp.config.aeadProtect) {
+      if (openpgp.config.AEADProtect) {
         const aead = openpgp.enums.aead;
-        expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.eax, aead.ocb]);
+        expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.eax, aead.ocb]);
       }
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512]);
@@ -2097,7 +2097,7 @@ function versionSpecificTests() {
       let expectedFeatures;
       if (openpgp.config.v5Keys) {
         expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.aeadProtect) {
+      } else if (openpgp.config.AEADProtect) {
         expectedFeatures = [3]; // aead + mdc
       } else {
         expectedFeatures = [1]; // mdc
@@ -2115,11 +2115,11 @@ function versionSpecificTests() {
     const preferredSymmetricAlgorithmVal = openpgp.config.preferredSymmetricAlgorithm;
     const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;
     const preferredCompressionAlgorithmVal = openpgp.config.preferredCompressionAlgorithm;
-    const preferredAeadAlgorithmVal = openpgp.config.preferredAeadAlgorithm;
+    const preferredAEADAlgorithmVal = openpgp.config.preferredAEADAlgorithm;
     openpgp.config.preferredSymmetricAlgorithm = openpgp.enums.symmetric.aes192;
     openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
     openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zip;
-    openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.experimentalGcm;
+    openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGcm;
 
     const testPref = function(key) {
       // key flags
@@ -2130,9 +2130,9 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128]);
-      if (openpgp.config.aeadProtect) {
+      if (openpgp.config.AEADProtect) {
         const aead = openpgp.enums.aead;
-        expect(key.users[0].selfCertifications[0].preferredAeadAlgorithms).to.eql([aead.experimentalGcm, aead.eax, aead.ocb]);
+        expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.experimentalGcm, aead.eax, aead.ocb]);
       }
       const hash = openpgp.enums.hash;
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
@@ -2142,7 +2142,7 @@ function versionSpecificTests() {
       let expectedFeatures;
       if (openpgp.config.v5Keys) {
         expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.aeadProtect) {
+      } else if (openpgp.config.AEADProtect) {
         expectedFeatures = [3]; // aead + mdc
       } else {
         expectedFeatures = [1]; // mdc
@@ -2158,7 +2158,7 @@ function versionSpecificTests() {
       openpgp.config.preferredSymmetricAlgorithm = preferredSymmetricAlgorithmVal;
       openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
       openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
-      openpgp.config.preferredAeadAlgorithm = preferredAeadAlgorithmVal;
+      openpgp.config.preferredAEADAlgorithm = preferredAEADAlgorithmVal;
     }
   });
 
@@ -2304,8 +2304,8 @@ function versionSpecificTests() {
 
   it('Generate RSA key - two subkeys with default values', async function() {
     const rsaBits = 512;
-    const minRsaBits = openpgp.config.minRsaBits;
-    openpgp.config.minRsaBits = rsaBits;
+    const minRSABits = openpgp.config.minRSABits;
+    openpgp.config.minRSABits = rsaBits;
 
     const userId = { name: 'test', email: 'a@b.com' };
     const opt = { type: 'rsa', rsaBits, userIds: [userId], passphrase: '123', subkeys:[{},{}] };
@@ -2318,7 +2318,7 @@ function versionSpecificTests() {
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
       expect(key.subKeys[1].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
     } finally {
-      openpgp.config.minRsaBits = minRsaBits;
+      openpgp.config.minRSABits = minRSABits;
     }
   });
 
@@ -2359,8 +2359,8 @@ function versionSpecificTests() {
 
   it('Generate key - override main RSA key options for subkey', async function() {
     const rsaBits = 512;
-    const minRsaBits = openpgp.config.minRsaBits;
-    openpgp.config.minRsaBits = rsaBits;
+    const minRSABits = openpgp.config.minRSABits;
+    openpgp.config.minRSABits = rsaBits;
 
     const userId = { name: 'test', email: 'a@b.com' };
     const opt = { type: 'rsa', rsaBits, userIds: [userId], passphrase: '123', subkeys:[{ type: 'ecc', curve: 'curve25519' }] };
@@ -2373,7 +2373,7 @@ function versionSpecificTests() {
       expect(key.getAlgorithmInfo().bits).to.equal(opt.rsaBits);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
     } finally {
-      openpgp.config.minRsaBits = minRsaBits;
+      openpgp.config.minRSABits = minRSABits;
     }
   });
 
@@ -2422,8 +2422,8 @@ function versionSpecificTests() {
     const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
 
-    const { minRsaBits } = openpgp.config;
-    openpgp.config.minRsaBits = 1024;
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
     try {
       publicKey = await publicKey.signPrimaryUser([privateKey]);
       const signatures = await publicKey.verifyPrimaryUser([privateKey]);
@@ -2435,7 +2435,7 @@ function versionSpecificTests() {
       expect(signatures[1].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
       expect(signatures[1].valid).to.be.true;
     } finally {
-      openpgp.config.minRsaBits = minRsaBits;
+      openpgp.config.minRSABits = minRSABits;
     }
   });
 
@@ -2445,8 +2445,8 @@ function versionSpecificTests() {
     const wrongKey = await openpgp.readKey({ armoredKey: wrong_key });
     await privateKey.decrypt('hello world');
 
-    const { minRsaBits } = openpgp.config;
-    openpgp.config.minRsaBits = 1024;
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
     try {
       publicKey = await publicKey.signPrimaryUser([privateKey]);
       const signatures = await publicKey.verifyPrimaryUser([wrongKey]);
@@ -2458,7 +2458,7 @@ function versionSpecificTests() {
       expect(signatures[1].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
       expect(signatures[1].valid).to.be.null;
     } finally {
-      openpgp.config.minRsaBits = minRsaBits;
+      openpgp.config.minRSABits = minRSABits;
     }
   });
 
@@ -2467,8 +2467,8 @@ function versionSpecificTests() {
     const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
     await privateKey.decrypt('hello world');
 
-    const { minRsaBits } = openpgp.config;
-    openpgp.config.minRsaBits = 1024;
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
     try {
       publicKey = await publicKey.signAllUsers([privateKey]);
       const signatures = await publicKey.verifyAllUsers([privateKey]);
@@ -2488,7 +2488,7 @@ function versionSpecificTests() {
       expect(signatures[3].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
       expect(signatures[3].valid).to.be.true;
     } finally {
-      openpgp.config.minRsaBits = minRsaBits;
+      openpgp.config.minRSABits = minRSABits;
     }
   });
 
@@ -2498,8 +2498,8 @@ function versionSpecificTests() {
     const wrongKey = await openpgp.readKey({ armoredKey: wrong_key });
     await privateKey.decrypt('hello world');
 
-    const { minRsaBits } = openpgp.config;
-    openpgp.config.minRsaBits = 1024;
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
     try {
       publicKey = await publicKey.signAllUsers([privateKey]);
       const signatures = await publicKey.verifyAllUsers([wrongKey]);
@@ -2519,7 +2519,7 @@ function versionSpecificTests() {
       expect(signatures[3].keyid.toHex()).to.equal(privateSigningKey.getKeyId().toHex());
       expect(signatures[3].valid).to.be.null;
     } finally {
-      openpgp.config.minRsaBits = minRsaBits;
+      openpgp.config.minRSABits = minRSABits;
     }
   });
 
@@ -2691,7 +2691,7 @@ function versionSpecificTests() {
 
 module.exports = () => describe('Key', function() {
   let v5KeysVal;
-  let aeadProtectVal;
+  let AEADProtectVal;
 
   tryTests('V4', versionSpecificTests, {
     if: !openpgp.config.ci,
@@ -2708,13 +2708,13 @@ module.exports = () => describe('Key', function() {
     if: !openpgp.config.ci,
     beforeEach: function() {
       v5KeysVal = openpgp.config.v5Keys;
-      aeadProtectVal = openpgp.config.aeadProtect;
+      AEADProtectVal = openpgp.config.AEADProtect;
       openpgp.config.v5Keys = true;
-      openpgp.config.aeadProtect = true;
+      openpgp.config.AEADProtect = true;
     },
     afterEach: function() {
       openpgp.config.v5Keys = v5KeysVal;
-      openpgp.config.aeadProtect = aeadProtectVal;
+      openpgp.config.AEADProtect = AEADProtectVal;
     }
   });
 
@@ -3011,7 +3011,7 @@ module.exports = () => describe('Key', function() {
     expect(key.primaryKey.isDummy()).to.be.false;
     key.primaryKey.makeDummy();
     expect(key.primaryKey.isDummy()).to.be.true;
-    await expect(openpgp.sign({ message: openpgp.Message.fromText('test'), privateKeys: [key], config: { minRsaBits: 1024 } })).to.be.fulfilled;
+    await expect(openpgp.sign({ message: openpgp.Message.fromText('test'), privateKeys: [key], config: { minRSABits: 1024 } })).to.be.fulfilled;
   });
 
   it('makeDummy() - should work for encrypted keys', async function() {
@@ -3313,9 +3313,9 @@ module.exports = () => describe('Key', function() {
     const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
     const prefAlgo = await key.getPreferredAlgo('aead', [key1], undefined, undefined, {
-      ...openpgp.config, preferredAeadAlgorithm: openpgp.enums.aead.ocb
+      ...openpgp.config, preferredAEADAlgorithm: openpgp.enums.aead.ocb
     });
     expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
     const supported = await key.isAeadSupported([key1]);
@@ -3328,7 +3328,7 @@ module.exports = () => describe('Key', function() {
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
     const primaryUser2 = await key2.getPrimaryUser();
     primaryUser2.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     const prefAlgo = await key.getPreferredAlgo('aead', [key1, key2]);
@@ -3343,7 +3343,7 @@ module.exports = () => describe('Key', function() {
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    primaryUser.selfCertification.preferredAeadAlgorithms = [2,1];
+    primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
     const prefAlgo = await key.getPreferredAlgo('aead', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.eax);
     const supported = await key.isAeadSupported([key1, key2]);
@@ -3416,7 +3416,7 @@ VYGdb3eNlV8CfoEC
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
     const sessionKey = await openpgp.generateSessionKey({ publicKeys: publicKey, toUserIds: { name: 'Test User', email: 'b@c.com' } });
     expect(sessionKey.algorithm).to.equal('aes128');
-    const config = { minRsaBits: 1024 };
+    const config = { minRSABits: 1024 };
     await openpgp.encrypt({
       message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: { name: 'Test User', email: 'b@c.com' }, armor: false, config
     });
@@ -3446,7 +3446,7 @@ VYGdb3eNlV8CfoEC
     privateKey.users[0].userId = openpgp.UserIDPacket.fromObject({ name: 'Test User', email: 'b@c.com' });
     // Set second user to prefer aes128. We will select this user.
     privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
-    const config = { minRsaBits: 1024 };
+    const config = { minRSABits: 1024 };
     const signed = await openpgp.sign({
       message: openpgp.Message.fromText('hello'), privateKeys: privateKey, fromUserIds: { name: 'Test McTestington', email: 'test@example.com' }, armor: false, config
     });
@@ -3464,7 +3464,7 @@ VYGdb3eNlV8CfoEC
 
   it('Find a valid subkey binding signature among many invalid ones', async function() {
     const key = await openpgp.readKey({ armoredKey: valid_binding_sig_among_many_expired_sigs_pub });
-    expect(await key.getEncryptionKey(undefined, undefined, undefined, { ...openpgp.config, minRsaBits: 1024 })).to.not.be.null;
+    expect(await key.getEncryptionKey(undefined, undefined, undefined, { ...openpgp.config, minRSABits: 1024 })).to.not.be.null;
   });
 
   it('Selects the most recent subkey binding signature', async function() {
@@ -3548,13 +3548,13 @@ VYGdb3eNlV8CfoEC
   describe('addSubkey functionality testing', function() {
     const rsaBits = 1024;
     const rsaOpt = { type: 'rsa' };
-    let minRsaBits;
+    let minRSABits;
     beforeEach(function() {
-      minRsaBits = openpgp.config.minRsaBits;
-      openpgp.config.minRsaBits = rsaBits;
+      minRSABits = openpgp.config.minRSABits;
+      openpgp.config.minRSABits = rsaBits;
     });
     afterEach(function() {
-      openpgp.config.minRsaBits = minRsaBits;
+      openpgp.config.minRSABits = minRSABits;
     });
 
     it('create and add a new rsa subkey to stored rsa key', async function() {
@@ -3600,7 +3600,7 @@ VYGdb3eNlV8CfoEC
       const total = key.subKeys.length;
       const newKey = await key.addSubkey();
       expect(newKey.subKeys[total].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
-      expect(newKey.subKeys[total].getAlgorithmInfo().bits).to.equal(Math.max(key.getAlgorithmInfo().bits, openpgp.config.minRsaBits));
+      expect(newKey.subKeys[total].getAlgorithmInfo().bits).to.equal(Math.max(key.getAlgorithmInfo().bits, openpgp.config.minRSABits));
     });
 
     it('should throw when trying to encrypt a subkey separately from key', async function() {

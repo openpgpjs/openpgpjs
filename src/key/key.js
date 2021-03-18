@@ -505,7 +505,7 @@ class Key {
        * It is enough to validate any signing keys
        * since its binding signatures are also checked
        */
-      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 });
+      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 });
       // This could again be a dummy key
       if (signingKey && !signingKey.keyPacket.isDummy()) {
         signingKeyPacket = signingKey.keyPacket;
@@ -600,16 +600,16 @@ class Key {
     let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
     if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
       const encryptKey =
-        await this.getEncryptionKey(keyId, expiry, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }).catch(() => {}) ||
-        await this.getEncryptionKey(keyId, null, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }).catch(() => {});
+        await this.getEncryptionKey(keyId, expiry, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
+        await this.getEncryptionKey(keyId, null, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!encryptKey) return null;
       const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket, undefined, config);
       if (encryptExpiry < expiry) expiry = encryptExpiry;
     }
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
       const signKey =
-        await this.getSigningKey(keyId, expiry, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }).catch(() => {}) ||
-        await this.getSigningKey(keyId, null, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }).catch(() => {});
+        await this.getSigningKey(keyId, expiry, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
+        await this.getSigningKey(keyId, null, userId, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!signKey) return null;
       const signExpiry = await signKey.getExpirationTime(this.keyPacket, undefined, config);
       if (signExpiry < expiry) expiry = signExpiry;
@@ -920,8 +920,8 @@ class Key {
     if (options.passphrase) {
       throw new Error("Subkey could not be encrypted here, please encrypt whole key");
     }
-    if (options.rsaBits < config.minRsaBits) {
-      throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${options.rsaBits}`);
+    if (options.rsaBits < config.minRSABits) {
+      throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${options.rsaBits}`);
     }
     const secretKeyPacket = this.primaryKey;
     if (secretKeyPacket.isDummy()) {

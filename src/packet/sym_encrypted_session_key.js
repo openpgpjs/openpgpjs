@@ -40,11 +40,11 @@ class SymEncryptedSessionKeyPacket {
    */
   constructor(config = defaultConfig) {
     this.tag = enums.packet.symEncryptedSessionKey;
-    this.version = config.aeadProtect ? 5 : 4;
+    this.version = config.AEADProtect ? 5 : 4;
     this.sessionKey = null;
     this.sessionKeyEncryptionAlgorithm = null;
     this.sessionKeyAlgorithm = 'aes256';
-    this.aeadAlgorithm = enums.read(enums.aead, config.preferredAeadAlgorithm);
+    this.aeadAlgorithm = enums.read(enums.aead, config.preferredAEADAlgorithm);
     this.encrypted = null;
     this.s2k = null;
     this.iv = null;

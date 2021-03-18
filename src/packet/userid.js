@@ -73,7 +73,7 @@ class UserIDPacket {
    */
   read(bytes, config = defaultConfig) {
     const userid = util.decodeUtf8(bytes);
-    if (userid.length > config.maxUseridLength) {
+    if (userid.length > config.maxUserIDLength) {
       throw new Error('User ID string is too long');
     }
     try {

@@ -61,8 +61,8 @@ export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBi
   config = { ...defaultConfig, ...config };
   userIds = toArray(userIds);
   const options = { userIds, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
-  if (type === "rsa" && rsaBits < config.minRsaBits) {
-    throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${rsaBits}`);
+  if (type === "rsa" && rsaBits < config.minRSABits) {
+    throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
   }
 
   return generate(options, config).then(async key => {

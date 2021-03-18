@@ -80,7 +80,7 @@ class SignaturePacket {
     this.embeddedSignature = null;
     this.issuerKeyVersion = null;
     this.issuerFingerprint = null;
-    this.preferredAeadAlgorithms = null;
+    this.preferredAEADAlgorithms = null;
 
     this.verified = null;
     this.revoked = null;
@@ -285,9 +285,9 @@ class SignaturePacket {
       bytes = util.concat(bytes);
       arr.push(write_sub_packet(sub.signatureTarget, bytes));
     }
-    if (this.preferredAeadAlgorithms !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredAeadAlgorithms));
-      arr.push(write_sub_packet(sub.preferredAeadAlgorithms, bytes));
+    if (this.preferredAEADAlgorithms !== null) {
+      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredAEADAlgorithms));
+      arr.push(write_sub_packet(sub.preferredAEADAlgorithms, bytes));
     }
 
     const result = util.concat(arr);
@@ -509,7 +509,7 @@ class SignaturePacket {
         break;
       case 34:
         // Preferred AEAD Algorithms
-        read_array.call(this, 'preferredAeadAlgorithms', bytes.subarray(mypos, bytes.length));
+        read_array.call(this, 'preferredAEADAlgorithms', bytes.subarray(mypos, bytes.length));
         break;
       default: {
         const err = new Error("Unknown signature subpacket type " + type + " @:" + mypos);

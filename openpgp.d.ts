@@ -316,11 +316,11 @@ interface Config {
   showVersion: boolean;
   showComment: boolean;
   deflateLevel: number;
-  aeadProtect: boolean;
+  AEADProtect: boolean;
   allowUnauthenticatedMessages: boolean;
   allowUnauthenticatedStream: boolean;
   checksumRequired: boolean;
-  minRsaBits: number;
+  minRSABits: number;
   passwordCollisionCheck: boolean;
   revocationsExpire: boolean;
   tolerant: boolean;
@@ -479,7 +479,7 @@ export class SignaturePacket extends BasePacket {
   public embeddedSignature: null | SignaturePacket;
   public issuerKeyVersion: null | number;
   public issuerFingerprint: null | Uint8Array;
-  public preferredAeadAlgorithms: enums.aead[] | null;
+  public preferredAEADAlgorithms: enums.aead[] | null;
   public verified: null | boolean;
   public revoked: null | boolean;
   public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean, streaming?: boolean): Promise<void>;

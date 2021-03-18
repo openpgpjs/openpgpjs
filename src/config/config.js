@@ -49,24 +49,24 @@ export default {
    * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
    * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-07|RFC4880bis-07}
    * @memberof module:config
-   * @property {Boolean} aeadProtect
+   * @property {Boolean} AEADProtect
    */
-  aeadProtect: false,
+  AEADProtect: false,
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
-   * Only has an effect when aeadProtect is set to true.
+   * Only has an effect when AEADProtect is set to true.
    * @memberof module:config
-   * @property {Integer} preferredAeadAlgorithm Default AEAD mode {@link module:enums.aead}
+   * @property {Integer} preferredAEADAlgorithm Default AEAD mode {@link module:enums.aead}
    */
-  preferredAeadAlgorithm: enums.aead.eax,
+  preferredAEADAlgorithm: enums.aead.eax,
   /**
    * Chunk Size Byte for Authenticated Encryption with Additional Data (AEAD) mode
-   * Only has an effect when aeadProtect is set to true.
+   * Only has an effect when AEADProtect is set to true.
    * Must be an integer value from 0 to 56.
    * @memberof module:config
-   * @property {Integer} aeadChunkSizeByte
+   * @property {Integer} AEADChunkSizeByte
    */
-  aeadChunkSizeByte: 12,
+  AEADChunkSizeByte: 12,
   /**
    * Use V5 keys.
    * Note: not all OpenPGP implementations are compatible with this option.
@@ -79,9 +79,9 @@ export default {
    * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
    * Iteration Count Byte for S2K (String to Key)
    * @memberof module:config
-   * @property {Integer} s2kIterationCountByte
+   * @property {Integer} S2KIterationCountByte
    */
-  s2kIterationCountByte: 224,
+  S2KIterationCountByte: 224,
   /**
    * Allow decryption of messages without integrity protection.
    * This is an **insecure** setting:
@@ -105,9 +105,9 @@ export default {
   checksumRequired: false,
   /**
    * @memberof module:config
-   * @property {Number} minRsaBits Minimum RSA key size allowed for key generation and message signing, verification and encryption
+   * @property {Number} minRSABits Minimum RSA key size allowed for key generation and message signing, verification and encryption
    */
-  minRsaBits: 2048,
+  minRSABits: 2048,
   /**
    * Work-around for rare GPG decryption bug when encrypting with multiple passwords.
    * **Slower and slightly less secure**
@@ -164,9 +164,9 @@ export default {
   /**
    * Max userid string length (used for parsing)
    * @memberof module:config
-   * @property {Integer} maxUseridLength
+   * @property {Integer} maxUserIDLength
    */
-  maxUseridLength: 1024 * 5,
+  maxUserIDLength: 1024 * 5,
   /**
    * Contains notatations that are considered "known". Known notations do not trigger
    * validation error when the notation is marked as critical.
