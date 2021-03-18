@@ -133,13 +133,13 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  */
 export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userID = {}, config) {
   let hashAlgo = config.preferredHashAlgorithm;
-  let pref_algo = hashAlgo;
+  let prefAlgo = hashAlgo;
   if (key) {
     const primaryUser = await key.getPrimaryUser(date, userID, config);
     if (primaryUser.selfCertification.preferredHashAlgorithms) {
-      [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
-      hashAlgo = crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(pref_algo) ?
-        pref_algo : hashAlgo;
+      [prefAlgo] = primaryUser.selfCertification.preferredHashAlgorithms;
+      hashAlgo = crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
+        prefAlgo : hashAlgo;
     }
   }
   switch (Object.getPrototypeOf(keyPacket)) {
@@ -151,11 +151,11 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
         case 'ecdh':
         case 'ecdsa':
         case 'eddsa':
-          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
+          prefAlgo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
       }
   }
-  return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(pref_algo) ?
-    pref_algo : hashAlgo;
+  return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
+    prefAlgo : hashAlgo;
 }
 
 /**
