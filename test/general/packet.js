@@ -844,7 +844,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     secretKeyPacket.algorithm = "rsaSign";
     secretKeyPacket.isEncrypted = false;
     await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: true });
-    expect(secretKeyPacket.s2k_usage).to.equal(253);
+    expect(secretKeyPacket.s2kUsage).to.equal(253);
 
     const raw = new openpgp.PacketList();
     raw.push(secretKeyPacket);
@@ -866,7 +866,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     secretKeyPacket.algorithm = "rsaSign";
     secretKeyPacket.isEncrypted = false;
     await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: false });
-    expect(secretKeyPacket.s2k_usage).to.equal(254);
+    expect(secretKeyPacket.s2kUsage).to.equal(254);
 
     const raw = new openpgp.PacketList();
     raw.push(secretKeyPacket);
