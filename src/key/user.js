@@ -59,10 +59,7 @@ class User {
       if (privateKey.hasSameFingerprintAs(primaryKey)) {
         throw new Error('Not implemented for self signing');
       }
-      const signingKey = await privateKey.getSigningKey(
-        undefined, undefined, undefined,
-        { ...config, rejectPublicKeyAlgorithms: new Set(), minRsaBits: 0 }
-      );
+      const signingKey = await privateKey.getSigningKey(undefined, undefined, undefined, config);
       return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,

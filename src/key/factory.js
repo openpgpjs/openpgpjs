@@ -88,7 +88,9 @@ export async function reformat(options, config) {
     options.subkeys = await Promise.all(privateKey.subKeys.map(async subkey => {
       const secretSubkeyPacket = subkey.keyPacket;
       const dataToVerify = { key: secretKeyPacket, bind: secretSubkeyPacket };
-      const bindingSignature = await helper.getLatestValidSignature(subkey.bindingSignatures, secretKeyPacket, enums.signature.subkeyBinding, dataToVerify, null, config);
+      const bindingSignature = await (
+        helper.getLatestValidSignature(subkey.bindingSignatures, secretKeyPacket, enums.signature.subkeyBinding, dataToVerify, null, config)
+      ).catch(() => ({}));
       return {
         sign: bindingSignature.keyFlags && (bindingSignature.keyFlags[0] & enums.keyFlags.signData)
       };

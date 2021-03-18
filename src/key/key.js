@@ -299,7 +299,7 @@ class Key {
           const bindingSignature = await helper.getLatestValidSignature(
             subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
           );
-          if (!bindingSignature || !helper.isValidSigningKeyPacket(subKey.keyPacket, bindingSignature)) {
+          if (!helper.isValidSigningKeyPacket(subKey.keyPacket, bindingSignature)) {
             continue;
           }
           if (!bindingSignature.embeddedSignature) {
@@ -316,11 +316,16 @@ class Key {
         }
       }
     }
-    const primaryUser = await this.getPrimaryUser(date, userId, config);
-    if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
-      helper.assertKeyStrength(primaryKey, config);
-      return this;
+
+    try {
+      const primaryUser = await this.getPrimaryUser(date, userId, config);
+      if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
+          helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
+        helper.assertKeyStrength(primaryKey, config);
+        return this;
+      }
+    } catch (e) {
+      exception = e;
     }
     throw util.wrapError('Could not find valid signing key packet in key ' + this.getKeyId().toHex(), exception);
   }
@@ -346,7 +351,7 @@ class Key {
           await subKey.verify(primaryKey, date, config);
           const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (bindingSignature && helper.isValidEncryptionKeyPacket(subKey.keyPacket, bindingSignature)) {
+          if (helper.isValidEncryptionKeyPacket(subKey.keyPacket, bindingSignature)) {
             helper.assertKeyStrength(subKey.keyPacket, config);
             return subKey;
           }
@@ -388,7 +393,7 @@ class Key {
         try {
           const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (bindingSignature && helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
+          if (helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
             keys.push(this.subKeys[i]);
           }
         } catch (e) {}

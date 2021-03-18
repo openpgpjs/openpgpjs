@@ -370,6 +370,7 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
   if (!signature.verified || signature.revoked !== false) { // Sanity check
     throw new Error('Signature not verified');
   }
+
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   return keyAlgo !== enums.publicKey.rsaEncrypt &&
     keyAlgo !== enums.publicKey.elgamal &&
@@ -417,5 +418,4 @@ export function assertKeyStrength(keyPacket, config) {
   if (rsaAlgos.has(keyAlgo) && util.uint8ArrayBitLength(keyPacket.publicParams.n) < config.minRsaBits) {
     throw new Error(`RSA keys shorter than ${config.minRsaBits} bits are considered too weak.`);
   }
-  return true;
 }
