@@ -255,7 +255,7 @@ module.exports = () => describe("Packet", function() {
     const msg = new openpgp.PacketList();
 
     msg.push(enc);
-    literal.setBytes(util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+    literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
     literal.filename = '';
     enc.packets.push(literal);
 
@@ -567,7 +567,7 @@ module.exports = () => describe("Packet", function() {
 
       const key = skesk.sessionKey;
 
-      literal.setBytes(util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+      literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
       literal.filename = '';
       encData.packets.push(literal);
       await encData.encrypt(algo, key, undefined, openpgp.config);
@@ -646,7 +646,7 @@ module.exports = () => describe("Packet", function() {
 
       const key = key_enc.sessionKey;
 
-      literal.setBytes(util.strToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
+      literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
       literal.filename = '';
       enc.packets.push(literal);
       await enc.encrypt(algo, key, undefined, openpgp.config);

@@ -125,7 +125,7 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
 
     const verify_signature = async function (oid, hash, r, s, message, pub) {
       if (util.isString(message)) {
-        message = util.strToUint8Array(message);
+        message = util.stringToUint8Array(message);
       } else if (!util.isUint8Array(message)) {
         message = new Uint8Array(message);
       }

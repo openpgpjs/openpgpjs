@@ -41,7 +41,7 @@ class KeyID {
    * @param {Uint8Array} bytes - Input to read the key id from
    */
   read(bytes) {
-    this.bytes = util.uint8ArrayToStr(bytes.subarray(0, 8));
+    this.bytes = util.uint8ArrayToString(bytes.subarray(0, 8));
   }
 
   /**
@@ -49,7 +49,7 @@ class KeyID {
    * @returns {Uint8Array} Key ID as a Uint8Array.
    */
   write() {
-    return util.strToUint8Array(this.bytes);
+    return util.stringToUint8Array(this.bytes);
   }
 
   /**
@@ -57,7 +57,7 @@ class KeyID {
    * @returns {String} Key ID as a hexadecimal string.
    */
   toHex() {
-    return util.strToHex(this.bytes);
+    return util.stringToHex(this.bytes);
   }
 
   /**

@@ -72,7 +72,7 @@ class UserIDPacket {
    * @param {Uint8Array} input - Payload of a tag 13 packet
    */
   read(bytes, config = defaultConfig) {
-    const userID = util.decodeUtf8(bytes);
+    const userID = util.decodeUTF8(bytes);
     if (userID.length > config.maxUserIDLength) {
       throw new Error('User ID string is too long');
     }
@@ -90,7 +90,7 @@ class UserIDPacket {
    * @returns {Uint8Array} Binary representation.
    */
   write() {
-    return util.encodeUtf8(this.userID);
+    return util.encodeUTF8(this.userID);
   }
 }
 

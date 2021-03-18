@@ -59,7 +59,7 @@ class LiteralDataPacket {
    */
   getText(clone = false) {
     if (this.text === null || util.isStream(this.text)) { // Assume that this.text has been read
-      this.text = util.decodeUtf8(util.nativeEOL(this.getBytes(clone)));
+      this.text = util.decodeUTF8(util.nativeEOL(this.getBytes(clone)));
     }
     return this.text;
   }
@@ -84,7 +84,7 @@ class LiteralDataPacket {
   getBytes(clone = false) {
     if (this.data === null) {
       // encode UTF8 and normalize EOL to \r\n
-      this.data = util.canonicalizeEOL(util.encodeUtf8(this.text));
+      this.data = util.canonicalizeEOL(util.encodeUTF8(this.text));
     }
     if (clone) {
       return stream.passiveClone(this.data);
@@ -123,7 +123,7 @@ class LiteralDataPacket {
       const format = enums.read(enums.literal, await reader.readByte());
 
       const filename_len = await reader.readByte();
-      this.filename = util.decodeUtf8(await reader.readBytes(filename_len));
+      this.filename = util.decodeUTF8(await reader.readBytes(filename_len));
 
       this.date = util.readDate(await reader.readBytes(4));
 
@@ -139,7 +139,7 @@ class LiteralDataPacket {
    * @returns {Uint8Array} Uint8Array representation of the packet.
    */
   writeHeader() {
-    const filename = util.encodeUtf8(this.filename);
+    const filename = util.encodeUTF8(this.filename);
     const filename_length = new Uint8Array([filename.length]);
 
     const format = new Uint8Array([enums.write(enums.literal, this.format)]);

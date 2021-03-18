@@ -224,7 +224,7 @@ class SignaturePacket {
       arr.push(writeSubPacket(sub.keyExpirationTime, util.writeNumber(this.keyExpirationTime, 4)));
     }
     if (this.preferredSymmetricAlgorithms !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredSymmetricAlgorithms));
+      bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredSymmetricAlgorithms));
       arr.push(writeSubPacket(sub.preferredSymmetricAlgorithms, bytes));
     }
     if (this.revocationKeyClass !== null) {
@@ -238,55 +238,55 @@ class SignaturePacket {
       bytes.push(util.writeNumber(name.length, 2));
       // 2 octets of value length
       bytes.push(util.writeNumber(value.length, 2));
-      bytes.push(util.strToUint8Array(name));
+      bytes.push(util.stringToUint8Array(name));
       bytes.push(value);
       bytes = util.concat(bytes);
       arr.push(writeSubPacket(sub.notationData, bytes));
     });
     if (this.preferredHashAlgorithms !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredHashAlgorithms));
+      bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredHashAlgorithms));
       arr.push(writeSubPacket(sub.preferredHashAlgorithms, bytes));
     }
     if (this.preferredCompressionAlgorithms !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredCompressionAlgorithms));
+      bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredCompressionAlgorithms));
       arr.push(writeSubPacket(sub.preferredCompressionAlgorithms, bytes));
     }
     if (this.keyServerPreferences !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.keyServerPreferences));
+      bytes = util.stringToUint8Array(util.uint8ArrayToString(this.keyServerPreferences));
       arr.push(writeSubPacket(sub.keyServerPreferences, bytes));
     }
     if (this.preferredKeyServer !== null) {
-      arr.push(writeSubPacket(sub.preferredKeyServer, util.strToUint8Array(this.preferredKeyServer)));
+      arr.push(writeSubPacket(sub.preferredKeyServer, util.stringToUint8Array(this.preferredKeyServer)));
     }
     if (this.isPrimaryUserID !== null) {
       arr.push(writeSubPacket(sub.primaryUserID, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
     }
     if (this.policyURI !== null) {
-      arr.push(writeSubPacket(sub.policyUri, util.strToUint8Array(this.policyURI)));
+      arr.push(writeSubPacket(sub.policyUri, util.stringToUint8Array(this.policyURI)));
     }
     if (this.keyFlags !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.keyFlags));
+      bytes = util.stringToUint8Array(util.uint8ArrayToString(this.keyFlags));
       arr.push(writeSubPacket(sub.keyFlags, bytes));
     }
     if (this.signersUserID !== null) {
-      arr.push(writeSubPacket(sub.signersUserID, util.strToUint8Array(this.signersUserID)));
+      arr.push(writeSubPacket(sub.signersUserID, util.stringToUint8Array(this.signersUserID)));
     }
     if (this.reasonForRevocationFlag !== null) {
-      bytes = util.strToUint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
+      bytes = util.stringToUint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
       arr.push(writeSubPacket(sub.reasonForRevocation, bytes));
     }
     if (this.features !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.features));
+      bytes = util.stringToUint8Array(util.uint8ArrayToString(this.features));
       arr.push(writeSubPacket(sub.features, bytes));
     }
     if (this.signatureTargetPublicKeyAlgorithm !== null) {
       bytes = [new Uint8Array([this.signatureTargetPublicKeyAlgorithm, this.signatureTargetHashAlgorithm])];
-      bytes.push(util.strToUint8Array(this.signatureTargetHash));
+      bytes.push(util.stringToUint8Array(this.signatureTargetHash));
       bytes = util.concat(bytes);
       arr.push(writeSubPacket(sub.signatureTarget, bytes));
     }
     if (this.preferredAEADAlgorithms !== null) {
-      bytes = util.strToUint8Array(util.uint8ArrayToStr(this.preferredAEADAlgorithms));
+      bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredAEADAlgorithms));
       arr.push(writeSubPacket(sub.preferredAEADAlgorithms, bytes));
     }
 
@@ -430,13 +430,13 @@ class SignaturePacket {
         const n = util.readNumber(bytes.subarray(mypos, mypos + 2));
         mypos += 2;
 
-        const name = util.uint8ArrayToStr(bytes.subarray(mypos, mypos + m));
+        const name = util.uint8ArrayToString(bytes.subarray(mypos, mypos + m));
         const value = bytes.subarray(mypos + m, mypos + m + n);
 
         this.rawNotations.push({ name, humanReadable, value, critical });
 
         if (humanReadable) {
-          this.notations[name] = util.uint8ArrayToStr(value);
+          this.notations[name] = util.uint8ArrayToString(value);
         }
         break;
       }
@@ -454,7 +454,7 @@ class SignaturePacket {
         break;
       case 24:
         // Preferred Key Server
-        this.preferredKeyServer = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
+        this.preferredKeyServer = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
       case 25:
         // Primary User ID
@@ -462,7 +462,7 @@ class SignaturePacket {
         break;
       case 26:
         // Policy URI
-        this.policyURI = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
+        this.policyURI = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
       case 27:
         // Key Flags
@@ -470,12 +470,12 @@ class SignaturePacket {
         break;
       case 28:
         // Signer's User ID
-        this.signersUserID = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
+        this.signersUserID = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
       case 29:
         // Reason for Revocation
         this.reasonForRevocationFlag = bytes[mypos++];
-        this.reasonForRevocationString = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
+        this.reasonForRevocationString = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
       case 30:
         // Features
@@ -489,7 +489,7 @@ class SignaturePacket {
 
         const len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
 
-        this.signatureTargetHash = util.uint8ArrayToStr(bytes.subarray(mypos, mypos + len));
+        this.signatureTargetHash = util.uint8ArrayToString(bytes.subarray(mypos, mypos + len));
         break;
       }
       case 32:
@@ -548,7 +548,7 @@ class SignaturePacket {
     switch (type) {
       case t.binary:
         if (data.text !== null) {
-          return util.encodeUtf8(data.getText(true));
+          return util.encodeUTF8(data.getText(true));
         }
         return data.getBytes(true);
 

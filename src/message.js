@@ -225,7 +225,7 @@ export class Message {
       if (keyPackets.length > 1) {
         const seen = {};
         keyPackets = keyPackets.filter(function(item) {
-          const k = item.sessionKeyAlgorithm + util.uint8ArrayToStr(item.sessionKey);
+          const k = item.sessionKeyAlgorithm + util.uint8ArrayToString(item.sessionKey);
           if (seen.hasOwnProperty(k)) {
             return false;
           }

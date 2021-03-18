@@ -198,7 +198,7 @@ class Curve {
     }
     const indutnyCurve = await getIndutnyCurve(this.name);
     keyPair = await indutnyCurve.genKeyPair({
-      entropy: util.uint8ArrayToStr(await getRandomBytes(32))
+      entropy: util.uint8ArrayToString(await getRandomBytes(32))
     });
     return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
   }

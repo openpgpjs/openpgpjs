@@ -220,7 +220,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       const curve = new elliptic.Curve('ed25519');
       const { publicKey } = nacl.sign.keyPair.fromSeed(util.hexToUint8Array(vector.SECRET_KEY));
       expect(publicKey).to.deep.equal(util.hexToUint8Array(vector.PUBLIC_KEY));
-      const data = util.strToUint8Array(vector.MESSAGE);
+      const data = util.stringToUint8Array(vector.MESSAGE);
       const privateParams = {
         seed: util.hexToUint8Array(vector.SECRET_KEY)
       };
@@ -257,7 +257,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       return testVector({
         SECRET_KEY: '4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb',
         PUBLIC_KEY: '3d4017c3e843895a92b70aa74d1b7ebc9c982ccf2ec4968cc0cd55f12af4660c',
-        MESSAGE: util.hexToStr('72'),
+        MESSAGE: util.hexToString('72'),
         SIGNATURE: {
           R: '92a009a9f0d4cab8720e820b5f642540a2b27b5416503f8fb3762223ebdb69da',
           S: '085ac1e43e15996e458f3613d0f11d8c387b2eaeb4302aeeb00d291612bb0c00'
@@ -269,7 +269,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       return testVector({
         SECRET_KEY: 'c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7',
         PUBLIC_KEY: 'fc51cd8e6218a1a38da47ed00230f0580816ed13ba3303ac5deb911548908025',
-        MESSAGE: util.hexToStr('af82'),
+        MESSAGE: util.hexToString('af82'),
         SIGNATURE: {
           R: '6291d657deec24024827e69c3abe01a30ce548a284743a445e3680d7db5ac3ac',
           S: '18ff9b538d16f290ae67f760984dc6594a7c15e9716ed28dc027beceea1ec40a'
@@ -281,7 +281,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       return testVector({
         SECRET_KEY: 'f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5',
         PUBLIC_KEY: '278117fc144c72340f67d0f2316e8386ceffbf2b2428c9c51fef7c597f1d426e',
-        MESSAGE: util.hexToStr([
+        MESSAGE: util.hexToString([
           '08b8b2b733424243760fe426a4b54908',
           '632110a66c2f6591eabd3345e3e4eb98',
           'fa6e264bf09efe12ee50f8f54e9f77b1',
@@ -358,7 +358,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
       return testVector({
         SECRET_KEY: '833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42',
         PUBLIC_KEY: 'ec172b93ad5e563bf4932c70e1245034c35467ef2efd4d64ebf819683467e2bf',
-        MESSAGE: util.hexToStr([
+        MESSAGE: util.hexToString([
           'ddaf35a193617abacc417349ae204131',
           '12e6fa4e89a97ea20a9eeee64b55d39a',
           '2192992a274fc1a836ba3c23a3feebbd',

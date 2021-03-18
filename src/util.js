@@ -131,7 +131,7 @@ const util = {
    * @param {String} str - String to convert
    * @returns {String} String containing the hexadecimal values.
    */
-  strToHex: function (str) {
+  stringToHex: function (str) {
     if (str === null) {
       return "";
     }
@@ -154,7 +154,7 @@ const util = {
    * @param {String} str - Hex string to convert
    * @returns {String}
    */
-  hexToStr: function (hex) {
+  hexToString: function (hex) {
     let str = '';
     for (let i = 0; i < hex.length; i += 2) {
       str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
@@ -191,7 +191,7 @@ const util = {
    * @param {Uint8Array} bin - An array of 8-bit integers to convert
    * @returns {Uint8Array} MPI-formatted Uint8Array.
    */
-  uint8ArrayToMpi: function (bin) {
+  uint8ArrayToMPI: function (bin) {
     const bitSize = util.uint8ArrayBitLength(bin);
     if (bitSize === 0) {
       throw new Error('Zero MPI');
@@ -254,10 +254,10 @@ const util = {
    * @param {String} str - String to convert
    * @returns {Uint8Array} An array of 8-bit integers.
    */
-  strToUint8Array: function (str) {
+  stringToUint8Array: function (str) {
     return stream.transform(str, str => {
       if (!util.isString(str)) {
-        throw new Error('strToUint8Array: Data must be in the form of a string');
+        throw new Error('stringToUint8Array: Data must be in the form of a string');
       }
 
       const result = new Uint8Array(str.length);
@@ -273,7 +273,7 @@ const util = {
    * @param {Uint8Array} bytes - An array of 8-bit integers to convert
    * @returns {String} String representation of the array.
    */
-  uint8ArrayToStr: function (bytes) {
+  uint8ArrayToString: function (bytes) {
     bytes = new Uint8Array(bytes);
     const result = [];
     const bs = 1 << 14;
@@ -290,7 +290,7 @@ const util = {
    * @param {String|ReadableStream} str - The string to convert
    * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes.
    */
-  encodeUtf8: function (str) {
+  encodeUTF8: function (str) {
     const encoder = new TextEncoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
@@ -304,7 +304,7 @@ const util = {
    * @param {Uint8Array|ReadableStream} utf8 - A valid squence of utf8 bytes
    * @returns {String|ReadableStream} A native javascript string.
    */
-  decodeUtf8: function (utf8) {
+  decodeUTF8: function (utf8) {
     const decoder = new TextDecoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
@@ -392,12 +392,12 @@ const util = {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * Different than printDebug because will call strToHex iff necessary.
+   * Different than printDebug because will call stringToHex iff necessary.
    * @param {String} str - String of the debug message
    */
-  printDebugHexStrDump: function (str, strToHex) {
+  printDebugHexStrDump: function (str, stringToHex) {
     if (debugMode) {
-      str += util.strToHex(strToHex);
+      str += util.stringToHex(stringToHex);
       console.log(str);
     }
   },
