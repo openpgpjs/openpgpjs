@@ -315,7 +315,7 @@ module.exports = () => describe("Packet", function() {
       enc.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
       enc.publicKeyAlgorithm = 'rsaEncryptSign';
       enc.sessionKeyAlgorithm = 'aes256';
-      enc.publicKeyId.bytes = '12345678';
+      enc.publicKeyID.bytes = '12345678';
       return enc.encrypt({ publicParams, getFingerprintBytes() {} }).then(async () => {
 
         msg.push(enc);
@@ -362,7 +362,7 @@ module.exports = () => describe("Packet", function() {
     enc.sessionKey = secret;
     enc.publicKeyAlgorithm = 'rsaEncryptSign';
     enc.sessionKeyAlgorithm = 'aes256';
-    enc.publicKeyId.bytes = '12345678';
+    enc.publicKeyID.bytes = '12345678';
 
     return enc.encrypt(key).then(() => {
       return enc.decrypt(key).then(() => {

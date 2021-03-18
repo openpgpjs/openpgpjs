@@ -473,7 +473,7 @@ Using the private key:
     });
     const { valid } = verified.signatures[0];
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }
@@ -515,7 +515,7 @@ Using the private key:
     });
     const { valid } = verified.signatures[0];
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }
@@ -563,7 +563,7 @@ Using the private key:
 
     const { valid } = verified.signatures[0];
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }

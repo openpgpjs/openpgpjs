@@ -107,17 +107,17 @@ class User {
    */
   async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config) {
     const that = this;
-    const keyid = certificate.issuerKeyId;
+    const keyID = certificate.issuerKeyID;
     const dataToVerify = {
       userId: this.userId,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
     const results = await Promise.all(keys.map(async function(key) {
-      if (!key.getKeyIds().some(id => id.equals(keyid))) {
+      if (!key.getKeyIDs().some(id => id.equals(keyID))) {
         return null;
       }
-      const signingKey = await key.getSigningKey(keyid, date, undefined, config);
+      const signingKey = await key.getSigningKey(keyID, date, undefined, config);
       if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
@@ -141,8 +141,8 @@ class User {
    * @param {Array<Key>} keys - Array of keys to verify certificate signatures
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
-   *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
+   * @returns {Promise<Array<{keyID: module:type/keyid~KeyID,
+   *                          valid: Boolean}>>}   List of signer's keyID and validity of signature
    * @async
    */
   async verifyAllCertifications(primaryKey, keys, date = new Date(), config) {
@@ -150,7 +150,7 @@ class User {
     const certifications = this.selfCertifications.concat(this.otherCertifications);
     return Promise.all(certifications.map(async function(certification) {
       return {
-        keyid: certification.issuerKeyId,
+        keyID: certification.issuerKeyID,
         valid: await that.verifyCertificate(primaryKey, certification, keys, date, config).catch(() => false)
       };
     }));

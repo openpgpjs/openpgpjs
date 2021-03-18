@@ -72,7 +72,7 @@ export async function getLatestValidSignature(signatures, primaryKey, signatureT
   }
   if (!signature) {
     throw util.wrapError(
-      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyId().toHex()}`
+      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyID().toHex()}`
         .replace('certGeneric ', 'self-')
         .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase())
       , exception);
@@ -269,7 +269,7 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
   key = key || primaryKey;
   const normDate = util.normalizeDate(date);
-  const revocationKeyIds = [];
+  const revocationKeyIDs = [];
   await Promise.all(revocations.map(async function(revocationSignature) {
     try {
       if (
@@ -281,23 +281,23 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // third-party revocation signatures here. (It could also be revoking a
         // third-party key certification, which should only affect
         // `verifyAllCertifications`.)
-        (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
+        (!signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)) &&
         !(config.revocationsExpire && revocationSignature.isExpired(normDate))
       ) {
         revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify, undefined, undefined, config);
 
         // TODO get an identifier of the revoked object instead
-        revocationKeyIds.push(revocationSignature.issuerKeyId);
+        revocationKeyIDs.push(revocationSignature.issuerKeyID);
       }
     } catch (e) {}
   }));
   // TODO further verify that this is the signature that should be revoked
   if (signature) {
-    signature.revoked = revocationKeyIds.some(keyId => keyId.equals(signature.issuerKeyId)) ? true :
+    signature.revoked = revocationKeyIDs.some(keyID => keyID.equals(signature.issuerKeyID)) ? true :
       signature.revoked || false;
     return signature.revoked;
   }
-  return revocationKeyIds.length > 0;
+  return revocationKeyIDs.length > 0;
 }
 
 export function getExpirationTime(keyPacket, signature) {

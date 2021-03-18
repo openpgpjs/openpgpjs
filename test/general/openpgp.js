@@ -5,7 +5,7 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 const crypto = require('../../src/crypto');
 const random = require('../../src/crypto/random');
 const util = require('../../src/util');
-const keyIdType = require('../../src/type/keyid');
+const keyIDType = require('../../src/type/keyid');
 
 const spy = require('sinon/lib/sinon/spy');
 const input = require('./testInputs.js');
@@ -899,14 +899,14 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           privateKey: privateKey,
           passphrase: passphrase
         }).then(function(unlocked){
-          expect(unlocked.getKeyId().toHex()).to.equal(privateKey.getKeyId().toHex());
-          expect(unlocked.subKeys[0].getKeyId().toHex()).to.equal(privateKey.subKeys[0].getKeyId().toHex());
+          expect(unlocked.getKeyID().toHex()).to.equal(privateKey.getKeyID().toHex());
+          expect(unlocked.subKeys[0].getKeyID().toHex()).to.equal(privateKey.subKeys[0].getKeyID().toHex());
           expect(unlocked.isDecrypted()).to.be.true;
           expect(unlocked.keyPacket.privateParams).to.not.be.null;
           // original key should be unchanged
           expect(privateKey.isDecrypted()).to.be.false;
           expect(privateKey.keyPacket.privateParams).to.be.null;
-          originalKey.subKeys[0].getKeyId(); // fill in keyid
+          originalKey.subKeys[0].getKeyID(); // fill in keyID
           expect(privateKey).to.deep.equal(originalKey);
         });
       });
@@ -953,14 +953,14 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           privateKey: key,
           passphrase: passphrase
         }).then(function(locked){
-          expect(locked.getKeyId().toHex()).to.equal(key.getKeyId().toHex());
-          expect(locked.subKeys[0].getKeyId().toHex()).to.equal(key.subKeys[0].getKeyId().toHex());
+          expect(locked.getKeyID().toHex()).to.equal(key.getKeyID().toHex());
+          expect(locked.subKeys[0].getKeyID().toHex()).to.equal(key.subKeys[0].getKeyID().toHex());
           expect(locked.isDecrypted()).to.be.false;
           expect(locked.keyPacket.privateParams).to.be.null;
           // original key should be unchanged
           expect(key.isDecrypted()).to.be.true;
           expect(key.keyPacket.privateParams).to.not.be.null;
-          originalKey.subKeys[0].getKeyId(); // fill in keyid
+          originalKey.subKeys[0].getKeyID(); // fill in keyID
           expect(key).to.deep.equal(originalKey);
         });
       });
@@ -1416,7 +1416,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(decrypted.data).to.equal(plaintext);
             expect(decrypted.signatures[0].valid).to.be.true;
             const signingKey = await privateKey.getSigningKey();
-            expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
           });
         });
@@ -1439,7 +1439,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(decrypted.data).to.equal(plaintext);
             expect(decrypted.signatures[0].valid).to.be.true;
             const signingKey = await privateKey.getSigningKey();
-            expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
           });
         });
@@ -1470,7 +1470,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               expect(decrypted.data).to.equal(plaintext);
               expect(decrypted.signatures[0].valid).to.be.true;
               const signingKey = await newPrivateKey.getSigningKey();
-              expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
               expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
             });
           });
@@ -1503,7 +1503,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(decrypted.data).to.equal(plaintext);
           expect(decrypted.signatures[0].valid).to.be.true;
           const signingKey = await newPrivateKey.getSigningKey();
-          expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
         });
 
@@ -1524,7 +1524,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(decrypted.data).to.equal('');
             expect(decrypted.signatures[0].valid).to.be.true;
             const signingKey = await privateKey.getSigningKey();
-            expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
           });
         });
@@ -1548,7 +1548,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(decrypted.data).to.equal(plaintext);
           expect(decrypted.signatures[0].valid).to.be.true;
           const signingKey = await privateKey.getSigningKey();
-          expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
         });
 
@@ -1592,11 +1592,11 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               expect(decrypted.data).to.equal(plaintext);
               expect(decrypted.signatures[0].valid).to.be.true;
               signingKey = await privateKey.getSigningKey();
-              expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
               expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
               expect(decrypted.signatures[1].valid).to.be.true;
               signingKey = await privKeyDE.getSigningKey();
-              expect(decrypted.signatures[1].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[1].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
               expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
             });
           } finally {
@@ -1632,7 +1632,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(signatures[0].valid).to.be.false;
             expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
-            expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
           });
         });
@@ -1655,7 +1655,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(signatures[0].valid).to.be.false;
             expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
-            expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
           });
         });
@@ -1678,7 +1678,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(signatures[0].valid).to.be.false;
             expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
-            expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
           });
         });
@@ -1700,7 +1700,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(signatures[0].valid).to.be.false;
             expect(signatures[0].error).to.match(/Could not find signing key/);
             const signingKey = await privateKey.getSigningKey();
-            expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(signatures[0].signature.packets.length).to.equal(1);
           });
         });
@@ -1725,7 +1725,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(signatures[0].valid).to.be.false;
           expect(signatures[0].error).to.match(/Could not find signing key/);
           const signingKey = await privateKey.getSigningKey();
-          expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(signatures[0].signature.packets.length).to.equal(1);
         });
 
@@ -1758,11 +1758,11 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               expect(decrypted.data).to.equal(plaintext);
               expect(decrypted.signatures[0].valid).to.be.true;
               signingKey = await privateKey.getSigningKey();
-              expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
               expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
               expect(decrypted.signatures[1].valid).to.be.true;
               signingKey = await privKeyDE.getSigningKey();
-              expect(decrypted.signatures[1].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[1].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
               expect(decrypted.signatures[1].signature.packets.length).to.equal(1);
             });
           } finally {
@@ -1860,7 +1860,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               expect(decrypted.data).to.equal(plaintext);
               expect(decrypted.signatures[0].valid).to.be.true;
               const signingKey = await privKeyDE.getSigningKey();
-              expect(decrypted.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+              expect(decrypted.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
               expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
             });
           } finally {
@@ -2104,7 +2104,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(verified.data).to.equal(plaintext.replace(/[ \t]+$/mg, ''));
           expect(verified.signatures[0].valid).to.be.true;
           const signingKey = await privateKey.getSigningKey();
-          expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(verified.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(verified.signatures[0].signature.packets.length).to.equal(1);
         });
       });
@@ -2134,11 +2134,11 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(verified.data).to.equal(plaintext.replace(/[ \t]+$/mg, ''));
             expect(verified.signatures[0].valid).to.be.true;
             signingKey = await privateKey.getSigningKey();
-            expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(verified.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(verified.signatures[0].signature.packets.length).to.equal(1);
             expect(verified.signatures[1].valid).to.be.true;
             signingKey = await privKeyDE.getSigningKey();
-            expect(verified.signatures[1].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+            expect(verified.signatures[1].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
             expect(verified.signatures[1].signature.packets.length).to.equal(1);
           });
         } finally {
@@ -2164,7 +2164,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(verified.data).to.equal(plaintext);
           expect(verified.signatures[0].valid).to.be.true;
           const signingKey = await privateKey.getSigningKey();
-          expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(verified.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(verified.signatures[0].signature.packets.length).to.equal(1);
         });
       });
@@ -2186,7 +2186,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(signatures[0].valid).to.be.false;
           expect(signatures[0].error).to.match(/Could not find signing key/);
           const signingKey = await privateKey.getSigningKey();
-          expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(signatures[0].signature.packets.length).to.equal(1);
         });
       });
@@ -2210,7 +2210,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(signatures[0].valid).to.be.false;
           expect(signatures[0].error).to.match(/Could not find signing key/);
           const signingKey = await privateKey.getSigningKey();
-          expect(signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(signatures[0].signature.packets.length).to.equal(1);
         });
       });
@@ -2232,7 +2232,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(verified.data).to.equal(plaintext);
           expect(verified.signatures[0].valid).to.be.true;
           const signingKey = await privateKey.getSigningKey();
-          expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(verified.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(verified.signatures[0].signature.packets.length).to.equal(1);
         });
       });
@@ -2259,7 +2259,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(+verified.signatures[0].signature.packets[0].created).to.be.gte(+start);
           expect(verified.signatures[0].valid).to.be.true;
           const signingKey = await privateKey.getSigningKey();
-          expect(verified.signatures[0].keyid.toHex()).to.equal(signingKey.getKeyId().toHex());
+          expect(verified.signatures[0].keyID.toHex()).to.equal(signingKey.getKeyID().toHex());
           expect(verified.signatures[0].signature.packets.length).to.equal(1);
         });
       });
@@ -2285,7 +2285,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
             expect(verified.data).to.equal(plaintext);
             expect(verified.signatures[0].valid).to.be.true;
-            expect(await privateKey_1337.getSigningKey(verified.signatures[0].keyid, past))
+            expect(await privateKey_1337.getSigningKey(verified.signatures[0].keyID, past))
               .to.be.not.null;
             expect(verified.signatures[0].signature.packets.length).to.equal(1);
             // now check with expiration checking disabled
@@ -2295,7 +2295,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             expect(+verified.signatures[0].signature.packets[0].created).to.equal(+past);
             expect(verified.data).to.equal(plaintext);
             expect(verified.signatures[0].valid).to.be.true;
-            expect(await privateKey_1337.getSigningKey(verified.signatures[0].keyid, null))
+            expect(await privateKey_1337.getSigningKey(verified.signatures[0].keyID, null))
               .to.be.not.null;
             expect(verified.signatures[0].signature.packets.length).to.equal(1);
           });
@@ -2325,7 +2325,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(+verified.signatures[0].signature.packets[0].created).to.equal(+future);
           expect([].slice.call(verified.data)).to.deep.equal([].slice.call(data));
           expect(verified.signatures[0].valid).to.be.true;
-          expect(await privateKey_2038_2045.getSigningKey(verified.signatures[0].keyid, future))
+          expect(await privateKey_2038_2045.getSigningKey(verified.signatures[0].keyID, future))
             .to.be.not.null;
           expect(verified.signatures[0].signature.packets.length).to.equal(1);
         });
@@ -2353,7 +2353,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         }).then(async function (verified) {
           expect([].slice.call(verified.data)).to.deep.equal([].slice.call(data));
           expect(verified.signatures[0].valid).to.be.true;
-          expect(await privateKey.getSigningKey(verified.signatures[0].keyid))
+          expect(await privateKey.getSigningKey(verified.signatures[0].keyID))
             .to.be.not.null;
           expect(verified.signatures[0].signature.packets.length).to.equal(1);
         });
@@ -2386,7 +2386,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(openpgp.stream.isStream(verified.data)).to.equal(useNativeStream ? 'web' : 'ponyfill');
           expect([].slice.call(await openpgp.stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
           expect(await verified.signatures[0].verified).to.be.true;
-          expect(await privateKey.getSigningKey(verified.signatures[0].keyid))
+          expect(await privateKey.getSigningKey(verified.signatures[0].keyID))
             .to.be.not.null;
           expect((await verified.signatures[0].signature).packets.length).to.equal(1);
         });
@@ -2454,7 +2454,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(await openpgp.stream.readToEnd(message.getText())).to.equal(plaintext);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+past);
           expect(await signatures[0].verified).to.be.true;
-          expect(await privateKey_2000_2008.getSigningKey(signatures[0].keyid, past))
+          expect(await privateKey_2000_2008.getSigningKey(signatures[0].keyID, past))
             .to.be.not.null;
           expect((await signatures[0].signature).packets.length).to.equal(1);
         });
@@ -2483,7 +2483,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(await openpgp.stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
           expect(await signatures[0].verified).to.be.true;
-          expect(await privateKey_2038_2045.getSigningKey(signatures[0].keyid, future))
+          expect(await privateKey_2038_2045.getSigningKey(signatures[0].keyID, future))
             .to.be.not.null;
           expect((await signatures[0].signature).packets.length).to.equal(1);
         });
@@ -2512,7 +2512,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(await openpgp.stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
           expect(await signatures[0].verified).to.be.true;
-          expect(await privateKey_2038_2045.getSigningKey(signatures[0].keyid, future))
+          expect(await privateKey_2038_2045.getSigningKey(signatures[0].keyID, future))
             .to.be.not.null;
           expect((await signatures[0].signature).packets.length).to.equal(1);
         });
@@ -2837,15 +2837,15 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
     });
 
     describe('Specific encryption/signing key testing', async function () {
-      const encryptionKeyIds = [
-        keyIdType.fromId("87EAE0977B2185EA"),
-        keyIdType.fromId("F94F9B34AF93FA14"),
-        keyIdType.fromId("08F7D4C7C59545C0")
+      const encryptionKeyIDs = [
+        keyIDType.fromId("87EAE0977B2185EA"),
+        keyIDType.fromId("F94F9B34AF93FA14"),
+        keyIDType.fromId("08F7D4C7C59545C0")
       ];
-      const signingKeyIds = [
-        keyIdType.fromId("663277AF60400638"),
-        keyIdType.fromId("BBE14491E6EE6366"),
-        keyIdType.fromId("3E0F20F1A71D6DFD")
+      const signingKeyIDs = [
+        keyIDType.fromId("663277AF60400638"),
+        keyIDType.fromId("BBE14491E6EE6366"),
+        keyIDType.fromId("3E0F20F1A71D6DFD")
       ];
       const getPrimaryKey = async () => openpgp.readKey({
         armoredKey: multipleEncryptionAndSigningSubkeys
@@ -2855,17 +2855,17 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
         const primaryKey = await getPrimaryKey();
         let m;
         let p;
-        for (let i = 0; i < encryptionKeyIds.length; i++) {
+        for (let i = 0; i < encryptionKeyIDs.length; i++) {
           m = await openpgp.readMessage({
             armoredMessage: await openpgp.encrypt({
               message: openpgp.Message.fromText("Hello World\n"),
               publicKeys: primaryKey,
-              encryptionKeyIds: [encryptionKeyIds[i]]
+              encryptionKeyIDs: [encryptionKeyIDs[i]]
             })
           });
           p = m.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
           expect(p.length).equals(1);
-          expect(p[0].publicKeyId.equals(encryptionKeyIds[i])).to.be.true;
+          expect(p[0].publicKeyID.equals(encryptionKeyIDs[i])).to.be.true;
         }
       });
 
@@ -2873,18 +2873,18 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
         const primaryKey = await getPrimaryKey();
         let s;
         let p;
-        for (let i = 0; i < signingKeyIds.length; i++) {
+        for (let i = 0; i < signingKeyIDs.length; i++) {
           s = await openpgp.readSignature({
             armoredSignature: await openpgp.sign({
               message: openpgp.Message.fromText("Hello World\n"),
               privateKeys: primaryKey,
-              signingKeyIds: [signingKeyIds[i]],
+              signingKeyIDs: [signingKeyIDs[i]],
               detached: true
             })
           });
           p = s.packets.filterByTag(openpgp.enums.packet.signature);
           expect(p.length).equals(1);
-          expect(p[0].issuerKeyId.equals(signingKeyIds[i])).to.be.true;
+          expect(p[0].issuerKeyID.equals(signingKeyIDs[i])).to.be.true;
         }
       });
 
@@ -2892,26 +2892,26 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
         const primaryKey = await getPrimaryKey();
         const plaintextMessage = openpgp.Message.fromText("Hello World\n");
 
-        const checkEncryptedPackets = (encryptionKeyIds, pKESKList) => {
-          pKESKList.forEach(({ publicKeyId }, i) => {
-            expect(publicKeyId.equals(encryptionKeyIds[i])).to.be.true;
+        const checkEncryptedPackets = (encryptionKeyIDs, pKESKList) => {
+          pKESKList.forEach(({ publicKeyID }, i) => {
+            expect(publicKeyID.equals(encryptionKeyIDs[i])).to.be.true;
           });
         };
-        const checkSignatures = (signingKeyIds, signatures) => {
-          signatures.forEach(({ keyid }, i) => {
-            expect(keyid.equals(signingKeyIds[i])).to.be.true;
+        const checkSignatures = (signingKeyIDs, signatures) => {
+          signatures.forEach(({ keyID }, i) => {
+            expect(keyID.equals(signingKeyIDs[i])).to.be.true;
           });
         };
 
-        const kIds = [encryptionKeyIds[1], encryptionKeyIds[0], encryptionKeyIds[2]];
-        const sIds = [signingKeyIds[2], signingKeyIds[1], signingKeyIds[0]];
+        const kIds = [encryptionKeyIDs[1], encryptionKeyIDs[0], encryptionKeyIDs[2]];
+        const sIds = [signingKeyIDs[2], signingKeyIDs[1], signingKeyIDs[0]];
         const message = await openpgp.readMessage({
           armoredMessage: await openpgp.encrypt({
             message: plaintextMessage,
             privateKeys: [primaryKey, primaryKey, primaryKey],
             publicKeys: [primaryKey, primaryKey, primaryKey],
-            encryptionKeyIds: kIds,
-            signingKeyIds: sIds
+            encryptionKeyIDs: kIds,
+            signingKeyIDs: sIds
           })
         });
         const pKESKList = message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);

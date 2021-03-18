@@ -31,7 +31,7 @@ import util from '../util.js';
  * section "Enhanced Key Formats" below describes how Key IDs are
  * formed.
  */
-class Keyid {
+class KeyID {
   constructor() {
     this.bytes = '';
   }
@@ -62,11 +62,11 @@ class Keyid {
 
   /**
    * Checks equality of Key ID's
-   * @param {Keyid} keyid
-   * @param {Boolean} matchWildcard - Indicates whether to check if either keyid is a wildcard
+   * @param {KeyID} keyID
+   * @param {Boolean} matchWildcard - Indicates whether to check if either keyID is a wildcard
    */
-  equals(keyid, matchWildcard = false) {
-    return (matchWildcard && (keyid.isWildcard() || this.isWildcard())) || this.bytes === keyid.bytes;
+  equals(keyID, matchWildcard = false) {
+    return (matchWildcard && (keyID.isWildcard() || this.isWildcard())) || this.bytes === keyID.bytes;
   }
 
   /**
@@ -85,21 +85,21 @@ class Keyid {
     return /^0+$/.test(this.toHex());
   }
 
-  static mapToHex(keyId) {
-    return keyId.toHex();
+  static mapToHex(keyID) {
+    return keyID.toHex();
   }
 
   static fromId(hex) {
-    const keyid = new Keyid();
-    keyid.read(util.hexToUint8Array(hex));
-    return keyid;
+    const keyID = new KeyID();
+    keyID.read(util.hexToUint8Array(hex));
+    return keyID;
   }
 
   static wildcard() {
-    const keyid = new Keyid();
-    keyid.read(new Uint8Array(8));
-    return keyid;
+    const keyID = new KeyID();
+    keyID.read(new Uint8Array(8));
+    return keyID;
   }
 }
 
-export default Keyid;
+export default KeyID;

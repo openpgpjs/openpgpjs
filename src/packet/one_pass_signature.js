@@ -17,7 +17,7 @@
 
 import stream from '@openpgp/web-stream-tools';
 import SignaturePacket from './signature';
-import type_keyid from '../type/keyid';
+import KeyID from '../type/keyid';
 import enums from '../enums';
 import util from '../util';
 
@@ -57,7 +57,7 @@ class OnePassSignaturePacket {
      */
     this.publicKeyAlgorithm = null;
     /** An eight-octet number holding the Key ID of the signing key. */
-    this.issuerKeyId = null;
+    this.issuerKeyID = null;
     /**
      * A one-octet number holding a flag showing whether the signature is nested.
      * A zero value indicates that the next packet is another One-Pass Signature packet
@@ -87,8 +87,8 @@ class OnePassSignaturePacket {
     this.publicKeyAlgorithm = bytes[mypos++];
 
     // An eight-octet number holding the Key ID of the signing key.
-    this.issuerKeyId = new type_keyid();
-    this.issuerKeyId.read(bytes.subarray(mypos, mypos + 8));
+    this.issuerKeyID = new KeyID();
+    this.issuerKeyID.read(bytes.subarray(mypos, mypos + 8));
     mypos += 8;
 
     // A one-octet number holding a flag showing whether the signature
@@ -110,7 +110,7 @@ class OnePassSignaturePacket {
 
     const end = new Uint8Array([this.flags]);
 
-    return util.concatUint8Array([start, this.issuerKeyId.write(), end]);
+    return util.concatUint8Array([start, this.issuerKeyID.write(), end]);
   }
 
   calculateTrailer(...args) {
@@ -126,7 +126,7 @@ class OnePassSignaturePacket {
       correspondingSig.signatureType !== this.signatureType ||
       correspondingSig.hashAlgorithm !== this.hashAlgorithm ||
       correspondingSig.publicKeyAlgorithm !== this.publicKeyAlgorithm ||
-      !correspondingSig.issuerKeyId.equals(this.issuerKeyId)
+      !correspondingSig.issuerKeyID.equals(this.issuerKeyID)
     ) {
       throw new Error('Corresponding signature packet does not match one-pass signature packet');
     }

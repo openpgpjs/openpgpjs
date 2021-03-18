@@ -10,7 +10,7 @@ import defaultConfig from '../config';
 
 /**
  * Class that represents a subkey packet and the relevant signatures.
- * @borrows PublicSubkeyPacket#getKeyId as SubKey#getKeyId
+ * @borrows PublicSubkeyPacket#getKeyID as SubKey#getKeyID
  * @borrows PublicSubkeyPacket#getFingerprint as SubKey#getFingerprint
  * @borrows PublicSubkeyPacket#hasSameFingerprintAs as SubKey#hasSameFingerprintAs
  * @borrows PublicSubkeyPacket#getAlgorithmInfo as SubKey#getAlgorithmInfo
@@ -134,7 +134,7 @@ class SubKey {
     const dataToVerify = { key: primaryKey, bind: that.keyPacket };
     await helper.mergeSignatures(subKey, this, 'bindingSignatures', async function(srcBindSig) {
       for (let i = 0; i < that.bindingSignatures.length; i++) {
-        if (that.bindingSignatures[i].issuerKeyId.equals(srcBindSig.issuerKeyId)) {
+        if (that.bindingSignatures[i].issuerKeyID.equals(srcBindSig.issuerKeyID)) {
           if (srcBindSig.created > that.bindingSignatures[i].created) {
             that.bindingSignatures[i] = srcBindSig;
           }
@@ -190,7 +190,7 @@ class SubKey {
   }
 }
 
-['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
+['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
   SubKey.prototype[name] =
     function() {
       return this.keyPacket[name]();

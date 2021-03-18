@@ -174,7 +174,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
       return data[name].pub_key;
     }
     const pub = await openpgp.readKey({ armoredKey: data[name].pub });
-    expect(pub.getKeyId().toHex()).to.equal(data[name].id);
+    expect(pub.getKeyID().toHex()).to.equal(data[name].id);
     data[name].pub_key = pub;
     return pub;
   }
@@ -184,7 +184,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     }
     const pk = await openpgp.readKey({ armoredKey: data[name].priv });
     expect(pk).to.exist;
-    expect(pk.getKeyId().toHex()).to.equal(data[name].id);
+    expect(pk.getKeyID().toHex()).to.equal(data[name].id);
     await pk.decrypt(data[name].pass);
     data[name].priv_key = pk;
     return pk;

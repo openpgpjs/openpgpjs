@@ -17,7 +17,7 @@
 
 import stream from '@openpgp/web-stream-tools';
 import { readSimpleLength, writeSimpleLength } from './packet';
-import type_keyid from '../type/keyid.js';
+import KeyID from '../type/keyid.js';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -60,7 +60,7 @@ class SignaturePacket {
     this.revocationKeyClass = null;
     this.revocationKeyAlgorithm = null;
     this.revocationKeyFingerprint = null;
-    this.issuerKeyId = new type_keyid();
+    this.issuerKeyID = new KeyID();
     this.rawNotations = [];
     this.notations = {};
     this.preferredHashAlgorithms = null;
@@ -166,7 +166,7 @@ class SignaturePacket {
 
     this.issuerKeyVersion = key.version;
     this.issuerFingerprint = key.getFingerprintBytes();
-    this.issuerKeyId = key.getKeyId();
+    this.issuerKeyID = key.getKeyID();
 
     // Add hashed subpackets
     arr.push(this.write_hashed_sub_packets());
@@ -304,10 +304,10 @@ class SignaturePacket {
     const sub = enums.signatureSubpacket;
     const arr = [];
     let bytes;
-    if (!this.issuerKeyId.isNull() && this.issuerKeyVersion !== 5) {
+    if (!this.issuerKeyID.isNull() && this.issuerKeyVersion !== 5) {
       // If the version of [the] key is greater than 4, this subpacket
       // MUST NOT be included in the signature.
-      arr.push(write_sub_packet(sub.issuer, this.issuerKeyId.write()));
+      arr.push(write_sub_packet(sub.issuer, this.issuerKeyID.write()));
     }
     if (this.embeddedSignature !== null) {
       arr.push(write_sub_packet(sub.embeddedSignature, this.embeddedSignature.write()));
@@ -416,7 +416,7 @@ class SignaturePacket {
 
       case 16:
         // Issuer
-        this.issuerKeyId.read(bytes.subarray(mypos, bytes.length));
+        this.issuerKeyID.read(bytes.subarray(mypos, bytes.length));
         break;
 
       case 20: {
@@ -502,9 +502,9 @@ class SignaturePacket {
         this.issuerKeyVersion = bytes[mypos++];
         this.issuerFingerprint = bytes.subarray(mypos, bytes.length);
         if (this.issuerKeyVersion === 5) {
-          this.issuerKeyId.read(this.issuerFingerprint);
+          this.issuerKeyID.read(this.issuerFingerprint);
         } else {
-          this.issuerKeyId.read(this.issuerFingerprint.subarray(-8));
+          this.issuerKeyID.read(this.issuerFingerprint.subarray(-8));
         }
         break;
       case 34:
