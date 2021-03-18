@@ -12,10 +12,7 @@
 
 import * as cipher from './cipher';
 import hash from './hash';
-import * as cfb from './cfb';
-import gcm from './gcm';
-import eax from './eax';
-import ocb from './ocb';
+import mode from './mode';
 import publicKey from './public_key';
 import * as signature from './signature';
 import * as random from './random';
@@ -30,15 +27,8 @@ const mod = {
   cipher: cipher,
   /** @see module:crypto/hash */
   hash: hash,
-  /** @see module:crypto/cfb */
-  cfb: cfb,
-  /** @see module:crypto/gcm */
-  gcm: gcm,
-  experimentalGCM: gcm,
-  /** @see module:crypto/eax */
-  eax: eax,
-  /** @see module:crypto/ocb */
-  ocb: ocb,
+  /** @see module:crypto/mode */
+  mode: mode,
   /** @see module:crypto/public_key */
   publicKey: publicKey,
   /** @see module:crypto/signature */

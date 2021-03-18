@@ -299,12 +299,12 @@ class SecretKeyPacket extends PublicKeyPacket {
     if (config.aeadProtect) {
       this.s2k_usage = 253;
       this.aead = 'eax';
-      const mode = crypto[this.aead];
+      const mode = crypto.mode[this.aead];
       const modeInstance = await mode(this.symmetric, key);
       this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
     } else {
       this.s2k_usage = 254;
-      this.keyMaterial = await crypto.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
+      this.keyMaterial = await crypto.mode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
         cleartext,
         await crypto.hash.sha1(cleartext, config)
       ]), this.iv, config);
@@ -339,7 +339,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     let cleartext;
     if (this.s2k_usage === 253) {
-      const mode = crypto[this.aead];
+      const mode = crypto.mode[this.aead];
       try {
         const modeInstance = await mode(this.symmetric, key);
         cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
@@ -350,7 +350,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         throw err;
       }
     } else {
-      const cleartextWithHash = await crypto.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
+      const cleartextWithHash = await crypto.mode.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
 
       cleartext = cleartextWithHash.subarray(0, -20);
       const hash = await crypto.hash.sha1(cleartext);

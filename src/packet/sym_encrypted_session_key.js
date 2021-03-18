@@ -74,7 +74,7 @@ class SymEncryptedSessionKeyPacket {
     offset += this.s2k.read(bytes.subarray(offset, bytes.length));
 
     if (this.version === 5) {
-      const mode = crypto[this.aeadAlgorithm];
+      const mode = crypto.mode[this.aeadAlgorithm];
 
       // A starting initialization vector of size specified by the AEAD
       // algorithm.
@@ -131,12 +131,12 @@ class SymEncryptedSessionKeyPacket {
     const key = await this.s2k.produceKey(passphrase, length);
 
     if (this.version === 5) {
-      const mode = crypto[this.aeadAlgorithm];
+      const mode = crypto.mode[this.aeadAlgorithm];
       const adata = new Uint8Array([0xC0 | this.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
       const modeInstance = await mode(algo, key);
       this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
     } else if (this.encrypted !== null) {
-      const decrypted = await crypto.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(crypto.cipher[algo].blockSize));
+      const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(crypto.cipher[algo].blockSize));
 
       this.sessionKeyAlgorithm = enums.read(enums.symmetric, decrypted[0]);
       this.sessionKey = decrypted.subarray(1, decrypted.length);
@@ -170,7 +170,7 @@ class SymEncryptedSessionKeyPacket {
     }
 
     if (this.version === 5) {
-      const mode = crypto[this.aeadAlgorithm];
+      const mode = crypto.mode[this.aeadAlgorithm];
       this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
       const adata = new Uint8Array([0xC0 | this.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
       const modeInstance = await mode(algo, key);
@@ -178,7 +178,7 @@ class SymEncryptedSessionKeyPacket {
     } else {
       const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
       const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
-      this.encrypted = await crypto.cfb.encrypt(algo, key, private_key, new Uint8Array(crypto.cipher[algo].blockSize), config);
+      this.encrypted = await crypto.mode.cfb.encrypt(algo, key, private_key, new Uint8Array(crypto.cipher[algo].blockSize), config);
     }
   }
 }

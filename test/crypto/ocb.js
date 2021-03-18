@@ -2,7 +2,7 @@
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
-const OCB = require('../../src/crypto/ocb');
+const OCB = require('../../src/crypto/mode/ocb');
 const util = require('../../src/util');
 
 const chai = require('chai');

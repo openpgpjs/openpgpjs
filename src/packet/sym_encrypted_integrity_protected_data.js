@@ -93,7 +93,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
     const plaintext = util.concat([tohash, hash]);
 
-    this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
+    this.encrypted = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
     return true;
   }
 
@@ -109,7 +109,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
   async decrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
     let encrypted = stream.clone(this.encrypted);
     if (!streaming) encrypted = await stream.readToEnd(encrypted);
-    const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
 
     // there must be a modification detection code packet as the
     // last packet and everything gets hashed except the hash itself

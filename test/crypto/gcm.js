@@ -45,18 +45,18 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
           this.skip(); // eslint-disable-line no-invalid-this
         }
         const key = await crypto.generateSessionKey(algo);
-        const iv = await crypto.random.getRandomBytes(crypto.gcm.ivLength);
+        const iv = await crypto.random.getRandomBytes(crypto.mode.gcm.ivLength);
 
         const nativeEncryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'encrypt') : sinonSandbox.spy(nodeCrypto, 'createCipheriv');
         const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'decrypt') : sinonSandbox.spy(nodeCrypto, 'createDecipheriv');
 
         nativeEncrypt || disableNative();
-        let modeInstance = await crypto.gcm(algo, key);
+        let modeInstance = await crypto.mode.gcm(algo, key);
         const ciphertext = await modeInstance.encrypt(util.stringToUint8Array(plaintext), iv);
         enableNative();
 
         nativeDecrypt || disableNative();
-        modeInstance = await crypto.gcm(algo, key);
+        modeInstance = await crypto.mode.gcm(algo, key);
         const decrypted = await modeInstance.decrypt(util.stringToUint8Array(util.uint8ArrayToString(ciphertext)), iv);
         enableNative();
 
