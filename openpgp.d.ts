@@ -316,7 +316,7 @@ interface Config {
   showVersion: boolean;
   showComment: boolean;
   deflateLevel: number;
-  AEADProtect: boolean;
+  aeadProtect: boolean;
   allowUnauthenticatedMessages: boolean;
   allowUnauthenticatedStream: boolean;
   checksumRequired: boolean;

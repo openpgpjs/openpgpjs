@@ -153,7 +153,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.symmetric.aes128,
       enums.symmetric.aes192
     ], config.preferredSymmetricAlgorithm);
-    if (config.AEADProtect) {
+    if (config.aeadProtect) {
       signaturePacket.preferredAEADAlgorithms = createPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
@@ -175,7 +175,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     // integrity protection always enabled
     signaturePacket.features = [0];
     signaturePacket.features[0] |= enums.features.modificationDetection;
-    if (config.AEADProtect) {
+    if (config.aeadProtect) {
       signaturePacket.features[0] |= enums.features.aead;
     }
     if (config.v5Keys) {

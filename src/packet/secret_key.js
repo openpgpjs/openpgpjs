@@ -296,7 +296,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     const blockLen = crypto.cipher[this.symmetric].blockSize;
     this.iv = await crypto.random.getRandomBytes(blockLen);
 
-    if (config.AEADProtect) {
+    if (config.aeadProtect) {
       this.s2k_usage = 253;
       this.aead = 'eax';
       const mode = crypto[this.aead];

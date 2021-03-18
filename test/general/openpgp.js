@@ -823,9 +823,9 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     let publicKeyNoAEAD;
     let privateKeyMismatchingParams;
 
-    let AEADProtectVal;
+    let aeadProtectVal;
     let preferredAEADAlgorithmVal;
-    let AEADChunkSizeByteVal;
+    let aeadChunkSizeByteVal;
     let v5KeysVal;
     let minRSABitsVal;
 
@@ -841,9 +841,9 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       publicKey_1337 = privateKey_1337.toPublic();
       privateKeyMismatchingParams = await openpgp.readKey({ armoredKey: mismatchingKeyParams });
 
-      AEADProtectVal = openpgp.config.AEADProtect;
+      aeadProtectVal = openpgp.config.aeadProtect;
       preferredAEADAlgorithmVal = openpgp.config.preferredAEADAlgorithm;
-      AEADChunkSizeByteVal = openpgp.config.AEADChunkSizeByte;
+      aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
       v5KeysVal = openpgp.config.v5Keys;
       minRSABitsVal = openpgp.config.minRSABits;
 
@@ -851,9 +851,9 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
 
     afterEach(function() {
-      openpgp.config.AEADProtect = AEADProtectVal;
+      openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredAEADAlgorithm = preferredAEADAlgorithmVal;
-      openpgp.config.AEADChunkSizeByte = AEADChunkSizeByteVal;
+      openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
       openpgp.config.v5Keys = v5KeysVal;
       openpgp.config.minRSABits = minRSABitsVal;
     });
@@ -1033,14 +1033,14 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     tryTests('CFB mode (asm.js)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.AEADProtect = false;
+        openpgp.config.aeadProtect = false;
       }
     });
 
     tryTests('GCM mode (V5 keys)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.AEADProtect = true;
+        openpgp.config.aeadProtect = true;
         openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGcm;
         openpgp.config.v5Keys = true;
 
@@ -1054,8 +1054,8 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     tryTests('EAX mode (small chunk size)', tests, {
       if: true,
       beforeEach: function() {
-        openpgp.config.AEADProtect = true;
-        openpgp.config.AEADChunkSizeByte = 0;
+        openpgp.config.aeadProtect = true;
+        openpgp.config.aeadChunkSizeByte = 0;
 
         // Monkey-patch AEAD feature flag
         publicKey.users[0].selfCertifications[0].features = [7];
@@ -1067,7 +1067,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     tryTests('OCB mode', tests, {
       if: !openpgp.config.ci,
       beforeEach: function() {
-        openpgp.config.AEADProtect = true;
+        openpgp.config.aeadProtect = true;
         openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb;
 
         // Monkey-patch AEAD feature flag
@@ -1410,7 +1410,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.AEADEncryptedData)).to.equal(openpgp.config.AEADProtect);
+            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.AEADEncryptedData)).to.equal(openpgp.config.aeadProtect);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -1464,7 +1464,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             };
             return openpgp.encrypt(encOpt).then(async function (encrypted) {
               decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.AEADEncryptedData)).to.equal(openpgp.config.AEADProtect);
+              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.AEADEncryptedData)).to.equal(openpgp.config.aeadProtect);
               return openpgp.decrypt(decOpt);
             }).then(async function (decrypted) {
               expect(decrypted.data).to.equal(plaintext);
@@ -1493,7 +1493,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             detached: true
           });
           const message = await openpgp.readMessage({ armoredMessage: encrypted });
-          expect(!!message.packets.findPacket(openpgp.enums.packet.AEADEncryptedData)).to.equal(openpgp.config.AEADProtect);
+          expect(!!message.packets.findPacket(openpgp.enums.packet.AEADEncryptedData)).to.equal(openpgp.config.aeadProtect);
           const decrypted = await openpgp.decrypt({
             message,
             signature: await openpgp.readSignature({ armoredSignature: signed }),
@@ -1813,7 +1813,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
                   expect(e.message).to.match(/Ascii armor integrity check on message failed/);
                   expect(stepReached).to.equal(
                     j === 0 ? 0 :
-                      (openpgp.config.AEADChunkSizeByte === 0 && (j === 2 || util.detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.AEADProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
+                      (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || util.detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
                         1
                   );
                   return;

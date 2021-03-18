@@ -122,8 +122,8 @@ module.exports = () => describe('Custom configuration', function() {
   });
 
   it('openpgp.encryptKey', async function() {
-    const S2KIterationCountByteVal = openpgp.config.S2KIterationCountByte;
-    openpgp.config.S2KIterationCountByte = 224;
+    const s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
+    openpgp.config.s2kIterationCountByte = 224;
 
     try {
       const passphrase = '12345678';
@@ -131,20 +131,20 @@ module.exports = () => describe('Custom configuration', function() {
       const { key: privateKey } = await openpgp.generateKey({ userIDs });
 
       const encKey = await openpgp.encryptKey({ privateKey, userIDs, passphrase });
-      expect(encKey.keyPacket.s2k.c).to.equal(openpgp.config.S2KIterationCountByte);
+      expect(encKey.keyPacket.s2k.c).to.equal(openpgp.config.s2kIterationCountByte);
 
-      const config = { S2KIterationCountByte: 123 };
+      const config = { s2kIterationCountByte: 123 };
       const encKey2 = await openpgp.encryptKey({ privateKey, userIDs, passphrase, config });
-      expect(encKey2.keyPacket.s2k.c).to.equal(config.S2KIterationCountByte);
+      expect(encKey2.keyPacket.s2k.c).to.equal(config.s2kIterationCountByte);
     } finally {
-      openpgp.config.S2KIterationCountByte = S2KIterationCountByteVal;
+      openpgp.config.s2kIterationCountByte = s2kIterationCountByteVal;
     }
   });
 
   it('openpgp.encrypt', async function() {
-    const AEADProtectVal = openpgp.config.AEADProtect;
+    const aeadProtectVal = openpgp.config.aeadProtect;
     const preferredCompressionAlgorithmVal = openpgp.config.preferredCompressionAlgorithm;
-    openpgp.config.AEADProtect = false;
+    openpgp.config.aeadProtect = false;
     openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.uncompressed;
 
     try {
@@ -160,7 +160,7 @@ module.exports = () => describe('Custom configuration', function() {
       expect(literal.tag).to.equal(openpgp.enums.packet.literalData);
 
       const config = {
-        AEADProtect: true,
+        aeadProtect: true,
         preferredCompressionAlgorithm: openpgp.enums.compression.zip,
         deflateLevel: 1
       };
@@ -179,7 +179,7 @@ module.exports = () => describe('Custom configuration', function() {
         message, publicKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.ecdh]) }
       })).to.be.eventually.rejectedWith(/ecdh keys are considered too weak/);
     } finally {
-      openpgp.config.AEADProtect = AEADProtectVal;
+      openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
     }
   });

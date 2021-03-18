@@ -283,7 +283,7 @@ export class Message {
    */
   static async generateSessionKey(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIDs, config));
-    const aeadAlgorithm = config.AEADProtect && await isAeadSupported(keys, date, userIDs, config) ?
+    const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIDs, config) ?
       enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIDs, config)) :
       undefined;
 

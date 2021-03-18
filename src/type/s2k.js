@@ -43,7 +43,7 @@ class S2K {
     /** @type {module:enums.s2k} */
     this.type = 'iterated';
     /** @type {Integer} */
-    this.c = config.S2KIterationCountByte;
+    this.c = config.s2kIterationCountByte;
     /** Eight bytes of salt in a binary string.
      * @type {String}
      */

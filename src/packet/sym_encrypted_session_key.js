@@ -40,7 +40,7 @@ class SymEncryptedSessionKeyPacket {
    */
   constructor(config = defaultConfig) {
     this.tag = enums.packet.symEncryptedSessionKey;
-    this.version = config.AEADProtect ? 5 : 4;
+    this.version = config.aeadProtect ? 5 : 4;
     this.sessionKey = null;
     this.sessionKeyEncryptionAlgorithm = null;
     this.sessionKeyAlgorithm = 'aes256';

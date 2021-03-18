@@ -2085,7 +2085,7 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192]);
-      if (openpgp.config.AEADProtect) {
+      if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
         expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.eax, aead.ocb]);
       }
@@ -2097,7 +2097,7 @@ function versionSpecificTests() {
       let expectedFeatures;
       if (openpgp.config.v5Keys) {
         expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.AEADProtect) {
+      } else if (openpgp.config.aeadProtect) {
         expectedFeatures = [3]; // aead + mdc
       } else {
         expectedFeatures = [1]; // mdc
@@ -2130,7 +2130,7 @@ function versionSpecificTests() {
       expect(key.subKeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
       expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128]);
-      if (openpgp.config.AEADProtect) {
+      if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
         expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.experimentalGcm, aead.eax, aead.ocb]);
       }
@@ -2142,7 +2142,7 @@ function versionSpecificTests() {
       let expectedFeatures;
       if (openpgp.config.v5Keys) {
         expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.AEADProtect) {
+      } else if (openpgp.config.aeadProtect) {
         expectedFeatures = [3]; // aead + mdc
       } else {
         expectedFeatures = [1]; // mdc
@@ -2691,7 +2691,7 @@ function versionSpecificTests() {
 
 module.exports = () => describe('Key', function() {
   let v5KeysVal;
-  let AEADProtectVal;
+  let aeadProtectVal;
 
   tryTests('V4', versionSpecificTests, {
     if: !openpgp.config.ci,
@@ -2708,13 +2708,13 @@ module.exports = () => describe('Key', function() {
     if: !openpgp.config.ci,
     beforeEach: function() {
       v5KeysVal = openpgp.config.v5Keys;
-      AEADProtectVal = openpgp.config.AEADProtect;
+      aeadProtectVal = openpgp.config.aeadProtect;
       openpgp.config.v5Keys = true;
-      openpgp.config.AEADProtect = true;
+      openpgp.config.aeadProtect = true;
     },
     afterEach: function() {
       openpgp.config.v5Keys = v5KeysVal;
-      openpgp.config.AEADProtect = AEADProtectVal;
+      openpgp.config.aeadProtect = aeadProtectVal;
     }
   });
 
