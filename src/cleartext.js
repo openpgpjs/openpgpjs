@@ -66,25 +66,10 @@ export class CleartextMessage {
    * @async
    */
   async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
-    return new CleartextMessage(this.text, await this.signDetached(privateKeys, signature, signingKeyIds, date, userIds, config));
-  }
-
-  /**
-   * Sign the cleartext message
-   * @param {Array<Key>} privateKeys - private keys with decrypted secret key data for signing
-   * @param {Signature} [signature] - Any existing detached signature
-   * @param {Array<module:type/keyid~Keyid>} [signingKeyIds] - Array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
-   * @param {Date} [date] - The creation time of the signature that should be created
-   * @param {Array} [userIds] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Signature} New detached signature of message content.
-   * @async
-   */
-  async signDetached(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
-
-    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, true, undefined, config));
+    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, true, undefined, config));
+    return new CleartextMessage(this.text, newSignature);
   }
 
   /**
@@ -96,19 +81,7 @@ export class CleartextMessage {
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {
-    return this.verifyDetached(this.signature, keys, date, config);
-  }
-
-  /**
-   * Verify signatures of cleartext signed message
-   * @param {Array<Key>} keys - Array of keys to verify signatures
-   * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>} List of signer's keyid and validity of signature.
-   * @async
-   */
-  verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
-    const signatureList = signature.packets;
+    const signatureList = this.signature.packets;
     const literalDataPacket = new LiteralDataPacket();
     // we assume that cleartext signature is generated based on UTF8 cleartext
     literalDataPacket.setText(this.text);
