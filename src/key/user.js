@@ -16,7 +16,7 @@ class User {
     if (!(this instanceof User)) {
       return new User(userPacket);
     }
-    this.userId = userPacket.tag === enums.packet.userID ? userPacket : null;
+    this.userID = userPacket.tag === enums.packet.userID ? userPacket : null;
     this.userAttribute = userPacket.tag === enums.packet.userAttribute ? userPacket : null;
     this.selfCertifications = [];
     this.otherCertifications = [];
@@ -29,7 +29,7 @@ class User {
    */
   toPacketlist() {
     const packetlist = new PacketList();
-    packetlist.push(this.userId || this.userAttribute);
+    packetlist.push(this.userID || this.userAttribute);
     packetlist.concat(this.revocationSignatures);
     packetlist.concat(this.selfCertifications);
     packetlist.concat(this.otherCertifications);
@@ -47,11 +47,11 @@ class User {
    */
   async sign(primaryKey, privateKeys, config) {
     const dataToSign = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
-    const user = new User(dataToSign.userId || dataToSign.userAttribute);
+    const user = new User(dataToSign.userID || dataToSign.userAttribute);
     user.otherCertifications = await Promise.all(privateKeys.map(async function(privateKey) {
       if (privateKey.isPublic()) {
         throw new Error('Need private key for signing');
@@ -88,7 +88,7 @@ class User {
     return isDataRevoked(
       primaryKey, enums.signature.certRevocation, {
         key: primaryKey,
-        userId: this.userId,
+        userID: this.userID,
         userAttribute: this.userAttribute
       }, this.revocationSignatures, certificate, key, date, config
     );
@@ -109,7 +109,7 @@ class User {
     const that = this;
     const keyID = certificate.issuerKeyID;
     const dataToVerify = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
@@ -173,7 +173,7 @@ class User {
     }
     const that = this;
     const dataToVerify = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
@@ -212,7 +212,7 @@ class User {
    */
   async update(user, primaryKey, config) {
     const dataToVerify = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };

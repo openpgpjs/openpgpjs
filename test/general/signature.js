@@ -884,8 +884,8 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       await expect(openpgp.sign({
         message: openpgp.Message.fromText('test'), privateKeys: [priv_key_gnupg_ext], config: { rejectPublicKeyAlgorithms: new Set() }
       })).to.eventually.be.rejectedWith(/Cannot sign with a gnu-dummy key/);
-      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
-      await expect(openpgp.reformatKey({ userIds: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
+      await expect(openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
+      await expect(openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
       await priv_key_gnupg_ext.encrypt("abcd");
       expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
       const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();
@@ -1581,7 +1581,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const privKey2 = await openpgp.readKey({ armoredKey: priv_key_arm2 });
     await privKey2.decrypt('hello world');
 
-    const opt = { rsaBits: 2048, userIds: { name:'test', email:'a@b.com' }, passphrase: null };
+    const opt = { rsaBits: 2048, userIDs: { name:'test', email:'a@b.com' }, passphrase: null };
     const { key: generatedKey } = await openpgp.generateKey(opt);
     const armoredSignature = await openpgp.sign({ privateKeys:[generatedKey, privKey2], message, detached: true, config: { minRSABits: 1024 } });
     const signature = await openpgp.readSignature({ armoredSignature });
@@ -1592,7 +1592,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   });
 
   it('Sign message with key without password', function() {
-    const opt = { userIds: { name:'test', email:'a@b.com' }, passphrase: null };
+    const opt = { userIDs: { name:'test', email:'a@b.com' }, passphrase: null };
     return openpgp.generateKey(opt).then(function(gen) {
       const key = gen.key;
       const message = openpgp.Message.fromText('hello world');

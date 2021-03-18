@@ -2104,7 +2104,7 @@ function versionSpecificTests() {
       }
       expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
     };
-    const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: 'hello' };
+    const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: 'hello' };
     return openpgp.generateKey(opt).then(async function(key) {
       testPref(key.key);
       testPref(await openpgp.readKey({ armoredKey: key.publicKeyArmored }));
@@ -2149,7 +2149,7 @@ function versionSpecificTests() {
       }
       expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
     };
-    const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: 'hello' };
+    const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: 'hello' };
     try {
       const key = await openpgp.generateKey(opt);
       testPref(key.key);
@@ -2163,7 +2163,7 @@ function versionSpecificTests() {
   });
 
   it('Generated key is not unlocked by default', async function() {
-    const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: '123' };
+    const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: '123' };
     const { key } = await openpgp.generateKey(opt);
     return openpgp.encrypt({
       message: openpgp.Message.fromText('hello'),
@@ -2176,62 +2176,62 @@ function versionSpecificTests() {
     });
   });
 
-  it('Generate key - single userid', function() {
-    const userId = { name: 'test', email: 'a@b.com', comment: 'test comment' };
-    const opt = { userIds: userId, passphrase: '123' };
+  it('Generate key - single userID', function() {
+    const userID = { name: 'test', email: 'a@b.com', comment: 'test comment' };
+    const opt = { userIDs: userID, passphrase: '123' };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test (test comment) <a@b.com>');
-      expect(key.users[0].userId.name).to.equal(userId.name);
-      expect(key.users[0].userId.email).to.equal(userId.email);
-      expect(key.users[0].userId.comment).to.equal(userId.comment);
+      expect(key.users[0].userID.userID).to.equal('test (test comment) <a@b.com>');
+      expect(key.users[0].userID.name).to.equal(userID.name);
+      expect(key.users[0].userID.email).to.equal(userID.email);
+      expect(key.users[0].userID.comment).to.equal(userID.comment);
     });
   });
 
-  it('Generate key - single userid (all missing)', function() {
-    const userId = { name: '', email: '', comment: '' };
-    const opt = { userIds: userId, passphrase: '123' };
+  it('Generate key - single userID (all missing)', function() {
+    const userID = { name: '', email: '', comment: '' };
+    const opt = { userIDs: userID, passphrase: '123' };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('');
-      expect(key.users[0].userId.name).to.equal(userId.name);
-      expect(key.users[0].userId.email).to.equal(userId.email);
-      expect(key.users[0].userId.comment).to.equal(userId.comment);
+      expect(key.users[0].userID.userID).to.equal('');
+      expect(key.users[0].userID.name).to.equal(userID.name);
+      expect(key.users[0].userID.email).to.equal(userID.email);
+      expect(key.users[0].userID.comment).to.equal(userID.comment);
     });
   });
 
-  it('Generate key - single userid (missing email)', function() {
-    const userId = { name: 'test', email: '', comment: 'test comment' };
-    const opt = { userIds: userId, passphrase: '123' };
+  it('Generate key - single userID (missing email)', function() {
+    const userID = { name: 'test', email: '', comment: 'test comment' };
+    const opt = { userIDs: userID, passphrase: '123' };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test (test comment)');
-      expect(key.users[0].userId.name).to.equal(userId.name);
-      expect(key.users[0].userId.email).to.equal(userId.email);
-      expect(key.users[0].userId.comment).to.equal(userId.comment);
+      expect(key.users[0].userID.userID).to.equal('test (test comment)');
+      expect(key.users[0].userID.name).to.equal(userID.name);
+      expect(key.users[0].userID.email).to.equal(userID.email);
+      expect(key.users[0].userID.comment).to.equal(userID.comment);
     });
   });
 
-  it('Generate key - single userid (missing comment)', function() {
-    const userId = { name: 'test', email: 'a@b.com', comment: '' };
-    const opt = { userIds: userId, passphrase: '123' };
+  it('Generate key - single userID (missing comment)', function() {
+    const userID = { name: 'test', email: 'a@b.com', comment: '' };
+    const opt = { userIDs: userID, passphrase: '123' };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
-      expect(key.users[0].userId.name).to.equal(userId.name);
-      expect(key.users[0].userId.email).to.equal(userId.email);
-      expect(key.users[0].userId.comment).to.equal(userId.comment);
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.name).to.equal(userID.name);
+      expect(key.users[0].userID.email).to.equal(userID.email);
+      expect(key.users[0].userID.comment).to.equal(userID.comment);
     });
   });
 
   it('Generate key - setting date to the past', function() {
     const past = new Date(0);
     const opt = {
-      userIds: { name: 'Test User', email: 'text@example.com' },
+      userIDs: { name: 'Test User', email: 'text@example.com' },
       passphrase: 'secret',
       date: past
     };
@@ -2247,7 +2247,7 @@ function versionSpecificTests() {
   it('Generate key - setting date to the future', function() {
     const future = new Date(Math.ceil(Date.now() / 1000) * 1000 + 1000);
     const opt = {
-      userIds: { name: 'Test User', email: 'text@example.com' },
+      userIDs: { name: 'Test User', email: 'text@example.com' },
       passphrase: 'secret',
       date: future
     };
@@ -2260,28 +2260,28 @@ function versionSpecificTests() {
     });
   });
 
-  it('Generate key - multi userid', function() {
-    const userId1 = { name: 'test', email: 'a@b.com' };
-    const userId2 = { name: 'test', email: 'b@c.com' };
-    const opt = { userIds: [userId1, userId2], passphrase: '123' };
+  it('Generate key - multi userID', function() {
+    const userID1 = { name: 'test', email: 'a@b.com' };
+    const userID2 = { name: 'test', email: 'b@c.com' };
+    const opt = { userIDs: [userID1, userID2], passphrase: '123' };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(2);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
-      expect(key.users[1].userId.userid).to.equal('test <b@c.com>');
+      expect(key.users[1].userID.userID).to.equal('test <b@c.com>');
       expect(key.users[1].selfCertifications[0].isPrimaryUserID).to.be.null;
     });
   });
 
   it('Generate key - default values', function() {
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { userIds: [userId] };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { userIDs: [userID] };
     return openpgp.generateKey(opt).then(function({ key }) {
       expect(key.isDecrypted()).to.be.true;
       expect(key.getAlgorithmInfo().algorithm).to.equal('eddsa');
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.length(1);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
@@ -2289,12 +2289,12 @@ function versionSpecificTests() {
   });
 
   it('Generate key - two subkeys with default values', function() {
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { userIds: [userId], passphrase: '123', subkeys:[{},{}] };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { userIDs: [userID], passphrase: '123', subkeys:[{},{}] };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.length(2);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
@@ -2307,12 +2307,12 @@ function versionSpecificTests() {
     const minRSABits = openpgp.config.minRSABits;
     openpgp.config.minRSABits = rsaBits;
 
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { type: 'rsa', rsaBits, userIds: [userId], passphrase: '123', subkeys:[{},{}] };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', subkeys:[{},{}] };
     try {
       const { key } = await openpgp.generateKey(opt);
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.length(2);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
@@ -2323,12 +2323,12 @@ function versionSpecificTests() {
   });
 
   it('Generate key - one signing subkey', function() {
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { userIds: [userId], passphrase: '123', subkeys:[{}, { sign: true }] };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { userIDs: [userID], passphrase: '123', subkeys:[{}, { sign: true }] };
     return openpgp.generateKey(opt).then(async function({ privateKeyArmored }) {
       const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.length(2);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
@@ -2339,15 +2339,15 @@ function versionSpecificTests() {
   });
 
   it('Reformat key - one signing subkey', function() {
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { userIds: [userId], passphrase: '123', subkeys:[{}, { sign: true }] };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { userIDs: [userID], passphrase: '123', subkeys:[{}, { sign: true }] };
     return openpgp.generateKey(opt).then(async function({ key }) {
       await key.decrypt('123');
-      return openpgp.reformatKey({ privateKey: key, userIds: [userId] });
+      return openpgp.reformatKey({ privateKey: key, userIDs: [userID] });
     }).then(async function({ privateKeyArmored }) {
       const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subKeys).to.have.length(2);
       expect(key.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
@@ -2362,12 +2362,12 @@ function versionSpecificTests() {
     const minRSABits = openpgp.config.minRSABits;
     openpgp.config.minRSABits = rsaBits;
 
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { type: 'rsa', rsaBits, userIds: [userId], passphrase: '123', subkeys:[{ type: 'ecc', curve: 'curve25519' }] };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', subkeys:[{ type: 'ecc', curve: 'curve25519' }] };
     try {
       const { key } = await openpgp.generateKey(opt);
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
       expect(key.getAlgorithmInfo().bits).to.equal(opt.rsaBits);
@@ -2378,8 +2378,8 @@ function versionSpecificTests() {
   });
 
   it('Encrypt key with new passphrase', async function() {
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { userIds: userId, passphrase: 'passphrase' };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { userIDs: userID, passphrase: 'passphrase' };
     const key = (await openpgp.generateKey(opt)).key;
     const armor1 = key.armor();
     const armor2 = key.armor();
@@ -2398,8 +2398,8 @@ function versionSpecificTests() {
 
   it('Generate key - ensure keyExpirationTime works', function() {
     const expect_delta = 365 * 24 * 60 * 60;
-    const userId = { name: 'test', email: 'a@b.com' };
-    const opt = { userIds: userId, passphrase: '123', keyExpirationTime: expect_delta };
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { userIDs: userID, passphrase: '123', keyExpirationTime: expect_delta };
     return openpgp.generateKey(opt).then(async function(key) {
       key = key.key;
 
@@ -2475,16 +2475,16 @@ function versionSpecificTests() {
       const publicSigningKey = await publicKey.getSigningKey();
       const privateSigningKey = await privateKey.getSigningKey();
       expect(signatures.length).to.equal(4);
-      expect(signatures[0].userid).to.equal(publicKey.users[0].userId.userid);
+      expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
       expect(signatures[0].valid).to.be.null;
-      expect(signatures[1].userid).to.equal(publicKey.users[0].userId.userid);
+      expect(signatures[1].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[1].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
       expect(signatures[1].valid).to.be.true;
-      expect(signatures[2].userid).to.equal(publicKey.users[1].userId.userid);
+      expect(signatures[2].userID).to.equal(publicKey.users[1].userID.userID);
       expect(signatures[2].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
       expect(signatures[2].valid).to.be.null;
-      expect(signatures[3].userid).to.equal(publicKey.users[1].userId.userid);
+      expect(signatures[3].userID).to.equal(publicKey.users[1].userID.userID);
       expect(signatures[3].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
       expect(signatures[3].valid).to.be.true;
     } finally {
@@ -2506,16 +2506,16 @@ function versionSpecificTests() {
       const publicSigningKey = await publicKey.getSigningKey();
       const privateSigningKey = await privateKey.getSigningKey();
       expect(signatures.length).to.equal(4);
-      expect(signatures[0].userid).to.equal(publicKey.users[0].userId.userid);
+      expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
       expect(signatures[0].valid).to.be.null;
-      expect(signatures[1].userid).to.equal(publicKey.users[0].userId.userid);
+      expect(signatures[1].userID).to.equal(publicKey.users[0].userID.userID);
       expect(signatures[1].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
       expect(signatures[1].valid).to.be.null;
-      expect(signatures[2].userid).to.equal(publicKey.users[1].userId.userid);
+      expect(signatures[2].userID).to.equal(publicKey.users[1].userID.userID);
       expect(signatures[2].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
       expect(signatures[2].valid).to.be.null;
-      expect(signatures[3].userid).to.equal(publicKey.users[1].userId.userid);
+      expect(signatures[3].userID).to.equal(publicKey.users[1].userID.userID);
       expect(signatures[3].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
       expect(signatures[3].valid).to.be.null;
     } finally {
@@ -2524,67 +2524,67 @@ function versionSpecificTests() {
   });
 
   it('Reformat key without passphrase', function() {
-    const userId1 = { name: 'test', email: 'a@b.com' };
-    const userId2 = { name: 'test', email: 'b@c.com' };
-    const opt = { userIds: userId1 };
+    const userID1 = { name: 'test', email: 'a@b.com' };
+    const userID2 = { name: 'test', email: 'b@c.com' };
+    const opt = { userIDs: userID1 };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       expect(key.users.length).to.equal(1);
-      expect(key.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.isDecrypted()).to.be.true;
       opt.privateKey = key;
-      opt.userIds = userId2;
+      opt.userIDs = userID2;
       return openpgp.reformatKey(opt).then(function(newKey) {
         newKey = newKey.key;
         expect(newKey.users.length).to.equal(1);
-        expect(newKey.users[0].userId.userid).to.equal('test <b@c.com>');
+        expect(newKey.users[0].userID.userID).to.equal('test <b@c.com>');
         expect(newKey.isDecrypted()).to.be.true;
       });
     });
   });
 
   it('Reformat key with no subkey with passphrase', async function() {
-    const userId = { name: 'test', email: 'a@b.com' };
+    const userID = { name: 'test', email: 'a@b.com' };
     const key = await openpgp.readKey({ armoredKey: key_without_subkey });
-    const opt = { privateKey: key, userIds: [userId], passphrase: "test" };
+    const opt = { privateKey: key, userIDs: [userID], passphrase: "test" };
     return openpgp.reformatKey(opt).then(function(newKey) {
       newKey = newKey.key;
       expect(newKey.users.length).to.equal(1);
-      expect(newKey.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(newKey.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(newKey.isDecrypted()).to.be.false;
     });
   });
 
   it('Reformat key with two subkeys with passphrase', function() {
-    const userId1 = { name: 'test', email: 'a@b.com' };
-    const userId2 = { name: 'test', email: 'b@c.com' };
+    const userID1 = { name: 'test', email: 'a@b.com' };
+    const userID2 = { name: 'test', email: 'b@c.com' };
     const now = util.normalizeDate(new Date());
     const before = util.normalizeDate(new Date(0));
-    const opt1 = { userIds: [userId1], date: now };
+    const opt1 = { userIDs: [userID1], date: now };
     return openpgp.generateKey(opt1).then(function(newKey) {
       newKey = newKey.key;
-      expect(newKey.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(newKey.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(+newKey.getCreationTime()).to.equal(+now);
       expect(+newKey.subKeys[0].getCreationTime()).to.equal(+now);
       expect(+newKey.subKeys[0].bindingSignatures[0].created).to.equal(+now);
-      const opt2 = { privateKey: newKey, userIds: [userId2], date: before };
+      const opt2 = { privateKey: newKey, userIDs: [userID2], date: before };
       return openpgp.reformatKey(opt2).then(function(refKey) {
         refKey = refKey.key;
         expect(refKey.users.length).to.equal(1);
-        expect(refKey.users[0].userId.userid).to.equal('test <b@c.com>');
+        expect(refKey.users[0].userID.userID).to.equal('test <b@c.com>');
         expect(+refKey.subKeys[0].bindingSignatures[0].created).to.equal(+before);
       });
     });
   });
 
   it('Reformat key with no subkey without passphrase', async function() {
-    const userId = { name: 'test', email: 'a@b.com' };
+    const userID = { name: 'test', email: 'a@b.com' };
     const key = await openpgp.readKey({ armoredKey: key_without_subkey });
-    const opt = { privateKey: key, userIds: [userId] };
+    const opt = { privateKey: key, userIDs: [userID] };
     return openpgp.reformatKey(opt).then(function(newKey) {
       newKey = newKey.key;
       expect(newKey.users.length).to.equal(1);
-      expect(newKey.users[0].userId.userid).to.equal('test <a@b.com>');
+      expect(newKey.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(newKey.isDecrypted()).to.be.true;
       return openpgp.sign({ message: openpgp.CleartextMessage.fromText('hello'), privateKeys: newKey, armor: true }).then(async function(signed) {
         return openpgp.verify(
@@ -2600,19 +2600,19 @@ function versionSpecificTests() {
   });
 
   it('Reformat and encrypt key', function() {
-    const userId1 = { name: 'test1', email: 'a@b.com' };
-    const userId2 = { name: 'test2', email: 'b@c.com' };
-    const userId3 = { name: 'test3', email: 'c@d.com' };
-    const opt = { userIds: userId1 };
+    const userID1 = { name: 'test1', email: 'a@b.com' };
+    const userID2 = { name: 'test2', email: 'b@c.com' };
+    const userID3 = { name: 'test3', email: 'c@d.com' };
+    const opt = { userIDs: userID1 };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       opt.privateKey = key;
-      opt.userIds = [userId2, userId3];
+      opt.userIDs = [userID2, userID3];
       opt.passphrase = '123';
       return openpgp.reformatKey(opt).then(async function(newKey) {
         newKey = newKey.key;
         expect(newKey.users.length).to.equal(2);
-        expect(newKey.users[0].userId.userid).to.equal('test2 <b@c.com>');
+        expect(newKey.users[0].userID.userID).to.equal('test2 <b@c.com>');
         expect(newKey.isDecrypted()).to.be.false;
         await newKey.decrypt('123');
         expect(newKey.isDecrypted()).to.be.true;
@@ -2621,13 +2621,13 @@ function versionSpecificTests() {
   });
 
   it('Sign and encrypt with reformatted key', function() {
-    const userId1 = { name: 'test1', email: 'a@b.com' };
-    const userId2 = { name: 'test2', email: 'b@c.com' };
-    const opt = { userIds: userId1 };
+    const userID1 = { name: 'test1', email: 'a@b.com' };
+    const userID2 = { name: 'test2', email: 'b@c.com' };
+    const opt = { userIDs: userID1 };
     return openpgp.generateKey(opt).then(function(key) {
       key = key.key;
       opt.privateKey = key;
-      opt.userIds = userId2;
+      opt.userIDs = userID2;
       return openpgp.reformatKey(opt).then(function(newKey) {
         newKey = newKey.key;
         return openpgp.encrypt({ message: openpgp.Message.fromText('hello'), publicKeys: newKey.toPublic(), privateKeys: newKey, armor: true }).then(async function(encrypted) {
@@ -2641,9 +2641,9 @@ function versionSpecificTests() {
   });
 
   it('Reject with user-friendly error when reformatting encrypted key', function() {
-    const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: '1234' };
+    const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: '1234' };
     return openpgp.generateKey(opt).then(function(original) {
-      return openpgp.reformatKey({ privateKey: original.key, userIds: { name: 'test2', email: 'a@b.com' }, passphrase: '1234' }).then(function() {
+      return openpgp.reformatKey({ privateKey: original.key, userIDs: { name: 'test2', email: 'a@b.com' }, passphrase: '1234' }).then(function() {
         throw new Error('reformatKey should result in error when key not decrypted');
       }).catch(function(error) {
         expect(error.message).to.equal('Error reformatting keypair: Key is not decrypted');
@@ -2652,7 +2652,7 @@ function versionSpecificTests() {
   });
 
   it('Revoke generated key with revocation certificate', function() {
-    const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: '1234' };
+    const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: '1234' };
     return openpgp.generateKey(opt).then(function(original) {
       return openpgp.revokeKey({ key: original.key.toPublic(), revocationCertificate: original.revocationCertificate }).then(async function(revKey) {
         revKey = revKey.publicKey;
@@ -2664,7 +2664,7 @@ function versionSpecificTests() {
   });
 
   it('Revoke generated key with private key', function() {
-    const opt = { userIds: { name: 'test', email: 'a@b.com' }, passphrase: '1234' };
+    const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: '1234' };
     return openpgp.generateKey(opt).then(async function(original) {
       await original.key.decrypt('1234');
       return openpgp.revokeKey({ key: original.key, reasonForRevocation: { string: 'Testing key revocation' } }).then(async function(revKey) {
@@ -2933,7 +2933,7 @@ module.exports = () => describe('Key', function() {
   });
 
   it("validate() - don't throw if key parameters correspond", async function() {
-    const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519' });
+    const { key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519' });
     await expect(key.validate()).to.not.be.rejected;
   });
 
@@ -2959,7 +2959,7 @@ module.exports = () => describe('Key', function() {
 
   it("isDecrypted() - should reflect whether all (sub)keys are encrypted", async function() {
     const passphrase = '12345678';
-    const { key } = await openpgp.generateKey({ userIds: {}, curve: 'ed25519', passphrase });
+    const { key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519', passphrase });
     expect(key.isDecrypted()).to.be.false;
     await key.decrypt(passphrase, key.subKeys[0].getKeyID());
     expect(key.isDecrypted()).to.be.true;
@@ -2978,14 +2978,14 @@ module.exports = () => describe('Key', function() {
   });
 
   it('makeDummy() - the converted key can be parsed', async function() {
-    const { key } = await openpgp.generateKey({ userIds: { name: 'dummy', email: 'dummy@alice.com' } });
+    const { key } = await openpgp.generateKey({ userIDs: { name: 'dummy', email: 'dummy@alice.com' } });
     key.primaryKey.makeDummy();
     const parsedKeys = await openpgp.readKey({ armoredKey: key.armor() });
     expect(parsedKeys).to.not.be.empty;
   });
 
   it('makeDummy() - the converted key can be encrypted and decrypted', async function() {
-    const { key } = await openpgp.generateKey({ userIds: { name: 'dummy', email: 'dummy@alice.com' } });
+    const { key } = await openpgp.generateKey({ userIDs: { name: 'dummy', email: 'dummy@alice.com' } });
     const passphrase = 'passphrase';
     key.primaryKey.makeDummy();
     expect(key.isDecrypted()).to.be.true;
@@ -3002,7 +3002,7 @@ module.exports = () => describe('Key', function() {
     key.primaryKey.makeDummy();
     expect(key.primaryKey.isDummy()).to.be.true;
     await key.validate();
-    await expect(openpgp.reformatKey({ privateKey: key, userIds: { name: 'test', email: 'a@b.com' } })).to.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
+    await expect(openpgp.reformatKey({ privateKey: key, userIDs: { name: 'test', email: 'a@b.com' } })).to.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
   });
 
   it('makeDummy() - subkeys of the converted key can still sign', async function() {
@@ -3092,7 +3092,7 @@ module.exports = () => describe('Key', function() {
     dest.users.pop();
     return dest.update(source).then(() => {
       expect(dest.users[1]).to.exist;
-      expect(dest.users[1].userId).to.equal(source.users[1].userId);
+      expect(dest.users[1].userID).to.equal(source.users[1].userID);
     });
   });
 
@@ -3360,10 +3360,10 @@ module.exports = () => describe('Key', function() {
     const key = await openpgp.readKey({ armoredKey: pub_sig_test });
     const primUser = await key.getPrimaryUser();
     expect(primUser).to.exist;
-    expect(primUser.user.userId.userid).to.equal('Signature Test <signature@test.com>');
-    expect(primUser.user.userId.name).to.equal('Signature Test');
-    expect(primUser.user.userId.email).to.equal('signature@test.com');
-    expect(primUser.user.userId.comment).to.equal('');
+    expect(primUser.user.userID.userID).to.equal('Signature Test <signature@test.com>');
+    expect(primUser.user.userID.name).to.equal('Signature Test');
+    expect(primUser.user.userID.email).to.equal('signature@test.com');
+    expect(primUser.user.userID.comment).to.equal('');
     expect(primUser.selfCertification).to.be.an.instanceof(openpgp.SignaturePacket);
   });
 
@@ -3414,14 +3414,14 @@ VYGdb3eNlV8CfoEC
     publicKey.users[0].selfCertifications[0].isPrimaryUserID = true;
     // Set second user to prefer aes128. We will select this user.
     publicKey.users[1].selfCertifications[0].preferredSymmetricAlgorithms = [openpgp.enums.symmetric.aes128];
-    const sessionKey = await openpgp.generateSessionKey({ publicKeys: publicKey, toUserIds: { name: 'Test User', email: 'b@c.com' } });
+    const sessionKey = await openpgp.generateSessionKey({ publicKeys: publicKey, toUserIDs: { name: 'Test User', email: 'b@c.com' } });
     expect(sessionKey.algorithm).to.equal('aes128');
     const config = { minRSABits: 1024 };
     await openpgp.encrypt({
-      message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: { name: 'Test User', email: 'b@c.com' }, armor: false, config
+      message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIDs: { name: 'Test User', email: 'b@c.com' }, armor: false, config
     });
     await expect(openpgp.encrypt({
-      message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIds: { name: 'Test User', email: 'c@c.com' }, armor: false, config
+      message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, toUserIDs: { name: 'Test User', email: 'c@c.com' }, armor: false, config
     })).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
@@ -3442,23 +3442,23 @@ VYGdb3eNlV8CfoEC
     privateKey.users.push(privateKeyClone.users[0]);
     // Set first user to primary. We won't select this user, this is to test that.
     privateKey.users[0].selfCertifications[0].isPrimaryUserID = true;
-    // Change userid of the first user so that we don't select it. This also makes this user invalid.
-    privateKey.users[0].userId = openpgp.UserIDPacket.fromObject({ name: 'Test User', email: 'b@c.com' });
+    // Change userID of the first user so that we don't select it. This also makes this user invalid.
+    privateKey.users[0].userID = openpgp.UserIDPacket.fromObject({ name: 'Test User', email: 'b@c.com' });
     // Set second user to prefer aes128. We will select this user.
     privateKey.users[1].selfCertifications[0].preferredHashAlgorithms = [openpgp.enums.hash.sha512];
     const config = { minRSABits: 1024 };
     const signed = await openpgp.sign({
-      message: openpgp.Message.fromText('hello'), privateKeys: privateKey, fromUserIds: { name: 'Test McTestington', email: 'test@example.com' }, armor: false, config
+      message: openpgp.Message.fromText('hello'), privateKeys: privateKey, fromUserIDs: { name: 'Test McTestington', email: 'test@example.com' }, armor: false, config
     });
     const signature = await openpgp.readMessage({ binaryMessage: signed });
     expect(signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
     const encrypted = await openpgp.encrypt({
-      message: openpgp.Message.fromText('hello'), passwords: 'test', privateKeys: privateKey, fromUserIds: { name: 'Test McTestington', email: 'test@example.com' }, armor: false, config
+      message: openpgp.Message.fromText('hello'), passwords: 'test', privateKeys: privateKey, fromUserIDs: { name: 'Test McTestington', email: 'test@example.com' }, armor: false, config
     });
     const { signatures } = await openpgp.decrypt({ message: await openpgp.readMessage({ binaryMessage: encrypted }), passwords: 'test' });
     expect(signatures[0].signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
     await expect(openpgp.encrypt({
-      message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIds: { name: 'Not Test McTestington', email: 'test@example.com' }, armor: false, config
+      message: openpgp.Message.fromText('hello'), publicKeys: publicKey, privateKeys: privateKey, fromUserIDs: { name: 'Not Test McTestington', email: 'test@example.com' }, armor: false, config
     })).to.be.rejectedWith('Could not find user that matches that user ID');
   });
 
@@ -3531,13 +3531,13 @@ VYGdb3eNlV8CfoEC
       expect(key.getFingerprint()).to.equal(
         updateKey.getFingerprint());
       expect(key.users).to.have.length(2);
-      expect(key.users[1].userId).to.be.null;
+      expect(key.users[1].userID).to.be.null;
     });
   });
 
   it("Should throw when trying to encrypt a key that's already encrypted", async function() {
     await expect((async function() {
-      const { privateKeyArmored } = await openpgp.generateKey({ userIds: [{ email: 'hello@user.com' }], passphrase: 'pass' });
+      const { privateKeyArmored } = await openpgp.generateKey({ userIDs: [{ email: 'hello@user.com' }], passphrase: 'pass' });
       const k = await openpgp.readKey({ armoredKey: privateKeyArmored });
       await k.decrypt('pass');
       await k.encrypt('pass');
@@ -3576,8 +3576,8 @@ VYGdb3eNlV8CfoEC
     });
 
     it('Add a new default subkey to an rsaSign key', async function() {
-      const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { type: 'rsa', rsaBits, userIds: [userId], subkeys: [] };
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { type: 'rsa', rsaBits, userIDs: [userID], subkeys: [] };
       const { key } = await openpgp.generateKey(opt);
       expect(key.subKeys).to.have.length(0);
       key.keyPacket.algorithm = "rsaSign";
@@ -3586,8 +3586,8 @@ VYGdb3eNlV8CfoEC
     });
 
     it('Add a new default subkey to an ecc key', async function() {
-      const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { type: 'ecc', userIds: [userId], subkeys: [] };
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { type: 'ecc', userIDs: [userID], subkeys: [] };
       const { key } = await openpgp.generateKey(opt);
       expect(key.subKeys).to.have.length(0);
       const newKey = await key.addSubkey();
@@ -3627,11 +3627,11 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new ec subkey to a ec key', async function() {
-      const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { curve: 'curve25519', userIds: [userId], subkeys:[] };
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { curve: 'curve25519', userIDs: [userID], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;
-      const opt2 = { curve: 'curve25519', userIds: [userId], sign: true };
+      const opt2 = { curve: 'curve25519', userIDs: [userID], sign: true };
       let newPrivateKey = await privateKey.addSubkey(opt2);
       const subKey1 = newPrivateKey.subKeys[total];
       await newPrivateKey.encrypt('12345678');
@@ -3651,8 +3651,8 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new ecdsa subkey to a eddsa key', async function() {
-      const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { curve: 'ed25519', userIds: [userId], subkeys:[] };
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { curve: 'ed25519', userIDs: [userID], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey({ curve: 'p256', sign: true });
@@ -3685,8 +3685,8 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new rsa subkey to a ecc key', async function() {
-      const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { curve: 'ed25519', userIds: [userId], subkeys:[] };
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { curve: 'ed25519', userIDs: [userID], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey({ type: 'rsa' });
@@ -3714,8 +3714,8 @@ VYGdb3eNlV8CfoEC
     });
 
     it('sign/verify data with the new subkey correctly using curve25519', async function() {
-      const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { curve: 'curve25519', userIds: [userId], subkeys:[] };
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { curve: 'curve25519', userIDs: [userID], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;
       const opt2 = { sign: true };
@@ -3739,9 +3739,9 @@ VYGdb3eNlV8CfoEC
     });
 
     it('encrypt/decrypt data with the new subkey correctly using curve25519', async function() {
-      const userId = { name: 'test', email: 'a@b.com' };
+      const userID = { name: 'test', email: 'a@b.com' };
       const vData = 'the data to encrypted!';
-      const opt = { curve: 'curve25519', userIds: [userId], subkeys:[] };
+      const opt = { curve: 'curve25519', userIDs: [userID], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
       const total = privateKey.subKeys.length;
       let newPrivateKey = await privateKey.addSubkey();
@@ -3809,12 +3809,12 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Subkey.verify returns the latest valid signature', async function () {
-    const { key: encryptionKey } = await openpgp.generateKey({ userIds: { name: "purple" } });
+    const { key: encryptionKey } = await openpgp.generateKey({ userIDs: { name: "purple" } });
     const encryptionKeySignature = await encryptionKey.getSubkeys()[0].verify(encryptionKey);
     expect(encryptionKeySignature instanceof openpgp.SignaturePacket).to.be.true;
     expect(encryptionKeySignature.keyFlags[0] & openpgp.enums.keyFlags.encryptCommunication).to.be.equals(openpgp.enums.keyFlags.encryptCommunication);
     expect(encryptionKeySignature.keyFlags[0] & openpgp.enums.keyFlags.encryptStorage).to.be.equals(openpgp.enums.keyFlags.encryptStorage);
-    const { key: signingKey } = await openpgp.generateKey({ userIds: { name: "purple" }, subkeys: [{ sign: true }] });
+    const { key: signingKey } = await openpgp.generateKey({ userIDs: { name: "purple" }, subkeys: [{ sign: true }] });
     const signingKeySignature = await signingKey.getSubkeys()[0].verify(signingKey);
     expect(signingKeySignature instanceof openpgp.SignaturePacket).to.be.true;
     expect(signingKeySignature.keyFlags[0] & openpgp.enums.keyFlags.signData).to.be.equals(openpgp.enums.keyFlags.signData);

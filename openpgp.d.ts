@@ -14,10 +14,10 @@ export function readKey(options: { binaryKey: Uint8Array, config?: PartialConfig
 export function readKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<Key[]>;
 export function readKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
-export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
+export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
 export function encryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
-export function reformatKey(options: { privateKey: Key; userIds?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
+export function reformatKey(options: { privateKey: Key; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
 
 export class Key {
   constructor(packetlist: PacketList<AnyPacket>);
@@ -30,24 +30,24 @@ export class Key {
   public armor(config?: Config): string;
   public decrypt(passphrase: string | string[], keyID?: KeyID, config?: Config): Promise<void>; // throws on error
   public encrypt(passphrase: string | string[], keyID?: KeyID, config?: Config): Promise<void>; // throws on error
-  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyID?: KeyID, userId?: UserID, config?: Config): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
+  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyID?: KeyID, userID?: UserID, config?: Config): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
   public getKeyIDs(): KeyID[];
-  public getPrimaryUser(date?: Date, userId?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
-  public getUserIds(): string[];
+  public getPrimaryUser(date?: Date, userID?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
+  public getUserIDs(): string[];
   public isPrivate(): boolean;
   public isPublic(): boolean;
   public toPublic(): Key;
   public update(key: Key, config?: Config): void;
-  public signPrimaryUser(privateKeys: Key[], date?: Date, userId?: UserID, config?: Config): Promise<Key>
+  public signPrimaryUser(privateKeys: Key[], date?: Date, userID?: UserID, config?: Config): Promise<Key>
   public signAllUsers(privateKeys: Key[], config?: Config): Promise<Key>
-  public verifyPrimaryKey(date?: Date, userId?: UserID, config?: Config): Promise<void>; // throws on error
-  public verifyPrimaryUser(publicKeys: Key[], date?: Date, userIds?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
-  public verifyAllUsers(publicKeys: Key[], config?: Config): Promise<{ userid: string, keyID: KeyID, valid: boolean | null }[]>;
+  public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
+  public verifyPrimaryUser(publicKeys: Key[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
+  public verifyAllUsers(publicKeys: Key[], config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date, config?: Config): Promise<Key>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
-  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userId?: UserID, config?: Config): Promise<Key | SubKey>;
-  public getSigningKey(keyID?: KeyID, date?: Date | null, userId?: UserID, config?: Config): Promise<Key | SubKey>;
+  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<Key | SubKey>;
+  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<Key | SubKey>;
   public getKeys(keyID?: KeyID): (Key | SubKey)[];
   public getSubkeys(keyID?: KeyID): SubKey[];
   public isDecrypted(): boolean;
@@ -72,7 +72,7 @@ export class SubKey {
 }
 
 export interface User {
-  userId: UserIDPacket | null;
+  userID: UserIDPacket | null;
   userAttribute: UserAttributePacket | null;
   selfCertifications: SignaturePacket[];
   otherCertifications: SignaturePacket[];
@@ -131,7 +131,7 @@ export class CleartextMessage {
    *
    *  @param privateKeys private keys with decrypted secret key data for signing
    */
-  sign(privateKeys: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIds?: UserID[], config?: Config): void;
+  sign(privateKeys: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): void;
 
   /** Verify signatures of cleartext signed message
    *  @param keys array of keys to verify signatures
@@ -262,7 +262,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Encrypt the message
       @param keys array of keys, used to encrypt the message
   */
-  public encrypt(keys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIds?: UserID[], streaming?: boolean, config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public encrypt(keys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], streaming?: boolean, config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Returns the key IDs of the keys to which the session key is encrypted
    */
@@ -285,7 +285,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Sign the message (the literal data packet of the message)
       @param privateKey private keys with decrypted secret key data for signing
   */
-  public sign(privateKey: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIds?: UserID[], streaming?: boolean, config?: Config): Promise<Message<T>>;
+  public sign(privateKey: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], streaming?: boolean, config?: Config): Promise<Message<T>>;
 
   /** Unwrap compressed message
    */
@@ -433,8 +433,8 @@ export class UserIDPacket extends BasePacket {
   public readonly name: string;
   public readonly comment: string;
   public readonly email: string;
-  public readonly userid: string;
-  static fromObject(userId: UserID): UserIDPacket;
+  public readonly userID: string;
+  static fromObject(userID: UserID): UserIDPacket;
 }
 
 export class SignaturePacket extends BasePacket {
@@ -469,7 +469,7 @@ export class SignaturePacket extends BasePacket {
   public isPrimaryUserID: null | boolean;
   public policyURI: null | string;
   public keyFlags: Uint8Array | null;
-  public signersUserId: null | string;
+  public signersUserID: null | string;
   public reasonForRevocationFlag: null | enums.reasonForRevocation;
   public reasonForRevocationString: null | string;
   public features: Uint8Array | null;
@@ -572,9 +572,9 @@ interface EncryptOptions {
   /** (optional) use a key ID of 0 instead of the public key IDs */
   wildcard?: boolean;
   /** (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
-  fromUserId?: UserID;
+  fromUserID?: UserID;
   /** (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
-  toUserId?: UserID;
+  toUserID?: UserID;
   config?: PartialConfig;
 }
 
@@ -608,7 +608,7 @@ interface SignOptions {
   dataType?: DataPacketType;
   detached?: boolean;
   date?: Date;
-  fromUserId?: UserID;
+  fromUserID?: UserID;
   config?: PartialConfig;
 }
 
@@ -638,7 +638,7 @@ interface KeyPair {
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
 interface KeyOptions {
-  userIds: UserID|UserID[];
+  userIDs: UserID|UserID[];
   passphrase?: string;
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
@@ -717,7 +717,7 @@ export namespace enums {
     keySuperseded = 1, // Key is superseded (key revocations)
     keyCompromised = 2, // Key material has been compromised (key revocations)
     keyRetired = 3, // Key is retired and no longer used (key revocations)
-    useridInvalid = 32, // User ID information is no longer valid (cert revocations)
+    userIDInvalid = 32, // User ID information is no longer valid (cert revocations)
   }
 
   export type compressionNames = 'uncompressed' | 'zip' | 'zlib' | 'bzip2';
@@ -740,7 +740,7 @@ export namespace enums {
   }
 
   export type packetNames = 'publicKeyEncryptedSessionKey' | 'signature' | 'symEncryptedSessionKey' | 'onePassSignature' | 'secretKey' | 'publicKey'
-    | 'secretSubkey' | 'compressed' | 'symmetricallyEncrypted' | 'marker' | 'literal' | 'trust' | 'userid' | 'publicSubkey' | 'userAttribute'
+    | 'secretSubkey' | 'compressed' | 'symmetricallyEncrypted' | 'marker' | 'literal' | 'trust' | 'userID' | 'publicSubkey' | 'userAttribute'
     | 'symEncryptedIntegrityProtected' | 'modificationDetectionCode' | 'AEADEncryptedDataPacket';
   enum packet {
     publicKeyEncryptedSessionKey = 1,

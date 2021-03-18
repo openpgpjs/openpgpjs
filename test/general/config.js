@@ -13,7 +13,7 @@ module.exports = () => describe('Custom configuration', function() {
 
     try {
       const opt = {
-        userIds: { name: 'Test User', email: 'text@example.com' }
+        userIDs: { name: 'Test User', email: 'text@example.com' }
       };
       const { key, privateKeyArmored } = await openpgp.generateKey(opt);
       expect(key.keyPacket.version).to.equal(4);
@@ -26,7 +26,7 @@ module.exports = () => describe('Custom configuration', function() {
         preferredHashAlgorithm: openpgp.enums.hash.sha512
       };
       const opt2 = {
-        userIds: { name: 'Test User', email: 'text@example.com' },
+        userIDs: { name: 'Test User', email: 'text@example.com' },
         config
       };
       const { key: key2, privateKeyArmored: privateKeyArmored2 } = await openpgp.generateKey(opt2);
@@ -49,10 +49,10 @@ module.exports = () => describe('Custom configuration', function() {
     openpgp.config.showComment = false;
 
     try {
-      const userIds = { name: 'Test User', email: 'text2@example.com' };
-      const { key: origKey } = await openpgp.generateKey({ userIds });
+      const userIDs = { name: 'Test User', email: 'text2@example.com' };
+      const { key: origKey } = await openpgp.generateKey({ userIDs });
 
-      const opt = { privateKey: origKey, userIds };
+      const opt = { privateKey: origKey, userIDs };
       const { key: refKey, privateKeyArmored: refKeyArmored } = await openpgp.reformatKey(opt);
       const prefs = refKey.users[0].selfCertifications[0];
       expect(prefs.preferredCompressionAlgorithms[0]).to.equal(openpgp.config.preferredCompressionAlgorithm);
@@ -65,7 +65,7 @@ module.exports = () => describe('Custom configuration', function() {
         preferredHashAlgorithm: openpgp.enums.hash.sha512,
         rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) // should not matter in this context
       };
-      const opt2 = { privateKey: origKey, userIds, config };
+      const opt2 = { privateKey: origKey, userIDs, config };
       const { key: refKey2, privateKeyArmored: refKeyArmored2 } = await openpgp.reformatKey(opt2);
       const prefs2 = refKey2.users[0].selfCertifications[0];
       expect(prefs2.preferredCompressionAlgorithms[0]).to.equal(config.preferredCompressionAlgorithm);
@@ -84,8 +84,8 @@ module.exports = () => describe('Custom configuration', function() {
     openpgp.config.showComment = false;
 
     try {
-      const userIds = { name: 'Test User', email: 'text2@example.com' };
-      const { key, revocationCertificate } = await openpgp.generateKey({ userIds });
+      const userIDs = { name: 'Test User', email: 'text2@example.com' };
+      const { key, revocationCertificate } = await openpgp.generateKey({ userIDs });
 
       const opt = { key };
       const { privateKeyArmored: revKeyArmored } = await openpgp.revokeKey(opt);
@@ -107,10 +107,10 @@ module.exports = () => describe('Custom configuration', function() {
   });
 
   it('openpgp.decryptKey', async function() {
-    const userIds = { name: 'Test User', email: 'text2@example.com' };
+    const userIDs = { name: 'Test User', email: 'text2@example.com' };
     const passphrase = '12345678';
 
-    const { key } = await openpgp.generateKey({ userIds, passphrase });
+    const { key } = await openpgp.generateKey({ userIDs, passphrase });
     key.keyPacket.makeDummy();
 
     const opt = {
@@ -127,14 +127,14 @@ module.exports = () => describe('Custom configuration', function() {
 
     try {
       const passphrase = '12345678';
-      const userIds = { name: 'Test User', email: 'text2@example.com' };
-      const { key: privateKey } = await openpgp.generateKey({ userIds });
+      const userIDs = { name: 'Test User', email: 'text2@example.com' };
+      const { key: privateKey } = await openpgp.generateKey({ userIDs });
 
-      const encKey = await openpgp.encryptKey({ privateKey, userIds, passphrase });
+      const encKey = await openpgp.encryptKey({ privateKey, userIDs, passphrase });
       expect(encKey.keyPacket.s2k.c).to.equal(openpgp.config.S2KIterationCountByte);
 
       const config = { S2KIterationCountByte: 123 };
-      const encKey2 = await openpgp.encryptKey({ privateKey, userIds, passphrase, config });
+      const encKey2 = await openpgp.encryptKey({ privateKey, userIDs, passphrase, config });
       expect(encKey2.keyPacket.s2k.c).to.equal(config.S2KIterationCountByte);
     } finally {
       openpgp.config.S2KIterationCountByte = S2KIterationCountByteVal;
@@ -173,8 +173,8 @@ module.exports = () => describe('Custom configuration', function() {
       expect(compressed.tag).to.equal(openpgp.enums.packet.compressedData);
       expect(compressed.algorithm).to.equal("zip");
 
-      const userIds = { name: 'Test User', email: 'text2@example.com' };
-      const { key } = await openpgp.generateKey({ userIds });
+      const userIDs = { name: 'Test User', email: 'text2@example.com' };
+      const { key } = await openpgp.generateKey({ userIDs });
       await expect(openpgp.encrypt({
         message, publicKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.ecdh]) }
       })).to.be.eventually.rejectedWith(/ecdh keys are considered too weak/);
@@ -187,8 +187,8 @@ module.exports = () => describe('Custom configuration', function() {
   it('openpgp.decrypt', async function() {
     const plaintext = 'test';
     const message = openpgp.Message.fromText(plaintext);
-    const userIds = { name: 'Test User', email: 'text2@example.com' };
-    const { key } = await openpgp.generateKey({ userIds, type: 'rsa', rsaBits: 2048 });
+    const userIDs = { name: 'Test User', email: 'text2@example.com' };
+    const { key } = await openpgp.generateKey({ userIDs, type: 'rsa', rsaBits: 2048 });
 
     const armoredMessage = await openpgp.encrypt({ message, publicKeys:[key], privateKeys: [key] });
     const { data, signatures } = await openpgp.decrypt({
@@ -221,8 +221,8 @@ module.exports = () => describe('Custom configuration', function() {
   });
 
   it('openpgp.sign', async function() {
-    const userIds = { name: 'Test User', email: 'text2@example.com' };
-    const { privateKeyArmored } = await openpgp.generateKey({ userIds });
+    const userIDs = { name: 'Test User', email: 'text2@example.com' };
+    const { privateKeyArmored } = await openpgp.generateKey({ userIDs });
     const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
 
     const message = openpgp.Message.fromText("test");
@@ -249,8 +249,8 @@ module.exports = () => describe('Custom configuration', function() {
   });
 
   it('openpgp.verify', async function() {
-    const userIds = { name: 'Test User', email: 'text2@example.com' };
-    const { privateKeyArmored } = await openpgp.generateKey({ userIds });
+    const userIDs = { name: 'Test User', email: 'text2@example.com' };
+    const { privateKeyArmored } = await openpgp.generateKey({ userIDs });
     const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
     const config = { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.sha256, openpgp.enums.hash.sha512]) };
 

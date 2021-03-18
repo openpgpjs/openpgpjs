@@ -85,7 +85,7 @@ module.exports = () => {
   describe('EdDSA parameter validation', function() {
     let eddsaKey;
     before(async () => {
-      eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
+      eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
     });
 
     it('EdDSA params should be valid', async function() {
@@ -109,9 +109,9 @@ module.exports = () => {
     let ecdhKey;
     let ecdsaKey;
     before(async () => {
-      eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
+      eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
       ecdhKey = eddsaKey.subKeys[0];
-      ecdsaKey = (await openpgp.generateKey({ curve: 'p256', userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
+      ecdsaKey = (await openpgp.generateKey({ curve: 'p256', userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
     });
 
     it('EdDSA params are not valid for ECDH', async function() {
@@ -194,10 +194,10 @@ module.exports = () => {
       let ecdhKey;
       before(async () => {
         if (curve !== 'curve25519') {
-          ecdsaKey = (await openpgp.generateKey({ curve, userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
+          ecdsaKey = (await openpgp.generateKey({ curve, userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
           ecdhKey = ecdsaKey.subKeys[0];
         } else {
-          const eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
+          const eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
           ecdhKey = eddsaKey.subKeys[0];
         }
       });
@@ -244,7 +244,7 @@ module.exports = () => {
   describe('RSA parameter validation', function() {
     let rsaKey;
     before(async () => {
-      rsaKey = (await openpgp.generateKey({ type: 'rsa', rsaBits: 2048, userIds: [{ name: 'Test', email: 'test@test.com' }] })).key;
+      rsaKey = (await openpgp.generateKey({ type: 'rsa', rsaBits: 2048, userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
     });
 
     it('generated RSA params are valid', async function() {

@@ -703,12 +703,12 @@ module.exports = () => describe("Packet", function() {
   it('Secret key reading with signature verification.', async function() {
     const packets = new openpgp.PacketList();
     await packets.read((await openpgp.unarmor(armored_key)).data, openpgp);
-    const [keyPacket, userIdPacket, keySigPacket, subkeyPacket, subkeySigPacket] = packets;
+    const [keyPacket, userIDPacket, keySigPacket, subkeyPacket, subkeySigPacket] = packets;
     expect(keySigPacket.verified).to.be.null;
     expect(subkeySigPacket.verified).to.be.null;
 
     await keySigPacket.verify(
-      keyPacket, openpgp.enums.signature.certGeneric, { userId: userIdPacket, key: keyPacket }
+      keyPacket, openpgp.enums.signature.certGeneric, { userID: userIDPacket, key: keyPacket }
     ).then(async () => expect(keySigPacket.verified).to.be.true);
     await subkeySigPacket.verify(
       keyPacket, openpgp.enums.signature.keyBinding, { key: keyPacket, bind: subkeyPacket }
@@ -757,7 +757,7 @@ module.exports = () => describe("Packet", function() {
     });
   });
 
-  it('Reading signersUserId from armored signature', async function() {
+  it('Reading signersUserID from armored signature', async function() {
     const armoredSignature =
 `-----BEGIN PGP SIGNATURE-----
 
@@ -773,7 +773,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 
     const signature = await openpgp.readSignature({ armoredSignature });
 
-    expect(signature.packets[0].signersUserId).to.equal('test-wkd@metacode.biz');
+    expect(signature.packets[0].signersUserID).to.equal('test-wkd@metacode.biz');
   });
 
   it('Reading notations from armored key', async function() {

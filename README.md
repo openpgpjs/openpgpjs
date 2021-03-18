@@ -139,7 +139,7 @@ To test whether the lazy loading works, try to generate a key with a non-standar
 
 ```js
 import { generateKey } from 'openpgp/lightweight';
-await generateKey({ curve: 'brainpoolP512r1',  userIds: [{ name: 'Test', email: 'test@test.com' }] });
+await generateKey({ curve: 'brainpoolP512r1',  userIDs: [{ name: 'Test', email: 'test@test.com' }] });
 ```
 
 For more examples of how to generate a key, see [Generate new key pair](#generate-new-key-pair). It is recommended to use `curve25519` instead of `brainpoolP512r1` by default.
@@ -395,7 +395,7 @@ and a subkey for encryption using Curve25519.
     const { privateKeyArmored, publicKeyArmored, revocationCertificate } = await openpgp.generateKey({
         type: 'ecc', // Type of the key, defaults to ECC
         curve: 'curve25519', // ECC curve name, defaults to curve25519
-        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret' // protects the private key
     });
 
@@ -412,7 +412,7 @@ RSA keys (increased compatibility):
     const key = await openpgp.generateKey({
         type: 'rsa', // Type of the key
         rsaBits: 4096, // RSA key size (defaults to 4096 bits)
-        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret' // protects the private key
     });
 })();

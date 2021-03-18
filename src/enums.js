@@ -367,10 +367,10 @@ export default {
     preferredCompressionAlgorithms: 22,
     keyServerPreferences: 23,
     preferredKeyServer: 24,
-    primaryUserId: 25,
+    primaryUserID: 25,
     policyUri: 26,
     keyFlags: 27,
-    signersUserId: 28,
+    signersUserID: 28,
     reasonForRevocation: 29,
     features: 30,
     signatureTarget: 31,
@@ -430,7 +430,7 @@ export default {
     /** Key is retired and no longer used (key revocations) */
     keyRetired: 3,
     /** User ID information is no longer valid (cert revocations) */
-    userIdInvalid: 32
+    userIDInvalid: 32
   },
 
   /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.2.3.25|RFC4880bis-04, section 5.2.3.25}

@@ -159,13 +159,13 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   }
   it('Load public key', async function () {
     const romeoPublic = await load_pub_key('romeo');
-    expect(romeoPublic.users[0].userId.name).to.equal('Romeo Montague');
-    expect(romeoPublic.users[0].userId.email).to.equal('romeo@example.net');
-    expect(romeoPublic.users[0].userId.comment).to.equal('secp256k1');
+    expect(romeoPublic.users[0].userID.name).to.equal('Romeo Montague');
+    expect(romeoPublic.users[0].userID.email).to.equal('romeo@example.net');
+    expect(romeoPublic.users[0].userID.comment).to.equal('secp256k1');
     const julietPublic = await load_pub_key('juliet');
-    expect(julietPublic.users[0].userId.name).to.equal('Juliet Capulet');
-    expect(julietPublic.users[0].userId.email).to.equal('juliet@example.net');
-    expect(julietPublic.users[0].userId.comment).to.equal('secp256k1');
+    expect(julietPublic.users[0].userID.name).to.equal('Juliet Capulet');
+    expect(julietPublic.users[0].userID.email).to.equal('juliet@example.net');
+    expect(julietPublic.users[0].userID.comment).to.equal('secp256k1');
   });
   it('Load private key', async function () {
     await load_priv_key('romeo');
@@ -222,7 +222,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   });
   it('Generate key', function () {
     const options = {
-      userIds: { name: "Hamlet (secp256k1)", email: "hamlet@example.net" },
+      userIDs: { name: "Hamlet (secp256k1)", email: "hamlet@example.net" },
       curve: "secp256k1",
       passphrase: "ophelia"
     };

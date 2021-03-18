@@ -70,7 +70,7 @@ class SignaturePacket {
     this.isPrimaryUserID = null;
     this.policyURI = null;
     this.keyFlags = null;
-    this.signersUserId = null;
+    this.signersUserID = null;
     this.reasonForRevocationFlag = null;
     this.reasonForRevocationString = null;
     this.features = null;
@@ -259,7 +259,7 @@ class SignaturePacket {
       arr.push(write_sub_packet(sub.preferredKeyServer, util.strToUint8Array(this.preferredKeyServer)));
     }
     if (this.isPrimaryUserID !== null) {
-      arr.push(write_sub_packet(sub.primaryUserId, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
+      arr.push(write_sub_packet(sub.primaryUserID, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
     }
     if (this.policyURI !== null) {
       arr.push(write_sub_packet(sub.policyUri, util.strToUint8Array(this.policyURI)));
@@ -268,8 +268,8 @@ class SignaturePacket {
       bytes = util.strToUint8Array(util.uint8ArrayToStr(this.keyFlags));
       arr.push(write_sub_packet(sub.keyFlags, bytes));
     }
-    if (this.signersUserId !== null) {
-      arr.push(write_sub_packet(sub.signersUserId, util.strToUint8Array(this.signersUserId)));
+    if (this.signersUserID !== null) {
+      arr.push(write_sub_packet(sub.signersUserID, util.strToUint8Array(this.signersUserID)));
     }
     if (this.reasonForRevocationFlag !== null) {
       bytes = util.strToUint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
@@ -470,7 +470,7 @@ class SignaturePacket {
         break;
       case 28:
         // Signer's User ID
-        this.signersUserId = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
+        this.signersUserID = util.uint8ArrayToStr(bytes.subarray(mypos, bytes.length));
         break;
       case 29:
         // Reason for Revocation
@@ -568,14 +568,14 @@ class SignaturePacket {
         let packet;
         let tag;
 
-        if (data.userId) {
+        if (data.userID) {
           tag = 0xB4;
-          packet = data.userId;
+          packet = data.userID;
         } else if (data.userAttribute) {
           tag = 0xD1;
           packet = data.userAttribute;
         } else {
-          throw new Error('Either a userId or userAttribute packet needs to be ' +
+          throw new Error('Either a userID or userAttribute packet needs to be ' +
             'supplied for certification.');
         }
 

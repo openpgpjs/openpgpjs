@@ -710,7 +710,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
   describe('generateKey - validate user ids', function() {
     it('should fail for invalid user name', async function() {
       const opt = {
-        userIds: [{ name: {}, email: 'text@example.com' }]
+        userIDs: [{ name: {}, email: 'text@example.com' }]
       };
       const test = openpgp.generateKey(opt);
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
@@ -718,7 +718,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
     it('should fail for invalid user email address', async function() {
       const opt = {
-        userIds: [{ name: 'Test User', email: 'textexample.com' }]
+        userIDs: [{ name: 'Test User', email: 'textexample.com' }]
       };
       const test = openpgp.generateKey(opt);
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
@@ -726,7 +726,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
     it('should fail for invalid user email address', async function() {
       const opt = {
-        userIds: [{ name: 'Test User', email: 'text@examplecom' }]
+        userIDs: [{ name: 'Test User', email: 'text@examplecom' }]
       };
       const test = openpgp.generateKey(opt);
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
@@ -734,7 +734,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
     it('should fail for string user ID', async function() {
       const opt = {
-        userIds: 'Test User <text@example.com>'
+        userIDs: 'Test User <text@example.com>'
       };
       const test = openpgp.generateKey(opt);
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
@@ -742,28 +742,28 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
     it('should work for valid single user ID object', function() {
       const opt = {
-        userIds: { name: 'Test User', email: 'text@example.com' }
+        userIDs: { name: 'Test User', email: 'text@example.com' }
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for array of user ID objects', function() {
       const opt = {
-        userIds: [{ name: 'Test User', email: 'text@example.com' }]
+        userIDs: [{ name: 'Test User', email: 'text@example.com' }]
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for undefined name', function() {
       const opt = {
-        userIds: { email: 'text@example.com' }
+        userIDs: { email: 'text@example.com' }
       };
       return openpgp.generateKey(opt);
     });
 
     it('should work for an undefined email address', function() {
       const opt = {
-        userIds: { name: 'Test User' }
+        userIDs: { name: 'Test User' }
       };
       return openpgp.generateKey(opt);
     });
@@ -773,15 +773,15 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     it('should have default params set', function() {
       const now = util.normalizeDate(new Date());
       const opt = {
-        userIds: { name: 'Test User', email: 'text@example.com' },
+        userIDs: { name: 'Test User', email: 'text@example.com' },
         passphrase: 'secret',
         date: now
       };
       return openpgp.generateKey(opt).then(async function(newKey) {
         expect(newKey.key).to.exist;
         expect(newKey.key.users.length).to.equal(1);
-        expect(newKey.key.users[0].userId.name).to.equal('Test User');
-        expect(newKey.key.users[0].userId.email).to.equal('text@example.com');
+        expect(newKey.key.users[0].userID.name).to.equal('Test User');
+        expect(newKey.key.users[0].userID.email).to.equal('text@example.com');
         expect(newKey.key.getAlgorithmInfo().rsaBits).to.equal(undefined);
         expect(newKey.key.getAlgorithmInfo().curve).to.equal('ed25519');
         expect(+newKey.key.getCreationTime()).to.equal(+now);
@@ -800,11 +800,11 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
   describe('generateKey - integration tests', function() {
     it('should work', function() {
       const opt = {
-        userIds: [{ name: 'Test User', email: 'text@example.com' }]
+        userIDs: [{ name: 'Test User', email: 'text@example.com' }]
       };
 
       return openpgp.generateKey(opt).then(function(newKey) {
-        expect(newKey.key.getUserIds()[0]).to.equal('Test User <text@example.com>');
+        expect(newKey.key.getUserIDs()[0]).to.equal('Test User <text@example.com>');
         expect(newKey.publicKeyArmored).to.match(/^-----BEGIN PGP PUBLIC/);
         expect(newKey.privateKeyArmored).to.match(/^-----BEGIN PGP PRIVATE/);
       });
@@ -945,7 +945,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
     describe('encryptKey', function() {
       it('should not change original key', async function() {
-        const { privateKeyArmored } = await openpgp.generateKey({ userIds: [{ name: 'test', email: 'test@test.com' }] });
+        const { privateKeyArmored } = await openpgp.generateKey({ userIDs: [{ name: 'test', email: 'test@test.com' }] });
         // read both keys from armored data to make sure all fields are exactly the same
         const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
         const originalKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
@@ -966,7 +966,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       });
 
       it('encrypted key can be decrypted', async function() {
-        const { key } = await openpgp.generateKey({ userIds: [{ name: 'test', email: 'test@test.com' }] });
+        const { key } = await openpgp.generateKey({ userIDs: [{ name: 'test', email: 'test@test.com' }] });
         const locked = await openpgp.encryptKey({
           privateKey: key,
           passphrase: passphrase
@@ -980,7 +980,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       });
 
       it('should support multiple passphrases', async function() {
-        const { key } = await openpgp.generateKey({ userIds: [{ name: 'test', email: 'test@test.com' }] });
+        const { key } = await openpgp.generateKey({ userIDs: [{ name: 'test', email: 'test@test.com' }] });
         const passphrases = ['123', '456'];
         const locked = await openpgp.encryptKey({
           privateKey: key,
@@ -1446,7 +1446,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt/sign and decrypt/verify with generated key', function () {
           const genOpt = {
-            userIds: [{ name: 'Test User', email: 'text@example.com' }]
+            userIDs: [{ name: 'Test User', email: 'text@example.com' }]
           };
 
           return openpgp.generateKey(genOpt).then(async function(newKey) {
@@ -1478,7 +1478,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
         it('should encrypt/sign and decrypt/verify with generated key and detached signatures', async function () {
           const newKey = await openpgp.generateKey({
-            userIds: [{ name: 'Test User', email: 'text@example.com' }]
+            userIDs: [{ name: 'Test User', email: 'text@example.com' }]
           });
           const newPublicKey = await openpgp.readKey({ armoredKey: newKey.publicKeyArmored });
           const newPrivateKey = await openpgp.readKey({ armoredKey: newKey.privateKeyArmored });
@@ -1771,7 +1771,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         });
 
         it('should fail to decrypt modified message', async function() {
-          const { privateKeyArmored } = await openpgp.generateKey({ curve: 'curve25519', userIds: [{ email: 'test@email.com' }] });
+          const { privateKeyArmored } = await openpgp.generateKey({ curve: 'curve25519', userIDs: [{ email: 'test@email.com' }] });
           const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
           const data = await openpgp.encrypt({ message: openpgp.Message.fromBinary(new Uint8Array(500)), publicKeys: [key.toPublic()] });
           let badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=aaaa');
@@ -1825,7 +1825,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         });
 
         it('should fail to decrypt unarmored message with garbage data appended', async function() {
-          const { key } = await openpgp.generateKey({ userIds: {} });
+          const { key } = await openpgp.generateKey({ userIDs: {} });
           const message = await openpgp.encrypt({ message: openpgp.Message.fromText('test'), publicKeys: key, privateKeys: key, armor: false });
           const encrypted = util.concat([message, new Uint8Array([11])]);
           await expect(
@@ -2709,7 +2709,7 @@ amnR6g==
       curves.forEach(curve => {
         it(`sign/verify with ${curve}`, async function() {
           const plaintext = 'short message';
-          const key = (await openpgp.generateKey({ curve, userIds: { name: 'Alice', email: 'info@alice.com' } })).key;
+          const key = (await openpgp.generateKey({ curve, userIDs: { name: 'Alice', email: 'info@alice.com' } })).key;
           const signed = await openpgp.sign({ privateKeys:[key], message: openpgp.CleartextMessage.fromText(plaintext) });
           const verified = await openpgp.verify({ publicKeys:[key], message: await openpgp.readCleartextMessage({ cleartextMessage: signed }) });
           expect(verified.signatures[0].valid).to.be.true;

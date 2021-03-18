@@ -13,7 +13,7 @@ import { expect } from 'chai';
 (async () => {
 
   // Generate keys
-  const { publicKeyArmored, key } = await generateKey({ userIds: [{ email: "user@corp.co" }], config: { v5Keys: true } });
+  const { publicKeyArmored, key } = await generateKey({ userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } });
   expect(key).to.be.instanceOf(Key);
   const privateKeys = [key];
   const publicKeys = [key.toPublic()];

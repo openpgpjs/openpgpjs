@@ -60,15 +60,15 @@ export class CleartextMessage {
    * @param {Signature} [signature] - Any existing detached signature
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
    * @param {Date} [date] - The creation time of the signature that should be created
-   * @param {Array} [userIds] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {CleartextMessage} New cleartext message with signed content.
    * @async
    */
-  async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIds = [], config = defaultConfig) {
+  async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
-    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIds, true, undefined, config));
+    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, undefined, config));
     return new CleartextMessage(this.text, newSignature);
   }
 

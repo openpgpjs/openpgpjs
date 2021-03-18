@@ -41,7 +41,7 @@ if (globalThis.ReadableStream) {
  * Generates a new OpenPGP key pair. Supports RSA and ECC keys. By default, primary and subkeys will be of same type.
  * @param {Object} options
  * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
- * @param {Object|Array<Object>} options.userIds - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
+ * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
@@ -57,10 +57,10 @@ if (globalThis.ReadableStream) {
  * @async
  * @static
  */
-export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
+export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
   config = { ...defaultConfig, ...config };
-  userIds = toArray(userIds);
-  const options = { userIds, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
+  userIDs = toArray(userIDs);
+  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
   if (type === "rsa" && rsaBits < config.minRSABits) {
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
   }
@@ -84,7 +84,7 @@ export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBi
  * Reformats signature packets for a key and rewraps key object.
  * @param {Object} options
  * @param {Key} options.privateKey - Private key to reformat
- * @param {Object|Array<Object>} options.userIds - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
+ * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
@@ -93,10 +93,10 @@ export function generateKey({ userIds = [], passphrase = "", type = "ecc", rsaBi
  * @async
  * @static
  */
-export function reformatKey({ privateKey, userIds = [], passphrase = "", keyExpirationTime = 0, date, config }) {
+export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, config }) {
   config = { ...defaultConfig, ...config };
-  userIds = toArray(userIds);
-  const options = { privateKey, userIds, passphrase, keyExpirationTime, date };
+  userIDs = toArray(userIDs);
+  const options = { privateKey, userIDs, passphrase, keyExpirationTime, date };
 
   return reformat(options, config).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate(date, config);
@@ -243,16 +243,16 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @param {Array<module:type/keyid~KeyID>} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `privateKeys[i]`
  * @param {Array<module:type/keyid~KeyID>} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `publicKeys[i]`
  * @param {Date} [options.date=current date] - Override the creation date of the message signature
- * @param {Array<Object>} [options.fromUserIds=primary user IDs] - Array of user IDs to sign with, one per key in `privateKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
- * @param {Array<Object>} [options.toUserIds=primary user IDs] - Array of user IDs to encrypt for, one per key in `publicKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
+ * @param {Array<Object>} [options.fromUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `privateKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
+ * @param {Array<Object>} [options.toUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `publicKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>} Encrypted message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
-export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), fromUserIds = [], toUserIds = [], config }) {
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), fromUserIDs = [], toUserIDs = [], config }) {
   config = { ...defaultConfig, ...config };
-  checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIds = toArray(fromUserIds); toUserIds = toArray(toUserIds);
+  checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIDs = toArray(fromUserIDs); toUserIDs = toArray(toUserIDs);
   if (detached) {
     throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");
   }
@@ -262,13 +262,13 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
       privateKeys = [];
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
-      message = await message.sign(privateKeys, signature, signingKeyIDs, date, fromUserIds, message.fromStream, config);
+      message = await message.sign(privateKeys, signature, signingKeyIDs, date, fromUserIDs, message.fromStream, config);
     }
     message = message.compress(
-      await getPreferredAlgo('compression', publicKeys, date, toUserIds, config),
+      await getPreferredAlgo('compression', publicKeys, date, toUserIDs, config),
       config
     );
-    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, toUserIds, streaming, config);
+    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, toUserIDs, streaming, config);
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
   }).catch(onError.bind(null, 'Error encrypting message'));
@@ -343,27 +343,27 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param {Boolean} [options.detached=false] - If the return value should contain a detached signature
  * @param {Array<module:type/keyid~KeyID>} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
- * @param {Array<Object>} [options.fromUserIds=primary user IDs] - Array of user IDs to sign with, one per key in `privateKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
+ * @param {Array<Object>} [options.fromUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `privateKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {String|ReadableStream<String>|NodeStream<String>|Uint8Array|ReadableStream<Uint8Array>|NodeStream<Uint8Array>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
-export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, signingKeyIDs = [], date = new Date(), fromUserIds = [], config }) {
+export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, signingKeyIDs = [], date = new Date(), fromUserIDs = [], config }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
   if (message instanceof CleartextMessage && detached) throw new Error("Can't detach-sign a cleartext message");
-  privateKeys = toArray(privateKeys); fromUserIds = toArray(fromUserIds);
+  privateKeys = toArray(privateKeys); fromUserIDs = toArray(fromUserIDs);
 
   return Promise.resolve().then(async function() {
     let signature;
     if (message instanceof CleartextMessage) {
-      signature = await message.sign(privateKeys, undefined, signingKeyIDs, date, fromUserIds, config);
+      signature = await message.sign(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, config);
     } else if (detached) {
-      signature = await message.signDetached(privateKeys, undefined, signingKeyIDs, date, fromUserIds, message.fromStream, config);
+      signature = await message.signDetached(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, message.fromStream, config);
     } else {
-      signature = await message.sign(privateKeys, undefined, signingKeyIDs, date, fromUserIds, message.fromStream, config);
+      signature = await message.sign(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, message.fromStream, config);
     }
     signature = armor ? signature.armor(config) : signature.write();
     if (detached) {
@@ -438,19 +438,19 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
  * @param {Object} options
  * @param {Key|Array<Key>} options.publicKeys - Array of public keys or single key used to select algorithm preferences for
  * @param {Date} [options.date=current date] - Date to select algorithm preferences at
- * @param {Array} [options.toUserIds=primary user IDs] - User IDs to select algorithm preferences for
+ * @param {Array} [options.toUserIDs=primary user IDs] - User IDs to select algorithm preferences for
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {{ data: Uint8Array, algorithm: String }} Object with session key data and algorithm.
  * @async
  * @static
  */
-export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = [], config }) {
+export function generateSessionKey({ publicKeys, date = new Date(), toUserIDs = [], config }) {
   config = { ...defaultConfig, ...config };
-  publicKeys = toArray(publicKeys); toUserIds = toArray(toUserIds);
+  publicKeys = toArray(publicKeys); toUserIDs = toArray(toUserIDs);
 
   return Promise.resolve().then(async function() {
 
-    return Message.generateSessionKey(publicKeys, date, toUserIds, config);
+    return Message.generateSessionKey(publicKeys, date, toUserIDs, config);
 
   }).catch(onError.bind(null, 'Error generating session key'));
 }
@@ -468,19 +468,19 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIds = 
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
  * @param {Array<module:type/keyid~KeyID>} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to publicKeys[i]
  * @param {Date} [options.date=current date] - Override the date
- * @param {Array} [options.toUserIds=primary user IDs] - Array of user IDs to encrypt for, one per key in `publicKeys`, e.g. `[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]`
+ * @param {Array} [options.toUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `publicKeys`, e.g. `[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {String|Uint8Array} Encrypted session keys (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), toUserIds = [], config }) {
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, publicKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), toUserIDs = [], config }) {
   config = { ...defaultConfig, ...config };
-  checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords); toUserIds = toArray(toUserIds);
+  checkBinary(data); checkString(algorithm, 'algorithm'); publicKeys = toArray(publicKeys); passwords = toArray(passwords); toUserIDs = toArray(toUserIDs);
 
   return Promise.resolve().then(async function() {
 
-    const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, encryptionKeyIDs, date, toUserIds, config);
+    const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard, encryptionKeyIDs, date, toUserIDs, config);
     return armor ? message.armor(config) : message.write();
 
   }).catch(onError.bind(null, 'Error encrypting session key'));
