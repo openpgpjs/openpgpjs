@@ -89,7 +89,7 @@ class KeyID {
     return keyID.toHex();
   }
 
-  static fromId(hex) {
+  static fromID(hex) {
     const keyID = new KeyID();
     keyID.read(util.hexToUint8Array(hex));
     return keyID;

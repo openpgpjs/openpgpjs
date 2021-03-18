@@ -379,7 +379,7 @@ const util = {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * Different than print_debug because will call Uint8ArrayToHex iff necessary.
+   * Different than printDebug because will call Uint8ArrayToHex iff necessary.
    * @param {String} str - String of the debug message
    */
   printDebugHexArrayDump: function (str, arrToHex) {
@@ -392,7 +392,7 @@ const util = {
   /**
    * Helper function to print a debug message. Debug
    * messages are only printed if
-   * Different than print_debug because will call strToHex iff necessary.
+   * Different than printDebug because will call strToHex iff necessary.
    * @param {String} str - String of the debug message
    */
   printDebugHexStrDump: function (str, strToHex) {
@@ -466,13 +466,13 @@ const util = {
    * @param {Uint8Array} data
    */
   double: function(data) {
-    const double_var = new Uint8Array(data.length);
+    const doubleVar = new Uint8Array(data.length);
     const last = data.length - 1;
     for (let i = 0; i < last; i++) {
-      double_var[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
+      doubleVar[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
     }
-    double_var[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
-    return double_var;
+    doubleVar[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
+    return doubleVar;
   },
 
   /**

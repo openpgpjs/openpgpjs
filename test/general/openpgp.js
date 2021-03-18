@@ -1041,7 +1041,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
-        openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGcm;
+        openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM;
         openpgp.config.v5Keys = true;
 
         // Monkey-patch AEAD feature flag
@@ -2838,14 +2838,14 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
 
     describe('Specific encryption/signing key testing', async function () {
       const encryptionKeyIDs = [
-        keyIDType.fromId("87EAE0977B2185EA"),
-        keyIDType.fromId("F94F9B34AF93FA14"),
-        keyIDType.fromId("08F7D4C7C59545C0")
+        keyIDType.fromID("87EAE0977B2185EA"),
+        keyIDType.fromID("F94F9B34AF93FA14"),
+        keyIDType.fromID("08F7D4C7C59545C0")
       ];
       const signingKeyIDs = [
-        keyIDType.fromId("663277AF60400638"),
-        keyIDType.fromId("BBE14491E6EE6366"),
-        keyIDType.fromId("3E0F20F1A71D6DFD")
+        keyIDType.fromID("663277AF60400638"),
+        keyIDType.fromID("BBE14491E6EE6366"),
+        keyIDType.fromID("3E0F20F1A71D6DFD")
       ];
       const getPrimaryKey = async () => openpgp.readKey({
         armoredKey: multipleEncryptionAndSigningSubkeys

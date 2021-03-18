@@ -427,7 +427,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 }
 
 async function produceEncryptionKey(s2k, passphrase, algorithm) {
-  return s2k.produce_key(
+  return s2k.produceKey(
     passphrase,
     crypto.cipher[algorithm].keySize
   );

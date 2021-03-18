@@ -1,4 +1,4 @@
-const aes_kw = require('../../src/crypto/aes_kw');
+const aesKW = require('../../src/crypto/aes_kw');
 const util = require('../../src/util');
 
 const expect = require('chai').expect;
@@ -50,8 +50,8 @@ module.exports = () => describe('AES Key Wrap and Unwrap', function () {
       const input_bin = util.hexToStr(input);
       const output = test[3].replace(/\s/g, "");
       const output_bin = util.hexToStr(output);
-      expect(util.uint8ArrayToHex(aes_kw.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
-      expect(util.uint8ArrayToHex(aes_kw.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
+      expect(util.uint8ArrayToHex(aesKW.wrap(kek, input_bin)).toUpperCase()).to.equal(output);
+      expect(util.uint8ArrayToHex(aesKW.unwrap(kek, output_bin)).toUpperCase()).to.equal(input);
       done();
     });
   });

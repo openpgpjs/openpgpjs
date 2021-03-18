@@ -81,7 +81,7 @@ library to convert back and forth between them.
   ```
   openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax // Default, native
   openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM // **Non-standard**, fastest
   ```
 
 * For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256.

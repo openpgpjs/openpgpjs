@@ -50,7 +50,7 @@ class S2K {
     this.salt = null;
   }
 
-  get_count() {
+  getCount() {
     // Exponent bias, defined in RFC4880
     const expbias = 6;
 
@@ -146,7 +146,7 @@ class S2K {
    * @returns {Uint8Array} Produced key with a length corresponding to.
    * hashAlgorithm hash length
    */
-  async produce_key(passphrase, numBytes) {
+  async produceKey(passphrase, numBytes) {
     passphrase = util.encodeUtf8(passphrase);
     const algorithm = enums.write(enums.hash, this.algorithm);
 
@@ -166,7 +166,7 @@ class S2K {
         case 'iterated': {
           const data = util.concatUint8Array([this.salt, passphrase]);
           let datalen = data.length;
-          const count = Math.max(this.get_count(), datalen);
+          const count = Math.max(this.getCount(), datalen);
           toHash = new Uint8Array(prefixlen + count);
           toHash.set(data, prefixlen);
           for (let pos = prefixlen + datalen; pos < count; pos += datalen, datalen *= 2) {

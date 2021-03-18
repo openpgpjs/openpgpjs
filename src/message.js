@@ -35,7 +35,7 @@ import {
   SignaturePacket
 } from './packet';
 import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredAlgo, isAeadSupported, createSignaturePacket } from './key';
+import { getPreferredHashAlgo, getPreferredAlgo, isAEADSupported, createSignaturePacket } from './key';
 
 /**
  * Class that represents an OpenPGP message.
@@ -283,7 +283,7 @@ export class Message {
    */
   static async generateSessionKey(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIDs, config));
-    const aeadAlgorithm = config.aeadProtect && await isAeadSupported(keys, date, userIDs, config) ?
+    const aeadAlgorithm = config.aeadProtect && await isAEADSupported(keys, date, userIDs, config) ?
       enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIDs, config)) :
       undefined;
 
@@ -342,7 +342,7 @@ export class Message {
    * Encrypt a session key either with public keys, passwords, or both at once.
    * @param {Uint8Array} sessionKey - session key for encryption
    * @param {String} algorithm - session key algorithm
-   * @param {String} [aeadAlgorithm] - Aead algorithm, e.g. 'eax' or 'ocb'
+   * @param {String} [aeadAlgorithm] - AEAD algorithm, e.g. 'eax' or 'ocb'
    * @param {Array<Key>} [publicKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - For message encryption
    * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs

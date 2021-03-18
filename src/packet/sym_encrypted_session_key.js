@@ -128,7 +128,7 @@ class SymEncryptedSessionKeyPacket {
       this.sessionKeyAlgorithm;
 
     const length = crypto.cipher[algo].keySize;
-    const key = await this.s2k.produce_key(passphrase, length);
+    const key = await this.s2k.produceKey(passphrase, length);
 
     if (this.version === 5) {
       const mode = crypto[this.aeadAlgorithm];
@@ -163,7 +163,7 @@ class SymEncryptedSessionKeyPacket {
     this.s2k.salt = await crypto.random.getRandomBytes(8);
 
     const length = crypto.cipher[algo].keySize;
-    const key = await this.s2k.produce_key(passphrase, length);
+    const key = await this.s2k.produceKey(passphrase, length);
 
     if (this.sessionKey === null) {
       this.sessionKey = await crypto.generateSessionKey(this.sessionKeyAlgorithm);

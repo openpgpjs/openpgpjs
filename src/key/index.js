@@ -7,7 +7,7 @@ import {
 
 import {
   getPreferredAlgo,
-  isAeadSupported,
+  isAEADSupported,
   getPreferredHashAlgo,
   createSignaturePacket
 } from './helper';
@@ -20,7 +20,7 @@ export {
   generate,
   reformat,
   getPreferredAlgo,
-  isAeadSupported,
+  isAEADSupported,
   getPreferredHashAlgo,
   createSignaturePacket,
   Key

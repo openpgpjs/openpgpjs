@@ -663,7 +663,7 @@ declare class KeyID {
   bytes: string;
   equals(keyID: KeyID, matchWildcard?: boolean): boolean;
   toHex(): string;
-  static fromId(hex: string): KeyID;
+  static fromID(hex: string): KeyID;
 }
 
 interface DecryptMessageResult {
@@ -832,6 +832,6 @@ export namespace enums {
   enum aead {
     eax = 1,
     ocb = 2,
-    experimentalGcm = 100 // Private algorithm
+    experimentalGCM = 100 // Private algorithm
   }
 }

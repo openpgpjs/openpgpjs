@@ -132,14 +132,14 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @async
  */
 export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userID = {}, config) {
-  let hash_algo = config.preferredHashAlgorithm;
-  let pref_algo = hash_algo;
+  let hashAlgo = config.preferredHashAlgorithm;
+  let pref_algo = hashAlgo;
   if (key) {
     const primaryUser = await key.getPrimaryUser(date, userID, config);
     if (primaryUser.selfCertification.preferredHashAlgorithms) {
       [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
-      hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
-        pref_algo : hash_algo;
+      hashAlgo = crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(pref_algo) ?
+        pref_algo : hashAlgo;
     }
   }
   switch (Object.getPrototypeOf(keyPacket)) {
@@ -154,8 +154,8 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
           pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
       }
   }
-  return crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
-    pref_algo : hash_algo;
+  return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(pref_algo) ?
+    pref_algo : hashAlgo;
 }
 
 /**
@@ -241,7 +241,7 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
       await Promise.all(source.map(async function(sourceSig) {
         if (!sourceSig.isExpired() && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
-              return util.equalsUint8Array(destSig.write_params(), sourceSig.write_params());
+              return util.equalsUint8Array(destSig.writeParams(), sourceSig.writeParams());
             })) {
           dest[attr].push(sourceSig);
         }
@@ -318,7 +318,7 @@ export function getExpirationTime(keyPacket, signature) {
  * @returns {Boolean}
  * @async
  */
-export async function isAeadSupported(keys, date = new Date(), userIDs = [], config = defaultConfig) {
+export async function isAEADSupported(keys, date = new Date(), userIDs = [], config = defaultConfig) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key, i) {

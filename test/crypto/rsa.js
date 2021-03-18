@@ -53,12 +53,12 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const message = await random.getRandomBytes(64);
-    const hash_algo = openpgp.enums.write(openpgp.enums.hash, 'sha256');
-    const hashed = await crypto.hash.digest(hash_algo, message);
+    const hashAlgo = openpgp.enums.write(openpgp.enums.hash, 'sha256');
+    const hashed = await crypto.hash.digest(hashAlgo, message);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const signature = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+    const signature = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
     expect(signature).to.exist;
-    const verify = await crypto.publicKey.rsa.verify(hash_algo, message, signature, n, e, hashed);
+    const verify = await crypto.publicKey.rsa.verify(hashAlgo, message, signature, n, e, hashed);
     expect(verify).to.be.true;
   });
 
@@ -97,12 +97,12 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await random.getRandomBytes(64);
     const hashName = 'sha256';
-    const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
-    const hashed = await crypto.hash.digest(hash_algo, message);
+    const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
+    const hashed = await crypto.hash.digest(hashAlgo, message);
     enableNative();
-    const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+    const signatureNative = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
     disableNative();
-    const signatureBN = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
+    const signatureBN = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
     expect(util.uint8ArrayToHex(signatureNative)).to.be.equal(util.uint8ArrayToHex(signatureBN));
   });
 
@@ -112,13 +112,13 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = await random.getRandomBytes(64);
     const hashName = 'sha256';
-    const hash_algo = openpgp.enums.write(openpgp.enums.hash, hashName);
-    const hashed = await crypto.hash.digest(hash_algo, message);
+    const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
+    const hashed = await crypto.hash.digest(hashAlgo, message);
     enableNative();
-    const signatureNative = await crypto.publicKey.rsa.sign(hash_algo, message, n, e, d, p, q, u, hashed);
-    const verifyNative = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e);
+    const signatureNative = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
+    const verifyNative = await crypto.publicKey.rsa.verify(hashAlgo, message, signatureNative, n, e);
     disableNative();
-    const verifyBN = await crypto.publicKey.rsa.verify(hash_algo, message, signatureNative, n, e, hashed);
+    const verifyBN = await crypto.publicKey.rsa.verify(hashAlgo, message, signatureNative, n, e, hashed);
     expect(verifyNative).to.be.true;
     expect(verifyBN).to.be.true;
   });

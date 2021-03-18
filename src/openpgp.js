@@ -461,7 +461,7 @@ export function generateSessionKey({ publicKeys, date = new Date(), toUserIDs = 
  * @param {Object} options
  * @param {Uint8Array} options.data - The session key to be encrypted e.g. 16 random bytes (for aes128)
  * @param {String} options.algorithm - Algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
- * @param {String} [options.aeadAlgorithm] - Aead algorithm, e.g. 'eax' or 'ocb'
+ * @param {String} [options.aeadAlgorithm] - AEAD algorithm, e.g. 'eax' or 'ocb'
  * @param {Key|Array<Key>} [options.publicKeys] - Array of public keys or single key, used to encrypt the key
  * @param {String|Array<String>} [options.passwords] - Passwords for the message
  * @param {Boolean} [options.armor=true] - Whether the return values should be ascii armored (true, the default) or binary (false)

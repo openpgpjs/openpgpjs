@@ -211,7 +211,7 @@ module.exports = () => describe("Packet", function() {
     const literal = new openpgp.LiteralDataPacket();
     const enc = new openpgp.AEADEncryptedDataPacket();
     const msg = new openpgp.PacketList();
-    enc.aeadAlgorithm = 'experimentalGcm';
+    enc.aeadAlgorithm = 'experimentalGCM';
 
     msg.push(enc);
     literal.setText(testText);
