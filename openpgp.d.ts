@@ -691,10 +691,6 @@ export function unarmor(input: string, config?: Config): Promise<{ text: string,
 /* ############## v5 ENUMS #################### */
 
 export namespace enums {
-  type enumType = typeof armor | reasonForRevocation;
-  type enumValue = armor | reasonForRevocation;
-  type enumName = armorNames
-
   function read(type: typeof armor, e: armor): armorNames;
   function read(type: typeof compression, e: compression): compressionNames;
   function read(type: typeof hash, e: hash): hashNames;
@@ -703,8 +699,6 @@ export namespace enums {
   function read(type: typeof symmetric, e: symmetric): symmetricNames;
   function read(type: typeof keyStatus, e: keyStatus): keyStatusNames;
   function read(type: typeof keyFlags, e: keyFlags): keyFlagsNames;
-
-  function write(type: enumType, e: string | number ) : enumValue;
 
   export type armorNames = 'multipartSection' | 'multipartLast' | 'signed' | 'message' | 'publicKey' | 'privateKey';
   enum armor {
