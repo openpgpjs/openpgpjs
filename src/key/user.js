@@ -16,8 +16,8 @@ class User {
     if (!(this instanceof User)) {
       return new User(userPacket);
     }
-    this.userID = userPacket.tag === enums.packet.userID ? userPacket : null;
-    this.userAttribute = userPacket.tag === enums.packet.userAttribute ? userPacket : null;
+    this.userID = userPacket.constructor.tag === enums.packet.userID ? userPacket : null;
+    this.userAttribute = userPacket.constructor.tag === enums.packet.userAttribute ? userPacket : null;
     this.selfCertifications = [];
     this.otherCertifications = [];
     this.revocationSignatures = [];

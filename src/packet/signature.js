@@ -32,11 +32,12 @@ import defaultConfig from '../config';
  * block of text, and a signature that is a certification of a User ID.
  */
 class SignaturePacket {
+  static tag = enums.packet.signature;
+
   /**
    * @param {Date} date - The creation date of the signature
    */
   constructor(date = new Date()) {
-    this.tag = enums.packet.signature;
     this.version = 4; // This is set to 5 below if we sign with a V5 key.
     this.signatureType = null;
     this.hashAlgorithm = null;

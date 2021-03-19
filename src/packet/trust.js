@@ -18,9 +18,7 @@ import enums from '../enums';
  * other than local keyring files.
  */
 class TrustPacket {
-  constructor() {
-    this.tag = enums.packet.trust;
-  }
+  static tag = enums.packet.trust;
 
   /**
    * Parsing function for a trust packet (tag 12).

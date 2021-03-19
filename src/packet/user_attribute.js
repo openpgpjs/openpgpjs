@@ -37,8 +37,9 @@ import util from '../util';
  * an implementation may use any method desired.
  */
 class UserAttributePacket {
+  static tag = enums.packet.userAttribute;
+
   constructor() {
-    this.tag = enums.packet.userAttribute;
     this.attributes = [];
   }
 

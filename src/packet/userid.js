@@ -31,8 +31,9 @@ import defaultConfig from '../config';
  * specifies the length of the User ID.
  */
 class UserIDPacket {
+  static tag = enums.packet.userID;
+
   constructor() {
-    this.tag = enums.packet.userID;
     /** A string containing the user id. Usually in the form
      * John Doe <john@example.com>
      * @type {String}

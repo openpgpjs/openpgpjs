@@ -37,8 +37,9 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * AEAD Protected Data Packet
  */
 class AEADEncryptedDataPacket {
+  static tag = enums.packet.AEADEncryptedData;
+
   constructor() {
-    this.tag = enums.packet.AEADEncryptedData;
     this.version = VERSION;
     this.cipherAlgo = null;
     this.aeadAlgorithm = 'eax';
@@ -132,7 +133,7 @@ class AEADEncryptedDataPacket {
     const adataTagArray = new Uint8Array(adataBuffer);
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+    adataArray.set([0xC0 | this.constructor.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     let chunkIndex = 0;
     let latestPromise = Promise.resolve();
     let cryptedBytes = 0;

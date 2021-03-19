@@ -38,12 +38,9 @@ import defaultConfig from '../config';
  * that form whole OpenPGP messages).
  */
 class SymmetricallyEncryptedDataPacket {
+  static tag = enums.packet.symmetricallyEncryptedData;
+
   constructor() {
-    /**
-     * Packet type
-     * @type {module:enums.packet}
-     */
-    this.tag = enums.packet.symmetricallyEncryptedData;
     /**
      * Encrypted secret-key data
      */

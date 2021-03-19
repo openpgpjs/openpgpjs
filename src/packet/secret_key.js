@@ -29,17 +29,14 @@ import defaultConfig from '../config';
  * @extends PublicKeyPacket
  */
 class SecretKeyPacket extends PublicKeyPacket {
+  static tag = enums.packet.secretKey;
+
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
     super(date, config);
-    /**
-     * Packet type
-     * @type {module:enums.packet}
-     */
-    this.tag = enums.packet.secretKey;
     /**
      * Secret-key data
      */

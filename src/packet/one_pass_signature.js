@@ -32,12 +32,9 @@ import util from '../util';
  * can compute the entire signed message in one pass.
  */
 class OnePassSignaturePacket {
+  static tag = enums.packet.onePassSignature;
+
   constructor() {
-    /**
-     * Packet type
-     * @type {module:enums.packet}
-     */
-    this.tag = enums.packet.onePassSignature;
     /** A one-octet version number.  The current version is 3. */
     this.version = null;
     /**
@@ -119,7 +116,7 @@ class OnePassSignaturePacket {
 
   async verify() {
     const correspondingSig = await this.correspondingSig;
-    if (!correspondingSig || correspondingSig.tag !== enums.packet.signature) {
+    if (!correspondingSig || correspondingSig.constructor.tag !== enums.packet.signature) {
       throw new Error('Corresponding signature packet missing');
     }
     if (

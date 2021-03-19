@@ -25,13 +25,14 @@ import defaultConfig from '../config';
  * @extends SecretKeyPacket
  */
 class SecretSubkeyPacket extends SecretKeyPacket {
+  static tag = enums.packet.secretSubkey;
+
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
     super(date, config);
-    this.tag = enums.packet.secretSubkey;
   }
 }
 

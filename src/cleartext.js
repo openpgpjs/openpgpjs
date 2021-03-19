@@ -164,7 +164,7 @@ function verifyHeaders(headers, packetlist) {
     const check = packet => algo => packet.hashAlgorithm === algo;
 
     for (let i = 0; i < packetlist.length; i++) {
-      if (packetlist[i].tag === enums.packet.signature && !hashAlgos.some(check(packetlist[i]))) {
+      if (packetlist[i].constructor.tag === enums.packet.signature && !hashAlgos.some(check(packetlist[i]))) {
         return false;
       }
     }

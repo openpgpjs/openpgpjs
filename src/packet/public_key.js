@@ -37,16 +37,13 @@ import util from '../util';
  * key (sometimes called an OpenPGP certificate).
  */
 class PublicKeyPacket {
+  static tag = enums.packet.publicKey;
+
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
-    /**
-     * Packet type
-     * @type {module:enums.packet}
-     */
-    this.tag = enums.packet.publicKey;
     /**
      * Packet version
      * @type {Integer}

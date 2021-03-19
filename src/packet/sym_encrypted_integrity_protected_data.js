@@ -40,8 +40,9 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * packet.
  */
 class SymEncryptedIntegrityProtectedDataPacket {
+  static tag = enums.packet.symEncryptedIntegrityProtectedData;
+
   constructor() {
-    this.tag = enums.packet.symEncryptedIntegrityProtectedData;
     this.version = VERSION;
     /** The encrypted payload. */
     this.encrypted = null; // string

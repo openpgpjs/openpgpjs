@@ -71,7 +71,7 @@ class Key {
     let primaryKeyID;
     let subKey;
     for (let i = 0; i < packetlist.length; i++) {
-      switch (packetlist[i].tag) {
+      switch (packetlist[i].constructor.tag) {
         case enums.packet.publicKey:
         case enums.packet.secretKey:
           if (this.keyPacket) {
@@ -216,7 +216,7 @@ class Key {
    * @returns {Boolean}
    */
   isPublic() {
-    return this.keyPacket.tag === enums.packet.publicKey;
+    return this.keyPacket.constructor.tag === enums.packet.publicKey;
   }
 
   /**
@@ -224,7 +224,7 @@ class Key {
    * @returns {Boolean}
    */
   isPrivate() {
-    return this.keyPacket.tag === enums.packet.secretKey;
+    return this.keyPacket.constructor.tag === enums.packet.secretKey;
   }
 
   /**
@@ -239,7 +239,7 @@ class Key {
     let pubKeyPacket;
     let pubSubkeyPacket;
     for (let i = 0; i < keyPackets.length; i++) {
-      switch (keyPackets[i].tag) {
+      switch (keyPackets[i].constructor.tag) {
         case enums.packet.secretKey:
           bytes = keyPackets[i].writePublicKey();
           pubKeyPacket = new PublicKeyPacket();

@@ -38,15 +38,12 @@ import {
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
  */
 class CompressedDataPacket {
+  static tag = enums.packet.compressedData;
+
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(config = defaultConfig) {
-    /**
-     * Packet type
-     * @type {module:enums.packet}
-     */
-    this.tag = enums.packet.compressedData;
     /**
      * List of packets
      * @type {PacketList}

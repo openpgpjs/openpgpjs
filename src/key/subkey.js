@@ -125,8 +125,8 @@ class SubKey {
       throw new Error('SubKey update method: fingerprints of subkeys not equal');
     }
     // key packet
-    if (this.keyPacket.tag === enums.packet.publicSubkey &&
-        subKey.keyPacket.tag === enums.packet.secretSubkey) {
+    if (this.keyPacket.constructor.tag === enums.packet.publicSubkey &&
+        subKey.keyPacket.constructor.tag === enums.packet.secretSubkey) {
       this.keyPacket = subKey.keyPacket;
     }
     // update missing binding signatures

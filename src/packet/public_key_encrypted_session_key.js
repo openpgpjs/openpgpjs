@@ -37,8 +37,9 @@ import util from '../util';
  * decrypt the message.
  */
 class PublicKeyEncryptedSessionKeyPacket {
+  static tag = enums.packet.publicKeyEncryptedSessionKey;
+
   constructor() {
-    this.tag = enums.packet.publicKeyEncryptedSessionKey;
     this.version = 3;
 
     this.publicKeyID = new KeyID();

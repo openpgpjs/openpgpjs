@@ -155,9 +155,9 @@ module.exports = () => describe('Custom configuration', function() {
       const encrypted = await openpgp.readMessage({ armoredMessage: armored });
       const { packets: [skesk, encData] } = encrypted;
       expect(skesk.version).to.equal(4); // cfb
-      expect(encData.tag).to.equal(openpgp.enums.packet.symEncryptedIntegrityProtectedData);
+      expect(encData.constructor.tag).to.equal(openpgp.enums.packet.symEncryptedIntegrityProtectedData);
       const { packets: [literal] } = await encrypted.decrypt(null, passwords, null, encrypted.fromStream, openpgp.config);
-      expect(literal.tag).to.equal(openpgp.enums.packet.literalData);
+      expect(literal.constructor.tag).to.equal(openpgp.enums.packet.literalData);
 
       const config = {
         aeadProtect: true,
@@ -168,9 +168,9 @@ module.exports = () => describe('Custom configuration', function() {
       const encrypted2 = await openpgp.readMessage({ armoredMessage: armored2 });
       const { packets: [skesk2, encData2] } = encrypted2;
       expect(skesk2.version).to.equal(5);
-      expect(encData2.tag).to.equal(openpgp.enums.packet.AEADEncryptedData);
+      expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.AEADEncryptedData);
       const { packets: [compressed] } = await encrypted2.decrypt(null, passwords, null, encrypted2.fromStream, openpgp.config);
-      expect(compressed.tag).to.equal(openpgp.enums.packet.compressedData);
+      expect(compressed.constructor.tag).to.equal(openpgp.enums.packet.compressedData);
       expect(compressed.algorithm).to.equal("zip");
 
       const userIDs = { name: 'Test User', email: 'text2@example.com' };

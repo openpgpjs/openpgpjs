@@ -27,11 +27,12 @@ import util from '../util';
  * further interpreted.
  */
 class LiteralDataPacket {
+  static tag = enums.packet.literalData;
+
   /**
    * @param {Date} date - The creation date of the literal package
    */
   constructor(date = new Date()) {
-    this.tag = enums.packet.literalData;
     this.format = 'utf8'; // default format for literal data packets
     this.date = util.normalizeDate(date);
     this.text = null; // textual data representation
