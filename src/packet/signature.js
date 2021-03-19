@@ -331,10 +331,10 @@ class SignaturePacket {
 
   // V4 signature sub packets
 
-  read_sub_packet(bytes, trusted = true) {
+  readSubPacket(bytes, trusted = true) {
     let mypos = 0;
 
-    const read_array = (prop, bytes) => {
+    const readArray = (prop, bytes) => {
       this[prop] = [];
 
       for (let i = 0; i < bytes.length; i++) {
@@ -403,7 +403,7 @@ class SignaturePacket {
       }
       case 11:
         // Preferred Symmetric Algorithms
-        read_array('preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
+        readArray('preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
         break;
       case 12:
         // Revocation Key
@@ -443,15 +443,15 @@ class SignaturePacket {
       }
       case 21:
         // Preferred Hash Algorithms
-        read_array('preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
+        readArray('preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
         break;
       case 22:
         // Preferred Compression Algorithms
-        read_array('preferredCompressionAlgorithms', bytes.subarray(mypos, bytes.length));
+        readArray('preferredCompressionAlgorithms', bytes.subarray(mypos, bytes.length));
         break;
       case 23:
         // Key Server Preferences
-        read_array('keyServerPreferences', bytes.subarray(mypos, bytes.length));
+        readArray('keyServerPreferences', bytes.subarray(mypos, bytes.length));
         break;
       case 24:
         // Preferred Key Server
@@ -467,7 +467,7 @@ class SignaturePacket {
         break;
       case 27:
         // Key Flags
-        read_array('keyFlags', bytes.subarray(mypos, bytes.length));
+        readArray('keyFlags', bytes.subarray(mypos, bytes.length));
         break;
       case 28:
         // Signer's User ID
@@ -480,7 +480,7 @@ class SignaturePacket {
         break;
       case 30:
         // Features
-        read_array('features', bytes.subarray(mypos, bytes.length));
+        readArray('features', bytes.subarray(mypos, bytes.length));
         break;
       case 31: {
         // Signature Target
@@ -510,7 +510,7 @@ class SignaturePacket {
         break;
       case 34:
         // Preferred AEAD Algorithms
-        read_array.call(this, 'preferredAEADAlgorithms', bytes.subarray(mypos, bytes.length));
+        readArray.call(this, 'preferredAEADAlgorithms', bytes.subarray(mypos, bytes.length));
         break;
       default: {
         const err = new Error("Unknown signature subpacket type " + type + " @:" + mypos);
@@ -534,7 +534,7 @@ class SignaturePacket {
       const len = readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
-      this.read_sub_packet(bytes.subarray(i, i + len.len), trusted, config);
+      this.readSubPacket(bytes.subarray(i, i + len.len), trusted, config);
 
       i += len.len;
     }
