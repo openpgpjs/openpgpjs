@@ -37,7 +37,7 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * AEAD Protected Data Packet
  */
 class AEADEncryptedDataPacket {
-  static tag = enums.packet.AEADEncryptedData;
+  static tag = enums.packet.aeadEncryptedData;
 
   constructor() {
     this.version = VERSION;

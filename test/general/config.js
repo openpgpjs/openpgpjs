@@ -168,7 +168,7 @@ module.exports = () => describe('Custom configuration', function() {
       const encrypted2 = await openpgp.readMessage({ armoredMessage: armored2 });
       const { packets: [skesk2, encData2] } = encrypted2;
       expect(skesk2.version).to.equal(5);
-      expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.AEADEncryptedData);
+      expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.aeadEncryptedData);
       const { packets: [compressed] } = await encrypted2.decrypt(null, passwords, null, encrypted2.fromStream, openpgp.config);
       expect(compressed.constructor.tag).to.equal(openpgp.enums.packet.compressedData);
       expect(compressed.algorithm).to.equal("zip");

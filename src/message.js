@@ -101,7 +101,7 @@ export class Message {
     const symEncryptedPacketlist = this.packets.filterByTag(
       enums.packet.symmetricallyEncryptedData,
       enums.packet.symEncryptedIntegrityProtectedData,
-      enums.packet.AEADEncryptedData
+      enums.packet.aeadEncryptedData
     );
 
     if (symEncryptedPacketlist.length === 0) {

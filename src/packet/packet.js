@@ -106,7 +106,7 @@ export function supportsStreaming(tag_type) {
     enums.packet.compressedData,
     enums.packet.symmetricallyEncryptedData,
     enums.packet.symEncryptedIntegrityProtectedData,
-    enums.packet.AEADEncryptedData
+    enums.packet.aeadEncryptedData
   ].includes(tag_type);
 }
 
