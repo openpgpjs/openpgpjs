@@ -368,7 +368,7 @@ export default {
     keyServerPreferences: 23,
     preferredKeyServer: 24,
     primaryUserID: 25,
-    policyUri: 26,
+    policyURI: 26,
     keyFlags: 27,
     signersUserID: 28,
     reasonForRevocation: 29,

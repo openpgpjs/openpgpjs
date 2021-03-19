@@ -263,7 +263,7 @@ class SignaturePacket {
       arr.push(writeSubPacket(sub.primaryUserID, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
     }
     if (this.policyURI !== null) {
-      arr.push(writeSubPacket(sub.policyUri, util.stringToUint8Array(this.policyURI)));
+      arr.push(writeSubPacket(sub.policyURI, util.stringToUint8Array(this.policyURI)));
     }
     if (this.keyFlags !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.keyFlags));
