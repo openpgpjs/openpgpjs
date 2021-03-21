@@ -545,10 +545,11 @@ Using the private key:
     await privateKey.decrypt(passphrase);
 
     const message = openpgp.Message.fromBinary(readableStream); // or .fromText(readableStream: ReadableStream<String>)
-    const signatureArmored = await openpgp.sign({
+    const signed = await openpgp.sign({
         message,
         privateKeys: privateKey // for signing
     });
+    const signatureArmored = await openpgp.stream.readToEnd(signed);
     console.log(signatureArmored); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
     const verified = await openpgp.verify({
