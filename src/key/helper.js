@@ -9,24 +9,12 @@ import {
   PublicSubkeyPacket,
   SecretKeyPacket,
   SecretSubkeyPacket,
-  UserIDPacket,
-  UserAttributePacket,
   SignaturePacket
 } from '../packet';
 import enums from '../enums';
 import crypto from '../crypto';
 import util from '../util';
 import defaultConfig from '../config';
-
-export const allowedKeyPackets = {
-  PublicKeyPacket,
-  PublicSubkeyPacket,
-  SecretKeyPacket,
-  SecretSubkeyPacket,
-  UserIDPacket,
-  UserAttributePacket,
-  SignaturePacket
-};
 
 export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);

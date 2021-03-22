@@ -37,8 +37,6 @@ import util from '../util';
  * decrypt the message.
  */
 class PublicKeyEncryptedSessionKeyPacket {
-  static tag = enums.packet.publicKeyEncryptedSessionKey;
-
   constructor() {
     this.version = 3;
 
@@ -130,5 +128,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     return true;
   }
 }
+// Static fields (explicit declaration not fully supported by Safari)
+PublicKeyEncryptedSessionKeyPacket.tag = enums.packet.publicKeyEncryptedSessionKey;
 
 export default PublicKeyEncryptedSessionKeyPacket;

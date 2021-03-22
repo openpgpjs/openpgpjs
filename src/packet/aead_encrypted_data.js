@@ -19,13 +19,20 @@ import stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// An AEAD-encrypted Data packet can contain the following packet types
+const allowedPackets = util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -37,8 +44,6 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * AEAD Protected Data Packet
  */
 class AEADEncryptedDataPacket {
-  static tag = enums.packet.aeadEncryptedData;
-
   constructor() {
     this.version = VERSION;
     this.cipherAlgo = null;
@@ -85,12 +90,7 @@ class AEADEncryptedDataPacket {
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, streaming) {
-    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), allowedPackets, streaming);
   }
 
   /**
@@ -133,7 +133,7 @@ class AEADEncryptedDataPacket {
     const adataTagArray = new Uint8Array(adataBuffer);
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | this.constructor.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+    adataArray.set([0xC0 | AEADEncryptedDataPacket.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     let chunkIndex = 0;
     let latestPromise = Promise.resolve();
     let cryptedBytes = 0;
@@ -190,5 +190,7 @@ class AEADEncryptedDataPacket {
     });
   }
 }
+// Static fields (explicit declaration not fully supported by Safari)
+AEADEncryptedDataPacket.tag = enums.packet.aeadEncryptedData;
 
 export default AEADEncryptedDataPacket;

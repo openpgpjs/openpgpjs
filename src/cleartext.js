@@ -23,6 +23,9 @@ import { Signature } from './signature';
 import { createVerificationObjects, createSignaturePackets } from './message';
 import defaultConfig from './config';
 
+// A Cleartext message can contain the following packets
+const allowedPackets = util.constructAllowedPackets([SignaturePacket]);
+
 /**
  * Class that represents an OpenPGP cleartext signed message.
  * See {@link https://tools.ietf.org/html/rfc4880#section-7}
@@ -127,7 +130,6 @@ export class CleartextMessage {
   }
 }
 
-
 /**
  * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {Object} options
@@ -147,7 +149,7 @@ export async function readCleartextMessage({ cleartextMessage, config }) {
     throw new Error('No cleartext signed message.');
   }
   const packetlist = new PacketList();
-  await packetlist.read(input.data, { SignaturePacket }, undefined, config);
+  await packetlist.read(input.data, allowedPackets, undefined, config);
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
   return new CleartextMessage(input.text, signature);

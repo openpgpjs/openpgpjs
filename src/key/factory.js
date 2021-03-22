@@ -15,13 +15,33 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { PacketList, UserIDPacket, SignaturePacket } from '../packet';
+import {
+  PacketList,
+  UserIDPacket,
+  SignaturePacket,
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserAttributePacket
+} from '../packet';
 import Key from './key';
 import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
 import { unarmor } from '../encoding/armor';
+
+// A Key can contain the following packets
+const allowedKeyPackets = util.constructAllowedPackets([
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserIDPacket,
+  UserAttributePacket,
+  SignaturePacket
+]);
 
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
@@ -256,7 +276,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
     input = binaryKey;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
+  await packetlist.read(input, allowedKeyPackets, undefined, config);
   return new Key(packetlist);
 }
 
@@ -285,7 +305,7 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   }
   const keys = [];
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
+  await packetlist.read(input, allowedKeyPackets, undefined, config);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');

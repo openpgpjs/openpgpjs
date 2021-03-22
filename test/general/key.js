@@ -4,6 +4,7 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 const key = require('../../src/key');
+const allPackets = require('../../src/packet/all_packets');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -2754,7 +2755,7 @@ module.exports = () => describe('Key', function() {
     `.replace(/\s+/g, ''));
 
     const packetlist = new openpgp.PacketList();
-    await packetlist.read(packetBytes, { PublicKeyPacket: openpgp.PublicKeyPacket }, undefined, openpgp.config);
+    await packetlist.read(packetBytes, util.constructAllowedPackets([openpgp.PublicKeyPacket]), undefined, openpgp.config);
     const key = packetlist[0];
     expect(key).to.exist;
   });
@@ -2784,7 +2785,7 @@ module.exports = () => describe('Key', function() {
 
     const packetlist = new openpgp.PacketList();
 
-    await packetlist.read((await openpgp.unarmor(pub_sig_test)).data, openpgp, undefined, openpgp.config);
+    await packetlist.read((await openpgp.unarmor(pub_sig_test)).data, util.constructAllowedPackets([...Object.values(allPackets)]), undefined, openpgp.config);
 
     const subkeys = pubKey.getSubkeys();
     expect(subkeys).to.exist;
@@ -3264,7 +3265,7 @@ module.exports = () => describe('Key', function() {
 
     const input = await openpgp.unarmor(revocation_certificate_arm4);
     const packetlist = new openpgp.PacketList();
-    await packetlist.read(input.data, { SignaturePacket: openpgp.SignaturePacket }, undefined, openpgp.config);
+    await packetlist.read(input.data, util.constructAllowedPackets([openpgp.SignaturePacket]), undefined, openpgp.config);
     const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write());
 
     expect(revocationCertificate.replace(/^Comment: .*$\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\n/mg, ''));

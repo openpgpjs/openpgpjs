@@ -1,34 +1,25 @@
 import stream from '@openpgp/web-stream-tools';
-import * as packetClasses from './all_packets';
 import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength
 } from './packet';
 import util from '../util';
+import enums from '../enums';
 import defaultConfig from '../config';
 
-const mapPacketTagToClassName = (() => {
-  const map = {};
-  for (const className of Object.keys(packetClasses)) {
-    const PacketClass = packetClasses[className];
-    map[PacketClass.tag] = className;
-  }
-  return map;
-})();
-
 /**
- * Allocate a new packet
+ * Instantiate a new packet given its tag
  * @function newPacketFromTag
- * @param {module:enums.packet} tag - Property name from {@link module:enums.packet}
- * @returns {Object} New packet object with type based on tag.
+ * @param {module:enums.packet} tag - Property value from {@link module:enums.packet}
+ * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
+ * @returns {Object} New packet object with type based on tag
  */
 export function newPacketFromTag(tag, allowedPackets) {
-  const className = mapPacketTagToClassName[tag];
-  if (!allowedPackets[className]) {
-    throw new Error(`Packet not allowed in this context: ${className}`);
+  if (!allowedPackets[tag]) {
+    throw new Error(`Packet not allowed in this context: ${enums.read(enums.packets, tag)}`);
   }
-  return new allowedPackets[className]();
+  return new allowedPackets[tag]();
 }
 
 /**

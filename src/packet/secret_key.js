@@ -29,8 +29,6 @@ import defaultConfig from '../config';
  * @extends PublicKeyPacket
  */
 class SecretKeyPacket extends PublicKeyPacket {
-  static tag = enums.packet.secretKey;
-
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -429,5 +427,7 @@ async function produceEncryptionKey(s2k, passphrase, algorithm) {
     crypto.cipher[algorithm].keySize
   );
 }
+// Static fields (explicit declaration not fully supported by Safari)
+SecretKeyPacket.tag = enums.packet.secretKey;
 
 export default SecretKeyPacket;

@@ -37,8 +37,6 @@ import util from '../util';
  * key (sometimes called an OpenPGP certificate).
  */
 class PublicKeyPacket {
-  static tag = enums.packet.publicKey;
-
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -250,5 +248,7 @@ PublicKeyPacket.prototype.readPublicKey = PublicKeyPacket.prototype.read;
  * @see PublicKeyPacket#write
  */
 PublicKeyPacket.prototype.writePublicKey = PublicKeyPacket.prototype.write;
+// Static fields (explicit declaration not fully supported by Safari)
+PublicKeyPacket.tag = enums.packet.publicKey;
 
 export default PublicKeyPacket;

@@ -25,8 +25,6 @@ import defaultConfig from '../config';
  * @extends SecretKeyPacket
  */
 class SecretSubkeyPacket extends SecretKeyPacket {
-  static tag = enums.packet.secretSubkey;
-
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -35,5 +33,7 @@ class SecretSubkeyPacket extends SecretKeyPacket {
     super(date, config);
   }
 }
+// Static fields (explicit declaration not fully supported by Safari)
+SecretSubkeyPacket.tag = enums.packet.secretSubkey;
 
 export default SecretSubkeyPacket;

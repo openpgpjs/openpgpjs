@@ -35,8 +35,6 @@ import util from '../util';
  * the Symmetric-Key Encrypted Session Key packet.
  */
 class SymEncryptedSessionKeyPacket {
-  static tag = enums.packet.symEncryptedSessionKey;
-
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
@@ -133,7 +131,7 @@ class SymEncryptedSessionKeyPacket {
 
     if (this.version === 5) {
       const mode = crypto.mode[this.aeadAlgorithm];
-      const adata = new Uint8Array([0xC0 | this.constructor.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
+      const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
       const modeInstance = await mode(algo, key);
       this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
     } else if (this.encrypted !== null) {
@@ -173,7 +171,7 @@ class SymEncryptedSessionKeyPacket {
     if (this.version === 5) {
       const mode = crypto.mode[this.aeadAlgorithm];
       this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
-      const adata = new Uint8Array([0xC0 | this.constructor.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
+      const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
       const modeInstance = await mode(algo, key);
       this.encrypted = await modeInstance.encrypt(this.sessionKey, this.iv, adata);
     } else {
@@ -183,5 +181,7 @@ class SymEncryptedSessionKeyPacket {
     }
   }
 }
+// Static fields (explicit declaration not fully supported by Safari)
+SymEncryptedSessionKeyPacket.tag = enums.packet.symEncryptedSessionKey;
 
 export default SymEncryptedSessionKeyPacket;

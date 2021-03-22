@@ -19,13 +19,20 @@ import stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// A SEIP packet can contain the following packet types
+const allowedPackets = util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -40,8 +47,6 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * packet.
  */
 class SymEncryptedIntegrityProtectedDataPacket {
-  static tag = enums.packet.symEncryptedIntegrityProtectedData;
-
   constructor() {
     this.version = VERSION;
     /** The encrypted payload. */
@@ -131,14 +136,11 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
       packetbytes = await stream.readToEnd(packetbytes);
     }
-    await this.packets.read(packetbytes, {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(packetbytes, allowedPackets, streaming);
     return true;
   }
 }
+// Static fields (explicit declaration not fully supported by Safari)
+SymEncryptedIntegrityProtectedDataPacket.tag = enums.packet.symEncryptedIntegrityProtectedData;
 
 export default SymEncryptedIntegrityProtectedDataPacket;

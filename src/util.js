@@ -674,6 +674,21 @@ const util = {
     } catch (e) {}
 
     return error;
+  },
+
+  /**
+   * Map allowed packet tags to corresponding classes
+   * Meant to be used to format `allowedPacket` for Packetlist.read
+   * @param {Array<Object>} allowedClasses
+   * @returns {Object} map from enum.packet to corresponding *Packet class
+   */
+  constructAllowedPackets: /*#__PURE__*/ function(allowedClasses) {
+    const map = {};
+    allowedClasses.forEach(PacketClass => {
+      if (!PacketClass.tag) return;
+      map[PacketClass.tag] = PacketClass;
+    });
+    return map;
   }
 };
 

@@ -19,13 +19,20 @@ import stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// A SE packet can contain the following packet types
+const allowedPackets = util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
@@ -38,8 +45,6 @@ import defaultConfig from '../config';
  * that form whole OpenPGP messages).
  */
 class SymmetricallyEncryptedDataPacket {
-  static tag = enums.packet.symmetricallyEncryptedData;
-
   constructor() {
     /**
      * Encrypted secret-key data
@@ -82,12 +87,7 @@ class SymmetricallyEncryptedDataPacket {
       encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
     );
 
-    await this.packets.read(decrypted, {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(decrypted, allowedPackets, streaming);
   }
 
   /**
@@ -108,5 +108,7 @@ class SymmetricallyEncryptedDataPacket {
     this.encrypted = util.concat([FRE, ciphertext]);
   }
 }
+// Static fields (explicit declaration not fully supported by Safari)
+SymmetricallyEncryptedDataPacket.tag = enums.packet.symmetricallyEncryptedData;
 
 export default SymmetricallyEncryptedDataPacket;

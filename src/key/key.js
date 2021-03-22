@@ -29,6 +29,9 @@ import User from './user';
 import SubKey from './subkey';
 import * as helper from './helper';
 
+// A key revocation certificate can contain the following packets
+const allowedRevocationPackets = util.constructAllowedPackets([SignaturePacket]);
+
 /**
  * Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
@@ -797,7 +800,7 @@ class Key {
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
     const input = await unarmor(revocationCertificate, config);
     const packetlist = new PacketList();
-    await packetlist.read(input.data, { SignaturePacket }, undefined, config);
+    await packetlist.read(input.data, allowedRevocationPackets, undefined, config);
     const revocationSignature = packetlist.findPacket(enums.packet.signature);
     if (!revocationSignature || revocationSignature.signatureType !== enums.signature.keyRevocation) {
       throw new Error('Could not find revocation signature packet');
@@ -950,3 +953,4 @@ class Key {
 });
 
 export default Key;
+

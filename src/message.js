@@ -22,6 +22,8 @@ import defaultConfig from './config';
 import crypto from './crypto';
 import enums from './enums';
 import util from './util';
+import { Signature } from './signature';
+import { getPreferredHashAlgo, getPreferredAlgo, isAEADSupported, createSignaturePacket } from './key';
 import {
   PacketList,
   LiteralDataPacket,
@@ -34,8 +36,23 @@ import {
   OnePassSignaturePacket,
   SignaturePacket
 } from './packet';
-import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredAlgo, isAEADSupported, createSignaturePacket } from './key';
+
+// A Message can contain the following packets
+const allowedMessagePackets = util.constructAllowedPackets([
+  LiteralDataPacket,
+  CompressedDataPacket,
+  AEADEncryptedDataPacket,
+  SymEncryptedIntegrityProtectedDataPacket,
+  SymmetricallyEncryptedDataPacket,
+  PublicKeyEncryptedSessionKeyPacket,
+  SymEncryptedSessionKeyPacket,
+  OnePassSignaturePacket,
+  SignaturePacket
+]);
+// A SKESK packet can contain the following packets
+const allowedSymSessionKeyPackets = util.constructAllowedPackets([SymEncryptedSessionKeyPacket]);
+// A detached signature can contain the following packets
+const allowedDetachedSignaturePackets = util.constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP message.
@@ -159,7 +176,7 @@ export class Message {
         let packets;
         if (i) {
           packets = new PacketList();
-          await packets.read(symESKeyPacketlist.write(), { SymEncryptedSessionKeyPacket });
+          await packets.read(symESKeyPacketlist.write(), allowedSymSessionKeyPackets);
         } else {
           packets = symESKeyPacketlist;
         }
@@ -610,7 +627,10 @@ export class Message {
    * @param {String|Uint8Array} detachedSignature - The detached ASCII-armored or Uint8Array PGP signature
    */
   async appendSignature(detachedSignature) {
-    await this.packets.read(util.isUint8Array(detachedSignature) ? detachedSignature : (await unarmor(detachedSignature)).data, { SignaturePacket });
+    await this.packets.read(
+      util.isUint8Array(detachedSignature) ? detachedSignature : (await unarmor(detachedSignature)).data,
+      allowedDetachedSignaturePackets
+    );
   }
 
   /**
@@ -853,18 +873,9 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
     input = data;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, {
-    LiteralDataPacket,
-    CompressedDataPacket,
-    AEADEncryptedDataPacket,
-    SymEncryptedIntegrityProtectedDataPacket,
-    SymmetricallyEncryptedDataPacket,
-    PublicKeyEncryptedSessionKeyPacket,
-    SymEncryptedSessionKeyPacket,
-    OnePassSignaturePacket,
-    SignaturePacket
-  }, streamType, config);
+  await packetlist.read(input, allowedMessagePackets, streamType, config);
   const message = new Message(packetlist);
   message.fromStream = streamType;
   return message;
 }
+

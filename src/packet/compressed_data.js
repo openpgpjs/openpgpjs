@@ -23,11 +23,17 @@ import stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
-import {
+
+import LiteralDataPacket from './literal_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// A Compressed Data packet can contain the following packet types
+const allowedPackets = util.constructAllowedPackets([
   LiteralDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
+]);
 
 /**
  * Implementation of the Compressed Data Packet (Tag 8)
@@ -38,8 +44,6 @@ import {
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
  */
 class CompressedDataPacket {
-  static tag = enums.packet.compressedData;
-
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
@@ -108,11 +112,7 @@ class CompressedDataPacket {
       throw new Error(this.algorithm + ' decompression not supported');
     }
 
-    await this.packets.read(decompress_fns[this.algorithm](this.compressed), {
-      LiteralDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(decompress_fns[this.algorithm](this.compressed), allowedPackets, streaming);
   }
 
   /**
@@ -126,6 +126,8 @@ class CompressedDataPacket {
     this.compressed = compress_fns[this.algorithm](this.packets.write(), this.deflateLevel);
   }
 }
+// Static fields (explicit declaration not fully supported by Safari)
+CompressedDataPacket.tag = enums.packet.compressedData;
 
 export default CompressedDataPacket;
 
@@ -190,3 +192,4 @@ const decompress_fns = nodeZlib ? {
   zlib: /*#__PURE__*/ pako_zlib(Inflate),
   bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
 };
+

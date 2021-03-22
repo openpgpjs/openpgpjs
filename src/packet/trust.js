@@ -18,8 +18,6 @@ import enums from '../enums';
  * other than local keyring files.
  */
 class TrustPacket {
-  static tag = enums.packet.trust;
-
   /**
    * Parsing function for a trust packet (tag 12).
    * Currently not implemented as we ignore trust packets
@@ -27,5 +25,7 @@ class TrustPacket {
    */
   read() {} // TODO
 }
+// Static fields (explicit declaration not fully supported by Safari)
+TrustPacket.tag = enums.packet.trust;
 
 export default TrustPacket;
