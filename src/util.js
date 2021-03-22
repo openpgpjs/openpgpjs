@@ -682,10 +682,12 @@ const util = {
    * @param {Array<Object>} allowedClasses
    * @returns {Object} map from enum.packet to corresponding *Packet class
    */
-  constructAllowedPackets: /*#__PURE__*/ function(allowedClasses) {
+  constructAllowedPackets: function(allowedClasses) {
     const map = {};
     allowedClasses.forEach(PacketClass => {
-      if (!PacketClass.tag) return;
+      if (!PacketClass.tag) {
+        throw new Error('Invalid input: expected a packet class');
+      }
       map[PacketClass.tag] = PacketClass;
     });
     return map;

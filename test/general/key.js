@@ -4,7 +4,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 const key = require('../../src/key');
-const allPackets = require('../../src/packet/all_packets');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -2785,7 +2784,12 @@ module.exports = () => describe('Key', function() {
 
     const packetlist = new openpgp.PacketList();
 
-    await packetlist.read((await openpgp.unarmor(pub_sig_test)).data, util.constructAllowedPackets([...Object.values(allPackets)]), undefined, openpgp.config);
+    await packetlist.read(
+      (await openpgp.unarmor(pub_sig_test)).data,
+      util.constructAllowedPackets([...Object.values(openpgp).filter(packetClass => !!packetClass.tag)]),
+      undefined,
+      openpgp.config
+    );
 
     const subkeys = pubKey.getSubkeys();
     expect(subkeys).to.exist;

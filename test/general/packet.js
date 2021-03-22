@@ -3,7 +3,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const crypto = require('../../src/crypto');
 const util = require('../../src/util');
-const allPackets = require('../../src/packet/all_packets');
 
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
@@ -29,7 +28,7 @@ function stringify(array) {
 }
 
 module.exports = () => describe("Packet", function() {
-  const allAllowedPackets = util.constructAllowedPackets([...Object.values(allPackets)]);
+  const allAllowedPackets = util.constructAllowedPackets([...Object.values(openpgp).filter(packetClass => !!packetClass.tag)]);
 
   const armored_key =
       '-----BEGIN PGP PRIVATE KEY BLOCK-----\n' +
