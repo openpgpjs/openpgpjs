@@ -858,6 +858,35 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     expect(secretKeyPacket2.publicParams).to.deep.equal(secretKeyPacket.publicParams);
   });
 
+  it('Writing of unencrypted secret key packet', async function() {
+    openpgp.config.v5Keys = true;
+    const packet = new openpgp.SecretKeyPacket();
+
+    packet.privateParams = { key: new Uint8Array([1, 2, 3]) };
+    packet.publicParams = { pubKey: new Uint8Array([4, 5, 6]) };
+    packet.algorithm = "rsaSign";
+    packet.isEncrypted = false;
+    packet.s2kUsage = 0;
+
+    const written = packet.write();
+    expect(written.length).to.equal(28);
+
+    /* The serialized length of private data */
+    expect(written[17]).to.equal(0);
+    expect(written[18]).to.equal(0);
+    expect(written[19]).to.equal(0);
+    expect(written[20]).to.equal(5);
+
+    /**
+     * The private data
+     *
+     * The 2 bytes missing here are the length prefix of the MPI
+     */
+    expect(written[23]).to.equal(1);
+    expect(written[24]).to.equal(2);
+    expect(written[25]).to.equal(3);
+  });
+
   it('Writing and encryption of a secret key packet (CFB)', async function() {
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const { privateParams, publicParams } = await crypto.generateParams(rsa, 1024, 65537);
