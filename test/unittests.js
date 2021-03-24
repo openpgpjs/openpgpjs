@@ -1,4 +1,4 @@
-/* globals openpgp: true */
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('..');
 
 (typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
 
@@ -28,9 +28,9 @@
 
 describe('Unit Tests', function () {
 
-  if (typeof window !== 'undefined') {
-    openpgp.config.s2kIterationCountByte = 0;
+  openpgp.config.s2kIterationCountByte = 0;
 
+  if (typeof window !== 'undefined') {
     window.location.search.substr(1).split('&').forEach(param => {
       const [key, value] = param.split('=');
       if (key && key !== 'grep') {
