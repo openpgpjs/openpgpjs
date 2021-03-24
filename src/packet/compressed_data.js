@@ -148,7 +148,11 @@ function uncompressed(data) {
 
 function node_zlib(func, options = {}) {
   return function (data) {
-    return stream.nodeToWeb(stream.webToNode(data).pipe(func(options)));
+    const webStream = stream.nodeToWeb(stream.webToNode(data).pipe(func(options)));
+    if (stream.isStream(data) === 'array') {
+      return stream.fromAsync(() => stream.readToEnd(webStream));
+    }
+    return webStream;
   };
 }
 

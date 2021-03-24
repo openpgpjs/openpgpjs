@@ -144,13 +144,16 @@ class AEADEncryptedDataPacket {
     let queuedBytes = 0;
     const iv = this.iv;
     return stream.transformPair(data, async (readable, writable) => {
+      if (util.isStream(readable) !== 'array') {
+        const buffer = new stream.TransformStream({}, {
+          highWaterMark: streaming ? util.getHardwareConcurrency() * 2 ** (this.chunkSizeByte + 6) : Infinity,
+          size: array => array.length
+        });
+        stream.pipe(buffer.readable, writable);
+        writable = buffer.writable;
+      }
       const reader = stream.getReader(readable);
-      const buffer = new stream.TransformStream({}, {
-        highWaterMark: streaming ? util.getHardwareConcurrency() * 2 ** (this.chunkSizeByte + 6) : Infinity,
-        size: array => array.length
-      });
-      stream.pipe(buffer.readable, writable);
-      const writer = stream.getWriter(buffer.writable);
+      const writer = stream.getWriter(writable);
       try {
         while (true) {
           let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();

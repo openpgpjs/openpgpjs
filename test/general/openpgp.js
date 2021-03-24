@@ -1828,9 +1828,9 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           const { key } = await openpgp.generateKey({ userIDs: {} });
           const message = await openpgp.encrypt({ message: openpgp.Message.fromText('test'), publicKeys: key, privateKeys: key, armor: false });
           const encrypted = util.concat([message, new Uint8Array([11])]);
-          await expect(
-            openpgp.decrypt({ message: await openpgp.readMessage({ binaryMessage: encrypted }), privateKeys: key, publicKeys: key })
-          ).to.be.rejectedWith('Error during parsing. This message / key probably does not conform to a valid OpenPGP format.');
+          await expect((async () => {
+            await openpgp.decrypt({ message: await openpgp.readMessage({ binaryMessage: encrypted }), privateKeys: key, publicKeys: key });
+          })()).to.be.rejectedWith('Error during parsing. This message / key probably does not conform to a valid OpenPGP format.');
         });
       });
 
@@ -2380,7 +2380,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           const packets = new openpgp.PacketList();
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
-          verifyOpt.message = new openpgp.Message(packets);
+          verifyOpt.message = await openpgp.readMessage({ binaryMessage: packets.write() });
           return openpgp.verify(verifyOpt);
         }).then(async function (verified) {
           expect(openpgp.stream.isStream(verified.data)).to.equal(useNativeStream ? 'web' : 'ponyfill');

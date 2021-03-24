@@ -150,9 +150,15 @@ export async function readPackets(input, streaming, callback) {
     const packetSupportsStreaming = supportsStreaming(tag);
     let packet = null;
     if (streaming && packetSupportsStreaming) {
-      const transform = new stream.TransformStream();
-      writer = stream.getWriter(transform.writable);
-      packet = transform.readable;
+      if (util.isStream(input) === 'array') {
+        const arrayStream = new stream.ArrayStream();
+        writer = stream.getWriter(arrayStream);
+        packet = arrayStream;
+      } else {
+        const transform = new stream.TransformStream();
+        writer = stream.getWriter(transform.writable);
+        packet = transform.readable;
+      }
       callbackReturned = callback({ tag, packet });
     } else {
       packet = [];

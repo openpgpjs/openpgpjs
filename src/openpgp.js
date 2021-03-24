@@ -570,6 +570,10 @@ async function convertStream(data, streaming, encoding = 'utf8') {
   if (!streaming && streamType) {
     return stream.readToEnd(data);
   }
+  if (streamType === 'array') {
+    data = await stream.readToEnd(data);
+    streamType = false;
+  }
   if (streaming && !streamType) {
     data = stream.toStream(data);
     streamType = util.isStream(data);
