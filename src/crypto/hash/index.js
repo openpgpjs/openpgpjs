@@ -19,13 +19,12 @@ import defaultConfig from '../../config';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 function nodeHash(type) {
   return async function (data) {
     const shasum = nodeCrypto.createHash(type);
     return stream.transform(data, value => {
-      shasum.update(Buffer.from(value));
+      shasum.update(value);
     }, () => new Uint8Array(shasum.digest()));
   };
 }

@@ -30,7 +30,6 @@ import util from '../../util';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 const knownAlgos = nodeCrypto ? nodeCrypto.getCiphers() : [];
 const nodeAlgos = {
@@ -149,15 +148,11 @@ async function webEncrypt(algo, key, pt, iv) {
 }
 
 function nodeEncrypt(algo, key, pt, iv) {
-  key = Buffer.from(key);
-  iv = Buffer.from(iv);
   const cipherObj = new nodeCrypto.createCipheriv(nodeAlgos[algo], key, iv);
-  return stream.transform(pt, value => new Uint8Array(cipherObj.update(Buffer.from(value))));
+  return stream.transform(pt, value => new Uint8Array(cipherObj.update(value)));
 }
 
 function nodeDecrypt(algo, key, ct, iv) {
-  key = Buffer.from(key);
-  iv = Buffer.from(iv);
   const decipherObj = new nodeCrypto.createDecipheriv(nodeAlgos[algo], key, iv);
-  return stream.transform(ct, value => new Uint8Array(decipherObj.update(Buffer.from(value))));
+  return stream.transform(ct, value => new Uint8Array(decipherObj.update(value)));
 }

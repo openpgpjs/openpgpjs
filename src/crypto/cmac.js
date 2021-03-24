@@ -10,7 +10,6 @@ import util from '../util';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 
 /**
@@ -82,9 +81,7 @@ async function CBC(key) {
     };
   }
   if (util.getNodeCrypto()) { // Node crypto library
-    key = Buffer.from(key);
     return async function(pt) {
-      pt = Buffer.from(pt);
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-cbc', key, zeroBlock);
       const ct = en.update(pt);
       return new Uint8Array(ct);
