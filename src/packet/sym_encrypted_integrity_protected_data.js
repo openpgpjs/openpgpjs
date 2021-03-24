@@ -88,14 +88,13 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * Encrypt the payload in the packet.
    * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
-   * @param {Boolean} streaming - Whether to set this.encrypted to a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Boolean}
    * @async
    */
-  async encrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
+  async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     let bytes = this.packets.write();
-    if (!streaming) bytes = await stream.readToEnd(bytes);
+    if (stream.isArrayStream(bytes)) bytes = await stream.readToEnd(bytes);
     const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
     const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
@@ -111,14 +110,13 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * Decrypts the encrypted data contained in the packet.
    * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
-   * @param {Boolean} streaming - Whether to read this.encrypted as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Boolean}
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
+  async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     let encrypted = stream.clone(this.encrypted);
-    if (!streaming) encrypted = await stream.readToEnd(encrypted);
+    if (stream.isArrayStream(encrypted)) encrypted = await stream.readToEnd(encrypted);
     const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
 
     // there must be a modification detection code packet as the
@@ -140,7 +138,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
       packetbytes = await stream.readToEnd(packetbytes);
     }
-    await this.packets.read(packetbytes, allowedPackets, streaming);
+    await this.packets.read(packetbytes, allowedPackets);
     return true;
   }
 }

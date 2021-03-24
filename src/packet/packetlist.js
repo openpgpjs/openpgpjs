@@ -33,18 +33,18 @@ class PacketList extends Array {
    * Reads a stream of binary data and interprets it as a list of packets.
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - A Uint8Array of bytes.
    */
-  async read(bytes, allowedPackets, streaming, config = defaultConfig) {
+  async read(bytes, allowedPackets, config = defaultConfig) {
     this.stream = stream.transformPair(bytes, async (readable, writable) => {
       const writer = stream.getWriter(writable);
       try {
         while (true) {
           await writer.ready;
-          const done = await readPackets(readable, streaming, async parsed => {
+          const done = await readPackets(readable, async parsed => {
             try {
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
-              await packet.read(parsed.packet, config, streaming);
+              await packet.read(parsed.packet, config);
               await writer.write(packet);
             } catch (e) {
               if (!config.tolerant || supportsStreaming(parsed.tag)) {

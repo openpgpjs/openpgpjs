@@ -51,7 +51,7 @@ export async function getLatestValidSignature(signatures, primaryKey, signatureT
         !signatures[i].isExpired(date)
       ) {
         // check binding signature is verified
-        signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify, undefined, undefined, config);
+        signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify, undefined, config);
         signature = signatures[i];
       }
     } catch (e) {
@@ -97,7 +97,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
     subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
       signatureType: enums.signature.keyBinding
-    }, options.date, undefined, undefined, undefined, config);
+    }, options.date, undefined, undefined, config);
   } else {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
   }
@@ -193,12 +193,11 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  * @param {Date} [date] - Override the creationtime of the signature
  * @param {Object} [userID] - User ID
  * @param {Object} [detached] - Whether to create a detached signature packet
- * @param {Boolean} [streaming] - Whether to process data as a stream
  * @param {Object} config - full configuration
  * @returns {SignaturePacket} Signature packet.
  * @async
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, streaming = false, config) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, config) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
@@ -209,7 +208,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
-  await signaturePacket.sign(signingKeyPacket, dataToSign, detached, streaming);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, detached);
   return signaturePacket;
 }
 
@@ -272,7 +271,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         (!signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)) &&
         !(config.revocationsExpire && revocationSignature.isExpired(normDate))
       ) {
-        revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify, undefined, undefined, config);
+        revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify, undefined, config);
 
         // TODO get an identifier of the revoked object instead
         revocationKeyIDs.push(revocationSignature.issuerKeyID);

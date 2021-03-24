@@ -221,7 +221,7 @@ module.exports = () => describe("Packet", function() {
     const msg2 = new openpgp.PacketList();
 
     try {
-      await enc.encrypt(algo, key, undefined, { ...openpgp.config, aeadChunkSizeByte: 0 });
+      await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 0 });
       await msg2.read(msg.write(), allAllowedPackets);
       await msg2[0].decrypt(algo, key);
       expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
@@ -266,7 +266,7 @@ module.exports = () => describe("Packet", function() {
     randomBytesStub.returns(iv);
 
     try {
-      await enc.encrypt(algo, key, undefined, { ...openpgp.config, aeadChunkSizeByte: 14 });
+      await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 14 });
       const data = msg.write();
       expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
       await msg2.read(data, allAllowedPackets);

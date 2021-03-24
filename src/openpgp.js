@@ -262,13 +262,13 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
       privateKeys = [];
     }
     if (privateKeys.length || signature) { // sign the message only if private keys or signature is specified
-      message = await message.sign(privateKeys, signature, signingKeyIDs, date, fromUserIDs, message.fromStream, config);
+      message = await message.sign(privateKeys, signature, signingKeyIDs, date, fromUserIDs, config);
     }
     message = message.compress(
       await getPreferredAlgo('compression', publicKeys, date, toUserIDs, config),
       config
     );
-    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, toUserIDs, streaming, config);
+    message = await message.encrypt(publicKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, toUserIDs, config);
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
   }).catch(onError.bind(null, 'Error encrypting message'));
@@ -309,13 +309,13 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
   config = { ...defaultConfig, ...config };
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
-  return message.decrypt(privateKeys, passwords, sessionKeys, streaming, config).then(async function(decrypted) {
+  return message.decrypt(privateKeys, passwords, sessionKeys, config).then(async function(decrypted) {
     if (!publicKeys) {
       publicKeys = [];
     }
 
     const result = {};
-    result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date, streaming, config) : await decrypted.verify(publicKeys, date, streaming, config);
+    result.signatures = signature ? await decrypted.verifyDetached(signature, publicKeys, date, config) : await decrypted.verify(publicKeys, date, config);
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.filename = decrypted.getFilename();
     linkStreams(result, message);
@@ -358,12 +358,10 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
 
   return Promise.resolve().then(async function() {
     let signature;
-    if (message instanceof CleartextMessage) {
-      signature = await message.sign(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, config);
-    } else if (detached) {
-      signature = await message.signDetached(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, message.fromStream, config);
+    if (detached) {
+      signature = await message.signDetached(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, config);
     } else {
-      signature = await message.sign(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, message.fromStream, config);
+      signature = await message.sign(privateKeys, undefined, signingKeyIDs, date, fromUserIDs, config);
     }
     signature = armor ? signature.armor(config) : signature.write();
     if (detached) {
@@ -413,10 +411,10 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
 
   return Promise.resolve().then(async function() {
     const result = {};
-    if (message instanceof CleartextMessage) {
-      result.signatures = await message.verify(publicKeys, date, config);
+    if (signature) {
+      result.signatures = await message.verifyDetached(signature, publicKeys, date, config);
     } else {
-      result.signatures = signature ? await message.verifyDetached(signature, publicKeys, date, streaming, config) : await message.verify(publicKeys, date, streaming, config);
+      result.signatures = await message.verify(publicKeys, date, config);
     }
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     if (streaming) linkStreams(result, message);

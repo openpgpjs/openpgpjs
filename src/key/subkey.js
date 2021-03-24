@@ -142,7 +142,7 @@ class SubKey {
         }
       }
       try {
-        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, undefined, undefined, config);
+        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, undefined, config);
         return true;
       } catch (e) {
         return false;
@@ -180,7 +180,7 @@ class SubKey {
       signatureType: enums.signature.subkeyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
-    }, date, undefined, undefined, undefined, config));
+    }, date, undefined, undefined, config));
     await subKey.update(this, primaryKey);
     return subKey;
   }

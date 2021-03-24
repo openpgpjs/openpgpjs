@@ -71,7 +71,7 @@ export class CleartextMessage {
   async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
-    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, undefined, config));
+    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, config));
     return new CleartextMessage(this.text, newSignature);
   }
 
@@ -90,7 +90,7 @@ export class CleartextMessage {
     const literalDataPacket = new LiteralDataPacket();
     // we assume that cleartext signature is generated based on UTF8 cleartext
     literalDataPacket.setText(this.text);
-    return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true, undefined, config);
+    return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true, config);
   }
 
   /**

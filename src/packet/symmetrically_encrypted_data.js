@@ -79,7 +79,7 @@ class SymmetricallyEncryptedDataPacket {
    * @throws {Error} if decryption was not successful
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
+  async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
     if (!config.allowUnauthenticatedMessages) {
       throw new Error('Message is not authenticated.');
@@ -91,7 +91,7 @@ class SymmetricallyEncryptedDataPacket {
       encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
     );
 
-    await this.packets.read(decrypted, allowedPackets, streaming);
+    await this.packets.read(decrypted, allowedPackets);
   }
 
   /**
@@ -103,7 +103,7 @@ class SymmetricallyEncryptedDataPacket {
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(algo, key, streaming, config = defaultConfig) {
+  async encrypt(algo, key, config = defaultConfig) {
     const data = this.packets.write();
 
     const prefix = await crypto.getPrefixRandom(algo);

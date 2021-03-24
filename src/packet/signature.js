@@ -153,11 +153,10 @@ class SignaturePacket {
    * @param {SecretKeyPacket} key - Private key used to sign the message.
    * @param {Object} data - Contains packets to be signed.
    * @param {Boolean} [detached] - Whether to create a detached signature
-   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @throws {Error} if signing failed
    * @async
    */
-  async sign(key, data, detached = false, streaming = false) {
+  async sign(key, data, detached = false) {
     const signatureType = enums.write(enums.signature, this.signatureType);
     const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
@@ -183,7 +182,7 @@ class SignaturePacket {
     const signed = async () => crypto.signature.sign(
       publicKeyAlgorithm, hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
     );
-    if (streaming) {
+    if (util.isStream(hash)) {
       this.params = signed();
     } else {
       this.params = await signed();
@@ -643,12 +642,9 @@ class SignaturePacket {
     return util.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
   }
 
-  async hash(signatureType, data, toHash, detached = false, streaming = true) {
+  async hash(signatureType, data, toHash, detached = false) {
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
     if (!toHash) toHash = this.toHash(signatureType, data, detached);
-    if (!streaming && util.isStream(toHash)) {
-      return stream.fromAsync(async () => this.hash(signatureType, data, await stream.readToEnd(toHash), detached));
-    }
     return crypto.hash.digest(hashAlgorithm, toHash);
   }
 
@@ -659,12 +655,11 @@ class SignaturePacket {
    * @param {module:enums.signature} signatureType - Expected signature type
    * @param {String|Object} data - Data which on the signature applies
    * @param {Boolean} [detached] - Whether to verify a detached signature
-   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if signature validation failed
    * @async
    */
-  async verify(key, signatureType, data, detached = false, streaming = false, config = defaultConfig) {
+  async verify(key, signatureType, data, detached = false, config = defaultConfig) {
     const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
@@ -678,7 +673,6 @@ class SignaturePacket {
       hash = await this.hashed;
     } else {
       toHash = this.toHash(signatureType, data, detached);
-      if (!streaming) toHash = await stream.readToEnd(toHash);
       hash = await this.hash(signatureType, data, toHash);
     }
     hash = await stream.readToEnd(hash);

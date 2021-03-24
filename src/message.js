@@ -107,12 +107,11 @@ export class Message {
    * @param {Array<Key>} [privateKeys] - Private keys with decrypted secret data
    * @param {Array<String>} [passwords] - Passwords used to decrypt
    * @param {Array<Object>} [sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
-   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Message} New message with decrypted content.
    * @async
    */
-  async decrypt(privateKeys, passwords, sessionKeys, streaming, config = defaultConfig) {
+  async decrypt(privateKeys, passwords, sessionKeys, config = defaultConfig) {
     const keyObjs = sessionKeys || await this.decryptSessionKeys(privateKeys, passwords, config);
 
     const symEncryptedPacketlist = this.packets.filterByTag(
@@ -133,7 +132,7 @@ export class Message {
       }
 
       try {
-        await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, streaming, config);
+        await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, config);
       } catch (e) {
         util.printDebugError(e);
         exception = e;
@@ -317,12 +316,11 @@ export class Message {
    * @param {Array<module:type/keyid~KeyID>} [encryptionKeyIDs] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to publicKeys[i]
    * @param {Date} [date] - Override the creation date of the literal package
    * @param {Array<Object>} [userIDs] - User IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
-   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Message} New message with encrypted content.
    * @async
    */
-  async encrypt(keys, passwords, sessionKey, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], streaming, config = defaultConfig) {
+  async encrypt(keys, passwords, sessionKey, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
@@ -348,7 +346,7 @@ export class Message {
     }
     symEncryptedPacket.packets = this.packets;
 
-    await symEncryptedPacket.encrypt(algorithm, sessionKeyData, streaming, config);
+    await symEncryptedPacket.encrypt(algorithm, sessionKeyData, config);
 
     msg.packets.push(symEncryptedPacket);
     symEncryptedPacket.packets = new PacketList(); // remove packets after encryption
@@ -433,12 +431,11 @@ export class Message {
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
    * @param {Date} [date] - Override the creation time of the signature
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Message} New message with signed content.
    * @async
    */
-  async sign(privateKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], streaming = false, config = defaultConfig) {
+  async sign(privateKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const packetlist = new PacketList();
 
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
@@ -488,7 +485,7 @@ export class Message {
     });
 
     packetlist.push(literalDataPacket);
-    packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, false, streaming, config));
+    packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, false, config));
 
     return new Message(packetlist);
   }
@@ -521,49 +518,47 @@ export class Message {
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
    * @param {Date} [date] - Override the creation time of the signature
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Signature} New detached signature of message content.
    * @async
    */
-  async signDetached(privateKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], streaming = false, config = defaultConfig) {
+  async signDetached(privateKeys = [], signature = null, signingKeyIds = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
     if (!literalDataPacket) {
       throw new Error('No literal data packet to sign.');
     }
-    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, streaming, config));
+    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIDs, true, config));
   }
 
   /**
    * Verify message signatures
    * @param {Array<Key>} keys - Array of keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
-   * @param {Boolean} [streaming] - Whether to process data as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Array<{keyID: module:type/keyid~KeyID,
    *                  signature: Promise<Signature>,
    *                  verified: Promise<Boolean>}>} List of signer's keyID and validity of signatures.
    * @async
    */
-  async verify(keys, date = new Date(), streaming, config = defaultConfig) {
+  async verify(keys, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
-    if (!streaming) {
+    if (stream.isArrayStream(msg.packets.stream)) {
       msg.packets.concat(await stream.readToEnd(msg.packets.stream, _ => _));
     }
     const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
     const signatureList = msg.packets.filterByTag(enums.packet.signature);
-    if (streaming && onePassSigList.length && !signatureList.length && msg.packets.stream) {
+    if (onePassSigList.length && !signatureList.length && util.isStream(msg.packets.stream) && !stream.isArrayStream(msg.packets.stream)) {
       await Promise.all(onePassSigList.map(async onePassSig => {
         onePassSig.correspondingSig = new Promise((resolve, reject) => {
           onePassSig.correspondingSigResolve = resolve;
           onePassSig.correspondingSigReject = reject;
         });
         onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-        onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false, streaming));
+        onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false));
         onePassSig.hashed.catch(() => {});
       }));
       msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
@@ -584,9 +579,9 @@ export class Message {
           await writer.abort(e);
         }
       });
-      return createVerificationObjects(onePassSigList, literalDataList, keys, date, false, streaming, config);
+      return createVerificationObjects(onePassSigList, literalDataList, keys, date, false, config);
     }
-    return createVerificationObjects(signatureList, literalDataList, keys, date, false, streaming, config);
+    return createVerificationObjects(signatureList, literalDataList, keys, date, false, config);
   }
 
   /**
@@ -600,14 +595,14 @@ export class Message {
    *                  verified: Promise<Boolean>}>} List of signer's keyID and validity of signature.
    * @async
    */
-  verifyDetached(signature, keys, date = new Date(), streaming, config = defaultConfig) {
+  verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
     const signatureList = signature.packets;
-    return createVerificationObjects(signatureList, literalDataList, keys, date, true, undefined, config);
+    return createVerificationObjects(signatureList, literalDataList, keys, date, true, config);
   }
 
   /**
@@ -717,13 +712,12 @@ export class Message {
  * @param {Date} [date] - Override the creationtime of the signature
  * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param {Boolean} [detached] - Whether to create detached signature packets
- * @param {Boolean} [streaming] - Whether to process data as a stream
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {PacketList} List of signature packets.
  * @async
  * @private
  */
-export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], detached = false, streaming = false, config = defaultConfig) {
+export async function createSignaturePackets(literalDataPacket, privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], detached = false, config = defaultConfig) {
   const packetlist = new PacketList();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -736,7 +730,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
       throw new Error('Need private key for signing');
     }
     const signingKey = await privateKey.getSigningKey(signingKeyIDs[i], date, userID, config);
-    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userID, detached, streaming, config);
+    return createSignaturePacket(literalDataPacket, privateKey, signingKey.keyPacket, { signatureType }, date, userID, detached, config);
   })).then(signatureList => {
     signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
   });
@@ -763,7 +757,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  * @async
  * @private
  */
-async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, streaming = false, config = defaultConfig) {
+async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, config = defaultConfig) {
   let primaryKey;
   let signingKey;
   let keyError;
@@ -791,7 +785,7 @@ async function createVerificationObject(signature, literalDataList, keys, date =
       if (keyError) {
         throw keyError;
       }
-      await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, streaming, config);
+      await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, config);
       const sig = await signaturePacket;
       if (sig.isExpired(date) || !(
         sig.created >= signingKey.getCreationTime() &&
@@ -837,11 +831,11 @@ async function createVerificationObject(signature, literalDataList, keys, date =
  * @async
  * @private
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date(), detached = false, streaming = false, config = defaultConfig) {
+export async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date(), detached = false, config = defaultConfig) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, keys, date, detached, streaming, config);
+    return createVerificationObject(signature, literalDataList, keys, date, detached, config);
   }));
 }
 

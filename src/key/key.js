@@ -768,7 +768,7 @@ class Key {
       signatureType: enums.signature.keyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
-    }, date, undefined, undefined, undefined, config));
+    }, date, undefined, undefined, config));
     return key;
   }
 
@@ -812,7 +812,7 @@ class Key {
       throw new Error('Revocation signature is expired');
     }
     try {
-      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, undefined, undefined, config);
+      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, undefined, config);
     } catch (e) {
       throw util.wrapError('Could not verify revocation signature', e);
     }

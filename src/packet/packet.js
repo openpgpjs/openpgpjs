@@ -117,7 +117,7 @@ export function supportsStreaming(tag_type) {
  * @param {Function} callback - Function to call with the parsed packet
  * @returns {Boolean} Returns false if the stream was empty and parsing is done, and true otherwise.
  */
-export async function readPackets(input, streaming, callback) {
+export async function readPackets(input, callback) {
   const reader = stream.getReader(input);
   let writer;
   let callbackReturned;
@@ -149,7 +149,7 @@ export async function readPackets(input, streaming, callback) {
 
     const packetSupportsStreaming = supportsStreaming(tag);
     let packet = null;
-    if (streaming && packetSupportsStreaming) {
+    if (packetSupportsStreaming) {
       if (util.isStream(input) === 'array') {
         const arrayStream = new stream.ArrayStream();
         writer = stream.getWriter(arrayStream);

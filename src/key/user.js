@@ -64,7 +64,7 @@ class User {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
-      }, undefined, undefined, undefined, undefined, config);
+      }, undefined, undefined, undefined, config);
     }));
     await user.update(this, primaryKey);
     return user;
@@ -122,7 +122,7 @@ class User {
         throw new Error('User certificate is revoked');
       }
       try {
-        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
+        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, undefined, config);
       } catch (e) {
         throw util.wrapError('User certificate is invalid', e);
       }
@@ -186,7 +186,7 @@ class User {
           throw new Error('Self-certification is revoked');
         }
         try {
-          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
+          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, config);
         } catch (e) {
           throw util.wrapError('Self-certification is invalid', e);
         }
@@ -219,7 +219,7 @@ class User {
     // self signatures
     await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
       try {
-        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
+        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, config);
         return true;
       } catch (e) {
         return false;
