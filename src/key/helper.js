@@ -409,7 +409,7 @@ export function isValidDecryptionKeyPacket(signature, config) {
     (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
 }
 
-export function assertKeyStrength(keyPacket, config) {
+export function checkKeyStrength(keyPacket, config) {
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   if (config.rejectPublicKeyAlgorithms.has(keyAlgo)) {
     throw new Error(`${keyPacket.algorithm} keys are considered too weak.`);
