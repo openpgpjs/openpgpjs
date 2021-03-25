@@ -409,7 +409,7 @@ function omnibus() {
 
       certificate.verified = null;
       await user.verifyCertificate(
-        primaryKey, certificate, [hi.toPublic()]
+        primaryKey, certificate, [hi.toPublic()], undefined, openpgp.config
       ).then(async () => expect(certificate.verified).to.be.true);
 
       const options = {
@@ -432,7 +432,7 @@ function omnibus() {
         ).then(async () => expect(certificate.verified).to.be.true);
         certificate.verified = null;
         await user.verifyCertificate(
-          bye.primaryKey, user.selfCertifications[0], [bye.toPublic()]
+          bye.primaryKey, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
         ).then(async () => expect(certificate.verified).to.be.true);
 
         return Promise.all([

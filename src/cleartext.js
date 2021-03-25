@@ -77,7 +77,9 @@ export class CleartextMessage {
    * @param {Array<Key>} keys - Array of keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>} List of signer's keyid and validity of signature.
+   * @returns {Array<{keyid: module:type/keyid~Keyid,
+   *                  signature: Promise<Signature>,
+   *                  verified: Promise<Boolean>}>} List of signer's keyid and validity of signature.
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {

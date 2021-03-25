@@ -652,7 +652,7 @@ class SignaturePacket {
   /**
    * verifies the signature packet. Note: not all signature types are implemented
    * @param {PublicSubkeyPacket|PublicKeyPacket|
-   *         SecretSubkeyPacket|SecretKeyPacket} key the public key to verify the signature
+   *         SecretSubkeyPacket|SecretKeyPacket} key - the public key to verify the signature
    * @param {module:enums.signature} signatureType - Expected signature type
    * @param {String|Object} data - Data which on the signature applies
    * @param {Boolean} [detached] - Whether to verify a detached signature

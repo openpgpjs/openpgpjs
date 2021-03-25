@@ -370,9 +370,11 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
   if (!signature.verified || signature.revoked !== false) { // Sanity check
     throw new Error('Signature not verified');
   }
-  return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsaEncrypt) &&
-    keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.elgamal) &&
-    keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdh) &&
+
+  const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
+  return keyAlgo !== enums.publicKey.rsaEncrypt &&
+    keyAlgo !== enums.publicKey.elgamal &&
+    keyAlgo !== enums.publicKey.ecdh &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.signData) !== 0);
 }
@@ -381,10 +383,12 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
   if (!signature.verified || signature.revoked !== false) { // Sanity check
     throw new Error('Signature not verified');
   }
-  return keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.dsa) &&
-    keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.rsaSign) &&
-    keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.ecdsa) &&
-    keyPacket.algorithm !== enums.read(enums.publicKey, enums.publicKey.eddsa) &&
+
+  const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
+  return keyAlgo !== enums.publicKey.dsa &&
+    keyAlgo !== enums.publicKey.rsaSign &&
+    keyAlgo !== enums.publicKey.ecdsa &&
+    keyAlgo !== enums.publicKey.eddsa &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
       (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0);
@@ -396,11 +400,22 @@ export function isValidDecryptionKeyPacket(signature, config) {
   }
 
   if (config.allowInsecureDecryptionWithSigningKeys) {
-    // This is only relevant for RSA keys, all other signing ciphers cannot decrypt
+    // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
     return true;
   }
 
   return !signature.keyFlags ||
     (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
     (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
+}
+
+export function checkKeyStrength(keyPacket, config) {
+  const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
+  if (config.rejectPublicKeyAlgorithms.has(keyAlgo)) {
+    throw new Error(`${keyPacket.algorithm} keys are considered too weak.`);
+  }
+  const rsaAlgos = new Set([enums.publicKey.rsaEncryptSign, enums.publicKey.rsaSign, enums.publicKey.rsaEncrypt]);
+  if (rsaAlgos.has(keyAlgo) && util.uint8ArrayBitLength(keyPacket.publicParams.n) < config.minRsaBits) {
+    throw new Error(`RSA keys shorter than ${config.minRsaBits} bits are considered too weak.`);
+  }
 }

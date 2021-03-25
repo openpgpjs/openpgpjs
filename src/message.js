@@ -523,7 +523,9 @@ export class Message {
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Boolean} [streaming] - Whether to process data as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<({keyid: module:type/keyid~Keyid, valid: Boolean})>} List of signer's keyid and validity of signature.
+   * @returns {Array<{keyid: module:type/keyid~Keyid,
+   *                  signature: Promise<Signature>,
+   *                  verified: Promise<Boolean>}>} List of signer's keyid and validity of signatures.
    * @async
    */
   async verify(keys, date = new Date(), streaming, config = defaultConfig) {
@@ -576,7 +578,9 @@ export class Message {
    * @param {Signature} signature
    * @param {Date} date - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<({keyid: module:type/keyid~Keyid, valid: Boolean})>} List of signer's keyid and validity of signature.
+   * @returns {Array<{keyid: module:type/keyid~Keyid,
+   *                  signature: Promise<Signature>,
+   *                  verified: Promise<Boolean>}>} List of signer's keyid and validity of signature.
    * @async
    */
   verifyDetached(signature, keys, date = new Date(), streaming, config = defaultConfig) {
@@ -733,28 +737,39 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
- *                          valid: Boolean|null}>>} list of signer's keyid and validity of signature
+ * @returns {{keyid: module:type/keyid~Keyid,
+ *            signature: Promise<Signature>,
+ *            verified: Promise<Boolean>}} signer's keyid and validity of signature
  * @async
  * @private
  */
 async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, streaming = false, config = defaultConfig) {
-  let primaryKey = null;
-  let signingKey = null;
-  await Promise.all(keys.map(async function(key) {
-    // Look for the unique key that matches issuerKeyId of signature
-    try {
-      signingKey = await key.getSigningKey(signature.issuerKeyId, null, undefined, config);
-      primaryKey = key;
-    } catch (e) {}
-  }));
+  let primaryKey;
+  let signingKey;
+  let keyError;
 
+  for (const key of keys) {
+    const issuerKeys = key.getKeys(signature.issuerKeyId);
+    if (issuerKeys.length > 0) {
+      primaryKey = key;
+      break;
+    }
+  }
+  if (!primaryKey) {
+    keyError = new Error(`Could not find signing key with key ID ${signature.issuerKeyId.toHex()}`);
+  } else {
+    try {
+      signingKey = await primaryKey.getSigningKey(signature.issuerKeyId, null, undefined, config);
+    } catch (e) {
+      keyError = e;
+    }
+  }
   const signaturePacket = signature.correspondingSig || signature;
   const verifiedSig = {
     keyid: signature.issuerKeyId,
     verified: (async () => {
-      if (!signingKey) {
-        return null;
+      if (keyError) {
+        throw keyError;
       }
       await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, streaming, config);
       const sig = await signaturePacket;
@@ -796,8 +811,9 @@ async function createVerificationObject(signature, literalDataList, keys, date =
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
- *                          valid: Boolean}>>} list of signer's keyid and validity of signature
+ * @returns {Array<{keyid: module:type/keyid~Keyid,
+ *            signature: Promise<Signature>,
+ *            verified: Promise<Boolean>}>} list of signer's keyid and validity of signatures
  * @async
  * @private
  */
