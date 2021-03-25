@@ -15,9 +15,9 @@ export { Key, readKey, readKeys } from './key';
 
 export { Signature, readSignature } from './signature';
 
-export { Message, readMessage } from './message';
+export { Message, readMessage, createMessage } from './message';
 
-export { CleartextMessage, readCleartextMessage } from './cleartext';
+export { CleartextMessage, readCleartextMessage, createCleartextMessage } from './cleartext';
 
 export * from './packet';
 

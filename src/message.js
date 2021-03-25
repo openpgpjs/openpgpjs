@@ -644,71 +644,6 @@ export class Message {
   armor(config = defaultConfig) {
     return armor(enums.armor.message, this.write(), null, null, null, config);
   }
-
-  /**
-   * Creates new message object from text.
-   * @param {String | ReadableStream<String>} text - The message contents
-   * @param {String} [filename=""] - Name of the file (if any)
-   * @param {Date} [date=current date] - Date of the message, or modification date of the file
-   * @param {'utf8'|'binary'|'text'|'mime'} [type='utf8'] - Data packet type
-   * @returns {Message} New message object.
-   * @static
-   * @async
-   */
-  static async fromText(text, filename, date = new Date(), type = 'utf8') {
-    const streamType = util.isStream(text);
-    if (streamType) {
-      await stream.loadStreamsPonyfill();
-    }
-    if (streamType === 'node') {
-      text = stream.nodeToWeb(text);
-    }
-    const literalDataPacket = new LiteralDataPacket(date);
-    // text will be converted to UTF8
-    literalDataPacket.setText(text, type);
-    if (filename !== undefined) {
-      literalDataPacket.setFilename(filename);
-    }
-    const literalDataPacketlist = new PacketList();
-    literalDataPacketlist.push(literalDataPacket);
-    const message = new Message(literalDataPacketlist);
-    message.fromStream = streamType;
-    return message;
-  }
-
-  /**
-   * Creates new message object from binary data.
-   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - The message contents
-   * @param {String} [filename=""] - Name of the file (if any)
-   * @param {Date} [date=current date] - Date of the message, or modification date of the file
-   * @param {'utf8'|'binary'|'text'|'mime'} [type='binary'] - Data packet type
-   * @returns {Message} New message object.
-   * @static
-   * @async
-   */
-  static async fromBinary(bytes, filename, date = new Date(), type = 'binary') {
-    const streamType = util.isStream(bytes);
-    if (!util.isUint8Array(bytes) && !streamType) {
-      throw new Error('Data must be in the form of a Uint8Array or Stream');
-    }
-    if (streamType) {
-      await stream.loadStreamsPonyfill();
-    }
-    if (streamType === 'node') {
-      bytes = stream.nodeToWeb(bytes);
-    }
-
-    const literalDataPacket = new LiteralDataPacket(date);
-    literalDataPacket.setBytes(bytes, type);
-    if (filename !== undefined) {
-      literalDataPacket.setFilename(filename);
-    }
-    const literalDataPacketlist = new PacketList();
-    literalDataPacketlist.push(literalDataPacket);
-    const message = new Message(literalDataPacketlist);
-    message.fromStream = streamType;
-    return message;
-  }
 }
 
 /**
@@ -884,3 +819,42 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
   return message;
 }
 
+/**
+ * Creates new message object from text or binary data.
+ * @param {Object} options
+ * @param {String | ReadableStream<String>} [options.text] - The text message contents
+ * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binary] - The binary message contents
+ * @param {String} [options.filename=""] - Name of the file (if any)
+ * @param {Date} [options.date=current date] - Date of the message, or modification date of the file
+ * @param {'utf8'|'binary'|'text'|'mime'} [options.format='utf8' if text is passed, 'binary' otherwise] - Data packet type
+ * @returns {Message} New message object.
+ * @async
+ * @static
+ */
+export async function createMessage({ text, binary, filename, date = new Date(), format = text !== undefined ? 'utf8' : 'binary' }) {
+  let input = text !== undefined ? text : binary;
+  if (input === undefined) {
+    throw new Error('createMessage: must pass options object containing `text` or `binary`');
+  }
+  const streamType = util.isStream(input);
+  if (streamType) {
+    await stream.loadStreamsPonyfill();
+  }
+  if (streamType === 'node') {
+    input = stream.nodeToWeb(input);
+  }
+  const literalDataPacket = new LiteralDataPacket(date);
+  if (text !== undefined) {
+    literalDataPacket.setText(input, format);
+  } else {
+    literalDataPacket.setBytes(input, format);
+  }
+  if (filename !== undefined) {
+    literalDataPacket.setFilename(filename);
+  }
+  const literalDataPacketlist = new PacketList();
+  literalDataPacketlist.push(literalDataPacket);
+  const message = new Message(literalDataPacketlist);
+  message.fromStream = streamType;
+  return message;
+}

@@ -184,7 +184,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   });
   it('Sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
-    const signed = await openpgp.sign({ privateKeys: [romeoPrivate], message: await openpgp.CleartextMessage.fromText(data.romeo.message) });
+    const signed = await openpgp.sign({ privateKeys: [romeoPrivate], message: await openpgp.createCleartextMessage({ text: data.romeo.message }) });
     const romeoPublic = await load_pub_key('romeo');
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: signed });
     const result = await openpgp.verify({ publicKeys: [romeoPublic], message: msg });
@@ -208,7 +208,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = await load_pub_key('juliet');
-    const encrypted = await openpgp.encrypt({ publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: await openpgp.Message.fromText(data.romeo.message) });
+    const encrypted = await openpgp.encrypt({ publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: await openpgp.createMessage({ text: data.romeo.message }) });
 
     const message = await openpgp.readMessage({ armoredMessage: encrypted });
     const romeoPublic = await load_pub_key('romeo');

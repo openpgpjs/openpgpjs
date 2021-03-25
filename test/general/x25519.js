@@ -174,7 +174,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const name = 'light';
     const randomData = input.createSomeMessage();
     const priv = await load_priv_key(name);
-    const signed = await openpgp.sign({ privateKeys: [priv], message: await openpgp.CleartextMessage.fromText(randomData) });
+    const signed = await openpgp.sign({ privateKeys: [priv], message: await openpgp.createCleartextMessage({ text: randomData }) });
     const pub = await load_pub_key(name);
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: signed });
     const result = await openpgp.verify({ publicKeys: [pub], message: msg });
@@ -201,7 +201,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const nightPublic = await load_pub_key('night');
     const lightPrivate = await load_priv_key('light');
     const randomData = input.createSomeMessage();
-    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], message: await openpgp.Message.fromText(randomData) });
+    const encrypted = await openpgp.encrypt({ publicKeys: [nightPublic], privateKeys: [lightPrivate], message: await openpgp.createMessage({ text: randomData }) });
 
     const message = await openpgp.readMessage({ armoredMessage: encrypted });
     const lightPublic = await load_pub_key('light');
@@ -447,7 +447,7 @@ function omnibus() {
           }),
           // Signing message
           openpgp.sign(
-            { message: await openpgp.CleartextMessage.fromText('Hi, this is me, Hi!'), privateKeys: hi }
+            { message: await openpgp.createCleartextMessage({ text: 'Hi, this is me, Hi!' }), privateKeys: hi }
           ).then(async signed => {
             const msg = await openpgp.readCleartextMessage({ cleartextMessage: signed });
             // Verifying signed message
@@ -457,7 +457,7 @@ function omnibus() {
               ).then(output => expect(output.signatures[0].valid).to.be.true),
               // Verifying detached signature
               openpgp.verify({
-                message: await openpgp.Message.fromText('Hi, this is me, Hi!'),
+                message: await openpgp.createMessage({ text: 'Hi, this is me, Hi!' }),
                 publicKeys: hi.toPublic(),
                 signature: msg.signature
               }).then(output => expect(output.signatures[0].valid).to.be.true)
@@ -466,7 +466,7 @@ function omnibus() {
           // Encrypting and signing
           openpgp.encrypt(
             {
-              message: await openpgp.Message.fromText('Hi, Hi wrote this but only Bye can read it!'),
+              message: await openpgp.createMessage({ text: 'Hi, Hi wrote this but only Bye can read it!' }),
               publicKeys: [bye.toPublic()],
               privateKeys: [hi]
             }

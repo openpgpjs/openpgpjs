@@ -112,6 +112,8 @@ interface VerificationResult {
 
 export function readCleartextMessage(options: { cleartextMessage: string, config?: PartialConfig }): Promise<CleartextMessage>;
 
+export function createCleartextMessage(options: { text: string }): Promise<CleartextMessage>;
+
 /** Class that represents an OpenPGP cleartext signed message.
  */
 export class CleartextMessage {
@@ -137,14 +139,15 @@ export class CleartextMessage {
    *  @param keys array of keys to verify signatures
    */
   verify(keys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
-
-  static fromText(text: string): CleartextMessage;
 }
 
 /* ############## v5 MSG #################### */
 
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binaryMessage: T, config?: PartialConfig }): Promise<Message<T>>;
+
+export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, type?: DataPacketType }): Message<T>;
+export function createMessage<T extends MaybeStream<Uint8Array>>(options: { bytes: T, filename?: string, date?: Date, type?: DataPacketType }): Message<T>;
 
 export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T, armor: false }): Promise<
   T extends 'web' ? WebStream<Uint8Array> :
@@ -301,9 +304,6 @@ export class Message<T extends MaybeStream<Data>> {
    * @param {String|Uint8Array} detachedSignature - The detached ASCII-armored or Uint8Array PGP signature
    */
   public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
-
-  static fromText<T extends MaybeStream<string>>(text: T, filename?: string, date?: Date, type?: DataPacketType): Message<T>;
-  static fromBinary<T extends MaybeStream<Uint8Array>>(bytes: T, filename?: string, date?: Date, type?: DataPacketType): Message<T>;
 }
 
 
@@ -551,7 +551,7 @@ export interface SessionKey { data: Uint8Array; algorithm: string; }
 
 
 interface EncryptOptions {
-  /** message to be encrypted as created by Message.fromText or Message.fromBinary */
+  /** message to be encrypted as created by createMessage */
   message: Message<MaybeStream<Data>>;
   /** (optional) array of keys or single key, used to encrypt the message */
   publicKeys?: Key | Key[];

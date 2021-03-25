@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { readKey, Key, message, enums, PacketList, SignaturePacket } = openpgp;
+const { readKey, Key, createMessage, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -58,7 +58,7 @@ async function makeKeyValid() {
   async function encryptFails(k) {
     try {
       await openpgp.encrypt({
-        message: await Message.fromText('Hello', 'hello.txt'),
+        message: await createMessage({ text: 'Hello', filename: 'hello.txt' }),
         publicKeys: k
       });
       return false;

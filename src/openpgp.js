@@ -231,7 +231,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
  *   must be specified. If private keys are specified, those will be used to sign the message.
  * @param {Object} options
- * @param {Message} options.message - Message to be encrypted as created by {@link Message.fromText} or {@link Message.fromBinary}
+ * @param {Message} options.message - Message to be encrypted as created by {@link createMessage}
  * @param {Key|Array<Key>} [options.publicKeys] - Array of keys or single key, used to encrypt the message
  * @param {Key|Array<Key>} [options.privateKeys] - Private keys for signing. If omitted message will not be signed
  * @param {String|Array<String>} [options.passwords] - Array of passwords or a single password to encrypt the message

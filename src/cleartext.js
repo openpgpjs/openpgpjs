@@ -119,16 +119,6 @@ export class CleartextMessage {
     };
     return armor(enums.armor.signed, body, undefined, undefined, undefined, config);
   }
-
-  /**
-   * Creates a new CleartextMessage object from text
-   * @param {String} text
-   * @static
-   * @async
-   */
-  static async fromText(text) {
-    return new CleartextMessage(text);
-  }
 }
 
 /**
@@ -200,4 +190,18 @@ function verifyHeaders(headers, packetlist) {
   } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
+}
+
+/**
+ * Creates a new CleartextMessage object from text
+ * @param {Object} options
+ * @param {String} options.text
+ * @static
+ * @async
+ */
+export async function createCleartextMessage({ text }) {
+  if (!text) {
+    throw new Error('createCleartextMessage: must pass options object containing `text`');
+  }
+  return new CleartextMessage(text);
 }
