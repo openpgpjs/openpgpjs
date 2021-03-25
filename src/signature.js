@@ -22,7 +22,7 @@ import util from './util';
 import defaultConfig from './config';
 
 // A Signature can contain the following packets
-const allowedPackets = util.constructAllowedPackets([SignaturePacket]);
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP signature.

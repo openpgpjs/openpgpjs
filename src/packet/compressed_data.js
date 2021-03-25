@@ -29,7 +29,7 @@ import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
 
 // A Compressed Data packet can contain the following packet types
-const allowedPackets = util.constructAllowedPackets([
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
   OnePassSignaturePacket,
   SignaturePacket

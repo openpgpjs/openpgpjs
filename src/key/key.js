@@ -30,7 +30,7 @@ import SubKey from './subkey';
 import * as helper from './helper';
 
 // A key revocation certificate can contain the following packets
-const allowedRevocationPackets = util.constructAllowedPackets([SignaturePacket]);
+const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP key. Must contain a primary key.

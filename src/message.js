@@ -38,7 +38,7 @@ import {
 } from './packet';
 
 // A Message can contain the following packets
-const allowedMessagePackets = util.constructAllowedPackets([
+const allowedMessagePackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   AEADEncryptedDataPacket,
@@ -50,9 +50,9 @@ const allowedMessagePackets = util.constructAllowedPackets([
   SignaturePacket
 ]);
 // A SKESK packet can contain the following packets
-const allowedSymSessionKeyPackets = util.constructAllowedPackets([SymEncryptedSessionKeyPacket]);
+const allowedSymSessionKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([SymEncryptedSessionKeyPacket]);
 // A detached signature can contain the following packets
-const allowedDetachedSignaturePackets = util.constructAllowedPackets([SignaturePacket]);
+const allowedDetachedSignaturePackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP message.

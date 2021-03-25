@@ -33,7 +33,7 @@ import defaultConfig from '../config';
 import { unarmor } from '../encoding/armor';
 
 // A Key can contain the following packets
-const allowedKeyPackets = util.constructAllowedPackets([
+const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
   PublicKeyPacket,
   PublicSubkeyPacket,
   SecretKeyPacket,

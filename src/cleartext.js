@@ -24,7 +24,7 @@ import { createVerificationObjects, createSignaturePackets } from './message';
 import defaultConfig from './config';
 
 // A Cleartext message can contain the following packets
-const allowedPackets = util.constructAllowedPackets([SignaturePacket]);
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP cleartext signed message.
