@@ -63,7 +63,7 @@ module.exports = () => it('Twofish with test vectors from https://www.schneier.c
       continue;
     }
     expect(res, 'vector with block ' + util.uint8ArrayToHex(blk) +
-                ' with key ' + util.stringToHex(key) +
+                ' with key ' + util.uint8ArrayToHex(util.stringToUint8Array(key)) +
                 ' should be ' + util.uint8ArrayToHex(ct) +
                 ' but is ' + util.uint8ArrayToHex(tfencrypt(blk,key))).to.equal(exp);
   }

@@ -80,7 +80,7 @@ module.exports = () => describe('TripleDES (EDE) cipher test with test vectors f
       const encr = util.uint8ArrayToString(des.encrypt(testvectors[i][0], key));
 
       expect(encr, 'vector with block ' + util.uint8ArrayToHex(testvectors[i][0]) +
-                   ' and key ' + util.stringToHex(util.uint8ArrayToString(key)) +
+                   ' and key ' + util.uint8ArrayToHex(key) +
                    ' should be ' + util.uint8ArrayToHex(testvectors[i][1]) +
                    ' != ' + util.uint8ArrayToHex(encr)).to.be.equal(util.uint8ArrayToString(testvectors[i][1]));
     }
@@ -125,13 +125,13 @@ module.exports = () => describe('TripleDES (EDE) cipher test with test vectors f
         const decrypted = des.decrypt(encrypted, padding);
 
         expect(util.uint8ArrayToString(encrypted), 'vector with block [' + util.uint8ArrayToHex(thisVectorSet[i][0]) +
-          '] and key [' + util.stringToHex(util.uint8ArrayToString(key)) +
+          '] and key [' + util.uint8ArrayToHex(key) +
           '] and padding [' + padding +
           '] should be ' + util.uint8ArrayToHex(thisVectorSet[i][1]) +
           ' - Actually [' + util.uint8ArrayToHex(encrypted) +
           ']').to.equal(util.uint8ArrayToString(thisVectorSet[i][1]));
         expect(util.uint8ArrayToString(decrypted), 'vector with block [' + util.uint8ArrayToHex(thisVectorSet[i][0]) +
-          '] and key [' + util.stringToHex(util.uint8ArrayToString(key)) +
+          '] and key [' + util.uint8ArrayToHex(key) +
           '] and padding [' + padding +
           '] should be ' + util.uint8ArrayToHex(thisVectorSet[i][0]) +
           ' - Actually [' + util.uint8ArrayToHex(decrypted) +

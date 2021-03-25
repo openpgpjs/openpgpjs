@@ -8,9 +8,9 @@ const { expect } = chai;
 module.exports = () => it('CAST-128 cipher test with test vectors from RFC2144', function (done) {
   function test_cast(input, key, output) {
     const cast5 = new CAST5(key);
-    const result = util.uint8ArrayToString(cast5.encrypt(input));
+    const result = cast5.encrypt(input);
 
-    return util.stringToHex(result) === util.stringToHex(util.uint8ArrayToString(output));
+    return util.equalsUint8Array(new Uint8Array(result), new Uint8Array(output));
   }
 
   const testvectors = [[[0x01,0x23,0x45,0x67,0x12,0x34,0x56,0x78,0x23,0x45,0x67,0x89,0x34,0x56,0x78,0x9A],[0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF],[0x23,0x8B,0x4F,0xE5,0x84,0x7E,0x44,0xB2]]];

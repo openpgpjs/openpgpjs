@@ -57,7 +57,7 @@ class KeyID {
    * @returns {String} Key ID as a hexadecimal string.
    */
   toHex() {
-    return util.stringToHex(this.bytes);
+    return util.uint8ArrayToHex(util.stringToUint8Array(this.bytes));
   }
 
   /**

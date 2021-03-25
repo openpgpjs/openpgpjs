@@ -37,61 +37,9 @@ const util = {
     return Array.prototype.isPrototypeOf(data);
   },
 
-  isBigInteger: function(data) {
-    return data !== null && typeof data === 'object' && data.value &&
-      // eslint-disable-next-line valid-typeof
-      (typeof data.value === 'bigint' || this.isBN(data.value));
-  },
-
-  isBN: function(data) {
-    return data !== null && typeof data === 'object' &&
-      (data.constructor.name === 'BN' ||
-        (data.constructor.wordSize === 26 && Array.isArray(data.words))); // taken from BN.isBN()
-  },
-
   isUint8Array: stream.isUint8Array,
 
   isStream: stream.isStream,
-
-  /**
-   * Convert MessagePorts back to ReadableStreams
-   * @param {Object} obj
-   * @returns {Object}
-   */
-  restoreStreams: function(obj, streaming) {
-    if (Object.prototype.toString.call(obj) === '[object MessagePort]') {
-      return new (streaming === 'web' ? globalThis.ReadableStream : stream.ReadableStream)({
-        pull(controller) {
-          return new Promise(resolve => {
-            obj.onmessage = evt => {
-              const { done, value, error } = evt.data;
-              if (error) {
-                controller.error(new Error(error));
-              } else if (!done) {
-                controller.enqueue(value);
-              } else {
-                controller.close();
-              }
-              resolve();
-            };
-            obj.postMessage({ action: 'read' });
-          });
-        },
-        cancel() {
-          return new Promise(resolve => {
-            obj.onmessage = resolve;
-            obj.postMessage({ action: 'cancel' });
-          });
-        }
-      }, { highWaterMark: 0 });
-    }
-    if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
-      Object.entries(obj).forEach(([key, value]) => { // recursively search all children
-        obj[key] = util.restoreStreams(value, streaming);
-      });
-    }
-    return obj;
-  },
 
   readNumber: function (bytes) {
     let n = 0;
@@ -124,42 +72,6 @@ const util = {
 
   normalizeDate: function (time = Date.now()) {
     return time === null || time === Infinity ? time : new Date(Math.floor(+time / 1000) * 1000);
-  },
-
-  /**
-   * Create hex string from a binary
-   * @param {String} str - String to convert
-   * @returns {String} String containing the hexadecimal values.
-   */
-  stringToHex: function (str) {
-    if (str === null) {
-      return "";
-    }
-    const r = [];
-    const e = str.length;
-    let c = 0;
-    let h;
-    while (c < e) {
-      h = str.charCodeAt(c++).toString(16);
-      while (h.length < 2) {
-        h = "0" + h;
-      }
-      r.push("" + h);
-    }
-    return r.join('');
-  },
-
-  /**
-   * Create binary string from a hex encoded string
-   * @param {String} str - Hex string to convert
-   * @returns {String}
-   */
-  hexToString: function (hex) {
-    let str = '';
-    for (let i = 0; i < hex.length; i += 2) {
-      str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-    }
-    return str;
   },
 
   /**
@@ -377,32 +289,6 @@ const util = {
   },
 
   /**
-   * Helper function to print a debug message. Debug
-   * messages are only printed if
-   * Different than printDebug because will call Uint8ArrayToHex iff necessary.
-   * @param {String} str - String of the debug message
-   */
-  printDebugHexArrayDump: function (str, arrToHex) {
-    if (debugMode) {
-      str += ': ' + util.uint8ArrayToHex(arrToHex);
-      console.log(str);
-    }
-  },
-
-  /**
-   * Helper function to print a debug message. Debug
-   * messages are only printed if
-   * Different than printDebug because will call stringToHex iff necessary.
-   * @param {String} str - String of the debug message
-   */
-  printDebugHexStrDump: function (str, stringToHex) {
-    if (debugMode) {
-      str += util.stringToHex(stringToHex);
-      console.log(str);
-    }
-  },
-
-  /**
    * Helper function to print a debug error. Debug
    * messages are only printed if
    * @param {String} str - String of the debug message
@@ -411,18 +297,6 @@ const util = {
     if (debugMode) {
       console.error(error);
     }
-  },
-
-  /**
-   * Read a stream to the end and print it to the console when it's closed.
-   * @param {String} str - String of the debug message
-   * @param {ReadableStream|Uint8array|String} input - Stream to print
-   * @param {Function} concat - Function to concatenate chunks of the stream (defaults to util.concat).
-   */
-  printEntireStream: function (str, input, concat) {
-    stream.readToEnd(stream.clone(input), concat).then(result => {
-      console.log(str + ': ', result);
-    });
   },
 
   // returns bit length of the integer x
@@ -543,10 +417,6 @@ const util = {
    */
   getNodeBuffer: function() {
     return (require('buffer') || {}).Buffer;
-  },
-
-  getNodeStream: function() {
-    return (require('stream') || {}).Readable;
   },
 
   getHardwareConcurrency: function() {
