@@ -7,8 +7,8 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
-import CMAC from "./cmac";
-import ECDHSymkey from '../type/ecdh_symkey';
+import { createHmac } from "./hmac";
+import OctetString from '../type/octet_string';
 
 /**
  * Parse signature in binary form to get the parameters.
@@ -57,8 +57,8 @@ export function parseSignatureParams(algo, signature) {
       return { r, s };
     }
 
-    case enums.publicKey.cmac: {
-      const mac = new ECDHSymkey(); mac.read(signature.subarray(read));
+    case enums.publicKey.hmac: {
+      const mac = new OctetString(); mac.read(signature.subarray(read));
       return { mac };
     }
     default:
@@ -108,18 +108,15 @@ export async function verify(algo, hashAlgo, signature, publicParams, privatePar
       // signature already padded on parsing
       return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signature, data, Q, hashed);
     }
-    case enums.publicKey.cmac: {
+    case enums.publicKey.hmac: {
       if (!privateParams) {
-        throw new Error('Cannot verify CMAC signature with symmetric key missing private parameters');
+        throw new Error('Cannot verify HMAC signature with symmetric key missing private parameters');
       }
       const { cipher: algo } = publicParams;
       const { keyMaterial } = privateParams;
-      if (algo.getName().substr(0, 3) !== 'aes') {
-        throw new Error('CMAC supports only AES cipher');
-      }
-
-      const cmac = await CMAC(keyMaterial);
-      const mac = await cmac(hashed);
+      const hmac = createHmac(algo.data, keyMaterial);
+      hmac.update(hashed);
+      const mac = hmac.finalize();
       return util.equalsUint8Array(mac, signature.mac.data);
     }
     default:
@@ -172,16 +169,14 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { seed } = privateKeyParams;
       return publicKey.elliptic.eddsa.sign(oid, hashAlgo, data, Q, seed, hashed);
     }
-    case enums.publicKey.cmac: {
+    case enums.publicKey.hmac: {
       const { cipher: algo } = publicKeyParams;
       const { keyMaterial } = privateKeyParams;
-      if (algo.getName().substr(0, 3) !== 'aes') {
-        throw new Error('CMAC supports only AES cipher');
-      }
-      const cmac = await CMAC(keyMaterial);
-      const mac = await cmac(hashed);
+      const hmac = createHmac(algo.data, keyMaterial);
+      hmac.update(hashed);
+      const mac = hmac.finalize();
 
-      return { mac: new ECDHSymkey(mac) };
+      return { mac: new OctetString(mac) };
     }
     default:
       throw new Error('Invalid signature algorithm.');

@@ -682,7 +682,7 @@ class SignaturePacket {
     }
 
     this.params = await this.params;
-    const privateParams = publicKeyAlgorithm === enums.publicKey.cmac ? key.privateParams : {};
+    const privateParams = publicKeyAlgorithm === enums.publicKey.hmac ? key.privateParams : {};
 
     const verified = await crypto.signature.verify(
       publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams, privateParams,

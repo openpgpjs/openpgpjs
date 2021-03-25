@@ -51,7 +51,7 @@ import util from './util';
  * @async
  * @static
  */
-export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config, symmetric = null }) {
+export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config, symmetricHash = "sha256", symmetricCipher = "aes256" }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -60,7 +60,7 @@ export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBi
   if (type === "rsa" && rsaBits < config.minRsaBits) {
     throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${rsaBits}`);
   }
-  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys, symmetric };
+  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys, symmetricHash, symmetricCipher };
 
   return generate(options, config).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate(date, config);

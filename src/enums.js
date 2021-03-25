@@ -119,7 +119,7 @@ export default {
     /** Symmetric authenticated encryption algorithms */
     aead: 100,
     /** Authentication using CMAC */
-    cmac: 101
+    hmac: 101
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}

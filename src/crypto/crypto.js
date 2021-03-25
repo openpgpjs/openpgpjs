@@ -28,10 +28,11 @@ import publicKey from './public_key';
 import * as cipher from './cipher';
 import { getRandomBytes } from './random';
 import ECDHSymkey from '../type/ecdh_symkey';
+import OctetString from '../type/octet_string';
 import hash from './hash';
 import config from '../config';
 import KDFParams from '../type/kdf_params';
-import { SymAlgoEnum, AEADEnum } from '../type/enum';
+import { SymAlgoEnum, AEADEnum, HashEnum } from '../type/enum';
 import enums from '../enums';
 import util from '../util';
 import OID from '../type/oid';
@@ -80,7 +81,7 @@ export async function publicKeyEncrypt(algo, publicParams, privateParams, data, 
       const iv = await getRandomBytes(ivLength);
       const modeInstance = await mode(algoName, keyMaterial);
       const c = await modeInstance.encrypt(data, iv, new Uint8Array());
-      return { aeadMode: new AEADEnum(aeadMode), iv, c: new ECDHSymkey(c) };
+      return { aeadMode: new AEADEnum(aeadMode), iv, c: new OctetString(c) };
     }
     default:
       return [];
@@ -182,7 +183,7 @@ export function parsePublicKeyParams(algo, bytes) {
       const kdfParams = new KDFParams(); read += kdfParams.read(bytes.subarray(read));
       return { read: read, publicParams: { oid, Q, kdfParams } };
     }
-    case enums.publicKey.cmac:
+    case enums.publicKey.hmac:
     case enums.publicKey.aead: {
       const algo = new SymAlgoEnum(); read += algo.read(bytes);
       const digestLength = hash.getHashByteLength(enums.hash.sha256);
@@ -230,7 +231,13 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       seed = util.leftPad(seed, 32);
       return { read, privateParams: { seed } };
     }
-    case enums.publicKey.cmac:
+    case enums.publicKey.hmac: {
+      const { cipher: algo } = publicParams;
+      const keySize = hash.getHashByteLength(algo);
+      const hashSeed = bytes.subarray(read, read + 32); read += 32;
+      const key = bytes.subarray(read, read + keySize); read += keySize;
+      return { read, privateParams: { key, hashSeed } };
+    }
     case enums.publicKey.aead: {
       const { cipher: algo } = publicParams;
       const algoName = algo.getName();
@@ -286,7 +293,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
       const { tagLength, ivLength } = mode;
 
       const iv = bytes.subarray(read, read + ivLength); read += ivLength;
-      const c = new ECDHSymkey(); read += c.read(bytes.subarray(read));
+      const c = new OctetString(); read += c.read(bytes.subarray(read));
       const t = bytes.subarray(read, read + tagLength);
 
       return { aeadMode, iv, c, t };
@@ -305,7 +312,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
 export function serializeParams(algo, params) {
   let orderedParams;
   switch (algo) {
-    case enums.publicKey.cmac:
+    case enums.publicKey.hmac:
     case enums.publicKey.aead: {
       orderedParams = Object.keys(params).map(name => {
         const param = params[name];
@@ -360,17 +367,13 @@ export async function generateParams(algo, bits, oid, symmetric) {
           kdfParams: new KDFParams({ hash, cipher })
         }
       }));
-    case enums.publicKey.cmac:
+    case enums.publicKey.hmac: {
+      const keyMaterial = await getRandomBytes(hash.getHashByteLength(enums.hash[symmetric]));
+      return createSymmetricParams(keyMaterial, new HashEnum(symmetric));
+    }
     case enums.publicKey.aead: {
       const keyMaterial = await generateSessionKey(symmetric);
-      const digest = await hash.sha256(keyMaterial);
-      return {
-        privateParams: { keyMaterial },
-        publicParams: {
-          cipher: new SymAlgoEnum(symmetric),
-          digest
-        }
-      };
+      return createSymmetricParams(keyMaterial, new SymAlgoEnum(symmetric));
     }
     case enums.publicKey.dsa:
     case enums.publicKey.elgamal:
@@ -378,6 +381,21 @@ export async function generateParams(algo, bits, oid, symmetric) {
     default:
       throw new Error('Invalid public key algorithm.');
   }
+}
+
+async function createSymmetricParams(key, algo) {
+  const seed = await getRandomBytes(32);
+  const bindingHash = await hash.sha256(seed);
+  return {
+    privateParams: {
+      keyMaterial: key,
+      hashSeed: seed
+    },
+    publicParams: {
+      cipher: algo,
+      digest: bindingHash
+    }
+  };
 }
 
 /**
@@ -422,14 +440,20 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { seed } = privateParams;
       return publicKey.elliptic.eddsa.validateParams(oid, Q, seed);
     }
-    case enums.publicKey.cmac:
+    case enums.publicKey.hmac: {
+      const { cipher: algo, digest } = publicParams;
+      const { keyMaterial, hashSeed } = privateParams;
+      const keySize = hash.getHashByteLength(algo);
+      return keySize === keyMaterial.length &&
+        util.equalsUint8Array(digest, await hash.sha256(hashSeed));
+    }
     case enums.publicKey.aead: {
       const { cipher: algo, digest } = publicParams;
+      const { keyMaterial, hashSeed } = privateParams;
       const algoName = algo.getName();
-      const { keyMaterial } = privateParams;
       const keySize = cipher[algoName].keySize;
       return keySize === keyMaterial.length &&
-        util.equalsUint8Array(digest, await hash.sha256(keyMaterial));
+        util.equalsUint8Array(digest, await hash.sha256(hashSeed));
     }
     default:
       throw new Error('Invalid public key algorithm.');

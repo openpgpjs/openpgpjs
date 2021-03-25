@@ -63,8 +63,9 @@ const type_enum = e => class EnumType {
 };
 const AEADEnum = type_enum(enums.aead);
 const SymAlgoEnum = type_enum(enums.symmetric);
+const HashEnum = type_enum(enums.hash);
 
 
-export { SymAlgoEnum, AEADEnum };
+export { SymAlgoEnum, AEADEnum, HashEnum };
 
 export default type_enum;

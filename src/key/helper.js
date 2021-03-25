@@ -323,7 +323,6 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.type = options.type || subkeyDefaults.type;
   options.curve = options.curve || subkeyDefaults.curve;
   options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
-  options.symmetric = options.symmetric || subkeyDefaults.symmetric;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
   options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
   options.date = options.date || subkeyDefaults.date;
@@ -351,9 +350,11 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       break;
     case 'symmetric':
       if (options.sign) {
-        options.algorithm = enums.publicKey.cmac;
+        options.algorithm = enums.publicKey.hmac;
+        options.symmetric = options.symmetricHash || subkeyDefaults.symmetricHash;
       } else {
         options.algorithm = enums.publicKey.aead;
+        options.symmetric = options.symmetricCipher || subkeyDefaults.symmetricCipher;
       }
       break;
     default:
