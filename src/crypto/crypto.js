@@ -243,7 +243,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
 export function serializeParams(algo, params) {
   const orderedParams = Object.keys(params).map(name => {
     const param = params[name];
-    return util.isUint8Array(param) ? util.uint8ArrayToMpi(param) : param.write();
+    return util.isUint8Array(param) ? util.uint8ArrayToMPI(param) : param.write();
   });
   return util.concatUint8Array(orderedParams);
 }

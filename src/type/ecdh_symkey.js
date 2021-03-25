@@ -29,7 +29,7 @@ class ECDHSymmetricKey {
     if (typeof data === 'undefined') {
       data = new Uint8Array([]);
     } else if (util.isString(data)) {
-      data = util.strToUint8Array(data);
+      data = util.stringToUint8Array(data);
     } else {
       data = new Uint8Array(data);
     }

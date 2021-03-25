@@ -18,12 +18,12 @@
 /**
  * @fileoverview This module wraps native AES-GCM en/decryption for both
  * the WebCrypto api as well as node.js' crypto api.
- * @module crypto/gcm
+ * @module crypto/mode/gcm
  * @private
  */
 
 import { AES_GCM } from '@openpgp/asmcrypto.js/dist_es8/aes/gcm';
-import util from '../util';
+import util from '../../util';
 
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();

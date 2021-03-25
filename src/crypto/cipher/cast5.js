@@ -14,7 +14,7 @@
 
 // CAST5 constructor
 
-function OpenpgpSymencCast5() {
+function OpenPGPSymEncCAST5() {
   this.BlockSize = 8;
   this.KeySize = 16;
 
@@ -595,8 +595,8 @@ function OpenpgpSymencCast5() {
   ];
 }
 
-function Cast5(key) {
-  this.cast5 = new OpenpgpSymencCast5();
+function CAST5(key) {
+  this.cast5 = new OpenPGPSymEncCAST5();
   this.cast5.setKey(key);
 
   this.encrypt = function(block) {
@@ -604,7 +604,7 @@ function Cast5(key) {
   };
 }
 
-Cast5.blockSize = Cast5.prototype.blockSize = 8;
-Cast5.keySize = Cast5.prototype.keySize = 16;
+CAST5.blockSize = CAST5.prototype.blockSize = 8;
+CAST5.keySize = CAST5.prototype.keySize = 16;
 
-export default Cast5;
+export default CAST5;

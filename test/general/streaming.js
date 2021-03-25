@@ -184,8 +184,8 @@ function tests() {
     dataArrived(); // Do not wait until data arrived.
     const data = new ReadableStream({
       async start(controller) {
-        controller.enqueue(util.strToUint8Array('hello '));
-        controller.enqueue(util.strToUint8Array('world'));
+        controller.enqueue(util.stringToUint8Array('hello '));
+        controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
       }
     });
@@ -238,7 +238,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     const reader = openpgp.stream.getReader(signed);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\n/);
@@ -314,7 +314,7 @@ function tests() {
         publicKeys: pubKey,
         privateKeys: privKey,
         armor: false,
-        config: { minRsaBits: 1024 }
+        config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -446,7 +446,7 @@ function tests() {
         message: openpgp.Message.fromBinary(data),
         publicKeys: pubKey,
         privateKeys: privKey,
-        config: { minRsaBits: 1024 }
+        config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -484,7 +484,7 @@ function tests() {
         message: openpgp.Message.fromBinary(data),
         publicKeys: pubKey,
         privateKeys: privKey,
-        config: { minRsaBits: 1024 }
+        config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -518,7 +518,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
@@ -535,7 +535,7 @@ function tests() {
       message,
       streaming: expectedType,
       format: 'binary',
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(verified.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(verified.data);
@@ -574,7 +574,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
@@ -583,7 +583,7 @@ function tests() {
       publicKeys: pubKey,
       message,
       format: 'binary',
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(verified.data)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(verified.data);
@@ -614,7 +614,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
@@ -629,7 +629,7 @@ function tests() {
     const signed = await openpgp.sign({
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const message = await openpgp.readMessage({ armoredMessage: signed });
@@ -650,8 +650,8 @@ function tests() {
     dataArrived(); // Do not wait until data arrived.
     const data = new ReadableStream({
       async start(controller) {
-        controller.enqueue(util.strToUint8Array('hello '));
-        controller.enqueue(util.strToUint8Array('world'));
+        controller.enqueue(util.stringToUint8Array('hello '));
+        controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
       }
     });
@@ -660,7 +660,7 @@ function tests() {
       privateKeys: privKey,
       detached: true,
       streaming: expectedType,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const armoredSignature = await openpgp.stream.readToEnd(signed);
@@ -669,7 +669,7 @@ function tests() {
       signature,
       publicKeys: pubKey,
       message: openpgp.Message.fromText('hello world'),
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);
@@ -680,8 +680,8 @@ function tests() {
     dataArrived(); // Do not wait until data arrived.
     const data = new ReadableStream({
       async start(controller) {
-        controller.enqueue(util.strToUint8Array('hello '));
-        controller.enqueue(util.strToUint8Array('world'));
+        controller.enqueue(util.stringToUint8Array('hello '));
+        controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
       }
     });
@@ -691,7 +691,7 @@ function tests() {
       detached: true,
       streaming: false,
       armor: false,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.be.false;
     const signature = await openpgp.readMessage({ binaryMessage: signed });
@@ -699,7 +699,7 @@ function tests() {
       signature,
       publicKeys: pubKey,
       message: openpgp.Message.fromText('hello world'),
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);
@@ -710,8 +710,8 @@ function tests() {
     dataArrived(); // Do not wait until data arrived.
     const data = new ReadableStream({
       async start(controller) {
-        controller.enqueue(util.strToUint8Array('hello '));
-        controller.enqueue(util.strToUint8Array('world'));
+        controller.enqueue(util.stringToUint8Array('hello '));
+        controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
       }
     });
@@ -741,8 +741,8 @@ function tests() {
     dataArrived(); // Do not wait until data arrived.
     const data = new ReadableStream({
       async start(controller) {
-        controller.enqueue(util.strToUint8Array('hello '));
-        controller.enqueue(util.strToUint8Array('world'));
+        controller.enqueue(util.stringToUint8Array('hello '));
+        controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
       }
     });
@@ -773,7 +773,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
       detached: true,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);
@@ -788,7 +788,7 @@ function tests() {
       message: openpgp.Message.fromBinary(data),
       privateKeys: privKey,
       detached: true,
-      config: { minRsaBits: 1024 }
+      config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const reader = openpgp.stream.getReader(signed);

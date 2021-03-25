@@ -258,7 +258,7 @@ Blowfish.prototype._F = function(xx) {
 //* This method takes an array with two values, left and right
 //* and does NN rounds of Blowfish on them.
 //*
-Blowfish.prototype._encrypt_block = function(vals) {
+Blowfish.prototype._encryptBlock = function(vals) {
   let dataL = vals[0];
   let dataR = vals[1];
 
@@ -289,7 +289,7 @@ Blowfish.prototype._encrypt_block = function(vals) {
 //* instead.  That will involve more looping, but it won't require
 //* the F() method to deconstruct the vector.
 //*
-Blowfish.prototype.encrypt_block = function(vector) {
+Blowfish.prototype.encryptBlock = function(vector) {
   let ii;
   const vals = [0, 0];
   const off = this.BLOCKSIZE / 2;
@@ -298,7 +298,7 @@ Blowfish.prototype.encrypt_block = function(vector) {
     vals[1] = (vals[1] << 8) | (vector[ii + off] & 0x00FF);
   }
 
-  this._encrypt_block(vals);
+  this._encryptBlock(vals);
 
   const ret = [];
   for (ii = 0; ii < this.BLOCKSIZE / 2; ++ii) {
@@ -315,7 +315,7 @@ Blowfish.prototype.encrypt_block = function(vector) {
 //* This method takes an array with two values, left and right
 //* and undoes NN rounds of Blowfish on them.
 //*
-Blowfish.prototype._decrypt_block = function(vals) {
+Blowfish.prototype._decryptBlock = function(vals) {
   let dataL = vals[0];
   let dataR = vals[1];
 
@@ -368,14 +368,14 @@ Blowfish.prototype.init = function(key) {
   const vals = [0x00000000, 0x00000000];
 
   for (ii = 0; ii < this.NN + 2; ii += 2) {
-    this._encrypt_block(vals);
+    this._encryptBlock(vals);
     this.parray[ii + 0] = vals[0];
     this.parray[ii + 1] = vals[1];
   }
 
   for (ii = 0; ii < 4; ++ii) {
     for (jj = 0; jj < 256; jj += 2) {
-      this._encrypt_block(vals);
+      this._encryptBlock(vals);
       this.sboxes[ii][jj + 0] = vals[0];
       this.sboxes[ii][jj + 1] = vals[1];
     }
@@ -388,7 +388,7 @@ function BF(key) {
   this.bf.init(key);
 
   this.encrypt = function(block) {
-    return this.bf.encrypt_block(block);
+    return this.bf.encryptBlock(block);
   };
 }
 

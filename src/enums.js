@@ -180,7 +180,7 @@ export default {
   aead: {
     eax: 1,
     ocb: 2,
-    experimentalGcm: 100 // Private algorithm
+    experimentalGCM: 100 // Private algorithm
   },
 
   /** A list of packet types and numeric tags associated with them.
@@ -205,7 +205,7 @@ export default {
     userAttribute: 17,
     symEncryptedIntegrityProtectedData: 18,
     modificationDetectionCode: 19,
-    AEADEncryptedData: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
+    aeadEncryptedData: 20 // see IETF draft: https://tools.ietf.org/html/draft-ford-openpgp-format-00#section-2.1
   },
 
   /** Data types in the literal packet
@@ -367,16 +367,16 @@ export default {
     preferredCompressionAlgorithms: 22,
     keyServerPreferences: 23,
     preferredKeyServer: 24,
-    primaryUserId: 25,
-    policyUri: 26,
+    primaryUserID: 25,
+    policyURI: 26,
     keyFlags: 27,
-    signersUserId: 28,
+    signersUserID: 28,
     reasonForRevocation: 29,
     features: 30,
     signatureTarget: 31,
     embeddedSignature: 32,
     issuerFingerprint: 33,
-    preferredAeadAlgorithms: 34
+    preferredAEADAlgorithms: 34
   },
 
   /** Key flags
@@ -430,7 +430,7 @@ export default {
     /** Key is retired and no longer used (key revocations) */
     keyRetired: 3,
     /** User ID information is no longer valid (cert revocations) */
-    userIdInvalid: 32
+    userIDInvalid: 32
   },
 
   /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.2.3.25|RFC4880bis-04, section 5.2.3.25}

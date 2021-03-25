@@ -1,13 +1,26 @@
 import stream from '@openpgp/web-stream-tools';
-import * as packets from './all_packets';
 import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength
 } from './packet';
-import enums from '../enums';
 import util from '../util';
+import enums from '../enums';
 import defaultConfig from '../config';
+
+/**
+ * Instantiate a new packet given its tag
+ * @function newPacketFromTag
+ * @param {module:enums.packet} tag - Property value from {@link module:enums.packet}
+ * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
+ * @returns {Object} New packet object with type based on tag
+ */
+export function newPacketFromTag(tag, allowedPackets) {
+  if (!allowedPackets[tag]) {
+    throw new Error(`Packet not allowed in this context: ${enums.read(enums.packets, tag)}`);
+  }
+  return new allowedPackets[tag]();
+}
 
 /**
  * This class represents a list of openpgp packets.
@@ -28,8 +41,7 @@ class PacketList extends Array {
           await writer.ready;
           const done = await readPackets(readable, streaming, async parsed => {
             try {
-              const tag = enums.read(enums.packet, parsed.tag);
-              const packet = packets.newPacketFromTag(tag, allowedPackets);
+              const packet = newPacketFromTag(parsed.tag, allowedPackets);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
               await packet.read(parsed.packet, config, streaming);
@@ -64,7 +76,7 @@ class PacketList extends Array {
       } else {
         this.stream = null;
       }
-      if (done || supportsStreaming(value.tag)) {
+      if (done || supportsStreaming(value.constructor.tag)) {
         break;
       }
     }
@@ -81,11 +93,11 @@ class PacketList extends Array {
 
     for (let i = 0; i < this.length; i++) {
       const packetbytes = this[i].write();
-      if (util.isStream(packetbytes) && supportsStreaming(this[i].tag)) {
+      if (util.isStream(packetbytes) && supportsStreaming(this[i].constructor.tag)) {
         let buffer = [];
         let bufferLength = 0;
         const minLength = 512;
-        arr.push(writeTag(this[i].tag));
+        arr.push(writeTag(this[i].constructor.tag));
         arr.push(stream.transform(packetbytes, value => {
           buffer.push(value);
           bufferLength += value.length;
@@ -103,9 +115,9 @@ class PacketList extends Array {
           let length = 0;
           arr.push(stream.transform(stream.clone(packetbytes), value => {
             length += value.length;
-          }, () => writeHeader(this[i].tag, length)));
+          }, () => writeHeader(this[i].constructor.tag, length)));
         } else {
-          arr.push(writeHeader(this[i].tag, packetbytes.length));
+          arr.push(writeHeader(this[i].constructor.tag, packetbytes.length));
         }
         arr.push(packetbytes);
       }
@@ -138,7 +150,7 @@ class PacketList extends Array {
     const handle = tag => packetType => tag === packetType;
 
     for (let i = 0; i < this.length; i++) {
-      if (args.some(handle(this[i].tag))) {
+      if (args.some(handle(this[i].constructor.tag))) {
         filtered.push(this[i]);
       }
     }
@@ -152,7 +164,7 @@ class PacketList extends Array {
    * @returns {Packet|undefined}
    */
   findPacket(type) {
-    return this.find(packet => packet.tag === type);
+    return this.find(packet => packet.constructor.tag === type);
   }
 
   /**
@@ -165,7 +177,7 @@ class PacketList extends Array {
     const handle = tag => packetType => tag === packetType;
 
     for (let i = 0; i < this.length; i++) {
-      if (args.some(handle(that[i].tag))) {
+      if (args.some(handle(that[i].constructor.tag))) {
         tagIndex.push(i);
       }
     }

@@ -94,15 +94,15 @@ module.exports = () => describe('Util unit tests', function() {
     });
   });
 
-  describe('uint8ArrayToMpi', function() {
+  describe('uint8ArrayToMPI', function() {
     it('should strip leading zeros', function() {
       const bytes = new Uint8Array([0, 0, 1, 2]);
-      const mpi = util.uint8ArrayToMpi(bytes);
+      const mpi = util.uint8ArrayToMPI(bytes);
       expect(mpi).to.deep.equal(new Uint8Array([0, 9, 1, 2]));
     });
     it('should throw on array of all zeros', function() {
       const bytes = new Uint8Array([0, 0]);
-      expect(() => util.uint8ArrayToMpi(bytes)).to.throw('Zero MPI');
+      expect(() => util.uint8ArrayToMPI(bytes)).to.throw('Zero MPI');
     });
   });
 

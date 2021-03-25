@@ -78,7 +78,7 @@ async function makeKeyValid() {
   // add key capability
   fake.keyFlags[0] |= enums.keyFlags.encryptCommunication;
   // create modified subpacket data
-  pusersig.read_sub_packets(fake.write_hashed_sub_packets(), false);
+  pusersig.readSubPackets(fake.writeHashedSubPackets(), false);
   // reconstruct the modified key
   const newlist = new PacketList();
   newlist.concat([pubkey, puser, pusersig]);

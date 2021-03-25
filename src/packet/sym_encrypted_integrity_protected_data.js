@@ -19,13 +19,20 @@ import stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// A SEIP packet can contain the following packet types
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -40,8 +47,11 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * packet.
  */
 class SymEncryptedIntegrityProtectedDataPacket {
+  static get tag() {
+    return enums.packet.symEncryptedIntegrityProtectedData;
+  }
+
   constructor() {
-    this.tag = enums.packet.symEncryptedIntegrityProtectedData;
     this.version = VERSION;
     /** The encrypted payload. */
     this.encrypted = null; // string
@@ -93,7 +103,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
     const plaintext = util.concat([tohash, hash]);
 
-    this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
+    this.encrypted = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
     return true;
   }
 
@@ -109,7 +119,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
   async decrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
     let encrypted = stream.clone(this.encrypted);
     if (!streaming) encrypted = await stream.readToEnd(encrypted);
-    const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
 
     // there must be a modification detection code packet as the
     // last packet and everything gets hashed except the hash itself
@@ -130,12 +140,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
       packetbytes = await stream.readToEnd(packetbytes);
     }
-    await this.packets.read(packetbytes, {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(packetbytes, allowedPackets, streaming);
     return true;
   }
 }

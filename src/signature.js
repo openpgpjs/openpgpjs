@@ -18,7 +18,11 @@
 import { armor, unarmor } from './encoding/armor';
 import { PacketList, SignaturePacket } from './packet';
 import enums from './enums';
+import util from './util';
 import defaultConfig from './config';
+
+// A Signature can contain the following packets
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP signature.
@@ -73,6 +77,6 @@ export async function readSignature({ armoredSignature, binarySignature, config 
     input = data;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, { SignaturePacket }, undefined, config);
+  await packetlist.read(input, allowedPackets, undefined, config);
   return new Signature(packetlist);
 }

@@ -22,8 +22,8 @@
  */
 
 import nacl from '@openpgp/tweetnacl/nacl-fast-light.js';
-import { Curve, jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams } from './curves';
-import * as aes_kw from '../../aes_kw';
+import { Curve, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams } from './curves';
+import * as aesKW from '../../aes_kw';
 import * as cipher from '../../cipher';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
@@ -54,13 +54,13 @@ function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
     oid.write(),
     new Uint8Array([public_algo]),
     kdfParams.write(),
-    util.strToUint8Array("Anonymous Sender    "),
+    util.stringToUint8Array("Anonymous Sender    "),
     fingerprint.subarray(0, 20)
   ]);
 }
 
 // Key Derivation Function (RFC 6637)
-async function kdf(hash_algo, X, length, param, stripLeading = false, stripTrailing = false) {
+async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTrailing = false) {
   // Note: X is little endian for Curve25519, big-endian for all others.
   // This is not ideal, but the RFC's are unclear
   // https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-02#appendix-B
@@ -75,7 +75,7 @@ async function kdf(hash_algo, X, length, param, stripLeading = false, stripTrail
     for (i = X.length - 1; i >= 0 && X[i] === 0; i--);
     X = X.subarray(0, i + 1);
   }
-  const digest = await hash.digest(hash_algo, util.concatUint8Array([
+  const digest = await hash.digest(hashAlgo, util.concatUint8Array([
     new Uint8Array([0, 0, 0, 1]),
     X,
     param
@@ -132,9 +132,9 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
   const curve = new Curve(oid);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
-  const cipher_algo = enums.read(enums.symmetric, kdfParams.cipher);
-  const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param);
-  const wrappedKey = aes_kw.wrap(Z, m);
+  const cipherAlgo = enums.read(enums.symmetric, kdfParams.cipher);
+  const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipherAlgo].keySize, param);
+  const wrappedKey = aesKW.wrap(Z, m);
   return { publicKey, wrappedKey };
 }
 
@@ -192,13 +192,13 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   const curve = new Curve(oid);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
-  const cipher_algo = enums.read(enums.symmetric, kdfParams.cipher);
+  const cipherAlgo = enums.read(enums.symmetric, kdfParams.cipher);
   let err;
   for (let i = 0; i < 3; i++) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
-      const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipher_algo].keySize, param, i === 1, i === 2);
-      return pkcs5.decode(aes_kw.unwrap(Z, C));
+      const Z = await kdf(kdfParams.hash, sharedKey, cipher[cipherAlgo].keySize, param, i === 1, i === 2);
+      return pkcs5.decode(aesKW.unwrap(Z, C));
     } catch (e) {
       err = e;
     }
@@ -217,7 +217,7 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
  * @async
  */
 async function webPrivateEphemeralKey(curve, V, Q, d) {
-  const recipient = privateToJwk(curve.payloadSize, curve.web.web, Q, d);
+  const recipient = privateToJWK(curve.payloadSize, curve.web.web, Q, d);
   let privateKey = webCrypto.importKey(
     "jwk",
     recipient,
@@ -228,7 +228,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
     true,
     ["deriveKey", "deriveBits"]
   );
-  const jwk = rawPublicToJwk(curve.payloadSize, curve.web.web, V);
+  const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, V);
   let sender = webCrypto.importKey(
     "jwk",
     jwk,
@@ -268,7 +268,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
  * @async
  */
 async function webPublicEphemeralKey(curve, Q) {
-  const jwk = rawPublicToJwk(curve.payloadSize, curve.web.web, Q);
+  const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, Q);
   let keyPair = webCrypto.generateKey(
     {
       name: "ECDH",

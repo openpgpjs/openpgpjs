@@ -7,10 +7,10 @@ const { expect } = chai;
 
 module.exports = () => it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
   function test_bf(input, key, output) {
-    const blowfish = new BF(util.uint8ArrayToStr(key));
-    const result = util.uint8ArrayToStr(blowfish.encrypt(input));
+    const blowfish = new BF(util.uint8ArrayToString(key));
+    const result = util.uint8ArrayToString(blowfish.encrypt(input));
 
-    return (util.strToHex(result) === util.strToHex(util.uint8ArrayToStr(output)));
+    return (util.stringToHex(result) === util.stringToHex(util.uint8ArrayToString(output)));
   }
 
   const testvectors = [[[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x4E,0xF9,0x97,0x45,0x61,0x98,0xDD,0x78]],

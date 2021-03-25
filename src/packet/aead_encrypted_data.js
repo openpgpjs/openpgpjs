@@ -19,13 +19,20 @@ import stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// An AEAD-encrypted Data packet can contain the following packet types
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -37,8 +44,11 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * AEAD Protected Data Packet
  */
 class AEADEncryptedDataPacket {
+  static get tag() {
+    return enums.packet.aeadEncryptedData;
+  }
+
   constructor() {
-    this.tag = enums.packet.AEADEncryptedData;
     this.version = VERSION;
     this.cipherAlgo = null;
     this.aeadAlgorithm = 'eax';
@@ -61,7 +71,7 @@ class AEADEncryptedDataPacket {
       this.cipherAlgo = await reader.readByte();
       this.aeadAlgo = await reader.readByte();
       this.chunkSizeByte = await reader.readByte();
-      const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+      const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
       this.iv = await reader.readBytes(mode.ivLength);
       this.encrypted = reader.remainder();
     });
@@ -84,12 +94,7 @@ class AEADEncryptedDataPacket {
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, streaming) {
-    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), allowedPackets, streaming);
   }
 
   /**
@@ -104,7 +109,7 @@ class AEADEncryptedDataPacket {
   async encrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
     this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
-    const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
     this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
     this.chunkSizeByte = config.aeadChunkSizeByte;
     const data = this.packets.write();
@@ -122,7 +127,7 @@ class AEADEncryptedDataPacket {
    */
   async crypt(fn, key, data, streaming) {
     const cipher = enums.read(enums.symmetric, this.cipherAlgo);
-    const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
     const modeInstance = await mode(cipher, key);
     const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
     const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;
@@ -132,7 +137,7 @@ class AEADEncryptedDataPacket {
     const adataTagArray = new Uint8Array(adataBuffer);
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+    adataArray.set([0xC0 | AEADEncryptedDataPacket.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     let chunkIndex = 0;
     let latestPromise = Promise.resolve();
     let cryptedBytes = 0;

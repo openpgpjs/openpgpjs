@@ -25,7 +25,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
-import { Curve, webCurves, privateToJwk, rawPublicToJwk, validateStandardParams } from './curves';
+import { Curve, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams } from './curves';
 import { getIndutnyCurve, keyFromPrivate, keyFromPublic } from './indutnyKey';
 
 const webCrypto = util.getWebCrypto();
@@ -34,7 +34,7 @@ const nodeCrypto = util.getNodeCrypto();
 /**
  * Sign a message using the provided key
  * @param {module:type/oid} oid - Elliptic curve object identifier
- * @param {module:enums.hash} hash_algo - Hash algorithm used to sign
+ * @param {module:enums.hash} hashAlgo - Hash algorithm used to sign
  * @param {Uint8Array} message - Message to sign
  * @param {Uint8Array} publicKey - Public key
  * @param {Uint8Array} privateKey - Private key used to sign the message
@@ -43,7 +43,7 @@ const nodeCrypto = util.getNodeCrypto();
  *            s: Uint8Array}}               Signature of the message
  * @async
  */
-export async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
+export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
   const curve = new Curve(oid);
   if (message && !util.isStream(message)) {
     const keyPair = { publicKey, privateKey };
@@ -52,7 +52,7 @@ export async function sign(oid, hash_algo, message, publicKey, privateKey, hashe
         // If browser doesn't support a curve, we'll catch it
         try {
           // Need to await to make sure browser succeeds
-          return await webSign(curve, hash_algo, message, keyPair);
+          return await webSign(curve, hashAlgo, message, keyPair);
         } catch (err) {
           // We do not fallback if the error is related to key integrity
           // Unfortunaley Safari does not support p521 and throws a DataError when using it
@@ -65,7 +65,7 @@ export async function sign(oid, hash_algo, message, publicKey, privateKey, hashe
         break;
       }
       case 'node': {
-        const signature = await nodeSign(curve, hash_algo, message, keyPair);
+        const signature = await nodeSign(curve, hashAlgo, message, keyPair);
         return {
           r: signature.r.toArrayLike(Uint8Array),
           s: signature.s.toArrayLike(Uint8Array)
@@ -79,7 +79,7 @@ export async function sign(oid, hash_algo, message, publicKey, privateKey, hashe
 /**
  * Verifies if a signature is valid for a message
  * @param {module:type/oid} oid - Elliptic curve object identifier
- * @param {module:enums.hash} hash_algo - Hash algorithm used in the signature
+ * @param {module:enums.hash} hashAlgo - Hash algorithm used in the signature
  * @param  {{r: Uint8Array,
              s: Uint8Array}}   signature Signature to verify
  * @param {Uint8Array} message - Message to verify
@@ -88,14 +88,14 @@ export async function sign(oid, hash_algo, message, publicKey, privateKey, hashe
  * @returns {Boolean}
  * @async
  */
-export async function verify(oid, hash_algo, signature, message, publicKey, hashed) {
+export async function verify(oid, hashAlgo, signature, message, publicKey, hashed) {
   const curve = new Curve(oid);
   if (message && !util.isStream(message)) {
     switch (curve.type) {
       case 'web':
         try {
           // Need to await to make sure browser succeeds
-          return await webVerify(curve, hash_algo, signature, message, publicKey);
+          return await webVerify(curve, hashAlgo, signature, message, publicKey);
         } catch (err) {
           // We do not fallback if the error is related to key integrity
           // Unfortunately Safari does not support p521 and throws a DataError when using it
@@ -107,10 +107,10 @@ export async function verify(oid, hash_algo, signature, message, publicKey, hash
         }
         break;
       case 'node':
-        return nodeVerify(curve, hash_algo, signature, message, publicKey);
+        return nodeVerify(curve, hashAlgo, signature, message, publicKey);
     }
   }
-  const digest = (typeof hash_algo === 'undefined') ? message : hashed;
+  const digest = (typeof hashAlgo === 'undefined') ? message : hashed;
   return ellipticVerify(curve, signature, digest, publicKey);
 }
 
@@ -172,9 +172,9 @@ async function ellipticVerify(curve, signature, digest, publicKey) {
   return key.verify(digest, signature);
 }
 
-async function webSign(curve, hash_algo, message, keyPair) {
+async function webSign(curve, hashAlgo, message, keyPair) {
   const len = curve.payloadSize;
-  const jwk = privateToJwk(curve.payloadSize, webCurves[curve.name], keyPair.publicKey, keyPair.privateKey);
+  const jwk = privateToJWK(curve.payloadSize, webCurves[curve.name], keyPair.publicKey, keyPair.privateKey);
   const key = await webCrypto.importKey(
     "jwk",
     jwk,
@@ -191,7 +191,7 @@ async function webSign(curve, hash_algo, message, keyPair) {
     {
       "name": 'ECDSA',
       "namedCurve": webCurves[curve.name],
-      "hash": { name: enums.read(enums.webHash, hash_algo) }
+      "hash": { name: enums.read(enums.webHash, hashAlgo) }
     },
     key,
     message
@@ -203,8 +203,8 @@ async function webSign(curve, hash_algo, message, keyPair) {
   };
 }
 
-async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
-  const jwk = rawPublicToJwk(curve.payloadSize, webCurves[curve.name], publicKey);
+async function webVerify(curve, hashAlgo, { r, s }, message, publicKey) {
+  const jwk = rawPublicToJWK(curve.payloadSize, webCurves[curve.name], publicKey);
   const key = await webCrypto.importKey(
     "jwk",
     jwk,
@@ -223,7 +223,7 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
     {
       "name": 'ECDSA',
       "namedCurve": webCurves[curve.name],
-      "hash": { name: enums.read(enums.webHash, hash_algo) }
+      "hash": { name: enums.read(enums.webHash, hashAlgo) }
     },
     key,
     signature,
@@ -231,8 +231,8 @@ async function webVerify(curve, hash_algo, { r, s }, message, publicKey) {
   );
 }
 
-async function nodeSign(curve, hash_algo, message, keyPair) {
-  const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
+async function nodeSign(curve, hashAlgo, message, keyPair) {
+  const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
   sign.write(message);
   sign.end();
   const key = ECPrivateKey.encode({
@@ -247,10 +247,10 @@ async function nodeSign(curve, hash_algo, message, keyPair) {
   return ECDSASignature.decode(sign.sign(key), 'der');
 }
 
-async function nodeVerify(curve, hash_algo, { r, s }, message, publicKey) {
+async function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
   const { default: BN } = await import('bn.js');
 
-  const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
+  const verify = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
   verify.write(message);
   verify.end();
   const key = SubjectPublicKeyInfo.encode({

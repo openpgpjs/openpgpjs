@@ -27,13 +27,17 @@ import enums from '../enums';
  * @extends PublicKeyPacket
  */
 class PublicSubkeyPacket extends PublicKeyPacket {
+  static get tag() {
+    return enums.packet.publicSubkey;
+  }
+
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
+  // eslint-disable-next-line no-useless-constructor
   constructor(date, config) {
     super(date, config);
-    this.tag = enums.packet.publicSubkey;
   }
 }
 

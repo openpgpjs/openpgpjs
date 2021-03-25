@@ -131,19 +131,19 @@ const curves = {
 };
 
 class Curve {
-  constructor(oid_or_name, params) {
+  constructor(oidOrName, params) {
     try {
-      if (util.isArray(oid_or_name) ||
-          util.isUint8Array(oid_or_name)) {
+      if (util.isArray(oidOrName) ||
+          util.isUint8Array(oidOrName)) {
         // by oid byte array
-        oid_or_name = new OID(oid_or_name);
+        oidOrName = new OID(oidOrName);
       }
-      if (oid_or_name instanceof OID) {
+      if (oidOrName instanceof OID) {
         // by curve OID
-        oid_or_name = oid_or_name.getName();
+        oidOrName = oidOrName.getName();
       }
       // by curve name or oid string
-      this.name = enums.write(enums.curve, oid_or_name);
+      this.name = enums.write(enums.curve, oidOrName);
     } catch (err) {
       throw new Error('Not valid curve');
     }
@@ -198,7 +198,7 @@ class Curve {
     }
     const indutnyCurve = await getIndutnyCurve(this.name);
     keyPair = await indutnyCurve.genKeyPair({
-      entropy: util.uint8ArrayToStr(await getRandomBytes(32))
+      entropy: util.uint8ArrayToString(await getRandomBytes(32))
     });
     return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
   }
@@ -287,7 +287,7 @@ async function validateStandardParams(algo, oid, Q, d) {
 }
 
 export {
-  Curve, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJwk, privateToJwk, validateStandardParams
+  Curve, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams
 };
 
 //////////////////////////
@@ -348,7 +348,7 @@ function jwkToRawPublic(jwk) {
  *
  * @returns {JsonWebKey} Public key in jwk format.
  */
-function rawPublicToJwk(payloadSize, name, publicKey) {
+function rawPublicToJWK(payloadSize, name, publicKey) {
   const len = payloadSize;
   const bufX = publicKey.slice(1, len + 1);
   const bufY = publicKey.slice(len + 1, len * 2 + 1);
@@ -371,8 +371,8 @@ function rawPublicToJwk(payloadSize, name, publicKey) {
  *
  * @returns {JsonWebKey} Private key in jwk format.
  */
-function privateToJwk(payloadSize, name, publicKey, privateKey) {
-  const jwk = rawPublicToJwk(payloadSize, name, publicKey);
+function privateToJWK(payloadSize, name, publicKey, privateKey) {
+  const jwk = rawPublicToJWK(payloadSize, name, publicKey);
   jwk.d = uint8ArrayToB64(privateKey, true);
   return jwk;
 }

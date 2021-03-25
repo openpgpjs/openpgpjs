@@ -3,14 +3,14 @@ import { AES_ECB } from '@openpgp/asmcrypto.js/dist_es8/aes/ecb';
 // TODO use webCrypto or nodeCrypto when possible.
 function aes(length) {
   const C = function(key) {
-    const aes_ecb = new AES_ECB(key);
+    const aesECB = new AES_ECB(key);
 
     this.encrypt = function(block) {
-      return aes_ecb.encrypt(block);
+      return aesECB.encrypt(block);
     };
 
     this.decrypt = function(block) {
-      return aes_ecb.decrypt(block);
+      return aesECB.decrypt(block);
     };
   };
 

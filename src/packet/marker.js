@@ -31,8 +31,8 @@ import enums from '../enums';
  * Such a packet MUST be ignored when received.
  */
 class MarkerPacket {
-  constructor() {
-    this.tag = enums.packet.marker;
+  static get tag() {
+    return enums.packet.marker;
   }
 
   /**

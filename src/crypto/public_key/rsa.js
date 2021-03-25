@@ -71,7 +71,7 @@ const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function (
 /* eslint-enable no-invalid-this */
 
 /** Create signature
- * @param {module:enums.hash} hash_algo - Hash algorithm
+ * @param {module:enums.hash} hashAlgo - Hash algorithm
  * @param {Uint8Array} data - Message
  * @param {Uint8Array} n - RSA public modulus
  * @param {Uint8Array} e - RSA public exponent
@@ -83,24 +83,24 @@ const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function (
  * @returns {Uint8Array} RSA Signature.
  * @async
  */
-export async function sign(hash_algo, data, n, e, d, p, q, u, hashed) {
+export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
   if (data && !util.isStream(data)) {
     if (util.getWebCrypto()) {
       try {
-        return await webSign(enums.read(enums.webHash, hash_algo), data, n, e, d, p, q, u);
+        return await webSign(enums.read(enums.webHash, hashAlgo), data, n, e, d, p, q, u);
       } catch (err) {
         util.printDebugError(err);
       }
     } else if (util.getNodeCrypto()) {
-      return nodeSign(hash_algo, data, n, e, d, p, q, u);
+      return nodeSign(hashAlgo, data, n, e, d, p, q, u);
     }
   }
-  return bnSign(hash_algo, n, d, hashed);
+  return bnSign(hashAlgo, n, d, hashed);
 }
 
 /**
  * Verify signature
- * @param {module:enums.hash} hash_algo - Hash algorithm
+ * @param {module:enums.hash} hashAlgo - Hash algorithm
  * @param {Uint8Array} data - Message
  * @param {Uint8Array} s - Signature
  * @param {Uint8Array} n - RSA public modulus
@@ -109,19 +109,19 @@ export async function sign(hash_algo, data, n, e, d, p, q, u, hashed) {
  * @returns {Boolean}
  * @async
  */
-export async function verify(hash_algo, data, s, n, e, hashed) {
+export async function verify(hashAlgo, data, s, n, e, hashed) {
   if (data && !util.isStream(data)) {
     if (util.getWebCrypto()) {
       try {
-        return await webVerify(enums.read(enums.webHash, hash_algo), data, s, n, e);
+        return await webVerify(enums.read(enums.webHash, hashAlgo), data, s, n, e);
       } catch (err) {
         util.printDebugError(err);
       }
     } else if (util.getNodeCrypto()) {
-      return nodeVerify(hash_algo, data, s, n, e);
+      return nodeVerify(hashAlgo, data, s, n, e);
     }
   }
-  return bnVerify(hash_algo, s, n, e, hashed);
+  return bnVerify(hashAlgo, s, n, e, hashed);
 }
 
 /**
@@ -330,10 +330,10 @@ export async function validateParams(n, e, d, p, q, u) {
   return true;
 }
 
-async function bnSign(hash_algo, n, d, hashed) {
+async function bnSign(hashAlgo, n, d, hashed) {
   const BigInteger = await util.getBigInteger();
   n = new BigInteger(n);
-  const m = new BigInteger(await emsaEncode(hash_algo, hashed, n.byteLength()));
+  const m = new BigInteger(await emsaEncode(hashAlgo, hashed, n.byteLength()));
   d = new BigInteger(d);
   if (m.gte(n)) {
     throw new Error('Message size cannot exceed modulus size');
@@ -341,31 +341,31 @@ async function bnSign(hash_algo, n, d, hashed) {
   return m.modExp(d, n).toUint8Array('be', n.byteLength());
 }
 
-async function webSign(hash_name, data, n, e, d, p, q, u) {
+async function webSign(hashName, data, n, e, d, p, q, u) {
   /** OpenPGP keys require that p < q, and Safari Web Crypto requires that p > q.
-   * We swap them in privateToJwk, so it usually works out, but nevertheless,
+   * We swap them in privateToJWK, so it usually works out, but nevertheless,
    * not all OpenPGP keys are compatible with this requirement.
    * OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
    * does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
    */
-  const jwk = await privateToJwk(n, e, d, p, q, u);
+  const jwk = await privateToJWK(n, e, d, p, q, u);
   const algo = {
     name: "RSASSA-PKCS1-v1_5",
-    hash: { name: hash_name }
+    hash: { name: hashName }
   };
   const key = await webCrypto.importKey("jwk", jwk, algo, false, ["sign"]);
   // add hash field for ms edge support
-  return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, data));
+  return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5", "hash": hashName }, key, data));
 }
 
-async function nodeSign(hash_algo, data, n, e, d, p, q, u) {
+async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
   const { default: BN } = await import('bn.js');
   const pBNum = new BN(p);
   const qBNum = new BN(q);
   const dBNum = new BN(d);
   const dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
   const dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
-  const sign = nodeCrypto.createSign(enums.read(enums.hash, hash_algo));
+  const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
   sign.write(data);
   sign.end();
   const keyObject = {
@@ -391,7 +391,7 @@ async function nodeSign(hash_algo, data, n, e, d, p, q, u) {
   return new Uint8Array(sign.sign(pem));
 }
 
-async function bnVerify(hash_algo, s, n, e, hashed) {
+async function bnVerify(hashAlgo, s, n, e, hashed) {
   const BigInteger = await util.getBigInteger();
   n = new BigInteger(n);
   s = new BigInteger(s);
@@ -400,24 +400,24 @@ async function bnVerify(hash_algo, s, n, e, hashed) {
     throw new Error('Signature size cannot exceed modulus size');
   }
   const EM1 = s.modExp(e, n).toUint8Array('be', n.byteLength());
-  const EM2 = await emsaEncode(hash_algo, hashed, n.byteLength());
+  const EM2 = await emsaEncode(hashAlgo, hashed, n.byteLength());
   return util.equalsUint8Array(EM1, EM2);
 }
 
-async function webVerify(hash_name, data, s, n, e) {
-  const jwk = publicToJwk(n, e);
+async function webVerify(hashName, data, s, n, e) {
+  const jwk = publicToJWK(n, e);
   const key = await webCrypto.importKey("jwk", jwk, {
     name: "RSASSA-PKCS1-v1_5",
-    hash: { name:  hash_name }
+    hash: { name:  hashName }
   }, false, ["verify"]);
   // add hash field for ms edge support
-  return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5", "hash": hash_name }, key, s, data);
+  return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5", "hash": hashName }, key, s, data);
 }
 
-async function nodeVerify(hash_algo, data, s, n, e) {
+async function nodeVerify(hashAlgo, data, s, n, e) {
   const { default: BN } = await import('bn.js');
 
-  const verify = nodeCrypto.createVerify(enums.read(enums.hash, hash_algo));
+  const verify = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
   verify.write(data);
   verify.end();
   const keyObject = {
@@ -543,7 +543,7 @@ async function bnDecrypt(data, n, e, d, p, q, u) {
 
 /** Convert Openpgp private key params to jwk key according to
  * @link https://tools.ietf.org/html/rfc7517
- * @param {String} hash_algo
+ * @param {String} hashAlgo
  * @param {Uint8Array} n
  * @param {Uint8Array} e
  * @param {Uint8Array} d
@@ -551,7 +551,7 @@ async function bnDecrypt(data, n, e, d, p, q, u) {
  * @param {Uint8Array} q
  * @param {Uint8Array} u
  */
-async function privateToJwk(n, e, d, p, q, u) {
+async function privateToJWK(n, e, d, p, q, u) {
   const BigInteger = await util.getBigInteger();
   const pNum = new BigInteger(p);
   const qNum = new BigInteger(q);
@@ -579,11 +579,11 @@ async function privateToJwk(n, e, d, p, q, u) {
 
 /** Convert Openpgp key public params to jwk key according to
  * @link https://tools.ietf.org/html/rfc7517
- * @param {String} hash_algo
+ * @param {String} hashAlgo
  * @param {Uint8Array} n
  * @param {Uint8Array} e
  */
-function publicToJwk(n, e) {
+function publicToJWK(n, e) {
   return {
     kty: 'RSA',
     n: uint8ArrayToB64(n, true),

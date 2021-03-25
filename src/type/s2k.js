@@ -50,7 +50,7 @@ class S2K {
     this.salt = null;
   }
 
-  get_count() {
+  getCount() {
     // Exponent bias, defined in RFC4880
     const expbias = 6;
 
@@ -88,7 +88,7 @@ class S2K {
         break;
 
       case 'gnu':
-        if (util.uint8ArrayToStr(bytes.subarray(i, i + 3)) === "GNU") {
+        if (util.uint8ArrayToString(bytes.subarray(i, i + 3)) === "GNU") {
           i += 3; // GNU
           const gnuExtType = 1000 + bytes[i++];
           if (gnuExtType === 1001) {
@@ -115,7 +115,7 @@ class S2K {
    */
   write() {
     if (this.type === 'gnu-dummy') {
-      return new Uint8Array([101, 0, ...util.strToUint8Array('GNU'), 1]);
+      return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 1]);
     }
 
     const arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
@@ -146,8 +146,8 @@ class S2K {
    * @returns {Uint8Array} Produced key with a length corresponding to.
    * hashAlgorithm hash length
    */
-  async produce_key(passphrase, numBytes) {
-    passphrase = util.encodeUtf8(passphrase);
+  async produceKey(passphrase, numBytes) {
+    passphrase = util.encodeUTF8(passphrase);
     const algorithm = enums.write(enums.hash, this.algorithm);
 
     const arr = [];
@@ -166,7 +166,7 @@ class S2K {
         case 'iterated': {
           const data = util.concatUint8Array([this.salt, passphrase]);
           let datalen = data.length;
-          const count = Math.max(this.get_count(), datalen);
+          const count = Math.max(this.getCount(), datalen);
           toHash = new Uint8Array(prefixlen + count);
           toHash.set(data, prefixlen);
           for (let pos = prefixlen + datalen; pos < count; pos += datalen, datalen *= 2) {

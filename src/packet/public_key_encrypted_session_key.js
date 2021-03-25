@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import type_keyid from '../type/keyid';
+import KeyID from '../type/keyid';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -37,11 +37,14 @@ import util from '../util';
  * decrypt the message.
  */
 class PublicKeyEncryptedSessionKeyPacket {
+  static get tag() {
+    return enums.packet.publicKeyEncryptedSessionKey;
+  }
+
   constructor() {
-    this.tag = enums.packet.publicKeyEncryptedSessionKey;
     this.version = 3;
 
-    this.publicKeyId = new type_keyid();
+    this.publicKeyID = new KeyID();
     this.publicKeyAlgorithm = null;
 
     this.sessionKey = null;
@@ -58,7 +61,7 @@ class PublicKeyEncryptedSessionKeyPacket {
    */
   read(bytes) {
     this.version = bytes[0];
-    this.publicKeyId.read(bytes.subarray(1, bytes.length));
+    this.publicKeyID.read(bytes.subarray(1, bytes.length));
     this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
 
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
@@ -75,7 +78,7 @@ class PublicKeyEncryptedSessionKeyPacket {
 
     const arr = [
       new Uint8Array([this.version]),
-      this.publicKeyId.write(),
+      this.publicKeyID.write(),
       new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)]),
       crypto.serializeParams(algo, this.encrypted)
     ];

@@ -16,7 +16,7 @@ const key_data = elliptic_data.key_data;
 module.exports = () => describe('ECDH key exchange @lightweight', function () {
   const decrypt_message = function (oid, hash, cipher, priv, pub, ephemeral, data, fingerprint) {
     if (util.isString(data)) {
-      data = util.strToUint8Array(data);
+      data = util.stringToUint8Array(data);
     } else {
       data = new Uint8Array(data);
     }
@@ -143,7 +143,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       const curve = new elliptic_curves.Curve('secp256k1');
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.strToUint8Array('test');
+      const data = util.stringToUint8Array('test');
       expect(
         ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1)
       ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/);
@@ -152,7 +152,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       const curve = new elliptic_curves.Curve('curve25519');
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.strToUint8Array('test');
+      const data = util.stringToUint8Array('test');
       const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
       await expect(
         ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint1)
@@ -162,7 +162,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       const curve = new elliptic_curves.Curve('curve25519');
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.strToUint8Array('test');
+      const data = util.stringToUint8Array('test');
       const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q2, fingerprint1);
       await expect(
         ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint2)
@@ -172,7 +172,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       const curve = new elliptic_curves.Curve('curve25519');
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.strToUint8Array('test');
+      const data = util.stringToUint8Array('test');
       const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
       expect(await ecdh.decrypt(oid, kdfParams, V, C, Q1, d1, fingerprint1)).to.deep.equal(data);
     });
@@ -182,7 +182,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
         const curve = new elliptic_curves.Curve(curveName);
         const oid = new OID(curve.oid);
         const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-        const data = util.strToUint8Array('test');
+        const data = util.stringToUint8Array('test');
         const Q = key_data[curveName].pub;
         const d = key_data[curveName].priv;
         const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
@@ -225,7 +225,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
           const curve = new elliptic_curves.Curve(curveName);
           const oid = new OID(curve.oid);
           const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-          const data = util.strToUint8Array('test');
+          const data = util.stringToUint8Array('test');
           const Q = key_data[curveName].pub;
           const d = key_data[curveName].priv;
           const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);

@@ -31,13 +31,16 @@ import defaultConfig from '../config';
  * specifies the length of the User ID.
  */
 class UserIDPacket {
+  static get tag() {
+    return enums.packet.userID;
+  }
+
   constructor() {
-    this.tag = enums.packet.userID;
     /** A string containing the user id. Usually in the form
      * John Doe <john@example.com>
      * @type {String}
      */
-    this.userid = '';
+    this.userID = '';
 
     this.name = '';
     this.email = '';
@@ -46,24 +49,24 @@ class UserIDPacket {
 
   /**
    * Create UserIDPacket instance from object
-   * @param {Object} userId - Object specifying userId name, email and comment
+   * @param {Object} userID - Object specifying userID name, email and comment
    * @returns {UserIDPacket}
    * @static
    */
-  static fromObject(userId) {
-    if (util.isString(userId) ||
-      (userId.name && !util.isString(userId.name)) ||
-      (userId.email && !util.isEmailAddress(userId.email)) ||
-      (userId.comment && !util.isString(userId.comment))) {
+  static fromObject(userID) {
+    if (util.isString(userID) ||
+      (userID.name && !util.isString(userID.name)) ||
+      (userID.email && !util.isEmailAddress(userID.email)) ||
+      (userID.comment && !util.isString(userID.comment))) {
       throw new Error('Invalid user ID format');
     }
     const packet = new UserIDPacket();
-    Object.assign(packet, userId);
+    Object.assign(packet, userID);
     const components = [];
     if (packet.name) components.push(packet.name);
     if (packet.comment) components.push(`(${packet.comment})`);
     if (packet.email) components.push(`<${packet.email}>`);
-    packet.userid = components.join(' ');
+    packet.userID = components.join(' ');
     return packet;
   }
 
@@ -72,17 +75,17 @@ class UserIDPacket {
    * @param {Uint8Array} input - Payload of a tag 13 packet
    */
   read(bytes, config = defaultConfig) {
-    const userid = util.decodeUtf8(bytes);
-    if (userid.length > config.maxUseridLength) {
+    const userID = util.decodeUTF8(bytes);
+    if (userID.length > config.maxUserIDLength) {
       throw new Error('User ID string is too long');
     }
     try {
-      const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userid, atInDisplayName: true });
+      const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userID, atInDisplayName: true });
       this.comment = comments.replace(/^\(|\)$/g, '');
       this.name = name;
       this.email = email;
     } catch (e) {}
-    this.userid = userid;
+    this.userID = userID;
   }
 
   /**
@@ -90,7 +93,7 @@ class UserIDPacket {
    * @returns {Uint8Array} Binary representation.
    */
   write() {
-    return util.encodeUtf8(this.userid);
+    return util.encodeUTF8(this.userID);
   }
 }
 

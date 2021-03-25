@@ -17,12 +17,12 @@
 
 /**
  * @fileoverview This module implements AES-OCB en/decryption.
- * @module crypto/ocb
+ * @module crypto/mode/ocb
  * @private
  */
 
-import * as ciphers from './cipher';
-import util from '../util';
+import * as ciphers from '../cipher';
+import util from '../../util';
 
 
 const blockLength = 16;

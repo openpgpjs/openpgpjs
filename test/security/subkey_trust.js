@@ -9,7 +9,7 @@ const expect = chai.expect;
 
 async function generateTestData() {
   const victimPrivKey = (await openpgp.generateKey({
-    userIds: [{ name: 'Victim', email: 'victim@example.com' }],
+    userIDs: [{ name: 'Victim', email: 'victim@example.com' }],
     type: 'rsa',
     rsaBits: 2048,
     subkeys: [{
@@ -19,7 +19,7 @@ async function generateTestData() {
   victimPrivKey.revocationSignatures = [];
 
   const attackerPrivKey = (await openpgp.generateKey({
-    userIds: [{ name: 'Attacker', email: 'attacker@example.com' }],
+    userIDs: [{ name: 'Attacker', email: 'attacker@example.com' }],
     type: 'rsa',
     rsaBits: 2048,
     subkeys: [],
@@ -71,7 +71,7 @@ async function testSubkeyTrust() {
     publicKeys: fakeKey,
     streaming: false
   });
-  expect(verifyAttackerIsBatman.signatures[0].keyid.equals(victimPubKey.subKeys[0].getKeyId())).to.be.true;
+  expect(verifyAttackerIsBatman.signatures[0].keyID.equals(victimPubKey.subKeys[0].getKeyID())).to.be.true;
   expect(verifyAttackerIsBatman.signatures[0].valid).to.be.false;
   expect(verifyAttackerIsBatman.signatures[0].error).to.match(/Could not find valid signing key packet/);
 }

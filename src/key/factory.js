@@ -15,7 +15,16 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { PacketList, UserIDPacket, SignaturePacket } from '../packet';
+import {
+  PacketList,
+  UserIDPacket,
+  SignaturePacket,
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserAttributePacket
+} from '../packet';
 import Key from './key';
 import * as helper from './helper';
 import enums from '../enums';
@@ -23,13 +32,24 @@ import util from '../util';
 import defaultConfig from '../config';
 import { unarmor } from '../encoding/armor';
 
+// A Key can contain the following packets
+const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserIDPacket,
+  UserAttributePacket,
+  SignaturePacket
+]);
+
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
  * By default, primary and subkeys will be of same type.
  * @param {ecc|rsa} options.type                  The primary key algorithm type: ECC or RSA
  * @param {String}  options.curve                 Elliptic curve for ECC keys
  * @param {Integer} options.rsaBits               Number of bits for RSA keys
- * @param {Array<String|Object>} options.userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String}  options.passphrase            Passphrase used to encrypt the resulting private key
  * @param {Number}  options.keyExpirationTime     (optional) Number of seconds from the key creation time after which the key expires
  * @param {Date}    options.date                  Creation date of the key and the key signatures
@@ -53,7 +73,7 @@ export async function generate(options, config) {
 /**
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
  * @param {Key} options.privateKey     The private key to reformat
- * @param {Array<String|Object>} options.userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key
  * @param {Number} options.keyExpirationTime      Number of seconds from the key creation time after which the key expires
  * @param {Date}   options.date                   Override the creation date of the key and the key signatures
@@ -133,14 +153,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   packetlist.push(secretKeyPacket);
 
-  await Promise.all(options.userIds.map(async function(userId, index) {
+  await Promise.all(options.userIDs.map(async function(userID, index) {
     function createPreferredAlgos(algos, preferredAlgo) {
       return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
     }
 
-    const userIdPacket = UserIDPacket.fromObject(userId);
+    const userIDPacket = UserIDPacket.fromObject(userID);
     const dataToSign = {};
-    dataToSign.userId = userIdPacket;
+    dataToSign.userID = userIDPacket;
     dataToSign.key = secretKeyPacket;
     const signaturePacket = new SignaturePacket(options.date);
     signaturePacket.signatureType = enums.signature.certGeneric;
@@ -154,10 +174,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.symmetric.aes192
     ], config.preferredSymmetricAlgorithm);
     if (config.aeadProtect) {
-      signaturePacket.preferredAeadAlgorithms = createPreferredAlgos([
+      signaturePacket.preferredAEADAlgorithms = createPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
-      ], config.preferredAeadAlgorithm);
+      ], config.preferredAEADAlgorithm);
     }
     signaturePacket.preferredHashAlgorithms = createPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
@@ -187,10 +207,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     }
     await signaturePacket.sign(secretKeyPacket, dataToSign);
 
-    return { userIdPacket, signaturePacket };
+    return { userIDPacket, signaturePacket };
   })).then(list => {
-    list.forEach(({ userIdPacket, signaturePacket }) => {
-      packetlist.push(userIdPacket);
+    list.forEach(({ userIDPacket, signaturePacket }) => {
+      packetlist.push(userIDPacket);
       packetlist.push(signaturePacket);
     });
   });
@@ -256,7 +276,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
     input = binaryKey;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
+  await packetlist.read(input, allowedKeyPackets, undefined, config);
   return new Key(packetlist);
 }
 
@@ -285,7 +305,7 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   }
   const keys = [];
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
+  await packetlist.read(input, allowedKeyPackets, undefined, config);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');

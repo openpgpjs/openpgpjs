@@ -9,24 +9,12 @@ import {
   PublicSubkeyPacket,
   SecretKeyPacket,
   SecretSubkeyPacket,
-  UserIDPacket,
-  UserAttributePacket,
   SignaturePacket
 } from '../packet';
 import enums from '../enums';
 import crypto from '../crypto';
 import util from '../util';
 import defaultConfig from '../config';
-
-export const allowedKeyPackets = {
-  PublicKeyPacket,
-  PublicSubkeyPacket,
-  SecretKeyPacket,
-  SecretSubkeyPacket,
-  UserIDPacket,
-  UserAttributePacket,
-  SignaturePacket
-};
 
 export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
@@ -72,7 +60,7 @@ export async function getLatestValidSignature(signatures, primaryKey, signatureT
   }
   if (!signature) {
     throw util.wrapError(
-      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyId().toHex()}`
+      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyID().toHex()}`
         .replace('certGeneric ', 'self-')
         .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase())
       , exception);
@@ -126,20 +114,20 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @param {Key} [key] - The key to get preferences from
  * @param {SecretKeyPacket|SecretSubkeyPacket} keyPacket - key packet used for signing
  * @param {Date} [date] - Use the given date for verification instead of the current time
- * @param {Object} [userId] - User ID
+ * @param {Object} [userID] - User ID
  * @param {Object} config - full configuration
  * @returns {String}
  * @async
  */
-export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userId = {}, config) {
-  let hash_algo = config.preferredHashAlgorithm;
-  let pref_algo = hash_algo;
+export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userID = {}, config) {
+  let hashAlgo = config.preferredHashAlgorithm;
+  let prefAlgo = hashAlgo;
   if (key) {
-    const primaryUser = await key.getPrimaryUser(date, userId, config);
+    const primaryUser = await key.getPrimaryUser(date, userID, config);
     if (primaryUser.selfCertification.preferredHashAlgorithms) {
-      [pref_algo] = primaryUser.selfCertification.preferredHashAlgorithms;
-      hash_algo = crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
-        pref_algo : hash_algo;
+      [prefAlgo] = primaryUser.selfCertification.preferredHashAlgorithms;
+      hashAlgo = crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
+        prefAlgo : hashAlgo;
     }
   }
   switch (Object.getPrototypeOf(keyPacket)) {
@@ -151,11 +139,11 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
         case 'ecdh':
         case 'ecdsa':
         case 'eddsa':
-          pref_algo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
+          prefAlgo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
       }
   }
-  return crypto.hash.getHashByteLength(hash_algo) <= crypto.hash.getHashByteLength(pref_algo) ?
-    pref_algo : hash_algo;
+  return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
+    prefAlgo : hashAlgo;
 }
 
 /**
@@ -163,12 +151,12 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @param {symmetric|aead|compression} type - Type of preference to return
  * @param {Array<Key>} [keys] - Set of keys
  * @param {Date} [date] - Use the given date for verification instead of the current time
- * @param {Array} [userIds] - User IDs
+ * @param {Array} [userIDs] - User IDs
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {module:enums.symmetric|aead|compression} Preferred algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys = [], date = new Date(), userIds = [], config = defaultConfig) {
+export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
   const defaultAlgo = { // these are all must-implement in rfc4880bis
     'symmetric': enums.symmetric.aes128,
     'aead': enums.aead.eax,
@@ -176,12 +164,12 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
   }[type];
   const preferredSenderAlgo = {
     'symmetric': config.preferredSymmetricAlgorithm,
-    'aead': config.preferredAeadAlgorithm,
+    'aead': config.preferredAEADAlgorithm,
     'compression': config.preferredCompressionAlgorithm
   }[type];
   const prefPropertyName = {
     'symmetric': 'preferredSymmetricAlgorithms',
-    'aead': 'preferredAeadAlgorithms',
+    'aead': 'preferredAEADAlgorithms',
     'compression': 'preferredCompressionAlgorithms'
   }[type];
 
@@ -189,7 +177,7 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
   const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIds[i], config);
+    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
     const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
     return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
@@ -203,14 +191,14 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
  * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing
  * @param {Date} [date] - Override the creationtime of the signature
- * @param {Object} [userId] - User ID
+ * @param {Object} [userID] - User ID
  * @param {Object} [detached] - Whether to create a detached signature packet
  * @param {Boolean} [streaming] - Whether to process data as a stream
  * @param {Object} config - full configuration
  * @returns {SignaturePacket} Signature packet.
  * @async
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userId, detached = false, streaming = false, config) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, streaming = false, config) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
@@ -220,7 +208,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   const signaturePacket = new SignaturePacket(date);
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userId, config);
+  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
   await signaturePacket.sign(signingKeyPacket, dataToSign, detached, streaming);
   return signaturePacket;
 }
@@ -241,7 +229,7 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
       await Promise.all(source.map(async function(sourceSig) {
         if (!sourceSig.isExpired() && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
-              return util.equalsUint8Array(destSig.write_params(), sourceSig.write_params());
+              return util.equalsUint8Array(destSig.writeParams(), sourceSig.writeParams());
             })) {
           dest[attr].push(sourceSig);
         }
@@ -269,7 +257,7 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
   key = key || primaryKey;
   const normDate = util.normalizeDate(date);
-  const revocationKeyIds = [];
+  const revocationKeyIDs = [];
   await Promise.all(revocations.map(async function(revocationSignature) {
     try {
       if (
@@ -281,23 +269,23 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // third-party revocation signatures here. (It could also be revoking a
         // third-party key certification, which should only affect
         // `verifyAllCertifications`.)
-        (!signature || revocationSignature.issuerKeyId.equals(signature.issuerKeyId)) &&
+        (!signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)) &&
         !(config.revocationsExpire && revocationSignature.isExpired(normDate))
       ) {
         revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify, undefined, undefined, config);
 
         // TODO get an identifier of the revoked object instead
-        revocationKeyIds.push(revocationSignature.issuerKeyId);
+        revocationKeyIDs.push(revocationSignature.issuerKeyID);
       }
     } catch (e) {}
   }));
   // TODO further verify that this is the signature that should be revoked
   if (signature) {
-    signature.revoked = revocationKeyIds.some(keyId => keyId.equals(signature.issuerKeyId)) ? true :
+    signature.revoked = revocationKeyIDs.some(keyID => keyID.equals(signature.issuerKeyID)) ? true :
       signature.revoked || false;
     return signature.revoked;
   }
-  return revocationKeyIds.length > 0;
+  return revocationKeyIDs.length > 0;
 }
 
 export function getExpirationTime(keyPacket, signature) {
@@ -313,16 +301,16 @@ export function getExpirationTime(keyPacket, signature) {
  * Returns whether aead is supported by all keys in the set
  * @param {Array<Key>} keys - Set of keys
  * @param {Date} [date] - Use the given date for verification instead of the current time
- * @param {Array} [userIds] - User IDs
+ * @param {Array} [userIDs] - User IDs
  * @param {Object} config - full configuration
  * @returns {Boolean}
  * @async
  */
-export async function isAeadSupported(keys, date = new Date(), userIds = [], config = defaultConfig) {
+export async function isAEADSupported(keys, date = new Date(), userIDs = [], config = defaultConfig) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIds[i], config);
+    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
     if (!primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;
@@ -415,7 +403,7 @@ export function checkKeyStrength(keyPacket, config) {
     throw new Error(`${keyPacket.algorithm} keys are considered too weak.`);
   }
   const rsaAlgos = new Set([enums.publicKey.rsaEncryptSign, enums.publicKey.rsaSign, enums.publicKey.rsaEncrypt]);
-  if (rsaAlgos.has(keyAlgo) && util.uint8ArrayBitLength(keyPacket.publicParams.n) < config.minRsaBits) {
-    throw new Error(`RSA keys shorter than ${config.minRsaBits} bits are considered too weak.`);
+  if (rsaAlgos.has(keyAlgo) && util.uint8ArrayBitLength(keyPacket.publicParams.n) < config.minRSABits) {
+    throw new Error(`RSA keys shorter than ${config.minRSABits} bits are considered too weak.`);
   }
 }

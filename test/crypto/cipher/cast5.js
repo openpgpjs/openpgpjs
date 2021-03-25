@@ -1,4 +1,4 @@
-const Cast5 = require('../../../src/crypto/cipher/cast5');
+const CAST5 = require('../../../src/crypto/cipher/cast5');
 const util = require('../../../src/util');
 
 const chai = require('chai');
@@ -7,10 +7,10 @@ const { expect } = chai;
 
 module.exports = () => it('CAST-128 cipher test with test vectors from RFC2144', function (done) {
   function test_cast(input, key, output) {
-    const cast5 = new Cast5(key);
-    const result = util.uint8ArrayToStr(cast5.encrypt(input));
+    const cast5 = new CAST5(key);
+    const result = util.uint8ArrayToString(cast5.encrypt(input));
 
-    return util.strToHex(result) === util.strToHex(util.uint8ArrayToStr(output));
+    return util.stringToHex(result) === util.stringToHex(util.uint8ArrayToString(output));
   }
 
   const testvectors = [[[0x01,0x23,0x45,0x67,0x12,0x34,0x56,0x78,0x23,0x45,0x67,0x89,0x34,0x56,0x78,0x9A],[0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF],[0x23,0x8B,0x4F,0xE5,0x84,0x7E,0x44,0xB2]]];
