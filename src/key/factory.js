@@ -253,8 +253,8 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 /**
  * Reads an (optionally armored) OpenPGP key and returns a key object
  * @param {Object} options
- * @param {String | ReadableStream<String>} [options.armoredKey] - Armored key to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKey] - Binary key to be parsed
+ * @param {String} [options.armoredKey] - Armored key to be parsed
+ * @param {Uint8Array} [options.binaryKey] - Binary key to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Key} Key object.
  * @async
@@ -264,6 +264,12 @@ export async function readKey({ armoredKey, binaryKey, config }) {
   config = { ...defaultConfig, ...config };
   if (!armoredKey && !binaryKey) {
     throw new Error('readKey: must pass options object containing `armoredKey` or `binaryKey`');
+  }
+  if (armoredKey && !util.isString(armoredKey)) {
+    throw new Error('readKey: options.armoredKey must be a string');
+  }
+  if (binaryKey && !util.isUint8Array(binaryKey)) {
+    throw new Error('readKey: options.binaryKey must be a Uint8Array');
   }
   let input;
   if (armoredKey) {
@@ -283,8 +289,8 @@ export async function readKey({ armoredKey, binaryKey, config }) {
 /**
  * Reads an (optionally armored) OpenPGP key block and returns a list of key objects
  * @param {Object} options
- * @param {String | ReadableStream<String>} [options.armoredKeys] - Armored keys to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKeys] - Binary keys to be parsed
+ * @param {String} [options.armoredKeys] - Armored keys to be parsed
+ * @param {Uint8Array} [options.binaryKeys] - Binary keys to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Array<Key>} Key objects.
  * @async
@@ -295,6 +301,12 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   let input = armoredKeys || binaryKeys;
   if (!input) {
     throw new Error('readKeys: must pass options object containing `armoredKeys` or `binaryKeys`');
+  }
+  if (armoredKeys && !util.isString(armoredKeys)) {
+    throw new Error('readKeys: options.armoredKeys must be a string');
+  }
+  if (binaryKeys && !util.isUint8Array(binaryKeys)) {
+    throw new Error('readKeys: options.binaryKeys must be a Uint8Array');
   }
   if (armoredKeys) {
     const { type, data } = await unarmor(armoredKeys, config);

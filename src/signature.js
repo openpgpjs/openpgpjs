@@ -56,8 +56,8 @@ export class Signature {
 /**
  * reads an (optionally armored) OpenPGP signature and returns a signature object
  * @param {Object} options
- * @param {String | ReadableStream<String>} [options.armoredSignature] - Armored signature to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binarySignature] - Binary signature to be parsed
+ * @param {String} [options.armoredSignature] - Armored signature to be parsed
+ * @param {Uint8Array} [options.binarySignature] - Binary signature to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Signature} New signature object.
  * @async
@@ -68,6 +68,12 @@ export async function readSignature({ armoredSignature, binarySignature, config 
   let input = armoredSignature || binarySignature;
   if (!input) {
     throw new Error('readSignature: must pass options object containing `armoredSignature` or `binarySignature`');
+  }
+  if (armoredSignature && !util.isString(armoredSignature)) {
+    throw new Error('readSignature: options.armoredSignature must be a string');
+  }
+  if (binarySignature && !util.isUint8Array(binarySignature)) {
+    throw new Error('readSignature: options.binarySignature must be a Uint8Array');
   }
   if (armoredSignature) {
     const { type, data } = await unarmor(input, config);

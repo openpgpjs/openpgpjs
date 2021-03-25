@@ -124,7 +124,7 @@ export class CleartextMessage {
 /**
  * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {Object} options
- * @param {String | ReadableStream<String>} options.cleartextMessage - Text to be parsed
+ * @param {String} options.cleartextMessage - Text to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {CleartextMessage} New cleartext message object.
  * @async
@@ -134,6 +134,9 @@ export async function readCleartextMessage({ cleartextMessage, config }) {
   config = { ...defaultConfig, ...config };
   if (!cleartextMessage) {
     throw new Error('readCleartextMessage: must pass options object containing `cleartextMessage`');
+  }
+  if (!util.isString(cleartextMessage)) {
+    throw new Error('readCleartextMessage: options.cleartextMessage must be a string');
   }
   const input = await unarmor(cleartextMessage);
   if (input.type !== enums.armor.signed) {
@@ -202,6 +205,9 @@ function verifyHeaders(headers, packetlist) {
 export async function createCleartextMessage({ text }) {
   if (!text) {
     throw new Error('createCleartextMessage: must pass options object containing `text`');
+  }
+  if (!util.isString(text)) {
+    throw new Error('createCleartextMessage: options.text must be a string');
   }
   return new CleartextMessage(text);
 }

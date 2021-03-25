@@ -798,6 +798,12 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
   if (!input) {
     throw new Error('readMessage: must pass options object containing `armoredMessage` or `binaryMessage`');
   }
+  if (armoredMessage && !util.isString(armoredMessage) && !util.isStream(armoredMessage)) {
+    throw new Error('readMessage: options.armoredMessage must be a string or stream');
+  }
+  if (binaryMessage && !util.isUint8Array(binaryMessage) && !util.isStream(binaryMessage)) {
+    throw new Error('readMessage: options.binaryMessage must be a Uint8Array or stream');
+  }
   const streamType = util.isStream(input);
   if (streamType) {
     await stream.loadStreamsPonyfill();
@@ -833,6 +839,12 @@ export async function createMessage({ text, binary, filename, date = new Date(),
   let input = text !== undefined ? text : binary;
   if (input === undefined) {
     throw new Error('createMessage: must pass options object containing `text` or `binary`');
+  }
+  if (text && !util.isString(text) && !util.isStream(text)) {
+    throw new Error('createMessage: options.text must be a string or stream');
+  }
+  if (binary && !util.isUint8Array(binary) && !util.isStream(binary)) {
+    throw new Error('createMessage: options.binary must be a Uint8Array or stream');
   }
   const streamType = util.isStream(input);
   if (streamType) {
