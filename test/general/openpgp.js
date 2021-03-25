@@ -2361,29 +2361,41 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
       it('should streaming sign and verify binary data without one-pass signature', async function () {
         const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
+        const dataStream = global.ReadableStream ? new global.ReadableStream({
+          start(controller) {
+            controller.enqueue(data);
+            controller.close();
+          }
+        }) : new (require('stream').Readable)({
+          read() {
+            this.push(data);
+            this.push(null);
+          }
+        });
         const signOpt = {
-          message: await openpgp.createMessage({ binary: data }),
+          message: await openpgp.createMessage({ binary: dataStream }),
           privateKeys: privateKey,
-          armor: false,
-          streaming: 'web'
+          armor: false
         };
         const verifyOpt = {
           publicKeys: publicKey,
-          streaming: 'web',
           format: 'binary'
         };
-        const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
         return openpgp.sign(signOpt).then(async function (signed) {
-          expect(openpgp.stream.isStream(signed)).to.equal(useNativeStream ? 'web' : 'ponyfill');
+          expect(openpgp.stream.isStream(signed)).to.equal(global.ReadableStream ? 'web' : 'node');
           const message = await openpgp.readMessage({ binaryMessage: signed });
           message.packets.concat(await openpgp.stream.readToEnd(message.packets.stream, _ => _));
           const packets = new openpgp.PacketList();
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
-          verifyOpt.message = await openpgp.readMessage({ binaryMessage: packets.write() });
+          verifyOpt.message = await openpgp.readMessage({
+            binaryMessage: openpgp.stream[
+              global.ReadableStream ? (global.ReadableStream === openpgp.stream.ReadableStream ? 'toStream' : 'toNativeReadable') : 'webToNode'
+            ](packets.write())
+          });
           return openpgp.verify(verifyOpt);
         }).then(async function (verified) {
-          expect(openpgp.stream.isStream(verified.data)).to.equal(useNativeStream ? 'web' : 'ponyfill');
+          expect(openpgp.stream.isStream(verified.data)).to.equal(global.ReadableStream ? 'web' : 'node');
           expect([].slice.call(await openpgp.stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
           expect(await verified.signatures[0].verified).to.be.true;
           expect(await privateKey.getSigningKey(verified.signatures[0].keyID))

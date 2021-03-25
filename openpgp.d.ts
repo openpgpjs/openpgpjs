@@ -149,16 +149,6 @@ export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binary
 export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, type?: DataPacketType }): Message<T>;
 export function createMessage<T extends MaybeStream<Uint8Array>>(options: { bytes: T, filename?: string, date?: Date, type?: DataPacketType }): Message<T>;
 
-export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T, armor: false }): Promise<
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
->;
-export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T }): Promise<
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
->;
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, armor: false }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
@@ -170,16 +160,6 @@ export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & {
   string
 >;
 
-export function sign<T extends 'web' | 'node' | false>(options: SignOptions & { streaming: T, armor: false }): Promise<
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
->;
-export function sign<T extends 'web' | 'node' | false>(options: SignOptions & { streaming: T }): Promise<
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
->;
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, armor: false }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
@@ -192,18 +172,6 @@ export function sign<T extends MaybeStream<Data>>(options: SignOptions & { messa
 >;
 export function sign(options: SignOptions & { message: CleartextMessage }): Promise<string>;
 
-export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T, format: 'binary' }): Promise<DecryptMessageResult & {
-  data:
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
-}>;
-export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T }): Promise<DecryptMessageResult & {
-  data:
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
-}>;
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & {
   data:
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
@@ -217,18 +185,6 @@ export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & {
   string
 }>;
 
-export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T, format: 'binary' }): Promise<VerifyMessageResult & {
-  data:
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
-}>;
-export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T }): Promise<VerifyMessageResult & {
-  data:
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
-}>;
 export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult & {
   data:
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
@@ -260,12 +216,12 @@ export class Message<T extends MaybeStream<Data>> {
   /** Decrypt the message
       @param privateKey private key with decrypted secret data
   */
-  public decrypt(privateKeys?: Key[], passwords?: string[], sessionKeys?: SessionKey[], streaming?: boolean, config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public decrypt(privateKeys?: Key[], passwords?: string[], sessionKeys?: SessionKey[], config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Encrypt the message
       @param keys array of keys, used to encrypt the message
   */
-  public encrypt(keys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], streaming?: boolean, config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public encrypt(keys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Returns the key IDs of the keys to which the session key is encrypted
    */
@@ -288,7 +244,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Sign the message (the literal data packet of the message)
       @param privateKey private keys with decrypted secret key data for signing
   */
-  public sign(privateKey: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], streaming?: boolean, config?: Config): Promise<Message<T>>;
+  public sign(privateKey: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<T>>;
 
   /** Unwrap compressed message
    */
@@ -297,7 +253,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Verify message signatures
       @param keys array of keys to verify signatures
   */
-  public verify(keys: Key[], date?: Date, streaming?: boolean, config?: Config): Promise<VerificationResult[]>;
+  public verify(keys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
 
   /**
    * Append signature to unencrypted message object
@@ -482,8 +438,8 @@ export class SignaturePacket extends BasePacket {
   public preferredAEADAlgorithms: enums.aead[] | null;
   public verified: null | boolean;
   public revoked: null | boolean;
-  public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean, streaming?: boolean): Promise<void>;
-  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, detached?: boolean, streaming?: boolean, config?: Config): Promise<void>; // throws on error
+  public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean): Promise<void>;
+  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
 }
@@ -502,7 +458,7 @@ type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 export class PacketList<PACKET_TYPE> extends Array<PACKET_TYPE> {
   [index: number]: PACKET_TYPE;
   public length: number;
-  public read(bytes: Uint8Array, allowedPackets?: object, streaming?: boolean, config?: Config): void;
+  public read(bytes: Uint8Array, allowedPackets?: object, config?: Config): void;
   public write(): Uint8Array;
   public push(...packet: PACKET_TYPE[]): number;
   public pop(): PACKET_TYPE;
@@ -563,8 +519,6 @@ interface EncryptOptions {
   sessionKey?: SessionKey;
   /** if the return values should be ascii armored or the message/signature objects */
   armor?: boolean;
-  /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-  streaming?: 'web' | 'node' | false;
   /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
   signature?: Signature;
   /** (optional) encrypt as of a certain date */
@@ -591,8 +545,6 @@ interface DecryptOptions {
   publicKeys?: Key | Key[];
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
   format?: 'utf8' | 'binary';
-  /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-  streaming?: 'web' | 'node' | false;
   /** (optional) detached signature for verification */
   signature?: Signature;
   /** (optional) use the given date for verification instead of the current time */
@@ -604,7 +556,6 @@ interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   privateKeys?: Key | Key[];
   armor?: boolean;
-  streaming?: 'web' | 'node' | false;
   dataType?: DataPacketType;
   detached?: boolean;
   date?: Date;
@@ -619,8 +570,6 @@ interface VerifyOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
   format?: 'utf8' | 'binary';
-  /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-  streaming?: 'web' | 'node' | false;
   /** (optional) detached signature for verification */
   signature?: Signature;
   /** (optional) use the given date for verification instead of the current time */

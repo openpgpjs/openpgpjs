@@ -801,9 +801,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
   const streamType = util.isStream(input);
   if (streamType) {
     await stream.loadStreamsPonyfill();
-  }
-  if (streamType === 'node') {
-    input = stream.nodeToWeb(input);
+    input = stream.toStream(input);
   }
   if (armoredMessage) {
     const { type, data } = await unarmor(input, config);
@@ -839,9 +837,7 @@ export async function createMessage({ text, binary, filename, date = new Date(),
   const streamType = util.isStream(input);
   if (streamType) {
     await stream.loadStreamsPonyfill();
-  }
-  if (streamType === 'node') {
-    input = stream.nodeToWeb(input);
+    input = stream.toStream(input);
   }
   const literalDataPacket = new LiteralDataPacket(date);
   if (text !== undefined) {

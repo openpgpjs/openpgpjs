@@ -79,7 +79,7 @@ class CompressedDataPacket {
    * Parsing function for the packet.
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - Payload of a tag 8 packet
    */
-  async read(bytes, config, streaming) {
+  async read(bytes) {
     await stream.parse(bytes, async reader => {
 
       // One octet that gives the algorithm used to compress the packet.
@@ -88,7 +88,7 @@ class CompressedDataPacket {
       // Compressed data, which makes up the remainder of the packet.
       this.compressed = reader.remainder();
 
-      await this.decompress(streaming);
+      await this.decompress();
     });
   }
 
@@ -110,13 +110,13 @@ class CompressedDataPacket {
    * Decompression method for decompressing the compressed data
    * read by read_packet
    */
-  async decompress(streaming) {
+  async decompress() {
 
     if (!decompress_fns[this.algorithm]) {
       throw new Error(this.algorithm + ' decompression not supported');
     }
 
-    await this.packets.read(decompress_fns[this.algorithm](this.compressed), allowedPackets, streaming);
+    await this.packets.read(decompress_fns[this.algorithm](this.compressed), allowedPackets);
   }
 
   /**

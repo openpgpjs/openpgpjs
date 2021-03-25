@@ -16,19 +16,12 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import * as stream from '@openpgp/web-stream-tools';
-import { createReadableStreamWrapper } from '@mattiasbuelens/web-streams-adapter';
 import { Message } from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat, getPreferredAlgo } from './key';
 import defaultConfig from './config';
 import util from './util';
 
-let toNativeReadable;
-if (globalThis.ReadableStream) {
-  try {
-    toNativeReadable = createReadableStreamWrapper(globalThis.ReadableStream);
-  } catch (e) {}
-}
 
 //////////////////////
 //                  //
@@ -237,7 +230,6 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @param {String|Array<String>} [options.passwords] - Array of passwords or a single password to encrypt the message
  * @param {Object} [options.sessionKey] - Session key in the form: `{ data:Uint8Array, algorithm:String }`
  * @param {Boolean} [options.armor=true] - Whether the return values should be ascii armored (true, the default) or binary (false)
- * @param {'web'|'ponyfill'|'node'|false} [options.streaming=type of stream `message` was created from, if any] - Whether to return data as a stream
  * @param {Signature} [options.signature] - A detached signature to add to the encrypted message
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
  * @param {Array<module:type/keyid~KeyID>} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `privateKeys[i]`
@@ -250,7 +242,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @async
  * @static
  */
-export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, armor = true, streaming = message && message.fromStream, detached = false, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), fromUserIDs = [], toUserIDs = [], config }) {
+export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKey, armor = true, detached = false, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), fromUserIDs = [], toUserIDs = [], config }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); fromUserIDs = toArray(fromUserIDs); toUserIDs = toArray(toUserIDs);
   if (detached) {
@@ -258,6 +250,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
   }
 
   return Promise.resolve().then(async function() {
+    const streaming = message.fromStream;
     if (!privateKeys) {
       privateKeys = [];
     }
@@ -284,7 +277,6 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @param {Object|Array<Object>} [options.sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String }
  * @param {Key|Array<Key>} [options.publicKeys] - Array of public keys or single key, to verify signatures
  * @param {'utf8'|'binary'} [options.format='utf8'] - Whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
- * @param {'web'|'ponyfill'|'node'|false} [options.streaming=type of stream `message` was created from, if any] - Whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
@@ -298,14 +290,14 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  *         {
  *           keyID: module:type/keyid~KeyID,
  *           verified: Promise<Boolean>,
- *           valid: Boolean (if streaming was false)
+ *           valid: Boolean (if `message` was not created from a stream)
  *         }, ...
  *       ]
  *     }
  * @async
  * @static
  */
-export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format = 'utf8', streaming = message && message.fromStream, signature = null, date = new Date(), config }) {
+export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format = 'utf8', signature = null, date = new Date(), config }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
@@ -319,8 +311,8 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.filename = decrypted.getFilename();
     linkStreams(result, message);
-    result.data = await convertStream(result.data, streaming, format);
-    if (!streaming) await prepareSignatures(result.signatures);
+    result.data = await convertStream(result.data, message.fromStream, format);
+    if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
   }).catch(onError.bind(null, 'Error decrypting message'));
 }
@@ -339,7 +331,6 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @param {CleartextMessage|Message} options.message - (cleartext) message to be signed
  * @param {Key|Array<Key>} options.privateKeys - Array of keys or single key with decrypted secret key data to sign cleartext
  * @param {Boolean} [options.armor=true] - Whether the return values should be ascii armored (true, the default) or binary (false)
- * @param {'web'|'ponyfill'|'node'|false} [options.streaming=type of stream `message` was created from, if any] - Whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param {Boolean} [options.detached=false] - If the return value should contain a detached signature
  * @param {Array<module:type/keyid~KeyID>} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
@@ -349,7 +340,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
  * @async
  * @static
  */
-export function sign({ message, privateKeys, armor = true, streaming = message && message.fromStream, detached = false, signingKeyIDs = [], date = new Date(), fromUserIDs = [], config }) {
+export function sign({ message, privateKeys, armor = true, detached = false, signingKeyIDs = [], date = new Date(), fromUserIDs = [], config }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
@@ -372,7 +363,7 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
         ]);
       });
     }
-    return convertStream(signature, streaming, armor ? 'utf8' : 'binary');
+    return convertStream(signature, message.fromStream, armor ? 'utf8' : 'binary');
   }).catch(onError.bind(null, 'Error signing message'));
 }
 
@@ -382,7 +373,6 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
  * @param {Key|Array<Key>} options.publicKeys - Array of publicKeys or single key, to verify signatures
  * @param {CleartextMessage|Message} options.message - (cleartext) message object with signatures
  * @param {'utf8'|'binary'} [options.format='utf8'] - Whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
- * @param {'web'|'ponyfill'|'node'|false} [options.streaming=type of stream `message` was created from, if any] - Whether to return data as a stream. Defaults to the type of stream `message` was created from, if any.
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
@@ -395,14 +385,14 @@ export function sign({ message, privateKeys, armor = true, streaming = message &
  *         {
  *           keyID: module:type/keyid~KeyID,
  *           verified: Promise<Boolean>,
- *           valid: Boolean (if `streaming` was false)
+ *           valid: Boolean (if `message` was not created from a stream)
  *         }, ...
  *       ]
  *     }
  * @async
  * @static
  */
-export function verify({ message, publicKeys, format = 'utf8', streaming = message && message.fromStream, signature = null, date = new Date(), config }) {
+export function verify({ message, publicKeys, format = 'utf8', signature = null, date = new Date(), config }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && format === 'binary') throw new Error("Can't return cleartext message data as binary");
@@ -417,9 +407,9 @@ export function verify({ message, publicKeys, format = 'utf8', streaming = messa
       result.signatures = await message.verify(publicKeys, date, config);
     }
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
-    if (streaming) linkStreams(result, message);
-    result.data = await convertStream(result.data, streaming, format);
-    if (!streaming) await prepareSignatures(result.signatures);
+    if (message.fromStream) linkStreams(result, message);
+    result.data = await convertStream(result.data, message.fromStream, format);
+    if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
   }).catch(onError.bind(null, 'Error verifying signed message'));
 }
@@ -558,31 +548,23 @@ function toArray(param) {
 /**
  * Convert data to or from Stream
  * @param {Object} data - the data to convert
- * @param {'web'|'ponyfill'|'node'|false} [options.streaming] - Whether to return a ReadableStream, and of what type
- * @param {'utf8'|'binary'} [options.encoding] - How to return data in Node Readable streams
+ * @param {'web'|'ponyfill'|'node'|false} streaming - Whether to return a ReadableStream, and of what type
+ * @param {'utf8'|'binary'} [encoding] - How to return data in Node Readable streams
  * @returns {Object} The data in the respective format.
  * @private
  */
 async function convertStream(data, streaming, encoding = 'utf8') {
-  let streamType = util.isStream(data);
-  if (!streaming && streamType) {
-    return stream.readToEnd(data);
-  }
+  const streamType = util.isStream(data);
   if (streamType === 'array') {
-    data = await stream.readToEnd(data);
-    streamType = false;
-  }
-  if (streaming && !streamType) {
-    data = stream.toStream(data);
-    streamType = util.isStream(data);
+    return stream.readToEnd(data);
   }
   if (streaming === 'node') {
     data = stream.webToNode(data);
     if (encoding !== 'binary') data.setEncoding(encoding);
     return data;
   }
-  if (streaming === 'web' && streamType === 'ponyfill' && toNativeReadable) {
-    return toNativeReadable(data);
+  if (streaming === 'web' && streamType === 'ponyfill') {
+    return stream.toNativeReadable(data);
   }
   return data;
 }
