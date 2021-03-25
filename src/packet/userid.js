@@ -31,6 +31,10 @@ import defaultConfig from '../config';
  * specifies the length of the User ID.
  */
 class UserIDPacket {
+  static get tag() {
+    return enums.packet.userID;
+  }
+
   constructor() {
     /** A string containing the user id. Usually in the form
      * John Doe <john@example.com>
@@ -92,7 +96,5 @@ class UserIDPacket {
     return util.encodeUTF8(this.userID);
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-UserIDPacket.tag = enums.packet.userID;
 
 export default UserIDPacket;

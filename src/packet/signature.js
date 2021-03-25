@@ -32,6 +32,10 @@ import defaultConfig from '../config';
  * block of text, and a signature that is a certification of a User ID.
  */
 class SignaturePacket {
+  static get tag() {
+    return enums.packet.signature;
+  }
+
   /**
    * @param {Date} date - The creation date of the signature
    */
@@ -732,8 +736,6 @@ class SignaturePacket {
     return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime * 1000) : Infinity;
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-SignaturePacket.tag = enums.packet.signature;
 
 export default SignaturePacket;
 

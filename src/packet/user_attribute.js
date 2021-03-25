@@ -37,6 +37,10 @@ import util from '../util';
  * an implementation may use any method desired.
  */
 class UserAttributePacket {
+  static get tag() {
+    return enums.packet.userAttribute;
+  }
+
   constructor() {
     this.attributes = [];
   }
@@ -83,7 +87,5 @@ class UserAttributePacket {
     });
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-UserAttributePacket.tag = enums.packet.userAttribute;
 
 export default UserAttributePacket;

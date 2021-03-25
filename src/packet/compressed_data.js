@@ -44,6 +44,10 @@ const allowedPackets = util.constructAllowedPackets([
  * a Signature or One-Pass Signature packet, and contains a literal data packet.
  */
 class CompressedDataPacket {
+  static get tag() {
+    return enums.packet.compressedData;
+  }
+
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
@@ -126,8 +130,6 @@ class CompressedDataPacket {
     this.compressed = compress_fns[this.algorithm](this.packets.write(), this.deflateLevel);
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-CompressedDataPacket.tag = enums.packet.compressedData;
 
 export default CompressedDataPacket;
 

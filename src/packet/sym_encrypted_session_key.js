@@ -35,6 +35,10 @@ import util from '../util';
  * the Symmetric-Key Encrypted Session Key packet.
  */
 class SymEncryptedSessionKeyPacket {
+  static get tag() {
+    return enums.packet.symEncryptedSessionKey;
+  }
+
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
@@ -181,7 +185,5 @@ class SymEncryptedSessionKeyPacket {
     }
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-SymEncryptedSessionKeyPacket.tag = enums.packet.symEncryptedSessionKey;
 
 export default SymEncryptedSessionKeyPacket;

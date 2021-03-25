@@ -47,6 +47,10 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * packet.
  */
 class SymEncryptedIntegrityProtectedDataPacket {
+  static get tag() {
+    return enums.packet.symEncryptedIntegrityProtectedData;
+  }
+
   constructor() {
     this.version = VERSION;
     /** The encrypted payload. */
@@ -140,7 +144,5 @@ class SymEncryptedIntegrityProtectedDataPacket {
     return true;
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-SymEncryptedIntegrityProtectedDataPacket.tag = enums.packet.symEncryptedIntegrityProtectedData;
 
 export default SymEncryptedIntegrityProtectedDataPacket;

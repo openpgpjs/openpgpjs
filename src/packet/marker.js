@@ -31,6 +31,10 @@ import enums from '../enums';
  * Such a packet MUST be ignored when received.
  */
 class MarkerPacket {
+  static get tag() {
+    return enums.packet.marker;
+  }
+
   /**
    * Parsing function for a literal data packet (tag 10).
    *
@@ -52,7 +56,5 @@ class MarkerPacket {
     return false;
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-MarkerPacket.tag = enums.packet.marker;
 
 export default MarkerPacket;

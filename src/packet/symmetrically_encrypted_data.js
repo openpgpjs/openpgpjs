@@ -45,6 +45,10 @@ const allowedPackets = util.constructAllowedPackets([
  * that form whole OpenPGP messages).
  */
 class SymmetricallyEncryptedDataPacket {
+  static get tag() {
+    return enums.packet.symmetricallyEncryptedData;
+  }
+
   constructor() {
     /**
      * Encrypted secret-key data
@@ -108,7 +112,5 @@ class SymmetricallyEncryptedDataPacket {
     this.encrypted = util.concat([FRE, ciphertext]);
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-SymmetricallyEncryptedDataPacket.tag = enums.packet.symmetricallyEncryptedData;
 
 export default SymmetricallyEncryptedDataPacket;

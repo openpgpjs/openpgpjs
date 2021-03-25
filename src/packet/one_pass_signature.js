@@ -32,6 +32,10 @@ import util from '../util';
  * can compute the entire signed message in one pass.
  */
 class OnePassSignaturePacket {
+  static get tag() {
+    return enums.packet.onePassSignature;
+  }
+
   constructor() {
     /** A one-octet version number.  The current version is 3. */
     this.version = null;
@@ -133,7 +137,5 @@ class OnePassSignaturePacket {
 OnePassSignaturePacket.prototype.hash = SignaturePacket.prototype.hash;
 OnePassSignaturePacket.prototype.toHash = SignaturePacket.prototype.toHash;
 OnePassSignaturePacket.prototype.toSign = SignaturePacket.prototype.toSign;
-// Static fields (explicit declaration not fully supported by Safari)
-OnePassSignaturePacket.tag = enums.packet.onePassSignature;
 
 export default OnePassSignaturePacket;

@@ -27,6 +27,10 @@ import enums from '../enums';
  * @extends PublicKeyPacket
  */
 class PublicSubkeyPacket extends PublicKeyPacket {
+  static get tag() {
+    return enums.packet.publicSubkey;
+  }
+
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -36,7 +40,5 @@ class PublicSubkeyPacket extends PublicKeyPacket {
     super(date, config);
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-PublicSubkeyPacket.tag = enums.packet.publicSubkey;
 
 export default PublicSubkeyPacket;

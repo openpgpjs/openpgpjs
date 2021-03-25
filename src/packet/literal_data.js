@@ -27,6 +27,10 @@ import util from '../util';
  * further interpreted.
  */
 class LiteralDataPacket {
+  static get tag() {
+    return enums.packet.literalData;
+  }
+
   /**
    * @param {Date} date - The creation date of the literal package
    */
@@ -158,7 +162,5 @@ class LiteralDataPacket {
     return util.concat([header, data]);
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-LiteralDataPacket.tag = enums.packet.literalData;
 
 export default LiteralDataPacket;

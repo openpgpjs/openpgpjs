@@ -44,6 +44,10 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * AEAD Protected Data Packet
  */
 class AEADEncryptedDataPacket {
+  static get tag() {
+    return enums.packet.aeadEncryptedData;
+  }
+
   constructor() {
     this.version = VERSION;
     this.cipherAlgo = null;
@@ -190,7 +194,5 @@ class AEADEncryptedDataPacket {
     });
   }
 }
-// Static fields (explicit declaration not fully supported by Safari)
-AEADEncryptedDataPacket.tag = enums.packet.aeadEncryptedData;
 
 export default AEADEncryptedDataPacket;
