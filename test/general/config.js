@@ -149,7 +149,7 @@ module.exports = () => describe('Custom configuration', function() {
 
     try {
       const passwords = ['12345678'];
-      const message = openpgp.Message.fromText("test");
+      const message = await openpgp.Message.fromText("test");
 
       const armored = await openpgp.encrypt({ message, passwords });
       const encrypted = await openpgp.readMessage({ armoredMessage: armored });
@@ -225,7 +225,7 @@ module.exports = () => describe('Custom configuration', function() {
     const { privateKeyArmored } = await openpgp.generateKey({ userIDs });
     const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
 
-    const message = openpgp.Message.fromText("test");
+    const message = await openpgp.Message.fromText("test");
     const opt = {
       message,
       privateKeys: key,
@@ -235,7 +235,7 @@ module.exports = () => describe('Custom configuration', function() {
     opt.detached = true;
     await expect(openpgp.sign(opt)).to.be.rejectedWith(/Insecure hash algorithm/);
 
-    const clearText = openpgp.CleartextMessage.fromText("test");
+    const clearText = await openpgp.CleartextMessage.fromText("test");
     const opt2 = {
       message: clearText,
       privateKeys: key,
@@ -255,7 +255,7 @@ module.exports = () => describe('Custom configuration', function() {
     const config = { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.sha256, openpgp.enums.hash.sha512]) };
 
 
-    const message = openpgp.Message.fromText("test");
+    const message = await openpgp.Message.fromText("test");
     const signed = await openpgp.sign({ message, privateKeys: key });
     const opt = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
@@ -274,7 +274,7 @@ module.exports = () => describe('Custom configuration', function() {
     const { signatures: [sig2] } = await openpgp.verify(opt2);
     await expect(sig2.error).to.match(/Insecure message hash algorithm/);
 
-    const cleartext = openpgp.CleartextMessage.fromText("test");
+    const cleartext = await openpgp.CleartextMessage.fromText("test");
     const signedCleartext = await openpgp.sign({ message: cleartext, privateKeys: key });
     const opt3 = {
       message: await openpgp.readCleartextMessage({ cleartextMessage: signedCleartext }),

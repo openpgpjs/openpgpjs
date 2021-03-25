@@ -210,7 +210,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   });
   it('Sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
-    const signed = await openpgp.sign({ privateKeys: [romeoPrivate], message: openpgp.CleartextMessage.fromText(data.romeo.message) });
+    const signed = await openpgp.sign({ privateKeys: [romeoPrivate], message: await openpgp.CleartextMessage.fromText(data.romeo.message) });
     const romeoPublic = await load_pub_key('romeo');
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: signed });
     const result = await openpgp.verify({ publicKeys: [romeoPublic], message: msg });
@@ -260,7 +260,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
     const julietPublic = await load_pub_key('juliet');
-    const encrypted = await openpgp.encrypt({ publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: openpgp.Message.fromText(data.romeo.message) });
+    const encrypted = await openpgp.encrypt({ publicKeys: [julietPublic], privateKeys: [romeoPrivate], message: await openpgp.Message.fromText(data.romeo.message) });
 
     const message = await openpgp.readMessage({ armoredMessage: encrypted });
     const romeoPublic = await load_pub_key('romeo');
@@ -290,21 +290,21 @@ function omnibus() {
     const bye = secondKey.key;
     const pubBye = bye.toPublic();
 
-    const cleartextMessage = await openpgp.sign({ message: openpgp.CleartextMessage.fromText(testData), privateKeys: hi });
+    const cleartextMessage = await openpgp.sign({ message: await openpgp.CleartextMessage.fromText(testData), privateKeys: hi });
     await openpgp.verify({
       message: await openpgp.readCleartextMessage({ cleartextMessage }),
       publicKeys: pubHi
     }).then(output => expect(output.signatures[0].valid).to.be.true);
     // Verifying detached signature
     await openpgp.verify({
-      message: openpgp.Message.fromText(util.removeTrailingSpaces(testData)),
+      message: await openpgp.Message.fromText(util.removeTrailingSpaces(testData)),
       publicKeys: pubHi,
       signature: (await openpgp.readCleartextMessage({ cleartextMessage })).signature
     }).then(output => expect(output.signatures[0].valid).to.be.true);
 
     // Encrypting and signing
     const encrypted = await openpgp.encrypt({
-      message: openpgp.Message.fromText(testData2),
+      message: await openpgp.Message.fromText(testData2),
       publicKeys: [pubBye],
       privateKeys: [hi]
     });

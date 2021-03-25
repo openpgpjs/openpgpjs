@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import * as base64 from './base64.js';
 import enums from '../enums.js';
 import util from '../util';

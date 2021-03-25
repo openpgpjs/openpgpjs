@@ -1,4 +1,4 @@
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,

@@ -25,7 +25,7 @@ import { expect } from 'chai';
 
   // Encrypt text message (armored)
   const text = 'hello';
-  const textMessage = Message.fromText('hello');
+  const textMessage = await Message.fromText('hello');
   const encryptedArmor: string = await encrypt({ publicKeys, message: textMessage });
   expect(encryptedArmor).to.include('-----BEGIN PGP MESSAGE-----');
 
@@ -33,7 +33,7 @@ import { expect } from 'chai';
   const binary = new Uint8Array(2);
   binary[0] = 1;
   binary[1] = 2;
-  const binaryMessage = Message.fromBinary(binary);
+  const binaryMessage = await Message.fromBinary(binary);
   const encryptedBinary: Uint8Array = await encrypt({ publicKeys, message: binaryMessage, armor: false });
   expect(encryptedBinary).to.be.instanceOf(Uint8Array);
 
@@ -54,7 +54,7 @@ import { expect } from 'chai';
   expect(encryptedMessage).to.be.instanceOf(Message);
 
   // Sign cleartext message (armored)
-  const cleartextMessage = CleartextMessage.fromText('hello');
+  const cleartextMessage = await CleartextMessage.fromText('hello');
   const clearSignedArmor = await sign({ privateKeys, message: cleartextMessage });
   expect(clearSignedArmor).to.include('-----BEGIN PGP SIGNED MESSAGE-----');
 
@@ -80,12 +80,12 @@ import { expect } from 'chai';
 
   // // Detached - sign cleartext message (armored)
   // import { Message, sign } from 'openpgp';
-  // const message = Message.fromText(util.removeTrailingSpaces(text));
+  // const message = await Message.fromText(util.removeTrailingSpaces(text));
   // const signed = await sign({ privateKeys, message, detached: true });
   // console.log(signed); // String
 
   // // Detached - sign binary message (unarmored)
-  // const message = Message.fromText(text);
+  // const message = await Message.fromText(text);
   // const signed = await sign({ privateKeys, message, detached: true, armor: false });
   // console.log(signed); // Uint8Array
 
@@ -99,7 +99,7 @@ import { expect } from 'chai';
 
   // // Streaming - encrypt text message on Node.js (armored)
   // const data = fs.createReadStream(filename, { encoding: 'utf8' });
-  // const message = Message.fromText(data);
+  // const message = await Message.fromText(data);
   // const encrypted = await encrypt({ publicKeys, message });
   // encrypted.on('data', chunk => {
   //   console.log(chunk); // String
@@ -107,7 +107,7 @@ import { expect } from 'chai';
 
   // // Streaming - encrypt binary message on Node.js (unarmored)
   // const data = fs.createReadStream(filename);
-  // const message = Message.fromBinary(data);
+  // const message = await Message.fromBinary(data);
   // const encrypted = await encrypt({ publicKeys, message, armor: false });
   // encrypted.pipe(targetStream);
 

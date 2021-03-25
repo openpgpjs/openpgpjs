@@ -19,7 +19,7 @@ import { Deflate } from '@openpgp/pako/lib/deflate';
 import { Inflate } from '@openpgp/pako/lib/inflate';
 import { Z_SYNC_FLUSH, Z_FINISH } from '@openpgp/pako/lib/zlib/constants';
 import { decode as BunzipDecode } from '@openpgp/seek-bzip';
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -146,13 +146,19 @@ function uncompressed(data) {
   return data;
 }
 
-function node_zlib(func, options = {}) {
+function node_zlib(func, create, options = {}) {
   return function (data) {
-    const webStream = stream.nodeToWeb(stream.webToNode(data).pipe(func(options)));
-    if (stream.isStream(data) === 'array') {
-      return stream.fromAsync(() => stream.readToEnd(webStream));
+    if (!util.isStream(data) || stream.isArrayStream(data)) {
+      return stream.fromAsync(() => stream.readToEnd(data).then(data => {
+        return new Promise((resolve, reject) => {
+          func(data, options, (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          });
+        });
+      }));
     }
-    return webStream;
+    return stream.nodeToWeb(stream.webToNode(data).pipe(create(options)));
   };
 }
 
@@ -180,8 +186,8 @@ function bzip2(func) {
 }
 
 const compress_fns = nodeZlib ? {
-  zip: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.createDeflateRaw, { level })(compressed),
-  zlib: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.createDeflate, { level })(compressed)
+  zip: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.deflateRaw, nodeZlib.createDeflateRaw, { level })(compressed),
+  zlib: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.deflate, nodeZlib.createDeflate, { level })(compressed)
 } : {
   zip: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { raw: true, level })(compressed),
   zlib: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { level })(compressed)
@@ -189,8 +195,8 @@ const compress_fns = nodeZlib ? {
 
 const decompress_fns = nodeZlib ? {
   uncompressed: uncompressed,
-  zip: /*#__PURE__*/ node_zlib(nodeZlib.createInflateRaw),
-  zlib: /*#__PURE__*/ node_zlib(nodeZlib.createInflate),
+  zip: /*#__PURE__*/ node_zlib(nodeZlib.inflateRaw, nodeZlib.createInflateRaw),
+  zlib: /*#__PURE__*/ node_zlib(nodeZlib.inflate, nodeZlib.createInflate),
   bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
 } : {
   uncompressed: uncompressed,

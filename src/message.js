@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import { armor, unarmor } from './encoding/armor';
 import KeyID from './type/keyid';
 import defaultConfig from './config';
@@ -653,9 +653,13 @@ export class Message {
    * @param {'utf8'|'binary'|'text'|'mime'} [type='utf8'] - Data packet type
    * @returns {Message} New message object.
    * @static
+   * @async
    */
-  static fromText(text, filename, date = new Date(), type = 'utf8') {
+  static async fromText(text, filename, date = new Date(), type = 'utf8') {
     const streamType = util.isStream(text);
+    if (streamType) {
+      await stream.loadStreamsPonyfill();
+    }
     if (streamType === 'node') {
       text = stream.nodeToWeb(text);
     }
@@ -680,11 +684,15 @@ export class Message {
    * @param {'utf8'|'binary'|'text'|'mime'} [type='binary'] - Data packet type
    * @returns {Message} New message object.
    * @static
+   * @async
    */
-  static fromBinary(bytes, filename, date = new Date(), type = 'binary') {
+  static async fromBinary(bytes, filename, date = new Date(), type = 'binary') {
     const streamType = util.isStream(bytes);
     if (!util.isUint8Array(bytes) && !streamType) {
       throw new Error('Data must be in the form of a Uint8Array or Stream');
+    }
+    if (streamType) {
+      await stream.loadStreamsPonyfill();
     }
     if (streamType === 'node') {
       bytes = stream.nodeToWeb(bytes);
@@ -856,6 +864,9 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
     throw new Error('readMessage: must pass options object containing `armoredMessage` or `binaryMessage`');
   }
   const streamType = util.isStream(input);
+  if (streamType) {
+    await stream.loadStreamsPonyfill();
+  }
   if (streamType === 'node') {
     input = stream.nodeToWeb(input);
   }

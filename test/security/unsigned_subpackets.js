@@ -58,7 +58,7 @@ async function makeKeyValid() {
   async function encryptFails(k) {
     try {
       await openpgp.encrypt({
-        message: message.fromText('Hello', 'hello.txt'),
+        message: await Message.fromText('Hello', 'hello.txt'),
         publicKeys: k
       });
       return false;

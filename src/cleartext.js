@@ -124,8 +124,9 @@ export class CleartextMessage {
    * Creates a new CleartextMessage object from text
    * @param {String} text
    * @static
+   * @async
    */
-  static fromText(text) {
+  static async fromText(text) {
     return new CleartextMessage(text);
   }
 }

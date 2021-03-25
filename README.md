@@ -173,7 +173,7 @@ Encryption will use the algorithm specified in config.preferredSymmetricAlgorith
 
 ```js
 (async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x01, 0x01]));
+    const message = await openpgp.Message.fromBinary(new Uint8Array([0x01, 0x01, 0x01]));
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -216,7 +216,7 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     await privateKey.decrypt(passphrase);
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText('Hello, World!'), // input as Message object
+        message: await openpgp.Message.fromText('Hello, World!'), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -257,7 +257,7 @@ Encrypt with multiple public keys:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase)
 
-    const message = openpgp.Message.fromText(message);
+    const message = await openpgp.Message.fromText(message);
     const encrypted = await openpgp.encrypt({
         message:, // input as Message object
         publicKeys, // for encryption
@@ -274,7 +274,7 @@ It's possible to change that behaviour by enabling compression through the confi
 
 ```js
 (async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])); // or .fromText('string')
+    const message = await openpgp.Message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])); // or .fromText('string')
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
@@ -306,7 +306,7 @@ Where the value can be any of:
         }
     });
 
-    const message = openpgp.Message.fromBinary(readableStream);
+    const message = await openpgp.Message.fromBinary(readableStream);
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -361,7 +361,7 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
     });
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText(readableStream), // input as Message object
+        message: await openpgp.Message.fromText(readableStream), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -457,7 +457,7 @@ Using the private key:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase);
 
-    const unsignedMessage = openpgp.CleartextMessage.fromText('Hello, World!');
+    const unsignedMessage = await openpgp.CleartextMessage.fromText('Hello, World!');
     const cleartextMessage = await openpgp.sign({
         message: unsignedMessage, // CleartextMessage or Message object
         privateKeys: privateKey // for signing
@@ -497,7 +497,7 @@ Using the private key:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase);
 
-    const cleartextMessage = openpgp.CleartextMessage.fromText('Hello, World!');
+    const cleartextMessage = await openpgp.CleartextMessage.fromText('Hello, World!');
     const detachedSignature = await openpgp.sign({
         message: cleartextMessage, // CleartextMessage or Message object
         privateKeys: privateKey, // for signing
@@ -544,7 +544,7 @@ Using the private key:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase);
 
-    const message = openpgp.Message.fromBinary(readableStream); // or .fromText(readableStream: ReadableStream<String>)
+    const message = await openpgp.Message.fromBinary(readableStream); // or .fromText(readableStream: ReadableStream<String>)
     const signatureArmored = await openpgp.sign({
         message,
         privateKeys: privateKey // for signing

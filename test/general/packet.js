@@ -753,7 +753,7 @@ module.exports = () => describe("Packet", function() {
 
       await Promise.all([
         signature.verify(keyPacket, openpgp.enums.signature.binary, literal),
-        openpgp.stream.pipe(literal.getBytes(), new openpgp.stream.WritableStream())
+        openpgp.stream.readToEnd(literal.getBytes())
       ]);
     });
   });
@@ -911,7 +911,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
         await Promise.all([
           signed2[1].verify(key, openpgp.enums.signature.text, signed2[0]),
-          openpgp.stream.pipe(signed2[0].getBytes(), new openpgp.stream.WritableStream())
+          openpgp.stream.readToEnd(signed2[0].getBytes())
         ]);
       });
     });

@@ -23,7 +23,7 @@
  * @private
  */
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 
