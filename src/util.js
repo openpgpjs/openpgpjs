@@ -564,27 +564,25 @@ const util = {
   },
 
   /**
-   * Given an array of promises, call Promise.any if available, otherwise
-   * resolve the promises sequentially and return the first fulfilled one
-   * (this second case is deterministic and it does not necessarily return the fastest fulfilled promise)
+   * Return a Promise that will resolve as soon as one of the promises in input resolves
+   * or will reject if all input promises all rejected
+   * (similar to Promise.any, but with slightly different error handling)
    * @param {Array<Promise>} promises
-   * @returns {Any} return value of one fullfilled promise
-   * @throws if all promises are rejected
-   * @async
+   * @return {Promise<Any>} Promise resolving to the result of the fastest fulfilled promise
+   *                          or rejected with the Error of the last resolved Promise (if all promises are rejected)
    */
-  anyPromise: async function(promises) {
-    if (Promise.any) return Promise.any(promises);
-
-    let exception;
-    for (const promise of promises) {
-      try {
-        const result = await promise;
-        return result;
-      } catch (e) {
-        exception = e;
-      }
-    }
-    throw exception;
+  anyPromise: function(promises) {
+    return new Promise(async (resolve, reject) => {
+      let exception;
+      await Promise.all(promises.map(async promise => {
+        try {
+          resolve(await promise);
+        } catch (e) {
+          exception = e;
+        }
+      }));
+      reject(exception);
+    });
   }
 };
 
