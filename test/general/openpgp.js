@@ -951,7 +951,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       openpgp.config.minRSABits = minRSABitsVal;
     });
 
-    it('enforce signed - decrypt/verify should succeed with valid signature', async function () {
+    it('decrypt/verify should succeed with valid signature  (expectSigned=true)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       await privateKey.decrypt(passphrase);
@@ -971,7 +971,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       expect(signatures[0].valid).to.be.true;
     });
 
-    it('enforce signed - decrypt/verify should throw on missing public keys', async function () {
+    it('decrypt/verify should throw on missing public keys (expectSigned=true)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       await privateKey.decrypt(passphrase);
@@ -988,7 +988,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       })).to.be.eventually.rejectedWith(/public keys are required/);
     });
 
-    it('enforce signed - decrypt/verify should throw on missing signature', async function () {
+    it('decrypt/verify should throw on missing signature (expectSigned=true)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       await privateKey.decrypt(passphrase);
@@ -1005,7 +1005,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       })).to.be.eventually.rejectedWith(/message is not signed/);
     });
 
-    it('enforce signed - decrypt/verify should throw on invalid signature', async function () {
+    it('decrypt/verify should throw on invalid signature (expectSigned=true)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       const wrongPublicKey = (await openpgp.readKey({ armoredKey: priv_key_2000_2008 })).toPublic();
@@ -1024,7 +1024,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       })).to.be.eventually.rejectedWith(/invalid message signature/);
     });
 
-    it('enforce signed - decrypt/verify should succeed with valid signature (with streaming)', async function () {
+    it('decrypt/verify should succeed with valid signature (expectSigned=true, with streaming)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       await privateKey.decrypt(passphrase);
@@ -1045,7 +1045,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       expect(await signatures[0].verified).to.be.true;
     });
 
-    it('enforce signed - decrypt/verify should throw on missing public keys (with streaming)', async function () {
+    it('decrypt/verify should throw on missing public keys (expectSigned=true, with streaming)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       await privateKey.decrypt(passphrase);
@@ -1062,7 +1062,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       })).to.be.eventually.rejectedWith(/public keys are required/);
     });
 
-    it('enforce signed - decrypt/verify should throw on missing signature (with streaming)', async function () {
+    it('decrypt/verify should throw on missing signature (expectSigned=true, with streaming)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       await privateKey.decrypt(passphrase);
@@ -1079,7 +1079,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       })).to.be.eventually.rejectedWith(/message is not signed/);
     });
 
-    it('enforce signed - decrypt/verify should throw on invalid signature (with streaming)', async function () {
+    it('decrypt/verify should throw on invalid signature (expectSigned=true, with streaming)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
       const wrongPublicKey = (await openpgp.readKey({ armoredKey: priv_key_2000_2008 })).toPublic();
@@ -1586,7 +1586,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           });
         });
 
-        it('should encrypt/sign and decrypt/verify (enforce signed)', async function () {
+        it('should encrypt/sign and decrypt/verify (expectSigned=true)', async function () {
           const encOpt = {
             message: await openpgp.createMessage({ text: plaintext }),
             publicKeys: publicKey,

@@ -561,6 +561,19 @@ const util = {
       map[PacketClass.tag] = PacketClass;
     });
     return map;
+  },
+
+  promiseAny: async function(promises) {
+    let exception;
+    for (const promise of promises) {
+      try {
+        const result = await promise;
+        return result;
+      } catch (e) {
+        exception = e;
+      }
+    }
+    throw exception;
   }
 };
 
