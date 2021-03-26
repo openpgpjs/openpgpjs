@@ -563,7 +563,18 @@ const util = {
     return map;
   },
 
+  /**
+   * Given an array of promises, call Promise.any if available, otherwise
+   * resolve the promises sequentially and return the first fulfilled one
+   * (this second case is deterministic and it does not necessarily return the fastest fulfilled promise)
+   * @param {Array<Promise>} promises
+   * @returns {Any} return value of one fullfilled promise
+   * @throws if all promises are rejected
+   * @async
+   */
   promiseAny: async function(promises) {
+    if (Promise.any) return Promise.any(promises);
+
     let exception;
     for (const promise of promises) {
       try {
