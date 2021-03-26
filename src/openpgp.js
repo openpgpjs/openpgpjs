@@ -276,6 +276,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @param {String|Array<String>} [options.passwords] - Passwords to decrypt the message
  * @param {Object|Array<Object>} [options.sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String }
  * @param {Key|Array<Key>} [options.publicKeys] - Array of public keys or single key, to verify signatures
+ * @param {Boolean} [options.enforceSigned=false] - If true, data decryption fails if message signatures are missing or invalid
  * @param {'utf8'|'binary'} [options.format='utf8'] - Whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
@@ -297,7 +298,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @async
  * @static
  */
-export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, format = 'utf8', signature = null, date = new Date(), config }) {
+export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKeys, enforceSigned = false, format = 'utf8', signature = null, date = new Date(), config }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); publicKeys = toArray(publicKeys); privateKeys = toArray(privateKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
@@ -311,6 +312,21 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     result.data = format === 'binary' ? decrypted.getLiteralData() : decrypted.getText();
     result.filename = decrypted.getFilename();
     linkStreams(result, message);
+    if (enforceSigned) {
+      if (publicKeys.length === 0) {
+        throw new Error('public keys are required to verify message signatures');
+      }
+      if (result.signatures.length === 0) {
+        throw new Error('message is not signed');
+      }
+      result.data = stream.concat([
+        result.data,
+        stream.fromAsync(() => Promise.any(
+          result.signatures.map(sig => sig.verified)
+        ).then(() => {}) // append nothing to the data
+          .catch(() => { throw new Error('invalid message signature'); }))
+      ]);
+    }
     result.data = await convertStream(result.data, message.fromStream, format);
     if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
