@@ -965,7 +965,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         privateKeys: privateKey,
         publicKeys: publicKey,
-        enforceSigned: true
+        expectSigned: true
       });
       expect(data).to.equal(plaintext);
       expect(signatures[0].valid).to.be.true;
@@ -984,7 +984,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       await expect(openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         privateKeys: privateKey,
-        enforceSigned: true
+        expectSigned: true
       })).to.be.eventually.rejectedWith(/public keys are required/);
     });
 
@@ -1001,7 +1001,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         privateKeys: privateKey,
         publicKeys: publicKey,
-        enforceSigned: true
+        expectSigned: true
       })).to.be.eventually.rejectedWith(/message is not signed/);
     });
 
@@ -1020,7 +1020,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         privateKeys: privateKey,
         publicKeys: wrongPublicKey,
-        enforceSigned: true
+        expectSigned: true
       })).to.be.eventually.rejectedWith(/invalid message signature/);
     });
 
@@ -1038,7 +1038,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
         privateKeys: privateKey,
         publicKeys: publicKey,
-        enforceSigned: true
+        expectSigned: true
       });
       const data = await openpgp.stream.readToEnd(streamedData);
       expect(data).to.equal(plaintext);
@@ -1058,7 +1058,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       await expect(openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
         privateKeys: privateKey,
-        enforceSigned: true
+        expectSigned: true
       })).to.be.eventually.rejectedWith(/public keys are required/);
     });
 
@@ -1075,7 +1075,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
         privateKeys: privateKey,
         publicKeys: publicKey,
-        enforceSigned: true
+        expectSigned: true
       })).to.be.eventually.rejectedWith(/message is not signed/);
     });
 
@@ -1094,7 +1094,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
         privateKeys: privateKey,
         publicKeys: wrongPublicKey,
-        enforceSigned: true
+        expectSigned: true
       });
       await expect(
         openpgp.stream.readToEnd(streamedData)
@@ -1595,7 +1595,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           const decOpt = {
             privateKeys: privateKey,
             publicKeys: publicKey,
-            enforceSigned: true
+            expectSigned: true
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
