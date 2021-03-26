@@ -572,7 +572,7 @@ const util = {
    * @throws if all promises are rejected
    * @async
    */
-  promiseAny: async function(promises) {
+  anyPromise: async function(promises) {
     if (Promise.any) return Promise.any(promises);
 
     let exception;

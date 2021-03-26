@@ -321,7 +321,7 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
       }
       result.data = stream.concat([
         result.data,
-        stream.fromAsync(() => util.promiseAny(
+        stream.fromAsync(() => util.anyPromise(
           result.signatures.map(sig => sig.verified)
         ).then(() => {}) // append nothing to the data
           .catch(() => { throw new Error('invalid message signature'); }))
