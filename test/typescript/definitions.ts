@@ -6,7 +6,7 @@
  *  - if it fails to run, edit this file to match the actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
  */
 
-import { generateKey, readKey, readKeys, Key, readMessage, createMessage, createCleartextMessage, encrypt, decrypt, sign, verify, config } from '../..';
+import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Message, createCleartextMessage, encrypt, decrypt, sign, verify, config } from '../..';
 
 import { expect } from 'chai';
 
