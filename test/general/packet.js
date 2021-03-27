@@ -4,6 +4,8 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 const crypto = require('../../src/crypto');
 const util = require('../../src/util');
 
+const stream = require('@openpgp/web-stream-tools');
+
 const stub = require('sinon/lib/sinon/stub');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -12,8 +14,8 @@ const { expect } = chai;
 const input = require('./testInputs.js');
 
 function stringify(array) {
-  if (openpgp.stream.isStream(array)) {
-    return openpgp.stream.readToEnd(array).then(stringify);
+  if (stream.isStream(array)) {
+    return stream.readToEnd(array).then(stringify);
   }
 
   if (!util.isUint8Array(array)) {
@@ -174,7 +176,7 @@ module.exports = () => describe("Packet", function() {
         await msg2.read(msg.write(), allAllowedPackets);
         return msg2[0].decrypt(algo, key);
       }).then(async function() {
-        expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+        expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
       });
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
@@ -227,7 +229,7 @@ module.exports = () => describe("Packet", function() {
       await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 0 });
       await msg2.read(msg.write(), allAllowedPackets);
       await msg2[0].decrypt(algo, key);
-      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+      expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
       expect(encryptStub.callCount > 1).to.be.true;
       expect(decryptStub.callCount > 1).to.be.true;
     } finally {
@@ -271,10 +273,10 @@ module.exports = () => describe("Packet", function() {
     try {
       await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 14 });
       const data = msg.write();
-      expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
       await msg2.read(data, allAllowedPackets);
       await msg2[0].decrypt(algo, key);
-      expect(await openpgp.stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+      expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     } finally {
       randomBytesStub.restore();
     }
@@ -575,7 +577,7 @@ module.exports = () => describe("Packet", function() {
       await encData.encrypt(algo, key, undefined, openpgp.config);
 
       const data = msg.write();
-      expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
 
       const msg2 = new openpgp.PacketList();
       await msg2.read(data, allAllowedPackets);
@@ -653,7 +655,7 @@ module.exports = () => describe("Packet", function() {
       await enc.encrypt(algo, key, undefined, openpgp.config);
 
       const data = msg.write();
-      expect(await openpgp.stream.readToEnd(openpgp.stream.clone(data))).to.deep.equal(packetBytes);
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
 
       const msg2 = new openpgp.PacketList();
       await msg2.read(data, allAllowedPackets);
@@ -745,13 +747,13 @@ module.exports = () => describe("Packet", function() {
       await encData.decrypt(pkesk.sessionKeyAlgorithm, pkesk.sessionKey);
 
       const payload = encData.packets[0].packets;
-      payload.push(...await openpgp.stream.readToEnd(payload.stream, arr => arr));
+      payload.push(...await stream.readToEnd(payload.stream, arr => arr));
       const literal = payload[1];
       const signature = payload[2];
 
       await Promise.all([
         signature.verify(keyPacket, openpgp.enums.signature.binary, literal),
-        openpgp.stream.readToEnd(literal.getBytes())
+        stream.readToEnd(literal.getBytes())
       ]);
     });
   });
@@ -939,11 +941,11 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
         const signed2 = new openpgp.PacketList();
         await signed2.read(raw, allAllowedPackets);
-        signed2.push(...await openpgp.stream.readToEnd(signed2.stream, arr => arr));
+        signed2.push(...await stream.readToEnd(signed2.stream, arr => arr));
 
         await Promise.all([
           signed2[1].verify(key, openpgp.enums.signature.text, signed2[0]),
-          openpgp.stream.readToEnd(signed2[0].getBytes())
+          stream.readToEnd(signed2[0].getBytes())
         ]);
       });
     });

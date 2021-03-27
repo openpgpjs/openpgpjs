@@ -340,6 +340,11 @@ export function unarmor(input, config = defaultConfig) {
     } catch (e) {
       reject(e);
     }
+  }).then(async result => {
+    if (stream.isArrayStream(result.data)) {
+      result.data = await stream.readToEnd(result.data);
+    }
+    return result;
   });
 }
 

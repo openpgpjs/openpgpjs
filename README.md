@@ -341,7 +341,7 @@ Where the value can be any of:
 
 ```js
 (async () => {
-    const readableStream = new openpgp.stream.ReadableStream({
+    const readableStream = new ReadableStream({
         start(controller) {
             controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
             controller.close();
@@ -358,24 +358,19 @@ Where the value can be any of:
 
     // Either pipe the above stream somewhere, pass it to another function,
     // or read it manually as follows:
-    const reader = openpgp.stream.getReader(encrypted);
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        console.log('new chunk:', value); // Uint8Array
+    for await (const chunk of encrypted) {
+        console.log('new chunk:', chunk); // Uint8Array
     }
-
-    // Or, in Node.js, you can pipe the above stream as follows:
-    const nodeStream = openpgp.stream.webToNode(encrypted);
-    nodeStream.pipe(nodeWritableStream);
 })();
 ```
 
-For more information on creating ReadableStreams, see [the MDN Documentation on `new
-ReadableStream()`](https://developer.mozilla.org/docs/Web/API/ReadableStream/ReadableStream).
-For more information on reading streams using `openpgp.stream`, see the documentation of
-[the web-stream-tools dependency](https://openpgpjs.org/web-stream-tools/), particularly
-its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
+For more information on using ReadableStreams, see [the MDN Documentation on the
+Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
+
+You can also pass a [Node.js `Readable`
+stream](https://nodejs.org/api/stream.html#stream_class_stream_readable), in
+which case OpenPGP.js will return a Node.js `Readable` stream as well, which you
+can `.pipe()` to a `Writable` stream, for example.
 
 
 #### Streaming encrypt and decrypt *String* data with PGP keys
@@ -397,7 +392,7 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
         passphrase
     });
 
-    const readableStream = new openpgp.stream.ReadableStream({
+    const readableStream = new ReadableStream({
         start(controller) {
             controller.enqueue('Hello, world!');
             controller.close();
@@ -419,7 +414,11 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
         publicKeys: publicKey, // for verification (optional)
         privateKeys: privateKey // for decryption
     });
-    const plaintext = await openpgp.stream.readToEnd(decrypted.data);
+    const chunks = [];
+    for await (const chunk of decrypted.data) {
+        chunks.push(chunk);
+    }
+    const plaintext = chunks.join('');
     console.log(plaintext); // 'Hello, World!'
 })();
 ```
@@ -574,7 +573,7 @@ Using the private key:
 
 ```js
 (async () => {
-    var readableStream = new openpgp.stream.ReadableStream({
+    var readableStream = new ReadableStream({
         start(controller) {
             controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
             controller.close();
@@ -606,7 +605,7 @@ Using the private key:
         publicKeys: await openpgp.readKey({ armoredKey: publicKeyArmored })   // for verification
     });
 
-    await openpgp.stream.readToEnd(verified.data);
+    for await (const chunk of verified.data) {}
     // Note: you *have* to read `verified.data` in some way or other,
     // even if you don't need it, as that is what triggers the
     // verification of the data.
