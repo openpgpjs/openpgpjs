@@ -117,7 +117,8 @@ class LiteralDataPacket {
    * Parsing function for a literal data packet (tag 11).
    *
    * @param {Uint8Array | ReadableStream<Uint8Array>} input - Payload of a tag 11 packet
-   * @returns {LiteralDataPacket} Object representation.
+   * @returns {Promise<LiteralDataPacket>} Object representation.
+   * @async
    */
   async read(bytes) {
     await stream.parse(bytes, async reader => {

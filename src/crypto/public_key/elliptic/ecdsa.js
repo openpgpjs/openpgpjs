@@ -39,8 +39,10 @@ const nodeCrypto = util.getNodeCrypto();
  * @param {Uint8Array} publicKey - Public key
  * @param {Uint8Array} privateKey - Private key used to sign the message
  * @param {Uint8Array} hashed - The hashed message
- * @returns {{r: Uint8Array,
- *            s: Uint8Array}}               Signature of the message
+ * @returns {Promise<{
+ *   r: Uint8Array,
+ *   s: Uint8Array
+ * }>} Signature of the message
  * @async
  */
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {

@@ -158,10 +158,12 @@ export class Message {
    * @param {Array<Key>} [privateKeys] - Private keys with decrypted secret data
    * @param {Array<String>} [passwords] - Passwords used to decrypt
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{ data:      Uint8Array,
-                               algorithm: String }>>} array of object with potential sessionKey, algorithm pairs
-  * @async
-  */
+   * @returns {Promise<Array<{
+   *   data: Uint8Array,
+   *   algorithm: String
+   * }>>} array of object with potential sessionKey, algorithm pairs
+   * @async
+   */
   async decryptSessionKeys(privateKeys, passwords, config = defaultConfig) {
     let keyPackets = [];
 
@@ -698,9 +700,11 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {{keyID: module:type/keyid~KeyID,
- *            signature: Promise<Signature>,
- *            verified: Promise<Boolean>}} signer's keyID and validity of signature
+ * @returns {Promise<{
+ *   keyID: module:type/keyid~KeyID,
+ *   signature: Promise<Signature>,
+ *   verified: Promise<Boolean>
+ * }>} signer's keyID and validity of signature
  * @async
  * @private
  */
@@ -772,9 +776,11 @@ async function createVerificationObject(signature, literalDataList, keys, date =
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {Array<{keyID: module:type/keyid~KeyID,
- *            signature: Promise<Signature>,
- *            verified: Promise<Boolean>}>} list of signer's keyID and validity of signatures
+ * @returns {Promise<Array<{
+ *   keyID: module:type/keyid~KeyID,
+ *   signature: Promise<Signature>,
+ *   verified: Promise<Boolean>
+ * }>>} list of signer's keyID and validity of signatures
  * @async
  * @private
  */
@@ -835,7 +841,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
  * @param {String} [options.filename=""] - Name of the file (if any)
  * @param {Date} [options.date=current date] - Date of the message, or modification date of the file
  * @param {'utf8'|'binary'|'text'|'mime'} [options.format='utf8' if text is passed, 'binary' otherwise] - Data packet type
- * @returns {Message} New message object.
+ * @returns {Promise<Message>} New message object.
  * @async
  * @static
  */

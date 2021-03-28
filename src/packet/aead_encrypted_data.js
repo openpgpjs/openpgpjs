@@ -119,7 +119,7 @@ class AEADEncryptedDataPacket {
    * @param {encrypt|decrypt} fn - Whether to encrypt or decrypt
    * @param {Uint8Array} key - The session key used to en/decrypt the payload
    * @param {Uint8Array | ReadableStream<Uint8Array>} data - The data to en/decrypt
-   * @returns {Uint8Array | ReadableStream<Uint8Array>}
+   * @returns {Promise<Uint8Array | ReadableStream<Uint8Array>>}
    * @async
    */
   async crypt(fn, key, data) {

@@ -143,8 +143,9 @@ class S2K {
    * Produces a key using the specified passphrase and the defined
    * hashAlgorithm
    * @param {String} passphrase - Passphrase containing user input
-   * @returns {Uint8Array} Produced key with a length corresponding to.
+   * @returns {Promise<Uint8Array>} Produced key with a length corresponding to.
    * hashAlgorithm hash length
+   * @async
    */
   async produceKey(passphrase, numBytes) {
     passphrase = util.encodeUTF8(passphrase);

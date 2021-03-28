@@ -38,7 +38,7 @@ import { isProbablePrime } from './prime';
  * @param {Uint8Array} p
  * @param {Uint8Array} q
  * @param {Uint8Array} x
- * @returns {{ r: Uint8Array, s: Uint8Array }}
+ * @returns {Promise<{ r: Uint8Array, s: Uint8Array >}}
  * @async
  */
 export async function sign(hashAlgo, hashed, g, p, q, x) {

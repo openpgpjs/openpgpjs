@@ -627,8 +627,10 @@ class Key {
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<{user: User,
-   *                    selfCertification: SignaturePacket}>} The primary user and the self signature
+   * @returns {Promise<{
+   *   user: User,
+   *   selfCertification: SignaturePacket
+   * }>} The primary user and the self signature
    * @async
    */
   async getPrimaryUser(date = new Date(), userID = {}, config = defaultConfig) {
@@ -862,8 +864,10 @@ class Key {
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyID: module:type/keyid~KeyID,
-   *                          valid: Boolean}>>}    List of signer's keyID and validity of signature
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   valid: Boolean
+   * }>>} List of signer's keyID and validity of signature
    * @async
    */
   async verifyPrimaryUser(keys, date, userID, config = defaultConfig) {
@@ -880,9 +884,11 @@ class Key {
    * - otherwise, verifies all certificates signed with given keys.
    * @param {Array<Key>} keys - array of keys to verify certificate signatures
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{userID: String,
-   *                          keyID: module:type/keyid~KeyID,
-   *                          valid: Boolean}>>} list of userID, signer's keyID and validity of signature
+   * @returns {Promise<Array<{
+   *   userID: String,
+   *   keyID: module:type/keyid~KeyID,
+   *   valid: Boolean
+   * }>>} List of userID, signer's keyID and validity of signature
    * @async
    */
   async verifyAllUsers(keys, config = defaultConfig) {

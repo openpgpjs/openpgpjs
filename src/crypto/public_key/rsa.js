@@ -80,7 +80,7 @@ const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function (
  * @param {Uint8Array} q - RSA private prime q
  * @param {Uint8Array} u - RSA private coefficient
  * @param {Uint8Array} hashed - Hashed message
- * @returns {Uint8Array} RSA Signature.
+ * @returns {Promise<Uint8Array>} RSA Signature.
  * @async
  */
 export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
@@ -129,7 +129,7 @@ export async function verify(hashAlgo, data, s, n, e, hashed) {
  * @param {Uint8Array} data - Message
  * @param {Uint8Array} n - RSA public modulus
  * @param {Uint8Array} e - RSA public exponent
- * @returns {Uint8Array} RSA Ciphertext.
+ * @returns {Promise<Uint8Array>} RSA Ciphertext.
  * @async
  */
 export async function encrypt(data, n, e) {
@@ -148,7 +148,7 @@ export async function encrypt(data, n, e) {
  * @param {Uint8Array} p - RSA private prime p
  * @param {Uint8Array} q - RSA private prime q
  * @param {Uint8Array} u - RSA private coefficient
- * @returns {String} RSA Plaintext.
+ * @returns {Promise<String>} RSA Plaintext.
  * @async
  */
 export async function decrypt(data, n, e, d, p, q, u) {

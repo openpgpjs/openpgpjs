@@ -59,7 +59,7 @@ export class Signature {
  * @param {String} [options.armoredSignature] - Armored signature to be parsed
  * @param {Uint8Array} [options.binarySignature] - Binary signature to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Signature} New signature object.
+ * @returns {Promise<Signature>} New signature object.
  * @async
  * @static
  */

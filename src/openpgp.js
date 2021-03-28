@@ -550,7 +550,8 @@ function toArray(param) {
  * @param {Object} data - the data to convert
  * @param {'web'|'ponyfill'|'node'|false} streaming - Whether to return a ReadableStream, and of what type
  * @param {'utf8'|'binary'} [encoding] - How to return data in Node Readable streams
- * @returns {Object} The data in the respective format.
+ * @returns {Promise<Object>} The data in the respective format.
+ * @async
  * @private
  */
 async function convertStream(data, streaming, encoding = 'utf8') {
@@ -596,6 +597,7 @@ function linkStreams(result, message) {
 /**
  * Wait until signature objects have been verified
  * @param {Object} signatures - list of signatures
+ * @async
  * @private
  */
 async function prepareSignatures(signatures) {

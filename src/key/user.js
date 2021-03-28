@@ -141,8 +141,10 @@ class User {
    * @param {Array<Key>} keys - Array of keys to verify certificate signatures
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<Array<{keyID: module:type/keyid~KeyID,
-   *                          valid: Boolean}>>}   List of signer's keyID and validity of signature
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   valid: Boolean
+   * }>>} List of signer's keyID and validity of signature
    * @async
    */
   async verifyAllCertifications(primaryKey, keys, date = new Date(), config) {

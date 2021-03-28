@@ -49,7 +49,7 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
  * Create padding with secure random data
  * @private
  * @param {Integer} length - Length of the padding in bytes
- * @returns {Uint8Array} Random padding.
+ * @returns {Promise<Uint8Array>} Random padding.
  * @async
  */
 async function getPKCS1Padding(length) {

@@ -32,7 +32,7 @@ import { emeEncode, emeDecode } from '../pkcs1';
  * @param {Uint8Array} p
  * @param {Uint8Array} g
  * @param {Uint8Array} y
- * @returns {{ c1: Uint8Array, c2: Uint8Array }}
+ * @returns {Promise<{ c1: Uint8Array, c2: Uint8Array >}}
  * @async
  */
 export async function encrypt(data, p, g, y) {
@@ -59,7 +59,7 @@ export async function encrypt(data, p, g, y) {
  * @param {Uint8Array} c2
  * @param {Uint8Array} p
  * @param {Uint8Array} x
- * @returns {Uint8Array} Unpadded message.
+ * @returns {Promise<Uint8Array>} Unpadded message.
  * @async
  */
 export async function decrypt(c1, c2, p, x) {

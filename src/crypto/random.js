@@ -96,7 +96,7 @@ class RandomBuffer {
 /**
  * Retrieve secure random byte array of the specified length
  * @param {Integer} length - Length in bytes to generate
- * @returns {Uint8Array} Random byte array.
+ * @returns {Promise<Uint8Array>} Random byte array.
  * @async
  */
 export async function getRandomBytes(length) {
@@ -120,7 +120,7 @@ export async function getRandomBytes(length) {
  * Create a secure random BigInteger that is greater than or equal to min and less than max.
  * @param {module:BigInteger} min - Lower bound, included
  * @param {module:BigInteger} max - Upper bound, excluded
- * @returns {module:BigInteger} Random BigInteger.
+ * @returns {Promise<module:BigInteger>} Random BigInteger.
  * @async
  */
 export async function getRandomBigInteger(min, max) {

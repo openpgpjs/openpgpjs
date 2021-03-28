@@ -128,7 +128,7 @@ export class CleartextMessage {
  * @param {Object} options
  * @param {String} options.cleartextMessage - Text to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {CleartextMessage} New cleartext message object.
+ * @returns {Promise<CleartextMessage>} New cleartext message object.
  * @async
  * @static
  */
