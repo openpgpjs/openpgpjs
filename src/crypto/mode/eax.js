@@ -96,8 +96,7 @@ async function EAX(cipher, key) {
      * @param {Uint8Array} plaintext - The cleartext input to be encrypted
      * @param {Uint8Array} nonce - The nonce (16 bytes)
      * @param {Uint8Array} adata - Associated data to sign
-     * @returns {Uint8Array} The ciphertext output.
-     * @async
+     * @returns {Promise<Uint8Array>} The ciphertext output.
      */
     encrypt: async function(plaintext, nonce, adata) {
       const [
@@ -121,8 +120,7 @@ async function EAX(cipher, key) {
      * @param {Uint8Array} ciphertext - The ciphertext input to be decrypted
      * @param {Uint8Array} nonce - The nonce (16 bytes)
      * @param {Uint8Array} adata - Associated data to verify
-     * @returns {Uint8Array} The plaintext output.
-     * @async
+     * @returns {Promise<Uint8Array>} The plaintext output.
      */
     decrypt: async function(ciphertext, nonce, adata) {
       if (ciphertext.length < tagLength) throw new Error('Invalid EAX ciphertext');

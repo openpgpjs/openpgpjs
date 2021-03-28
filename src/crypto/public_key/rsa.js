@@ -288,7 +288,7 @@ export async function generate(bits, e) {
  * @param {Uint8Array} p - RSA private prime p
  * @param {Uint8Array} q - RSA private prime q
  * @param {Uint8Array} u - RSA inverse of p w.r.t. q
- * @returns {Boolean} Whether params are valid.
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(n, e, d, p, q, u) {

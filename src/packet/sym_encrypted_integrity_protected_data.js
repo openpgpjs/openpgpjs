@@ -89,7 +89,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Boolean}
+   * @returns {Promise<Boolean>}
    * @async
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
@@ -111,7 +111,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Boolean}
+   * @returns {Promise<Boolean>}
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {

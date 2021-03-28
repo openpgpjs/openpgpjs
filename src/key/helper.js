@@ -37,7 +37,7 @@ export async function generateSecretKey(options, config) {
  * @param {Array<SignaturePacket>} signatures - List of signatures
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - full configuration
- * @returns {SignaturePacket} The latest valid signature.
+ * @returns {Promise<SignaturePacket>} The latest valid signature.
  * @async
  */
 export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date(), config) {
@@ -116,7 +116,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Object} [userID] - User ID
  * @param {Object} config - full configuration
- * @returns {String}
+ * @returns {Promise<String>}
  * @async
  */
 export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userID = {}, config) {
@@ -153,7 +153,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Array} [userIDs] - User IDs
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {module:enums.symmetric|aead|compression} Preferred algorithm
+ * @returns {Promise<module:enums.symmetric|aead|compression>} Preferred algorithm
  * @async
  */
 export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
@@ -194,8 +194,7 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  * @param {Object} [userID] - User ID
  * @param {Object} [detached] - Whether to create a detached signature packet
  * @param {Object} config - full configuration
- * @returns {SignaturePacket} Signature packet.
- * @async
+ * @returns {Promise<SignaturePacket>} Signature packet.
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, config) {
   if (signingKeyPacket.isDummy()) {
@@ -250,7 +249,7 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
  *          SecretKeyPacket} key, optional The key packet to check the signature
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - Full configuration
- * @returns {Boolean} True if the signature revokes the data.
+ * @returns {Promise<Boolean>} True if the signature revokes the data.
  * @async
  */
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
@@ -302,7 +301,7 @@ export function getExpirationTime(keyPacket, signature) {
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Array} [userIDs] - User IDs
  * @param {Object} config - full configuration
- * @returns {Boolean}
+ * @returns {Promise<Boolean>}
  * @async
  */
 export async function isAEADSupported(keys, date = new Date(), userIDs = [], config = defaultConfig) {

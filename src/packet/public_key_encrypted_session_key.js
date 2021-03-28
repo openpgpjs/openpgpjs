@@ -89,7 +89,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   /**
    * Encrypt session key packet
    * @param {PublicKeyPacket} key - Public key
-   * @returns {Boolean}
+   * @returns {Promise<Boolean>}
    * @async
    */
   async encrypt(key) {
@@ -110,7 +110,7 @@ class PublicKeyEncryptedSessionKeyPacket {
    *
    * @param {SecretKeyPacket} key
    *            Private key with secret params unlocked
-   * @returns {Boolean}
+   * @returns {Promise<Boolean>}
    * @async
    */
   async decrypt(key) {

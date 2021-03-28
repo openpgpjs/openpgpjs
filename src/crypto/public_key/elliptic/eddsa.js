@@ -76,7 +76,7 @@ export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
  * @param {module:type/oid} oid - Elliptic curve object identifier
  * @param {Uint8Array} Q - EdDSA public point
  * @param {Uint8Array} k - EdDSA secret seed
- * @returns {Boolean} Whether params are valid.
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(oid, Q, k) {

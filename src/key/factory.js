@@ -56,7 +56,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @param {Object} config - Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @returns {Key}
+ * @returns {Promise<Key>}
  * @async
  * @static
  * @private
@@ -80,7 +80,7 @@ export async function generate(options, config) {
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  * @param {Object} config - Full configuration
  *
- * @returns {Key}
+ * @returns {Promise<Key>}
  * @async
  * @static
  * @private
@@ -256,7 +256,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
  * @param {String} [options.armoredKey] - Armored key to be parsed
  * @param {Uint8Array} [options.binaryKey] - Binary key to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Key} Key object.
+ * @returns {Promise<Key>} Key object.
  * @async
  * @static
  */
@@ -292,7 +292,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
  * @param {String} [options.armoredKeys] - Armored keys to be parsed
  * @param {Uint8Array} [options.binaryKeys] - Binary keys to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Array<Key>} Key objects.
+ * @returns {Promise<Array<Key>>} Key objects.
  * @async
  * @static
  */

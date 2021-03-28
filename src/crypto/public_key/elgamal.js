@@ -79,7 +79,7 @@ export async function decrypt(c1, c2, p, x) {
  * @param {Uint8Array} g - ElGamal group generator
  * @param {Uint8Array} y - ElGamal public key
  * @param {Uint8Array} x - ElGamal private exponent
- * @returns {Boolean} Whether params are valid.
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(p, g, y, x) {

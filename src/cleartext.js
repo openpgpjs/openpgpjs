@@ -65,7 +65,7 @@ export class CleartextMessage {
    * @param {Date} [date] - The creation time of the signature that should be created
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {CleartextMessage} New cleartext message with signed content.
+   * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
    * @async
    */
   async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
@@ -80,9 +80,11 @@ export class CleartextMessage {
    * @param {Array<Key>} keys - Array of keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<{keyID: module:type/keyid~KeyID,
-   *                  signature: Promise<Signature>,
-   *                  verified: Promise<Boolean>}>} List of signer's keyID and validity of signature.
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   signature: Promise<Signature>,
+   *   verified: Promise<Boolean>
+   * }>>} List of signer's keyID and validity of signature.
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {

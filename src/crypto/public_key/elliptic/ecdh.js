@@ -41,7 +41,7 @@ const nodeCrypto = util.getNodeCrypto();
  * @param {module:type/oid} oid - Elliptic curve object identifier
  * @param {Uint8Array} Q - ECDH public point
  * @param {Uint8Array} d - ECDH secret scalar
- * @returns {Boolean} Whether params are valid.
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(oid, Q, d) {
@@ -88,7 +88,7 @@ async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTraili
  *
  * @param {Curve} curve - Elliptic curve object
  * @param {Uint8Array} Q - Recipient public key
- * @returns {{publicKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function genPublicEphemeralKey(curve, Q) {
@@ -123,7 +123,7 @@ async function genPublicEphemeralKey(curve, Q) {
  * @param {Uint8Array} data - Unpadded session key data
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} fingerprint - Recipient fingerprint
- * @returns {{publicKey: Uint8Array, wrappedKey: Uint8Array}}
+ * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
 export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
@@ -145,7 +145,7 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
  * @param {Uint8Array} V - Public part of ephemeral key
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
- * @returns {{secretKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function genPrivateEphemeralKey(curve, V, Q, d) {
@@ -185,7 +185,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
  * @param {Uint8Array} fingerprint - Recipient fingerprint
- * @returns {Uint8Array} Value derived from session key.
+ * @returns {Promise<Uint8Array>} Value derived from session key.
  * @async
  */
 export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
@@ -213,7 +213,7 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
  * @param {Uint8Array} V - Public part of ephemeral key
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
- * @returns {{secretKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function webPrivateEphemeralKey(curve, V, Q, d) {
@@ -264,7 +264,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
  *
  * @param {Curve} curve - Elliptic curve object
  * @param {Uint8Array} Q - Recipient public key
- * @returns {{publicKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function webPublicEphemeralKey(curve, Q) {
@@ -313,7 +313,7 @@ async function webPublicEphemeralKey(curve, Q) {
  * @param {Curve} curve - Elliptic curve object
  * @param {Uint8Array} V - Public part of ephemeral key
  * @param {Uint8Array} d - Recipient private key
- * @returns {{secretKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function ellipticPrivateEphemeralKey(curve, V, d) {
@@ -332,7 +332,7 @@ async function ellipticPrivateEphemeralKey(curve, V, d) {
  *
  * @param {Curve} curve - Elliptic curve object
  * @param {Uint8Array} Q - Recipient public key
- * @returns {{publicKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function ellipticPublicEphemeralKey(curve, Q) {
@@ -353,7 +353,7 @@ async function ellipticPublicEphemeralKey(curve, Q) {
  * @param {Curve} curve - Elliptic curve object
  * @param {Uint8Array} V - Public part of ephemeral key
  * @param {Uint8Array} d - Recipient private key
- * @returns {{secretKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function nodePrivateEphemeralKey(curve, V, d) {
@@ -369,7 +369,7 @@ async function nodePrivateEphemeralKey(curve, V, d) {
  *
  * @param {Curve} curve - Elliptic curve object
  * @param {Uint8Array} Q - Recipient public key
- * @returns {{publicKey: Uint8Array, sharedKey: Uint8Array}}
+ * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
 async function nodePublicEphemeralKey(curve, Q) {

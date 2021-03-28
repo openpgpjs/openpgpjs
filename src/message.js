@@ -108,7 +108,7 @@ export class Message {
    * @param {Array<String>} [passwords] - Passwords used to decrypt
    * @param {Array<Object>} [sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Message} New message with decrypted content.
+   * @returns {Promise<Message>} New message with decrypted content.
    * @async
    */
   async decrypt(privateKeys, passwords, sessionKeys, config = defaultConfig) {
@@ -294,7 +294,7 @@ export class Message {
    * @param {Date} [date] - Date to select algorithm preferences at
    * @param {Array<Object>} [userIDs] - User IDs to select algorithm preferences for
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {{ data: Uint8Array, algorithm: String }} Object with session key data and algorithm.
+   * @returns {Promise<{ data: Uint8Array, algorithm: String }>} Object with session key data and algorithm.
    * @async
    */
   static async generateSessionKey(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
@@ -317,7 +317,7 @@ export class Message {
    * @param {Date} [date] - Override the creation date of the literal package
    * @param {Array<Object>} [userIDs] - User IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Message} New message with encrypted content.
+   * @returns {Promise<Message>} New message with encrypted content.
    * @async
    */
   async encrypt(keys, passwords, sessionKey, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
@@ -365,7 +365,7 @@ export class Message {
    * @param {Date} [date] - Override the date
    * @param {Array} [userIDs] - User IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Message} New message with encrypted content.
+   * @returns {Promise<Message>} New message with encrypted content.
    * @async
    */
   static async encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, publicKeys, passwords, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
@@ -432,7 +432,7 @@ export class Message {
    * @param {Date} [date] - Override the creation time of the signature
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Message} New message with signed content.
+   * @returns {Promise<Message>} New message with signed content.
    * @async
    */
   async sign(privateKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
@@ -519,7 +519,7 @@ export class Message {
    * @param {Date} [date] - Override the creation time of the signature
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Signature} New detached signature of message content.
+   * @returns {Promise<Signature>} New detached signature of message content.
    * @async
    */
   async signDetached(privateKeys = [], signature = null, signingKeyIds = [], date = new Date(), userIDs = [], config = defaultConfig) {
@@ -535,9 +535,11 @@ export class Message {
    * @param {Array<Key>} keys - Array of keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<{keyID: module:type/keyid~KeyID,
-   *                  signature: Promise<Signature>,
-   *                  verified: Promise<Boolean>}>} List of signer's keyID and validity of signatures.
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   signature: Promise<Signature>,
+   *   verified: Promise<Boolean>
+   * }>>} List of signer's keyID and validity of signatures.
    * @async
    */
   async verify(keys, date = new Date(), config = defaultConfig) {
@@ -590,9 +592,11 @@ export class Message {
    * @param {Signature} signature
    * @param {Date} date - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<{keyID: module:type/keyid~KeyID,
-   *                  signature: Promise<Signature>,
-   *                  verified: Promise<Boolean>}>} List of signer's keyID and validity of signature.
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   signature: Promise<Signature>,
+   *   verified: Promise<Boolean>
+   * }>} List of signer's keyID and validity of signature.
    * @async
    */
   verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
@@ -656,7 +660,7 @@ export class Message {
  * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param {Boolean} [detached] - Whether to create detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {PacketList} List of signature packets.
+ * @returns {Promise<PacketList>} List of signature packets.
  * @async
  * @private
  */
@@ -788,7 +792,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
  * @param {String | ReadableStream<String>} [options.armoredMessage] - Armored message to be parsed
  * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryMessage] - Binary to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Message} New message object.
+ * @returns {Promise<Message>} New message object.
  * @async
  * @static
  */

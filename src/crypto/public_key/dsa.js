@@ -140,7 +140,7 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
  * @param {Uint8Array} g - DSA sub-group generator
  * @param {Uint8Array} y - DSA public key
  * @param {Uint8Array} x - DSA private key
- * @returns {Boolean} Whether params are valid.
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(p, q, g, y, x) {

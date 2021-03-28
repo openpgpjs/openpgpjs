@@ -71,7 +71,7 @@ async function getPKCS1Padding(length) {
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1}
  * @param {Uint8Array} message - Message to be encoded
  * @param {Integer} keyLength - The length in octets of the key modulus
- * @returns {Uint8Array} EME-PKCS1 padded message.
+ * @returns {Promise<Uint8Array>} EME-PKCS1 padded message.
  * @async
  */
 export async function emeEncode(message, keyLength) {
