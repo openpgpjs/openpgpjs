@@ -118,7 +118,7 @@ function des(keys, message, encrypt, mode, iv, padding) {
   //pad the message depending on the padding parameter
   //only add padding if encrypting - note that you need to use the same padding option for both encrypt and decrypt
   if (encrypt) {
-    message = des_addPadding(message, padding);
+    message = desAddPadding(message, padding);
     len = message.length;
   }
 
@@ -234,18 +234,18 @@ function des(keys, message, encrypt, mode, iv, padding) {
 
   //only remove padding if decrypting - note that you need to use the same padding option for both encrypt and decrypt
   if (!encrypt) {
-    result = des_removePadding(result, padding);
+    result = desRemovePadding(result, padding);
   }
 
   return result;
 } //end of des
 
 
-//des_createKeys
+//desCreateKeys
 //this takes as input a 64 bit key (even though only 56 bits are used)
 //as an array of 2 integers, and returns 16 48 bit keys
 
-function des_createKeys(key) {
+function desCreateKeys(key) {
   //declaring this locally speeds things up a bit
   const pc2bytes0 = [
     0, 0x4, 0x20000000, 0x20000004, 0x10000, 0x10004, 0x20010000, 0x20010004, 0x200, 0x204,
@@ -376,10 +376,10 @@ function des_createKeys(key) {
   } //for each iterations
   //return the keys we've created
   return keys;
-} //end of des_createKeys
+} //end of desCreateKeys
 
 
-function des_addPadding(message, padding) {
+function desAddPadding(message, padding) {
   const padLength = 8 - (message.length % 8);
 
   let pad;
@@ -406,7 +406,7 @@ function des_addPadding(message, padding) {
   return paddedMessage;
 }
 
-function des_removePadding(message, padding) {
+function desRemovePadding(message, padding) {
   let padLength = null;
   let pad;
   if (padding === 2) { // space padded
@@ -441,11 +441,11 @@ export function TripleDES(key) {
 
   this.encrypt = function(block) {
     return des(
-      des_createKeys(this.key[2]),
+      desCreateKeys(this.key[2]),
       des(
-        des_createKeys(this.key[1]),
+        desCreateKeys(this.key[1]),
         des(
-          des_createKeys(this.key[0]),
+          desCreateKeys(this.key[0]),
           block, true, 0, null, null
         ),
         false, 0, null, null
@@ -463,12 +463,12 @@ export function DES(key) {
   this.key = key;
 
   this.encrypt = function(block, padding) {
-    const keys = des_createKeys(this.key);
+    const keys = desCreateKeys(this.key);
     return des(keys, block, true, 0, null, padding);
   };
 
   this.decrypt = function(block, padding) {
-    const keys = des_createKeys(this.key);
+    const keys = desCreateKeys(this.key);
     return des(keys, block, false, 0, null, padding);
   };
 }

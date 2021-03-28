@@ -29,10 +29,13 @@ import User from './user';
 import SubKey from './subkey';
 import * as helper from './helper';
 
+// A key revocation certificate can contain the following packets
+const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
+
 /**
  * Class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
- * @borrows PublicKeyPacket#getKeyId as Key#getKeyId
+ * @borrows PublicKeyPacket#getKeyID as Key#getKeyID
  * @borrows PublicKeyPacket#getFingerprint as Key#getFingerprint
  * @borrows PublicKeyPacket#hasSameFingerprintAs as Key#hasSameFingerprintAs
  * @borrows PublicKeyPacket#getAlgorithmInfo as Key#getAlgorithmInfo
@@ -68,17 +71,17 @@ class Key {
    */
   packetlist2structure(packetlist) {
     let user;
-    let primaryKeyId;
+    let primaryKeyID;
     let subKey;
     for (let i = 0; i < packetlist.length; i++) {
-      switch (packetlist[i].tag) {
+      switch (packetlist[i].constructor.tag) {
         case enums.packet.publicKey:
         case enums.packet.secretKey:
           if (this.keyPacket) {
             throw new Error('Key block contains multiple keys');
           }
           this.keyPacket = packetlist[i];
-          primaryKeyId = this.getKeyId();
+          primaryKeyID = this.getKeyID();
           break;
         case enums.packet.userID:
         case enums.packet.userAttribute:
@@ -101,7 +104,7 @@ class Key {
                 util.printDebug('Dropping certification signatures without preceding user packet');
                 continue;
               }
-              if (packetlist[i].issuerKeyId.equals(primaryKeyId)) {
+              if (packetlist[i].issuerKeyID.equals(primaryKeyID)) {
                 user.selfCertifications.push(packetlist[i]);
               } else {
                 user.otherCertifications.push(packetlist[i]);
@@ -156,7 +159,7 @@ class Key {
 
   /**
    * Clones the key object
-   * @returns {Key} Shallow clone of the key.
+   * @returns {Promise<Key>} Shallow clone of the key.
    * @async
    */
   async clone() {
@@ -164,15 +167,15 @@ class Key {
   }
 
   /**
-   * Returns an array containing all public or private subkeys matching keyId;
-   * If keyId is not present, returns all subkeys.
-   * @param {type/keyid} keyId
+   * Returns an array containing all public or private subkeys matching keyID;
+   * If keyID is not present, returns all subkeys.
+   * @param {type/keyid} keyID
    * @returns {Array<SubKey>}
    */
-  getSubkeys(keyId = null) {
+  getSubkeys(keyID = null) {
     const subKeys = [];
     this.subKeys.forEach(subKey => {
-      if (!keyId || subKey.getKeyId().equals(keyId, true)) {
+      if (!keyID || subKey.getKeyID().equals(keyID, true)) {
         subKeys.push(subKey);
       }
     });
@@ -180,35 +183,35 @@ class Key {
   }
 
   /**
-   * Returns an array containing all public or private keys matching keyId.
-   * If keyId is not present, returns all keys starting with the primary key.
-   * @param {type/keyid} keyId
+   * Returns an array containing all public or private keys matching keyID.
+   * If keyID is not present, returns all keys starting with the primary key.
+   * @param {type/keyid} keyID
    * @returns {Array<Key|SubKey>}
    */
-  getKeys(keyId = null) {
+  getKeys(keyID = null) {
     const keys = [];
-    if (!keyId || this.getKeyId().equals(keyId, true)) {
+    if (!keyID || this.getKeyID().equals(keyID, true)) {
       keys.push(this);
     }
-    return keys.concat(this.getSubkeys(keyId));
+    return keys.concat(this.getSubkeys(keyID));
   }
 
   /**
    * Returns key IDs of all keys
-   * @returns {Array<module:type/keyid~Keyid>}
+   * @returns {Array<module:type/keyid~KeyID>}
    */
-  getKeyIds() {
-    return this.getKeys().map(key => key.getKeyId());
+  getKeyIDs() {
+    return this.getKeys().map(key => key.getKeyID());
   }
 
   /**
-   * Returns userids
-   * @returns {Array<string>} Array of userids.
+   * Returns userIDs
+   * @returns {Array<string>} Array of userIDs.
    */
-  getUserIds() {
+  getUserIDs() {
     return this.users.map(user => {
-      return user.userId ? user.userId.userid : null;
-    }).filter(userid => userid !== null);
+      return user.userID ? user.userID.userID : null;
+    }).filter(userID => userID !== null);
   }
 
   /**
@@ -216,7 +219,7 @@ class Key {
    * @returns {Boolean}
    */
   isPublic() {
-    return this.keyPacket.tag === enums.packet.publicKey;
+    return this.keyPacket.constructor.tag === enums.packet.publicKey;
   }
 
   /**
@@ -224,7 +227,7 @@ class Key {
    * @returns {Boolean}
    */
   isPrivate() {
-    return this.keyPacket.tag === enums.packet.secretKey;
+    return this.keyPacket.constructor.tag === enums.packet.secretKey;
   }
 
   /**
@@ -239,7 +242,7 @@ class Key {
     let pubKeyPacket;
     let pubSubkeyPacket;
     for (let i = 0; i < keyPackets.length; i++) {
-      switch (keyPackets[i].tag) {
+      switch (keyPackets[i].constructor.tag) {
         case enums.packet.secretKey:
           bytes = keyPackets[i].writePublicKey();
           pubKeyPacket = new PublicKeyPacket();
@@ -278,103 +281,122 @@ class Key {
   }
 
   /**
-   * Returns last created key or key by given keyId that is available for signing and verification
-   * @param  {module:type/keyid~Keyid} keyId, optional
+   * Returns last created key or key by given keyID that is available for signing and verification
+   * @param  {module:type/keyid~KeyID} keyID, optional
    * @param {Date} [date] - Use the given date for verification instead of the current time
-   * @param  {Object} userId, optional user ID
+   * @param  {Object} userID, optional user ID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Key|SubKey|null} Key or null if no signing key has been found.
+   * @returns {Promise<Key|SubKey|null>} Key or null if no signing key has been found.
    * @async
    */
-  async getSigningKey(keyId = null, date = new Date(), userId = {}, config = defaultConfig) {
-    await this.verifyPrimaryKey(date, userId, config);
+  async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
+    await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
-    for (let i = 0; i < subKeys.length; i++) {
-      if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
+    for (const subKey of subKeys) {
+      if (!keyID || subKey.getKeyID().equals(keyID)) {
         try {
-          await subKeys[i].verify(primaryKey, date, config);
-          const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (
-            bindingSignature &&
-            bindingSignature.embeddedSignature &&
-            helper.isValidSigningKeyPacket(subKeys[i].keyPacket, bindingSignature) &&
-            await helper.getLatestValidSignature([bindingSignature.embeddedSignature], subKeys[i].keyPacket, enums.signature.keyBinding, dataToVerify, date, config)
-          ) {
-            return subKeys[i];
+          await subKey.verify(primaryKey, date, config);
+          const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
+          const bindingSignature = await helper.getLatestValidSignature(
+            subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
+          );
+          if (!helper.isValidSigningKeyPacket(subKey.keyPacket, bindingSignature)) {
+            continue;
           }
+          if (!bindingSignature.embeddedSignature) {
+            throw new Error('Missing embedded signature');
+          }
+          // verify embedded signature
+          await helper.getLatestValidSignature(
+            [bindingSignature.embeddedSignature], subKey.keyPacket, enums.signature.keyBinding, dataToVerify, date, config
+          );
+          helper.checkKeyStrength(subKey.keyPacket, config);
+          return subKey;
         } catch (e) {
           exception = e;
         }
       }
     }
-    const primaryUser = await this.getPrimaryUser(date, userId, config);
-    if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification)) {
-      return this;
+
+    try {
+      const primaryUser = await this.getPrimaryUser(date, userID, config);
+      if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
+          helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
+        helper.checkKeyStrength(primaryKey, config);
+        return this;
+      }
+    } catch (e) {
+      exception = e;
     }
-    throw util.wrapError('Could not find valid signing key packet in key ' + this.getKeyId().toHex(), exception);
+    throw util.wrapError('Could not find valid signing key packet in key ' + this.getKeyID().toHex(), exception);
   }
 
   /**
-   * Returns last created key or key by given keyId that is available for encryption or decryption
-   * @param  {module:type/keyid~Keyid} keyId, optional
+   * Returns last created key or key by given keyID that is available for encryption or decryption
+   * @param  {module:type/keyid~KeyID} keyID, optional
    * @param  {Date}              date, optional
-   * @param  {String}            userId, optional
+   * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Key|SubKey|null} Key or null if no encryption key has been found.
+   * @returns {Promise<Key|SubKey|null>} Key or null if no encryption key has been found.
    * @async
    */
-  async getEncryptionKey(keyId, date = new Date(), userId = {}, config = defaultConfig) {
-    await this.verifyPrimaryKey(date, userId, config);
+  async getEncryptionKey(keyID, date = new Date(), userID = {}, config = defaultConfig) {
+    await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
     // V4: by convention subkeys are preferred for encryption service
     const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
-    for (let i = 0; i < subKeys.length; i++) {
-      if (!keyId || subKeys[i].getKeyId().equals(keyId)) {
+    for (const subKey of subKeys) {
+      if (!keyID || subKey.getKeyID().equals(keyID)) {
         try {
-          await subKeys[i].verify(primaryKey, date, config);
-          const dataToVerify = { key: primaryKey, bind: subKeys[i].keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (bindingSignature && helper.isValidEncryptionKeyPacket(subKeys[i].keyPacket, bindingSignature)) {
-            return subKeys[i];
+          await subKey.verify(primaryKey, date, config);
+          const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
+          const bindingSignature = await helper.getLatestValidSignature(subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
+          if (helper.isValidEncryptionKeyPacket(subKey.keyPacket, bindingSignature)) {
+            helper.checkKeyStrength(subKey.keyPacket, config);
+            return subKey;
           }
         } catch (e) {
           exception = e;
         }
       }
     }
-    // if no valid subkey for encryption, evaluate primary key
-    const primaryUser = await this.getPrimaryUser(date, userId, config);
-    if ((!keyId || primaryKey.getKeyId().equals(keyId)) &&
-        helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
-      return this;
+
+    try {
+      // if no valid subkey for encryption, evaluate primary key
+      const primaryUser = await this.getPrimaryUser(date, userID, config);
+      if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
+          helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+        helper.checkKeyStrength(primaryKey, config);
+        return this;
+      }
+    } catch (e) {
+      exception = e;
     }
-    throw util.wrapError('Could not find valid encryption key packet in key ' + this.getKeyId().toHex(), exception);
+    throw util.wrapError('Could not find valid encryption key packet in key ' + this.getKeyID().toHex(), exception);
   }
 
   /**
-   * Returns all keys that are available for decryption, matching the keyId when given
+   * Returns all keys that are available for decryption, matching the keyID when given
    * This is useful to retrieve keys for session key decryption
-   * @param  {module:type/keyid~Keyid} keyId, optional
+   * @param  {module:type/keyid~KeyID} keyID, optional
    * @param  {Date}              date, optional
-   * @param  {String}            userId, optional
+   * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<Key|SubKey>} Array of decryption keys.
+   * @returns {Promise<Array<Key|SubKey>>} Array of decryption keys.
    * @async
    */
-  async getDecryptionKeys(keyId, date = new Date(), userId = {}, config = defaultConfig) {
+  async getDecryptionKeys(keyID, date = new Date(), userID = {}, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const keys = [];
     for (let i = 0; i < this.subKeys.length; i++) {
-      if (!keyId || this.subKeys[i].getKeyId().equals(keyId, true)) {
+      if (!keyID || this.subKeys[i].getKeyID().equals(keyID, true)) {
         try {
           const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (bindingSignature && helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
+          if (helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
             keys.push(this.subKeys[i]);
           }
         } catch (e) {}
@@ -382,8 +404,8 @@ class Key {
     }
 
     // evaluate primary key
-    const primaryUser = await this.getPrimaryUser(date, userId, config);
-    if ((!keyId || primaryKey.getKeyId().equals(keyId, true)) &&
+    const primaryUser = await this.getPrimaryUser(date, userID, config);
+    if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) &&
         helper.isValidDecryptionKeyPacket(primaryUser.selfCertification, config)) {
       keys.push(this);
     }
@@ -392,19 +414,19 @@ class Key {
   }
 
   /**
-   * Encrypts all secret key and subkey packets matching keyId
+   * Encrypts all secret key and subkey packets matching keyID
    * @param {String|Array<String>} passphrases - If multiple passphrases, then should be in same order as packets each should encrypt
-   * @param {module:type/keyid~Keyid} keyId
+   * @param {module:type/keyid~KeyID} keyID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption failed for any key or subkey
    * @async
    */
-  async encrypt(passphrases, keyId = null, config = defaultConfig) {
+  async encrypt(passphrases, keyID = null, config = defaultConfig) {
     if (!this.isPrivate()) {
       throw new Error("Nothing to encrypt in a public key");
     }
 
-    const keys = this.getKeys(keyId);
+    const keys = this.getKeys(keyID);
     passphrases = util.isArray(passphrases) ? passphrases : new Array(keys.length).fill(passphrases);
     if (passphrases.length !== keys.length) {
       throw new Error("Invalid number of passphrases for key");
@@ -418,27 +440,27 @@ class Key {
   }
 
   /**
-   * Decrypts all secret key and subkey packets matching keyId
+   * Decrypts all secret key and subkey packets matching keyID
    * @param {String|Array<String>} passphrases
-   * @param {module:type/keyid~Keyid} keyId
+   * @param {module:type/keyid~KeyID} keyID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if any matching key or subkey packets did not decrypt successfully
    * @async
    */
-  async decrypt(passphrases, keyId = null, config = defaultConfig) {
+  async decrypt(passphrases, keyID = null, config = defaultConfig) {
     if (!this.isPrivate()) {
       throw new Error("Nothing to decrypt in a public key");
     }
     passphrases = util.isArray(passphrases) ? passphrases : [passphrases];
 
-    await Promise.all(this.getKeys(keyId).map(async function(key) {
+    await Promise.all(this.getKeys(keyID).map(async function(key) {
       let decrypted = false;
       let error = null;
       await Promise.all(passphrases.map(async function(passphrase) {
         try {
           await key.keyPacket.decrypt(passphrase);
           // If we are decrypting a single key packet, we also validate it directly
-          if (keyId) await key.keyPacket.validate();
+          if (keyID) await key.keyPacket.validate();
           decrypted = true;
         } catch (e) {
           error = e;
@@ -449,7 +471,7 @@ class Key {
       }
     }));
 
-    if (!keyId) {
+    if (!keyID) {
       // The full key should be decrypted and we can validate it all
       await this.validate(config);
     }
@@ -486,7 +508,7 @@ class Key {
        * It is enough to validate any signing keys
        * since its binding signatures are also checked
        */
-      const signingKey = await this.getSigningKey(null, null, undefined, config);
+      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 });
       // This could again be a dummy key
       if (signingKey && !signingKey.keyPacket.isDummy()) {
         signingKeyPacket = signingKey.keyPacket;
@@ -529,7 +551,7 @@ class Key {
    *          SecretKeyPacket} key, optional The key to verify the signature
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Boolean} True if the certificate is revoked.
+   * @returns {Promise<Boolean>} True if the certificate is revoked.
    * @async
    */
   async isRevoked(signature, key, date = new Date(), config = defaultConfig) {
@@ -542,19 +564,19 @@ class Key {
    * Verify primary key. Checks for revocation signatures, expiration time
    * and valid self signature. Throws if the primary key is invalid.
    * @param {Date} [date] - Use the given date for verification instead of the current time
-   * @param {Object} [userId] - User ID
+   * @param {Object} [userID] - User ID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} If key verification failed
    * @async
    */
-  async verifyPrimaryKey(date = new Date(), userId = {}, config = defaultConfig) {
+  async verifyPrimaryKey(date = new Date(), userID = {}, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     // check for key revocation signatures
     if (await this.isRevoked(null, null, date, config)) {
       throw new Error('Primary key is revoked');
     }
     // check for valid, unrevoked, unexpired self signature
-    const { selfCertification } = await this.getPrimaryUser(date, userId, config);
+    const { selfCertification } = await this.getPrimaryUser(date, userID, config);
     // check for expiration time
     if (helper.isDataExpired(primaryKey, selfCertification, date)) {
       throw new Error('Primary key is expired');
@@ -567,30 +589,30 @@ class Key {
    * Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
    * Returns Infinity if the key doesn't expire.
    * @param  {encrypt|sign|encrypt_sign} capabilities, optional
-   * @param  {module:type/keyid~Keyid} keyId, optional
-   * @param  {Object} userId, optional user ID
+   * @param  {module:type/keyid~KeyID} keyID, optional
+   * @param  {Object} userID, optional user ID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Date | Infinity | null}
+   * @returns {Promise<Date | Infinity | null>}
    * @async
    */
-  async getExpirationTime(capabilities, keyId, userId, config = defaultConfig) {
-    const primaryUser = await this.getPrimaryUser(null, userId, config);
+  async getExpirationTime(capabilities, keyID, userID, config = defaultConfig) {
+    const primaryUser = await this.getPrimaryUser(null, userID, config);
     const selfCert = primaryUser.selfCertification;
     const keyExpiry = helper.getExpirationTime(this.keyPacket, selfCert);
     const sigExpiry = selfCert.getExpirationTime();
     let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
     if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
       const encryptKey =
-        await this.getEncryptionKey(keyId, expiry, userId, config).catch(() => {}) ||
-        await this.getEncryptionKey(keyId, null, userId, config).catch(() => {});
+        await this.getEncryptionKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
+        await this.getEncryptionKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!encryptKey) return null;
       const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket, undefined, config);
       if (encryptExpiry < expiry) expiry = encryptExpiry;
     }
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
       const signKey =
-        await this.getSigningKey(keyId, expiry, userId, config).catch(() => {}) ||
-        await this.getSigningKey(keyId, null, userId, config).catch(() => {});
+        await this.getSigningKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
+        await this.getSigningKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!signKey) return null;
       const signExpiry = await signKey.getExpirationTime(this.keyPacket, undefined, config);
       if (signExpiry < expiry) expiry = signExpiry;
@@ -603,30 +625,32 @@ class Key {
    * - if multiple primary users exist, returns the one with the latest self signature
    * - otherwise, returns the user with the latest self signature
    * @param {Date} [date] - Use the given date for verification instead of the current time
-   * @param {Object} [userId] - User ID to get instead of the primary user, if it exists
+   * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<{user: User,
-   *                    selfCertification: SignaturePacket}>} The primary user and the self signature
+   * @returns {Promise<{
+   *   user: User,
+   *   selfCertification: SignaturePacket
+   * }>} The primary user and the self signature
    * @async
    */
-  async getPrimaryUser(date = new Date(), userId = {}, config = defaultConfig) {
+  async getPrimaryUser(date = new Date(), userID = {}, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const users = [];
     let exception;
     for (let i = 0; i < this.users.length; i++) {
       try {
         const user = this.users[i];
-        if (!user.userId) {
+        if (!user.userID) {
           continue;
         }
         if (
-          (userId.name !== undefined && user.userId.name !== userId.name) ||
-          (userId.email !== undefined && user.userId.email !== userId.email) ||
-          (userId.comment !== undefined && user.userId.comment !== userId.comment)
+          (userID.name !== undefined && user.userID.name !== userID.name) ||
+          (userID.email !== undefined && user.userID.email !== userID.email) ||
+          (userID.comment !== undefined && user.userID.comment !== userID.comment)
         ) {
           throw new Error('Could not find user that matches that user ID');
         }
-        const dataToVerify = { userId: user.userId, key: primaryKey };
+        const dataToVerify = { userID: user.userID, key: primaryKey };
         const selfCertification = await helper.getLatestValidSignature(user.selfCertifications, primaryKey, enums.signature.certGeneric, dataToVerify, date, config);
         users.push({ index: i, user, selfCertification });
       } catch (e) {
@@ -661,7 +685,7 @@ class Key {
    * the destination key is transformed to a private key.
    * @param {Key} key - Source key to merge
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {undefined}
+   * @returns {Promise<undefined>}
    * @async
    */
   async update(key, config = defaultConfig) {
@@ -692,8 +716,8 @@ class Key {
     await Promise.all(key.users.map(async srcUser => {
       let found = false;
       await Promise.all(this.users.map(async dstUser => {
-        if ((srcUser.userId && dstUser.userId &&
-              (srcUser.userId.userid === dstUser.userId.userid)) ||
+        if ((srcUser.userID && dstUser.userID &&
+              (srcUser.userID.userID === dstUser.userID.userID)) ||
             (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
           await dstUser.update(srcUser, this.keyPacket, config);
           found = true;
@@ -726,7 +750,7 @@ class Key {
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
    * @param {Date} date - optional, override the creationtime of the revocation signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Key} New key with revocation signature.
+   * @returns {Promise<Key>} New key with revocation signature.
    * @async
    */
   async revoke(
@@ -746,7 +770,7 @@ class Key {
       signatureType: enums.signature.keyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
-    }, date, undefined, undefined, undefined, config));
+    }, date, undefined, undefined, config));
     return key;
   }
 
@@ -755,7 +779,7 @@ class Key {
    *   (To get a revocation certificate for an unrevoked key, call revoke() first.)
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {String} Armored revocation certificate.
+   * @returns {Promise<String>} Armored revocation certificate.
    * @async
    */
   async getRevocationCertificate(date = new Date(), config = defaultConfig) {
@@ -772,25 +796,25 @@ class Key {
    * if it is a valid revocation signature.
    * @param {String} revocationCertificate - armored revocation certificate
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Key} New revoked key.
+   * @returns {Promise<Key>} New revoked key.
    * @async
    */
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
     const input = await unarmor(revocationCertificate, config);
     const packetlist = new PacketList();
-    await packetlist.read(input.data, { SignaturePacket }, undefined, config);
+    await packetlist.read(input.data, allowedRevocationPackets, undefined, config);
     const revocationSignature = packetlist.findPacket(enums.packet.signature);
     if (!revocationSignature || revocationSignature.signatureType !== enums.signature.keyRevocation) {
       throw new Error('Could not find revocation signature packet');
     }
-    if (!revocationSignature.issuerKeyId.equals(this.getKeyId())) {
+    if (!revocationSignature.issuerKeyID.equals(this.getKeyID())) {
       throw new Error('Revocation signature does not match key');
     }
     if (revocationSignature.isExpired()) {
       throw new Error('Revocation signature is expired');
     }
     try {
-      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, undefined, undefined, config);
+      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, undefined, config);
     } catch (e) {
       throw util.wrapError('Could not verify revocation signature', e);
     }
@@ -803,13 +827,13 @@ class Key {
    * Signs primary user of key
    * @param {Array<Key>} privateKeys - decrypted private keys for signing
    * @param {Date} [date] - Use the given date for verification instead of the current time
-   * @param {Object} [userId] - User ID to get instead of the primary user, if it exists
+   * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Key} New public key with new certificate signature.
+   * @returns {Promise<Key>} New public key with new certificate signature.
    * @async
    */
-  async signPrimaryUser(privateKeys, date, userId, config = defaultConfig) {
-    const { index, user } = await this.getPrimaryUser(date, userId, config);
+  async signPrimaryUser(privateKeys, date, userID, config = defaultConfig) {
+    const { index, user } = await this.getPrimaryUser(date, userID, config);
     const userSign = await user.sign(this.keyPacket, privateKeys, config);
     const key = await this.clone();
     key.users[index] = userSign;
@@ -820,7 +844,7 @@ class Key {
    * Signs all users of key
    * @param {Array<Key>} privateKeys - decrypted private keys for signing
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Key} New public key with new certificate signature.
+   * @returns {Promise<Key>} New public key with new certificate signature.
    * @async
    */
   async signAllUsers(privateKeys, config = defaultConfig) {
@@ -838,17 +862,19 @@ class Key {
    * - otherwise, verifies all certificates signed with given keys.
    * @param {Array<Key>} keys - array of keys to verify certificate signatures
    * @param {Date} [date] - Use the given date for verification instead of the current time
-   * @param {Object} [userId] - User ID to get instead of the primary user, if it exists
+   * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
-   *                          valid: Boolean}>>}    List of signer's keyid and validity of signature
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   valid: Boolean
+   * }>>} List of signer's keyID and validity of signature
    * @async
    */
-  async verifyPrimaryUser(keys, date, userId, config = defaultConfig) {
+  async verifyPrimaryUser(keys, date, userID, config = defaultConfig) {
     const primaryKey = this.keyPacket;
-    const { user } = await this.getPrimaryUser(date, userId, config);
+    const { user } = await this.getPrimaryUser(date, userID, config);
     const results = keys ? await user.verifyAllCertifications(primaryKey, keys, undefined, config) :
-      [{ keyid: primaryKey.keyid, valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
+      [{ keyID: primaryKey.keyID, valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
     return results;
   }
 
@@ -858,9 +884,11 @@ class Key {
    * - otherwise, verifies all certificates signed with given keys.
    * @param {Array<Key>} keys - array of keys to verify certificate signatures
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<{userid: String,
-   *                          keyid: module:type/keyid~Keyid,
-   *                          valid: Boolean}>>} list of userid, signer's keyid and validity of signature
+   * @returns {Promise<Array<{
+   *   userID: String,
+   *   keyID: module:type/keyid~KeyID,
+   *   valid: Boolean
+   * }>>} List of userID, signer's keyID and validity of signature
    * @async
    */
   async verifyAllUsers(keys, config = defaultConfig) {
@@ -868,11 +896,11 @@ class Key {
     const primaryKey = this.keyPacket;
     await Promise.all(this.users.map(async function(user) {
       const signatures = keys ? await user.verifyAllCertifications(primaryKey, keys, undefined, config) :
-        [{ keyid: primaryKey.keyid, valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
+        [{ keyID: primaryKey.keyID, valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
       signatures.forEach(signature => {
         results.push({
-          userid: user.userId.userid,
-          keyid: signature.keyid,
+          userID: user.userID.userID,
+          keyID: signature.keyID,
           valid: signature.valid
         });
       });
@@ -890,7 +918,7 @@ class Key {
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in [config]{@link module:config}
-   * @returns {Key}
+   * @returns {Promise<Key>}
    * @async
    */
   async addSubkey(options = {}) {
@@ -901,8 +929,8 @@ class Key {
     if (options.passphrase) {
       throw new Error("Subkey could not be encrypted here, please encrypt whole key");
     }
-    if (options.rsaBits < config.minRsaBits) {
-      throw new Error(`rsaBits should be at least ${config.minRsaBits}, got: ${options.rsaBits}`);
+    if (options.rsaBits < config.minRSABits) {
+      throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${options.rsaBits}`);
     }
     const secretKeyPacket = this.primaryKey;
     if (secretKeyPacket.isDummy()) {
@@ -925,9 +953,10 @@ class Key {
   }
 }
 
-['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
+['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
   Key.prototype[name] =
   SubKey.prototype[name];
 });
 
 export default Key;
+

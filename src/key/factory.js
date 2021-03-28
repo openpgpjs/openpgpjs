@@ -15,7 +15,16 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { PacketList, UserIDPacket, SignaturePacket } from '../packet';
+import {
+  PacketList,
+  UserIDPacket,
+  SignaturePacket,
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserAttributePacket
+} from '../packet';
 import Key from './key';
 import * as helper from './helper';
 import enums from '../enums';
@@ -23,20 +32,31 @@ import util from '../util';
 import defaultConfig from '../config';
 import { unarmor } from '../encoding/armor';
 
+// A Key can contain the following packets
+const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  UserIDPacket,
+  UserAttributePacket,
+  SignaturePacket
+]);
+
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
  * By default, primary and subkeys will be of same type.
  * @param {ecc|rsa} options.type                  The primary key algorithm type: ECC or RSA
  * @param {String}  options.curve                 Elliptic curve for ECC keys
  * @param {Integer} options.rsaBits               Number of bits for RSA keys
- * @param {Array<String|Object>} options.userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String}  options.passphrase            Passphrase used to encrypt the resulting private key
  * @param {Number}  options.keyExpirationTime     (optional) Number of seconds from the key creation time after which the key expires
  * @param {Date}    options.date                  Creation date of the key and the key signatures
  * @param {Object} config - Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @returns {Key}
+ * @returns {Promise<Key>}
  * @async
  * @static
  * @private
@@ -53,56 +73,56 @@ export async function generate(options, config) {
 /**
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
  * @param {Key} options.privateKey     The private key to reformat
- * @param {Array<String|Object>} options.userIds  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
+ * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key
  * @param {Number} options.keyExpirationTime      Number of seconds from the key creation time after which the key expires
  * @param {Date}   options.date                   Override the creation date of the key and the key signatures
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  * @param {Object} config - Full configuration
  *
- * @returns {Key}
+ * @returns {Promise<Key>}
  * @async
  * @static
  * @private
  */
 export async function reformat(options, config) {
   options = sanitize(options);
+  const { privateKey } = options;
 
-  if (options.privateKey.primaryKey.isDummy()) {
+  if (privateKey.isPublic()) {
+    throw new Error('Cannot reformat a public key');
+  }
+
+  if (privateKey.primaryKey.isDummy()) {
     throw new Error('Cannot reformat a gnu-dummy primary key');
   }
 
-  const isDecrypted = options.privateKey.getKeys().every(({ keyPacket }) => keyPacket.isDecrypted());
+  const isDecrypted = privateKey.getKeys().every(({ keyPacket }) => keyPacket.isDecrypted());
   if (!isDecrypted) {
     throw new Error('Key is not decrypted');
   }
 
-  const packetlist = options.privateKey.toPacketlist();
-  let secretKeyPacket;
-  const secretSubkeyPackets = [];
-  for (let i = 0; i < packetlist.length; i++) {
-    if (packetlist[i].tag === enums.packet.secretKey) {
-      secretKeyPacket = packetlist[i];
-    } else if (packetlist[i].tag === enums.packet.secretSubkey) {
-      secretSubkeyPackets.push(packetlist[i]);
-    }
-  }
-  if (!secretKeyPacket) {
-    throw new Error('Key does not contain a secret key packet');
-  }
+  const secretKeyPacket = privateKey.keyPacket;
 
   if (!options.subkeys) {
-    options.subkeys = await Promise.all(secretSubkeyPackets.map(async secretSubkeyPacket => ({
-      sign: await options.privateKey.getSigningKey(secretSubkeyPacket.getKeyId(), null, undefined, config).catch(() => {}) &&
-          !await options.privateKey.getEncryptionKey(secretSubkeyPacket.getKeyId(), null, undefined, config).catch(() => {})
-    })));
+    options.subkeys = await Promise.all(privateKey.subKeys.map(async subkey => {
+      const secretSubkeyPacket = subkey.keyPacket;
+      const dataToVerify = { key: secretKeyPacket, bind: secretSubkeyPacket };
+      const bindingSignature = await (
+        helper.getLatestValidSignature(subkey.bindingSignatures, secretKeyPacket, enums.signature.subkeyBinding, dataToVerify, null, config)
+      ).catch(() => ({}));
+      return {
+        sign: bindingSignature.keyFlags && (bindingSignature.keyFlags[0] & enums.keyFlags.signData)
+      };
+    }));
   }
 
+  const secretSubkeyPackets = privateKey.subKeys.map(subkey => subkey.keyPacket);
   if (options.subkeys.length !== secretSubkeyPackets.length) {
     throw new Error('Number of subkey options does not match number of subkeys');
   }
 
-  options.subkeys = options.subkeys.map(function(subkey, index) { return sanitize(options.subkeys[index], options); });
+  options.subkeys = options.subkeys.map(subkeyOptions => sanitize(subkeyOptions, options));
 
   return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config);
 
@@ -133,14 +153,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   packetlist.push(secretKeyPacket);
 
-  await Promise.all(options.userIds.map(async function(userId, index) {
+  await Promise.all(options.userIDs.map(async function(userID, index) {
     function createPreferredAlgos(algos, preferredAlgo) {
       return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
     }
 
-    const userIdPacket = UserIDPacket.fromObject(userId);
+    const userIDPacket = UserIDPacket.fromObject(userID);
     const dataToSign = {};
-    dataToSign.userId = userIdPacket;
+    dataToSign.userID = userIDPacket;
     dataToSign.key = secretKeyPacket;
     const signaturePacket = new SignaturePacket(options.date);
     signaturePacket.signatureType = enums.signature.certGeneric;
@@ -154,10 +174,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.symmetric.aes192
     ], config.preferredSymmetricAlgorithm);
     if (config.aeadProtect) {
-      signaturePacket.preferredAeadAlgorithms = createPreferredAlgos([
+      signaturePacket.preferredAEADAlgorithms = createPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
-      ], config.preferredAeadAlgorithm);
+      ], config.preferredAEADAlgorithm);
     }
     signaturePacket.preferredHashAlgorithms = createPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
@@ -187,10 +207,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     }
     await signaturePacket.sign(secretKeyPacket, dataToSign);
 
-    return { userIdPacket, signaturePacket };
+    return { userIDPacket, signaturePacket };
   })).then(list => {
-    list.forEach(({ userIdPacket, signaturePacket }) => {
-      packetlist.push(userIdPacket);
+    list.forEach(({ userIDPacket, signaturePacket }) => {
+      packetlist.push(userIDPacket);
       packetlist.push(signaturePacket);
     });
   });
@@ -213,7 +233,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signatureType: enums.signature.keyRevocation,
     reasonForRevocationFlag: enums.reasonForRevocation.noReason,
     reasonForRevocationString: ''
-  }, options.date, undefined, undefined, undefined, config));
+  }, options.date, undefined, undefined, config));
 
   // set passphrase protection
   if (options.passphrase) {
@@ -233,10 +253,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 /**
  * Reads an (optionally armored) OpenPGP key and returns a key object
  * @param {Object} options
- * @param {String | ReadableStream<String>} [options.armoredKey] - Armored key to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKey] - Binary key to be parsed
+ * @param {String} [options.armoredKey] - Armored key to be parsed
+ * @param {Uint8Array} [options.binaryKey] - Binary key to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Key} Key object.
+ * @returns {Promise<Key>} Key object.
  * @async
  * @static
  */
@@ -244,6 +264,12 @@ export async function readKey({ armoredKey, binaryKey, config }) {
   config = { ...defaultConfig, ...config };
   if (!armoredKey && !binaryKey) {
     throw new Error('readKey: must pass options object containing `armoredKey` or `binaryKey`');
+  }
+  if (armoredKey && !util.isString(armoredKey)) {
+    throw new Error('readKey: options.armoredKey must be a string');
+  }
+  if (binaryKey && !util.isUint8Array(binaryKey)) {
+    throw new Error('readKey: options.binaryKey must be a Uint8Array');
   }
   let input;
   if (armoredKey) {
@@ -256,17 +282,17 @@ export async function readKey({ armoredKey, binaryKey, config }) {
     input = binaryKey;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
+  await packetlist.read(input, allowedKeyPackets, undefined, config);
   return new Key(packetlist);
 }
 
 /**
  * Reads an (optionally armored) OpenPGP key block and returns a list of key objects
  * @param {Object} options
- * @param {String | ReadableStream<String>} [options.armoredKeys] - Armored keys to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binaryKeys] - Binary keys to be parsed
+ * @param {String} [options.armoredKeys] - Armored keys to be parsed
+ * @param {Uint8Array} [options.binaryKeys] - Binary keys to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Array<Key>} Key objects.
+ * @returns {Promise<Array<Key>>} Key objects.
  * @async
  * @static
  */
@@ -275,6 +301,12 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   let input = armoredKeys || binaryKeys;
   if (!input) {
     throw new Error('readKeys: must pass options object containing `armoredKeys` or `binaryKeys`');
+  }
+  if (armoredKeys && !util.isString(armoredKeys)) {
+    throw new Error('readKeys: options.armoredKeys must be a string');
+  }
+  if (binaryKeys && !util.isUint8Array(binaryKeys)) {
+    throw new Error('readKeys: options.binaryKeys must be a Uint8Array');
   }
   if (armoredKeys) {
     const { type, data } = await unarmor(armoredKeys, config);
@@ -285,7 +317,7 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   }
   const keys = [];
   const packetlist = new PacketList();
-  await packetlist.read(input, helper.allowedKeyPackets, undefined, config);
+  await packetlist.read(input, allowedKeyPackets, undefined, config);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');

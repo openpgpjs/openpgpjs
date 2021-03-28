@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { readKey, Key, readCleartextMessage, CleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
+const { readKey, Key, readCleartextMessage, createCleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -9,7 +9,7 @@ const expect = chai.expect;
 
 async function generateTestData() {
   const victimPrivKey = (await openpgp.generateKey({
-    userIds: [{ name: 'Victim', email: 'victim@example.com' }],
+    userIDs: [{ name: 'Victim', email: 'victim@example.com' }],
     type: 'rsa',
     rsaBits: 2048,
     subkeys: [{
@@ -19,7 +19,7 @@ async function generateTestData() {
   victimPrivKey.revocationSignatures = [];
 
   const attackerPrivKey = (await openpgp.generateKey({
-    userIds: [{ name: 'Attacker', email: 'attacker@example.com' }],
+    userIDs: [{ name: 'Attacker', email: 'attacker@example.com' }],
     type: 'rsa',
     rsaBits: 2048,
     subkeys: [],
@@ -27,9 +27,8 @@ async function generateTestData() {
   })).key;
   attackerPrivKey.revocationSignatures = [];
   const signed = await openpgp.sign({
-    message: await CleartextMessage.fromText('I am batman'),
+    message: await createCleartextMessage({ text: 'I am batman' }),
     privateKeys: victimPrivKey,
-    streaming: false,
     armor: true
   });
   return {
@@ -68,11 +67,11 @@ async function testSubkeyTrust() {
   fakeKey = await readKey({ armoredKey: await fakeKey.toPublic().armor() });
   const verifyAttackerIsBatman = await openpgp.verify({
     message: await readCleartextMessage({ cleartextMessage: signed }),
-    publicKeys: fakeKey,
-    streaming: false
+    publicKeys: fakeKey
   });
-  expect(verifyAttackerIsBatman.signatures[0].keyid.equals(victimPubKey.subKeys[0].getKeyId())).to.be.true;
-  expect(verifyAttackerIsBatman.signatures[0].valid).to.be.null;
+  expect(verifyAttackerIsBatman.signatures[0].keyID.equals(victimPubKey.subKeys[0].getKeyID())).to.be.true;
+  expect(verifyAttackerIsBatman.signatures[0].valid).to.be.false;
+  expect(verifyAttackerIsBatman.signatures[0].error).to.match(/Could not find valid signing key packet/);
 }
 
 module.exports = () => it('Does not trust subkeys without Primary Key Binding Signature', testSubkeyTrust);

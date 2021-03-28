@@ -18,7 +18,11 @@
 import { armor, unarmor } from './encoding/armor';
 import { PacketList, SignaturePacket } from './packet';
 import enums from './enums';
+import util from './util';
 import defaultConfig from './config';
+
+// A Signature can contain the following packets
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
  * Class that represents an OpenPGP signature.
@@ -52,10 +56,10 @@ export class Signature {
 /**
  * reads an (optionally armored) OpenPGP signature and returns a signature object
  * @param {Object} options
- * @param {String | ReadableStream<String>} [options.armoredSignature] - Armored signature to be parsed
- * @param {Uint8Array | ReadableStream<Uint8Array>} [options.binarySignature] - Binary signature to be parsed
+ * @param {String} [options.armoredSignature] - Armored signature to be parsed
+ * @param {Uint8Array} [options.binarySignature] - Binary signature to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Signature} New signature object.
+ * @returns {Promise<Signature>} New signature object.
  * @async
  * @static
  */
@@ -65,6 +69,12 @@ export async function readSignature({ armoredSignature, binarySignature, config 
   if (!input) {
     throw new Error('readSignature: must pass options object containing `armoredSignature` or `binarySignature`');
   }
+  if (armoredSignature && !util.isString(armoredSignature)) {
+    throw new Error('readSignature: options.armoredSignature must be a string');
+  }
+  if (binarySignature && !util.isUint8Array(binarySignature)) {
+    throw new Error('readSignature: options.binarySignature must be a Uint8Array');
+  }
   if (armoredSignature) {
     const { type, data } = await unarmor(input, config);
     if (type !== enums.armor.signature) {
@@ -73,6 +83,6 @@ export async function readSignature({ armoredSignature, binarySignature, config 
     input = data;
   }
   const packetlist = new PacketList();
-  await packetlist.read(input, { SignaturePacket }, undefined, config);
+  await packetlist.read(input, allowedPackets, undefined, config);
   return new Signature(packetlist);
 }

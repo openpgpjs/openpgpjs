@@ -14,10 +14,10 @@ export function readKey(options: { binaryKey: Uint8Array, config?: PartialConfig
 export function readKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<Key[]>;
 export function readKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
-export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIds?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
+export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
 export function encryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
-export function reformatKey(options: { privateKey: Key; userIds?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
+export function reformatKey(options: { privateKey: Key; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
 
 export class Key {
   constructor(packetlist: PacketList<AnyPacket>);
@@ -28,33 +28,33 @@ export class Key {
   private keyPacket: PublicKeyPacket | SecretKeyPacket;
   public write(): Uint8Array;
   public armor(config?: Config): string;
-  public decrypt(passphrase: string | string[], keyId?: Keyid, config?: Config): Promise<void>; // throws on error
-  public encrypt(passphrase: string | string[], keyId?: Keyid, config?: Config): Promise<void>; // throws on error
-  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyId?: Keyid, userId?: UserID, config?: Config): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
-  public getKeyIds(): Keyid[];
-  public getPrimaryUser(date?: Date, userId?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
-  public getUserIds(): string[];
+  public decrypt(passphrase: string | string[], keyID?: KeyID, config?: Config): Promise<void>; // throws on error
+  public encrypt(passphrase: string | string[], keyID?: KeyID, config?: Config): Promise<void>; // throws on error
+  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyID?: KeyID, userID?: UserID, config?: Config): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
+  public getKeyIDs(): KeyID[];
+  public getPrimaryUser(date?: Date, userID?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
+  public getUserIDs(): string[];
   public isPrivate(): boolean;
   public isPublic(): boolean;
   public toPublic(): Key;
   public update(key: Key, config?: Config): void;
-  public signPrimaryUser(privateKeys: Key[], date?: Date, userId?: UserID, config?: Config): Promise<Key>
+  public signPrimaryUser(privateKeys: Key[], date?: Date, userID?: UserID, config?: Config): Promise<Key>
   public signAllUsers(privateKeys: Key[], config?: Config): Promise<Key>
-  public verifyPrimaryKey(date?: Date, userId?: UserID, config?: Config): Promise<void>; // throws on error
-  public verifyPrimaryUser(publicKeys: Key[], date?: Date, userIds?: UserID, config?: Config): Promise<{ keyid: Keyid, valid: boolean | null }[]>;
-  public verifyAllUsers(publicKeys: Key[], config?: Config): Promise<{ userid: string, keyid: Keyid, valid: boolean | null }[]>;
+  public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
+  public verifyPrimaryUser(publicKeys: Key[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
+  public verifyAllUsers(publicKeys: Key[], config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date, config?: Config): Promise<Key>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
-  public getEncryptionKey(keyid?: Keyid, date?: Date | null, userId?: UserID, config?: Config): Promise<Key | SubKey>;
-  public getSigningKey(keyid?: Keyid, date?: Date | null, userId?: UserID, config?: Config): Promise<Key | SubKey>;
-  public getKeys(keyId?: Keyid): (Key | SubKey)[];
-  public getSubkeys(keyId?: Keyid): SubKey[];
+  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<Key | SubKey>;
+  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<Key | SubKey>;
+  public getKeys(keyID?: KeyID): (Key | SubKey)[];
+  public getSubkeys(keyID?: KeyID): SubKey[];
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
   public getAlgorithmInfo(): AlgorithmInfo;
-  public getKeyId(): Keyid;
+  public getKeyID(): KeyID;
   public addSubkey(options: SubKeyOptions): Promise<Key>;
 }
 
@@ -68,11 +68,11 @@ export class SubKey {
   public getFingerprint(): string;
   public getCreationTime(): Date;
   public getAlgorithmInfo(): AlgorithmInfo;
-  public getKeyId(): Keyid;
+  public getKeyID(): KeyID;
 }
 
 export interface User {
-  userId: UserIDPacket | null;
+  userID: UserIDPacket | null;
   userAttribute: UserAttributePacket | null;
   selfCertifications: SignaturePacket[];
   otherCertifications: SignaturePacket[];
@@ -103,7 +103,7 @@ export class Signature {
 }
 
 interface VerificationResult {
-  keyid: Keyid;
+  keyID: KeyID;
   verified: Promise<null | boolean>;
   signature: Promise<Signature>;
 }
@@ -111,6 +111,8 @@ interface VerificationResult {
 /* ############## v5 CLEARTEXT #################### */
 
 export function readCleartextMessage(options: { cleartextMessage: string, config?: PartialConfig }): Promise<CleartextMessage>;
+
+export function createCleartextMessage(options: { text: string }): Promise<CleartextMessage>;
 
 /** Class that represents an OpenPGP cleartext signed message.
  */
@@ -121,7 +123,7 @@ export class CleartextMessage {
 
   /** Returns the key IDs of the keys that signed the cleartext message
    */
-  getSigningKeyIds(): Keyid[];
+  getSigningKeyIDs(): KeyID[];
 
   /** Get cleartext
    */
@@ -131,14 +133,12 @@ export class CleartextMessage {
    *
    *  @param privateKeys private keys with decrypted secret key data for signing
    */
-  sign(privateKeys: Key[], signature?: Signature, signingKeyIds?: Keyid[], date?: Date, userIds?: UserID[], config?: Config): void;
+  sign(privateKeys: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): void;
 
   /** Verify signatures of cleartext signed message
    *  @param keys array of keys to verify signatures
    */
   verify(keys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
-
-  static fromText(text: string): CleartextMessage;
 }
 
 /* ############## v5 MSG #################### */
@@ -146,16 +146,9 @@ export class CleartextMessage {
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binaryMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 
-export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T, armor: false }): Promise<
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
->;
-export function encrypt<T extends 'web' | 'node' | false>(options: EncryptOptions & { streaming: T }): Promise<
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
->;
+export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
+export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
+
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, armor: false }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
@@ -167,16 +160,6 @@ export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & {
   string
 >;
 
-export function sign<T extends 'web' | 'node' | false>(options: SignOptions & { streaming: T, armor: false }): Promise<
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
->;
-export function sign<T extends 'web' | 'node' | false>(options: SignOptions & { streaming: T }): Promise<
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
->;
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, armor: false }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
@@ -189,18 +172,6 @@ export function sign<T extends MaybeStream<Data>>(options: SignOptions & { messa
 >;
 export function sign(options: SignOptions & { message: CleartextMessage }): Promise<string>;
 
-export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T, format: 'binary' }): Promise<DecryptMessageResult & {
-  data:
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
-}>;
-export function decrypt<T extends 'web' | 'node' | false>(options: DecryptOptions & { streaming: T }): Promise<DecryptMessageResult & {
-  data:
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
-}>;
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & {
   data:
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
@@ -214,18 +185,6 @@ export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & {
   string
 }>;
 
-export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T, format: 'binary' }): Promise<VerifyMessageResult & {
-  data:
-  T extends 'web' ? WebStream<Uint8Array> :
-  T extends 'node' ? NodeStream<Uint8Array> :
-  Uint8Array
-}>;
-export function verify<T extends 'web' | 'node' | false>(options: VerifyOptions & { streaming: T }): Promise<VerifyMessageResult & {
-  data:
-  T extends 'web' ? WebStream<string> :
-  T extends 'node' ? NodeStream<string> :
-  string
-}>;
 export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult & {
   data:
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
@@ -257,16 +216,16 @@ export class Message<T extends MaybeStream<Data>> {
   /** Decrypt the message
       @param privateKey private key with decrypted secret data
   */
-  public decrypt(privateKeys?: Key[], passwords?: string[], sessionKeys?: SessionKey[], streaming?: boolean, config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public decrypt(privateKeys?: Key[], passwords?: string[], sessionKeys?: SessionKey[], config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Encrypt the message
       @param keys array of keys, used to encrypt the message
   */
-  public encrypt(keys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIds?: Keyid[], date?: Date, userIds?: UserID[], streaming?: boolean, config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public encrypt(keys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Returns the key IDs of the keys to which the session key is encrypted
    */
-  public getEncryptionKeyIds(): Keyid[];
+  public getEncryptionKeyIDs(): KeyID[];
 
   /** Get literal data that is the body of the message
    */
@@ -274,7 +233,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Returns the key IDs of the keys that signed the message
    */
-  public getSigningKeyIds(): Keyid[];
+  public getSigningKeyIDs(): KeyID[];
 
   /** Get literal data as text
    */
@@ -285,7 +244,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Sign the message (the literal data packet of the message)
       @param privateKey private keys with decrypted secret key data for signing
   */
-  public sign(privateKey: Key[], signature?: Signature, signingKeyIds?: Keyid[], date?: Date, userIds?: UserID[], streaming?: boolean, config?: Config): Promise<Message<T>>;
+  public sign(privateKey: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<T>>;
 
   /** Unwrap compressed message
    */
@@ -294,16 +253,13 @@ export class Message<T extends MaybeStream<Data>> {
   /** Verify message signatures
       @param keys array of keys to verify signatures
   */
-  public verify(keys: Key[], date?: Date, streaming?: boolean, config?: Config): Promise<VerificationResult[]>;
+  public verify(keys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
 
   /**
    * Append signature to unencrypted message object
    * @param {String|Uint8Array} detachedSignature - The detached ASCII-armored or Uint8Array PGP signature
    */
   public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
-
-  static fromText<T extends MaybeStream<string>>(text: T, filename?: string, date?: Date, type?: DataPacketType): Message<T>;
-  static fromBinary<T extends MaybeStream<Uint8Array>>(bytes: T, filename?: string, date?: Date, type?: DataPacketType): Message<T>;
 }
 
 
@@ -320,7 +276,7 @@ interface Config {
   allowUnauthenticatedMessages: boolean;
   allowUnauthenticatedStream: boolean;
   checksumRequired: boolean;
-  minRsaBits: number;
+  minRSABits: number;
   passwordCollisionCheck: boolean;
   revocationsExpire: boolean;
   tolerant: boolean;
@@ -357,7 +313,7 @@ declare abstract class BasePublicKeyPacket extends BasePacket {
   public getFingerprintBytes(): Uint8Array | null;
   public hasSameFingerprintAs(other: BasePublicKeyPacket): boolean;
   public getCreationTime(): Date;
-  public getKeyId(): Keyid;
+  public getKeyID(): KeyID;
   public isDecrypted(): boolean;
   public publicParams: object;
 }
@@ -396,7 +352,7 @@ export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
 }
 
 export class AEADEncryptedDataPacket extends BasePacket {
-  public tag: enums.packet.AEADEncryptedData;
+  public tag: enums.packet.aeadEncryptedData;
 }
 
 export class PublicKeyEncryptedSessionKeyPaclet extends BasePacket {
@@ -433,8 +389,8 @@ export class UserIDPacket extends BasePacket {
   public readonly name: string;
   public readonly comment: string;
   public readonly email: string;
-  public readonly userid: string;
-  static fromObject(userId: UserID): UserIDPacket;
+  public readonly userID: string;
+  static fromObject(userID: UserID): UserIDPacket;
 }
 
 export class SignaturePacket extends BasePacket {
@@ -460,7 +416,7 @@ export class SignaturePacket extends BasePacket {
   public revocationKeyClass: null | number;
   public revocationKeyAlgorithm: null | enums.publicKey;
   public revocationKeyFingerprint: null | Uint8Array;
-  public issuerKeyId: Keyid;
+  public issuerKeyID: KeyID;
   public notation: null | { [name: string]: string };
   public preferredHashAlgorithms: enums.hash[] | null;
   public preferredCompressionAlgorithms: enums.compression[] | null;
@@ -469,7 +425,7 @@ export class SignaturePacket extends BasePacket {
   public isPrimaryUserID: null | boolean;
   public policyURI: null | string;
   public keyFlags: Uint8Array | null;
-  public signersUserId: null | string;
+  public signersUserID: null | string;
   public reasonForRevocationFlag: null | enums.reasonForRevocation;
   public reasonForRevocationString: null | string;
   public features: Uint8Array | null;
@@ -479,11 +435,11 @@ export class SignaturePacket extends BasePacket {
   public embeddedSignature: null | SignaturePacket;
   public issuerKeyVersion: null | number;
   public issuerFingerprint: null | Uint8Array;
-  public preferredAeadAlgorithms: enums.aead[] | null;
+  public preferredAEADAlgorithms: enums.aead[] | null;
   public verified: null | boolean;
   public revoked: null | boolean;
-  public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean, streaming?: boolean): Promise<void>;
-  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, detached?: boolean, streaming?: boolean, config?: Config): Promise<void>; // throws on error
+  public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean): Promise<void>;
+  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
 }
@@ -502,7 +458,7 @@ type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 export class PacketList<PACKET_TYPE> extends Array<PACKET_TYPE> {
   [index: number]: PACKET_TYPE;
   public length: number;
-  public read(bytes: Uint8Array, allowedPackets?: object, streaming?: boolean, config?: Config): void;
+  public read(bytes: Uint8Array, allowedPackets?: object, config?: Config): void;
   public write(): Uint8Array;
   public push(...packet: PACKET_TYPE[]): number;
   public pop(): PACKET_TYPE;
@@ -551,7 +507,7 @@ export interface SessionKey { data: Uint8Array; algorithm: string; }
 
 
 interface EncryptOptions {
-  /** message to be encrypted as created by Message.fromText or Message.fromBinary */
+  /** message to be encrypted as created by createMessage */
   message: Message<MaybeStream<Data>>;
   /** (optional) array of keys or single key, used to encrypt the message */
   publicKeys?: Key | Key[];
@@ -563,8 +519,6 @@ interface EncryptOptions {
   sessionKey?: SessionKey;
   /** if the return values should be ascii armored or the message/signature objects */
   armor?: boolean;
-  /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-  streaming?: 'web' | 'node' | false;
   /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
   signature?: Signature;
   /** (optional) encrypt as of a certain date */
@@ -572,9 +526,9 @@ interface EncryptOptions {
   /** (optional) use a key ID of 0 instead of the public key IDs */
   wildcard?: boolean;
   /** (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
-  fromUserId?: UserID;
+  fromUserID?: UserID;
   /** (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
-  toUserId?: UserID;
+  toUserID?: UserID;
   config?: PartialConfig;
 }
 
@@ -591,8 +545,6 @@ interface DecryptOptions {
   publicKeys?: Key | Key[];
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
   format?: 'utf8' | 'binary';
-  /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-  streaming?: 'web' | 'node' | false;
   /** (optional) detached signature for verification */
   signature?: Signature;
   /** (optional) use the given date for verification instead of the current time */
@@ -604,11 +556,10 @@ interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   privateKeys?: Key | Key[];
   armor?: boolean;
-  streaming?: 'web' | 'node' | false;
   dataType?: DataPacketType;
   detached?: boolean;
   date?: Date;
-  fromUserId?: UserID;
+  fromUserID?: UserID;
   config?: PartialConfig;
 }
 
@@ -619,8 +570,6 @@ interface VerifyOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
   format?: 'utf8' | 'binary';
-  /** (optional) whether to return data as a stream. Defaults to the type of stream `message` was created from, if any. */
-  streaming?: 'web' | 'node' | false;
   /** (optional) detached signature for verification */
   signature?: Signature;
   /** (optional) use the given date for verification instead of the current time */
@@ -638,7 +587,7 @@ interface KeyPair {
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
 interface KeyOptions {
-  userIds: UserID|UserID[];
+  userIDs: UserID|UserID[];
   passphrase?: string;
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
@@ -659,11 +608,11 @@ interface SubKeyOptions {
   config?: PartialConfig;
 }
 
-declare class Keyid {
+declare class KeyID {
   bytes: string;
-  equals(keyid: Keyid, matchWildcard?: boolean): boolean;
+  equals(keyID: KeyID, matchWildcard?: boolean): boolean;
   toHex(): string;
-  static fromId(hex: string): Keyid;
+  static fromID(hex: string): KeyID;
 }
 
 interface DecryptMessageResult {
@@ -691,7 +640,6 @@ export function unarmor(input: string, config?: Config): Promise<{ text: string,
 /* ############## v5 ENUMS #################### */
 
 export namespace enums {
-
   function read(type: typeof armor, e: armor): armorNames;
   function read(type: typeof compression, e: compression): compressionNames;
   function read(type: typeof hash, e: hash): hashNames;
@@ -717,7 +665,7 @@ export namespace enums {
     keySuperseded = 1, // Key is superseded (key revocations)
     keyCompromised = 2, // Key material has been compromised (key revocations)
     keyRetired = 3, // Key is retired and no longer used (key revocations)
-    useridInvalid = 32, // User ID information is no longer valid (cert revocations)
+    userIDInvalid = 32, // User ID information is no longer valid (cert revocations)
   }
 
   export type compressionNames = 'uncompressed' | 'zip' | 'zlib' | 'bzip2';
@@ -740,7 +688,7 @@ export namespace enums {
   }
 
   export type packetNames = 'publicKeyEncryptedSessionKey' | 'signature' | 'symEncryptedSessionKey' | 'onePassSignature' | 'secretKey' | 'publicKey'
-    | 'secretSubkey' | 'compressed' | 'symmetricallyEncrypted' | 'marker' | 'literal' | 'trust' | 'userid' | 'publicSubkey' | 'userAttribute'
+    | 'secretSubkey' | 'compressed' | 'symmetricallyEncrypted' | 'marker' | 'literal' | 'trust' | 'userID' | 'publicSubkey' | 'userAttribute'
     | 'symEncryptedIntegrityProtected' | 'modificationDetectionCode' | 'AEADEncryptedDataPacket';
   enum packet {
     publicKeyEncryptedSessionKey = 1,
@@ -760,7 +708,7 @@ export namespace enums {
     userAttribute = 17,
     symEncryptedIntegrityProtectedData = 18,
     modificationDetectionCode = 19,
-    AEADEncryptedData = 20,
+    aeadEncryptedData = 20,
   }
 
   export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsa' | 'aedh' | 'aedsa';
@@ -832,6 +780,6 @@ export namespace enums {
   enum aead {
     eax = 1,
     ocb = 2,
-    experimentalGcm = 100 // Private algorithm
+    experimentalGCM = 100 // Private algorithm
   }
 }

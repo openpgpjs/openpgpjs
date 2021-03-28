@@ -15,17 +15,24 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// An AEAD-encrypted Data packet can contain the following packet types
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -37,8 +44,11 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * AEAD Protected Data Packet
  */
 class AEADEncryptedDataPacket {
+  static get tag() {
+    return enums.packet.aeadEncryptedData;
+  }
+
   constructor() {
-    this.tag = enums.packet.AEADEncryptedData;
     this.version = VERSION;
     this.cipherAlgo = null;
     this.aeadAlgorithm = 'eax';
@@ -61,7 +71,7 @@ class AEADEncryptedDataPacket {
       this.cipherAlgo = await reader.readByte();
       this.aeadAlgo = await reader.readByte();
       this.chunkSizeByte = await reader.readByte();
-      const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+      const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
       this.iv = await reader.readBytes(mode.ivLength);
       this.encrypted = reader.remainder();
     });
@@ -79,36 +89,29 @@ class AEADEncryptedDataPacket {
    * Decrypt the encrypted payload.
    * @param {String} sessionKeyAlgorithm - The session key's cipher algorithm e.g. 'aes128'
    * @param {Uint8Array} key - The session key used to encrypt the payload
-   * @param {Boolean} streaming - Whether the top-level function will return a stream
    * @throws {Error} if decryption was not successful
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key, streaming) {
-    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted), streaming), {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+  async decrypt(sessionKeyAlgorithm, key) {
+    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted)), allowedPackets);
   }
 
   /**
    * Encrypt the packet list payload.
    * @param {String} sessionKeyAlgorithm - The session key's cipher algorithm e.g. 'aes128'
    * @param {Uint8Array} key - The session key used to encrypt the payload
-   * @param {Boolean} streaming - Whether the top-level function will return a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
+  async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
     this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
-    const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
     this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
     this.chunkSizeByte = config.aeadChunkSizeByte;
     const data = this.packets.write();
-    this.encrypted = await this.crypt('encrypt', key, data, streaming);
+    this.encrypted = await this.crypt('encrypt', key, data);
   }
 
   /**
@@ -116,13 +119,12 @@ class AEADEncryptedDataPacket {
    * @param {encrypt|decrypt} fn - Whether to encrypt or decrypt
    * @param {Uint8Array} key - The session key used to en/decrypt the payload
    * @param {Uint8Array | ReadableStream<Uint8Array>} data - The data to en/decrypt
-   * @param {Boolean} streaming - Whether the top-level function will return a stream
-   * @returns {Uint8Array | ReadableStream<Uint8Array>}
+   * @returns {Promise<Uint8Array | ReadableStream<Uint8Array>>}
    * @async
    */
-  async crypt(fn, key, data, streaming) {
+  async crypt(fn, key, data) {
     const cipher = enums.read(enums.symmetric, this.cipherAlgo);
-    const mode = crypto[enums.read(enums.aead, this.aeadAlgo)];
+    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
     const modeInstance = await mode(cipher, key);
     const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
     const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;
@@ -132,20 +134,23 @@ class AEADEncryptedDataPacket {
     const adataTagArray = new Uint8Array(adataBuffer);
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | this.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+    adataArray.set([0xC0 | AEADEncryptedDataPacket.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
     let chunkIndex = 0;
     let latestPromise = Promise.resolve();
     let cryptedBytes = 0;
     let queuedBytes = 0;
     const iv = this.iv;
     return stream.transformPair(data, async (readable, writable) => {
+      if (util.isStream(readable) !== 'array') {
+        const buffer = new stream.TransformStream({}, {
+          highWaterMark: util.getHardwareConcurrency() * 2 ** (this.chunkSizeByte + 6),
+          size: array => array.length
+        });
+        stream.pipe(buffer.readable, writable);
+        writable = buffer.writable;
+      }
       const reader = stream.getReader(readable);
-      const buffer = new stream.TransformStream({}, {
-        highWaterMark: streaming ? util.getHardwareConcurrency() * 2 ** (this.chunkSizeByte + 6) : Infinity,
-        size: array => array.length
-      });
-      stream.pipe(buffer.readable, writable);
-      const writer = stream.getWriter(buffer.writable);
+      const writer = stream.getWriter(writable);
       try {
         while (true) {
           let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();

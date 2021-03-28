@@ -16,7 +16,7 @@ import util from '../util';
  * See {@link https://tools.ietf.org/html/rfc4880#section-5.2.2|RFC 4880 5.2.2.}
  * @param {module:enums.publicKey} algo - Public key algorithm
  * @param {Uint8Array} signature - Data for which the signature was created
- * @returns {Object} True if signature is valid.
+ * @returns {Promise<Object>} True if signature is valid.
  * @async
  */
 export function parseSignatureParams(algo, signature) {
@@ -70,7 +70,7 @@ export function parseSignatureParams(algo, signature) {
  * @param {Object} publicParams - Algorithm-specific public key parameters
  * @param {Uint8Array} data - Data for which the signature was created
  * @param {Uint8Array} hashed - The hashed data
- * @returns {Boolean} True if signature is valid.
+ * @returns {Promise<Boolean>} True if signature is valid.
  * @async
  */
 export async function verify(algo, hashAlgo, signature, publicParams, data, hashed) {
@@ -116,7 +116,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
  * @param {Object} privateKeyParams - Algorithm-specific public and private key parameters
  * @param {Uint8Array} data - Data to be signed
  * @param {Uint8Array} hashed - The hashed data
- * @returns {Object} Signature                      Object containing named signature parameters.
+ * @returns {Promise<Object>} Signature                      Object containing named signature parameters.
  * @async
  */
 export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, data, hashed) {

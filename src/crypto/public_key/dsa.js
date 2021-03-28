@@ -32,16 +32,16 @@ import { isProbablePrime } from './prime';
 
 /**
  * DSA Sign function
- * @param {Integer} hash_algo
+ * @param {Integer} hashAlgo
  * @param {Uint8Array} hashed
  * @param {Uint8Array} g
  * @param {Uint8Array} p
  * @param {Uint8Array} q
  * @param {Uint8Array} x
- * @returns {{ r: Uint8Array, s: Uint8Array }}
+ * @returns {Promise<{ r: Uint8Array, s: Uint8Array >}}
  * @async
  */
-export async function sign(hash_algo, hashed, g, p, q, x) {
+export async function sign(hashAlgo, hashed, g, p, q, x) {
   const BigInteger = await util.getBigInteger();
   const one = new BigInteger(1);
   p = new BigInteger(p);
@@ -89,7 +89,7 @@ export async function sign(hash_algo, hashed, g, p, q, x) {
 
 /**
  * DSA Verify function
- * @param {Integer} hash_algo
+ * @param {Integer} hashAlgo
  * @param {Uint8Array} r
  * @param {Uint8Array} s
  * @param {Uint8Array} hashed
@@ -100,7 +100,7 @@ export async function sign(hash_algo, hashed, g, p, q, x) {
  * @returns {boolean}
  * @async
  */
-export async function verify(hash_algo, r, s, hashed, g, p, q, y) {
+export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
   const BigInteger = await util.getBigInteger();
   const zero = new BigInteger(0);
   r = new BigInteger(r);
@@ -140,7 +140,7 @@ export async function verify(hash_algo, r, s, hashed, g, p, q, y) {
  * @param {Uint8Array} g - DSA sub-group generator
  * @param {Uint8Array} y - DSA public key
  * @param {Uint8Array} x - DSA private key
- * @returns {Boolean} Whether params are valid.
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(p, q, g, y, x) {

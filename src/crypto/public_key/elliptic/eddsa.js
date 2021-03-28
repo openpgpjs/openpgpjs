@@ -32,17 +32,19 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 /**
  * Sign a message using the provided key
  * @param {module:type/oid} oid - Elliptic curve object identifier
- * @param {module:enums.hash} hash_algo - Hash algorithm used to sign (must be sha256 or stronger)
+ * @param {module:enums.hash} hashAlgo - Hash algorithm used to sign (must be sha256 or stronger)
  * @param {Uint8Array} message - Message to sign
  * @param {Uint8Array} publicKey - Public key
  * @param {Uint8Array} privateKey - Private key used to sign the message
  * @param {Uint8Array} hashed - The hashed message
- * @returns {{r: Uint8Array,
- *            s: Uint8Array}}               Signature of the message
+ * @returns {Promise<{
+ *   r: Uint8Array,
+ *   s: Uint8Array
+ * }>} Signature of the message
  * @async
  */
-export async function sign(oid, hash_algo, message, publicKey, privateKey, hashed) {
-  if (hash.getHashByteLength(hash_algo) < hash.getHashByteLength(enums.hash.sha256)) {
+export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
+  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
     throw new Error('Hash algorithm too weak: sha256 or stronger is required for EdDSA.');
   }
@@ -58,7 +60,7 @@ export async function sign(oid, hash_algo, message, publicKey, privateKey, hashe
 /**
  * Verifies if a signature is valid for a message
  * @param {module:type/oid} oid - Elliptic curve object identifier
- * @param {module:enums.hash} hash_algo - Hash algorithm used in the signature
+ * @param {module:enums.hash} hashAlgo - Hash algorithm used in the signature
  * @param  {{r: Uint8Array,
              s: Uint8Array}}   signature Signature to verify the message
  * @param {Uint8Array} m - Message to verify
@@ -67,7 +69,7 @@ export async function sign(oid, hash_algo, message, publicKey, privateKey, hashe
  * @returns {Boolean}
  * @async
  */
-export async function verify(oid, hash_algo, { r, s }, m, publicKey, hashed) {
+export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
   const signature = util.concatUint8Array([r, s]);
   return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
 }
@@ -76,7 +78,7 @@ export async function verify(oid, hash_algo, { r, s }, m, publicKey, hashed) {
  * @param {module:type/oid} oid - Elliptic curve object identifier
  * @param {Uint8Array} Q - EdDSA public point
  * @param {Uint8Array} k - EdDSA secret seed
- * @returns {Boolean} Whether params are valid.
+ * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
 export async function validateParams(oid, Q, k) {

@@ -17,12 +17,12 @@
 
 /**
  * @fileoverview This module implements AES-OCB en/decryption.
- * @module crypto/ocb
+ * @module crypto/mode/ocb
  * @private
  */
 
-import * as ciphers from './cipher';
-import util from '../util';
+import * as ciphers from '../cipher';
+import util from '../../util';
 
 
 const blockLength = 16;
@@ -136,7 +136,7 @@ async function OCB(cipher, key) {
    * @param {Uint8Array} text - The cleartext or ciphertext (without tag) input
    * @param {Uint8Array} nonce - The nonce (15 bytes)
    * @param {Uint8Array} adata - Associated data to sign
-   * @returns {Uint8Array} The ciphertext or plaintext output, with tag appended in both cases.
+   * @returns {Promise<Uint8Array>} The ciphertext or plaintext output, with tag appended in both cases.
    */
   function crypt(fn, text, nonce, adata) {
     //
@@ -223,8 +223,7 @@ async function OCB(cipher, key) {
      * @param {Uint8Array} plaintext - The cleartext input to be encrypted
      * @param {Uint8Array} nonce - The nonce (15 bytes)
      * @param {Uint8Array} adata - Associated data to sign
-     * @returns {Uint8Array} The ciphertext output.
-     * @async
+     * @returns {Promise<Uint8Array>} The ciphertext output.
      */
     encrypt: async function(plaintext, nonce, adata) {
       return crypt(encipher, plaintext, nonce, adata);
@@ -235,8 +234,7 @@ async function OCB(cipher, key) {
      * @param {Uint8Array} ciphertext - The ciphertext input to be decrypted
      * @param {Uint8Array} nonce - The nonce (15 bytes)
      * @param {Uint8Array} adata - Associated data to sign
-     * @returns {Uint8Array} The ciphertext output.
-     * @async
+     * @returns {Promise<Uint8Array>} The ciphertext output.
      */
     decrypt: async function(ciphertext, nonce, adata) {
       if (ciphertext.length < tagLength) throw new Error('Invalid OCB ciphertext');

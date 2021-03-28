@@ -6,7 +6,7 @@
 
 import aes from './aes';
 import { DES, TripleDES } from './des.js';
-import Cast5 from './cast5';
+import CAST5 from './cast5';
 import TF from './twofish';
 import BF from './blowfish';
 
@@ -54,7 +54,7 @@ export const tripledes = TripleDES;
  * @see {@link https://tools.ietf.org/html/rfc2144|The CAST-128 Encryption Algorithm}
  * @returns {Object}
  */
-export const cast5 = Cast5;
+export const cast5 = CAST5;
 /**
  * Twofish Block Cipher (ID 10)
  * @function

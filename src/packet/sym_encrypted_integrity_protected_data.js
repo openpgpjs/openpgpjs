@@ -15,17 +15,24 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// A SEIP packet can contain the following packet types
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 const VERSION = 1; // A one-octet version number of the data packet.
 
@@ -40,8 +47,11 @@ const VERSION = 1; // A one-octet version number of the data packet.
  * packet.
  */
 class SymEncryptedIntegrityProtectedDataPacket {
+  static get tag() {
+    return enums.packet.symEncryptedIntegrityProtectedData;
+  }
+
   constructor() {
-    this.tag = enums.packet.symEncryptedIntegrityProtectedData;
     this.version = VERSION;
     /** The encrypted payload. */
     this.encrypted = null; // string
@@ -78,14 +88,13 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * Encrypt the payload in the packet.
    * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
-   * @param {Boolean} streaming - Whether to set this.encrypted to a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Boolean}
+   * @returns {Promise<Boolean>}
    * @async
    */
-  async encrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
+  async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     let bytes = this.packets.write();
-    if (!streaming) bytes = await stream.readToEnd(bytes);
+    if (stream.isArrayStream(bytes)) bytes = await stream.readToEnd(bytes);
     const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
     const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
@@ -93,7 +102,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
     const plaintext = util.concat([tohash, hash]);
 
-    this.encrypted = await crypto.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
+    this.encrypted = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
     return true;
   }
 
@@ -101,15 +110,14 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * Decrypts the encrypted data contained in the packet.
    * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
-   * @param {Boolean} streaming - Whether to read this.encrypted as a stream
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Boolean}
+   * @returns {Promise<Boolean>}
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
+  async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     let encrypted = stream.clone(this.encrypted);
-    if (!streaming) encrypted = await stream.readToEnd(encrypted);
-    const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+    if (stream.isArrayStream(encrypted)) encrypted = await stream.readToEnd(encrypted);
+    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
 
     // there must be a modification detection code packet as the
     // last packet and everything gets hashed except the hash itself
@@ -130,12 +138,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
       packetbytes = await stream.readToEnd(packetbytes);
     }
-    await this.packets.read(packetbytes, {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(packetbytes, allowedPackets);
     return true;
   }
 }

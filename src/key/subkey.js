@@ -10,7 +10,7 @@ import defaultConfig from '../config';
 
 /**
  * Class that represents a subkey packet and the relevant signatures.
- * @borrows PublicSubkeyPacket#getKeyId as SubKey#getKeyId
+ * @borrows PublicSubkeyPacket#getKeyID as SubKey#getKeyID
  * @borrows PublicSubkeyPacket#getFingerprint as SubKey#getFingerprint
  * @borrows PublicSubkeyPacket#hasSameFingerprintAs as SubKey#hasSameFingerprintAs
  * @borrows PublicSubkeyPacket#getAlgorithmInfo as SubKey#getAlgorithmInfo
@@ -50,7 +50,7 @@ class SubKey {
    *          SecretKeyPacket} key, optional The key to verify the signature
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Boolean} True if the binding signature is revoked.
+   * @returns {Promise<Boolean>} True if the binding signature is revoked.
    * @async
    */
   async isRevoked(primaryKey, signature, key, date = new Date(), config = defaultConfig) {
@@ -69,7 +69,7 @@ class SubKey {
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {SignaturePacket}
+   * @returns {Promise<SignaturePacket>}
    * @throws {Error}           if the subkey is invalid.
    * @async
    */
@@ -95,7 +95,7 @@ class SubKey {
    *          PublicKeyPacket} primaryKey  The primary key packet
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Date | Infinity | null}
+   * @returns {Promise<Date | Infinity | null>}
    * @async
    */
   async getExpirationTime(primaryKey, date = new Date(), config = defaultConfig) {
@@ -125,8 +125,8 @@ class SubKey {
       throw new Error('SubKey update method: fingerprints of subkeys not equal');
     }
     // key packet
-    if (this.keyPacket.tag === enums.packet.publicSubkey &&
-        subKey.keyPacket.tag === enums.packet.secretSubkey) {
+    if (this.keyPacket.constructor.tag === enums.packet.publicSubkey &&
+        subKey.keyPacket.constructor.tag === enums.packet.secretSubkey) {
       this.keyPacket = subKey.keyPacket;
     }
     // update missing binding signatures
@@ -134,7 +134,7 @@ class SubKey {
     const dataToVerify = { key: primaryKey, bind: that.keyPacket };
     await helper.mergeSignatures(subKey, this, 'bindingSignatures', async function(srcBindSig) {
       for (let i = 0; i < that.bindingSignatures.length; i++) {
-        if (that.bindingSignatures[i].issuerKeyId.equals(srcBindSig.issuerKeyId)) {
+        if (that.bindingSignatures[i].issuerKeyID.equals(srcBindSig.issuerKeyID)) {
           if (srcBindSig.created > that.bindingSignatures[i].created) {
             that.bindingSignatures[i] = srcBindSig;
           }
@@ -142,7 +142,7 @@ class SubKey {
         }
       }
       try {
-        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, undefined, undefined, config);
+        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, undefined, config);
         return true;
       } catch (e) {
         return false;
@@ -162,7 +162,7 @@ class SubKey {
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
    * @param {Date} date - optional, override the creationtime of the revocation signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {SubKey} New subkey with revocation signature.
+   * @returns {Promise<SubKey>} New subkey with revocation signature.
    * @async
    */
   async revoke(
@@ -180,7 +180,7 @@ class SubKey {
       signatureType: enums.signature.subkeyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
-    }, date, undefined, undefined, undefined, config));
+    }, date, undefined, undefined, config));
     await subKey.update(this, primaryKey);
     return subKey;
   }
@@ -190,7 +190,7 @@ class SubKey {
   }
 }
 
-['getKeyId', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
+['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
   SubKey.prototype[name] =
     function() {
       return this.keyPacket[name]();

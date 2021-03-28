@@ -16,8 +16,8 @@ class User {
     if (!(this instanceof User)) {
       return new User(userPacket);
     }
-    this.userId = userPacket.tag === enums.packet.userID ? userPacket : null;
-    this.userAttribute = userPacket.tag === enums.packet.userAttribute ? userPacket : null;
+    this.userID = userPacket.constructor.tag === enums.packet.userID ? userPacket : null;
+    this.userAttribute = userPacket.constructor.tag === enums.packet.userAttribute ? userPacket : null;
     this.selfCertifications = [];
     this.otherCertifications = [];
     this.revocationSignatures = [];
@@ -29,7 +29,7 @@ class User {
    */
   toPacketlist() {
     const packetlist = new PacketList();
-    packetlist.push(this.userId || this.userAttribute);
+    packetlist.push(this.userID || this.userAttribute);
     packetlist.concat(this.revocationSignatures);
     packetlist.concat(this.selfCertifications);
     packetlist.concat(this.otherCertifications);
@@ -42,16 +42,16 @@ class User {
    *          PublicKeyPacket}          primaryKey  The primary key packet
    * @param {Array<Key>} privateKeys - Decrypted private keys for signing
    * @param {Object} config - Full configuration
-   * @returns {Key} New user with new certificate signatures.
+   * @returns {Promise<Key>} New user with new certificate signatures.
    * @async
    */
   async sign(primaryKey, privateKeys, config) {
     const dataToSign = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
-    const user = new User(dataToSign.userId || dataToSign.userAttribute);
+    const user = new User(dataToSign.userID || dataToSign.userAttribute);
     user.otherCertifications = await Promise.all(privateKeys.map(async function(privateKey) {
       if (privateKey.isPublic()) {
         throw new Error('Need private key for signing');
@@ -64,7 +64,7 @@ class User {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
-      }, undefined, undefined, undefined, undefined, config);
+      }, undefined, undefined, undefined, config);
     }));
     await user.update(this, primaryKey);
     return user;
@@ -81,14 +81,14 @@ class User {
    *          SecretKeyPacket} key, optional The key to verify the signature
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Boolean} True if the certificate is revoked.
+   * @returns {Promise<Boolean>} True if the certificate is revoked.
    * @async
    */
   async isRevoked(primaryKey, certificate, key, date = new Date(), config) {
     return isDataRevoked(
       primaryKey, enums.signature.certRevocation, {
         key: primaryKey,
-        userId: this.userId,
+        userID: this.userID,
         userAttribute: this.userAttribute
       }, this.revocationSignatures, certificate, key, date, config
     );
@@ -102,27 +102,27 @@ class User {
    * @param {Array<Key>} keys - Array of keys to verify certificate signatures
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {true|null} Status of the certificate.
+   * @returns {Promise<true|null>} Status of the certificate.
    * @async
    */
   async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config) {
     const that = this;
-    const keyid = certificate.issuerKeyId;
+    const keyID = certificate.issuerKeyID;
     const dataToVerify = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
     const results = await Promise.all(keys.map(async function(key) {
-      if (!key.getKeyIds().some(id => id.equals(keyid))) {
+      if (!key.getKeyIDs().some(id => id.equals(keyID))) {
         return null;
       }
-      const signingKey = await key.getSigningKey(keyid, date, undefined, config);
+      const signingKey = await key.getSigningKey(keyID, date, undefined, config);
       if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
       try {
-        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
+        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, undefined, config);
       } catch (e) {
         throw util.wrapError('User certificate is invalid', e);
       }
@@ -141,8 +141,10 @@ class User {
    * @param {Array<Key>} keys - Array of keys to verify certificate signatures
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<Array<{keyid: module:type/keyid~Keyid,
-   *                          valid: Boolean}>>}   List of signer's keyid and validity of signature
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   valid: Boolean
+   * }>>} List of signer's keyID and validity of signature
    * @async
    */
   async verifyAllCertifications(primaryKey, keys, date = new Date(), config) {
@@ -150,7 +152,7 @@ class User {
     const certifications = this.selfCertifications.concat(this.otherCertifications);
     return Promise.all(certifications.map(async function(certification) {
       return {
-        keyid: certification.issuerKeyId,
+        keyID: certification.issuerKeyID,
         valid: await that.verifyCertificate(primaryKey, certification, keys, date, config).catch(() => false)
       };
     }));
@@ -163,7 +165,7 @@ class User {
    *          PublicKeyPacket} primaryKey The primary key packet
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {true} Status of user.
+   * @returns {Promise<true>} Status of user.
    * @throws {Error} if there are no valid self signatures.
    * @async
    */
@@ -173,7 +175,7 @@ class User {
     }
     const that = this;
     const dataToVerify = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
@@ -186,7 +188,7 @@ class User {
           throw new Error('Self-certification is revoked');
         }
         try {
-          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
+          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, config);
         } catch (e) {
           throw util.wrapError('Self-certification is invalid', e);
         }
@@ -207,19 +209,19 @@ class User {
    * @param  {SecretKeyPacket|
    *          SecretSubkeyPacket} primaryKey primary key used for validation
    * @param {Object} config - Full configuration
-   * @returns {undefined}
+   * @returns {Promise<undefined>}
    * @async
    */
   async update(user, primaryKey, config) {
     const dataToVerify = {
-      userId: this.userId,
+      userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
     // self signatures
     await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
       try {
-        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, undefined, config);
+        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, config);
         return true;
       } catch (e) {
         return false;

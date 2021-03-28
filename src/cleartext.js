@@ -23,6 +23,9 @@ import { Signature } from './signature';
 import { createVerificationObjects, createSignaturePackets } from './message';
 import defaultConfig from './config';
 
+// A Cleartext message can contain the following packets
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
+
 /**
  * Class that represents an OpenPGP cleartext signed message.
  * See {@link https://tools.ietf.org/html/rfc4880#section-7}
@@ -43,32 +46,32 @@ export class CleartextMessage {
 
   /**
    * Returns the key IDs of the keys that signed the cleartext message
-   * @returns {Array<module:type/keyid~Keyid>} Array of keyid objects.
+   * @returns {Array<module:type/keyid~KeyID>} Array of keyID objects.
    */
-  getSigningKeyIds() {
-    const keyIds = [];
+  getSigningKeyIDs() {
+    const keyIDs = [];
     const signatureList = this.signature.packets;
     signatureList.forEach(function(packet) {
-      keyIds.push(packet.issuerKeyId);
+      keyIDs.push(packet.issuerKeyID);
     });
-    return keyIds;
+    return keyIDs;
   }
 
   /**
    * Sign the cleartext message
    * @param {Array<Key>} privateKeys - private keys with decrypted secret key data for signing
    * @param {Signature} [signature] - Any existing detached signature
-   * @param {Array<module:type/keyid~Keyid>} [signingKeyIds] - Array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]
+   * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
    * @param {Date} [date] - The creation time of the signature that should be created
-   * @param {Array} [userIds] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {CleartextMessage} New cleartext message with signed content.
+   * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
    * @async
    */
-  async sign(privateKeys, signature = null, signingKeyIds = [], date = new Date(), userIds = [], config = defaultConfig) {
+  async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
-    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIds, true, undefined, config));
+    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, config));
     return new CleartextMessage(this.text, newSignature);
   }
 
@@ -77,7 +80,11 @@ export class CleartextMessage {
    * @param {Array<Key>} keys - Array of keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Array<{keyid: module:type/keyid~Keyid, valid: Boolean}>} List of signer's keyid and validity of signature.
+   * @returns {Promise<Array<{
+   *   keyID: module:type/keyid~KeyID,
+   *   signature: Promise<Signature>,
+   *   verified: Promise<Boolean>
+   * }>>} List of signer's keyID and validity of signature.
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {
@@ -85,7 +92,7 @@ export class CleartextMessage {
     const literalDataPacket = new LiteralDataPacket();
     // we assume that cleartext signature is generated based on UTF8 cleartext
     literalDataPacket.setText(this.text);
-    return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true, undefined, config);
+    return createVerificationObjects(signatureList, [literalDataPacket], keys, date, true, config);
   }
 
   /**
@@ -114,24 +121,14 @@ export class CleartextMessage {
     };
     return armor(enums.armor.signed, body, undefined, undefined, undefined, config);
   }
-
-  /**
-   * Creates a new CleartextMessage object from text
-   * @param {String} text
-   * @static
-   */
-  static fromText(text) {
-    return new CleartextMessage(text);
-  }
 }
-
 
 /**
  * Reads an OpenPGP cleartext signed message and returns a CleartextMessage object
  * @param {Object} options
- * @param {String | ReadableStream<String>} options.cleartextMessage - Text to be parsed
+ * @param {String} options.cleartextMessage - Text to be parsed
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {CleartextMessage} New cleartext message object.
+ * @returns {Promise<CleartextMessage>} New cleartext message object.
  * @async
  * @static
  */
@@ -140,12 +137,15 @@ export async function readCleartextMessage({ cleartextMessage, config }) {
   if (!cleartextMessage) {
     throw new Error('readCleartextMessage: must pass options object containing `cleartextMessage`');
   }
+  if (!util.isString(cleartextMessage)) {
+    throw new Error('readCleartextMessage: options.cleartextMessage must be a string');
+  }
   const input = await unarmor(cleartextMessage);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }
   const packetlist = new PacketList();
-  await packetlist.read(input.data, { SignaturePacket }, undefined, config);
+  await packetlist.read(input.data, allowedPackets, undefined, config);
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
   return new CleartextMessage(input.text, signature);
@@ -162,7 +162,7 @@ function verifyHeaders(headers, packetlist) {
     const check = packet => algo => packet.hashAlgorithm === algo;
 
     for (let i = 0; i < packetlist.length; i++) {
-      if (packetlist[i].tag === enums.packet.signature && !hashAlgos.some(check(packetlist[i]))) {
+      if (packetlist[i].constructor.tag === enums.packet.signature && !hashAlgos.some(check(packetlist[i]))) {
         return false;
       }
     }
@@ -195,4 +195,21 @@ function verifyHeaders(headers, packetlist) {
   } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
+}
+
+/**
+ * Creates a new CleartextMessage object from text
+ * @param {Object} options
+ * @param {String} options.text
+ * @static
+ * @async
+ */
+export async function createCleartextMessage({ text }) {
+  if (!text) {
+    throw new Error('createCleartextMessage: must pass options object containing `text`');
+  }
+  if (!util.isString(text)) {
+    throw new Error('createCleartextMessage: options.text must be a string');
+  }
+  return new CleartextMessage(text);
 }

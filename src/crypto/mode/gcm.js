@@ -18,12 +18,12 @@
 /**
  * @fileoverview This module wraps native AES-GCM en/decryption for both
  * the WebCrypto api as well as node.js' crypto api.
- * @module crypto/gcm
+ * @module crypto/mode/gcm
  * @private
  */
 
 import { AES_GCM } from '@openpgp/asmcrypto.js/dist_es8/aes/gcm';
-import util from '../util';
+import util from '../../util';
 
 const webCrypto = util.getWebCrypto(); // no GCM support in IE11, Safari 9
 const nodeCrypto = util.getNodeCrypto();
@@ -79,13 +79,8 @@ async function GCM(cipher, key) {
   }
 
   if (util.getNodeCrypto()) { // Node crypto library
-    key = Buffer.from(key);
-
     return {
       encrypt: async function(pt, iv, adata = new Uint8Array()) {
-        pt = Buffer.from(pt);
-        iv = Buffer.from(iv);
-        adata = Buffer.from(adata);
         const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
         en.setAAD(adata);
         const ct = Buffer.concat([en.update(pt), en.final(), en.getAuthTag()]); // append auth tag to ciphertext
@@ -93,9 +88,6 @@ async function GCM(cipher, key) {
       },
 
       decrypt: async function(ct, iv, adata = new Uint8Array()) {
-        ct = Buffer.from(ct);
-        iv = Buffer.from(iv);
-        adata = Buffer.from(adata);
         const de = new nodeCrypto.createDecipheriv('aes-' + (key.length * 8) + '-gcm', key, iv);
         de.setAAD(adata);
         de.setAuthTag(ct.slice(ct.length - tagLength, ct.length)); // read auth tag at end of ciphertext

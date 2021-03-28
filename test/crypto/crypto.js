@@ -207,7 +207,7 @@ module.exports = () => describe('API functional testing', function() {
   const elGamalPublicParams = crypto.parsePublicKeyParams(algoElGamal, elGamalPublicKeyMaterial).publicParams;
   const elGamalPrivateParams = crypto.parsePrivateKeyParams(algoElGamal, elGamalPrivateKeyMaterial).privateParams;
 
-  const data = util.strToUint8Array("foobar");
+  const data = util.stringToUint8Array("foobar");
 
   describe('Sign and verify', function () {
     it('RSA', async function () {
@@ -242,8 +242,8 @@ module.exports = () => describe('API functional testing', function() {
       await Promise.all(symmAlgos.map(async function(algo) {
         const symmKey = await crypto.generateSessionKey(algo);
         const IV = new Uint8Array(crypto.cipher[algo].blockSize);
-        const symmencData = await crypto.cfb.encrypt(algo, symmKey, util.strToUint8Array(plaintext), IV, openpgp.config);
-        const text = util.uint8ArrayToStr(await crypto.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(crypto.cipher[algo].blockSize)));
+        const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, openpgp.config);
+        const text = util.uint8ArrayToString(await crypto.mode.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(crypto.cipher[algo].blockSize)));
         expect(text).to.equal(plaintext);
       }));
     }

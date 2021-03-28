@@ -2,7 +2,7 @@
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 
-const EAX = require('../../src/crypto/eax');
+const EAX = require('../../src/crypto/mode/eax');
 const util = require('../../src/util');
 
 const sandbox = require('sinon/lib/sinon/sandbox');

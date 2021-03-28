@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { readKey, Key, message, enums, PacketList, SignaturePacket } = openpgp;
+const { readKey, Key, createMessage, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -58,7 +58,7 @@ async function makeKeyValid() {
   async function encryptFails(k) {
     try {
       await openpgp.encrypt({
-        message: message.fromText('Hello', 'hello.txt'),
+        message: await createMessage({ text: 'Hello', filename: 'hello.txt' }),
         publicKeys: k
       });
       return false;
@@ -78,7 +78,7 @@ async function makeKeyValid() {
   // add key capability
   fake.keyFlags[0] |= enums.keyFlags.encryptCommunication;
   // create modified subpacket data
-  pusersig.read_sub_packets(fake.write_hashed_sub_packets(), false);
+  pusersig.readSubPackets(fake.writeHashedSubPackets(), false);
   // reconstruct the modified key
   const newlist = new PacketList();
   newlist.concat([pubkey, puser, pusersig]);

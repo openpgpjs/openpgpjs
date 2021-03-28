@@ -12,26 +12,28 @@ import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
 import { ripemd160 } from 'hash.js/lib/hash/ripemd';
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
 import defaultConfig from '../../config';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
-function node_hash(type) {
+function nodeHash(type) {
   return async function (data) {
     const shasum = nodeCrypto.createHash(type);
     return stream.transform(data, value => {
-      shasum.update(Buffer.from(value));
+      shasum.update(value);
     }, () => new Uint8Array(shasum.digest()));
   };
 }
 
-function hashjs_hash(hash, webCryptoHash) {
+function hashjsHash(hash, webCryptoHash) {
   return async function(data, config = defaultConfig) {
+    if (stream.isArrayStream(data)) {
+      data = await stream.readToEnd(data);
+    }
     if (!util.isStream(data) && webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     }
@@ -42,8 +44,11 @@ function hashjs_hash(hash, webCryptoHash) {
   };
 }
 
-function asmcrypto_hash(hash, webCryptoHash) {
+function asmcryptoHash(hash, webCryptoHash) {
   return async function(data, config = defaultConfig) {
+    if (stream.isArrayStream(data)) {
+      data = await stream.readToEnd(data);
+    }
     if (util.isStream(data)) {
       const hashInstance = new hash();
       return stream.transform(data, value => {
@@ -57,52 +62,51 @@ function asmcrypto_hash(hash, webCryptoHash) {
   };
 }
 
-let hash_fns;
+let hashFunctions;
 if (nodeCrypto) { // Use Node native crypto for all hash functions
-  hash_fns = {
-    md5: node_hash('md5'),
-    sha1: node_hash('sha1'),
-    sha224: node_hash('sha224'),
-    sha256: node_hash('sha256'),
-    sha384: node_hash('sha384'),
-    sha512: node_hash('sha512'),
-    ripemd: node_hash('ripemd160')
+  hashFunctions = {
+    md5: nodeHash('md5'),
+    sha1: nodeHash('sha1'),
+    sha224: nodeHash('sha224'),
+    sha256: nodeHash('sha256'),
+    sha384: nodeHash('sha384'),
+    sha512: nodeHash('sha512'),
+    ripemd: nodeHash('ripemd160')
   };
 } else { // Use JS fallbacks
-  hash_fns = {
+  hashFunctions = {
     md5: md5,
-    sha1: asmcrypto_hash(Sha1, navigator.userAgent.indexOf('Edge') === -1 && 'SHA-1'),
-    sha224: hashjs_hash(sha224),
-    sha256: asmcrypto_hash(Sha256, 'SHA-256'),
-    sha384: hashjs_hash(sha384, 'SHA-384'),
-    sha512: hashjs_hash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
-    ripemd: hashjs_hash(ripemd160)
+    sha1: asmcryptoHash(Sha1, navigator.userAgent.indexOf('Edge') === -1 && 'SHA-1'),
+    sha224: hashjsHash(sha224),
+    sha256: asmcryptoHash(Sha256, 'SHA-256'),
+    sha384: hashjsHash(sha384, 'SHA-384'),
+    sha512: hashjsHash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
+    ripemd: hashjsHash(ripemd160)
   };
 }
 
 export default {
 
   /** @see module:md5 */
-  md5: hash_fns.md5,
+  md5: hashFunctions.md5,
   /** @see asmCrypto */
-  sha1: hash_fns.sha1,
+  sha1: hashFunctions.sha1,
   /** @see hash.js */
-  sha224: hash_fns.sha224,
+  sha224: hashFunctions.sha224,
   /** @see asmCrypto */
-  sha256: hash_fns.sha256,
+  sha256: hashFunctions.sha256,
   /** @see hash.js */
-  sha384: hash_fns.sha384,
+  sha384: hashFunctions.sha384,
   /** @see asmCrypto */
-  sha512: hash_fns.sha512,
+  sha512: hashFunctions.sha512,
   /** @see hash.js */
-  ripemd: hash_fns.ripemd,
+  ripemd: hashFunctions.ripemd,
 
   /**
    * Create a hash on the specified data using the specified algorithm
    * @param {module:enums.hash} algo - Hash algorithm type (see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
    * @param {Uint8Array} data - Data to be hashed
-   * @returns {Uint8Array} Hash value.
-   * @async
+   * @returns {Promise<Uint8Array>} Hash value.
    */
   digest: function(algo, data) {
     switch (algo) {

@@ -23,7 +23,7 @@
  * @private
  */
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import { getBigInteger } from './biginteger';
 
 const debugMode = globalThis.process && globalThis.process.env.NODE_ENV === 'development';
@@ -37,61 +37,9 @@ const util = {
     return Array.prototype.isPrototypeOf(data);
   },
 
-  isBigInteger: function(data) {
-    return data !== null && typeof data === 'object' && data.value &&
-      // eslint-disable-next-line valid-typeof
-      (typeof data.value === 'bigint' || this.isBN(data.value));
-  },
-
-  isBN: function(data) {
-    return data !== null && typeof data === 'object' &&
-      (data.constructor.name === 'BN' ||
-        (data.constructor.wordSize === 26 && Array.isArray(data.words))); // taken from BN.isBN()
-  },
-
   isUint8Array: stream.isUint8Array,
 
   isStream: stream.isStream,
-
-  /**
-   * Convert MessagePorts back to ReadableStreams
-   * @param {Object} obj
-   * @returns {Object}
-   */
-  restoreStreams: function(obj, streaming) {
-    if (Object.prototype.toString.call(obj) === '[object MessagePort]') {
-      return new (streaming === 'web' ? globalThis.ReadableStream : stream.ReadableStream)({
-        pull(controller) {
-          return new Promise(resolve => {
-            obj.onmessage = evt => {
-              const { done, value, error } = evt.data;
-              if (error) {
-                controller.error(new Error(error));
-              } else if (!done) {
-                controller.enqueue(value);
-              } else {
-                controller.close();
-              }
-              resolve();
-            };
-            obj.postMessage({ action: 'read' });
-          });
-        },
-        cancel() {
-          return new Promise(resolve => {
-            obj.onmessage = resolve;
-            obj.postMessage({ action: 'cancel' });
-          });
-        }
-      }, { highWaterMark: 0 });
-    }
-    if (Object.prototype.isPrototypeOf(obj) && !Uint8Array.prototype.isPrototypeOf(obj)) {
-      Object.entries(obj).forEach(([key, value]) => { // recursively search all children
-        obj[key] = util.restoreStreams(value, streaming);
-      });
-    }
-    return obj;
-  },
 
   readNumber: function (bytes) {
     let n = 0;
@@ -127,42 +75,6 @@ const util = {
   },
 
   /**
-   * Create hex string from a binary
-   * @param {String} str - String to convert
-   * @returns {String} String containing the hexadecimal values.
-   */
-  strToHex: function (str) {
-    if (str === null) {
-      return "";
-    }
-    const r = [];
-    const e = str.length;
-    let c = 0;
-    let h;
-    while (c < e) {
-      h = str.charCodeAt(c++).toString(16);
-      while (h.length < 2) {
-        h = "0" + h;
-      }
-      r.push("" + h);
-    }
-    return r.join('');
-  },
-
-  /**
-   * Create binary string from a hex encoded string
-   * @param {String} str - Hex string to convert
-   * @returns {String}
-   */
-  hexToStr: function (hex) {
-    let str = '';
-    for (let i = 0; i < hex.length; i += 2) {
-      str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-    }
-    return str;
-  },
-
-  /**
    * Read one MPI from bytes in input
    * @param {Uint8Array} bytes - Input data to parse
    * @returns {Uint8Array} Parsed MPI.
@@ -191,16 +103,29 @@ const util = {
    * @param {Uint8Array} bin - An array of 8-bit integers to convert
    * @returns {Uint8Array} MPI-formatted Uint8Array.
    */
-  uint8ArrayToMpi: function (bin) {
+  uint8ArrayToMPI: function (bin) {
+    const bitSize = util.uint8ArrayBitLength(bin);
+    if (bitSize === 0) {
+      throw new Error('Zero MPI');
+    }
+    const stripped = bin.subarray(bin.length - Math.ceil(bitSize / 8));
+    const prefix = Uint8Array.from([(bitSize & 0xFF00) >> 8, bitSize & 0xFF]);
+    return util.concatUint8Array([prefix, stripped]);
+  },
+
+  /**
+   * Return bit length of the input data
+   * @param {Uint8Array} bin input data (big endian)
+   * @returns bit length
+   */
+  uint8ArrayBitLength: function (bin) {
     let i; // index of leading non-zero byte
     for (i = 0; i < bin.length; i++) if (bin[i] !== 0) break;
     if (i === bin.length) {
-      throw new Error('Zero MPI');
+      return 0;
     }
     const stripped = bin.subarray(i);
-    const size = (stripped.length - 1) * 8 + util.nbits(stripped[0]);
-    const prefix = Uint8Array.from([(size & 0xFF00) >> 8, size & 0xFF]);
-    return util.concatUint8Array([prefix, stripped]);
+    return (stripped.length - 1) * 8 + util.nbits(stripped[0]);
   },
 
   /**
@@ -241,10 +166,10 @@ const util = {
    * @param {String} str - String to convert
    * @returns {Uint8Array} An array of 8-bit integers.
    */
-  strToUint8Array: function (str) {
+  stringToUint8Array: function (str) {
     return stream.transform(str, str => {
       if (!util.isString(str)) {
-        throw new Error('strToUint8Array: Data must be in the form of a string');
+        throw new Error('stringToUint8Array: Data must be in the form of a string');
       }
 
       const result = new Uint8Array(str.length);
@@ -260,7 +185,7 @@ const util = {
    * @param {Uint8Array} bytes - An array of 8-bit integers to convert
    * @returns {String} String representation of the array.
    */
-  uint8ArrayToStr: function (bytes) {
+  uint8ArrayToString: function (bytes) {
     bytes = new Uint8Array(bytes);
     const result = [];
     const bs = 1 << 14;
@@ -277,7 +202,7 @@ const util = {
    * @param {String|ReadableStream} str - The string to convert
    * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes.
    */
-  encodeUtf8: function (str) {
+  encodeUTF8: function (str) {
     const encoder = new TextEncoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
@@ -291,7 +216,7 @@ const util = {
    * @param {Uint8Array|ReadableStream} utf8 - A valid squence of utf8 bytes
    * @returns {String|ReadableStream} A native javascript string.
    */
-  decodeUtf8: function (utf8) {
+  decodeUTF8: function (utf8) {
     const decoder = new TextDecoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
@@ -364,32 +289,6 @@ const util = {
   },
 
   /**
-   * Helper function to print a debug message. Debug
-   * messages are only printed if
-   * Different than print_debug because will call Uint8ArrayToHex iff necessary.
-   * @param {String} str - String of the debug message
-   */
-  printDebugHexArrayDump: function (str, arrToHex) {
-    if (debugMode) {
-      str += ': ' + util.uint8ArrayToHex(arrToHex);
-      console.log(str);
-    }
-  },
-
-  /**
-   * Helper function to print a debug message. Debug
-   * messages are only printed if
-   * Different than print_debug because will call strToHex iff necessary.
-   * @param {String} str - String of the debug message
-   */
-  printDebugHexStrDump: function (str, strToHex) {
-    if (debugMode) {
-      str += util.strToHex(strToHex);
-      console.log(str);
-    }
-  },
-
-  /**
    * Helper function to print a debug error. Debug
    * messages are only printed if
    * @param {String} str - String of the debug message
@@ -398,18 +297,6 @@ const util = {
     if (debugMode) {
       console.error(error);
     }
-  },
-
-  /**
-   * Read a stream to the end and print it to the console when it's closed.
-   * @param {String} str - String of the debug message
-   * @param {ReadableStream|Uint8array|String} input - Stream to print
-   * @param {Function} concat - Function to concatenate chunks of the stream (defaults to util.concat).
-   */
-  printEntireStream: function (str, input, concat) {
-    stream.readToEnd(stream.clone(input), concat).then(result => {
-      console.log(str + ': ', result);
-    });
   },
 
   // returns bit length of the integer x
@@ -453,13 +340,13 @@ const util = {
    * @param {Uint8Array} data
    */
   double: function(data) {
-    const double_var = new Uint8Array(data.length);
+    const doubleVar = new Uint8Array(data.length);
     const last = data.length - 1;
     for (let i = 0; i < last; i++) {
-      double_var[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
+      doubleVar[i] = (data[i] << 1) ^ (data[i + 1] >> 7);
     }
-    double_var[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
-    return double_var;
+    doubleVar[last] = (data[last] << 1) ^ ((data[0] >> 7) * 0x87);
+    return doubleVar;
   },
 
   /**
@@ -530,10 +417,6 @@ const util = {
    */
   getNodeBuffer: function() {
     return (require('buffer') || {}).Buffer;
-  },
-
-  getNodeStream: function() {
-    return (require('stream') || {}).Readable;
   },
 
   getHardwareConcurrency: function() {
@@ -661,6 +544,23 @@ const util = {
     } catch (e) {}
 
     return error;
+  },
+
+  /**
+   * Map allowed packet tags to corresponding classes
+   * Meant to be used to format `allowedPacket` for Packetlist.read
+   * @param {Array<Object>} allowedClasses
+   * @returns {Object} map from enum.packet to corresponding *Packet class
+   */
+  constructAllowedPackets: function(allowedClasses) {
+    const map = {};
+    allowedClasses.forEach(PacketClass => {
+      if (!PacketClass.tag) {
+        throw new Error('Invalid input: expected a packet class');
+      }
+      map[PacketClass.tag] = PacketClass;
+    });
+    return map;
   }
 };
 

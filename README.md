@@ -79,9 +79,9 @@ library to convert back and forth between them.
   You can change the AEAD mode by setting one of the following options:
 
   ```
-  openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.eax // Default, native
-  openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.preferredAeadAlgorithm = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax // Default, native
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb // Non-native
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM // **Non-standard**, fastest
   ```
 
 * For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256.
@@ -139,7 +139,7 @@ To test whether the lazy loading works, try to generate a key with a non-standar
 
 ```js
 import { generateKey } from 'openpgp/lightweight';
-await generateKey({ curve: 'brainpoolP512r1',  userIds: [{ name: 'Test', email: 'test@test.com' }] });
+await generateKey({ curve: 'brainpoolP512r1',  userIDs: [{ name: 'Test', email: 'test@test.com' }] });
 ```
 
 For more examples of how to generate a key, see [Generate new key pair](#generate-new-key-pair). It is recommended to use `curve25519` instead of `brainpoolP512r1` by default.
@@ -173,7 +173,7 @@ Encryption will use the algorithm specified in config.preferredSymmetricAlgorith
 
 ```js
 (async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x01, 0x01]));
+    const message = await openpgp.createMessage({ binary: new Uint8Array([0x01, 0x01, 0x01]) });
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -216,7 +216,7 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     await privateKey.decrypt(passphrase);
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText('Hello, World!'), // input as Message object
+        message: await openpgp.createMessage({ text: 'Hello, World!' }), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -257,7 +257,7 @@ Encrypt with multiple public keys:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase)
 
-    const message = openpgp.Message.fromText(message);
+    const message = await openpgp.createMessage({ text: message });
     const encrypted = await openpgp.encrypt({
         message:, // input as Message object
         publicKeys, // for encryption
@@ -274,7 +274,7 @@ It's possible to change that behaviour by enabling compression through the confi
 
 ```js
 (async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])); // or .fromText('string')
+    const message = await openpgp.createMessage({ binary: new Uint8Array([0x01, 0x02, 0x03]) }); // or createMessage({ text: 'string' })
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
@@ -306,7 +306,7 @@ Where the value can be any of:
         }
     });
 
-    const message = openpgp.Message.fromBinary(readableStream);
+    const message = await openpgp.createMessage({ binary: readableStream });
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -361,7 +361,7 @@ its [Reader class](https://openpgpjs.org/web-stream-tools/Reader.html).
     });
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText(readableStream), // input as Message object
+        message: await openpgp.createMessage({ text: readableStream }), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -395,7 +395,7 @@ and a subkey for encryption using Curve25519.
     const { privateKeyArmored, publicKeyArmored, revocationCertificate } = await openpgp.generateKey({
         type: 'ecc', // Type of the key, defaults to ECC
         curve: 'curve25519', // ECC curve name, defaults to curve25519
-        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret' // protects the private key
     });
 
@@ -412,7 +412,7 @@ RSA keys (increased compatibility):
     const key = await openpgp.generateKey({
         type: 'rsa', // Type of the key
         rsaBits: 4096, // RSA key size (defaults to 4096 bits)
-        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret' // protects the private key
     });
 })();
@@ -457,7 +457,7 @@ Using the private key:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase);
 
-    const unsignedMessage = openpgp.CleartextMessage.fromText('Hello, World!');
+    const unsignedMessage = await openpgp.createCleartextMessage({ text: 'Hello, World!' });
     const cleartextMessage = await openpgp.sign({
         message: unsignedMessage, // CleartextMessage or Message object
         privateKeys: privateKey // for signing
@@ -473,7 +473,7 @@ Using the private key:
     });
     const { valid } = verified.signatures[0];
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }
@@ -497,7 +497,7 @@ Using the private key:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase);
 
-    const cleartextMessage = openpgp.CleartextMessage.fromText('Hello, World!');
+    const cleartextMessage = await openpgp.createCleartextMessage({ text: 'Hello, World!' });
     const detachedSignature = await openpgp.sign({
         message: cleartextMessage, // CleartextMessage or Message object
         privateKeys: privateKey, // for signing
@@ -515,7 +515,7 @@ Using the private key:
     });
     const { valid } = verified.signatures[0];
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }
@@ -544,8 +544,8 @@ Using the private key:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase);
 
-    const message = openpgp.Message.fromBinary(readableStream); // or .fromText(readableStream: ReadableStream<String>)
-    const signed = await openpgp.sign({
+    const message = await openpgp.createMessage({ binary: readableStream }); // or createMessage({ text: ReadableStream<String> })
+    const signatureArmored = await openpgp.sign({
         message,
         privateKeys: privateKey // for signing
     });
@@ -559,7 +559,7 @@ Using the private key:
 
     const valid = await verified.signatures[0].verified;
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }

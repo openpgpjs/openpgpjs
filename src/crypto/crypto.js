@@ -41,7 +41,7 @@ import { Curve } from './public_key/elliptic/curves';
  * @param {Object} publicParams - Algorithm-specific public key parameters
  * @param {Uint8Array} data - Data to be encrypted
  * @param {Uint8Array} fingerprint - Recipient fingerprint
- * @returns {Object} Encrypted session key parameters.
+ * @returns {Promise<Object>} Encrypted session key parameters.
  * @async
  */
 export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
@@ -75,7 +75,7 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
  * @param {Object} privateKeyParams - Algorithm-specific private key parameters
  * @param {Object} sessionKeyParams - Encrypted session key parameters
  * @param {Uint8Array} fingerprint - Recipient fingerprint
- * @returns {Uint8Array} Decrypted data.
+ * @returns {Promise<Uint8Array>} Decrypted data.
  * @async
  */
 export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint) {
@@ -243,7 +243,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
 export function serializeParams(algo, params) {
   const orderedParams = Object.keys(params).map(name => {
     const param = params[name];
-    return util.isUint8Array(param) ? util.uint8ArrayToMpi(param) : param.write();
+    return util.isUint8Array(param) ? util.uint8ArrayToMPI(param) : param.write();
   });
   return util.concatUint8Array(orderedParams);
 }
@@ -253,7 +253,7 @@ export function serializeParams(algo, params) {
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Integer} bits - Bit length for RSA keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
- * @returns {{ publicParams: {Object}, privateParams: {Object} }} The parameters referenced by name.
+ * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
 export function generateParams(algo, bits, oid) {
@@ -298,7 +298,7 @@ export function generateParams(algo, bits, oid) {
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Object} publicParams - Algorithm-specific public key parameters
  * @param {Object} privateParams - Algorithm-specific private key parameters
- * @returns {Boolean} Whether the parameters are valid.
+ * @returns {Promise<Boolean>} Whether the parameters are valid.
  * @async
  */
 export async function validateParams(algo, publicParams, privateParams) {
@@ -344,7 +344,7 @@ export async function validateParams(algo, publicParams, privateParams) {
  * Generates a random byte prefix for the specified algorithm
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
  * @param {module:enums.symmetric} algo - Symmetric encryption algorithm
- * @returns {Uint8Array} Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
+ * @returns {Promise<Uint8Array>} Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
  * @async
  */
 export async function getPrefixRandom(algo) {
@@ -357,7 +357,7 @@ export async function getPrefixRandom(algo) {
  * Generating a session key for the specified symmetric algorithm
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
  * @param {module:enums.symmetric} algo - Symmetric encryption algorithm
- * @returns {Uint8Array} Random bytes as a string to be used as a key.
+ * @returns {Promise<Uint8Array>} Random bytes as a string to be used as a key.
  * @async
  */
 export function generateSessionKey(algo) {

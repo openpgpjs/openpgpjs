@@ -15,17 +15,24 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import {
+import defaultConfig from '../config';
+
+import LiteralDataPacket from './literal_data';
+import CompressedDataPacket from './compressed_data';
+import OnePassSignaturePacket from './one_pass_signature';
+import SignaturePacket from './signature';
+
+// A SE packet can contain the following packet types
+const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
   LiteralDataPacket,
   CompressedDataPacket,
   OnePassSignaturePacket,
   SignaturePacket
-} from '../packet';
-import defaultConfig from '../config';
+]);
 
 /**
  * Implementation of the Symmetrically Encrypted Data Packet (Tag 9)
@@ -38,12 +45,11 @@ import defaultConfig from '../config';
  * that form whole OpenPGP messages).
  */
 class SymmetricallyEncryptedDataPacket {
+  static get tag() {
+    return enums.packet.symmetricallyEncryptedData;
+  }
+
   constructor() {
-    /**
-     * Packet type
-     * @type {module:enums.packet}
-     */
-    this.tag = enums.packet.symmetricallyEncryptedData;
     /**
      * Encrypted secret-key data
      */
@@ -73,24 +79,19 @@ class SymmetricallyEncryptedDataPacket {
    * @throws {Error} if decryption was not successful
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key, streaming, config = defaultConfig) {
+  async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     // If MDC errors are not being ignored, all missing MDC packets in symmetrically encrypted data should throw an error
     if (!config.allowUnauthenticatedMessages) {
       throw new Error('Message is not authenticated.');
     }
 
     const encrypted = await stream.readToEnd(stream.clone(this.encrypted));
-    const decrypted = await crypto.cfb.decrypt(sessionKeyAlgorithm, key,
+    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key,
       encrypted.subarray(crypto.cipher[sessionKeyAlgorithm].blockSize + 2),
       encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
     );
 
-    await this.packets.read(decrypted, {
-      LiteralDataPacket,
-      CompressedDataPacket,
-      OnePassSignaturePacket,
-      SignaturePacket
-    }, streaming);
+    await this.packets.read(decrypted, allowedPackets);
   }
 
   /**
@@ -102,12 +103,12 @@ class SymmetricallyEncryptedDataPacket {
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(algo, key, streaming, config = defaultConfig) {
+  async encrypt(algo, key, config = defaultConfig) {
     const data = this.packets.write();
 
     const prefix = await crypto.getPrefixRandom(algo);
-    const FRE = await crypto.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize), config);
-    const ciphertext = await crypto.cfb.encrypt(algo, key, data, FRE.subarray(2), config);
+    const FRE = await crypto.mode.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize), config);
+    const ciphertext = await crypto.mode.cfb.encrypt(algo, key, data, FRE.subarray(2), config);
     this.encrypted = util.concat([FRE, ciphertext]);
   }
 }

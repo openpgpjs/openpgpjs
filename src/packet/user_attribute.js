@@ -37,8 +37,11 @@ import util from '../util';
  * an implementation may use any method desired.
  */
 class UserAttributePacket {
+  static get tag() {
+    return enums.packet.userAttribute;
+  }
+
   constructor() {
-    this.tag = enums.packet.userAttribute;
     this.attributes = [];
   }
 
@@ -52,7 +55,7 @@ class UserAttributePacket {
       const len = readSimpleLength(bytes.subarray(i, bytes.length));
       i += len.offset;
 
-      this.attributes.push(util.uint8ArrayToStr(bytes.subarray(i, i + len.len)));
+      this.attributes.push(util.uint8ArrayToString(bytes.subarray(i, i + len.len)));
       i += len.len;
     }
   }
@@ -65,7 +68,7 @@ class UserAttributePacket {
     const arr = [];
     for (let i = 0; i < this.attributes.length; i++) {
       arr.push(writeSimpleLength(this.attributes[i].length));
-      arr.push(util.strToUint8Array(this.attributes[i]));
+      arr.push(util.stringToUint8Array(this.attributes[i]));
     }
     return util.concatUint8Array(arr);
   }

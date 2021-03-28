@@ -23,7 +23,7 @@
  * @private
  */
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 
@@ -106,7 +106,7 @@ export function supportsStreaming(tag_type) {
     enums.packet.compressedData,
     enums.packet.symmetricallyEncryptedData,
     enums.packet.symEncryptedIntegrityProtectedData,
-    enums.packet.AEADEncryptedData
+    enums.packet.aeadEncryptedData
   ].includes(tag_type);
 }
 
@@ -117,7 +117,7 @@ export function supportsStreaming(tag_type) {
  * @param {Function} callback - Function to call with the parsed packet
  * @returns {Boolean} Returns false if the stream was empty and parsing is done, and true otherwise.
  */
-export async function readPackets(input, streaming, callback) {
+export async function readPackets(input, callback) {
   const reader = stream.getReader(input);
   let writer;
   let callbackReturned;
@@ -130,29 +130,35 @@ export async function readPackets(input, streaming, callback) {
     const headerByte = await reader.readByte();
     let tag = -1;
     let format = -1;
-    let packet_length;
+    let packetLength;
 
     format = 0; // 0 = old format; 1 = new format
     if ((headerByte & 0x40) !== 0) {
       format = 1;
     }
 
-    let packet_length_type;
+    let packetLengthType;
     if (format) {
       // new format header
       tag = headerByte & 0x3F; // bit 5-0
     } else {
       // old format header
       tag = (headerByte & 0x3F) >> 2; // bit 5-2
-      packet_length_type = headerByte & 0x03; // bit 1-0
+      packetLengthType = headerByte & 0x03; // bit 1-0
     }
 
     const packetSupportsStreaming = supportsStreaming(tag);
     let packet = null;
-    if (streaming && packetSupportsStreaming) {
-      const transform = new stream.TransformStream();
-      writer = stream.getWriter(transform.writable);
-      packet = transform.readable;
+    if (packetSupportsStreaming) {
+      if (util.isStream(input) === 'array') {
+        const arrayStream = new stream.ArrayStream();
+        writer = stream.getWriter(arrayStream);
+        packet = arrayStream;
+      } else {
+        const transform = new stream.TransformStream();
+        writer = stream.getWriter(transform.writable);
+        packet = transform.readable;
+      }
       callbackReturned = callback({ tag, packet });
     } else {
       packet = [];
@@ -162,21 +168,21 @@ export async function readPackets(input, streaming, callback) {
     do {
       if (!format) {
         // 4.2.1. Old Format Packet Lengths
-        switch (packet_length_type) {
+        switch (packetLengthType) {
           case 0:
             // The packet has a one-octet length. The header is 2 octets
             // long.
-            packet_length = await reader.readByte();
+            packetLength = await reader.readByte();
             break;
           case 1:
             // The packet has a two-octet length. The header is 3 octets
             // long.
-            packet_length = (await reader.readByte() << 8) | await reader.readByte();
+            packetLength = (await reader.readByte() << 8) | await reader.readByte();
             break;
           case 2:
             // The packet has a four-octet length. The header is 5
             // octets long.
-            packet_length = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
+            packetLength = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
               8) | await reader.readByte();
             break;
           default:
@@ -190,7 +196,7 @@ export async function readPackets(input, streaming, callback) {
             // definite length, or a new format header. The new format
             // headers described below have a mechanism for precisely
             // encoding data of indeterminate length.
-            packet_length = Infinity;
+            packetLength = Infinity;
             break;
         }
       } else { // 4.2.2. New Format Packet Lengths
@@ -198,38 +204,38 @@ export async function readPackets(input, streaming, callback) {
         const lengthByte = await reader.readByte();
         wasPartialLength = false;
         if (lengthByte < 192) {
-          packet_length = lengthByte;
+          packetLength = lengthByte;
           // 4.2.2.2. Two-Octet Lengths
         } else if (lengthByte >= 192 && lengthByte < 224) {
-          packet_length = ((lengthByte - 192) << 8) + (await reader.readByte()) + 192;
+          packetLength = ((lengthByte - 192) << 8) + (await reader.readByte()) + 192;
           // 4.2.2.4. Partial Body Lengths
         } else if (lengthByte > 223 && lengthByte < 255) {
-          packet_length = 1 << (lengthByte & 0x1F);
+          packetLength = 1 << (lengthByte & 0x1F);
           wasPartialLength = true;
           if (!packetSupportsStreaming) {
             throw new TypeError('This packet type does not support partial lengths.');
           }
           // 4.2.2.3. Five-Octet Lengths
         } else {
-          packet_length = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
+          packetLength = (await reader.readByte() << 24) | (await reader.readByte() << 16) | (await reader.readByte() <<
             8) | await reader.readByte();
         }
       }
-      if (packet_length > 0) {
+      if (packetLength > 0) {
         let bytesRead = 0;
         while (true) {
           if (writer) await writer.ready;
           const { done, value } = await reader.read();
           if (done) {
-            if (packet_length === Infinity) break;
+            if (packetLength === Infinity) break;
             throw new Error('Unexpected end of packet');
           }
-          const chunk = packet_length === Infinity ? value : value.subarray(0, packet_length - bytesRead);
+          const chunk = packetLength === Infinity ? value : value.subarray(0, packetLength - bytesRead);
           if (writer) await writer.write(chunk);
           else packet.push(chunk);
           bytesRead += value.length;
-          if (bytesRead >= packet_length) {
-            reader.unshift(value.subarray(packet_length - bytesRead + value.length));
+          if (bytesRead >= packetLength) {
+            reader.unshift(value.subarray(packetLength - bytesRead + value.length));
             break;
           }
         }

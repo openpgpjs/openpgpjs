@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import stream from '@openpgp/web-stream-tools';
+import * as stream from '@openpgp/web-stream-tools';
 import * as base64 from './base64.js';
 import enums from '../enums.js';
 import util from '../util';
@@ -223,7 +223,7 @@ function splitChecksum(text) {
  * Dearmor an OpenPGP armored message; verify the checksum and return
  * the encoded bytes
  * @param {String} input - OpenPGP armored message
- * @returns {Object} An object with attribute "text" containing the message text,
+ * @returns {Promise<Object>} An object with attribute "text" containing the message text,
  * an attribute "data" containing a stream of bytes and "type" for the ASCII armor type
  * @async
  * @static

@@ -18,8 +18,8 @@ import enums from '../enums';
  * other than local keyring files.
  */
 class TrustPacket {
-  constructor() {
-    this.tag = enums.packet.trust;
+  static get tag() {
+    return enums.packet.trust;
   }
 
   /**

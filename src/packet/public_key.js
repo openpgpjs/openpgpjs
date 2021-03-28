@@ -19,7 +19,7 @@
 
 import { Sha1 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha1/sha1';
 import { Sha256 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha256/sha256';
-import type_keyid from '../type/keyid';
+import KeyID from '../type/keyid';
 import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -37,16 +37,15 @@ import util from '../util';
  * key (sometimes called an OpenPGP certificate).
  */
 class PublicKeyPacket {
+  static get tag() {
+    return enums.packet.publicKey;
+  }
+
   /**
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(date = new Date(), config = defaultConfig) {
-    /**
-     * Packet type
-     * @type {module:enums.packet}
-     */
-    this.tag = enums.packet.publicKey;
     /**
      * Packet version
      * @type {Integer}
@@ -78,10 +77,10 @@ class PublicKeyPacket {
      */
     this.fingerprint = null;
     /**
-     * Keyid
-     * @type {module:type/keyid~Keyid}
+     * KeyID
+     * @type {module:type/keyid~KeyID}
      */
-    this.keyid = null;
+    this.keyID = null;
   }
 
   /**
@@ -176,19 +175,19 @@ class PublicKeyPacket {
 
   /**
    * Calculates the key id of the key
-   * @returns {module:type/keyid~Keyid} A 8 byte key id.
+   * @returns {module:type/keyid~KeyID} A 8 byte key id.
    */
-  getKeyId() {
-    if (this.keyid) {
-      return this.keyid;
+  getKeyID() {
+    if (this.keyID) {
+      return this.keyID;
     }
-    this.keyid = new type_keyid();
+    this.keyID = new KeyID();
     if (this.version === 5) {
-      this.keyid.read(util.hexToUint8Array(this.getFingerprint()).subarray(0, 8));
+      this.keyID.read(util.hexToUint8Array(this.getFingerprint()).subarray(0, 8));
     } else if (this.version === 4) {
-      this.keyid.read(util.hexToUint8Array(this.getFingerprint()).subarray(12, 20));
+      this.keyID.read(util.hexToUint8Array(this.getFingerprint()).subarray(12, 20));
     }
-    return this.keyid;
+    return this.keyID;
   }
 
   /**
@@ -234,7 +233,7 @@ class PublicKeyPacket {
     // RSA, DSA or ElGamal public modulo
     const modulo = this.publicParams.n || this.publicParams.p;
     if (modulo) {
-      result.bits = modulo.length * 8;
+      result.bits = util.uint8ArrayBitLength(modulo);
     } else {
       result.curve = this.publicParams.oid.getName();
     }

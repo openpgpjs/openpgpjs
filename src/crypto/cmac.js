@@ -10,7 +10,6 @@ import util from '../util';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-const Buffer = util.getNodeBuffer();
 
 
 /**
@@ -37,7 +36,7 @@ const blockLength = 16;
  * @param {Uint8Array} data
  * @param {Uint8Array} padding
  */
-function rightXorMut(data, padding) {
+function rightXORMut(data, padding) {
   const offset = data.length - blockLength;
   for (let i = 0; i < blockLength; i++) {
     data[i + offset] ^= padding[i];
@@ -49,13 +48,13 @@ function pad(data, padding, padding2) {
   // if |M| in {n, 2n, 3n, ...}
   if (data.length && data.length % blockLength === 0) {
     // then return M xor→ B,
-    return rightXorMut(data, padding);
+    return rightXORMut(data, padding);
   }
   // else return (M || 10^(n−1−(|M| mod n))) xor→ P
   const padded = new Uint8Array(data.length + (blockLength - data.length % blockLength));
   padded.set(data);
   padded[data.length] = 0b10000000;
-  return rightXorMut(padded, padding2);
+  return rightXORMut(padded, padding2);
 }
 
 const zeroBlock = new Uint8Array(blockLength);
@@ -82,9 +81,7 @@ async function CBC(key) {
     };
   }
   if (util.getNodeCrypto()) { // Node crypto library
-    key = Buffer.from(key);
     return async function(pt) {
-      pt = Buffer.from(pt);
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-cbc', key, zeroBlock);
       const ct = en.update(pt);
       return new Uint8Array(ct);
