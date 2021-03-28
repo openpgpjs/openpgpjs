@@ -549,13 +549,13 @@ Using the private key:
         message,
         privateKeys: privateKey // for signing
     });
-    const signatureArmored = await openpgp.stream.readToEnd(signed);
     console.log(signatureArmored); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
     const verified = await openpgp.verify({
         message: await openpgp.readMessage({ armoredMessage: signatureArmored }), // parse armored signature
         publicKeys: await openpgp.readKey({ armoredKey: publicKeyArmored })   // for verification
     });
+     await openpgp.stream.readToEnd(verified.data);
 
     const valid = await verified.signatures[0].verified;
     if (valid) {
