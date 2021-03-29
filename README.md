@@ -555,7 +555,11 @@ Using the private key:
         message: await openpgp.readMessage({ armoredMessage: signatureArmored }), // parse armored signature
         publicKeys: await openpgp.readKey({ armoredKey: publicKeyArmored })   // for verification
     });
-     await openpgp.stream.readToEnd(verified.data);
+
+    await openpgp.stream.readToEnd(verified.data);
+    // Note: you *have* to read `verified.data` in some way or other,
+    // even if you don't need it, as that is what triggers the
+    // verification of the data.
 
     const valid = await verified.signatures[0].verified;
     if (valid) {
