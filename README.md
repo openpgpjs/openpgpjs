@@ -561,7 +561,7 @@ Using the private key:
     // even if you don't need it, as that is what triggers the
     // verification of the data.
 
-    const { valid } = verified.signatures[0];
+    const valid = await verified.signatures[0].verified;
     if (valid) {
         console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
