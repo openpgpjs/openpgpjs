@@ -985,7 +985,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         privateKeys: privateKey,
         expectSigned: true
-      })).to.be.eventually.rejectedWith(/public keys are required/);
+      })).to.be.eventually.rejectedWith(/Public keys are required/);
     });
 
     it('decrypt/verify should throw on missing signature (expectSigned=true)', async function () {
@@ -1002,7 +1002,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         privateKeys: privateKey,
         publicKeys: publicKey,
         expectSigned: true
-      })).to.be.eventually.rejectedWith(/message is not signed/);
+      })).to.be.eventually.rejectedWith(/Message is not signed/);
     });
 
     it('decrypt/verify should throw on invalid signature (expectSigned=true)', async function () {
@@ -1021,7 +1021,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         privateKeys: privateKey,
         publicKeys: wrongPublicKey,
         expectSigned: true
-      })).to.be.eventually.rejectedWith(/invalid message signature/);
+      })).to.be.eventually.rejectedWith(/Could not find signing key/);
     });
 
     it('decrypt/verify should succeed with valid signature (expectSigned=true, with streaming)', async function () {
@@ -1059,7 +1059,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
         privateKeys: privateKey,
         expectSigned: true
-      })).to.be.eventually.rejectedWith(/public keys are required/);
+      })).to.be.eventually.rejectedWith(/Public keys are required/);
     });
 
     it('decrypt/verify should throw on missing signature (expectSigned=true, with streaming)', async function () {
@@ -1076,7 +1076,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         privateKeys: privateKey,
         publicKeys: publicKey,
         expectSigned: true
-      })).to.be.eventually.rejectedWith(/message is not signed/);
+      })).to.be.eventually.rejectedWith(/Message is not signed/);
     });
 
     it('decrypt/verify should throw on invalid signature (expectSigned=true, with streaming)', async function () {
@@ -1098,7 +1098,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       });
       await expect(
         openpgp.stream.readToEnd(streamedData)
-      ).to.be.eventually.rejectedWith(/invalid message signature/);
+      ).to.be.eventually.rejectedWith(/Could not find signing key/);
     });
   });
 

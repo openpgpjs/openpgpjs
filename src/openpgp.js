@@ -314,17 +314,16 @@ export function decrypt({ message, privateKeys, passwords, sessionKeys, publicKe
     linkStreams(result, message);
     if (expectSigned) {
       if (publicKeys.length === 0) {
-        throw new Error('public keys are required to verify message signatures');
+        throw new Error('Public keys are required to verify message signatures');
       }
       if (result.signatures.length === 0) {
-        throw new Error('message is not signed');
+        throw new Error('Message is not signed');
       }
       result.data = stream.concat([
         result.data,
-        stream.fromAsync(() => util.anyPromise(
-          result.signatures.map(sig => sig.verified)
-        ).then(() => {}) // append nothing to the data
-          .catch(() => { throw new Error('invalid message signature'); }))
+        stream.fromAsync(async () => {
+          await util.anyPromise(result.signatures.map(sig => sig.verified));
+        })
       ]);
     }
     result.data = await convertStream(result.data, message.fromStream, format);
