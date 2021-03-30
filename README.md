@@ -296,8 +296,8 @@ If you expect an encrypted message to be signed with one of the public keys you 
     const { data: decrypted, signatures } = await openpgp.decrypt({
         message,
         privateKeys: privateKey // for decryption
-        expectSign: true,
-        publicKeys: publicKey, // for verification (mandatory with expectSign=true)
+        expectSigned: true,
+        publicKeys: publicKey, // for verification (mandatory with expectSigned=true)
     });
     console.log(decrypted); // 'Hello, World!'
 })();
