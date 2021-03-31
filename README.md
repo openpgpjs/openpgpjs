@@ -225,16 +225,17 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     const message = await openpgp.readMessage({
         armoredMessage: encrypted // parse armored message
     });
-    const { data: decrypted } = await openpgp.decrypt({
+    const { data: decrypted, signatures } = await openpgp.decrypt({
         message,
         publicKeys: publicKey, // for verification (optional)
         privateKeys: privateKey // for decryption
     });
     console.log(decrypted); // 'Hello, World!'
+    console.log(signatures[0].valid) // signature validity (signed messages only)
 })();
 ```
 
-Encrypt with multiple public keys:
+Encrypt to multiple public keys:
 
 ```js
 (async () => {
@@ -264,6 +265,41 @@ Encrypt with multiple public keys:
         privateKeys: privateKey // for signing (optional)
     });
     console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
+})();
+```
+
+If you expect an encrypted message to be signed with one of the public keys you have, and do not want to trust the decrypted data otherwise, you can pass the decryption option `expectSigned = true`, so that the decryption operation will fail if no valid signature is found:
+```js
+(async () => {
+    // put keys in backtick (``) to avoid errors caused by spaces or tabs
+    const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`;
+    const privateKeyArmored = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+...
+-----END PGP PRIVATE KEY BLOCK-----`; // encrypted private key
+    const passphrase = `yourPassphrase`; // what the private key is encrypted with
+
+    const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+
+    const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
+    await privateKey.decrypt(passphrase);
+
+    const encryptedAndSignedMessage = `-----BEGIN PGP MESSAGE-----
+...
+-----END PGP MESSAGE-----`;
+
+    const message = await openpgp.readMessage({
+        armoredMessage: encryptedAndSignedMessage // parse armored message
+    });
+    // decryption will fail if all signatures are invalid or missing
+    const { data: decrypted, signatures } = await openpgp.decrypt({
+        message,
+        privateKeys: privateKey // for decryption
+        expectSigned: true,
+        publicKeys: publicKey, // for verification (mandatory with expectSigned=true)
+    });
+    console.log(decrypted); // 'Hello, World!'
 })();
 ```
 

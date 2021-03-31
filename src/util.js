@@ -561,6 +561,28 @@ const util = {
       map[PacketClass.tag] = PacketClass;
     });
     return map;
+  },
+
+  /**
+   * Return a Promise that will resolve as soon as one of the promises in input resolves
+   * or will reject if all input promises all rejected
+   * (similar to Promise.any, but with slightly different error handling)
+   * @param {Array<Promise>} promises
+   * @return {Promise<Any>} Promise resolving to the result of the fastest fulfilled promise
+   *                          or rejected with the Error of the last resolved Promise (if all promises are rejected)
+   */
+  anyPromise: function(promises) {
+    return new Promise(async (resolve, reject) => {
+      let exception;
+      await Promise.all(promises.map(async promise => {
+        try {
+          resolve(await promise);
+        } catch (e) {
+          exception = e;
+        }
+      }));
+      reject(exception);
+    });
   }
 };
 
