@@ -276,7 +276,7 @@ export function encrypt({ message, publicKeys, privateKeys, passwords, sessionKe
  * @param {String|Array<String>} [options.passwords] - Passwords to decrypt the message
  * @param {Object|Array<Object>} [options.sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String }
  * @param {Key|Array<Key>} [options.publicKeys] - Array of public keys or single key, to verify signatures
- * @param {Boolean} [options.expectSigned=false] - If true, data decryption fails if message signatures are missing or invalid
+ * @param {Boolean} [options.expectSigned=false] - If true, data decryption fails if the message is not signed with the provided publicKeys
  * @param {'utf8'|'binary'} [options.format='utf8'] - Whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
@@ -385,8 +385,9 @@ export function sign({ message, privateKeys, armor = true, detached = false, sig
 /**
  * Verifies signatures of cleartext signed message
  * @param {Object} options
- * @param {Key|Array<Key>} options.publicKeys - Array of publicKeys or single key, to verify signatures
  * @param {CleartextMessage|Message} options.message - (cleartext) message object with signatures
+ * @param {Key|Array<Key>} options.publicKeys - Array of publicKeys or single key, to verify signatures
+ * @param {Boolean} [options.expectSigned=false] - If true, verification throws if the message is not signed with the provided publicKeys
  * @param {'utf8'|'binary'} [options.format='utf8'] - Whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines.
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
@@ -407,7 +408,7 @@ export function sign({ message, privateKeys, armor = true, detached = false, sig
  * @async
  * @static
  */
-export function verify({ message, publicKeys, format = 'utf8', signature = null, date = new Date(), config }) {
+export function verify({ message, publicKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (message instanceof CleartextMessage && format === 'binary') throw new Error("Can't return cleartext message data as binary");
@@ -423,6 +424,17 @@ export function verify({ message, publicKeys, format = 'utf8', signature = null,
     }
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     if (message.fromStream) linkStreams(result, message);
+    if (expectSigned) {
+      if (result.signatures.length === 0) {
+        throw new Error('Message is not signed');
+      }
+      result.data = stream.concat([
+        result.data,
+        stream.fromAsync(async () => {
+          await util.anyPromise(result.signatures.map(sig => sig.verified));
+        })
+      ]);
+    }
     result.data = await convertStream(result.data, message.fromStream, format);
     if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;

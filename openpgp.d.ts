@@ -566,10 +566,12 @@ interface SignOptions {
 }
 
 interface VerifyOptions {
-  /** array of publicKeys or single key, to verify signatures */
-  publicKeys: Key | Key[];
   /** (cleartext) message object with signatures */
   message: CleartextMessage | Message<MaybeStream<Data>>;
+  /** array of publicKeys or single key, to verify signatures */
+  publicKeys: Key | Key[];
+  /** (optional) whether verification should throw if the message is not signed with the provided publicKeys */
+  expectSigned?: boolean;
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
   format?: 'utf8' | 'binary';
   /** (optional) detached signature for verification */

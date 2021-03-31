@@ -1102,6 +1102,138 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
   });
 
+  describe('verify - unit tests', function() {
+    let minRSABitsVal;
+
+    beforeEach(async function() {
+      minRSABitsVal = openpgp.config.minRSABits;
+      openpgp.config.minRSABits = 512;
+    });
+
+    afterEach(function() {
+      openpgp.config.minRSABits = minRSABitsVal;
+    });
+
+    describe('message', function() {
+      verifyTests(false);
+    });
+
+    describe('cleartext message', function() {
+      verifyTests(true);
+    });
+
+    function verifyTests(useCleartext) {
+      const createMessage = useCleartext ? openpgp.createCleartextMessage : openpgp.createMessage;
+      const readMessage = ({ armoredMessage }) => (
+        useCleartext ?
+          openpgp.readCleartextMessage({ cleartextMessage: armoredMessage }) :
+          openpgp.readMessage({ armoredMessage })
+      );
+      const text = useCleartext ? util.removeTrailingSpaces(plaintext) : plaintext;
+
+      it('verify should succeed with valid signature (expectSigned=true)', async function () {
+        const publicKey = await openpgp.readKey({ armoredKey: pub_key });
+        const privateKey = await openpgp.readKey({ armoredKey: priv_key });
+        await privateKey.decrypt(passphrase);
+
+        const signed = await openpgp.sign({
+          message: await createMessage({ text }),
+          privateKeys: privateKey
+        });
+        const { data, signatures } = await openpgp.verify({
+          message: await readMessage({ armoredMessage: signed }),
+          publicKeys: publicKey,
+          expectSigned: true
+        });
+        expect(data).to.equal(text);
+        expect(signatures[0].valid).to.be.true;
+      });
+
+      it('verify should throw on missing signature (expectSigned=true)', async function () {
+        const publicKey = await openpgp.readKey({ armoredKey: pub_key });
+        const privateKey = await openpgp.readKey({ armoredKey: priv_key });
+        await privateKey.decrypt(passphrase);
+
+        await expect(openpgp.verify({
+          message: await createMessage({ text }),
+          publicKeys: publicKey,
+          expectSigned: true
+        })).to.be.eventually.rejectedWith(/Message is not signed/);
+      });
+
+      it('verify should throw on invalid signature (expectSigned=true)', async function () {
+        const privateKey = await openpgp.readKey({ armoredKey: priv_key });
+        const wrongPublicKey = (await openpgp.readKey({ armoredKey: priv_key_2000_2008 })).toPublic();
+        await privateKey.decrypt(passphrase);
+
+        const signed = await openpgp.sign({
+          message: await createMessage({ text }),
+          privateKeys: privateKey
+        });
+        await expect(openpgp.verify({
+          message: await readMessage({ armoredMessage: signed }),
+          publicKeys: wrongPublicKey,
+          expectSigned: true
+        })).to.be.eventually.rejectedWith(/Could not find signing key/);
+      });
+
+      it('verify should succeed with valid signature (expectSigned=true, with streaming)', async function () {
+        if (useCleartext) this.skip(); // eslint-disable-line no-invalid-this
+
+        const publicKey = await openpgp.readKey({ armoredKey: pub_key });
+        const privateKey = await openpgp.readKey({ armoredKey: priv_key });
+        await privateKey.decrypt(passphrase);
+
+        const signed = await openpgp.sign({
+          message: await createMessage({ text }),
+          privateKeys: privateKey
+        });
+        const { data: streamedData, signatures } = await openpgp.verify({
+          message: await readMessage({ armoredMessage: openpgp.stream.toStream(signed) }),
+          publicKeys: publicKey,
+          expectSigned: true
+        });
+        const data = await openpgp.stream.readToEnd(streamedData);
+        expect(data).to.equal(text);
+        expect(await signatures[0].verified).to.be.true;
+      });
+
+      it('verify should throw on missing signature (expectSigned=true, with streaming)', async function () {
+        if (useCleartext) this.skip(); // eslint-disable-line no-invalid-this
+
+        const publicKey = await openpgp.readKey({ armoredKey: pub_key });
+        const privateKey = await openpgp.readKey({ armoredKey: priv_key });
+        await privateKey.decrypt(passphrase);
+
+        await expect(openpgp.verify({
+          message: await createMessage({ text: openpgp.stream.toStream(text) }),
+          publicKeys: publicKey,
+          expectSigned: true
+        })).to.be.eventually.rejectedWith(/Message is not signed/);
+      });
+
+      it('verify should throw on invalid signature (expectSigned=true, with streaming)', async function () {
+        if (useCleartext) this.skip(); // eslint-disable-line no-invalid-this
+
+        const privateKey = await openpgp.readKey({ armoredKey: priv_key });
+        const wrongPublicKey = (await openpgp.readKey({ armoredKey: priv_key_2000_2008 })).toPublic();
+        await privateKey.decrypt(passphrase);
+
+        const signed = await openpgp.sign({
+          message: await createMessage({ text }),
+          privateKeys: privateKey
+        });
+        const { data: streamedData } = await openpgp.verify({
+          message: await readMessage({ armoredMessage: openpgp.stream.toStream(signed) }),
+          publicKeys: wrongPublicKey,
+          expectSigned: true
+        });
+        await expect(
+          openpgp.stream.readToEnd(streamedData)
+        ).to.be.eventually.rejectedWith(/Could not find signing key/);
+      });
+    }
+  });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
     let privateKey_2000_2008;
