@@ -858,7 +858,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     expect(secretKeyPacket2.publicParams).to.deep.equal(secretKeyPacket.publicParams);
   });
 
-  it('Writing of unencrypted secret key packet', async function() {
+  it('Writing of unencrypted v5 secret key packet', async function() {
     openpgp.config.v5Keys = true;
     const packet = new openpgp.SecretKeyPacket();
 
