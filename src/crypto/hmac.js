@@ -16,7 +16,7 @@ import enums from '../enums';
  * @param {module:enums.hash} algo - The hash algorithm to be used in the hmac
  * @param Uint8Array key - The key for the hmac computation
  */
-export function createHmac(algo, key) {
+export default function createHmac(algo, key) {
   switch (algo) {
     case enums.hash.sha1:
     case enums.hash.sha256:

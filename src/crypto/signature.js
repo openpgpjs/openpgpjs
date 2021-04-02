@@ -7,7 +7,7 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
-import { createHmac } from "./hmac";
+import createHmac from "./hmac";
 import OctetString from '../type/octet_string';
 
 /**
