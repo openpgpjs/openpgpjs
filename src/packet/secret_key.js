@@ -205,17 +205,17 @@ class SecretKeyPacket extends PublicKeyPacket {
     if (!this.isDummy()) {
       if (!this.s2kUsage) {
         const algo = enums.write(enums.publicKey, this.algorithm);
-        const cleartextParams = crypto.serializeParams(algo, this.privateParams);
-        this.keyMaterial = util.concatUint8Array([
-          cleartextParams,
-          util.writeChecksum(cleartextParams)
-        ]);
+        this.keyMaterial = crypto.serializeParams(algo, this.privateParams);
       }
 
       if (this.version === 5) {
         arr.push(util.writeNumber(this.keyMaterial.length, 4));
       }
       arr.push(this.keyMaterial);
+
+      if (!this.s2kUsage) {
+        arr.push(util.writeChecksum(this.keyMaterial));
+      }
     }
 
     return util.concatUint8Array(arr);
