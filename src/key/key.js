@@ -159,11 +159,29 @@ class Key {
 
   /**
    * Clones the key object
-   * @returns {Promise<Key>} Shallow clone of the key.
+   * @param {Boolean} [deep=false] Whether to return a deep clone
+   * @returns {Promise<Key>} Clone of the key.
    * @async
    */
-  async clone() {
-    return new Key(this.toPacketlist());
+  async clone(deep = false) {
+    const key = new Key(this.toPacketlist());
+    if (deep) {
+      key.getKeys().forEach(k => {
+        // shallow clone the key packets
+        k.keyPacket = Object.create(
+          Object.getPrototypeOf(k.keyPacket),
+          Object.getOwnPropertyDescriptors(k.keyPacket)
+        );
+        if (!k.keyPacket.isDecrypted()) return;
+        // deep clone the private params, which are cleared during encryption
+        const privateParams = {};
+        Object.keys(k.keyPacket.privateParams).forEach(name => {
+          privateParams[name] = new Uint8Array(k.keyPacket.privateParams[name]);
+        });
+        k.keyPacket.privateParams = privateParams;
+      });
+    }
+    return key;
   }
 
   /**

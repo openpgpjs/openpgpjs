@@ -33,8 +33,8 @@ import util from './util';
 /**
  * Generates a new OpenPGP key pair. Supports RSA and ECC keys. By default, primary and subkeys will be of same type.
  * @param {Object} options
- * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
+ * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
@@ -53,10 +53,13 @@ import util from './util';
 export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
-  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
+  if (userIDs.length === 0) {
+    throw new Error('UserIDs are required for key generation');
+  }
   if (type === "rsa" && rsaBits < config.minRSABits) {
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
   }
+  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
 
   return generate(options, config).then(async key => {
     const revocationCertificate = await key.getRevocationCertificate(date, config);
@@ -159,14 +162,7 @@ export function revokeKey({ key, revocationCertificate, reasonForRevocation, con
  */
 export async function decryptKey({ privateKey, passphrase, config }) {
   config = { ...defaultConfig, ...config };
-  const key = await privateKey.clone();
-  // shallow clone is enough since the encrypted material is not changed in place by decryption
-  key.getKeys().forEach(k => {
-    k.keyPacket = Object.create(
-      Object.getPrototypeOf(k.keyPacket),
-      Object.getOwnPropertyDescriptors(k.keyPacket)
-    );
-  });
+  const key = await privateKey.clone(true);
   try {
     await key.decrypt(passphrase, undefined, config);
     return key;
@@ -188,21 +184,7 @@ export async function decryptKey({ privateKey, passphrase, config }) {
  */
 export async function encryptKey({ privateKey, passphrase, config }) {
   config = { ...defaultConfig, ...config };
-  const key = await privateKey.clone();
-  key.getKeys().forEach(k => {
-    // shallow clone the key packets
-    k.keyPacket = Object.create(
-      Object.getPrototypeOf(k.keyPacket),
-      Object.getOwnPropertyDescriptors(k.keyPacket)
-    );
-    if (!k.keyPacket.isDecrypted()) return;
-    // deep clone the private params, which are cleared during encryption
-    const privateParams = {};
-    Object.keys(k.keyPacket.privateParams).forEach(name => {
-      privateParams[name] = new Uint8Array(k.keyPacket.privateParams[name]);
-    });
-    k.keyPacket.privateParams = privateParams;
-  });
+  const key = await privateKey.clone(true);
   try {
     await key.encrypt(passphrase, undefined, config);
     return key;

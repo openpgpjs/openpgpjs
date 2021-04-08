@@ -795,6 +795,10 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         expect(newKey.publicKeyArmored).to.exist;
       });
     });
+
+    it('should throw if missing userIDs', async function() {
+      expect(() => openpgp.generateKey({})).to.throw(/UserIDs are required/);
+    });
   });
 
   describe('generateKey - integration tests', function() {
