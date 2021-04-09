@@ -162,12 +162,22 @@ export function revokeKey({ key, revocationCertificate, reasonForRevocation, con
  */
 export async function decryptKey({ privateKey, passphrase, config }) {
   config = { ...defaultConfig, ...config };
-  const key = await privateKey.clone(true);
+  if (!privateKey.isPrivate()) {
+    throw new Error("Cannot decrypt a public key");
+  }
+  const clonedPrivateKey = await privateKey.clone(true);
+
   try {
-    await key.decrypt(passphrase, undefined, config);
-    return key;
+    const passphrases = util.isArray(passphrase) ? passphrase : [passphrase];
+    await Promise.all(clonedPrivateKey.getKeys().map(key => (
+      // try to decrypt each key with any of the given passphrases
+      util.anyPromise(passphrases.map(passphrase => key.keyPacket.decrypt(passphrase)))
+    )));
+
+    await clonedPrivateKey.validate(config);
+    return clonedPrivateKey;
   } catch (err) {
-    key.clearPrivateParams();
+    clonedPrivateKey.clearPrivateParams();
     return onError('Error decrypting private key', err);
   }
 }
@@ -184,12 +194,26 @@ export async function decryptKey({ privateKey, passphrase, config }) {
  */
 export async function encryptKey({ privateKey, passphrase, config }) {
   config = { ...defaultConfig, ...config };
-  const key = await privateKey.clone(true);
+  if (!privateKey.isPrivate()) {
+    throw new Error("Cannot encrypt a public key");
+  }
+  const clonedPrivateKey = await privateKey.clone(true);
+
   try {
-    await key.encrypt(passphrase, undefined, config);
-    return key;
+    const keys = clonedPrivateKey.getKeys();
+    const passphrases = util.isArray(passphrase) ? passphrase : new Array(keys.length).fill(passphrase);
+    if (passphrases.length !== keys.length) {
+      throw new Error("Invalid number of passphrases for key");
+    }
+
+    await Promise.all(keys.map(async (key, i) => {
+      const { keyPacket } = key;
+      await keyPacket.encrypt(passphrases[i], config);
+      keyPacket.clearPrivateParams();
+    }));
+    return clonedPrivateKey;
   } catch (err) {
-    key.clearPrivateParams();
+    clonedPrivateKey.clearPrivateParams();
     return onError('Error encrypting private key', err);
   }
 }

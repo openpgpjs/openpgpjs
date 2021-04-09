@@ -312,10 +312,11 @@ class SecretKeyPacket extends PublicKeyPacket {
 
   /**
    * Decrypts the private key params which are needed to use the key.
+   * Successful decryption does not imply key integrity, call validate() to confirm that.
    * {@link SecretKeyPacket.isDecrypted} should be false, as
    * otherwise calls to this function will throw an error.
    * @param {String} passphrase - The passphrase for this private key as string
-   * @throws {Error} if decryption was not successful
+   * @throws {Error} if the key is already decrypted, or if decryption was not successful
    * @async
    */
   async decrypt(passphrase) {
