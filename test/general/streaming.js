@@ -84,8 +84,6 @@ const priv_key = [
   '-----END PGP PRIVATE KEY BLOCK-----'
 ].join('\n');
 
-const passphrase = 'hello world';
-
 const brainpoolPub = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
   '',
