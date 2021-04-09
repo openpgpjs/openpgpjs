@@ -432,44 +432,6 @@ class Key {
   }
 
   /**
-   * Decrypts all secret key and subkey packets matching keyID
-   * @param {String|Array<String>} passphrases
-   * @param {module:type/keyid~KeyID} keyID
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @throws {Error} if any matching key or subkey packets did not decrypt successfully
-   * @async
-   */
-  async decrypt(passphrases, keyID = null, config = defaultConfig) {
-    if (!this.isPrivate()) {
-      throw new Error("Nothing to decrypt in a public key");
-    }
-    passphrases = util.isArray(passphrases) ? passphrases : [passphrases];
-
-    await Promise.all(this.getKeys(keyID).map(async function(key) {
-      let decrypted = false;
-      let error = null;
-      await Promise.all(passphrases.map(async function(passphrase) {
-        try {
-          await key.keyPacket.decrypt(passphrase);
-          // If we are decrypting a single key packet, we also validate it directly
-          if (keyID) await key.keyPacket.validate();
-          decrypted = true;
-        } catch (e) {
-          error = e;
-        }
-      }));
-      if (!decrypted) {
-        throw error;
-      }
-    }));
-
-    if (!keyID) {
-      // The full key should be decrypted and we can validate it all
-      await this.validate(config);
-    }
-  }
-
-  /**
    * Returns true if the primary key or any subkey is decrypted.
    * A dummy key is considered encrypted.
    */
