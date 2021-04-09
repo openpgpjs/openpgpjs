@@ -28,8 +28,6 @@ export class Key {
   private keyPacket: PublicKeyPacket | SecretKeyPacket;
   public write(): Uint8Array;
   public armor(config?: Config): string;
-  public decrypt(passphrase: string | string[], keyID?: KeyID, config?: Config): Promise<void>; // throws on error
-  public encrypt(passphrase: string | string[], keyID?: KeyID, config?: Config): Promise<void>; // throws on error
   public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyID?: KeyID, userID?: UserID, config?: Config): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
   public getKeyIDs(): KeyID[];
   public getPrimaryUser(date?: Date, userID?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
