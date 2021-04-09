@@ -2379,20 +2379,27 @@ function versionSpecificTests() {
 
   it('Encrypt key with new passphrase', async function() {
     const userID = { name: 'test', email: 'a@b.com' };
-    const opt = { userIDs: userID, passphrase: 'passphrase' };
-    const key = (await openpgp.generateKey(opt)).key;
-    const armor1 = key.armor();
-    const armor2 = key.armor();
+    const passphrase = 'passphrase';
+    const newPassphrase = 'new_passphrase';
+    const privateKey = (await openpgp.generateKey({ userIDs: userID, passphrase })).key;
+    const armor1 = privateKey.armor();
+    const armor2 = privateKey.armor();
     expect(armor1).to.equal(armor2);
-    await key.decrypt('passphrase');
-    expect(key.isDecrypted()).to.be.true;
-    await key.encrypt('new_passphrase');
-    expect(key.isDecrypted()).to.be.false;
-    await expect(key.decrypt('passphrase')).to.be.rejectedWith('Incorrect key passphrase');
-    expect(key.isDecrypted()).to.be.false;
-    await key.decrypt('new_passphrase');
-    expect(key.isDecrypted()).to.be.true;
-    const armor3 = key.armor();
+
+    const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase });
+    expect(decryptedKey.isDecrypted()).to.be.true;
+
+    const newEncryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey, passphrase: newPassphrase
+    });
+    expect(newEncryptedKey.isDecrypted()).to.be.false;
+    await expect(openpgp.decryptKey({
+      privateKey: newEncryptedKey, passphrase
+    })).to.be.rejectedWith('Incorrect key passphrase');
+    expect(newEncryptedKey.isDecrypted()).to.be.false;
+    const newDecryptedKey = await openpgp.decryptKey({ privateKey: newEncryptedKey, passphrase: newPassphrase });
+    expect(newDecryptedKey.isDecrypted()).to.be.true;
+    const armor3 = newDecryptedKey.armor();
     expect(armor3).to.not.equal(armor1);
   });
 
@@ -2973,8 +2980,8 @@ module.exports = () => describe('Key', function() {
   it("isDecrypted() - gnu-dummy primary key", async function() {
     const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
     expect(key.isDecrypted()).to.be.true;
-    await key.encrypt('12345678');
-    expect(key.isDecrypted()).to.be.false;
+    const encryptedKey = await openpgp.encryptKey({ privateKey: key, passphrase: '12345678' });
+    expect(encryptedKey.isDecrypted()).to.be.false;
   });
 
   it("isDecrypted() - all-gnu-dummy key", async function() {
@@ -2994,15 +3001,15 @@ module.exports = () => describe('Key', function() {
     const passphrase = 'passphrase';
     key.primaryKey.makeDummy();
     expect(key.isDecrypted()).to.be.true;
-    await key.encrypt(passphrase);
-    expect(key.isDecrypted()).to.be.false;
-    await key.decrypt(passphrase);
-    expect(key.isDecrypted()).to.be.true;
+    const encryptedKey = await openpgp.encryptKey({ privateKey: key, passphrase });
+    expect(encryptedKey.isDecrypted()).to.be.false;
+    const decryptedKey = await openpgp.decryptKey({ privateKey: encryptedKey, passphrase });
+    expect(decryptedKey.isDecrypted()).to.be.true;
   });
 
   it('makeDummy() - the converted key is valid but can no longer sign', async function() {
-    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
-    await key.decrypt('hello world');
+    const parsedKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const key = await openpgp.decryptKey({ privateKey: parsedKey, passphrase: 'hello world' });
     expect(key.primaryKey.isDummy()).to.be.false;
     key.primaryKey.makeDummy();
     expect(key.primaryKey.isDummy()).to.be.true;
@@ -3020,21 +3027,23 @@ module.exports = () => describe('Key', function() {
   });
 
   it('makeDummy() - should work for encrypted keys', async function() {
+    const passphrase = 'hello world';
     const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     expect(key.primaryKey.isDummy()).to.be.false;
     expect(key.primaryKey.makeDummy()).to.not.throw;
     expect(key.primaryKey.isDummy()).to.be.true;
     // dummy primary key should always be marked as not decrypted
-    await expect(key.decrypt('hello world')).to.be.fulfilled;
-    expect(key.primaryKey.isDummy()).to.be.true;
-    expect(key.primaryKey.isEncrypted === null);
-    expect(key.primaryKey.isDecrypted()).to.be.false;
-    await expect(key.encrypt('hello world')).to.be.fulfilled;
-    expect(key.primaryKey.isDummy()).to.be.true;
-    expect(key.primaryKey.isEncrypted === null);
-    expect(key.primaryKey.isDecrypted()).to.be.false;
-    // confirm that the converted key can be parsed
-    await openpgp.readKey({ armoredKey: key.armor() });
+    const decryptedKey = await openpgp.decryptKey({ privateKey: key, passphrase });
+    expect(decryptedKey.primaryKey.isDummy()).to.be.true;
+    expect(decryptedKey.primaryKey.isEncrypted === null);
+    expect(decryptedKey.primaryKey.isDecrypted()).to.be.false;
+    const encryptedKey = await openpgp.encryptKey({ privateKey: decryptedKey, passphrase });
+    expect(encryptedKey.primaryKey.isDummy()).to.be.true;
+    expect(encryptedKey.primaryKey.isEncrypted === null);
+    expect(encryptedKey.primaryKey.isDecrypted()).to.be.false;
+    // confirm that the converted keys can be parsed
+    await openpgp.readKey({ armoredKey: encryptedKey.armor() });
+    await openpgp.readKey({ armoredKey: decryptedKey.armor() });
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
@@ -3541,13 +3550,12 @@ VYGdb3eNlV8CfoEC
   });
 
   it("Should throw when trying to encrypt a key that's already encrypted", async function() {
-    await expect((async function() {
-      const { privateKeyArmored } = await openpgp.generateKey({ userIDs: [{ email: 'hello@user.com' }], passphrase: 'pass' });
-      const k = await openpgp.readKey({ armoredKey: privateKeyArmored });
-      await k.decrypt('pass');
-      await k.encrypt('pass');
-      await k.encrypt('pass');
-    })()).to.be.rejectedWith('Key packet is already encrypted');
+    const passphrase = 'pass';
+    const { privateKeyArmored } = await openpgp.generateKey({ userIDs: [{ email: 'hello@user.com' }], passphrase });
+    const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
+    const decryptedKey = await openpgp.decryptKey({ privateKey: key, passphrase });
+    const encryptedKey = await openpgp.encryptKey({ privateKey: decryptedKey, passphrase });
+    await expect(openpgp.encryptKey({ privateKey: encryptedKey, passphrase })).to.be.eventually.rejectedWith(/Key packet is already encrypted/);
   });
 
   describe('addSubkey functionality testing', function() {
@@ -3616,15 +3624,18 @@ VYGdb3eNlV8CfoEC
     });
 
     it('encrypt and decrypt key with added subkey', async function() {
-      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
-      await privateKey.decrypt('hello world');
+      const parsedKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
+      const privateKey = await openpgp.decryptKey({ privateKey: parsedKey, passphrase: 'hello world' });
       const total = privateKey.subKeys.length;
-      let newPrivateKey = await privateKey.addSubkey(rsaOpt);
-      newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
-      await newPrivateKey.encrypt('12345678');
-      const armoredKey = newPrivateKey.armor();
-      const importedPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
-      await importedPrivateKey.decrypt('12345678');
+
+      const passphrase = '12345678';
+      const newPrivateKey = await privateKey.addSubkey(rsaOpt);
+      const encNewPrivateKey = await openpgp.encryptKey({ privateKey: newPrivateKey, passphrase });
+      expect(encNewPrivateKey.subKeys.length).to.be.equal(total + 1);
+
+      const armoredKey = encNewPrivateKey.armor();
+      const importedParsedKey = await openpgp.readKey({ armoredKey });
+      const importedPrivateKey = await openpgp.decryptKey({ privateKey: importedParsedKey, passphrase });
       const subKey = importedPrivateKey.subKeys[total];
       expect(subKey).to.exist;
       expect(importedPrivateKey.subKeys.length).to.be.equal(total + 1);
@@ -3632,6 +3643,7 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new ec subkey to a ec key', async function() {
+      const passphrase = '12345678';
       const userID = { name: 'test', email: 'a@b.com' };
       const opt = { curve: 'curve25519', userIDs: [userID], subkeys:[] };
       const privateKey = (await openpgp.generateKey(opt)).key;
@@ -3639,20 +3651,21 @@ VYGdb3eNlV8CfoEC
       const opt2 = { curve: 'curve25519', userIDs: [userID], sign: true };
       let newPrivateKey = await privateKey.addSubkey(opt2);
       const subKey1 = newPrivateKey.subKeys[total];
-      await newPrivateKey.encrypt('12345678');
-      const armoredKey = newPrivateKey.armor();
-      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
-      await newPrivateKey.decrypt('12345678');
-      const subKey = newPrivateKey.subKeys[total];
-      expect(subKey.isDecrypted()).to.be.true;
-      expect(subKey1.getKeyID().toHex()).to.be.equal(subKey.getKeyID().toHex());
-      expect(subKey).to.exist;
+      const encNewPrivateKey = await openpgp.encryptKey({ privateKey: newPrivateKey, passphrase });
+      newPrivateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: encNewPrivateKey.armor() }),
+        passphrase
+      });
+      const subKey2 = newPrivateKey.subKeys[total];
+      expect(subKey2.isDecrypted()).to.be.true;
+      expect(subKey1.getKeyID().toHex()).to.be.equal(subKey2.getKeyID().toHex());
+      expect(subKey2).to.exist;
       expect(newPrivateKey.subKeys.length).to.be.equal(total + 1);
-      const subkeyOid = subKey.keyPacket.publicParams.oid;
+      const subkeyOid = subKey2.keyPacket.publicParams.oid;
       const pkOid = privateKey.primaryKey.publicParams.oid;
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
-      expect(subKey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
-      await subKey.verify(privateKey.primaryKey);
+      expect(subKey2.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
+      await subKey2.verify(privateKey.primaryKey);
     });
 
     it('create and add a new ecdsa subkey to a eddsa key', async function() {

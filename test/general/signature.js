@@ -861,41 +861,44 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
   });
 
-  it('Supports decrypting with GnuPG stripped-key extension', async function() {
+  it('Supports decrypting with GnuPG dummy key', async function() {
     const { rejectMessageHashAlgorithms } = openpgp.config;
     Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
     try {
+      const passphrase = 'abcd';
       // exercises the GnuPG s2k type 1001 extension:
       // the secrets on the primary key have been stripped.
-      const priv_key_gnupg_ext = await openpgp.readKey({ armoredKey: priv_key_arm1_stripped });
-      const priv_key_gnupg_ext_2 = await openpgp.readKey({ armoredKey: priv_key_arm1_stripped });
-      const pub_key = await openpgp.readKey({ armoredKey: pub_key_arm1 });
+      const dummyKey = await openpgp.readKey({ armoredKey: priv_key_arm1_stripped });
+      const publicKey = await openpgp.readKey({ armoredKey: pub_key_arm1 });
       const message = await openpgp.readMessage({ armoredMessage: msg_arm1 });
-      const primaryKey_packet = priv_key_gnupg_ext.primaryKey.write();
-      expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
-      await priv_key_gnupg_ext.decrypt("abcd");
-      await priv_key_gnupg_ext_2.decrypt("abcd");
-      expect(priv_key_gnupg_ext.isDecrypted()).to.be.true;
-      const msg = await openpgp.decrypt({ message, privateKeys: [priv_key_gnupg_ext], publicKeys: [pub_key], config: { rejectPublicKeyAlgorithms: new Set() } });
+      const primaryKeyPacket = dummyKey.primaryKey.write();
+      expect(dummyKey.isDecrypted()).to.be.false;
+      const decryptedDummyKey = await openpgp.decryptKey({ privateKey: dummyKey, passphrase });
+      expect(decryptedDummyKey.isDecrypted()).to.be.true;
+      // decrypting with a secret subkey works
+      const msg = await openpgp.decrypt({ message, privateKeys: decryptedDummyKey, publicKeys: publicKey, config: { rejectPublicKeyAlgorithms: new Set() } });
       expect(msg.signatures).to.exist;
       expect(msg.signatures).to.have.length(1);
       expect(msg.signatures[0].valid).to.be.true;
       expect(msg.signatures[0].signature.packets.length).to.equal(1);
+      // secret key operations involving the primary key should fail
       await expect(openpgp.sign({
-        message: await openpgp.createMessage({ text: 'test' }), privateKeys: [priv_key_gnupg_ext], config: { rejectPublicKeyAlgorithms: new Set() }
+        message: await openpgp.createMessage({ text: 'test' }), privateKeys: decryptedDummyKey, config: { rejectPublicKeyAlgorithms: new Set() }
       })).to.eventually.be.rejectedWith(/Cannot sign with a gnu-dummy key/);
-      await expect(openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: priv_key_gnupg_ext })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
-      await expect(openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: priv_key_gnupg_ext_2, passphrase: 'test' })).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
-      await priv_key_gnupg_ext.encrypt("abcd");
-      expect(priv_key_gnupg_ext.isDecrypted()).to.be.false;
-      const primaryKey_packet2 = priv_key_gnupg_ext.primaryKey.write();
-      expect(primaryKey_packet).to.deep.equal(primaryKey_packet2);
+      await expect(
+        openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: decryptedDummyKey })
+      ).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
+
+      const encryptedDummyKey = await openpgp.encryptKey({ privateKey: decryptedDummyKey, passphrase });
+      expect(encryptedDummyKey.isDecrypted()).to.be.false;
+      const primaryKeyPacket2 = encryptedDummyKey.primaryKey.write();
+      expect(primaryKeyPacket).to.deep.equal(primaryKeyPacket2);
     } finally {
       Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
     }
   });
 
-  it('Supports signing with GnuPG stripped-key extension', async function() {
+  it('Supports signing with GnuPG dummy key', async function() {
     const priv_key_gnupg_ext = await openpgp.readKey({ armoredKey: flowcrypt_stripped_key });
     await priv_key_gnupg_ext.decrypt('FlowCrypt');
     const sig = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), privateKeys: [priv_key_gnupg_ext], date: new Date('2018-12-17T03:24:00') });

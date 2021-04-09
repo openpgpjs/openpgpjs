@@ -432,32 +432,6 @@ class Key {
   }
 
   /**
-   * Encrypts all secret key and subkey packets matching keyID
-   * @param {String|Array<String>} passphrases - If multiple passphrases, then should be in same order as packets each should encrypt
-   * @param {module:type/keyid~KeyID} keyID
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @throws {Error} if encryption failed for any key or subkey
-   * @async
-   */
-  async encrypt(passphrases, keyID = null, config = defaultConfig) {
-    if (!this.isPrivate()) {
-      throw new Error("Nothing to encrypt in a public key");
-    }
-
-    const keys = this.getKeys(keyID);
-    passphrases = util.isArray(passphrases) ? passphrases : new Array(keys.length).fill(passphrases);
-    if (passphrases.length !== keys.length) {
-      throw new Error("Invalid number of passphrases for key");
-    }
-
-    await Promise.all(keys.map(async function(key, i) {
-      const { keyPacket } = key;
-      await keyPacket.encrypt(passphrases[i], config);
-      keyPacket.clearPrivateParams();
-    }));
-  }
-
-  /**
    * Decrypts all secret key and subkey packets matching keyID
    * @param {String|Array<String>} passphrases
    * @param {module:type/keyid~KeyID} keyID
