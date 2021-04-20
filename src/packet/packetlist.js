@@ -130,27 +130,29 @@ class PacketList extends Array {
    * Adds a packet to the list. This is the only supported method of doing so;
    * writing to packetlist[i] directly will result in an error.
    * @param {Object} packet - Packet to push
+   * @returns {Integer} length of resulting packetlist
    */
   push(packet) {
     if (!packet) {
-      return;
+      return this.length;
     }
 
     packet.packets = packet.packets || new PacketList();
-
-    super.push(packet);
+    return super.push(packet);
   }
 
   /**
-   * Creates a new PacketList with all packets from the given types
+   * Creates a new PacketList with all packets matching the given tag(s)
+   * @param {...module:enums.packet} tags - packet tags to look for
+   * @returns {PacketList}
    */
-  filterByTag(...args) {
+  filterByTag(...tags) {
     const filtered = new PacketList();
 
     const handle = tag => packetType => tag === packetType;
 
     for (let i = 0; i < this.length; i++) {
-      if (args.some(handle(this[i].constructor.tag))) {
+      if (tags.some(handle(this[i].constructor.tag))) {
         filtered.push(this[i]);
       }
     }
@@ -159,25 +161,27 @@ class PacketList extends Array {
   }
 
   /**
-   * Traverses packet tree and returns first matching packet
-   * @param {module:enums.packet} type - The packet type
+   * Traverses packet list and returns first packet with matching tag
+   * @param {module:enums.packet} tag - The packet tag
    * @returns {Packet|undefined}
    */
-  findPacket(type) {
-    return this.find(packet => packet.constructor.tag === type);
+  findPacket(tag) {
+    return this.find(packet => packet.constructor.tag === tag);
   }
 
   /**
-   * Returns array of found indices by tag
+   * Find indices of packets with the given tag(s)
+   * @param {...module:enums.packet} tags - packet tags to look for
+   * @returns {Integer[]} packet indices
    */
-  indexOfTag(...args) {
+  indexOfTag(...tags) {
     const tagIndex = [];
     const that = this;
 
     const handle = tag => packetType => tag === packetType;
 
     for (let i = 0; i < this.length; i++) {
-      if (args.some(handle(that[i].constructor.tag))) {
+      if (tags.some(handle(that[i].constructor.tag))) {
         tagIndex.push(i);
       }
     }
@@ -186,6 +190,8 @@ class PacketList extends Array {
 
   /**
    * Concatenates packetlist or array of packets
+   * @param {PacketList|Packet} packets - packets to concatenate
+   * @returns {PacketList} this packetlist
    */
   concat(packetlist) {
     if (packetlist) {

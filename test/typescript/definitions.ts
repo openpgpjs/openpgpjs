@@ -6,9 +6,9 @@
  *  - if it fails to run, edit this file to match the actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
  */
 
-import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Message, createCleartextMessage, encrypt, decrypt, sign, verify, config } from '../..';
-
 import { expect } from 'chai';
+import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Message, createCleartextMessage, encrypt, decrypt, sign, verify, config, LiteralDataPacket, PacketList, enums } from '../..';
+
 
 (async () => {
 
@@ -77,6 +77,11 @@ import { expect } from 'chai';
   const verifiedBinary = await verify({ publicKeys, message, format: 'binary' });
   const verifiedBinaryData: Uint8Array = verifiedBinary.data;
   expect(verifiedBinaryData).to.deep.equal(binary);
+
+  const packets = new PacketList();
+  expect(packets.push()).to.equal(0);
+  expect(packets.push(new LiteralDataPacket())).to.equal(1);
+  expect(packets[0].tag).to.equal(enums.packet.literalData);
 
   // // Detached - sign cleartext message (armored)
   // import { Message, sign } from 'openpgp';

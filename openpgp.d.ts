@@ -455,24 +455,14 @@ export type AnyKeyPacket = BasePublicKeyPacket;
 type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 
 
-export class PacketList<PACKET_TYPE> extends Array<PACKET_TYPE> {
-  [index: number]: PACKET_TYPE;
+export class PacketList<T extends AnyPacket> extends Array<T> {
   public length: number;
   public read(bytes: Uint8Array, allowedPackets?: object, config?: Config): void;
   public write(): Uint8Array;
-  public push(...packet: PACKET_TYPE[]): number;
-  public pop(): PACKET_TYPE;
-  public filter(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => void): PacketList<PACKET_TYPE>;
-  public filterByTag(...args: enums.packet[]): PacketList<PACKET_TYPE>;
-  public forEach(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => void): void;
-  public map<RETURN_TYPE>(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => RETURN_TYPE): PacketList<RETURN_TYPE>;
-  // some()
-  // every()
-  // findPacket()
-  // indexOfTag()
-  // slice()
-  // concat()
-  // fromStructuredClone()
+  public filterByTag(...args: enums.packet[]): PacketList<T>;
+  public indexOfTag(...tags: enums.packet[]): number[];
+  public findPacket(tag: enums.packet): T | undefined;
+  public concat(packets: Array<T>): PacketList<T>; // in place
 }
 
 /* ############## v5 STREAM #################### */
