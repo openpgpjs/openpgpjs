@@ -139,7 +139,7 @@ To test whether the lazy loading works, try to generate a key with a non-standar
 
 ```js
 import { generateKey } from 'openpgp/lightweight';
-await generateKey({ curve: 'brainpoolP512r1',  userIDs: [{ name: 'Test', email: 'test@test.com' }] });
+await generateKey({ curve: 'brainpoolP512r1',  userIds: [{ name: 'Test', email: 'test@test.com' }] });
 ```
 
 For more examples of how to generate a key, see [Generate new key pair](#generate-new-key-pair). It is recommended to use `curve25519` instead of `brainpoolP512r1` by default.
@@ -173,7 +173,7 @@ Encryption will use the algorithm specified in config.preferredSymmetricAlgorith
 
 ```js
 (async () => {
-    const message = await openpgp.createMessage({ binary: new Uint8Array([0x01, 0x01, 0x01]) });
+    const message = await openpgp.Message.fromBinary( new Uint8Array([0x01, 0x01, 0x01]) );
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -216,7 +216,7 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     await privateKey.decrypt(passphrase);
 
     const encrypted = await openpgp.encrypt({
-        message: await openpgp.createMessage({ text: 'Hello, World!' }), // input as Message object
+        message: await openpgp.Message.fromText('Hello, World!'), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -258,7 +258,7 @@ Encrypt to multiple public keys:
     const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
     await privateKey.decrypt(passphrase)
 
-    const message = await openpgp.createMessage({ text: message });
+    const message = await openpgp.Message.fromText(message);
     const encrypted = await openpgp.encrypt({
         message:, // input as Message object
         publicKeys, // for encryption
@@ -310,7 +310,7 @@ It's possible to change that behaviour by enabling compression through the confi
 
 ```js
 (async () => {
-    const message = await openpgp.createMessage({ binary: new Uint8Array([0x01, 0x02, 0x03]) }); // or createMessage({ text: 'string' })
+    const message = await openpgp.Message.fromBinary( new Uint8Array([0x01, 0x02, 0x03]) ); // or openpgp.Message.fromText('Some message')
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
@@ -342,7 +342,7 @@ Where the value can be any of:
         }
     });
 
-    const message = await openpgp.createMessage({ binary: readableStream });
+    const message = await openpgp.Message.fromBinary(readableStream);
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
