@@ -81,7 +81,9 @@ import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Messag
   const packets = new PacketList();
   expect(packets.push()).to.equal(0);
   expect(packets.push(new LiteralDataPacket())).to.equal(1);
-  expect(packets[0].tag).to.equal(enums.packet.literalData);
+  packets[0].write();
+
+  expect(LiteralDataPacket.tag).to.equal(enums.packet.literalData)
 
   // // Detached - sign cleartext message (armored)
   // import { Message, sign } from 'openpgp';

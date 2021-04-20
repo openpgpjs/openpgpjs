@@ -294,7 +294,7 @@ interface PartialConfig extends Partial<Config> {}
 /* ############## v5 PACKET #################### */
 
 declare abstract class BasePacket {
-  public tag: enums.packet;
+  static tag: enums.packet;
   public read(bytes: Uint8Array): void;
   public write(): Uint8Array;
 }
@@ -319,11 +319,11 @@ declare abstract class BasePublicKeyPacket extends BasePacket {
 }
 
 export class PublicKeyPacket extends BasePublicKeyPacket {
-  public tag: enums.packet.publicKey;
+  static tag: enums.packet.publicKey;
 }
 
 export class PublicSubkeyPacket extends BasePublicKeyPacket {
-  public tag: enums.packet.publicSubkey;
+  static tag: enums.packet.publicSubkey;
 }
 
 declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
@@ -336,51 +336,51 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
 }
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
-  public tag: enums.packet.secretKey;
+  static tag: enums.packet.secretKey;
 }
 
 export class SecretSubkeyPacket extends BaseSecretKeyPacket {
-  public tag: enums.packet.secretSubkey;
+  static tag: enums.packet.secretSubkey;
 }
 
 export class CompressedDataPacket extends BasePacket {
-  public tag: enums.packet.compressedData;
+  static tag: enums.packet.compressedData;
 }
 
 export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
-  public tag: enums.packet.symEncryptedIntegrityProtectedData;
+  static tag: enums.packet.symEncryptedIntegrityProtectedData;
 }
 
 export class AEADEncryptedDataPacket extends BasePacket {
-  public tag: enums.packet.aeadEncryptedData;
+  static tag: enums.packet.aeadEncryptedData;
 }
 
 export class PublicKeyEncryptedSessionKeyPaclet extends BasePacket {
-  public tag: enums.packet.publicKeyEncryptedSessionKey;
+  static tag: enums.packet.publicKeyEncryptedSessionKey;
 }
 
 export class SymEncryptedSessionKey extends BasePacket {
-  public tag: enums.packet.symEncryptedSessionKey;
+  static tag: enums.packet.symEncryptedSessionKey;
 }
 
 export class LiteralDataPacket extends BasePacket {
-  public tag: enums.packet.literalData;
+  static tag: enums.packet.literalData;
 }
 
 export class SymmetricallyEncryptedDataPacket extends BasePacket {
-  public tag: enums.packet.symmetricallyEncryptedData;
+  static tag: enums.packet.symmetricallyEncryptedData;
 }
 
 export class MarkerPacket extends BasePacket {
-  public tag: enums.packet.marker;
+  static tag: enums.packet.marker;
 }
 
 export class UserAttributePacket extends BasePacket {
-  public tag: enums.packet.userAttribute;
+  static tag: enums.packet.userAttribute;
 }
 
 export class OnePassSignaturePacket extends BasePacket {
-  public tag: enums.packet.onePassSignature;
+  static tag: enums.packet.onePassSignature;
   public correspondingSig?: Promise<SignaturePacket>;
 }
 
@@ -394,7 +394,7 @@ export class UserIDPacket extends BasePacket {
 }
 
 export class SignaturePacket extends BasePacket {
-  public tag: enums.packet.signature;
+  static tag: enums.packet.signature;
   public version: number;
   public signatureType: enums.signature | null;
   public hashAlgorithm: enums.hash | null;
@@ -445,7 +445,7 @@ export class SignaturePacket extends BasePacket {
 }
 
 export class TrustPacket extends BasePacket {
-  public tag: enums.packet.trust;
+  static tag: enums.packet.trust;
 }
 
 export type AnyPacket = BasePacket;
