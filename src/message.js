@@ -170,7 +170,7 @@ export class Message {
     let exception;
     if (passwords) {
       const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
-      if (!symESKeyPacketlist) {
+      if (symESKeyPacketlist.length === 0) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
       await Promise.all(passwords.map(async function(password, i) {
@@ -192,7 +192,7 @@ export class Message {
       }));
     } else if (privateKeys) {
       const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-      if (!pkESKeyPacketlist) {
+      if (pkESKeyPacketlist.length === 0) {
         throw new Error('No public key encrypted session key packet found.');
       }
       await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
