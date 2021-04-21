@@ -34,8 +34,8 @@ class SubKey {
   toPacketlist() {
     const packetlist = new PacketList();
     packetlist.push(this.keyPacket);
-    packetlist.concat(this.revocationSignatures);
-    packetlist.concat(this.bindingSignatures);
+    packetlist.append(this.revocationSignatures);
+    packetlist.append(this.bindingSignatures);
     return packetlist;
   }
 

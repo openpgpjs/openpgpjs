@@ -30,9 +30,9 @@ class User {
   toPacketlist() {
     const packetlist = new PacketList();
     packetlist.push(this.userID || this.userAttribute);
-    packetlist.concat(this.revocationSignatures);
-    packetlist.concat(this.selfCertifications);
-    packetlist.concat(this.otherCertifications);
+    packetlist.append(this.revocationSignatures);
+    packetlist.append(this.selfCertifications);
+    packetlist.append(this.otherCertifications);
     return packetlist;
   }
 

@@ -189,17 +189,15 @@ class PacketList extends Array {
   }
 
   /**
-   * Concatenates packetlist or array of packets
-   * @param {PacketList|Packet} packets - packets to concatenate
-   * @returns {PacketList} this packetlist
+   * Append packetlist or array of packets, in place
+   * @param {PacketList|Array<Packet>} packets - packets to append
    */
-  concat(packetlist) {
+  append(packetlist) {
     if (packetlist) {
       for (let i = 0; i < packetlist.length; i++) {
         this.push(packetlist[i]);
       }
     }
-    return this;
   }
 }
 

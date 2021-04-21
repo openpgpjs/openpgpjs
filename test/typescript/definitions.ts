@@ -93,6 +93,9 @@ import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Messag
   literalPackets.push(new LiteralDataPacket());
   literalPackets[0].write();
   literalPackets.map((packet: LiteralDataPacket) => packet);
+  packets.append(literalPackets);
+  // @ts-expect-error for incompatible packetlist type
+  literalPackets.append(packets);
   // @ts-expect-error for incompatible packet type
   new PacketList<LiteralDataPacket>().push(new CompressedDataPacket());
 

@@ -385,7 +385,7 @@ export class Message {
         delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
         return pkESKeyPacket;
       }));
-      packetlist.concat(results);
+      packetlist.append(results);
     }
     if (passwords) {
       const testDecrypt = async function(keyPacket, password) {
@@ -420,7 +420,7 @@ export class Message {
       };
 
       const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, algorithm, aeadAlgorithm, pwd)));
-      packetlist.concat(results);
+      packetlist.append(results);
     }
 
     return new Message(packetlist);
@@ -487,7 +487,7 @@ export class Message {
     });
 
     packetlist.push(literalDataPacket);
-    packetlist.concat(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, false, config));
+    packetlist.append(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, false, config));
 
     return new Message(packetlist);
   }
@@ -551,7 +551,7 @@ export class Message {
       throw new Error('Can only verify message with one literal data packet.');
     }
     if (stream.isArrayStream(msg.packets.stream)) {
-      msg.packets.concat(await stream.readToEnd(msg.packets.stream, _ => _));
+      msg.packets.append(await stream.readToEnd(msg.packets.stream, _ => _));
     }
     const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
     const signatureList = msg.packets.filterByTag(enums.packet.signature);
@@ -686,7 +686,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
 
   if (signature) {
     const existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
-    packetlist.concat(existingSigPacketlist);
+    packetlist.append(existingSigPacketlist);
   }
   return packetlist;
 }

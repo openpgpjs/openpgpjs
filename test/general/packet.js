@@ -747,7 +747,7 @@ module.exports = () => describe("Packet", function() {
       await encData.decrypt(pkesk.sessionKeyAlgorithm, pkesk.sessionKey);
 
       const payload = encData.packets[0].packets;
-      payload.concat(await openpgp.stream.readToEnd(payload.stream, arr => arr));
+      payload.append(await openpgp.stream.readToEnd(payload.stream, arr => arr));
       const literal = payload[1];
       const signature = payload[2];
 
@@ -942,7 +942,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
         const signed2 = new openpgp.PacketList();
         await signed2.read(raw, allAllowedPackets);
-        signed2.concat(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
+        signed2.append(await openpgp.stream.readToEnd(signed2.stream, arr => arr));
 
         await Promise.all([
           signed2[1].verify(key, openpgp.enums.signature.text, signed2[0]),
