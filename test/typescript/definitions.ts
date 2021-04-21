@@ -7,8 +7,7 @@
  */
 
 import { expect } from 'chai';
-import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Message, createCleartextMessage, encrypt, decrypt, sign, verify, config, LiteralDataPacket, PacketList, enums } from '../..';
-
+import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Message, createCleartextMessage, encrypt, decrypt, sign, verify, config, enums, LiteralDataPacket, PacketList, CompressedDataPacket } from '../..';
 
 (async () => {
 
@@ -78,12 +77,26 @@ import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Messag
   const verifiedBinaryData: Uint8Array = verifiedBinary.data;
   expect(verifiedBinaryData).to.deep.equal(binary);
 
+  // Generic packetlist
   const packets = new PacketList();
   expect(packets.push()).to.equal(0);
   expect(packets.push(new LiteralDataPacket())).to.equal(1);
-  packets[0].write();
+  packets.map(packet => packet.write);
+  // @ts-expect-error for unsafe downcasting
+  packets.map((packet: LiteralDataPacket) => packet.getText());
+  // @ts-expect-error for non-packet element
+  try { new PacketList().push(1); } catch (e) {}
 
-  expect(LiteralDataPacket.tag).to.equal(enums.packet.literalData)
+
+  // Packetlist of specific type
+  const literalPackets = new PacketList<LiteralDataPacket>();
+  literalPackets.push(new LiteralDataPacket());
+  literalPackets[0].write();
+  literalPackets.map((packet: LiteralDataPacket) => packet);
+  // @ts-expect-error for incompatible packet type
+  new PacketList<LiteralDataPacket>().push(new CompressedDataPacket());
+
+  expect(LiteralDataPacket.tag).to.equal(enums.packet.literalData);
 
   // // Detached - sign cleartext message (armored)
   // import { Message, sign } from 'openpgp';

@@ -28,6 +28,11 @@ class TrustPacket {
    * @param {String} byptes - Payload of a tag 12 packet
    */
   read() {} // TODO
+
+  // eslint-disable-next-line class-methods-use-this
+  write() {
+    throw new Error('Trust packets are not supported');
+  }
 }
 
 export default TrustPacket;
