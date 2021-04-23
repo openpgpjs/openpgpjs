@@ -45,8 +45,10 @@ onmessage = async function({ data: { action, message }, ports: [port] }) {
     switch (action) {
       case 'encrypt': {
         const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
-        const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-        await privateKey.decrypt('test');
+        const privateKey = await openpgp.decryptKey({
+          privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+          passphrase: 'test'
+        });
         const data = await openpgp.encrypt({
           message: await openpgp.createMessage({ text: message }),
           publicKeys: publicKey,
@@ -57,8 +59,10 @@ onmessage = async function({ data: { action, message }, ports: [port] }) {
       }
       case 'decrypt': {
         const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
-        const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-        await privateKey.decrypt('test');
+        const privateKey = await openpgp.decryptKey({
+          privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+          passphrase: 'test'
+        });
         const { data, signatures } = await openpgp.decrypt({
           message: await openpgp.readMessage({ armoredMessage: message }),
           publicKeys: publicKey,

@@ -684,15 +684,15 @@ module.exports = () => describe("Packet", function() {
         '=pR+C\n' +
         '-----END PGP MESSAGE-----';
 
-    let key = new openpgp.PacketList();
-    await key.read((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
-    key = key[3];
-    await key.decrypt('test');
+    const keyPackets = new openpgp.PacketList();
+    await keyPackets.read((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
+    const keyPacket = keyPackets[3];
+    await keyPacket.decrypt('test');
 
     const msg = new openpgp.PacketList();
     await msg.read((await openpgp.unarmor(armored_msg)).data, allAllowedPackets);
 
-    return msg[0].decrypt(key).then(async () => {
+    return msg[0].decrypt(keyPacket).then(async () => {
       await msg[1].decrypt(msg[0].sessionKeyAlgorithm, msg[0].sessionKey);
 
       const text = await stringify(msg[1].packets[0].packets[0].data);

@@ -159,11 +159,29 @@ class Key {
 
   /**
    * Clones the key object
-   * @returns {Promise<Key>} Shallow clone of the key.
+   * @param {Boolean} [deep=false] Whether to return a deep clone
+   * @returns {Promise<Key>} Clone of the key.
    * @async
    */
-  async clone() {
-    return new Key(this.toPacketlist());
+  async clone(deep = false) {
+    const key = new Key(this.toPacketlist());
+    if (deep) {
+      key.getKeys().forEach(k => {
+        // shallow clone the key packets
+        k.keyPacket = Object.create(
+          Object.getPrototypeOf(k.keyPacket),
+          Object.getOwnPropertyDescriptors(k.keyPacket)
+        );
+        if (!k.keyPacket.isDecrypted()) return;
+        // deep clone the private params, which are cleared during encryption
+        const privateParams = {};
+        Object.keys(k.keyPacket.privateParams).forEach(name => {
+          privateParams[name] = new Uint8Array(k.keyPacket.privateParams[name]);
+        });
+        k.keyPacket.privateParams = privateParams;
+      });
+    }
+    return key;
   }
 
   /**
@@ -411,70 +429,6 @@ class Key {
     }
 
     return keys;
-  }
-
-  /**
-   * Encrypts all secret key and subkey packets matching keyID
-   * @param {String|Array<String>} passphrases - If multiple passphrases, then should be in same order as packets each should encrypt
-   * @param {module:type/keyid~KeyID} keyID
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @throws {Error} if encryption failed for any key or subkey
-   * @async
-   */
-  async encrypt(passphrases, keyID = null, config = defaultConfig) {
-    if (!this.isPrivate()) {
-      throw new Error("Nothing to encrypt in a public key");
-    }
-
-    const keys = this.getKeys(keyID);
-    passphrases = util.isArray(passphrases) ? passphrases : new Array(keys.length).fill(passphrases);
-    if (passphrases.length !== keys.length) {
-      throw new Error("Invalid number of passphrases for key");
-    }
-
-    await Promise.all(keys.map(async function(key, i) {
-      const { keyPacket } = key;
-      await keyPacket.encrypt(passphrases[i], config);
-      keyPacket.clearPrivateParams();
-    }));
-  }
-
-  /**
-   * Decrypts all secret key and subkey packets matching keyID
-   * @param {String|Array<String>} passphrases
-   * @param {module:type/keyid~KeyID} keyID
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @throws {Error} if any matching key or subkey packets did not decrypt successfully
-   * @async
-   */
-  async decrypt(passphrases, keyID = null, config = defaultConfig) {
-    if (!this.isPrivate()) {
-      throw new Error("Nothing to decrypt in a public key");
-    }
-    passphrases = util.isArray(passphrases) ? passphrases : [passphrases];
-
-    await Promise.all(this.getKeys(keyID).map(async function(key) {
-      let decrypted = false;
-      let error = null;
-      await Promise.all(passphrases.map(async function(passphrase) {
-        try {
-          await key.keyPacket.decrypt(passphrase);
-          // If we are decrypting a single key packet, we also validate it directly
-          if (keyID) await key.keyPacket.validate();
-          decrypted = true;
-        } catch (e) {
-          error = e;
-        }
-      }));
-      if (!decrypted) {
-        throw error;
-      }
-    }));
-
-    if (!keyID) {
-      // The full key should be decrypted and we can validate it all
-      await this.validate(config);
-    }
   }
 
   /**

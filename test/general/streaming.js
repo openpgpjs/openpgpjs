@@ -84,8 +84,6 @@ const priv_key = [
   '-----END PGP PRIVATE KEY BLOCK-----'
 ].join('\n');
 
-const passphrase = 'hello world';
-
 const brainpoolPub = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
   '',
@@ -344,9 +342,12 @@ function tests() {
   it('Encrypt and decrypt larger message roundtrip using curve x25519 (allowUnauthenticatedStream=true)', async function() {
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
-    const priv = await openpgp.readKey({ armoredKey: xPriv });
     const pub = await openpgp.readKey({ armoredKey: xPub });
-    await priv.decrypt(xPass);
+    const priv = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: xPriv }),
+      passphrase: xPass
+    });
+
     try {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
@@ -376,9 +377,12 @@ function tests() {
   it('Encrypt and decrypt larger message roundtrip using curve brainpool (allowUnauthenticatedStream=true)', async function() {
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
-    const priv = await openpgp.readKey({ armoredKey: brainpoolPriv });
     const pub = await openpgp.readKey({ armoredKey: brainpoolPub });
-    await priv.decrypt(brainpoolPass);
+    const priv = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: brainpoolPriv }),
+      passphrase: brainpoolPass
+    });
+
     try {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
@@ -698,9 +702,12 @@ function tests() {
         this.push(null);
       }
     });
-    const priv = await openpgp.readKey({ armoredKey: brainpoolPriv });
     const pub = await openpgp.readKey({ armoredKey: brainpoolPub });
-    await priv.decrypt(brainpoolPass);
+    const priv = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: brainpoolPriv }),
+      passphrase: brainpoolPass
+    });
+
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
       privateKeys: priv,
@@ -734,9 +741,12 @@ function tests() {
         this.push(null);
       }
     });
-    const priv = await openpgp.readKey({ armoredKey: xPriv });
     const pub = await openpgp.readKey({ armoredKey: xPub });
-    await priv.decrypt(xPass);
+    const priv = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: xPriv }),
+      passphrase: xPass
+    });
+
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
       privateKeys: priv,
@@ -937,8 +947,10 @@ module.exports = () => describe('Streaming', function() {
 
   before(async function() {
     pubKey = await openpgp.readKey({ armoredKey: pub_key });
-    privKey = await openpgp.readKey({ armoredKey: priv_key });
-    await privKey.decrypt(passphrase);
+    privKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+      passphrase: 'hello world'
+    });
   });
 
   beforeEach(function() {
