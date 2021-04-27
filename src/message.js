@@ -598,7 +598,7 @@ export class Message {
    *   keyID: module:type/keyid~KeyID,
    *   signature: Promise<Signature>,
    *   verified: Promise<Boolean>
-   * }>} List of signer's keyID and validity of signature.
+   * }>>} List of signer's keyID and validity of signature.
    * @async
    */
   verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
