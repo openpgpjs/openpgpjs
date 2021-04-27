@@ -146,7 +146,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L50">line 50</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L66">line 66</a>
     </li></ul></dd>
     
 
@@ -209,7 +209,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id=".encryptSessionKey"><span class="type-signature">(async, static) </span>encryptSessionKey<span class="signature">(sessionKey, algorithm, aeadAlgorithm<span class="signature-attributes">opt</span>, publicKeys<span class="signature-attributes">opt</span>, passwords<span class="signature-attributes">opt</span>, wildcard<span class="signature-attributes">opt</span>, encryptionKeyIds<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIds<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
+    <h4 class="name" id=".encryptSessionKey"><span class="type-signature">(async, static) </span>encryptSessionKey<span class="signature">(sessionKey, algorithm, aeadAlgorithm<span class="signature-attributes">opt</span>, publicKeys<span class="signature-attributes">opt</span>, passwords<span class="signature-attributes">opt</span>, wildcard<span class="signature-attributes">opt</span>, encryptionKeyIDs<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIDs<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Message.html">Message</a>>}</span></h4>
     
 
     
@@ -357,7 +357,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
                 </td>
             
 
-            <td class="description last"><p>Aead algorithm, e.g. 'eax' or 'ocb'</p></td>
+            <td class="description last"><p>AEAD algorithm, e.g. 'eax' or 'ocb'</p></td>
         </tr>
 
     
@@ -477,13 +477,13 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>encryptionKeyIds</code></td>
+                <td class="name"><code>encryptionKeyIDs</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>></span>
+<span class="param-type">Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>></span>
 
 
             
@@ -507,7 +507,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]</p></td>
+            <td class="description last"><p>Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to publicKeys[i]</p></td>
         </tr>
 
     
@@ -551,7 +551,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>userIds</code></td>
+                <td class="name"><code>userIDs</code></td>
             
 
             <td class="type">
@@ -661,7 +661,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L356">line 356</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L373">line 373</a>
     </li></ul></dd>
     
 
@@ -701,7 +701,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type"><a href="Message.html">Message</a></span>
+<span class="param-type">Promise.&lt;<a href="Message.html">Message</a>></span>
 
 
     </dd>
@@ -719,619 +719,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id=".fromBinary"><span class="type-signature">(static) </span>fromBinary<span class="signature">(bytes, filename<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, type<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Creates new message object from binary data.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-        <th>Default</th>
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>bytes</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-|
-
-<span class="param-type">ReadableStream.&lt;Uint8Array></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                </td>
-            
-
-            <td class="description last"><p>The message contents</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>filename</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    ""
-                
-                </td>
-            
-
-            <td class="description last"><p>Name of the file (if any)</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>date</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Date</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    current date
-                
-                </td>
-            
-
-            <td class="description last"><p>Date of the message, or modification date of the file</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">'utf8'</span>
-|
-
-<span class="param-type">'binary'</span>
-|
-
-<span class="param-type">'text'</span>
-|
-
-<span class="param-type">'mime'</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    'binary'
-                
-                </td>
-            
-
-            <td class="description last"><p>Data packet type</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L663">line 663</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>New message object.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Message.html">Message</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id=".fromText"><span class="type-signature">(static) </span>fromText<span class="signature">(text, filename<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, type<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Creates new message object from text.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-        <th>Default</th>
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>text</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-|
-
-<span class="param-type">ReadableStream.&lt;String></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                </td>
-            
-
-            <td class="description last"><p>The message contents</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>filename</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    ""
-                
-                </td>
-            
-
-            <td class="description last"><p>Name of the file (if any)</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>date</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Date</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    current date
-                
-                </td>
-            
-
-            <td class="description last"><p>Date of the message, or modification date of the file</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">'utf8'</span>
-|
-
-<span class="param-type">'binary'</span>
-|
-
-<span class="param-type">'text'</span>
-|
-
-<span class="param-type">'mime'</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    'utf8'
-                
-                </td>
-            
-
-            <td class="description last"><p>Data packet type</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L636">line 636</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>New message object.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Message.html">Message</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id=".generateSessionKey"><span class="type-signature">(async, static) </span>generateSessionKey<span class="signature">(keys<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIds<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    <h4 class="name" id=".generateSessionKey"><span class="type-signature">(async, static) </span>generateSessionKey<span class="signature">(keys<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIDs<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;{data: Uint8Array, algorithm: String}>}</span></h4>
     
 
     
@@ -1443,7 +831,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>userIds</code></td>
+                <td class="name"><code>userIDs</code></td>
             
 
             <td class="type">
@@ -1545,7 +933,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L285">line 285</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L302">line 302</a>
     </li></ul></dd>
     
 
@@ -1585,7 +973,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type">Object</span>
+<span class="param-type">Promise.&lt;{data: Uint8Array, algorithm: String}></span>
 
 
     </dd>
@@ -1709,7 +1097,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L606">line 606</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L630">line 630</a>
     </li></ul></dd>
     
 
@@ -1860,7 +1248,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L623">line 623</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L650">line 650</a>
     </li></ul></dd>
     
 
@@ -1918,7 +1306,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="compress"><span class="type-signature"></span>compress<span class="signature">(config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
+    <h4 class="name" id="compress"><span class="type-signature"></span>compress<span class="signature">(algo, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
     
 
     
@@ -1960,6 +1348,37 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </thead>
 
     <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>algo</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-enums.html#.compression">module:enums.compression</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>compression algorithm</p></td>
+        </tr>
+
     
 
         <tr>
@@ -2033,7 +1452,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L484">line 484</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L501">line 501</a>
     </li></ul></dd>
     
 
@@ -2091,7 +1510,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="decrypt"><span class="type-signature">(async) </span>decrypt<span class="signature">(privateKeys<span class="signature-attributes">opt</span>, passwords<span class="signature-attributes">opt</span>, sessionKeys<span class="signature-attributes">opt</span>, streaming<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
+    <h4 class="name" id="decrypt"><span class="type-signature">(async) </span>decrypt<span class="signature">(privateKeys<span class="signature-attributes">opt</span>, passwords<span class="signature-attributes">opt</span>, sessionKeys<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Message.html">Message</a>>}</span></h4>
     
 
     
@@ -2236,39 +1655,6 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>streaming</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Whether to process data as a stream</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>config</code></td>
             
 
@@ -2338,7 +1724,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L99">line 99</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L114">line 114</a>
     </li></ul></dd>
     
 
@@ -2378,7 +1764,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type"><a href="Message.html">Message</a></span>
+<span class="param-type">Promise.&lt;<a href="Message.html">Message</a>></span>
 
 
     </dd>
@@ -2577,7 +1963,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L150">line 150</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L167">line 167</a>
     </li></ul></dd>
     
 
@@ -2635,7 +2021,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="encrypt"><span class="type-signature">(async) </span>encrypt<span class="signature">(keys<span class="signature-attributes">opt</span>, passwords<span class="signature-attributes">opt</span>, sessionKey<span class="signature-attributes">opt</span>, wildcard<span class="signature-attributes">opt</span>, encryptionKeyIds<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIds<span class="signature-attributes">opt</span>, streaming<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
+    <h4 class="name" id="encrypt"><span class="type-signature">(async) </span>encrypt<span class="signature">(keys<span class="signature-attributes">opt</span>, passwords<span class="signature-attributes">opt</span>, sessionKey<span class="signature-attributes">opt</span>, wildcard<span class="signature-attributes">opt</span>, encryptionKeyIDs<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIDs<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Message.html">Message</a>>}</span></h4>
     
 
     
@@ -2833,13 +2219,13 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>encryptionKeyIds</code></td>
+                <td class="name"><code>encryptionKeyIDs</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>></span>
+<span class="param-type">Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>></span>
 
 
             
@@ -2863,7 +2249,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for encryption. Each encryptionKeyIds[i] corresponds to publicKeys[i]</p></td>
+            <td class="description last"><p>Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to publicKeys[i]</p></td>
         </tr>
 
     
@@ -2907,7 +2293,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>userIds</code></td>
+                <td class="name"><code>userIDs</code></td>
             
 
             <td class="type">
@@ -2938,43 +2324,6 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
             
 
             <td class="description last"><p>User IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>streaming</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                </td>
-            
-
-            <td class="description last"><p>Whether to process data as a stream</p></td>
         </tr>
 
     
@@ -3054,7 +2403,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L308">line 308</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L325">line 325</a>
     </li></ul></dd>
     
 
@@ -3094,7 +2443,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type"><a href="Message.html">Message</a></span>
+<span class="param-type">Promise.&lt;<a href="Message.html">Message</a>></span>
 
 
     </dd>
@@ -3112,7 +2461,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="getEncryptionKeyIds"><span class="type-signature"></span>getEncryptionKeyIds<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>>}</span></h4>
+    <h4 class="name" id="getEncryptionKeyIDs"><span class="type-signature"></span>getEncryptionKeyIDs<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>>}</span></h4>
     
 
     
@@ -3166,7 +2515,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L58">line 58</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L74">line 74</a>
     </li></ul></dd>
     
 
@@ -3195,7 +2544,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         
 <div class="param-desc">
-    <p>Array of keyid objects.</p>
+    <p>Array of keyID objects.</p>
 </div>
 
 
@@ -3206,7 +2555,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type">Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>></span>
+<span class="param-type">Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>></span>
 
 
     </dd>
@@ -3278,7 +2627,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L257">line 257</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L274">line 274</a>
     </li></ul></dd>
     
 
@@ -3393,7 +2742,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L247">line 247</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L264">line 264</a>
     </li></ul></dd>
     
 
@@ -3454,7 +2803,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="getSigningKeyIds"><span class="type-signature"></span>getSigningKeyIds<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>>}</span></h4>
+    <h4 class="name" id="getSigningKeyIDs"><span class="type-signature"></span>getSigningKeyIDs<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>>}</span></h4>
     
 
     
@@ -3508,7 +2857,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L71">line 71</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L87">line 87</a>
     </li></ul></dd>
     
 
@@ -3537,7 +2886,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         
 <div class="param-desc">
-    <p>Array of keyid objects.</p>
+    <p>Array of keyID objects.</p>
 </div>
 
 
@@ -3548,7 +2897,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type">Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>></span>
+<span class="param-type">Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>></span>
 
 
     </dd>
@@ -3620,7 +2969,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L267">line 267</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L284">line 284</a>
     </li></ul></dd>
     
 
@@ -3681,7 +3030,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="sign"><span class="type-signature">(async) </span>sign<span class="signature">(privateKeys, signature<span class="signature-attributes">opt</span>, signingKeyIds<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIds<span class="signature-attributes">opt</span>, streaming<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Message.html">Message</a>}</span></h4>
+    <h4 class="name" id="sign"><span class="type-signature">(async) </span>sign<span class="signature">(privateKeys, signature<span class="signature-attributes">opt</span>, signingKeyIDs<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIDs<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Message.html">Message</a>>}</span></h4>
     
 
     
@@ -3803,13 +3152,13 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>signingKeyIds</code></td>
+                <td class="name"><code>signingKeyIDs</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>></span>
+<span class="param-type">Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>></span>
 
 
             
@@ -3833,7 +3182,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]</p></td>
+            <td class="description last"><p>Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]</p></td>
         </tr>
 
     
@@ -3877,7 +3226,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>userIds</code></td>
+                <td class="name"><code>userIDs</code></td>
             
 
             <td class="type">
@@ -3908,45 +3257,6 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
             
 
             <td class="description last"><p>User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>streaming</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    false
-                
-                </td>
-            
-
-            <td class="description last"><p>Whether to process data as a stream</p></td>
         </tr>
 
     
@@ -4026,7 +3336,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L424">line 424</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L440">line 440</a>
     </li></ul></dd>
     
 
@@ -4066,7 +3376,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type"><a href="Message.html">Message</a></span>
+<span class="param-type">Promise.&lt;<a href="Message.html">Message</a>></span>
 
 
     </dd>
@@ -4084,7 +3394,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="signDetached"><span class="type-signature">(async) </span>signDetached<span class="signature">(privateKeys, signature<span class="signature-attributes">opt</span>, signingKeyIds<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIds<span class="signature-attributes">opt</span>, streaming<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Signature.html">Signature</a>}</span></h4>
+    <h4 class="name" id="signDetached"><span class="type-signature">(async) </span>signDetached<span class="signature">(privateKeys, signature<span class="signature-attributes">opt</span>, signingKeyIDs<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userIDs<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Signature.html">Signature</a>>}</span></h4>
     
 
     
@@ -4206,13 +3516,13 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>signingKeyIds</code></td>
+                <td class="name"><code>signingKeyIDs</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>></span>
+<span class="param-type">Array.&lt;<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>></span>
 
 
             
@@ -4236,7 +3546,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for signing. Each signingKeyIds[i] corresponds to privateKeys[i]</p></td>
+            <td class="description last"><p>Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]</p></td>
         </tr>
 
     
@@ -4280,7 +3590,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>userIds</code></td>
+                <td class="name"><code>userIDs</code></td>
             
 
             <td class="type">
@@ -4311,45 +3621,6 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
             
 
             <td class="description last"><p>User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>streaming</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-                <td class="default">
-                
-                    false
-                
-                </td>
-            
-
-            <td class="description last"><p>Whether to process data as a stream</p></td>
         </tr>
 
     
@@ -4429,7 +3700,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L510">line 510</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L527">line 527</a>
     </li></ul></dd>
     
 
@@ -4469,7 +3740,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type"><a href="Signature.html">Signature</a></span>
+<span class="param-type">Promise.&lt;<a href="Signature.html">Signature</a>></span>
 
 
     </dd>
@@ -4541,7 +3812,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L594">line 594</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L618">line 618</a>
     </li></ul></dd>
     
 
@@ -4599,7 +3870,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(keys, date<span class="signature-attributes">opt</span>, streaming<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Array.&lt;({keyid: <a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>, valid: Boolean})>}</span></h4>
+    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(keys, date<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, signature: Promise.&lt;<a href="Signature.html">Signature</a>>, verified: Promise.&lt;Boolean>}>>}</span></h4>
     
 
     
@@ -4709,39 +3980,6 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         <tr>
             
-                <td class="name"><code>streaming</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Whether to process data as a stream</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
                 <td class="name"><code>config</code></td>
             
 
@@ -4811,7 +4049,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L527">line 527</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L547">line 547</a>
     </li></ul></dd>
     
 
@@ -4840,7 +4078,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         
 <div class="param-desc">
-    <p>List of signer's keyid and validity of signature.</p>
+    <p>List of signer's keyID and validity of signatures.</p>
 </div>
 
 
@@ -4851,7 +4089,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type">Array.&lt;({keyid: <a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>, valid: Boolean})></span>
+<span class="param-type">Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, signature: Promise.&lt;<a href="Signature.html">Signature</a>>, verified: Promise.&lt;Boolean>}>></span>
 
 
     </dd>
@@ -4869,7 +4107,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
 
     
-    <h4 class="name" id="verifyDetached"><span class="type-signature">(async) </span>verifyDetached<span class="signature">(keys, signature, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Array.&lt;({keyid: <a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>, valid: Boolean})>}</span></h4>
+    <h4 class="name" id="verifyDetached"><span class="type-signature">(async) </span>verifyDetached<span class="signature">(keys, signature, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, signature: Promise.&lt;<a href="Signature.html">Signature</a>>, verified: Promise.&lt;Boolean>}>>}</span></h4>
     
 
     
@@ -5077,7 +4315,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L580">line 580</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L604">line 604</a>
     </li></ul></dd>
     
 
@@ -5106,7 +4344,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 
         
 <div class="param-desc">
-    <p>List of signer's keyid and validity of signature.</p>
+    <p>List of signer's keyID and validity of signature.</p>
 </div>
 
 
@@ -5117,7 +4355,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     </dt>
     <dd>
         
-<span class="param-type">Array.&lt;({keyid: <a href="module-type_keyid-Keyid.html">module:type/keyid~Keyid</a>, valid: Boolean})></span>
+<span class="param-type">Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, signature: Promise.&lt;<a href="Signature.html">Signature</a>>, verified: Promise.&lt;Boolean>}>></span>
 
 
     </dd>
@@ -5189,7 +4427,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-1/src/message.js#L614">line 614</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L641">line 641</a>
     </li></ul></dd>
     
 
@@ -5257,7 +4495,7 @@ See <a href="https://tools.ietf.org/html/rfc4880#section-11.3">https://tools.iet
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-Keyid.html">Keyid</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">

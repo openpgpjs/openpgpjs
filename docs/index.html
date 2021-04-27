@@ -208,9 +208,9 @@ library to convert back and forth between them.</p>
 <li>
 <p>The library implements the <a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10">IETF proposal</a> for authenticated encryption using native AES-EAX, OCB, or GCM. This makes symmetric encryption up to 30x faster on supported platforms. Since the specification has not been finalized and other OpenPGP implementations haven't adopted it yet, the feature is currently behind a flag. <strong>Note: activating this setting can break compatibility with other OpenPGP implementations, and also with future versions of OpenPGP.js. Don't use it with messages you want to store on disk or in a database.</strong> You can enable it by setting <code>openpgp.config.aeadProtect = true</code>.</p>
 <p>You can change the AEAD mode by setting one of the following options:</p>
-<pre class="prettyprint source"><code>openpgp.config.aeadMode = openpgp.enums.aead.eax // Default, native
-openpgp.config.aeadMode = openpgp.enums.aead.ocb // Non-native
-openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm // **Non-standard**, fastest
+<pre class="prettyprint source"><code>openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax // Default, native
+openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb // Non-native
+openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM // **Non-standard**, fastest
 </code></pre>
 </li>
 <li>
@@ -243,7 +243,7 @@ openpgp.config.aeadMode = openpgp.enums.aead.experimentalGcm // **Non-standard**
 </code></pre>
 <p>To test whether the lazy loading works, try to generate a key with a non-standard curve:</p>
 <pre class="prettyprint source lang-js"><code>import { generateKey } from 'openpgp/lightweight';
-await generateKey({ curve: 'brainpoolP512r1',  userIds: [{ name: 'Test', email: 'test@test.com' }] });
+await generateKey({ curve: 'brainpoolP512r1',  userIDs: [{ name: 'Test', email: 'test@test.com' }] });
 </code></pre>
 <p>For more examples of how to generate a key, see <a href="#generate-new-key-pair">Generate new key pair</a>. It is recommended to use <code>curve25519</code> instead of <code>brainpoolP512r1</code> by default.</p>
 <h4 id="browser-(plain-files)">Browser (plain files)</h4>
@@ -259,9 +259,9 @@ import * as openpgp from './openpgp.min.mjs';
 <h3 id="examples">Examples</h3>
 <p>Here are some examples of how to use OpenPGP.js v5. For more elaborate examples and working code, please check out the <a href="https://github.com/openpgpjs/openpgpjs/blob/master/test/general/openpgp.js">public API unit tests</a>. If you're upgrading from v4 it might help to check out the <a href="https://github.com/openpgpjs/openpgpjs/wiki/V5-Changelog">changelog</a> and <a href="https://github.com/openpgpjs/openpgpjs#documentation">documentation</a>.</p>
 <h4 id="encrypt-and-decrypt-uint8array-data-with-a-password">Encrypt and decrypt <em>Uint8Array</em> data with a password</h4>
-<p>Encryption will use the algorithm specified in config.encryptionCipher (defaults to aes256), and decryption will use the algorithm used for encryption.</p>
+<p>Encryption will use the algorithm specified in config.preferredSymmetricAlgorithm (defaults to aes256), and decryption will use the algorithm used for encryption.</p>
 <pre class="prettyprint source lang-js"><code>(async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x01, 0x01]));
+    const message = await openpgp.createMessage({ binary: new Uint8Array([0x01, 0x01, 0x01]) });
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -296,11 +296,13 @@ import * as openpgp from './openpgp.min.mjs';
 
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
-    const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-    await privateKey.decrypt(passphrase);
+    const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        passphrase
+    });
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText('Hello, World!'), // input as Message object
+        message: await openpgp.createMessage({ text: 'Hello, World!' }), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -309,15 +311,16 @@ import * as openpgp from './openpgp.min.mjs';
     const message = await openpgp.readMessage({
         armoredMessage: encrypted // parse armored message
     });
-    const { data: decrypted } = await openpgp.decrypt({
+    const { data: decrypted, signatures } = await openpgp.decrypt({
         message,
         publicKeys: publicKey, // for verification (optional)
         privateKeys: privateKey // for decryption
     });
     console.log(decrypted); // 'Hello, World!'
+    console.log(signatures[0].valid) // signature validity (signed messages only)
 })();
 </code></pre>
-<p>Encrypt with multiple public keys:</p>
+<p>Encrypt to multiple public keys:</p>
 <pre class="prettyprint source lang-js"><code>(async () => {
     const publicKeysArmored = [
         `-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -335,10 +338,12 @@ import * as openpgp from './openpgp.min.mjs';
 
     const publicKeys = await Promise.all(publicKeysArmored.map(armoredKey => openpgp.readKey({ armoredKey })));
 
-    const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-    await privateKey.decrypt(passphrase)
+    const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        passphrase
+    });
 
-    const message = openpgp.Message.fromText(message);
+    const message = await openpgp.createMessage({ text: message });
     const encrypted = await openpgp.encrypt({
         message:, // input as Message object
         publicKeys, // for encryption
@@ -347,25 +352,61 @@ import * as openpgp from './openpgp.min.mjs';
     console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 })();
 </code></pre>
-<h4 id="encrypt-with-compression">Encrypt with compression</h4>
-<p>By default, <code>encrypt</code> will not use any compression. It's possible to override that behavior in two ways:</p>
-<p>Either set the <code>compression</code> parameter in the options object when calling <code>encrypt</code>.</p>
+<p>If you expect an encrypted message to be signed with one of the public keys you have, and do not want to trust the decrypted data otherwise, you can pass the decryption option <code>expectSigned = true</code>, so that the decryption operation will fail if no valid signature is found:</p>
 <pre class="prettyprint source lang-js"><code>(async () => {
-    const message = openpgp.Message.fromBinary(new Uint8Array([0x01, 0x02, 0x03])); // or .fromText('string')
+    // put keys in backtick (``) to avoid errors caused by spaces or tabs
+    const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+...
+-----END PGP PUBLIC KEY BLOCK-----`;
+    const privateKeyArmored = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+...
+-----END PGP PRIVATE KEY BLOCK-----`; // encrypted private key
+    const passphrase = `yourPassphrase`; // what the private key is encrypted with
+
+    const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+
+    const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        passphrase
+    });
+
+    const encryptedAndSignedMessage = `-----BEGIN PGP MESSAGE-----
+...
+-----END PGP MESSAGE-----`;
+
+    const message = await openpgp.readMessage({
+        armoredMessage: encryptedAndSignedMessage // parse armored message
+    });
+    // decryption will fail if all signatures are invalid or missing
+    const { data: decrypted, signatures } = await openpgp.decrypt({
+        message,
+        privateKeys: privateKey // for decryption
+        expectSigned: true,
+        publicKeys: publicKey, // for verification (mandatory with expectSigned=true)
+    });
+    console.log(decrypted); // 'Hello, World!'
+})();
+</code></pre>
+<h4 id="encrypt-symmetrically-with-compression">Encrypt symmetrically with compression</h4>
+<p>By default, <code>encrypt</code> will not use any compression when encrypting symmetrically only (i.e. when no <code>publicKeys</code> are given).
+It's possible to change that behaviour by enabling compression through the config, either for the single encryption:</p>
+<pre class="prettyprint source lang-js"><code>(async () => {
+    const message = await openpgp.createMessage({ binary: new Uint8Array([0x01, 0x02, 0x03]) }); // or createMessage({ text: 'string' })
     const encrypted = await openpgp.encrypt({
         message,
         passwords: ['secret stuff'], // multiple passwords possible
-        compression: openpgp.enums.compression.zip // compress the data with zip
+        config: { preferredCompressionAlgorithm: openpgp.enums.compression.zlib } // compress the data with zlib
     });
 })();
 </code></pre>
-<p>Or, override the config to enable compression:</p>
-<pre class="prettyprint source lang-js"><code>openpgp.config.compression = openpgp.enums.compression.zlib;
+<p>or by changing the default global configuration:</p>
+<pre class="prettyprint source lang-js"><code>openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib
 </code></pre>
 <p>Where the value can be any of:</p>
 <ul>
 <li><code>openpgp.enums.compression.zip</code></li>
 <li><code>openpgp.enums.compression.zlib</code></li>
+<li><code>openpgp.enums.compression.uncompressed</code> (default)</li>
 </ul>
 <h4 id="streaming-encrypt-uint8array-data-with-a-password">Streaming encrypt <em>Uint8Array</em> data with a password</h4>
 <pre class="prettyprint source lang-js"><code>(async () => {
@@ -376,7 +417,7 @@ import * as openpgp from './openpgp.min.mjs';
         }
     });
 
-    const message = openpgp.Message.fromBinary(readableStream);
+    const message = await openpgp.createMessage({ binary: readableStream });
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
@@ -414,8 +455,10 @@ its <a href="https://openpgpjs.org/web-stream-tools/Reader.html">Reader class</a
 
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
-    const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-    await privateKey.decrypt(passphrase);
+    const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        passphrase
+    });
 
     const readableStream = new openpgp.stream.ReadableStream({
         start(controller) {
@@ -425,7 +468,7 @@ its <a href="https://openpgpjs.org/web-stream-tools/Reader.html">Reader class</a
     });
 
     const encrypted = await openpgp.encrypt({
-        message: openpgp.Message.fromText(readableStream), // input as Message object
+        message: await openpgp.createMessage({ text: readableStream }), // input as Message object
         publicKeys: publicKey, // for encryption
         privateKeys: privateKey // for signing (optional)
     });
@@ -453,7 +496,7 @@ and a subkey for encryption using Curve25519.</p>
     const { privateKeyArmored, publicKeyArmored, revocationCertificate } = await openpgp.generateKey({
         type: 'ecc', // Type of the key, defaults to ECC
         curve: 'curve25519', // ECC curve name, defaults to curve25519
-        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret' // protects the private key
     });
 
@@ -467,7 +510,7 @@ and a subkey for encryption using Curve25519.</p>
     const key = await openpgp.generateKey({
         type: 'rsa', // Type of the key
         rsaBits: 4096, // RSA key size (defaults to 4096 bits)
-        userIds: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
+        userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret' // protects the private key
     });
 })();
@@ -501,10 +544,12 @@ and a subkey for encryption using Curve25519.</p>
 
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
-    const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-    await privateKey.decrypt(passphrase);
+    const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        passphrase
+    });
 
-    const unsignedMessage = openpgp.CleartextMessage.fromText('Hello, World!');
+    const unsignedMessage = await openpgp.createCleartextMessage({ text: 'Hello, World!' });
     const cleartextMessage = await openpgp.sign({
         message: unsignedMessage, // CleartextMessage or Message object
         privateKeys: privateKey // for signing
@@ -520,7 +565,7 @@ and a subkey for encryption using Curve25519.</p>
     });
     const { valid } = verified.signatures[0];
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }
@@ -538,10 +583,12 @@ and a subkey for encryption using Curve25519.</p>
 
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
-    const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-    await privateKey.decrypt(passphrase);
+    const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        passphrase
+    });
 
-    const cleartextMessage = openpgp.CleartextMessage.fromText('Hello, World!');
+    const cleartextMessage = await openpgp.createCleartextMessage({ text: 'Hello, World!' });
     const detachedSignature = await openpgp.sign({
         message: cleartextMessage, // CleartextMessage or Message object
         privateKeys: privateKey, // for signing
@@ -559,7 +606,7 @@ and a subkey for encryption using Curve25519.</p>
     });
     const { valid } = verified.signatures[0];
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }
@@ -582,10 +629,12 @@ and a subkey for encryption using Curve25519.</p>
 -----END PGP PRIVATE KEY BLOCK-----`; // encrypted private key
     const passphrase = `yourPassphrase`; // what the private key is encrypted with
 
-    const privateKey = await openpgp.readKey({ armoredKey: privateKeyArmored });
-    await privateKey.decrypt(passphrase);
+    const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        passphrase
+    });
 
-    const message = openpgp.Message.fromBinary(readableStream); // or .fromText(readableStream: ReadableStream&lt;String>)
+    const message = await openpgp.createMessage({ binary: readableStream }); // or createMessage({ text: ReadableStream&lt;String> })
     const signatureArmored = await openpgp.sign({
         message,
         privateKeys: privateKey // for signing
@@ -602,9 +651,9 @@ and a subkey for encryption using Curve25519.</p>
     // even if you don't need it, as that is what triggers the
     // verification of the data.
 
-    const { valid } = verified.signatures[0];
+    const valid = await verified.signatures[0].verified;
     if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyid.toHex());
+        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
     } else {
         throw new Error('signature could not be verified');
     }
@@ -638,7 +687,7 @@ and a subkey for encryption using Curve25519.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-Keyid.html">Keyid</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">
