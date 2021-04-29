@@ -352,7 +352,7 @@ export class SecretSubkeyPacket extends BaseSecretKeyPacket {
 export class CompressedDataPacket extends BasePacket {
   static readonly tag: enums.packet.compressedData;
   private compress(): void;
-  private decompress(): void;
+  private decompress(config?: Config): void;
 }
 
 export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
@@ -361,7 +361,7 @@ export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
 
 export class AEADEncryptedDataPacket extends BasePacket {
   static readonly tag: enums.packet.aeadEncryptedData;
-  private decrypt(sessionKeyAlgorithm: string, sessionKey: Uint8Array): void;
+  private decrypt(sessionKeyAlgorithm: string, sessionKey: Uint8Array, config?: Config): void;
   private encrypt(sessionKeyAlgorithm: string, sessionKey: Uint8Array, config?: Config): void;
   private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>
 }

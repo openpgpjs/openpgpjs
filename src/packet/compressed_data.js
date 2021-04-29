@@ -79,8 +79,9 @@ class CompressedDataPacket {
   /**
    * Parsing function for the packet.
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - Payload of a tag 8 packet
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  async read(bytes) {
+  async read(bytes, config = defaultConfig) {
     await stream.parse(bytes, async reader => {
 
       // One octet that gives the algorithm used to compress the packet.
@@ -89,7 +90,7 @@ class CompressedDataPacket {
       // Compressed data, which makes up the remainder of the packet.
       this.compressed = reader.remainder();
 
-      await this.decompress();
+      await this.decompress(config);
     });
   }
 
@@ -110,14 +111,15 @@ class CompressedDataPacket {
   /**
    * Decompression method for decompressing the compressed data
    * read by read_packet
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  async decompress() {
+  async decompress(config = defaultConfig) {
 
     if (!decompress_fns[this.algorithm]) {
       throw new Error(this.algorithm + ' decompression not supported');
     }
 
-    this.packets = await PacketList.fromBinary(decompress_fns[this.algorithm](this.compressed), allowedPackets);
+    this.packets = await PacketList.fromBinary(decompress_fns[this.algorithm](this.compressed), allowedPackets, config);
   }
 
   /**
