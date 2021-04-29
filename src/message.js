@@ -625,11 +625,13 @@ export class Message {
   /**
    * Append signature to unencrypted message object
    * @param {String|Uint8Array} detachedSignature - The detached ASCII-armored or Uint8Array PGP signature
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  async appendSignature(detachedSignature) {
+  async appendSignature(detachedSignature, config = defaultConfig) {
     await this.packets.read(
       util.isUint8Array(detachedSignature) ? detachedSignature : (await unarmor(detachedSignature)).data,
-      allowedDetachedSignaturePackets
+      allowedDetachedSignaturePackets,
+      config
     );
   }
 

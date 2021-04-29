@@ -2763,8 +2763,7 @@ module.exports = () => describe('Key', function() {
       43 ee 3b 24 06
     `.replace(/\s+/g, ''));
 
-    const packetlist = new openpgp.PacketList();
-    await packetlist.read(packetBytes, util.constructAllowedPackets([openpgp.PublicKeyPacket]), undefined, openpgp.config);
+    const packetlist = await openpgp.PacketList.fromBinary(packetBytes, util.constructAllowedPackets([openpgp.PublicKeyPacket]), openpgp.config);
     const key = packetlist[0];
     expect(key).to.exist;
   });
@@ -2792,12 +2791,9 @@ module.exports = () => describe('Key', function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(pubKey).to.exist;
 
-    const packetlist = new openpgp.PacketList();
-
-    await packetlist.read(
+    const packetlist = await openpgp.PacketList.fromBinary(
       (await openpgp.unarmor(pub_sig_test)).data,
       util.constructAllowedPackets([...Object.values(openpgp).filter(packetClass => !!packetClass.tag)]),
-      undefined,
       openpgp.config
     );
 
@@ -3288,8 +3284,7 @@ module.exports = () => describe('Key', function() {
     const revocationCertificate = await revKey.getRevocationCertificate();
 
     const input = await openpgp.unarmor(revocation_certificate_arm4);
-    const packetlist = new openpgp.PacketList();
-    await packetlist.read(input.data, util.constructAllowedPackets([openpgp.SignaturePacket]), undefined, openpgp.config);
+    const packetlist = await openpgp.PacketList.fromBinary(input.data, util.constructAllowedPackets([openpgp.SignaturePacket]), openpgp.config);
     const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write());
 
     expect(revocationCertificate.replace(/^Comment: .*$\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\n/mg, ''));

@@ -717,8 +717,7 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Secret key reading with signature verification.', async function() {
-    const packets = new openpgp.PacketList();
-    await packets.read((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
+    const packets = await openpgp.PacketList.fromBinary((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
     const [keyPacket, userIDPacket, keySigPacket, subkeyPacket, subkeySigPacket] = packets;
     expect(keySigPacket.verified).to.be.null;
     expect(subkeySigPacket.verified).to.be.null;
@@ -748,8 +747,7 @@ module.exports = () => describe("Packet", function() {
         '=htrB\n' +
         '-----END PGP MESSAGE-----';
 
-    const packets = new openpgp.PacketList();
-    await packets.read((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
+    const packets = await openpgp.PacketList.fromBinary((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
     const keyPacket = packets[0];
     const subkeyPacket = packets[3];
     await subkeyPacket.decrypt('test');
@@ -864,8 +862,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
     const raw = new openpgp.PacketList();
     raw.push(secretKeyPacket);
-    const packetList = new openpgp.PacketList();
-    await packetList.read(raw.write(), allAllowedPackets, undefined, openpgp.config);
+    const packetList = await openpgp.PacketList.fromBinary(raw.write(), allAllowedPackets, openpgp.config);
     const secretKeyPacket2 = packetList[0];
     await secretKeyPacket2.decrypt('hello');
 
@@ -921,8 +918,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
     const raw = new openpgp.PacketList();
     raw.push(secretKeyPacket);
-    const packetList = new openpgp.PacketList();
-    await packetList.read(raw.write(), allAllowedPackets, undefined, openpgp.config);
+    const packetList = await openpgp.PacketList.fromBinary(raw.write(), allAllowedPackets, openpgp.config);
     const secretKeyPacket2 = packetList[0];
     await secretKeyPacket2.decrypt('hello');
   });

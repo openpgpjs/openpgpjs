@@ -257,7 +257,7 @@ export class Message<T extends MaybeStream<Data>> {
    * Append signature to unencrypted message object
    * @param {String|Uint8Array} detachedSignature - The detached ASCII-armored or Uint8Array PGP signature
    */
-  public appendSignature(detachedSignature: string | Uint8Array): Promise<void>;
+  public appendSignature(detachedSignature: string | Uint8Array, config?: Config): Promise<void>;
 }
 
 
