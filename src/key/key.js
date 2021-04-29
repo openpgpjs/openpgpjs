@@ -150,10 +150,10 @@ class Key {
   toPacketlist() {
     const packetlist = new PacketList();
     packetlist.push(this.keyPacket);
-    packetlist.concat(this.revocationSignatures);
-    packetlist.concat(this.directSignatures);
-    this.users.map(user => packetlist.concat(user.toPacketlist()));
-    this.subKeys.map(subKey => packetlist.concat(subKey.toPacketlist()));
+    packetlist.push(...this.revocationSignatures);
+    packetlist.push(...this.directSignatures);
+    this.users.map(user => packetlist.push(...user.toPacketlist()));
+    this.subKeys.map(subKey => packetlist.push(...subKey.toPacketlist()));
     return packetlist;
   }
 

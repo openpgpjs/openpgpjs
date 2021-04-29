@@ -28,7 +28,13 @@ import enums from '../enums';
  * tag. With PGP 5.x, this packet has been reassigned and is reserved for use as
  * the Marker packet.
  *
- * Such a packet MUST be ignored when received.
+ * The body of this packet consists of:
+ *   The three octets 0x50, 0x47, 0x50 (which spell "PGP" in UTF-8).
+ *
+ * Such a packet MUST be ignored when received. It may be placed at the
+ * beginning of a message that uses features not available in PGP
+ * version 2.6 in order to cause that version to report that newer
+ * software is necessary to process the message.
  */
 class MarkerPacket {
   static get tag() {
@@ -36,15 +42,9 @@ class MarkerPacket {
   }
 
   /**
-   * Parsing function for a literal data packet (tag 10).
-   *
-   * @param {String} input - Payload of a tag 10 packet
-   * @param {Integer} position
-   *            Position to start reading from the input string
-   * @param {Integer} len
-   *            Length of the packet or the remaining length of
-   *            input at position
-   * @returns {MarkerPacket} Object representation.
+   * Parsing function for a marker data packet (tag 10).
+   * @param {Uint8Array} bytes - Payload of a tag 10 packet
+   * @returns {Boolean} whether the packet payload contains "PGP"
    */
   read(bytes) {
     if (bytes[0] === 0x50 && // P
@@ -52,8 +52,12 @@ class MarkerPacket {
         bytes[2] === 0x50) { // P
       return true;
     }
-    // marker packet does not contain "PGP"
     return false;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  write() {
+    return new Uint8Array([0x50, 0x47, 0x50]);
   }
 }
 

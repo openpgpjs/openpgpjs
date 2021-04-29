@@ -81,7 +81,7 @@ async function makeKeyValid() {
   pusersig.readSubPackets(fake.writeHashedSubPackets(), false);
   // reconstruct the modified key
   const newlist = new PacketList();
-  newlist.concat([pubkey, puser, pusersig]);
+  newlist.push(...[pubkey, puser, pusersig]);
   let modifiedkey = new Key(newlist);
   // re-read the message to eliminate any
   // behaviour due to cached values.

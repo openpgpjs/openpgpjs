@@ -2722,7 +2722,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         };
         return openpgp.sign(signOpt).then(async function (signed) {
           const message = await openpgp.readMessage({ binaryMessage: signed });
-          message.packets.concat(await openpgp.stream.readToEnd(message.packets.stream, _ => _));
+          message.packets.push(...await openpgp.stream.readToEnd(message.packets.stream, _ => _));
           const packets = new openpgp.PacketList();
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
@@ -2762,7 +2762,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         return openpgp.sign(signOpt).then(async function (signed) {
           expect(openpgp.stream.isStream(signed)).to.equal(global.ReadableStream ? 'web' : 'node');
           const message = await openpgp.readMessage({ binaryMessage: signed });
-          message.packets.concat(await openpgp.stream.readToEnd(message.packets.stream, _ => _));
+          message.packets.push(...await openpgp.stream.readToEnd(message.packets.stream, _ => _));
           const packets = new openpgp.PacketList();
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));

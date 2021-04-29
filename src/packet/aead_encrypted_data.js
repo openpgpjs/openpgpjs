@@ -25,6 +25,7 @@ import LiteralDataPacket from './literal_data';
 import CompressedDataPacket from './compressed_data';
 import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
+import PacketList from './packetlist';
 
 // An AEAD-encrypted Data packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -93,6 +94,7 @@ class AEADEncryptedDataPacket {
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key) {
+    this.packets = new PacketList();
     await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted)), allowedPackets);
   }
 

@@ -292,7 +292,7 @@ interface PartialConfig extends Partial<Config> {}
 /* ############## v5 PACKET #################### */
 
 declare abstract class BasePacket {
-  public tag: enums.packet;
+  static readonly tag: enums.packet;
   public read(bytes: Uint8Array): void;
   public write(): Uint8Array;
 }
@@ -314,14 +314,20 @@ declare abstract class BasePublicKeyPacket extends BasePacket {
   public getKeyID(): KeyID;
   public isDecrypted(): boolean;
   public publicParams: object;
+  // `isSubkey` is a dummy method to ensure that Subkey packets are not accepted as Key one, and vice versa.
+  // The key class hierarchy is already modelled to cover this, but the concrete key packet classes
+  // have compatible structure and TS can't detect the difference.
+  protected isSubkey(): boolean;
 }
 
 export class PublicKeyPacket extends BasePublicKeyPacket {
-  public tag: enums.packet.publicKey;
+  static readonly tag: enums.packet.publicKey;
+  protected isSubkey(): false;
 }
 
 export class PublicSubkeyPacket extends BasePublicKeyPacket {
-  public tag: enums.packet.publicSubkey;
+  static readonly tag: enums.packet.publicSubkey;
+  protected isSubkey(): true;
 }
 
 declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
@@ -334,56 +340,78 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
 }
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
-  public tag: enums.packet.secretKey;
+  static readonly tag: enums.packet.secretKey;
+  protected isSubkey(): false;
 }
 
 export class SecretSubkeyPacket extends BaseSecretKeyPacket {
-  public tag: enums.packet.secretSubkey;
+  static readonly tag: enums.packet.secretSubkey;
+  protected isSubkey(): true;
 }
 
 export class CompressedDataPacket extends BasePacket {
-  public tag: enums.packet.compressedData;
+  static readonly tag: enums.packet.compressedData;
+  private compress(): void;
+  private decompress(): void;
 }
 
 export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
-  public tag: enums.packet.symEncryptedIntegrityProtectedData;
+  static readonly tag: enums.packet.symEncryptedIntegrityProtectedData;
 }
 
 export class AEADEncryptedDataPacket extends BasePacket {
-  public tag: enums.packet.aeadEncryptedData;
+  static readonly tag: enums.packet.aeadEncryptedData;
+  private decrypt(sessionKeyAlgorithm: string, sessionKey: Uint8Array): void;
+  private encrypt(sessionKeyAlgorithm: string, sessionKey: Uint8Array, config?: Config): void;
+  private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>
 }
 
 export class PublicKeyEncryptedSessionKeyPaclet extends BasePacket {
-  public tag: enums.packet.publicKeyEncryptedSessionKey;
+  static readonly tag: enums.packet.publicKeyEncryptedSessionKey;
+  private decrypt(keyPacket: SecretKeyPacket): Promise<true>; // throws on error
+  private encrypt(keyPacket: PublicKeyPacket): Promise<true>; // throws on error
 }
 
 export class SymEncryptedSessionKey extends BasePacket {
-  public tag: enums.packet.symEncryptedSessionKey;
+  static readonly tag: enums.packet.symEncryptedSessionKey;
+  private decrypt(passphrase: string): Promise<void>;
+  private encrypt(passphrase: string, config?: Config): Promise<void>;
 }
 
 export class LiteralDataPacket extends BasePacket {
-  public tag: enums.packet.literalData;
+  static readonly tag: enums.packet.literalData;
+  private getText(clone?: boolean): MaybeStream<string>;
+  private getBytes(clone?: boolean): MaybeStream<Uint8Array>;
+  private setText(text: MaybeStream<string>, format?: DataPacketType);
+  private setBytes(bytes: MaybeStream<Uint8Array>, format?: DataPacketType);
+  private setFilename(filename: string);
+  private getFilename(): string;
+  private writeHeader(): Uint8Array;
 }
 
 export class SymmetricallyEncryptedDataPacket extends BasePacket {
-  public tag: enums.packet.symmetricallyEncryptedData;
+  static readonly tag: enums.packet.symmetricallyEncryptedData;
+  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
+  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
 }
 
 export class MarkerPacket extends BasePacket {
-  public tag: enums.packet.marker;
+  static readonly tag: enums.packet.marker;
 }
 
 export class UserAttributePacket extends BasePacket {
-  public tag: enums.packet.userAttribute;
+  static readonly tag: enums.packet.userAttribute;
+  private equals(packet: UserAttributePacket): boolean;
 }
 
 export class OnePassSignaturePacket extends BasePacket {
-  public tag: enums.packet.onePassSignature;
+  static readonly tag: enums.packet.onePassSignature;
   public correspondingSig?: Promise<SignaturePacket>;
+  private verify: SignaturePacket['verify'];
 }
 
 export class UserIDPacket extends BasePacket {
-  public readonly tag: enums.packet.userID;
+  static readonly tag: enums.packet.userID;
   public readonly name: string;
   public readonly comment: string;
   public readonly email: string;
@@ -392,7 +420,7 @@ export class UserIDPacket extends BasePacket {
 }
 
 export class SignaturePacket extends BasePacket {
-  public tag: enums.packet.signature;
+  static readonly tag: enums.packet.signature;
   public version: number;
   public signatureType: enums.signature | null;
   public hashAlgorithm: enums.hash | null;
@@ -443,7 +471,7 @@ export class SignaturePacket extends BasePacket {
 }
 
 export class TrustPacket extends BasePacket {
-  public tag: enums.packet.trust;
+  static readonly tag: enums.packet.trust;
 }
 
 export type AnyPacket = BasePacket;
@@ -453,24 +481,13 @@ export type AnyKeyPacket = BasePublicKeyPacket;
 type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 
 
-export class PacketList<PACKET_TYPE> extends Array<PACKET_TYPE> {
-  [index: number]: PACKET_TYPE;
+export class PacketList<T extends AnyPacket> extends Array<T> {
   public length: number;
   public read(bytes: Uint8Array, allowedPackets?: object, config?: Config): void;
   public write(): Uint8Array;
-  public push(...packet: PACKET_TYPE[]): number;
-  public pop(): PACKET_TYPE;
-  public filter(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => void): PacketList<PACKET_TYPE>;
-  public filterByTag(...args: enums.packet[]): PacketList<PACKET_TYPE>;
-  public forEach(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => void): void;
-  public map<RETURN_TYPE>(callback: (packet: PACKET_TYPE, i: number, self: PacketList<PACKET_TYPE>) => RETURN_TYPE): PacketList<RETURN_TYPE>;
-  // some()
-  // every()
-  // findPacket()
-  // indexOfTag()
-  // slice()
-  // concat()
-  // fromStructuredClone()
+  public filterByTag(...args: enums.packet[]): PacketList<T>;
+  public indexOfTag(...tags: enums.packet[]): number[];
+  public findPacket(tag: enums.packet): T | undefined;
 }
 
 /* ############## v5 STREAM #################### */
