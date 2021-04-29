@@ -7,7 +7,12 @@
  */
 
 import { expect } from 'chai';
-import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Message, createCleartextMessage, encrypt, decrypt, sign, verify, config, enums, LiteralDataPacket, PacketList, CompressedDataPacket } from '../..';
+import {
+  generateKey, readKey, readKeys, Key,
+  readMessage, createMessage, Message, createCleartextMessage,
+  encrypt, decrypt, sign, verify, config, enums,
+  LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
+} from '../..';
 
 (async () => {
 
@@ -98,6 +103,10 @@ import { generateKey, readKey, readKeys, Key, readMessage, createMessage, Messag
   literalPackets.push(...packets);
   // @ts-expect-error for incompatible packet type
   new PacketList<LiteralDataPacket>().push(new CompressedDataPacket());
+  // @ts-expect-error for incompatible packet type
+  new PacketList<PublicKeyPacket>().push(new PublicSubkeyPacket());
+  // @ts-expect-error for incompatible packet type
+  new PacketList<SecretKeyPacket>().push(new SecretSubkeyPacket());
 
   expect(LiteralDataPacket.tag).to.equal(enums.packet.literalData);
 

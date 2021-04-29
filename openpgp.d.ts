@@ -316,14 +316,20 @@ declare abstract class BasePublicKeyPacket extends BasePacket {
   public getKeyID(): KeyID;
   public isDecrypted(): boolean;
   public publicParams: object;
+  // `isSubkey` is a dummy method to ensure that Subkey packets are not accepted as Key one, and vice versa.
+  // The key class hierarchy is already modelled to cover this, but the concrete key packet classes
+  // have compatible structure and TS can't detect the difference.
+  protected isSubkey(): boolean;
 }
 
 export class PublicKeyPacket extends BasePublicKeyPacket {
   static readonly tag: enums.packet.publicKey;
+  protected isSubkey(): false;
 }
 
 export class PublicSubkeyPacket extends BasePublicKeyPacket {
   static readonly tag: enums.packet.publicSubkey;
+  protected isSubkey(): true;
 }
 
 declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
@@ -337,10 +343,12 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
   static readonly tag: enums.packet.secretKey;
+  protected isSubkey(): false;
 }
 
 export class SecretSubkeyPacket extends BaseSecretKeyPacket {
   static readonly tag: enums.packet.secretSubkey;
+  protected isSubkey(): true;
 }
 
 export class CompressedDataPacket extends BasePacket {
