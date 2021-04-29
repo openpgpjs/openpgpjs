@@ -82,7 +82,6 @@ export async function readSignature({ armoredSignature, binarySignature, config 
     }
     input = data;
   }
-  const packetlist = new PacketList();
-  await packetlist.read(input, allowedPackets, undefined, config);
+  const packetlist = await PacketList.fromBinary(input, allowedPackets, config);
   return new Signature(packetlist);
 }

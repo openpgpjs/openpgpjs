@@ -94,8 +94,7 @@ class AEADEncryptedDataPacket {
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key) {
-    this.packets = new PacketList();
-    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted)), allowedPackets);
+    this.packets = await PacketList.fromBinary(await this.crypt('decrypt', key, stream.clone(this.encrypted)), allowedPackets);
   }
 
   /**

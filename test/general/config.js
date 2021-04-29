@@ -3,6 +3,21 @@ const { expect } = require('chai');
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 module.exports = () => describe('Custom configuration', function() {
+  it('openpgp.readMessage', async function() {
+    const armoredMessage = await openpgp.encrypt({ message: await openpgp.createMessage({ text:"hello world" }), passwords: 'password' });
+    const message = await openpgp.readMessage({ armoredMessage });
+    message.packets.unshift(new openpgp.MarkerPacket()); // MarkerPacket is not allowed in the Message context
+
+    const config = { tolerant: true };
+    const parsedMessage = await openpgp.readMessage({ armoredMessage: message.armor(), config });
+    expect(parsedMessage.packets.length).to.equal(2);
+
+    config.tolerant = false;
+    await expect(
+      openpgp.readMessage({ armoredMessage: message.armor(), config })
+    ).to.be.rejectedWith(/Packet not allowed in this context/);
+  });
+
   it('openpgp.generateKey', async function() {
     const v5KeysVal = openpgp.config.v5Keys;
     const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;

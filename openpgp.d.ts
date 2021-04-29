@@ -480,10 +480,10 @@ export type AnyKeyPacket = BasePublicKeyPacket;
 
 type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 
-
+type AllowedPackets = Map<enums.packet, object>; // mapping to Packet classes (i.e. typeof LiteralDataPacket etc.)
 export class PacketList<T extends AnyPacket> extends Array<T> {
-  public length: number;
-  public read(bytes: Uint8Array, allowedPackets?: object, config?: Config): void;
+  static fromBinary(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): PacketList<AnyPacket>; // the packet types depend on`allowedPackets`
+  public read(bytes: MaybeStream<Uint8Array>, allowedPackets: AllowedPackets, config?: Config): void;
   public write(): Uint8Array;
   public filterByTag(...args: enums.packet[]): PacketList<T>;
   public indexOfTag(...tags: enums.packet[]): number[];

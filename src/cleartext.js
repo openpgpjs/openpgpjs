@@ -144,8 +144,7 @@ export async function readCleartextMessage({ cleartextMessage, config }) {
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
   }
-  const packetlist = new PacketList();
-  await packetlist.read(input.data, allowedPackets, undefined, config);
+  const packetlist = await PacketList.fromBinary(input.data, allowedPackets, config);
   verifyHeaders(input.headers, packetlist);
   const signature = new Signature(packetlist);
   return new CleartextMessage(input.text, signature);

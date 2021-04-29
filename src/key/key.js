@@ -755,8 +755,7 @@ class Key {
    */
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
     const input = await unarmor(revocationCertificate, config);
-    const packetlist = new PacketList();
-    await packetlist.read(input.data, allowedRevocationPackets, undefined, config);
+    const packetlist = await PacketList.fromBinary(input.data, allowedRevocationPackets, config);
     const revocationSignature = packetlist.findPacket(enums.packet.signature);
     if (!revocationSignature || revocationSignature.signatureType !== enums.signature.keyRevocation) {
       throw new Error('Could not find revocation signature packet');

@@ -176,8 +176,7 @@ export class Message {
       await Promise.all(passwords.map(async function(password, i) {
         let packets;
         if (i) {
-          packets = new PacketList();
-          await packets.read(symESKeyPacketlist.write(), allowedSymSessionKeyPackets);
+          packets = await PacketList.fromBinary(symESKeyPacketlist.write(), allowedSymSessionKeyPackets, config);
         } else {
           packets = symESKeyPacketlist;
         }
@@ -826,8 +825,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
     }
     input = data;
   }
-  const packetlist = new PacketList();
-  await packetlist.read(input, allowedMessagePackets, streamType, config);
+  const packetlist = await PacketList.fromBinary(input, allowedMessagePackets, config);
   const message = new Message(packetlist);
   message.fromStream = streamType;
   return message;

@@ -117,8 +117,7 @@ class CompressedDataPacket {
       throw new Error(this.algorithm + ' decompression not supported');
     }
 
-    this.packets = new PacketList();
-    await this.packets.read(decompress_fns[this.algorithm](this.compressed), allowedPackets);
+    this.packets = await PacketList.fromBinary(decompress_fns[this.algorithm](this.compressed), allowedPackets);
   }
 
   /**
