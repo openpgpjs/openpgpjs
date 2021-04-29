@@ -27,6 +27,7 @@ import defaultConfig from '../config';
 import LiteralDataPacket from './literal_data';
 import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
+import PacketList from './packetlist';
 
 // A Compressed Data packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -116,6 +117,7 @@ class CompressedDataPacket {
       throw new Error(this.algorithm + ' decompression not supported');
     }
 
+    this.packets = new PacketList();
     await this.packets.read(decompress_fns[this.algorithm](this.compressed), allowedPackets);
   }
 

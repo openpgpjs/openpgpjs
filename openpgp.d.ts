@@ -482,7 +482,6 @@ export class PacketList<T extends AnyPacket> extends Array<T> {
   public filterByTag(...args: enums.packet[]): PacketList<T>;
   public indexOfTag(...tags: enums.packet[]): number[];
   public findPacket(tag: enums.packet): T | undefined;
-  public append(packets: Array<T>): void;
 }
 
 /* ############## v5 STREAM #################### */

@@ -25,6 +25,7 @@ import LiteralDataPacket from './literal_data';
 import CompressedDataPacket from './compressed_data';
 import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
+import PacketList from './packetlist';
 
 // A SE packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -91,6 +92,7 @@ class SymmetricallyEncryptedDataPacket {
       encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
     );
 
+    this.packets = new PacketList();
     await this.packets.read(decrypted, allowedPackets);
   }
 

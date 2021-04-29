@@ -56,7 +56,7 @@ async function testSubkeyTrust() {
   fakeBindingSignature.keyFlags = [enums.keyFlags.signData];
   await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign);
   const newList = new PacketList();
-  newList.append([
+  newList.push(...[
     pktPrivAttacker[0], // attacker private key
     pktPrivAttacker[1], // attacker user
     pktPrivAttacker[2], // attacker self signature

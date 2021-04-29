@@ -25,6 +25,7 @@ import LiteralDataPacket from './literal_data';
 import CompressedDataPacket from './compressed_data';
 import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
+import PacketList from './packetlist';
 
 // A SEIP packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -53,15 +54,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
 
   constructor() {
     this.version = VERSION;
-    /** The encrypted payload. */
-    this.encrypted = null; // string
-    /**
-     * If after decrypting the packet this is set to true,
-     * a modification has been detected and thus the contents
-     * should be discarded.
-     * @type {Boolean}
-     */
-    this.modification = false;
+    this.encrypted = null;
     this.packets = null;
   }
 
@@ -138,6 +131,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
       packetbytes = await stream.readToEnd(packetbytes);
     }
+    this.packets = new PacketList();
     await this.packets.read(packetbytes, allowedPackets);
     return true;
   }

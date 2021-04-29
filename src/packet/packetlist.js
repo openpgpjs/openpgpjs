@@ -127,21 +127,6 @@ class PacketList extends Array {
   }
 
   /**
-   * Adds a packet to the list. This is the only supported method of doing so;
-   * writing to packetlist[i] directly will result in an error.
-   * @param {Object} packet - Packet to push
-   * @returns {Integer} length of resulting packetlist
-   */
-  push(packet) {
-    if (!packet) {
-      return this.length;
-    }
-
-    packet.packets = packet.packets || new PacketList();
-    return super.push(packet);
-  }
-
-  /**
    * Creates a new PacketList with all packets matching the given tag(s)
    * @param {...module:enums.packet} tags - packet tags to look for
    * @returns {PacketList}
@@ -186,18 +171,6 @@ class PacketList extends Array {
       }
     }
     return tagIndex;
-  }
-
-  /**
-   * Append packetlist or array of packets, in place
-   * @param {PacketList|Array<Packet>} packets - packets to append
-   */
-  append(packetlist) {
-    if (packetlist) {
-      for (let i = 0; i < packetlist.length; i++) {
-        this.push(packetlist[i]);
-      }
-    }
   }
 }
 
