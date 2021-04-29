@@ -10,7 +10,6 @@ chai.use(require('chai-as-promised'));
 
 const { expect } = chai;
 const input = require('./testInputs.js');
-const { PacketList } = require('../../src/packet');
 
 function stringify(array) {
   if (openpgp.stream.isStream(array)) {
