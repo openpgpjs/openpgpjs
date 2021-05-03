@@ -900,8 +900,7 @@ class Key {
     const keyPacket = await helper.generateSecretSubkey(options);
     const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options, config);
     const packetList = this.toPacketList();
-    packetList.push(keyPacket);
-    packetList.push(bindingSignature);
+    packetList.push(keyPacket, bindingSignature);
     return new Key(packetList);
   }
 }
