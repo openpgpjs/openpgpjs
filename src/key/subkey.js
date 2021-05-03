@@ -31,7 +31,7 @@ class SubKey {
    * Transforms structured subkey data to packetlist
    * @returns {PacketList}
    */
-  toPacketlist() {
+  toPacketList() {
     const packetlist = new PacketList();
     packetlist.push(this.keyPacket);
     packetlist.push(...this.revocationSignatures);

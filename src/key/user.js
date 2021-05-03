@@ -27,7 +27,7 @@ class User {
    * Transforms structured user data to packetlist
    * @returns {PacketList}
    */
-  toPacketlist() {
+  toPacketList() {
     const packetlist = new PacketList();
     packetlist.push(this.userID || this.userAttribute);
     packetlist.push(...this.revocationSignatures);

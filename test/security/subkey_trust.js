@@ -43,8 +43,8 @@ async function testSubkeyTrust() {
   // the victim's public key and a signed message
   const { victimPubKey, attackerPrivKey, signed } = await generateTestData();
 
-  const pktPubVictim = victimPubKey.toPacketlist();
-  const pktPrivAttacker = attackerPrivKey.toPacketlist();
+  const pktPubVictim = victimPubKey.toPacketList();
+  const pktPrivAttacker = attackerPrivKey.toPacketList();
   const dataToSign = {
     key: attackerPrivKey.toPublic().keyPacket,
     bind: pktPubVictim[3] // victim subkey

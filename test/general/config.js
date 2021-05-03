@@ -18,6 +18,57 @@ module.exports = () => describe('Custom configuration', function() {
     ).to.be.rejectedWith(/Packet not allowed in this context/);
   });
 
+  it('openpgp.readSignature', async function() {
+    const armoredSignature = `-----BEGIN PGP SIGNATURE-----
+
+wnUEARYKAAYFAmCPyjwAIQkQk5xMVrwBTN4WIQT7kMrxk1s/unaTxxmTnExW
+vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
+3KkV9TCnZibYM9OXuIvQpkoIKn4qbyFv7AaSIgs=
+=hgTd
+-----END PGP SIGNATURE-----`;
+
+    const signature = await openpgp.readSignature({ armoredSignature });
+    signature.packets.unshift(new openpgp.MarkerPacket()); // MarkerPacket is not allowed in the Signature context
+
+    const config = { tolerant: true };
+    const parsedSignature = await openpgp.readSignature({ armoredSignature: signature.armor(), config });
+    expect(parsedSignature.packets.length).to.equal(1);
+
+    config.tolerant = false;
+    await expect(
+      openpgp.readSignature({ armoredSignature: signature.armor(), config })
+    ).to.be.rejectedWith(/Packet not allowed in this context/);
+  });
+
+  it('openpgp.readKey', async function() {
+    const armoredKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xjMEYI/KsBYJKwYBBAHaRw8BAQdAW2lu0r97hQztwP8+WbSF9N/QJ5hkevhm
+CGJbM3HBvznNEHRlc3QgPHRlc3RAYS5pdD7CjAQQFgoAHQUCYI/KsAQLCQcI
+AxUICgQWAAIBAhkBAhsDAh4BACEJEKgxHS8jVhd9FiEE8hy8OerCaNGuKPDw
+qDEdLyNWF32XOQD/dq2/D394eW67VwUhvRpQl9gwToDf+SixATEFigok5JgA
+/3ZeH9eXiZqo3rChfdQ+3VKTd7yoI2gM/pjbHupemYYAzjgEYI/KsBIKKwYB
+BAGXVQEFAQEHQN/8mxAaro95FmvPQ4wlAfk3WKUHZtNvpaqzXo1K6WdMAwEI
+B8J4BBgWCAAJBQJgj8qwAhsMACEJEKgxHS8jVhd9FiEE8hy8OerCaNGuKPDw
+qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
+/3r62WsCVupzKdISZYOMPwEY5qN/4f9i6ZWxIynmVX0E
+=6+P3
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+    const keyPackets = (await openpgp.readKey({ armoredKey })).toPacketList();
+    keyPackets.unshift(new openpgp.MarkerPacket()); // MarkerPacket is not allowed in the Signature context
+
+    const config = { tolerant: true };
+    const parsedKey = await openpgp.readKey({ binaryKey: keyPackets.write(), config });
+    expect(parsedKey.toPacketList().length).to.equal(5);
+
+    config.tolerant = false;
+    await expect(
+      openpgp.readKey({ binaryKey: keyPackets.write(), config })
+    ).to.be.rejectedWith(/Packet not allowed in this context/);
+  });
+
+
   it('openpgp.generateKey', async function() {
     const v5KeysVal = openpgp.config.v5Keys;
     const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;

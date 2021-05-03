@@ -68,7 +68,7 @@ async function makeKeyValid() {
   }
   const invalidkey = await getInvalidKey();
   // deconstruct invalid key
-  const [pubkey, puser, pusersig] = invalidkey.toPacketlist().map(i => i);
+  const [pubkey, puser, pusersig] = invalidkey.toPacketList().map(i => i);
   // create a fake signature
   const fake = new SignaturePacket();
   Object.assign(fake, pusersig);
