@@ -20,7 +20,7 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
-import { UnsupportedPacketError } from './packet';
+import { UnsupportedError } from './packet';
 
 import LiteralDataPacket from './literal_data';
 import CompressedDataPacket from './compressed_data';
@@ -69,7 +69,7 @@ class AEADEncryptedDataPacket {
     await stream.parse(bytes, async reader => {
       const version = await reader.readByte();
       if (version !== VERSION) { // The only currently defined value is 1.
-        throw new UnsupportedPacketError(`Version ${version} of the AEAD-encrypted data packet is not supported.`);
+        throw new UnsupportedError(`Version ${version} of the AEAD-encrypted data packet is not supported.`);
       }
       this.cipherAlgo = await reader.readByte();
       this.aeadAlgo = await reader.readByte();

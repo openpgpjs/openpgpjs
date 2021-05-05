@@ -20,7 +20,7 @@ import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import { UnsupportedPacketError } from './packet';
+import { UnsupportedError } from './packet';
 
 /**
  * Symmetric-Key Encrypted Session Key Packets (Tag 3)
@@ -65,7 +65,7 @@ class SymEncryptedSessionKeyPacket {
     // A one-octet version number. The only currently defined version is 4.
     this.version = bytes[offset++];
     if (this.version !== 4 && this.version !== 5) {
-      throw new UnsupportedPacketError(`Version ${this.version} of the SKESK packet is unsupported.`);
+      throw new UnsupportedError(`Version ${this.version} of the SKESK packet is unsupported.`);
     }
 
     // A one-octet number describing the symmetric algorithm used.

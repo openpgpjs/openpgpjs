@@ -22,7 +22,7 @@ import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import { UnsupportedPacketError } from './packet';
+import { UnsupportedError } from './packet';
 
 /**
  * Implementation of the Key Material Packet (Tag 5,6,7,14)
@@ -138,7 +138,7 @@ class PublicKeyPacket {
       await this.computeFingerprintAndKeyID();
       return pos;
     }
-    throw new UnsupportedPacketError(`Version ${this.version} of the key packet is unsupported.`);
+    throw new UnsupportedError(`Version ${this.version} of the key packet is unsupported.`);
   }
 
   /**

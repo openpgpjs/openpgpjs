@@ -19,7 +19,7 @@ import KeyID from '../type/keyid';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
-import { UnsupportedPacketError } from './packet';
+import { UnsupportedError } from './packet';
 
 const VERSION = 3;
 
@@ -65,7 +65,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   read(bytes) {
     this.version = bytes[0];
     if (this.version !== VERSION) {
-      throw new UnsupportedPacketError(`Version ${this.version} of the PKESK packet is unsupported.`);
+      throw new UnsupportedError(`Version ${this.version} of the PKESK packet is unsupported.`);
     }
     this.publicKeyID.read(bytes.subarray(1, bytes.length));
     this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);

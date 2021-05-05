@@ -3,7 +3,7 @@ import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength,
-  UnsupportedPacketError, UnknownPacketError
+  UnsupportedError
 } from './packet';
 import util from '../util';
 import enums from '../enums';
@@ -23,9 +23,9 @@ export function newPacketFromTag(tag, allowedPackets) {
     try {
       packetType = enums.read(enums.packet, tag);
     } catch (e) {
-      throw new UnknownPacketError(`Unknown packet type with tag: ${tag}`);
+      throw new UnsupportedError(`Unknown packet type with tag: ${tag}`);
     }
-    throw new UnsupportedPacketError(`Packet not allowed in this context: ${packetType}`);
+    throw new UnsupportedError(`Packet not allowed in this context: ${packetType}`);
   }
   return new allowedPackets[tag]();
 }
@@ -75,7 +75,7 @@ class PacketList extends Array {
               await packet.read(parsed.packet, config);
               await writer.write(packet);
             } catch (e) {
-              const isTolerableError = config.tolerant && (e instanceof UnknownPacketError || e instanceof UnsupportedPacketError);
+              const isTolerableError = config.tolerant && e instanceof UnsupportedError;
               if (!isTolerableError || supportsStreaming(parsed.tag)) {
                 // The packets that support streaming are the ones that contain message data.
                 // Those are also the ones we want to be more strict about and throw on parse errors

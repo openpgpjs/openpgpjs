@@ -297,17 +297,15 @@ export async function readPackets(input, callback) {
   }
 }
 
-export class UnsupportedPacketError extends Error {
+export class UnsupportedError extends Error {
   constructor(...params) {
     super(...params);
-    this.name = 'UnsupportedPacketError';
-  }
-}
 
-export class UnknownPacketError extends Error {
-  constructor(...params) {
-    super(...params);
-    this.name = 'UnknownPacketError';
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, UnsupportedError);
+    }
+
+    this.name = 'UnsupportedError';
   }
 }
 

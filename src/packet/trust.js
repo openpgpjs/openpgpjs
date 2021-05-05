@@ -1,7 +1,7 @@
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["read"] }] */
 
 import enums from '../enums';
-import { UnsupportedPacketError } from './packet';
+import { UnsupportedError } from './packet';
 
 /**
  * Implementation of the Trust Packet (Tag 12)
@@ -28,12 +28,12 @@ class TrustPacket {
    * Currently not implemented as we ignore trust packets
    */
   read() {
-    throw new UnsupportedPacketError('Trust packets are not supported');
+    throw new UnsupportedError('Trust packets are not supported');
   }
 
   // eslint-disable-next-line class-methods-use-this
   write() {
-    throw new UnsupportedPacketError('Trust packets are not supported');
+    throw new UnsupportedError('Trust packets are not supported');
   }
 }
 
