@@ -927,12 +927,13 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const rsa = openpgp.enums.publicKey.rsaEncryptSign;
     const key = new openpgp.SecretKeyPacket();
 
-    return crypto.generateParams(rsa, 1024, 65537).then(function({ privateParams, publicParams }) {
+    return crypto.generateParams(rsa, 1024, 65537).then(async ({ privateParams, publicParams }) => {
       const testText = input.createSomeMessage();
 
       key.publicParams = publicParams;
       key.privateParams = privateParams;
       key.algorithm = "rsaSign";
+      await key.computeKeyFingerprintAndID();
 
       const signed = new openpgp.PacketList();
       const literal = new openpgp.LiteralDataPacket();

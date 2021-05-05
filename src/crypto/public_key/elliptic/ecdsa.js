@@ -117,10 +117,10 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
 }
 
 /**
- * Validate EcDSA parameters
+ * Validate ECDSA parameters
  * @param {module:type/oid} oid - Elliptic curve object identifier
- * @param {Uint8Array} Q - EcDSA public point
- * @param {Uint8Array} d - EcDSA secret scalar
+ * @param {Uint8Array} Q - ECDSA public point
+ * @param {Uint8Array} d - ECDSA secret scalar
  * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */

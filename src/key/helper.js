@@ -21,6 +21,7 @@ export async function generateSecretSubkey(options, config) {
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
   await secretSubkeyPacket.generate(options.rsaBits, options.curve);
+  await secretSubkeyPacket.computeKeyFingerprintAndID();
   return secretSubkeyPacket;
 }
 
@@ -29,6 +30,7 @@ export async function generateSecretKey(options, config) {
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
   await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
+  await secretKeyPacket.computeKeyFingerprintAndID();
   return secretKeyPacket;
 }
 

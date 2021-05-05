@@ -74,9 +74,9 @@ vqBGKJzmO5q3cECw
 =X9kJ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
-function cloneKeyPacket(key) {
+async function cloneKeyPacket(key) {
   const keyPacket = new openpgp.SecretKeyPacket();
-  keyPacket.read(key.keyPacket.write());
+  await keyPacket.read(key.keyPacket.write());
   return keyPacket;
 }
 
@@ -93,7 +93,7 @@ module.exports = () => {
     });
 
     it('detect invalid edDSA Q', async function() {
-      const eddsaKeyPacket = cloneKeyPacket(eddsaKey);
+      const eddsaKeyPacket = await cloneKeyPacket(eddsaKey);
       const Q = eddsaKeyPacket.publicParams.Q;
       Q[0]++;
       await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -118,7 +118,7 @@ module.exports = () => {
       const { oid, Q } = eddsaKey.keyPacket.publicParams;
       const { seed } = eddsaKey.keyPacket.privateParams;
 
-      const ecdhKeyPacket = cloneKeyPacket(ecdhKey);
+      const ecdhKeyPacket = await cloneKeyPacket(ecdhKey);
       const ecdhOID = ecdhKeyPacket.publicParams.oid;
 
       ecdhKeyPacket.publicParams.oid = oid;
@@ -130,11 +130,11 @@ module.exports = () => {
       await expect(ecdhKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
-    it('EdDSA params are not valid for EcDSA', async function() {
+    it('EdDSA params are not valid for ECDSA', async function() {
       const { oid, Q } = eddsaKey.keyPacket.publicParams;
       const { seed } = eddsaKey.keyPacket.privateParams;
 
-      const ecdsaKeyPacket = cloneKeyPacket(ecdsaKey);
+      const ecdsaKeyPacket = await cloneKeyPacket(ecdsaKey);
       const ecdsaOID = ecdsaKeyPacket.publicParams.oid;
       ecdsaKeyPacket.publicParams.oid = oid;
       await expect(ecdsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -145,22 +145,22 @@ module.exports = () => {
       await expect(ecdsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
-    it('ECDH x25519 params are not valid for EcDSA', async function() {
+    it('ECDH x25519 params are not valid for ECDSA', async function() {
       const { oid, Q } = ecdhKey.keyPacket.publicParams;
       const { d } = ecdhKey.keyPacket.privateParams;
 
-      const ecdsaKeyPacket = cloneKeyPacket(ecdsaKey);
+      const ecdsaKeyPacket = await cloneKeyPacket(ecdsaKey);
       ecdsaKeyPacket.publicParams.oid = oid;
       ecdsaKeyPacket.publicParams.Q = Q;
       ecdsaKeyPacket.privateParams.d = d;
       await expect(ecdsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
-    it('EcDSA params are not valid for EdDSA', async function() {
+    it('ECDSA params are not valid for EdDSA', async function() {
       const { oid, Q } = ecdsaKey.keyPacket.publicParams;
       const { d } = ecdsaKey.keyPacket.privateParams;
 
-      const eddsaKeyPacket = cloneKeyPacket(eddsaKey);
+      const eddsaKeyPacket = await cloneKeyPacket(eddsaKey);
       const eddsaOID = eddsaKeyPacket.publicParams.oid;
       eddsaKeyPacket.publicParams.oid = oid;
       await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -175,7 +175,7 @@ module.exports = () => {
       const { oid, Q } = ecdhKey.keyPacket.publicParams;
       const { d } = ecdhKey.keyPacket.privateParams;
 
-      const eddsaKeyPacket = cloneKeyPacket(eddsaKey);
+      const eddsaKeyPacket = await cloneKeyPacket(eddsaKey);
       const eddsaOID = eddsaKeyPacket.publicParams.oid;
       eddsaKeyPacket.publicParams.oid = oid;
       await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -202,7 +202,7 @@ module.exports = () => {
         }
       });
 
-      it(`EcDSA ${curve} params should be valid`, async function() {
+      it(`ECDSA ${curve} params should be valid`, async function() {
         if (!ecdsaKey) {
           this.skip();
         }
@@ -213,7 +213,7 @@ module.exports = () => {
         if (!ecdsaKey) {
           this.skip();
         }
-        const keyPacket = cloneKeyPacket(ecdsaKey);
+        const keyPacket = await cloneKeyPacket(ecdsaKey);
         const Q = keyPacket.publicParams.Q;
         Q[16]++;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -228,7 +228,7 @@ module.exports = () => {
       });
 
       it(`ECDH ${curve} - detect invalid Q`, async function() {
-        const keyPacket = cloneKeyPacket(ecdhKey);
+        const keyPacket = await cloneKeyPacket(ecdhKey);
         const Q = keyPacket.publicParams.Q;
         Q[16]++;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -252,14 +252,14 @@ module.exports = () => {
     });
 
     it('detect invalid RSA n', async function() {
-      const keyPacket = cloneKeyPacket(rsaKey);
+      const keyPacket = await cloneKeyPacket(rsaKey);
       const n = keyPacket.publicParams.n;
       n[0]++;
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
     it('detect invalid RSA e', async function() {
-      const keyPacket = cloneKeyPacket(rsaKey);
+      const keyPacket = await cloneKeyPacket(rsaKey);
       const e = keyPacket.publicParams.e;
       e[0]++;
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
@@ -277,14 +277,14 @@ module.exports = () => {
     });
 
     it('detect invalid DSA p', async function() {
-      const keyPacket = cloneKeyPacket(dsaKey);
+      const keyPacket = await cloneKeyPacket(dsaKey);
       const p = keyPacket.publicParams.p;
       p[0]++;
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
     it('detect invalid DSA y', async function() {
-      const keyPacket = cloneKeyPacket(dsaKey);
+      const keyPacket = await cloneKeyPacket(dsaKey);
       const y = keyPacket.publicParams.y;
 
       y[0]++;
@@ -292,7 +292,7 @@ module.exports = () => {
     });
 
     it('detect invalid DSA g', async function() {
-      const keyPacket = cloneKeyPacket(dsaKey);
+      const keyPacket = await cloneKeyPacket(dsaKey);
       const g = keyPacket.publicParams.g;
 
       g[0]++;
@@ -314,21 +314,21 @@ module.exports = () => {
     });
 
     it('detect invalid p', async function() {
-      const keyPacket = cloneKeyPacket(egKey);
+      const keyPacket = await cloneKeyPacket(egKey);
       const p = keyPacket.publicParams.p;
       p[0]++;
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
     it('detect invalid y', async function() {
-      const keyPacket = cloneKeyPacket(egKey);
+      const keyPacket = await cloneKeyPacket(egKey);
       const y = keyPacket.publicParams.y;
       y[0]++;
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
 
     it('detect invalid g', async function() {
-      const keyPacket = cloneKeyPacket(egKey);
+      const keyPacket = await cloneKeyPacket(egKey);
       const g = keyPacket.publicParams.g;
 
       g[0]++;
@@ -339,7 +339,7 @@ module.exports = () => {
     });
 
     it('detect g with small order', async function() {
-      const keyPacket = cloneKeyPacket(egKey);
+      const keyPacket = await cloneKeyPacket(egKey);
       const p = keyPacket.publicParams.p;
       const g = keyPacket.publicParams.g;
 

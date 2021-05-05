@@ -822,7 +822,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       return openpgp.decryptKey({
         privateKey: privateKey,
         passphrase: passphrase
-      }).then(function(unlocked){
+      }).then(unlocked => {
         expect(unlocked.getKeyID().toHex()).to.equal(privateKey.getKeyID().toHex());
         expect(unlocked.subKeys[0].getKeyID().toHex()).to.equal(privateKey.subKeys[0].getKeyID().toHex());
         expect(unlocked.isDecrypted()).to.be.true;
@@ -830,7 +830,6 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         // original key should be unchanged
         expect(privateKey.isDecrypted()).to.be.false;
         expect(privateKey.keyPacket.privateParams).to.be.null;
-        originalKey.subKeys[0].getKeyID(); // fill in keyID
         expect(privateKey).to.deep.equal(originalKey);
       });
     });
@@ -841,7 +840,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       return openpgp.decryptKey({
         privateKey: privateKey,
         passphrase: ['rubbish', passphrase]
-      }).then(function(unlocked){
+      }).then(unlocked => {
         expect(unlocked.getKeyID().toHex()).to.equal(privateKey.getKeyID().toHex());
         expect(unlocked.subKeys[0].getKeyID().toHex()).to.equal(privateKey.subKeys[0].getKeyID().toHex());
         expect(unlocked.isDecrypted()).to.be.true;
@@ -849,7 +848,6 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         // original key should be unchanged
         expect(privateKey.isDecrypted()).to.be.false;
         expect(privateKey.keyPacket.privateParams).to.be.null;
-        originalKey.subKeys[0].getKeyID(); // fill in keyID
         expect(privateKey).to.deep.equal(originalKey);
       });
     });
@@ -897,7 +895,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       return openpgp.encryptKey({
         privateKey: key,
         passphrase: passphrase
-      }).then(function(locked){
+      }).then(locked => {
         expect(locked.getKeyID().toHex()).to.equal(key.getKeyID().toHex());
         expect(locked.subKeys[0].getKeyID().toHex()).to.equal(key.subKeys[0].getKeyID().toHex());
         expect(locked.isDecrypted()).to.be.false;
@@ -905,7 +903,6 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         // original key should be unchanged
         expect(key.isDecrypted()).to.be.true;
         expect(key.keyPacket.privateParams).to.not.be.null;
-        originalKey.subKeys[0].getKeyID(); // fill in keyID
         expect(key).to.deep.equal(originalKey);
       });
     });

@@ -80,10 +80,11 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Internal parser for private keys as specified in
    * {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.5.3|RFC4880bis-04 section 5.5.3}
    * @param {String} bytes - Input string to read the packet from
+   * @async
    */
-  read(bytes) {
+  async read(bytes) {
     // - A Public-Key or Public-Subkey packet, as described above.
-    let i = this.readPublicKey(bytes);
+    let i = await this.readPublicKey(bytes);
 
     // - One octet indicating string-to-key usage conventions.  Zero
     //   indicates that the secret-key data is not encrypted.  255 or 254
