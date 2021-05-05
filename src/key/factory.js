@@ -150,7 +150,6 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   }));
 
   const packetlist = new PacketList();
-
   packetlist.push(secretKeyPacket);
 
   await Promise.all(options.userIDs.map(async function(userID, index) {
@@ -281,8 +280,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
   } else {
     input = binaryKey;
   }
-  const packetlist = new PacketList();
-  await packetlist.read(input, allowedKeyPackets, undefined, config);
+  const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
   return new Key(packetlist);
 }
 
@@ -316,8 +314,7 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
     input = data;
   }
   const keys = [];
-  const packetlist = new PacketList();
-  await packetlist.read(input, allowedKeyPackets, undefined, config);
+  const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
   const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   if (keyIndex.length === 0) {
     throw new Error('No key packet found');

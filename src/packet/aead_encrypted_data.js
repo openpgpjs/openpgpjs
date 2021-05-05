@@ -90,12 +90,16 @@ class AEADEncryptedDataPacket {
    * Decrypt the encrypted payload.
    * @param {String} sessionKeyAlgorithm - The session key's cipher algorithm e.g. 'aes128'
    * @param {Uint8Array} key - The session key used to encrypt the payload
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if decryption was not successful
    * @async
    */
-  async decrypt(sessionKeyAlgorithm, key) {
-    this.packets = new PacketList();
-    await this.packets.read(await this.crypt('decrypt', key, stream.clone(this.encrypted)), allowedPackets);
+  async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
+    this.packets = await PacketList.fromBinary(
+      await this.crypt('decrypt', key, stream.clone(this.encrypted)),
+      allowedPackets,
+      config
+    );
   }
 
   /**

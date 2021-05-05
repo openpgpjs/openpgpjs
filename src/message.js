@@ -176,8 +176,7 @@ export class Message {
       await Promise.all(passwords.map(async function(password, i) {
         let packets;
         if (i) {
-          packets = new PacketList();
-          await packets.read(symESKeyPacketlist.write(), allowedSymSessionKeyPackets);
+          packets = await PacketList.fromBinary(symESKeyPacketlist.write(), allowedSymSessionKeyPackets, config);
         } else {
           packets = symESKeyPacketlist;
         }
@@ -524,12 +523,12 @@ export class Message {
    * @returns {Promise<Signature>} New detached signature of message content.
    * @async
    */
-  async signDetached(privateKeys = [], signature = null, signingKeyIds = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  async signDetached(privateKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
     if (!literalDataPacket) {
       throw new Error('No literal data packet to sign.');
     }
-    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIds, date, userIDs, true, config));
+    return new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, config));
   }
 
   /**
@@ -626,11 +625,13 @@ export class Message {
   /**
    * Append signature to unencrypted message object
    * @param {String|Uint8Array} detachedSignature - The detached ASCII-armored or Uint8Array PGP signature
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  async appendSignature(detachedSignature) {
+  async appendSignature(detachedSignature, config = defaultConfig) {
     await this.packets.read(
       util.isUint8Array(detachedSignature) ? detachedSignature : (await unarmor(detachedSignature)).data,
-      allowedDetachedSignaturePackets
+      allowedDetachedSignaturePackets,
+      config
     );
   }
 
@@ -826,8 +827,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
     }
     input = data;
   }
-  const packetlist = new PacketList();
-  await packetlist.read(input, allowedMessagePackets, streamType, config);
+  const packetlist = await PacketList.fromBinary(input, allowedMessagePackets, config);
   const message = new Message(packetlist);
   message.fromStream = streamType;
   return message;

@@ -131,8 +131,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
       packetbytes = await stream.readToEnd(packetbytes);
     }
-    this.packets = new PacketList();
-    await this.packets.read(packetbytes, allowedPackets);
+    this.packets = await PacketList.fromBinary(packetbytes, allowedPackets, config);
     return true;
   }
 }

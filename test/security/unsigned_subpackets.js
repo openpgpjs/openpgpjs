@@ -68,7 +68,7 @@ async function makeKeyValid() {
   }
   const invalidkey = await getInvalidKey();
   // deconstruct invalid key
-  const [pubkey, puser, pusersig] = invalidkey.toPacketlist().map(i => i);
+  const [pubkey, puser, pusersig] = invalidkey.toPacketList().map(i => i);
   // create a fake signature
   const fake = new SignaturePacket();
   Object.assign(fake, pusersig);
@@ -81,7 +81,7 @@ async function makeKeyValid() {
   pusersig.readSubPackets(fake.writeHashedSubPackets(), false);
   // reconstruct the modified key
   const newlist = new PacketList();
-  newlist.push(...[pubkey, puser, pusersig]);
+  newlist.push(pubkey, puser, pusersig);
   let modifiedkey = new Key(newlist);
   // re-read the message to eliminate any
   // behaviour due to cached values.

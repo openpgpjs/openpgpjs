@@ -67,6 +67,21 @@ module.exports = () => describe("Packet", function() {
       '=KXkj\n' +
       '-----END PGP PRIVATE KEY BLOCK-----';
 
+  it('Ignores disallowed packet with tolerant mode enabled', async function() {
+    const packets = new openpgp.PacketList();
+    packets.push(new openpgp.MarkerPacket());
+    const bytes = packets.write();
+    const parsed = await openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: true });
+    expect(parsed.length).to.equal(0);
+  });
+
+  it('Throws on disallowed packet with tolerant mode disabled', async function() {
+    const packets = new openpgp.PacketList();
+    packets.push(new openpgp.MarkerPacket());
+    const bytes = packets.write();
+    await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: false })).to.be.rejectedWith(/Packet not allowed in this context/);
+  });
+
   it('Symmetrically encrypted packet without integrity protection - allow decryption', async function() {
     const aeadProtectVal = openpgp.config.aeadProtect;
     const allowUnauthenticatedMessagesVal = openpgp.config.allowUnauthenticatedMessages;
@@ -702,8 +717,7 @@ module.exports = () => describe("Packet", function() {
   });
 
   it('Secret key reading with signature verification.', async function() {
-    const packets = new openpgp.PacketList();
-    await packets.read((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
+    const packets = await openpgp.PacketList.fromBinary((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
     const [keyPacket, userIDPacket, keySigPacket, subkeyPacket, subkeySigPacket] = packets;
     expect(keySigPacket.verified).to.be.null;
     expect(subkeySigPacket.verified).to.be.null;
@@ -733,8 +747,7 @@ module.exports = () => describe("Packet", function() {
         '=htrB\n' +
         '-----END PGP MESSAGE-----';
 
-    const packets = new openpgp.PacketList();
-    await packets.read((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
+    const packets = await openpgp.PacketList.fromBinary((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
     const keyPacket = packets[0];
     const subkeyPacket = packets[3];
     await subkeyPacket.decrypt('test');
@@ -849,8 +862,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
     const raw = new openpgp.PacketList();
     raw.push(secretKeyPacket);
-    const packetList = new openpgp.PacketList();
-    await packetList.read(raw.write(), allAllowedPackets, undefined, openpgp.config);
+    const packetList = await openpgp.PacketList.fromBinary(raw.write(), allAllowedPackets, openpgp.config);
     const secretKeyPacket2 = packetList[0];
     await secretKeyPacket2.decrypt('hello');
 
@@ -906,8 +918,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
     const raw = new openpgp.PacketList();
     raw.push(secretKeyPacket);
-    const packetList = new openpgp.PacketList();
-    await packetList.read(raw.write(), allAllowedPackets, undefined, openpgp.config);
+    const packetList = await openpgp.PacketList.fromBinary(raw.write(), allAllowedPackets, openpgp.config);
     const secretKeyPacket2 = packetList[0];
     await secretKeyPacket2.decrypt('hello');
   });

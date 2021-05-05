@@ -147,13 +147,13 @@ class Key {
    * Transforms structured key data to packetlist
    * @returns {PacketList} The packets that form a key.
    */
-  toPacketlist() {
+  toPacketList() {
     const packetlist = new PacketList();
     packetlist.push(this.keyPacket);
     packetlist.push(...this.revocationSignatures);
     packetlist.push(...this.directSignatures);
-    this.users.map(user => packetlist.push(...user.toPacketlist()));
-    this.subKeys.map(subKey => packetlist.push(...subKey.toPacketlist()));
+    this.users.map(user => packetlist.push(...user.toPacketList()));
+    this.subKeys.map(subKey => packetlist.push(...subKey.toPacketList()));
     return packetlist;
   }
 
@@ -164,7 +164,7 @@ class Key {
    * @async
    */
   async clone(deep = false) {
-    const key = new Key(this.toPacketlist());
+    const key = new Key(this.toPacketList());
     if (deep) {
       key.getKeys().forEach(k => {
         // shallow clone the key packets
@@ -255,7 +255,7 @@ class Key {
    */
   toPublic() {
     const packetlist = new PacketList();
-    const keyPackets = this.toPacketlist();
+    const keyPackets = this.toPacketList();
     let bytes;
     let pubKeyPacket;
     let pubSubkeyPacket;
@@ -285,7 +285,7 @@ class Key {
    * @returns {Uint8Array} Binary key.
    */
   write() {
-    return this.toPacketlist().write();
+    return this.toPacketList().write();
   }
 
   /**
@@ -295,7 +295,7 @@ class Key {
    */
   armor(config = defaultConfig) {
     const type = this.isPublic() ? enums.armor.publicKey : enums.armor.privateKey;
-    return armor(type, this.toPacketlist().write(), undefined, undefined, undefined, config);
+    return armor(type, this.toPacketList().write(), undefined, undefined, undefined, config);
   }
 
   /**
@@ -755,8 +755,7 @@ class Key {
    */
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
     const input = await unarmor(revocationCertificate, config);
-    const packetlist = new PacketList();
-    await packetlist.read(input.data, allowedRevocationPackets, undefined, config);
+    const packetlist = await PacketList.fromBinary(input.data, allowedRevocationPackets, config);
     const revocationSignature = packetlist.findPacket(enums.packet.signature);
     if (!revocationSignature || revocationSignature.signatureType !== enums.signature.keyRevocation) {
       throw new Error('Could not find revocation signature packet');
@@ -900,9 +899,8 @@ class Key {
     options = helper.sanitizeKeyOptions(options, defaultOptions);
     const keyPacket = await helper.generateSecretSubkey(options);
     const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options, config);
-    const packetList = this.toPacketlist();
-    packetList.push(keyPacket);
-    packetList.push(bindingSignature);
+    const packetList = this.toPacketList();
+    packetList.push(keyPacket, bindingSignature);
     return new Key(packetList);
   }
 }

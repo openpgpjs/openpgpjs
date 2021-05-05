@@ -92,8 +92,7 @@ class SymmetricallyEncryptedDataPacket {
       encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
     );
 
-    this.packets = new PacketList();
-    await this.packets.read(decrypted, allowedPackets);
+    this.packets = await PacketList.fromBinary(decrypted, allowedPackets, config);
   }
 
   /**

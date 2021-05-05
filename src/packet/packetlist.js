@@ -17,7 +17,7 @@ import defaultConfig from '../config';
  */
 export function newPacketFromTag(tag, allowedPackets) {
   if (!allowedPackets[tag]) {
-    throw new Error(`Packet not allowed in this context: ${enums.read(enums.packets, tag)}`);
+    throw new Error(`Packet not allowed in this context: ${enums.read(enums.packet, tag)}`);
   }
   return new allowedPackets[tag]();
 }
@@ -30,8 +30,28 @@ export function newPacketFromTag(tag, allowedPackets) {
  */
 class PacketList extends Array {
   /**
+   * Parses the given binary data and returns a list of packets.
+   * Equivalent to calling `read` on an empty PacketList instance.
+   * @param {Uint8Array | ReadableStream<Uint8Array} bytes - binary data to parse
+   * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @returns {PacketList} parsed list of packets
+   * @throws on parsing errors
+   * @async
+   */
+  static async fromBinary(bytes, allowedPackets, config = defaultConfig) {
+    const packets = new PacketList();
+    await packets.read(bytes, allowedPackets, config);
+    return packets;
+  }
+
+  /**
    * Reads a stream of binary data and interprets it as a list of packets.
-   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - A Uint8Array of bytes.
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - binary data to parse
+   * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
+   * @param {Object} [config] - full configuration, defaults to openpgp.config
+   * @throws on parsing errors
+   * @async
    */
   async read(bytes, allowedPackets, config = defaultConfig) {
     this.stream = stream.transformPair(bytes, async (readable, writable) => {

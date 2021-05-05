@@ -43,8 +43,8 @@ async function testSubkeyTrust() {
   // the victim's public key and a signed message
   const { victimPubKey, attackerPrivKey, signed } = await generateTestData();
 
-  const pktPubVictim = victimPubKey.toPacketlist();
-  const pktPrivAttacker = attackerPrivKey.toPacketlist();
+  const pktPubVictim = victimPubKey.toPacketList();
+  const pktPrivAttacker = attackerPrivKey.toPacketList();
   const dataToSign = {
     key: attackerPrivKey.toPublic().keyPacket,
     bind: pktPubVictim[3] // victim subkey
@@ -56,13 +56,13 @@ async function testSubkeyTrust() {
   fakeBindingSignature.keyFlags = [enums.keyFlags.signData];
   await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign);
   const newList = new PacketList();
-  newList.push(...[
+  newList.push(
     pktPrivAttacker[0], // attacker private key
     pktPrivAttacker[1], // attacker user
     pktPrivAttacker[2], // attacker self signature
     pktPubVictim[3], // victim subkey
     fakeBindingSignature // faked key binding
-  ]);
+  );
   let fakeKey = new Key(newList);
   fakeKey = await readKey({ armoredKey: await fakeKey.toPublic().armor() });
   const verifyAttackerIsBatman = await openpgp.verify({
