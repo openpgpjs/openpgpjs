@@ -134,7 +134,7 @@ class PublicKeyPacket {
       }
 
       // we set the fingerprint and keyID already to make it possible to put together the key packets directly in the Key constructor
-      await this.computeKeyFingerprintAndID();
+      await this.computeFingerprintAndKeyID();
       return pos;
     }
     throw new Error('Version ' + this.version + ' of the key packet is unsupported.');
@@ -204,7 +204,7 @@ class PublicKeyPacket {
    * Computes and set the key ID and fingerprint of the key
    * @async
    */
-  async computeKeyFingerprintAndID() {
+  async computeFingerprintAndKeyID() {
     await this.computeFingerprint();
     this.keyID = new KeyID();
 

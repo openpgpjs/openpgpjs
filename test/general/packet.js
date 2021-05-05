@@ -933,7 +933,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       key.publicParams = publicParams;
       key.privateParams = privateParams;
       key.algorithm = "rsaSign";
-      await key.computeKeyFingerprintAndID();
+      await key.computeFingerprintAndKeyID();
 
       const signed = new openpgp.PacketList();
       const literal = new openpgp.LiteralDataPacket();
