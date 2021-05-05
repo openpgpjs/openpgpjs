@@ -89,7 +89,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   /**
    * Encrypt session key packet
    * @param {PublicKeyPacket} key - Public key
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if encryption failed
    * @async
    */
   async encrypt(key) {
@@ -101,16 +101,13 @@ class PublicKeyEncryptedSessionKeyPacket {
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     this.encrypted = await crypto.publicKeyEncrypt(
       algo, key.publicParams, data, key.getFingerprintBytes());
-    return true;
   }
 
   /**
    * Decrypts the session key (only for public key encrypted session key
    * packets (tag 1)
-   *
-   * @param {SecretKeyPacket} key
-   *            Private key with secret params unlocked
-   * @returns {Promise<Boolean>}
+   * @param {SecretKeyPacket} key - decrypted private key
+   * @throws {Error} if decryption failed
    * @async
    */
   async decrypt(key) {
@@ -129,7 +126,6 @@ class PublicKeyEncryptedSessionKeyPacket {
       this.sessionKey = sessionKey;
       this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded[0]);
     }
-    return true;
   }
 }
 

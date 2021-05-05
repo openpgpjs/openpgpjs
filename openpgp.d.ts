@@ -366,10 +366,10 @@ export class AEADEncryptedDataPacket extends BasePacket {
   private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>
 }
 
-export class PublicKeyEncryptedSessionKeyPaclet extends BasePacket {
+export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
   static readonly tag: enums.packet.publicKeyEncryptedSessionKey;
-  private decrypt(keyPacket: SecretKeyPacket): Promise<true>; // throws on error
-  private encrypt(keyPacket: PublicKeyPacket): Promise<true>; // throws on error
+  private decrypt(keyPacket: SecretKeyPacket): void; // throws on error
+  private encrypt(keyPacket: PublicKeyPacket): void; // throws on error
 }
 
 export class SymEncryptedSessionKey extends BasePacket {
