@@ -225,7 +225,7 @@ function getPreferredHashAlgo(oid) {
 }
 
 /**
- * Validate ECDH and EcDSA parameters
+ * Validate ECDH and ECDSA parameters
  * Not suitable for EdDSA (different secret key format)
  * @param {module:enums.publicKey} algo - EC algorithm, to filter supported curves
  * @param {module:type/oid} oid - EC object identifier

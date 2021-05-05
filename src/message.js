@@ -694,7 +694,7 @@ export async function createSignaturePackets(literalDataPacket, privateKeys, sig
 
 /**
  * Create object containing signer's keyID and validity of signature
- * @param {SignaturePacket} signature - Signature packets
+ * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
  * @param {Array<Key>} keys - Array of keys to verify signatures
  * @param {Date} date - Verify the signature against the given date,

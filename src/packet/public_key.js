@@ -17,8 +17,6 @@
 
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["isDecrypted"] }] */
 
-import { Sha1 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha1/sha1';
-import { Sha256 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha256/sha256';
 import KeyID from '../type/keyid';
 import defaultConfig from '../config';
 import crypto from '../crypto';
@@ -72,8 +70,8 @@ class PublicKeyPacket {
      */
     this.expirationTimeV3 = 0;
     /**
-     * Fingerprint in lowercase hex
-     * @type {String}
+     * Fingerprint bytes
+     * @type {Uint8Array}
      */
     this.fingerprint = null;
     /**
@@ -84,12 +82,30 @@ class PublicKeyPacket {
   }
 
   /**
-   * Internal Parser for public keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
-   * called by read_tag&lt;num&gt;
-   * @param {Uint8Array} bytes - Input array to read the packet from
-   * @returns {Object} This object with attributes set by the parser.
+   * Create a PublicKeyPacket from a SecretKeyPacket
+   * @param {SecretKeyPacket} secretKeyPacket - key packet to convert
+   * @returns {PublicKeyPacket} public key packet
+   * @static
    */
-  read(bytes) {
+  static fromSecretKeyPacket(secretKeyPacket) {
+    const keyPacket = new PublicKeyPacket();
+    const { version, created, algorithm, publicParams, keyID, fingerprint } = secretKeyPacket;
+    keyPacket.version = version;
+    keyPacket.created = created;
+    keyPacket.algorithm = algorithm;
+    keyPacket.publicParams = publicParams;
+    keyPacket.keyID = keyID;
+    keyPacket.fingerprint = fingerprint;
+    return keyPacket;
+  }
+
+  /**
+   * Internal Parser for public keys as specified in {@link https://tools.ietf.org/html/rfc4880#section-5.5.2|RFC 4880 section 5.5.2 Public-Key Packet Formats}
+   * @param {Uint8Array} bytes - Input array to read the packet from
+   * @returns {Object} This object with attributes set by the parser
+   * @async
+   */
+  async read(bytes) {
     let pos = 0;
     // A one-octet version number (3, 4 or 5).
     this.version = bytes[pos++];
@@ -117,6 +133,8 @@ class PublicKeyPacket {
         throw new Error('Error reading MPIs');
       }
 
+      // we set the fingerprint and keyID already to make it possible to put together the key packets directly in the Key constructor
+      await this.computeFingerprintAndKeyID();
       return pos;
     }
     throw new Error('Version ' + this.version + ' of the key packet is unsupported.');
@@ -146,7 +164,8 @@ class PublicKeyPacket {
   }
 
   /**
-   * Write packet in order to be hashed; either for a signature or a fingerprint.
+   * Write packet in order to be hashed; either for a signature or a fingerprint
+   * @param {Integer} version - target version of signature or key
    */
   writeForHash(version) {
     const bytes = this.writePublicKey();
@@ -174,42 +193,56 @@ class PublicKeyPacket {
   }
 
   /**
-   * Calculates the key id of the key
-   * @returns {module:type/keyid~KeyID} A 8 byte key id.
+   * Return the key ID of the key
+   * @returns {module:type/keyid~KeyID} The 8-byte key ID
    */
   getKeyID() {
-    if (this.keyID) {
-      return this.keyID;
-    }
-    this.keyID = new KeyID();
-    if (this.version === 5) {
-      this.keyID.read(util.hexToUint8Array(this.getFingerprint()).subarray(0, 8));
-    } else if (this.version === 4) {
-      this.keyID.read(util.hexToUint8Array(this.getFingerprint()).subarray(12, 20));
-    }
     return this.keyID;
   }
 
   /**
-   * Calculates the fingerprint of the key
-   * @returns {Uint8Array} A Uint8Array containing the fingerprint.
+   * Computes and set the key ID and fingerprint of the key
+   * @async
+   */
+  async computeFingerprintAndKeyID() {
+    await this.computeFingerprint();
+    this.keyID = new KeyID();
+
+    if (this.version === 5) {
+      this.keyID.read(this.fingerprint.subarray(0, 8));
+    } else if (this.version === 4) {
+      this.keyID.read(this.fingerprint.subarray(12, 20));
+    } else {
+      throw new Error('Unsupported key version');
+    }
+  }
+
+  /**
+   * Computes and set the fingerprint of the key
+   */
+  async computeFingerprint() {
+    const toHash = this.writeForHash(this.version);
+
+    if (this.version === 5) {
+      this.fingerprint = await crypto.hash.sha256(toHash);
+    } else if (this.version === 4) {
+      this.fingerprint = await crypto.hash.sha1(toHash);
+    } else {
+      throw new Error('Unsupported key version');
+    }
+  }
+
+  /**
+   * Returns the fingerprint of the key, as an array of bytes
+   * @returns {Uint8Array} A Uint8Array containing the fingerprint
    */
   getFingerprintBytes() {
-    if (this.fingerprint) {
-      return this.fingerprint;
-    }
-    const toHash = this.writeForHash(this.version);
-    if (this.version === 5) {
-      this.fingerprint = Sha256.bytes(toHash);
-    } else if (this.version === 4) {
-      this.fingerprint = Sha1.bytes(toHash);
-    }
     return this.fingerprint;
   }
 
   /**
-   * Calculates the fingerprint of the key
-   * @returns {String} A string containing the fingerprint in lowercase hex.
+   * Calculates and returns the fingerprint of the key, as a string
+   * @returns {String} A string containing the fingerprint in lowercase hex
    */
   getFingerprint() {
     return util.uint8ArrayToHex(this.getFingerprintBytes());

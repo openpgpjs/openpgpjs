@@ -39,6 +39,24 @@ class PublicSubkeyPacket extends PublicKeyPacket {
   constructor(date, config) {
     super(date, config);
   }
+
+  /**
+   * Create a PublicSubkeyPacket from a SecretSubkeyPacket
+   * @param {SecretSubkeyPacket} secretSubkeyPacket - subkey packet to convert
+   * @returns {SecretSubkeyPacket} public key packet
+   * @static
+   */
+  static fromSecretSubkeyPacket(secretSubkeyPacket) {
+    const keyPacket = new PublicSubkeyPacket();
+    const { version, created, algorithm, publicParams, keyID, fingerprint } = secretSubkeyPacket;
+    keyPacket.version = version;
+    keyPacket.created = created;
+    keyPacket.algorithm = algorithm;
+    keyPacket.publicParams = publicParams;
+    keyPacket.keyID = keyID;
+    keyPacket.fingerprint = fingerprint;
+    return keyPacket;
+  }
 }
 
 export default PublicSubkeyPacket;

@@ -82,6 +82,9 @@ class Key {
           }
           this.keyPacket = packetlist[i];
           primaryKeyID = this.getKeyID();
+          if (!primaryKeyID) {
+            throw new Error('Missing Key ID');
+          }
           break;
         case enums.packet.userID:
         case enums.packet.userAttribute:
@@ -186,25 +189,22 @@ class Key {
 
   /**
    * Returns an array containing all public or private subkeys matching keyID;
-   * If keyID is not present, returns all subkeys.
-   * @param {type/keyid} keyID
-   * @returns {Array<SubKey>}
+   * If no keyID is given, returns all subkeys.
+   * @param {type/keyID} [keyID] - key ID to look for
+   * @returns {Array<SubKey>} array of subkeys
    */
   getSubkeys(keyID = null) {
-    const subKeys = [];
-    this.subKeys.forEach(subKey => {
-      if (!keyID || subKey.getKeyID().equals(keyID, true)) {
-        subKeys.push(subKey);
-      }
-    });
+    const subKeys = this.subKeys.filter(subKey => (
+      !keyID || subKey.getKeyID().equals(keyID, true)
+    ));
     return subKeys;
   }
 
   /**
    * Returns an array containing all public or private keys matching keyID.
-   * If keyID is not present, returns all keys starting with the primary key.
-   * @param {type/keyid} keyID
-   * @returns {Array<Key|SubKey>}
+   * If no keyID is given, returns all keys, starting with the primary key.
+   * @param {type/keyid~KeyID} [keyID] - key ID to look for
+   * @returns {Array<Key|SubKey>} array of keys
    */
   getKeys(keyID = null) {
     const keys = [];
@@ -250,31 +250,25 @@ class Key {
 
   /**
    * Returns key as public key (shallow copy)
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Key} New public Key.
+   * @returns {Key} New public Key
    */
   toPublic() {
     const packetlist = new PacketList();
     const keyPackets = this.toPacketList();
-    let bytes;
-    let pubKeyPacket;
-    let pubSubkeyPacket;
-    for (let i = 0; i < keyPackets.length; i++) {
-      switch (keyPackets[i].constructor.tag) {
-        case enums.packet.secretKey:
-          bytes = keyPackets[i].writePublicKey();
-          pubKeyPacket = new PublicKeyPacket();
-          pubKeyPacket.read(bytes);
+    for (const keyPacket of keyPackets) {
+      switch (keyPacket.constructor.tag) {
+        case enums.packet.secretKey: {
+          const pubKeyPacket = PublicKeyPacket.fromSecretKeyPacket(keyPacket);
           packetlist.push(pubKeyPacket);
           break;
-        case enums.packet.secretSubkey:
-          bytes = keyPackets[i].writePublicKey();
-          pubSubkeyPacket = new PublicSubkeyPacket();
-          pubSubkeyPacket.read(bytes);
+        }
+        case enums.packet.secretSubkey: {
+          const pubSubkeyPacket = PublicSubkeyPacket.fromSecretSubkeyPacket(keyPacket);
           packetlist.push(pubSubkeyPacket);
           break;
+        }
         default:
-          packetlist.push(keyPackets[i]);
+          packetlist.push(keyPacket);
       }
     }
     return new Key(packetlist);
@@ -827,7 +821,7 @@ class Key {
     const primaryKey = this.keyPacket;
     const { user } = await this.getPrimaryUser(date, userID, config);
     const results = keys ? await user.verifyAllCertifications(primaryKey, keys, undefined, config) :
-      [{ keyID: primaryKey.keyID, valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
+      [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
     return results;
   }
 
@@ -849,7 +843,7 @@ class Key {
     const primaryKey = this.keyPacket;
     await Promise.all(this.users.map(async function(user) {
       const signatures = keys ? await user.verifyAllCertifications(primaryKey, keys, undefined, config) :
-        [{ keyID: primaryKey.keyID, valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
+        [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
       signatures.forEach(signature => {
         results.push({
           userID: user.userID.userID,

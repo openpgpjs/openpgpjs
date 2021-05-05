@@ -3,7 +3,8 @@
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
-const key = require('../../src/key');
+const { isAEADSupported, getPreferredAlgo } = require('../../src/key');
+const KeyID = require('../../src/type/keyid');
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -166,55 +167,54 @@ zoGJ6s48HcP591pN93uAitCcYcinY2ZslmdiCXw+zbeoX4spNrV4T4CYxBjNQdIa
 =8d2d
 -----END PGP PUBLIC KEY BLOCK-----`;
 
-const twoKeys =
-     ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
-       'Version: GnuPG v2.0.19 (GNU/Linux)',
-       '',
-       'mI0EUmEvTgEEANyWtQQMOybQ9JltDqmaX0WnNPJeLILIM36sw6zL0nfTQ5zXSS3+',
-       'fIF6P29lJFxpblWk02PSID5zX/DYU9/zjM2xPO8Oa4xo0cVTOTLj++Ri5mtr//f5',
-       'GLsIXxFrBJhD/ghFsL3Op0GXOeLJ9A5bsOn8th7x6JucNKuaRB6bQbSPABEBAAG0',
-       'JFRlc3QgTWNUZXN0aW5ndG9uIDx0ZXN0QGV4YW1wbGUuY29tPoi5BBMBAgAjBQJS',
-       'YS9OAhsvBwsJCAcDAgEGFQgCCQoLBBYCAwECHgECF4AACgkQSmNhOk1uQJQwDAP6',
-       'AgrTyqkRlJVqz2pb46TfbDM2TDF7o9CBnBzIGoxBhlRwpqALz7z2kxBDmwpQa+ki',
-       'Bq3jZN/UosY9y8bhwMAlnrDY9jP1gdCo+H0sD48CdXybblNwaYpwqC8VSpDdTndf',
-       '9j2wE/weihGp/DAdy/2kyBCaiOY1sjhUfJ1GogF49rC4jQRSYS9OAQQA6R/PtBFa',
-       'JaT4jq10yqASk4sqwVMsc6HcifM5lSdxzExFP74naUMMyEsKHP53QxTF0Grqusag',
-       'Qg/ZtgT0CN1HUM152y7ACOdp1giKjpMzOTQClqCoclyvWOFB+L/SwGEIJf7LSCEr',
-       'woBuJifJc8xAVr0XX0JthoW+uP91eTQ3XpsAEQEAAYkBPQQYAQIACQUCUmEvTgIb',
-       'LgCoCRBKY2E6TW5AlJ0gBBkBAgAGBQJSYS9OAAoJEOCE90RsICyXuqIEANmmiRCA',
-       'SF7YK7PvFkieJNwzeK0V3F2lGX+uu6Y3Q/Zxdtwc4xR+me/CSBmsURyXTO29OWhP',
-       'GLszPH9zSJU9BdDi6v0yNprmFPX/1Ng0Abn/sCkwetvjxC1YIvTLFwtUL/7v6NS2',
-       'bZpsUxRTg9+cSrMWWSNjiY9qUKajm1tuzPDZXAUEAMNmAN3xXN/Kjyvj2OK2ck0X',
-       'W748sl/tc3qiKPMJ+0AkMF7Pjhmh9nxqE9+QCEl7qinFqqBLjuzgUhBU4QlwX1GD',
-       'AtNTq6ihLMD5v1d82ZC7tNatdlDMGWnIdvEMCv2GZcuIqDQ9rXWs49e7tq1NncLY',
-       'hz3tYjKhoFTKEIq3y3PpmQENBFKV0FUBCACtZliApy01KBGbGNB36YGH4lpr+5Ko',
-       'qF1I8A5IT0YeNjyGisOkWsDsUzOqaNvgzQ82I3MY/jQV5rLBhH/6LiRmCA16WkKc',
-       'qBrHfNGIxJ+Q+ofVBHUbaS9ClXYI88j747QgWzirnLuEA0GfilRZcewII1pDA/G7',
-       '+m1HwV4qHsPataYLeboqhPA3h1EVVQFMAcwlqjOuS8+weHQRfNVRGQdRMm6H7166',
-       'PseDVRUHdkJpVaKFhptgrDoNI0lO+UujdqeF1o5tVZ0j/s7RbyBvdLTXNuBbcpq9',
-       '3ceSWuJPZmi1XztQXKYey0f+ltgVtZDEc7TGV5WDX9erRECCcA3+s7J3ABEBAAG0',
-       'G0pTIENyeXB0byA8ZGlmZmllQGhvbWUub3JnPokBPwQTAQIAKQUCUpXQVQIbAwUJ',
-       'CWYBgAcLCQgHAwIBBhUIAgkKCwQWAgMBAh4BAheAAAoJENvyI+hwU030yRAIAKX/',
-       'mGEgi/miqasbbQoyK/CSa7sRxgZwOWQLdi2xxpE5V4W4HJIDNLJs5vGpRN4mmcNK',
-       '2fmJAh74w0PskmVgJEhPdFJ14UC3fFPq5nbqkBl7hU0tDP5jZxo9ruQZfDOWpHKx',
-       'OCz5guYJ0CW97bz4fChZNFDyfU7VsJQwRIoViVcMCipP0fVZQkIhhwpzQpmVmN8E',
-       '0a6jWezTZv1YpMdlzbEfH79l3StaOh9/Un9CkIyqEWdYiKvIYms9nENyehN7r/OK',
-       'YN3SW+qlt5GaL+ws+N1w6kEZjPFwnsr+Y4A3oHcAwXq7nfOz71USojSmmo8pgdN8',
-       'je16CP98vw3/k6TncLS5AQ0EUpXQVQEIAMEjHMeqg7B04FliUFWr/8C6sJDb492M',
-       'lGAWgghIbnuJfXAnUGdNoAzn0S+n93Y/qHbW6YcjHD4/G+kK3MuxthAFqcVjdHZQ',
-       'XK0rkhXO/u1co7v1cdtkOTEcyOpyLXolM/1S2UYImhrml7YulTHMnWVja7xu6QIR',
-       'so+7HBFT/u9D47L/xXrXMzXFVZfBtVY+yoeTrOY3OX9cBMOAu0kuN9eT18Yv2yi6',
-       'XMzP3iONVHtl6HfFrAA7kAtx4ne0jgAPWZ+a8hMy59on2ZFs/AvSpJtSc1kw/vMT',
-       'WkyVP1Ky20vAPHQ6Ej5q1NGJ/JbcFgolvEeI/3uDueLjj4SdSIbLOXMAEQEAAYkB',
-       'JQQYAQIADwUCUpXQVQIbDAUJCWYBgAAKCRDb8iPocFNN9NLkB/wO4iRxia0zf4Kw',
-       '2RLVZG8qcuo3Bw9UTXYYlI0AutoLNnSURMLLCq6rcJ0BCXGj/2iZ0NBxZq3t5vbR',
-       'h6uUv+hpiSxK1nF7AheN4aAAzhbWx0UDTF04ebG/neE4uDklRIJLhif6+Bwu+EUe',
-       'TlGbDj7fqGSsNe8g92w71e41rF/9CMoOswrKgIjXAou3aexogWcHvKY2D+1q9exO',
-       'Re1rIa1+sUGl5PG2wsEsznN6qtN5gMlGY1ofWDY+I02gO4qzaZ/FxRZfittCw7v5',
-       'dmQYKot9qRi2Kx3Fvw+hivFBpC4TWgppFBnJJnAsFXZJQcejMW4nEmOViRQXY8N8',
-       'PepQmgsu',
-       '=w6wd',
-       '-----END PGP PUBLIC KEY BLOCK-----'].join("\n");
+const twoKeys = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v2.0.19 (GNU/Linux)
+
+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
+PepQmgsu
+=w6wd
+-----END PGP PUBLIC KEY BLOCK-----`;
 
 const pub_revoked_subkeys =
     ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -2693,8 +2693,8 @@ function versionSpecificTests() {
     // ssb   cv25519 2019-03-20 [E]
     //       E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965
     const key = await openpgp.readKey({ armoredKey: v5_sample_key });
-    expect(key.primaryKey.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
-    expect(key.subKeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
+    expect(await key.primaryKey.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
+    expect(await key.subKeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
     await key.verifyPrimaryKey();
   });
 }
@@ -2777,14 +2777,14 @@ module.exports = () => describe('Key', function() {
     expect(pubKeyV4).to.exist;
 
     expect(pubKeyV4.getKeyID().toHex()).to.equal('4a63613a4d6e4094');
-    expect(pubKeyV4.getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
+    expect(await pubKeyV4.getFingerprint()).to.equal('f470e50dcb1ad5f1e64e08644a63613a4d6e4094');
   });
 
   it('Create new key ID with fromID()', async function() {
     const [pubKeyV4] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const keyID = pubKeyV4.getKeyID();
-    const newKeyID = keyID.constructor.fromID(keyID.toHex());
-    expect(newKeyID.toHex()).to.equal(keyID.toHex());
+    const newKeyID = KeyID.fromID(keyID.toHex());
+    expect(newKeyID.equals(keyID)).to.be.true;
   });
 
   it('Testing key method getSubkeys', async function() {
@@ -2797,11 +2797,12 @@ module.exports = () => describe('Key', function() {
       openpgp.config
     );
 
-    const subkeys = pubKey.getSubkeys();
+    const subkeyPackets = [packetlist[8], packetlist[11]];
+    const subkeys = await pubKey.getSubkeys();
     expect(subkeys).to.exist;
     expect(subkeys).to.have.length(2);
-    expect(subkeys[0].getKeyID().equals(packetlist[8].getKeyID())).to.be.true;
-    expect(subkeys[1].getKeyID().equals(packetlist[11].getKeyID())).to.be.true;
+    expect(subkeys[0].getKeyID().equals(subkeyPackets[0].getKeyID())).to.be.true;
+    expect(subkeys[1].getKeyID().equals(subkeyPackets[1].getKeyID())).to.be.true;
   });
 
   it('Verify status of revoked primary key', async function() {
@@ -3133,12 +3134,13 @@ module.exports = () => describe('Key', function() {
     const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.subKeys[1]).to.exist;
     dest.subKeys.pop();
-    return dest.update(source).then(() => {
-      expect(dest.subKeys[1]).to.exist;
-      expect(
-        dest.subKeys[1].getKeyID().toHex()
-      ).to.equal(source.subKeys[1].getKeyID().toHex());
-    });
+    await dest.update(source);
+    expect(dest.subKeys[1]).to.exist;
+    expect(
+      dest.subKeys[1].getKeyID().toHex()
+    ).to.equal(
+      source.subKeys[1].getKeyID().toHex()
+    );
   });
 
   it('update() - merge subkey - revocation signature', async function() {
@@ -3300,7 +3302,7 @@ module.exports = () => describe('Key', function() {
 
   it("getPreferredAlgo('symmetric') - one key", async function() {
     const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
-    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1], undefined, undefined, {
+    const prefAlgo = await getPreferredAlgo('symmetric', [key1], undefined, undefined, {
       ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256
     });
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
@@ -3311,11 +3313,11 @@ module.exports = () => describe('Key', function() {
     const [key1, key2] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = [6, aes192, cast5];
-    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
+    const prefAlgo = await getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
       ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes192
     });
     expect(prefAlgo).to.equal(aes192);
-    const prefAlgo2 = await key.getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
+    const prefAlgo2 = await getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
       ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256
     });
     expect(prefAlgo2).to.equal(aes128);
@@ -3325,7 +3327,7 @@ module.exports = () => describe('Key', function() {
     const [key1, key2] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = null;
-    const prefAlgo = await key.getPreferredAlgo('symmetric', [key1, key2]);
+    const prefAlgo = await getPreferredAlgo('symmetric', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes128);
   });
 
@@ -3334,11 +3336,11 @@ module.exports = () => describe('Key', function() {
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
-    const prefAlgo = await key.getPreferredAlgo('aead', [key1], undefined, undefined, {
+    const prefAlgo = await getPreferredAlgo('aead', [key1], undefined, undefined, {
       ...openpgp.config, preferredAEADAlgorithm: openpgp.enums.aead.ocb
     });
     expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
-    const supported = await key.isAEADSupported([key1]);
+    const supported = await isAEADSupported([key1]);
     expect(supported).to.be.true;
   });
 
@@ -3351,9 +3353,9 @@ module.exports = () => describe('Key', function() {
     primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
     const primaryUser2 = await key2.getPrimaryUser();
     primaryUser2.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    const prefAlgo = await key.getPreferredAlgo('aead', [key1, key2]);
+    const prefAlgo = await getPreferredAlgo('aead', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.eax);
-    const supported = await key.isAEADSupported([key1, key2]);
+    const supported = await isAEADSupported([key1, key2]);
     expect(supported).to.be.true;
   });
 
@@ -3364,9 +3366,9 @@ module.exports = () => describe('Key', function() {
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
     primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
-    const prefAlgo = await key.getPreferredAlgo('aead', [key1, key2]);
+    const prefAlgo = await getPreferredAlgo('aead', [key1, key2]);
     expect(prefAlgo).to.equal(openpgp.enums.aead.eax);
-    const supported = await key.isAEADSupported([key1, key2]);
+    const supported = await isAEADSupported([key1, key2]);
     expect(supported).to.be.false;
   });
 
@@ -3529,7 +3531,7 @@ VYGdb3eNlV8CfoEC
     key.users[0].revocationSignatures = [];
     return openpgp.encrypt({ publicKeys: [key], message: await openpgp.createMessage({ text: 'random data' }), date: new Date(1386842743000) }).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
-    }).catch(function(error) {
+    }).catch(error => {
       expect(error.message).to.equal('Error encrypting message: Could not find valid encryption key packet in key ' + key.getKeyID().toHex() + ': Subkey is revoked');
     });
   });
@@ -3550,8 +3552,7 @@ VYGdb3eNlV8CfoEC
     expect(updateKey).to.exist;
     expect(key.users).to.have.length(1);
     return key.update(updateKey).then(() => {
-      expect(key.getFingerprint()).to.equal(
-        updateKey.getFingerprint());
+      expect(key.getFingerprint()).to.equal(updateKey.getFingerprint());
       expect(key.users).to.have.length(2);
       expect(key.users[1].userID).to.be.null;
     });

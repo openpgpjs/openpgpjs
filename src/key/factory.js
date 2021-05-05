@@ -76,7 +76,7 @@ export async function generate(options, config) {
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key
  * @param {Number} options.keyExpirationTime      Number of seconds from the key creation time after which the key expires
- * @param {Date}   options.date                   Override the creation date of the key and the key signatures
+ * @param {Date}   options.date                   Override the creation date of the key signatures
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  * @param {Object} config - Full configuration
  *
