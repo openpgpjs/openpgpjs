@@ -219,7 +219,6 @@ class PublicKeyPacket {
 
   /**
    * Computes and set the fingerprint of the key
-   * @returns {Uint8Array} A Uint8Array containing the fingerprint
    */
   async computeFingerprint() {
     const toHash = this.writeForHash(this.version);
