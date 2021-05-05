@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import * as stream from '@openpgp/web-stream-tools';
-import { readSimpleLength, writeSimpleLength } from './packet';
+import { readSimpleLength, UnsupportedPacketError, writeSimpleLength } from './packet';
 import KeyID from '../type/keyid.js';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -99,7 +99,7 @@ class SignaturePacket {
     this.version = bytes[i++];
 
     if (this.version !== 4 && this.version !== 5) {
-      throw new Error('Version ' + this.version + ' of the signature is unsupported.');
+      throw new UnsupportedPacketError(`Version ${this.version} of the signature packet is unsupported.`);
     }
 
     this.signatureType = bytes[i++];

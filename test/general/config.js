@@ -360,4 +360,10 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
     await expect(sig4.error).to.match(/eddsa keys are considered too weak/);
   });
 
+  it('tolerant mode still throws on parsing errors', async function () {
+    const { privateKeyArmored: armoredKey } = await openpgp.generateKey({ userIDs:[{ name:'test', email:'test@a.it' }] });
+    await expect(
+      openpgp.readKey({ armoredKey, config: { tolerant: true, maxUserIDLength: 2 } })
+    ).to.be.rejectedWith(/User ID string is too long/);
+  });
 });

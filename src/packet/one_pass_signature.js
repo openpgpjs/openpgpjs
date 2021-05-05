@@ -20,6 +20,9 @@ import SignaturePacket from './signature';
 import KeyID from '../type/keyid';
 import enums from '../enums';
 import util from '../util';
+import { UnsupportedPacketError } from './packet';
+
+const VERSION = 3;
 
 /**
  * Implementation of the One-Pass Signature Packets (Tag 4)
@@ -74,6 +77,9 @@ class OnePassSignaturePacket {
     let mypos = 0;
     // A one-octet version number.  The current version is 3.
     this.version = bytes[mypos++];
+    if (this.version !== VERSION) {
+      throw new UnsupportedPacketError(`Version ${this.version} of the one-pass signature packet is unsupported.`);
+    }
 
     // A one-octet signature type.  Signature types are described in
     //   Section 5.2.1.
