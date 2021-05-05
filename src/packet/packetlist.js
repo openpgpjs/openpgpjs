@@ -21,7 +21,7 @@ export function newPacketFromTag(tag, allowedPackets) {
     // distinguish between disallowed packets and unknown ones
     let packetType;
     try {
-      packetType = enums.read(enums.packets, tag);
+      packetType = enums.read(enums.packet, tag);
     } catch (e) {
       throw new UnknownPacketError(`Unknown packet type with tag: ${tag}`);
     }
