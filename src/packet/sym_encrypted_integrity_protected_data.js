@@ -26,6 +26,7 @@ import CompressedDataPacket from './compressed_data';
 import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
 import PacketList from './packetlist';
+import { UnsupportedError } from './packet';
 
 // A SEIP packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -60,10 +61,10 @@ class SymEncryptedIntegrityProtectedDataPacket {
 
   async read(bytes) {
     await stream.parse(bytes, async reader => {
-
+      const version = await reader.readByte();
       // - A one-octet version number. The only currently defined value is 1.
-      if (await reader.readByte() !== VERSION) {
-        throw new Error('Invalid packet version.');
+      if (version !== VERSION) {
+        throw new UnsupportedError(`Version ${version} of the SEIP packet is unsupported.`);
       }
 
       // - Encrypted data, the output of the selected symmetric-key cipher

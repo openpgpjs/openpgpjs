@@ -67,21 +67,6 @@ module.exports = () => describe("Packet", function() {
       '=KXkj\n' +
       '-----END PGP PRIVATE KEY BLOCK-----';
 
-  it('Ignores disallowed packet with tolerant mode enabled', async function() {
-    const packets = new openpgp.PacketList();
-    packets.push(new openpgp.MarkerPacket());
-    const bytes = packets.write();
-    const parsed = await openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: true });
-    expect(parsed.length).to.equal(0);
-  });
-
-  it('Throws on disallowed packet with tolerant mode disabled', async function() {
-    const packets = new openpgp.PacketList();
-    packets.push(new openpgp.MarkerPacket());
-    const bytes = packets.write();
-    await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: false })).to.be.rejectedWith(/Packet not allowed in this context/);
-  });
-
   it('Symmetrically encrypted packet without integrity protection - allow decryption', async function() {
     const aeadProtectVal = openpgp.config.aeadProtect;
     const allowUnauthenticatedMessagesVal = openpgp.config.allowUnauthenticatedMessages;
@@ -961,6 +946,30 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
           openpgp.stream.readToEnd(signed2[0].getBytes())
         ]);
       });
+    });
+  });
+
+  describe('PacketList parsing', function () {
+    it('Ignores disallowed packet with tolerant mode enabled', async function() {
+      const packets = new openpgp.PacketList();
+      packets.push(new openpgp.MarkerPacket());
+      const bytes = packets.write();
+      const parsed = await openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: true });
+      expect(parsed.length).to.equal(0);
+    });
+
+    it('Throws on disallowed packet with tolerant mode disabled', async function() {
+      const packets = new openpgp.PacketList();
+      packets.push(new openpgp.MarkerPacket());
+      const bytes = packets.write();
+      await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: false })).to.be.rejectedWith(/Packet not allowed in this context/);
+    });
+
+    it('Throws on parsing errors even with tolerant mode enabled', async function () {
+      const { privateKeyArmored: armoredKey } = await openpgp.generateKey({ userIDs:[{ name:'test', email:'test@a.it' }] });
+      await expect(
+        openpgp.readKey({ armoredKey, config: { tolerant: true, maxUserIDLength: 2 } })
+      ).to.be.rejectedWith(/User ID string is too long/);
     });
   });
 });

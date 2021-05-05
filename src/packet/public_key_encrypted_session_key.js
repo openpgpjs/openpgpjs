@@ -19,6 +19,9 @@ import KeyID from '../type/keyid';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
+import { UnsupportedError } from './packet';
+
+const VERSION = 3;
 
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)
@@ -61,6 +64,9 @@ class PublicKeyEncryptedSessionKeyPacket {
    */
   read(bytes) {
     this.version = bytes[0];
+    if (this.version !== VERSION) {
+      throw new UnsupportedError(`Version ${this.version} of the PKESK packet is unsupported.`);
+    }
     this.publicKeyID.read(bytes.subarray(1, bytes.length));
     this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
 
@@ -89,7 +95,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   /**
    * Encrypt session key packet
    * @param {PublicKeyPacket} key - Public key
-   * @returns {Promise<Boolean>}
+   * @throws {Error} if encryption failed
    * @async
    */
   async encrypt(key) {
@@ -101,16 +107,13 @@ class PublicKeyEncryptedSessionKeyPacket {
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     this.encrypted = await crypto.publicKeyEncrypt(
       algo, key.publicParams, data, key.getFingerprintBytes());
-    return true;
   }
 
   /**
    * Decrypts the session key (only for public key encrypted session key
    * packets (tag 1)
-   *
-   * @param {SecretKeyPacket} key
-   *            Private key with secret params unlocked
-   * @returns {Promise<Boolean>}
+   * @param {SecretKeyPacket} key - decrypted private key
+   * @throws {Error} if decryption failed
    * @async
    */
   async decrypt(key) {
@@ -129,7 +132,6 @@ class PublicKeyEncryptedSessionKeyPacket {
       this.sessionKey = sessionKey;
       this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded[0]);
     }
-    return true;
   }
 }
 

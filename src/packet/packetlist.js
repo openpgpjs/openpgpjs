@@ -2,7 +2,8 @@ import * as stream from '@openpgp/web-stream-tools';
 import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
-  writePartialLength, writeSimpleLength
+  writePartialLength, writeSimpleLength,
+  UnsupportedError
 } from './packet';
 import util from '../util';
 import enums from '../enums';
@@ -17,7 +18,14 @@ import defaultConfig from '../config';
  */
 export function newPacketFromTag(tag, allowedPackets) {
   if (!allowedPackets[tag]) {
-    throw new Error(`Packet not allowed in this context: ${enums.read(enums.packet, tag)}`);
+    // distinguish between disallowed packets and unknown ones
+    let packetType;
+    try {
+      packetType = enums.read(enums.packet, tag);
+    } catch (e) {
+      throw new UnsupportedError(`Unknown packet type with tag: ${tag}`);
+    }
+    throw new UnsupportedError(`Packet not allowed in this context: ${packetType}`);
   }
   return new allowedPackets[tag]();
 }
@@ -67,10 +75,11 @@ class PacketList extends Array {
               await packet.read(parsed.packet, config);
               await writer.write(packet);
             } catch (e) {
-              if (!config.tolerant || supportsStreaming(parsed.tag)) {
-                // The packets that support streaming are the ones that contain
-                // message data. Those are also the ones we want to be more strict
-                // about and throw on parse errors for.
+              const isTolerableError = config.tolerant && e instanceof UnsupportedError;
+              if (!isTolerableError || supportsStreaming(parsed.tag)) {
+                // The packets that support streaming are the ones that contain message data.
+                // Those are also the ones we want to be more strict about and throw on parse errors
+                // (since we likely cannot process the message without these packets anyway).
                 await writer.abort(e);
               }
               util.printDebugError(e);
