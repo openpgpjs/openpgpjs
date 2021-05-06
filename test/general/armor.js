@@ -382,7 +382,7 @@ NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
 `;
 
     const { type, data } = await openpgp.unarmor(pubKey);
-    const armor = await openpgp.stream.readToEnd(openpgp.armor(type, data));
+    const armor = await openpgp.armor(type, data);
     expect(
       armor
         .replace(/^(Version|Comment): .*$\n/mg, '')

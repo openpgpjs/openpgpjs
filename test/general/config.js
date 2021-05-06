@@ -359,5 +359,4 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
     await expect(sig4.valid).to.be.false;
     await expect(sig4.error).to.match(/eddsa keys are considered too weak/);
   });
-
 });

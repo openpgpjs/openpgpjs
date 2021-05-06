@@ -4,6 +4,8 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 
+const stream = require('@openpgp/web-stream-tools');
+
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
@@ -946,7 +948,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       const sMsg = await openpgp.readMessage({ armoredMessage: signedArmor });
       const pub_key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
       const verified = await sMsg.verify([pub_key]);
-      openpgp.stream.readToEnd(sMsg.getLiteralData());
+      stream.readToEnd(sMsg.getLiteralData());
       expect(verified).to.exist;
       expect(verified).to.have.length(1);
       expect(await verified[0].verified).to.be.true;
@@ -1115,7 +1117,7 @@ PAAeuQTUrcJdZeJ86eQ9cCUB216HCwSKOWTQRzL+hBWKXij4WD4=
     const pubKey = await openpgp.readKey({ armoredKey: pub_latin1_msg });
 
     return message.verify([pubKey]).then(async verifiedSig => {
-      expect(await openpgp.stream.readToEnd(message.getLiteralData())).to.equal(latin1Binary);
+      expect(await stream.readToEnd(message.getLiteralData())).to.equal(latin1Binary);
       expect(verifiedSig).to.exist;
       expect(verifiedSig).to.have.length(1);
       expect(await verifiedSig[0].verified).to.be.true;
@@ -1210,25 +1212,13 @@ yYDnCgA=
 -----END PGP MESSAGE-----`.split('');
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      await stream.loadStreamsPonyfill();
       const message = await openpgp.readMessage({
-        armoredMessage: globalThis.ReadableStream ? new globalThis.ReadableStream({
+        armoredMessage: new stream.ReadableStream({
           async pull(controller) {
             await new Promise(setTimeout);
             controller.enqueue(armoredMessage.shift());
             if (!armoredMessage.length) controller.close();
-          }
-        }) : new (require('stream').Readable)({
-          encoding: 'utf8',
-          async read() {
-            while (true) {
-              await new Promise(setTimeout);
-              if (!armoredMessage.length) {
-                return this.push(null);
-              }
-              if (!this.push(armoredMessage.shift())) {
-                break;
-              }
-            }
           }
         })
       });
@@ -1239,7 +1229,7 @@ yYDnCgA=
 
       return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async function(cleartextSig) {
         expect(cleartextSig).to.exist;
-        expect(await openpgp.stream.readToEnd(cleartextSig.data)).to.equal(plaintext);
+        expect(await stream.readToEnd(cleartextSig.data)).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
         if (!openpgp.config.rejectMessageHashAlgorithms.has(openpgp.enums.hash.sha1)) {
           expect(await cleartextSig.signatures[0].verified).to.be.true;
@@ -1288,8 +1278,9 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 -----END PGP MESSAGE-----`.split('');
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
+      await stream.loadStreamsPonyfill();
       const message = await openpgp.readMessage({
-        armoredMessage: new openpgp.stream.ReadableStream({
+        armoredMessage: new stream.ReadableStream({
           async pull(controller) {
             await new Promise(setTimeout);
             controller.enqueue(armoredMessage.shift());
@@ -1303,7 +1294,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
       return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
-        expect(await openpgp.stream.readToEnd(data)).to.equal(plaintext);
+        expect(await stream.readToEnd(data)).to.equal(plaintext);
         expect(signatures).to.have.length(1);
         await expect(signatures[0].verified).to.be.rejectedWith('Corresponding signature packet missing');
         expect((await signatures[0].signature).packets.length).to.equal(0);

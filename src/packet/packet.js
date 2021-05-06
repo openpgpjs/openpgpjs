@@ -97,17 +97,17 @@ export function writeHeader(tag_type, length) {
 
 /**
  * Whether the packet type supports partial lengths per RFC4880
- * @param {Integer} tag_type - Tag type
+ * @param {Integer} tag - Tag type
  * @returns {Boolean} String of the header.
  */
-export function supportsStreaming(tag_type) {
+export function supportsStreaming(tag) {
   return [
     enums.packet.literalData,
     enums.packet.compressedData,
     enums.packet.symmetricallyEncryptedData,
     enums.packet.symEncryptedIntegrityProtectedData,
     enums.packet.aeadEncryptedData
-  ].includes(tag_type);
+  ].includes(tag);
 }
 
 /**
@@ -296,3 +296,16 @@ export async function readPackets(input, callback) {
     reader.releaseLock();
   }
 }
+
+export class UnsupportedError extends Error {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, UnsupportedError);
+    }
+
+    this.name = 'UnsupportedError';
+  }
+}
+

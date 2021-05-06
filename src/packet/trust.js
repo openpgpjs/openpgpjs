@@ -1,6 +1,7 @@
 /* eslint class-methods-use-this: ["error", { "exceptMethods": ["read"] }] */
 
 import enums from '../enums';
+import { UnsupportedError } from './packet';
 
 /**
  * Implementation of the Trust Packet (Tag 12)
@@ -25,13 +26,14 @@ class TrustPacket {
   /**
    * Parsing function for a trust packet (tag 12).
    * Currently not implemented as we ignore trust packets
-   * @param {String} byptes - Payload of a tag 12 packet
    */
-  read() {} // TODO
+  read() {
+    throw new UnsupportedError('Trust packets are not supported');
+  }
 
   // eslint-disable-next-line class-methods-use-this
   write() {
-    throw new Error('Trust packets are not supported');
+    throw new UnsupportedError('Trust packets are not supported');
   }
 }
 

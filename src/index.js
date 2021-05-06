@@ -21,9 +21,6 @@ export { CleartextMessage, readCleartextMessage, createCleartextMessage } from '
 
 export * from './packet';
 
-import * as streamMod from '@openpgp/web-stream-tools'; // eslint-disable-line
-export const stream = streamMod;
-
 export * from './encoding/armor';
 
 export { default as enums } from './enums';

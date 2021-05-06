@@ -7,6 +7,8 @@ const random = require('../../src/crypto/random');
 const util = require('../../src/util');
 const keyIDType = require('../../src/type/keyid');
 
+const stream = require('@openpgp/web-stream-tools');
+
 const spy = require('sinon/lib/sinon/spy');
 const input = require('./testInputs.js');
 const chai = require('chai');
@@ -1065,12 +1067,12 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         encryptionKeys: publicKey
       });
       const { data: streamedData, signatures } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
+        message: await openpgp.readMessage({ armoredMessage: stream.toStream(encrypted) }),
         decryptionKeys: privateKey,
         verificationKeys: publicKey,
         expectSigned: true
       });
-      const data = await openpgp.stream.readToEnd(streamedData);
+      const data = await stream.readToEnd(streamedData);
       expect(data).to.equal(plaintext);
       expect(await signatures[0].verified).to.be.true;
     });
@@ -1088,7 +1090,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         signingKeys: privateKey
       });
       await expect(openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
+        message: await openpgp.readMessage({ armoredMessage: stream.toStream(encrypted) }),
         decryptionKeys: privateKey,
         expectSigned: true
       })).to.be.eventually.rejectedWith(/Verification keys are required/);
@@ -1106,7 +1108,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         encryptionKeys: publicKey
       });
       await expect(openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
+        message: await openpgp.readMessage({ armoredMessage: stream.toStream(encrypted) }),
         decryptionKeys: privateKey,
         verificationKeys: publicKey,
         expectSigned: true
@@ -1127,13 +1129,13 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         signingKeys: privateKey
       });
       const { data: streamedData } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: openpgp.stream.toStream(encrypted) }),
+        message: await openpgp.readMessage({ armoredMessage: stream.toStream(encrypted) }),
         decryptionKeys: privateKey,
         verificationKeys: wrongPublicKey,
         expectSigned: true
       });
       await expect(
-        openpgp.stream.readToEnd(streamedData)
+        stream.readToEnd(streamedData)
       ).to.be.eventually.rejectedWith(/Could not find signing key/);
     });
   });
@@ -1229,11 +1231,11 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           signingKeys: privateKey
         });
         const { data: streamedData, signatures } = await openpgp.verify({
-          message: await readMessage({ armoredMessage: openpgp.stream.toStream(signed) }),
+          message: await readMessage({ armoredMessage: stream.toStream(signed) }),
           verificationKeys: publicKey,
           expectSigned: true
         });
-        const data = await openpgp.stream.readToEnd(streamedData);
+        const data = await stream.readToEnd(streamedData);
         expect(data).to.equal(text);
         expect(await signatures[0].verified).to.be.true;
       });
@@ -1244,7 +1246,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         const publicKey = await openpgp.readKey({ armoredKey: pub_key });
 
         await expect(openpgp.verify({
-          message: await createMessage({ text: openpgp.stream.toStream(text) }),
+          message: await createMessage({ text: stream.toStream(text) }),
           verificationKeys: publicKey,
           expectSigned: true
         })).to.be.eventually.rejectedWith(/Message is not signed/);
@@ -1264,12 +1266,12 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           signingKeys: privateKey
         });
         const { data: streamedData } = await openpgp.verify({
-          message: await readMessage({ armoredMessage: openpgp.stream.toStream(signed) }),
+          message: await readMessage({ armoredMessage: stream.toStream(signed) }),
           verificationKeys: wrongPublicKey,
           expectSigned: true
         });
         await expect(
-          openpgp.stream.readToEnd(streamedData)
+          stream.readToEnd(streamedData)
         ).to.be.eventually.rejectedWith(/Could not find signing key/);
       });
     }
@@ -2152,13 +2154,19 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             throw new Error("Was not able to successfully modify checksum");
           }
           const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
+          await stream.loadStreamsPonyfill();
           for (let allow_streaming = 1; allow_streaming >= 0; allow_streaming--) {
             openpgp.config.allowUnauthenticatedStream = !!allow_streaming;
             await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
               await Promise.all([
                 encrypted,
-                openpgp.stream.toStream(encrypted),
-                new openpgp.stream.ReadableStream({
+                new stream.ReadableStream({
+                  start(controller) {
+                    controller.enqueue(encrypted);
+                    controller.close();
+                  }
+                }),
+                new stream.ReadableStream({
                   start() {
                     this.remaining = encrypted.split('\n');
                   },
@@ -2178,7 +2186,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
                   stepReached = 1;
                   const { data: decrypted } = await openpgp.decrypt({ message: message, decryptionKeys: [key] });
                   stepReached = 2;
-                  await openpgp.stream.readToEnd(decrypted);
+                  await stream.readToEnd(decrypted);
                 } catch (e) {
                   expect(e.message).to.match(/Ascii armor integrity check on message failed/);
                   expect(stepReached).to.equal(
@@ -2407,7 +2415,8 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
             const plaintext = [];
             let i = 0;
             const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
-            const ReadableStream = useNativeStream ? global.ReadableStream : openpgp.stream.ReadableStream;
+            await stream.loadStreamsPonyfill();
+            const ReadableStream = useNativeStream ? global.ReadableStream : stream.ReadableStream;
             const data = new ReadableStream({
               async pull(controller) {
                 if (i++ < 4) {
@@ -2423,7 +2432,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               message: await openpgp.createMessage({ binary: data }),
               passwords: ['test']
             }));
-            expect(openpgp.stream.isStream(encrypted)).to.equal(useNativeStream ? 'web' : 'ponyfill');
+            expect(stream.isStream(encrypted)).to.equal(useNativeStream ? 'web' : 'web-like');
 
             const message = await openpgp.readMessage({ armoredMessage: encrypted });
             const decrypted = await openpgp.decrypt({
@@ -2431,8 +2440,8 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
               message,
               format: 'binary'
             });
-            expect(openpgp.stream.isStream(decrypted.data)).to.equal(useNativeStream ? 'web' : 'ponyfill');
-            expect(await openpgp.stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
+            expect(stream.isStream(decrypted.data)).to.equal(useNativeStream ? 'web' : 'web-like');
+            expect(await stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
           });
         });
       });
@@ -2719,7 +2728,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         };
         return openpgp.sign(signOpt).then(async function (signed) {
           const message = await openpgp.readMessage({ binaryMessage: signed });
-          message.packets.push(...await openpgp.stream.readToEnd(message.packets.stream, _ => _));
+          message.packets.push(...await stream.readToEnd(message.packets.stream, _ => _));
           const packets = new openpgp.PacketList();
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
@@ -2757,21 +2766,21 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           format: 'binary'
         };
         return openpgp.sign(signOpt).then(async function (signed) {
-          expect(openpgp.stream.isStream(signed)).to.equal(global.ReadableStream ? 'web' : 'node');
+          expect(stream.isStream(signed)).to.equal(global.ReadableStream ? 'web' : 'node');
           const message = await openpgp.readMessage({ binaryMessage: signed });
-          message.packets.push(...await openpgp.stream.readToEnd(message.packets.stream, _ => _));
+          message.packets.push(...await stream.readToEnd(message.packets.stream, _ => _));
           const packets = new openpgp.PacketList();
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
           verifyOpt.message = await openpgp.readMessage({
-            binaryMessage: openpgp.stream[
-              global.ReadableStream ? (global.ReadableStream === openpgp.stream.ReadableStream ? 'toStream' : 'toNativeReadable') : 'webToNode'
+            binaryMessage: stream[
+              global.ReadableStream ? (global.ReadableStream === stream.ReadableStream ? 'toStream' : 'toNativeReadable') : 'webToNode'
             ](packets.write())
           });
           return openpgp.verify(verifyOpt);
         }).then(async function (verified) {
-          expect(openpgp.stream.isStream(verified.data)).to.equal(global.ReadableStream ? 'web' : 'node');
-          expect([].slice.call(await openpgp.stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
+          expect(stream.isStream(verified.data)).to.equal(global.ReadableStream ? 'web' : 'node');
+          expect([].slice.call(await stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
           expect(await verified.signatures[0].verified).to.be.true;
           expect(await privateKey.getSigningKey(verified.signatures[0].keyID))
             .to.be.not.null;
@@ -2795,7 +2804,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           const literals = packets.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
           expect(+literals[0].date).to.equal(+future);
-          expect(await openpgp.stream.readToEnd(packets.getText())).to.equal(plaintext);
+          expect(await stream.readToEnd(packets.getText())).to.equal(plaintext);
         });
       });
 
@@ -2816,7 +2825,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           const literals = packets.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
           expect(+literals[0].date).to.equal(+past);
-          expect(await openpgp.stream.readToEnd(packets.getLiteralData())).to.deep.equal(data);
+          expect(await stream.readToEnd(packets.getLiteralData())).to.deep.equal(data);
         });
       });
 
@@ -2838,7 +2847,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(literals.length).to.equal(1);
           expect(+literals[0].date).to.equal(+past);
           const signatures = await message.verify([publicKey_2000_2008], past, undefined, openpgp.config);
-          expect(await openpgp.stream.readToEnd(message.getText())).to.equal(plaintext);
+          expect(await stream.readToEnd(message.getText())).to.equal(plaintext);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+past);
           expect(await signatures[0].verified).to.be.true;
           expect(await privateKey_2000_2008.getSigningKey(signatures[0].keyID, past))
@@ -2867,7 +2876,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(literals[0].format).to.equal('binary');
           expect(+literals[0].date).to.equal(+future);
           const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
-          expect(await openpgp.stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
+          expect(await stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
           expect(await signatures[0].verified).to.be.true;
           expect(await privateKey_2038_2045.getSigningKey(signatures[0].keyID, future))
@@ -2896,7 +2905,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
           expect(literals[0].format).to.equal('mime');
           expect(+literals[0].date).to.equal(+future);
           const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
-          expect(await openpgp.stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
+          expect(await stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
           expect(+(await signatures[0].signature).packets[0].created).to.equal(+future);
           expect(await signatures[0].verified).to.be.true;
           expect(await privateKey_2038_2045.getSigningKey(signatures[0].keyID, future))
@@ -3202,7 +3211,7 @@ Bw==
 -----END PGP PRIVATE KEY BLOCK-----`
         });
         const message = await openpgp.readMessage({
-          armoredMessage: openpgp.stream.toStream(`-----BEGIN PGP MESSAGE-----
+          armoredMessage: stream.toStream(`-----BEGIN PGP MESSAGE-----
 
 wV4D+3VwOibHmagSAQdATlMJlvrkaq46zMkbIuKBOJO5X3ugVwZpEyAterQC
 /RUw0OPWeO+4swh/U7ZurV8cRr/fPnyGUUKI7rI+va3kWUZv4RRpUs7eYE57
@@ -3214,7 +3223,7 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
 -----END PGP MESSAGE-----`)
         });
         const decrypted = await openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key, config: { allowUnauthenticatedMessages: true } });
-        const data = await openpgp.stream.readToEnd(decrypted.data);
+        const data = await stream.readToEnd(decrypted.data);
         expect(data).to.equal('test');
       });
     });
