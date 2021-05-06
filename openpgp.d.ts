@@ -9,15 +9,19 @@
 
 /* ############## v5 KEY #################### */
 
-export function readKey(options: { armoredKey: string, config?: PartialConfig }): Promise<Key>;
-export function readKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<Key>;
-export function readKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<Key[]>;
-export function readKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<Key[]>;
+export function readKey(options: { armoredKey: string, config?: PartialConfig }): Promise<PublicKey>;
+export function readKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PublicKey>;
+export function readKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PublicKey[]>;
+export function readKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<PublicKey[]>;
+export function readPrivateKey(options: { armoredKey: string, config?: PartialConfig }): Promise<PrivateKey>;
+export function readPrivateKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PrivateKey>;
+export function readPrivateKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PrivateKey[]>;
+export function readPrivateKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<PrivateKey[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
-export function generateSessionKey(options: { encryptionKeys: Key[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
-export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
-export function encryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
-export function reformatKey(options: { privateKey: Key; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
+export function generateSessionKey(options: { encryptionKeys: PublicKey[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
+export function decryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
+export function encryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
 
 export abstract class Key {
   private primaryKey: PublicKeyPacket | SecretKeyPacket;
@@ -34,17 +38,17 @@ export abstract class Key {
   public isPrivate(): boolean;
   public isPublic(): boolean;
   public toPublic(): PublicKey;
-  public update(sourceKey: Key, config?: Config): Promise<Key>;
-  public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<Key>
-  public signAllUsers(privateKeys: PrivateKey[], config?: Config): Promise<Key>
+  public update(sourceKey: PublicKey, config?: Config): Promise<PublicKey>;
+  public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<PublicKey>
+  public signAllUsers(privateKeys: PrivateKey[], config?: Config): Promise<PublicKey>
   public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
   public verifyPrimaryUser(publicKeys: PublicKey[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
   public verifyAllUsers(publicKeys: PublicKey[], config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
-  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<Key | SubKey>;
-  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<Key | SubKey>;
-  public getKeys(keyID?: KeyID): (Key | SubKey)[];
+  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | SubKey>;
+  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | SubKey>;
+  public getKeys(keyID?: KeyID): (PublicKey | SubKey)[];
   public getSubkeys(keyID?: KeyID): SubKey[];
   public getFingerprint(): string;
   public getCreationTime(): Date;

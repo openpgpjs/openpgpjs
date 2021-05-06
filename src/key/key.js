@@ -676,7 +676,7 @@ export default Key;
  * @param {PacketList} - packets to parse
  * @return {Key} parsed key
  */
- export function createKey(packetlist) {
+export function createKey(packetlist) {
   switch (packetlist[0].constructor.tag) {
     case enums.packet.secretKey:
       return new PrivateKey(packetlist);

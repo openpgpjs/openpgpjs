@@ -1,6 +1,8 @@
 import {
   readKey,
   readKeys,
+  readPrivateKey,
+  readPrivateKeys,
   generate,
   reformat
 } from './factory';
@@ -18,6 +20,8 @@ import PublicKey from './public_key.js';
 export {
   readKey,
   readKeys,
+  readPrivateKey,
+  readPrivateKeys,
   generate,
   reformat,
   getPreferredAlgo,

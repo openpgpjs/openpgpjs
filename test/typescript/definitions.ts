@@ -8,7 +8,7 @@
 
 import { expect } from 'chai';
 import {
-  generateKey, readKey, readKeys, PrivateKey, PublicKey, Key,
+  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
@@ -17,7 +17,7 @@ import {
 (async () => {
 
   // Generate keys
-  const { publicKeyArmored, key: privateKey } = await generateKey({ userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } });
+  const { publicKeyArmored, privateKeyArmored, key: privateKey } = await generateKey({ userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } });
   expect(privateKey).to.be.instanceOf(PrivateKey);
   const privateKeys = [privateKey];
   const publicKeys = [privateKey.toPublic()];
@@ -26,8 +26,9 @@ import {
   // Parse keys
   expect(await readKeys({ armoredKeys: publicKeyArmored })).to.have.lengthOf(1);
   const parsedKey: Key = await readKey({ armoredKey: publicKeyArmored });
-  expect(parsedKey).to.be.instanceOf(PublicKey);
   parsedKey.armor();
+  const parsedPrivateKey: PrivateKey = await readPrivateKey({ armoredKey: privateKeyArmored });
+  expect(parsedPrivateKey.isPrivate()).to.be.true;
 
   // Encrypt text message (armored)
   const text = 'hello';
