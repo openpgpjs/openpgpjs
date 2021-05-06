@@ -2891,7 +2891,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 Key', async function() {
     const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
   });
@@ -2899,7 +2899,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime expired V4 Key', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: expiredKey });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime.toISOString()).to.be.equal('1970-01-01T00:22:18.000Z');
   });
@@ -2907,7 +2907,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 SubKey', async function() {
     const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.subKeys[0].getExpirationTime(pubKey.primaryKey);
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
   });
@@ -2915,7 +2915,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 Key with capabilities', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     pubKey.users[0].selfCertifications[0].keyFlags = [1];
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime).to.equal(Infinity);
@@ -2926,7 +2926,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 Key with capabilities - capable primary key', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime).to.equal(Infinity);
     const encryptExpirationTime = await pubKey.getExpirationTime('encrypt_sign');

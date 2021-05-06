@@ -12,7 +12,8 @@ import {
   createSignaturePacket
 } from './helper';
 
-import Key from './key.js';
+import PrivateKey from './private_key.js';
+import PublicKey from './public_key.js';
 
 export {
   readKey,
@@ -23,5 +24,6 @@ export {
   isAEADSupported,
   getPreferredHashAlgo,
   createSignaturePacket,
-  Key
+  PrivateKey,
+  PublicKey
 };

@@ -25,7 +25,8 @@ import {
   SecretSubkeyPacket,
   UserAttributePacket
 } from '../packet';
-import Key from './key';
+import PrivateKey from './private_key';
+import PublicKey from './public_key';
 import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
@@ -246,7 +247,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     }
   }));
 
-  return new Key(packetlist);
+  return new PrivateKey(packetlist);
 }
 
 /**
@@ -281,7 +282,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
     input = binaryKey;
   }
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  return new Key(packetlist);
+  return (packetlist[0].constructor.tag === enums.packet.publicKey) ? new PublicKey(packetlist) : new PrivateKey(packetlist);
 }
 
 /**
@@ -321,7 +322,7 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   }
   for (let i = 0; i < keyIndex.length; i++) {
     const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
-    const newKey = new Key(oneKeyList);
+    const newKey = (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) ? new PublicKey(oneKeyList) : new PrivateKey(oneKeyList);
     keys.push(newKey);
   }
   return keys;

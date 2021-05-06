@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { readKey, Key, createMessage, enums, PacketList, SignaturePacket } = openpgp;
+const { readKey, PrivateKey, createMessage, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -82,7 +82,7 @@ async function makeKeyValid() {
   // reconstruct the modified key
   const newlist = new PacketList();
   newlist.push(pubkey, puser, pusersig);
-  let modifiedkey = new Key(newlist);
+  let modifiedkey = new PrivateKey(newlist);
   // re-read the message to eliminate any
   // behaviour due to cached values.
   modifiedkey = await readKey({ armoredKey: await modifiedkey.armor() });
