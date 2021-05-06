@@ -30,7 +30,7 @@ import {
   // Encrypt text message (armored)
   const text = 'hello';
   const textMessage = await createMessage({ text: 'hello' });
-  const encryptedArmor: string = await encrypt({ publicKeys, message: textMessage });
+  const encryptedArmor: string = await encrypt({ encryptionKeys: publicKeys, message: textMessage });
   expect(encryptedArmor).to.include('-----BEGIN PGP MESSAGE-----');
 
   // Encrypt binary message (unarmored)
@@ -38,18 +38,18 @@ import {
   binary[0] = 1;
   binary[1] = 2;
   const binaryMessage = await createMessage({ binary });
-  const encryptedBinary: Uint8Array = await encrypt({ publicKeys, message: binaryMessage, armor: false });
+  const encryptedBinary: Uint8Array = await encrypt({ encryptionKeys: publicKeys, message: binaryMessage, armor: false });
   expect(encryptedBinary).to.be.instanceOf(Uint8Array);
 
   // Decrypt text message (armored)
   const encryptedTextMessage = await readMessage({ armoredMessage: encryptedArmor });
-  const decryptedText = await decrypt({ privateKeys, message: encryptedTextMessage });
+  const decryptedText = await decrypt({ decryptionKeys: privateKeys, message: encryptedTextMessage });
   const decryptedTextData: string = decryptedText.data;
   expect(decryptedTextData).to.equal(text);
 
   // Decrypt binary message (unarmored)
   const encryptedBinaryMessage = await readMessage({ binaryMessage: encryptedBinary });
-  const decryptedBinary = await decrypt({ privateKeys, message: encryptedBinaryMessage, format: 'binary' });
+  const decryptedBinary = await decrypt({ decryptionKeys: privateKeys, message: encryptedBinaryMessage, format: 'binary' });
   const decryptedBinaryData: Uint8Array = decryptedBinary.data;
   expect(decryptedBinaryData).to.deep.equal(binary);
 
@@ -59,26 +59,26 @@ import {
 
   // Sign cleartext message (armored)
   const cleartextMessage = await createCleartextMessage({ text: 'hello' });
-  const clearSignedArmor = await sign({ privateKeys, message: cleartextMessage });
+  const clearSignedArmor = await sign({ signingKeys: privateKeys, message: cleartextMessage });
   expect(clearSignedArmor).to.include('-----BEGIN PGP SIGNED MESSAGE-----');
 
   // Sign text message (armored)
-  const textSignedArmor: string = await sign({ privateKeys, message: textMessage });
+  const textSignedArmor: string = await sign({ signingKeys: privateKeys, message: textMessage });
   expect(textSignedArmor).to.include('-----BEGIN PGP MESSAGE-----');
 
   // Sign text message (unarmored)
-  const textSignedBinary: Uint8Array = await sign({ privateKeys, message: binaryMessage, armor: false });
+  const textSignedBinary: Uint8Array = await sign({ signingKeys: privateKeys, message: binaryMessage, armor: false });
   expect(textSignedBinary).to.be.instanceOf(Uint8Array);
 
   // Verify signed text message (armored)
   const signedMessage = await readMessage({ armoredMessage: textSignedArmor });
-  const verifiedText = await verify({ publicKeys, message: signedMessage });
+  const verifiedText = await verify({ verificationKeys: publicKeys, message: signedMessage });
   const verifiedTextData: string = verifiedText.data;
   expect(verifiedTextData).to.equal(text);
 
   // Verify signed binary message (unarmored)
   const message = await readMessage({ binaryMessage: textSignedBinary });
-  const verifiedBinary = await verify({ publicKeys, message, format: 'binary' });
+  const verifiedBinary = await verify({ verificationKeys: publicKeys, message, format: 'binary' });
   const verifiedBinaryData: Uint8Array = verifiedBinary.data;
   expect(verifiedBinaryData).to.deep.equal(binary);
 
