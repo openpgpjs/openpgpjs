@@ -1,6 +1,6 @@
 /**
  * npm run-script test-type-definitions
- * 
+ *
  * If types are off, either this will fail to build with TypeScript, or it will fail to run.
  *  - if it fails to build, edit the file to match type definitions
  *  - if it fails to run, edit this file to match the actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
@@ -8,7 +8,7 @@
 
 import { expect } from 'chai';
 import {
-  generateKey, readKey, readKeys, Key,
+  generateKey, readKey, readKeys, PrivateKey, PublicKey, Key,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
@@ -17,15 +17,17 @@ import {
 (async () => {
 
   // Generate keys
-  const { publicKeyArmored, key } = await generateKey({ userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } });
-  expect(key).to.be.instanceOf(Key);
-  const privateKeys = [key];
-  const publicKeys = [key.toPublic()];
-  expect(key.toPublic().armor(config)).to.equal(publicKeyArmored);
+  const { publicKeyArmored, key: privateKey } = await generateKey({ userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } });
+  expect(privateKey).to.be.instanceOf(PrivateKey);
+  const privateKeys = [privateKey];
+  const publicKeys = [privateKey.toPublic()];
+  expect(privateKey.toPublic().armor(config)).to.equal(publicKeyArmored);
 
   // Parse keys
-  expect(await readKey({ armoredKey: publicKeyArmored })).to.be.instanceOf(Key);
   expect(await readKeys({ armoredKeys: publicKeyArmored })).to.have.lengthOf(1);
+  const parsedKey: Key = await readKey({ armoredKey: publicKeyArmored });
+  expect(parsedKey).to.be.instanceOf(PublicKey);
+  parsedKey.armor();
 
   // Encrypt text message (armored)
   const text = 'hello';
@@ -61,6 +63,10 @@ import {
   const cleartextMessage = await createCleartextMessage({ text: 'hello' });
   const clearSignedArmor = await sign({ signingKeys: privateKeys, message: cleartextMessage });
   expect(clearSignedArmor).to.include('-----BEGIN PGP SIGNED MESSAGE-----');
+  // @ts-expect-error PublicKey not assignable to PrivateKey
+  try { await sign({ signingKeys: publicKeys, message: cleartextMessage }); } catch (e) {}
+  // @ts-expect-error Key not assignable to PrivateKey
+  try { await sign({ signingKeys: parsedKey, message: cleartextMessage }); } catch (e) {}
 
   // Sign text message (armored)
   const textSignedArmor: string = await sign({ signingKeys: privateKeys, message: textMessage });
@@ -81,6 +87,7 @@ import {
   const verifiedBinary = await verify({ verificationKeys: publicKeys, message, format: 'binary' });
   const verifiedBinaryData: Uint8Array = verifiedBinary.data;
   expect(verifiedBinaryData).to.deep.equal(binary);
+  await verify({ verificationKeys: privateKeys, message, format: 'binary' });
 
   // Generic packetlist
   const packets = new PacketList();
@@ -91,7 +98,6 @@ import {
   packets.map((packet: LiteralDataPacket) => packet.getText());
   // @ts-expect-error for non-packet element
   try { new PacketList().push(1); } catch (e) {}
-
 
   // Packetlist of specific type
   const literalPackets = new PacketList<LiteralDataPacket>();
