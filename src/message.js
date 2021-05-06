@@ -359,7 +359,7 @@ export class Message {
    * @param {Uint8Array} sessionKey - session key for encryption
    * @param {String} algorithm - session key algorithm
    * @param {String} [aeadAlgorithm] - AEAD algorithm, e.g. 'eax' or 'ocb'
-   * @param {Array<Key>} [encryptionKeys] - Encryption key(s) for message encryption
+   * @param {Array<Key>} [encryptionKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - For message encryption
    * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs
    * @param {Array<module:type/keyid~KeyID>} [encryptionKeyIDs] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to encryptionKeys[i]
