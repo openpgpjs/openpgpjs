@@ -241,7 +241,7 @@ function tests() {
   it('Sign: Input stream should be canceled when canceling encrypted stream', async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       config: { minRSABits: 1024 }
     });
     const reader = openpgp.stream.getReader(signed);
@@ -315,8 +315,8 @@ function tests() {
     try {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
-        publicKeys: pubKey,
-        privateKeys: privKey,
+        encryptionKeys: pubKey,
+        signingKeys: privKey,
         armor: false,
         config: { minRSABits: 1024 }
       });
@@ -324,8 +324,8 @@ function tests() {
 
       const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
-        publicKeys: pubKey,
-        privateKeys: privKey,
+        verificationKeys: pubKey,
+        decryptionKeys: privKey,
         message,
         format: 'binary'
       });
@@ -351,16 +351,16 @@ function tests() {
     try {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
-        publicKeys: pub,
-        privateKeys: priv,
+        encryptionKeys: pub,
+        signingKeys: priv,
         armor: false
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
-        publicKeys: pub,
-        privateKeys: priv,
+        verificationKeys: pub,
+        decryptionKeys: priv,
         message,
         format: 'binary'
       });
@@ -386,16 +386,16 @@ function tests() {
     try {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
-        publicKeys: pub,
-        privateKeys: priv,
+        encryptionKeys: pub,
+        signingKeys: priv,
         armor: false
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
-        publicKeys: pub,
-        privateKeys: priv,
+        verificationKeys: pub,
+        decryptionKeys: priv,
         message,
         format: 'binary'
       });
@@ -453,8 +453,8 @@ function tests() {
     try {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
-        publicKeys: pubKey,
-        privateKeys: privKey,
+        encryptionKeys: pubKey,
+        signingKeys: privKey,
         config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
@@ -468,8 +468,8 @@ function tests() {
         }), { encoding: 'utf8' })
       });
       const decrypted = await openpgp.decrypt({
-        publicKeys: pubKey,
-        privateKeys: privKey,
+        verificationKeys: pubKey,
+        decryptionKeys: privKey,
         message,
         format: 'binary'
       });
@@ -490,8 +490,8 @@ function tests() {
     try {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
-        publicKeys: pubKey,
-        privateKeys: privKey,
+        encryptionKeys: pubKey,
+        signingKeys: privKey,
         config: { minRSABits: 1024 }
       });
       expect(openpgp.stream.isStream(encrypted)).to.equal(expectedType);
@@ -505,7 +505,7 @@ function tests() {
         }), { encoding: 'utf8' })
       });
       const decrypted = await openpgp.decrypt({
-        privateKeys: privKey,
+        decryptionKeys: privKey,
         message,
         format: 'binary'
       });
@@ -524,7 +524,7 @@ function tests() {
   it('Sign/verify: Detect armor checksum error', async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
@@ -538,7 +538,7 @@ function tests() {
       }), { encoding: 'utf8' })
     });
     const verified = await openpgp.verify({
-      publicKeys: pubKey,
+      verificationKeys: pubKey,
       message,
       format: 'binary',
       config: { minRSABits: 1024 }
@@ -579,14 +579,14 @@ function tests() {
   it('Sign/verify: Input stream should be canceled when canceling verified stream', async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
 
     const message = await openpgp.readMessage({ armoredMessage: signed });
     const verified = await openpgp.verify({
-      publicKeys: pubKey,
+      verificationKeys: pubKey,
       message,
       format: 'binary',
       config: { minRSABits: 1024 }
@@ -619,7 +619,7 @@ function tests() {
   it("Sign: Don't pull entire input stream when we're not pulling signed stream", async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
@@ -634,13 +634,13 @@ function tests() {
   it("Sign/verify: Don't pull entire input stream when we're not pulling verified stream", async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       config: { minRSABits: 1024 }
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
     const message = await openpgp.readMessage({ armoredMessage: signed });
     const verified = await openpgp.verify({
-      publicKeys: pubKey,
+      verificationKeys: pubKey,
       message,
       format: 'binary'
     });
@@ -669,7 +669,7 @@ function tests() {
     });
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       detached: true,
       config: { minRSABits: 1024 }
     });
@@ -678,7 +678,7 @@ function tests() {
     const signature = await openpgp.readSignature({ armoredSignature });
     const verified = await openpgp.verify({
       signature,
-      publicKeys: pubKey,
+      verificationKeys: pubKey,
       message: await openpgp.createMessage({ text: 'hello world' }),
       config: { minRSABits: 1024 }
     });
@@ -710,7 +710,7 @@ function tests() {
 
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: priv,
+      signingKeys: priv,
       detached: true
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
@@ -718,7 +718,7 @@ function tests() {
     const signature = await openpgp.readSignature({ armoredSignature });
     const verified = await openpgp.verify({
       signature,
-      publicKeys: pub,
+      verificationKeys: pub,
       message: await openpgp.createMessage({ text: 'hello world' })
     });
     expect(verified.data).to.equal('hello world');
@@ -749,7 +749,7 @@ function tests() {
 
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: priv,
+      signingKeys: priv,
       detached: true
     });
     expect(openpgp.stream.isStream(signed)).to.equal(expectedType);
@@ -757,7 +757,7 @@ function tests() {
     const signature = await openpgp.readSignature({ armoredSignature });
     const verified = await openpgp.verify({
       signature,
-      publicKeys: pub,
+      verificationKeys: pub,
       message: await openpgp.createMessage({ text: 'hello world' })
     });
     expect(verified.data).to.equal('hello world');
@@ -768,7 +768,7 @@ function tests() {
   it("Detached sign is expected to pull entire input stream when we're not pulling signed stream", async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       detached: true,
       config: { minRSABits: 1024 }
     });
@@ -783,7 +783,7 @@ function tests() {
   it('Detached sign: Input stream should be canceled when canceling signed stream', async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
-      privateKeys: privKey,
+      signingKeys: privKey,
       detached: true,
       config: { minRSABits: 1024 }
     });

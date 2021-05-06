@@ -51,8 +51,8 @@ onmessage = async function({ data: { action, message }, ports: [port] }) {
         });
         const data = await openpgp.encrypt({
           message: await openpgp.createMessage({ text: message }),
-          publicKeys: publicKey,
-          privateKeys: privateKey
+          encryptionKeys: publicKey,
+          signingKeys: privateKey
         });
         result = data;
         break;
@@ -65,8 +65,8 @@ onmessage = async function({ data: { action, message }, ports: [port] }) {
         });
         const { data, signatures } = await openpgp.decrypt({
           message: await openpgp.readMessage({ armoredMessage: message }),
-          publicKeys: publicKey,
-          privateKeys: privateKey
+          verificationKeys: publicKey,
+          decryptionKeys: privateKey
         });
         if (!signatures[0].valid) {
           throw new Error("Couldn't veriy signature");

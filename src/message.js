@@ -291,17 +291,17 @@ export class Message {
 
   /**
    * Generate a new session key object, taking the algorithm preferences of the passed encryption keys into account, if any.
-   * @param {Array<Key>} [keys] - Encryption key(s) to select algorithm preferences for
+   * @param {Array<Key>} [encryptionKeys] - Public key(s) to select algorithm preferences for
    * @param {Date} [date] - Date to select algorithm preferences at
    * @param {Array<Object>} [userIDs] - User IDs to select algorithm preferences for
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<{ data: Uint8Array, algorithm: String }>} Object with session key data and algorithm.
    * @async
    */
-  static async generateSessionKey(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
-    const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', keys, date, userIDs, config));
-    const aeadAlgorithm = config.aeadProtect && await isAEADSupported(keys, date, userIDs, config) ?
-      enums.read(enums.aead, await getPreferredAlgo('aead', keys, date, userIDs, config)) :
+  static async generateSessionKey(encryptionKeys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+    const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', encryptionKeys, date, userIDs, config));
+    const aeadAlgorithm = config.aeadProtect && await isAEADSupported(encryptionKeys, date, userIDs, config) ?
+      enums.read(enums.aead, await getPreferredAlgo('aead', encryptionKeys, date, userIDs, config)) :
       undefined;
 
     const sessionKeyData = await crypto.generateSessionKey(algorithm);
@@ -310,7 +310,7 @@ export class Message {
 
   /**
    * Encrypt the message either with public keys, passwords, or both at once.
-   * @param {Array<Key>} [keys] - Encryption key(s) for message encryption
+   * @param {Array<Key>} [encryptionKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - Password(s) for message encryption
    * @param {Object} [sessionKey] - Session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs
@@ -321,13 +321,13 @@ export class Message {
    * @returns {Promise<Message>} New message with encrypted content.
    * @async
    */
-  async encrypt(keys, passwords, sessionKey, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  async encrypt(encryptionKeys, passwords, sessionKey, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
       }
-    } else if (keys && keys.length) {
-      sessionKey = await Message.generateSessionKey(keys, date, userIDs, config);
+    } else if (encryptionKeys && encryptionKeys.length) {
+      sessionKey = await Message.generateSessionKey(encryptionKeys, date, userIDs, config);
     } else if (passwords && passwords.length) {
       sessionKey = await Message.generateSessionKey(undefined, undefined, undefined, config);
     } else {
@@ -336,7 +336,7 @@ export class Message {
 
     const { data: sessionKeyData, algorithm, aeadAlgorithm } = sessionKey;
 
-    const msg = await Message.encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, keys, passwords, wildcard, encryptionKeyIDs, date, userIDs, config);
+    const msg = await Message.encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, userIDs, config);
 
     let symEncryptedPacket;
     if (aeadAlgorithm) {
@@ -533,7 +533,7 @@ export class Message {
 
   /**
    * Verify message signatures
-   * @param {Array<Key>} keys - Array of keys to verify signatures
+   * @param {Array<Key>} encryptionKeys - Array of public keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -543,7 +543,7 @@ export class Message {
    * }>>} List of signer's keyID and validity of signatures.
    * @async
    */
-  async verify(keys, date = new Date(), config = defaultConfig) {
+  async verify(encryptionKeys, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
@@ -582,14 +582,14 @@ export class Message {
           await writer.abort(e);
         }
       });
-      return createVerificationObjects(onePassSigList, literalDataList, keys, date, false, config);
+      return createVerificationObjects(onePassSigList, literalDataList, encryptionKeys, date, false, config);
     }
-    return createVerificationObjects(signatureList, literalDataList, keys, date, false, config);
+    return createVerificationObjects(signatureList, literalDataList, encryptionKeys, date, false, config);
   }
 
   /**
    * Verify detached message signature
-   * @param {Array<Key>} keys - Array of keys to verify signatures
+   * @param {Array<Key>} encryptionKeys - Array of public keys to verify signatures
    * @param {Signature} signature
    * @param {Date} date - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -600,14 +600,14 @@ export class Message {
    * }>>} List of signer's keyID and validity of signature.
    * @async
    */
-  verifyDetached(signature, keys, date = new Date(), config = defaultConfig) {
+  verifyDetached(signature, encryptionKeys, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
     const signatureList = signature.packets;
-    return createVerificationObjects(signatureList, literalDataList, keys, date, true, config);
+    return createVerificationObjects(signatureList, literalDataList, encryptionKeys, date, true, config);
   }
 
   /**
@@ -696,7 +696,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * Create object containing signer's keyID and validity of signature
  * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
- * @param {Array<Key>} keys - Array of keys to verify signatures
+ * @param {Array<Key>} encryptionKeys - Array of public keys to verify signatures
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
@@ -709,12 +709,12 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @async
  * @private
  */
-async function createVerificationObject(signature, literalDataList, keys, date = new Date(), detached = false, config = defaultConfig) {
+async function createVerificationObject(signature, literalDataList, encryptionKeys, date = new Date(), detached = false, config = defaultConfig) {
   let primaryKey;
   let signingKey;
   let keyError;
 
-  for (const key of keys) {
+  for (const key of encryptionKeys) {
     const issuerKeys = key.getKeys(signature.issuerKeyID);
     if (issuerKeys.length > 0) {
       primaryKey = key;
@@ -772,7 +772,7 @@ async function createVerificationObject(signature, literalDataList, keys, date =
  * Create list of objects containing signer's keyID and validity of signature
  * @param {Array<SignaturePacket>} signatureList - Array of signature packets
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
- * @param {Array<Key>} keys - Array of keys to verify signatures
+ * @param {Array<Key>} encryptionKeys - Array of public keys to verify signatures
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
@@ -785,11 +785,11 @@ async function createVerificationObject(signature, literalDataList, keys, date =
  * @async
  * @private
  */
-export async function createVerificationObjects(signatureList, literalDataList, keys, date = new Date(), detached = false, config = defaultConfig) {
+export async function createVerificationObjects(signatureList, literalDataList, encryptionKeys, date = new Date(), detached = false, config = defaultConfig) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, keys, date, detached, config);
+    return createVerificationObject(signature, literalDataList, encryptionKeys, date, detached, config);
   }));
 }
 

@@ -242,7 +242,7 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
       const userIDs = { name: 'Test User', email: 'text2@example.com' };
       const { key } = await openpgp.generateKey({ userIDs });
       await expect(openpgp.encrypt({
-        message, publicKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.ecdh]) }
+        message, encryptionKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.ecdh]) }
       })).to.be.eventually.rejectedWith(/ecdh keys are considered too weak/);
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
@@ -256,19 +256,19 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
     const userIDs = { name: 'Test User', email: 'text2@example.com' };
     const { key } = await openpgp.generateKey({ userIDs, type: 'rsa', rsaBits: 2048 });
 
-    const armoredMessage = await openpgp.encrypt({ message, publicKeys:[key], privateKeys: [key] });
+    const armoredMessage = await openpgp.encrypt({ message, encryptionKeys:[key], signingKeys: [key] });
     const { data, signatures } = await openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage }),
-      privateKeys: [key],
-      publicKeys: [key]
+      decryptionKeys: [key],
+      verificationKeys: [key]
     });
     expect(data).to.equal(plaintext);
     expect(signatures[0].valid).to.be.true;
 
     const { data: data2, signatures: signatures2 } = await openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage }),
-      privateKeys: [key],
-      publicKeys: [key],
+      decryptionKeys: [key],
+      verificationKeys: [key],
       config: { minRSABits: 4096 }
     });
     expect(data2).to.equal(plaintext);
@@ -277,8 +277,8 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
 
     const { data: data3, signatures: signatures3 } = await openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage }),
-      privateKeys: [key],
-      publicKeys: [key],
+      decryptionKeys: [key],
+      verificationKeys: [key],
       config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.rsaEncryptSign]) }
     });
     expect(data3).to.equal(plaintext);
@@ -294,7 +294,7 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
     const message = await openpgp.createMessage({ text: "test" });
     const opt = {
       message,
-      privateKeys: key,
+      signingKeys: key,
       config: { rejectHashAlgorithms: new Set([openpgp.enums.hash.sha256, openpgp.enums.hash.sha512]) }
     };
     await expect(openpgp.sign(opt)).to.be.rejectedWith(/Insecure hash algorithm/);
@@ -304,13 +304,13 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
     const clearText = await openpgp.createCleartextMessage({ text: "test" });
     const opt2 = {
       message: clearText,
-      privateKeys: key,
+      signingKeys: key,
       config: { rejectHashAlgorithms: new Set([openpgp.enums.hash.sha256, openpgp.enums.hash.sha512]) }
     };
     await expect(openpgp.sign(opt2)).to.be.rejectedWith(/Insecure hash algorithm/);
 
     await expect(openpgp.sign({
-      message, privateKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
+      message, signingKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
     })).to.be.eventually.rejectedWith(/eddsa keys are considered too weak/);
   });
 
@@ -322,29 +322,29 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
 
 
     const message = await openpgp.createMessage({ text: "test" });
-    const signed = await openpgp.sign({ message, privateKeys: key });
+    const signed = await openpgp.sign({ message, signingKeys: key });
     const opt = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
-      publicKeys: key,
+      verificationKeys: key,
       config
     };
     const { signatures: [sig] } = await openpgp.verify(opt);
     await expect(sig.error).to.match(/Insecure message hash algorithm/);
-    const armoredSignature = await openpgp.sign({ message, privateKeys: key, detached: true });
+    const armoredSignature = await openpgp.sign({ message, signingKeys: key, detached: true });
     const opt2 = {
       message,
       signature: await openpgp.readSignature({ armoredSignature }),
-      publicKeys: key,
+      verificationKeys: key,
       config
     };
     const { signatures: [sig2] } = await openpgp.verify(opt2);
     await expect(sig2.error).to.match(/Insecure message hash algorithm/);
 
     const cleartext = await openpgp.createCleartextMessage({ text: "test" });
-    const signedCleartext = await openpgp.sign({ message: cleartext, privateKeys: key });
+    const signedCleartext = await openpgp.sign({ message: cleartext, signingKeys: key });
     const opt3 = {
       message: await openpgp.readCleartextMessage({ cleartextMessage: signedCleartext }),
-      publicKeys: key,
+      verificationKeys: key,
       config
     };
     const { signatures: [sig3] } = await openpgp.verify(opt3);
@@ -352,7 +352,7 @@ qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
 
     const opt4 = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
-      publicKeys: [key],
+      verificationKeys: [key],
       config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
     };
     const { signatures: [sig4] } = await openpgp.verify(opt4);

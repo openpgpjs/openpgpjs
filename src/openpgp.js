@@ -253,7 +253,7 @@ export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessi
   config = { ...defaultConfig, ...config };
   checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (detached) {
-    throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove signingKeys option as well.");
+    throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");
   }
 
   return Promise.resolve().then(async function() {

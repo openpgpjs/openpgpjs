@@ -857,7 +857,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]),
       rejectPublicKeyAlgorithms: new Set()
     };
-    const decrypted = await openpgp.decrypt({ privateKeys: privateKey, publicKeys: publicKey, message, config });
+    const decrypted = await openpgp.decrypt({ decryptionKeys: privateKey, verificationKeys: publicKey, message, config });
     expect(decrypted.data).to.exist;
     expect(decrypted.signatures[0].valid).to.be.true;
     expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
@@ -878,14 +878,14 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       const decryptedDummyKey = await openpgp.decryptKey({ privateKey: dummyKey, passphrase });
       expect(decryptedDummyKey.isDecrypted()).to.be.true;
       // decrypting with a secret subkey works
-      const msg = await openpgp.decrypt({ message, privateKeys: decryptedDummyKey, publicKeys: publicKey, config: { rejectPublicKeyAlgorithms: new Set() } });
+      const msg = await openpgp.decrypt({ message, decryptionKeys: decryptedDummyKey, verificationKeys: publicKey, config: { rejectPublicKeyAlgorithms: new Set() } });
       expect(msg.signatures).to.exist;
       expect(msg.signatures).to.have.length(1);
       expect(msg.signatures[0].valid).to.be.true;
       expect(msg.signatures[0].signature.packets.length).to.equal(1);
       // secret key operations involving the primary key should fail
       await expect(openpgp.sign({
-        message: await openpgp.createMessage({ text: 'test' }), privateKeys: decryptedDummyKey, config: { rejectPublicKeyAlgorithms: new Set() }
+        message: await openpgp.createMessage({ text: 'test' }), signingKeys: decryptedDummyKey, config: { rejectPublicKeyAlgorithms: new Set() }
       })).to.eventually.be.rejectedWith(/Cannot sign with a gnu-dummy key/);
       await expect(
         openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: decryptedDummyKey })
@@ -905,7 +905,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       privateKey: await openpgp.readKey({ armoredKey: flowcrypt_stripped_key }),
       passphrase: 'FlowCrypt'
     });
-    const sig = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), privateKeys: dummyKey, date: new Date('2018-12-17T03:24:00') });
+    const sig = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: dummyKey, date: new Date('2018-12-17T03:24:00') });
     expect(sig).to.match(/-----END PGP MESSAGE-----\n$/);
   });
 
@@ -982,7 +982,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     });
 
     return openpgp.decrypt({
-      privateKeys: privKey, publicKeys: pubKey , message, config: { minRSABits: 1024 }
+      decryptionKeys: privKey, verificationKeys: pubKey , message, config: { minRSABits: 1024 }
     }).then(decrypted => {
       expect(decrypted.data).to.exist;
       expect(decrypted.data).to.equal(plaintext);
@@ -1019,7 +1019,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(pubKey2.getKeys(keyIDs[1])).to.not.be.empty;
     expect(pubKey3.getKeys(keyIDs[0])).to.not.be.empty;
 
-    const { data, signatures } = await openpgp.verify({ message: sMsg, publicKeys: [pubKey2, pubKey3], config: { minRSABits: 1024 } });
+    const { data, signatures } = await openpgp.verify({ message: sMsg, verificationKeys: [pubKey2, pubKey3], config: { minRSABits: 1024 } });
     expect(data).to.equal(plaintext);
     expect(signatures).to.exist;
     expect(signatures).to.have.length(2);
@@ -1032,7 +1032,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
   it('Verify fails with signed message with critical notations', async function() {
     const message = await openpgp.readMessage({ armoredMessage: signature_with_critical_notation });
     const key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
-    const { signatures: [sig] } = await openpgp.verify({ message, publicKeys: key, config: { minRSABits: 1024 } });
+    const { signatures: [sig] } = await openpgp.verify({ message, verificationKeys: key, config: { minRSABits: 1024 } });
     expect(sig.valid).to.be.false;
     expect(sig.error).to.match(/Unknown critical notation: test@example.com/);
   });
@@ -1042,7 +1042,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     const key = await openpgp.readKey({ armoredKey: pub_key_arm2 });
 
     const config = { knownNotations: ['test@example.com'], minRSABits: 1024 };
-    const { signatures: [sig] } = await openpgp.verify({ message, publicKeys: key, config });
+    const { signatures: [sig] } = await openpgp.verify({ message, verificationKeys: key, config });
     expect(sig.valid).to.be.true;
   });
 
@@ -1080,7 +1080,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(pubKey2.getKeys(keyIDs[0])).to.not.be.empty;
     expect(pubKey3.getKeys(keyIDs[1])).to.not.be.empty;
 
-    return openpgp.verify({ publicKeys:[pubKey2, pubKey3], message, config: { minRSABits: 1024 } }).then(function(cleartextSig) {
+    return openpgp.verify({ verificationKeys:[pubKey2, pubKey3], message, config: { minRSABits: 1024 } }).then(function(cleartextSig) {
       expect(cleartextSig).to.exist;
       expect(cleartextSig.data).to.equal(plaintext);
       expect(cleartextSig.signatures).to.have.length(2);
@@ -1154,7 +1154,7 @@ zmuVOdNuWQqxT9Sqa84=
     expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
     const cleartextSig = await openpgp.verify({
-      publicKeys:[pubKey],
+      verificationKeys:[pubKey],
       message,
       config: { minRSABits: 1024, rejectMessageHashAlgorithms: new Set() }
     });
@@ -1187,7 +1187,7 @@ yYDnCgA=
       const keyIDs = message.getSigningKeyIDs();
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
-      return openpgp.verify({ publicKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(({ data, signatures }) => {
+      return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(({ data, signatures }) => {
         expect(data).to.equal(plaintext);
         expect(signatures).to.have.length(1);
         expect(signatures[0].valid).to.equal(!openpgp.config.rejectMessageHashAlgorithms.has(openpgp.enums.hash.sha1));
@@ -1237,7 +1237,7 @@ yYDnCgA=
       const keyIDs = message.getSigningKeyIDs();
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
-      return openpgp.verify({ publicKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async function(cleartextSig) {
+      return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async function(cleartextSig) {
         expect(cleartextSig).to.exist;
         expect(await openpgp.stream.readToEnd(cleartextSig.data)).to.equal(plaintext);
         expect(cleartextSig.signatures).to.have.length(1);
@@ -1269,7 +1269,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       const keyIDs = message.getSigningKeyIDs();
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
-      return openpgp.verify({ publicKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
+      return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
         expect(data).to.equal(plaintext);
         expect(signatures).to.have.length(0);
       });
@@ -1302,7 +1302,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       const keyIDs = message.getSigningKeyIDs();
       expect(pubKey.getKeys(keyIDs[0])).to.not.be.empty;
 
-      return openpgp.verify({ publicKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
+      return openpgp.verify({ verificationKeys: [pubKey], message, config: { minRSABits: 1024 } }).then(async ({ data, signatures }) => {
         expect(await openpgp.stream.readToEnd(data)).to.equal(plaintext);
         expect(signatures).to.have.length(1);
         await expect(signatures[0].verified).to.be.rejectedWith('Corresponding signature packet missing');
@@ -1334,10 +1334,10 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message: await openpgp.createCleartextMessage({ text: plaintext }), config }).then(async signed => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createCleartextMessage({ text: plaintext }), config }).then(async signed => {
 
       const message = await openpgp.readCleartextMessage({ cleartextMessage: signed });
-      return openpgp.verify({ publicKeys:[pubKey], message, config });
+      return openpgp.verify({ verificationKeys:[pubKey], message, config });
 
     }).then(function({ data, signatures }) {
       expect(data).to.equal(plaintext.replace(/[ \t\r]+$/mg, ''));
@@ -1356,10 +1356,10 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message: await openpgp.createCleartextMessage({ text: plaintext }), config }).then(async signed => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createCleartextMessage({ text: plaintext }), config }).then(async signed => {
 
       const message = await openpgp.readCleartextMessage({ cleartextMessage: signed });
-      return openpgp.verify({ publicKeys: pubKey, message, config });
+      return openpgp.verify({ verificationKeys: pubKey, message, config });
 
     }).then(function({ data, signatures }) {
       expect(data).to.equal(plaintext);
@@ -1378,10 +1378,10 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message: await openpgp.createCleartextMessage({ text: plaintext }), config }).then(async signed => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createCleartextMessage({ text: plaintext }), config }).then(async signed => {
 
       const message = await openpgp.readCleartextMessage({ cleartextMessage: signed });
-      return openpgp.verify({ publicKeys: pubKey, message, config });
+      return openpgp.verify({ verificationKeys: pubKey, message, config });
 
     }).then(function({ data, signatures }) {
       expect(data).to.equal(plaintext.replace(/[ \t]+$/mg, ''));
@@ -1400,10 +1400,10 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message: await openpgp.createMessage({ binary: plaintext }), config }).then(async signed => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createMessage({ binary: plaintext }), config }).then(async signed => {
 
       const message = await openpgp.readMessage({ armoredMessage: signed });
-      return openpgp.verify({ publicKeys: pubKey, message, format: 'binary', config });
+      return openpgp.verify({ verificationKeys: pubKey, message, format: 'binary', config });
 
     }).then(function({ data, signatures }) {
       expect(data).to.deep.equal(plaintext);
@@ -1422,10 +1422,10 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message: await openpgp.createMessage({ binary: plaintext }), armor: false, config }).then(async signed => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createMessage({ binary: plaintext }), armor: false, config }).then(async signed => {
 
       const message = await openpgp.readMessage({ binaryMessage: signed });
-      return openpgp.verify({ publicKeys: pubKey, message, format: 'binary', config });
+      return openpgp.verify({ verificationKeys: pubKey, message, format: 'binary', config });
 
     }).then(function({ data, signatures }) {
       expect(data).to.deep.equal(plaintext);
@@ -1444,9 +1444,9 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message: await openpgp.createMessage({ text: plaintext }), detached: true, config }).then(async armoredSignature => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createMessage({ text: plaintext }), detached: true, config }).then(async armoredSignature => {
       const signature = await openpgp.readSignature({ armoredSignature });
-      return openpgp.verify({ publicKeys: pubKey, message: await openpgp.createMessage({ binary: util.encodeUTF8(plaintext) }), signature, config });
+      return openpgp.verify({ verificationKeys: pubKey, message: await openpgp.createMessage({ binary: util.encodeUTF8(plaintext) }), signature, config });
     }).then(function({ data, signatures }) {
       expect(data).to.equal(plaintext);
       expect(signatures).to.have.length(1);
@@ -1465,9 +1465,9 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message:await openpgp.createMessage({ binary: binaryPlaintext }), detached: true, config }).then(async armoredSignature => {
+    return openpgp.sign({ signingKeys: privKey, message:await openpgp.createMessage({ binary: binaryPlaintext }), detached: true, config }).then(async armoredSignature => {
       const signature = await openpgp.readSignature({ armoredSignature });
-      return openpgp.verify({ publicKeys: pubKey, message: await openpgp.createMessage({ text: plaintext }), signature, config });
+      return openpgp.verify({ verificationKeys: pubKey, message: await openpgp.createMessage({ text: plaintext }), signature, config });
 
     }).then(function({ data, signatures }) {
       expect(data).to.equal(plaintext);
@@ -1486,13 +1486,13 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ privateKeys: privKey, message: await openpgp.createMessage({ text: plaintext }), detached: true, config }).then(async armoredSignature => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createMessage({ text: plaintext }), detached: true, config }).then(async armoredSignature => {
       const signature = await openpgp.readSignature({ armoredSignature });
-      return openpgp.encrypt({ message: await openpgp.createMessage({ binary: util.encodeUTF8(plaintext) }), publicKeys: [pubKey], signature, config });
+      return openpgp.encrypt({ message: await openpgp.createMessage({ binary: util.encodeUTF8(plaintext) }), encryptionKeys: [pubKey], signature, config });
 
     }).then(async armoredMessage => {
       const message = await openpgp.readMessage({ armoredMessage });
-      return openpgp.decrypt({ message, privateKeys: [privKey], publicKeys: [pubKey], config });
+      return openpgp.decrypt({ message, decryptionKeys: [privKey], verificationKeys: [pubKey], config });
 
     }).then(function({ data, signatures }) {
       expect(data).to.equal(plaintext);
@@ -1505,7 +1505,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   it('Verify test with expired verification public key', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_expired });
     const message = await openpgp.readMessage({ armoredMessage: msg_sig_expired });
-    return openpgp.verify({ publicKeys:[pubKey], message:message }).then(function(verified) {
+    return openpgp.verify({ verificationKeys:[pubKey], message:message }).then(function(verified) {
       expect(verified).to.exist;
       expect(verified.signatures).to.have.length(1);
       expect(verified.signatures[0].valid).to.be.true;
@@ -1516,7 +1516,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   it('Verify test with expired verification public key and disable expiration checks using null date', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_expired });
     const message = await openpgp.readMessage({ armoredMessage: msg_sig_expired });
-    return openpgp.verify({ publicKeys:[pubKey], message:message, date: null }).then(function(verified) {
+    return openpgp.verify({ verificationKeys:[pubKey], message:message, date: null }).then(function(verified) {
       expect(verified).to.exist;
       expect(verified.signatures).to.have.length(1);
       expect(verified.signatures[0].valid).to.be.true;
@@ -1607,7 +1607,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
     const message = await openpgp.createMessage({ text: content });
     await message.appendSignature(detachedSig);
-    const { data, signatures } = await openpgp.verify({ publicKeys:[publicKey], message, config: { minRSABits: 1024 } });
+    const { data, signatures } = await openpgp.verify({ verificationKeys:[publicKey], message, config: { minRSABits: 1024 } });
     expect(data).to.equal(content);
     expect(signatures).to.have.length(1);
     expect(signatures[0].valid).to.be.true;
@@ -1625,9 +1625,9 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 
     const opt = { rsaBits: 2048, userIDs: { name:'test', email:'a@b.com' }, passphrase: null };
     const { key: generatedKey } = await openpgp.generateKey(opt);
-    const armoredSignature = await openpgp.sign({ privateKeys: [generatedKey, privKey], message, detached: true, config: { minRSABits: 1024 } });
+    const armoredSignature = await openpgp.sign({ signingKeys: [generatedKey, privKey], message, detached: true, config: { minRSABits: 1024 } });
     const signature = await openpgp.readSignature({ armoredSignature });
-    const { data, signatures } = await openpgp.verify({ publicKeys: [generatedKey.toPublic(), pubKey], message, signature, config: { minRSABits: 1024 } });
+    const { data, signatures } = await openpgp.verify({ verificationKeys: [generatedKey.toPublic(), pubKey], message, signature, config: { minRSABits: 1024 } });
     expect(data).to.equal('hello');
     expect(await signatures[0].verified).to.be.true;
     expect(await signatures[1].verified).to.be.true;
@@ -1772,8 +1772,8 @@ oaBUyhCKt8tz6Q==
     const key = await openpgp.readKey({ armoredKey });
     const decrypted = await openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage: encrypted }),
-      publicKeys: key,
-      privateKeys: key,
+      verificationKeys: key,
+      decryptionKeys: key,
       config: { minRSABits: 1024 }
     });
     expect(decrypted.signatures[0].valid).to.be.true;
@@ -1808,7 +1808,7 @@ j+GItrR+QbbN13ODlcR3hf66cwjLLsJCx5VcBaRspKF05O3ix/u9KVjJqtbi
 Ie6jnY0zP2ldtS4JmhKBa43qmOHCxHc=
 =7B58
 -----END PGP MESSAGE-----`;
-    const decrypted = await openpgp.decrypt({ message: await openpgp.readMessage({ armoredMessage: encrypted }), privateKeys: key, publicKeys: key.toPublic() });
+    const decrypted = await openpgp.decrypt({ message: await openpgp.readMessage({ armoredMessage: encrypted }), decryptionKeys: key, verificationKeys: key.toPublic() });
     expect(decrypted.signatures[0].valid).to.be.true;
   });
 
@@ -1844,7 +1844,7 @@ JImeZLY02MctIpGZULbqgcUGK0P/yqrPL8Pe4lQM
 =Pacb
 -----END PGP SIGNATURE-----`;
     const message = await openpgp.readCleartextMessage({ cleartextMessage: signed });
-    const verified = await openpgp.verify({ publicKeys: key, message });
+    const verified = await openpgp.verify({ verificationKeys: key, message });
     expect(verified.signatures[0].valid).to.be.true;
   });
 });
