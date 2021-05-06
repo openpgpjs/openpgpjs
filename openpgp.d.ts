@@ -14,7 +14,7 @@ export function readKey(options: { binaryKey: Uint8Array, config?: PartialConfig
 export function readKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<Key[]>;
 export function readKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<Key[]>;
 export function generateKey(options: KeyOptions): Promise<KeyPair>;
-export function generateSessionKey(options: { publicKeys: Key[], date?: Date, toUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
+export function generateSessionKey(options: { encryptionKeys: Key[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
 export function encryptKey(options: { privateKey: Key; passphrase?: string | string[]; config?: PartialConfig }): Promise<Key>;
 export function reformatKey(options: { privateKey: Key; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
@@ -212,14 +212,14 @@ export class Message<T extends MaybeStream<Data>> {
   public armor(config?: Config): string;
 
   /** Decrypt the message
-      @param privateKey private key with decrypted secret data
+      @param decryptionKeys array of private keys with decrypted secret data
   */
-  public decrypt(privateKeys?: Key[], passwords?: string[], sessionKeys?: SessionKey[], config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public decrypt(decryptionKeys?: Key[], passwords?: string[], sessionKeys?: SessionKey[], config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Encrypt the message
-      @param keys array of keys, used to encrypt the message
+      @param encryptionKeys array of public keys, used to encrypt the message
   */
-  public encrypt(keys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public encrypt(encryptionKeys?: Key[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Returns the key IDs of the keys to which the session key is encrypted
    */
@@ -240,18 +240,18 @@ export class Message<T extends MaybeStream<Data>> {
   public getFilename(): string | null;
 
   /** Sign the message (the literal data packet of the message)
-      @param privateKey private keys with decrypted secret key data for signing
+      @param signingKeys private keys with decrypted secret key data for signing
   */
-  public sign(privateKey: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<T>>;
+  public sign(signingKeys: Key[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<T>>;
 
   /** Unwrap compressed message
    */
   public unwrapCompressed(): Message<T>;
 
   /** Verify message signatures
-      @param keys array of keys to verify signatures
+      @param signingKeys array of public keys to verify signatures
   */
-  public verify(keys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
+  public verify(signingKeys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
 
   /**
    * Append signature to unencrypted message object
@@ -525,9 +525,9 @@ interface EncryptOptions {
   /** message to be encrypted as created by createMessage */
   message: Message<MaybeStream<Data>>;
   /** (optional) array of keys or single key, used to encrypt the message */
-  publicKeys?: Key | Key[];
+  encryptionKeys?: Key | Key[];
   /** (optional) private keys for signing. If omitted message will not be signed */
-  privateKeys?: Key | Key[];
+  signingKeys?: Key | Key[];
   /** (optional) array of passwords or a single password to encrypt the message */
   passwords?: string | string[];
   /** (optional) session key in the form: { data:Uint8Array, algorithm:String } */
@@ -540,10 +540,14 @@ interface EncryptOptions {
   date?: Date;
   /** (optional) use a key ID of 0 instead of the public key IDs */
   wildcard?: boolean;
-  /** (optional) user ID to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
-  fromUserID?: UserID;
-  /** (optional) user ID to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
-  toUserID?: UserID;
+  /** (optional) Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]` */
+  signingKeyIDs?: KeyID[];
+  /** (optional) Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`*/
+  encryptionKeyIDs?: KeyID[];
+  /** (optional) Array of user IDs to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
+  signingUserIDs?: UserID[];
+  /** (optional) array of user IDs to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
+  encryptionUserIDs?: UserID[];
   config?: PartialConfig;
 }
 
@@ -551,13 +555,13 @@ interface DecryptOptions {
   /** the message object with the encrypted data */
   message: Message<MaybeStream<Data>>;
   /** (optional) private keys with decrypted secret key data or session key */
-  privateKeys?: Key | Key[];
+  decryptionKeys?: Key | Key[];
   /** (optional) passwords to decrypt the message */
   passwords?: string | string[];
   /** (optional) session keys in the form: { data:Uint8Array, algorithm:String } */
   sessionKeys?: SessionKey | SessionKey[];
   /** (optional) array of public keys or single key, to verify signatures */
-  publicKeys?: Key | Key[];
+  verificationKeys?: Key | Key[];
   /** (optional) whether data decryption should fail if the message is not signed with the provided publicKeys */
   expectSigned?: boolean;
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
@@ -571,12 +575,13 @@ interface DecryptOptions {
 
 interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
-  privateKeys?: Key | Key[];
+  signingKeys?: Key | Key[];
   armor?: boolean;
   dataType?: DataPacketType;
   detached?: boolean;
+  signingKeyIDs?: KeyID[];
   date?: Date;
-  fromUserID?: UserID;
+  signingUserIDs?: UserID[];
   config?: PartialConfig;
 }
 
@@ -584,7 +589,7 @@ interface VerifyOptions {
   /** (cleartext) message object with signatures */
   message: CleartextMessage | Message<MaybeStream<Data>>;
   /** array of publicKeys or single key, to verify signatures */
-  publicKeys: Key | Key[];
+  verificationKeys: Key | Key[];
   /** (optional) whether verification should throw if the message is not signed with the provided publicKeys */
   expectSigned?: boolean;
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
