@@ -26,12 +26,14 @@ import util from '../util';
 import User from './user';
 import SubKey from './subkey';
 import * as helper from './helper';
+import PrivateKey from './private_key';
+import PublicKey from './public_key';
 
 // A key revocation certificate can contain the following packets
 const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
- * Class that represents an OpenPGP key. Must contain a primary key.
+ * Abstract class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
  * @borrows PublicKeyPacket#getKeyID as Key#getKeyID
  * @borrows PublicKeyPacket#getFingerprint as Key#getFingerprint
@@ -40,14 +42,6 @@ const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([Sig
  * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
  */
 class Key {
-  constructor() {
-    this.keyPacket = null;
-    this.revocationSignatures = [];
-    this.directSignatures = [];
-    this.users = [];
-    this.subKeys = [];
-  }
-
   get primaryKey() {
     return this.keyPacket;
   }
@@ -471,64 +465,69 @@ class Key {
    *
    * If the specified key is a private key and the destination key is public,
    * the destination key is transformed to a private key.
-   * @param {Key} key - Source key to merge
+   * @param {Key} sourceKey - Source key to merge
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<undefined>}
+   * @returns {Promise<Key>} updated key
    * @async
    */
-  async update(key, config = defaultConfig) {
-    if (!this.hasSameFingerprintAs(key)) {
+  async update(sourceKey, config = defaultConfig) {
+    const updatedPacketList = this.toPacketList();
+    if (!this.hasSameFingerprintAs(sourceKey)) {
       throw new Error('Key update method: fingerprints of keys not equal');
     }
-    if (this.isPublic() && key.isPrivate()) {
+    if (this.isPublic() && sourceKey.isPrivate()) {
       // check for equal subkey packets
-      const equal = (this.subKeys.length === key.subKeys.length) &&
+      const equal = (this.subKeys.length === sourceKey.subKeys.length) &&
             (this.subKeys.every(destSubKey => {
-              return key.subKeys.some(srcSubKey => {
+              return sourceKey.subKeys.some(srcSubKey => {
                 return destSubKey.hasSameFingerprintAs(srcSubKey);
               });
             }));
       if (!equal) {
-        throw new Error('Cannot update public key with private key if subkey mismatch');
+        throw new Error('Cannot update public key with private key if subkeys mismatch');
       }
-      this.keyPacket = key.keyPacket;
+      // the updated key will be private
+      updatedPacketList[0] = sourceKey.keyPacket;
     }
+    const updatedKey = createKey(updatedPacketList);
     // revocation signatures
-    await helper.mergeSignatures(key, this, 'revocationSignatures', srcRevSig => {
-      return helper.isDataRevoked(this.keyPacket, enums.signature.keyRevocation, this, [srcRevSig], null, key.keyPacket, undefined, config);
+    await helper.mergeSignatures(sourceKey, updatedKey, 'revocationSignatures', srcRevSig => {
+      return helper.isDataRevoked(updatedKey.keyPacket, enums.signature.keyRevocation, updatedKey, [srcRevSig], null, sourceKey.keyPacket, undefined, config);
     });
     // direct signatures
-    await helper.mergeSignatures(key, this, 'directSignatures');
+    await helper.mergeSignatures(sourceKey, updatedKey, 'directSignatures');
     // TODO replace when Promise.some or Promise.any are implemented
     // users
-    await Promise.all(key.users.map(async srcUser => {
+    await Promise.all(sourceKey.users.map(async srcUser => {
       let found = false;
-      await Promise.all(this.users.map(async dstUser => {
+      await Promise.all(updatedKey.users.map(async dstUser => {
         if ((srcUser.userID && dstUser.userID &&
               (srcUser.userID.userID === dstUser.userID.userID)) ||
             (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
-          await dstUser.update(srcUser, this.keyPacket, config);
+          await dstUser.update(srcUser, updatedKey.keyPacket, config);
           found = true;
         }
       }));
       if (!found) {
-        this.users.push(srcUser);
+        updatedKey.users.push(srcUser);
       }
     }));
     // TODO replace when Promise.some or Promise.any are implemented
     // subkeys
-    await Promise.all(key.subKeys.map(async srcSubKey => {
+    await Promise.all(sourceKey.subKeys.map(async srcSubKey => {
       let found = false;
-      await Promise.all(this.subKeys.map(async dstSubKey => {
+      await Promise.all(updatedKey.subKeys.map(async dstSubKey => {
         if (dstSubKey.hasSameFingerprintAs(srcSubKey)) {
-          await dstSubKey.update(srcSubKey, this.keyPacket, config);
+          await dstSubKey.update(srcSubKey, updatedKey.keyPacket, config);
           found = true;
         }
       }));
       if (!found) {
-        this.subKeys.push(srcSubKey);
+        updatedKey.subKeys.push(srcSubKey);
       }
     }));
+
+    return updatedKey;
   }
 
   /**
@@ -671,3 +670,17 @@ class Key {
 });
 
 export default Key;
+
+/**
+ * Creates a PublicKey or PrivateKey depending on the packetlist in input
+ * @param {PacketList} - packets to parse
+ * @return {Key} parsed key
+ */
+ export function createKey(packetlist) {
+  switch (packetlist[0].constructor.tag) {
+    case enums.packet.secretKey:
+      return new PrivateKey(packetlist);
+    case enums.packet.publicKey:
+      return new PublicKey(packetlist);
+  }
+}

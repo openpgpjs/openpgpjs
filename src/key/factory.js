@@ -26,7 +26,7 @@ import {
   UserAttributePacket
 } from '../packet';
 import PrivateKey from './private_key';
-import PublicKey from './public_key';
+import { createKey } from './key';
 import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
@@ -57,7 +57,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @param {Object} config - Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @returns {Promise<Key>}
+ * @returns {Promise<PrivateKey>}
  * @async
  * @static
  * @private
@@ -73,7 +73,7 @@ export async function generate(options, config) {
 
 /**
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
- * @param {Key} options.privateKey     The private key to reformat
+ * @param {PrivateKey} options.privateKey         The private key to reformat
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
  * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key
  * @param {Number} options.keyExpirationTime      Number of seconds from the key creation time after which the key expires
@@ -81,7 +81,7 @@ export async function generate(options, config) {
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  * @param {Object} config - Full configuration
  *
- * @returns {Promise<Key>}
+ * @returns {Promise<PrivateKey>}
  * @async
  * @static
  * @private
@@ -282,7 +282,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
     input = binaryKey;
   }
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  return (packetlist[0].constructor.tag === enums.packet.publicKey) ? new PublicKey(packetlist) : new PrivateKey(packetlist);
+  return createKey(packetlist);
 }
 
 /**
@@ -322,7 +322,7 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   }
   for (let i = 0; i < keyIndex.length; i++) {
     const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
-    const newKey = (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) ? new PublicKey(oneKeyList) : new PrivateKey(oneKeyList);
+    const newKey = createKey(oneKeyList);
     keys.push(newKey);
   }
   return keys;

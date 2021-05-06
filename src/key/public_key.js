@@ -19,13 +19,7 @@ import enums from '../enums';
 import Key from './key';
 
 /**
- * Class that represents an OpenPGP key. Must contain a primary key.
- * Can contain additional subkeys, signatures, user ids, user attributes.
- * @borrows PublicKeyPacket#getKeyID as Key#getKeyID
- * @borrows PublicKeyPacket#getFingerprint as Key#getFingerprint
- * @borrows PublicKeyPacket#hasSameFingerprintAs as Key#hasSameFingerprintAs
- * @borrows PublicKeyPacket#getAlgorithmInfo as Key#getAlgorithmInfo
- * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
+ * Class that represents an OpenPGP Public Key
  */
 class PublicKey extends Key {
   /**
@@ -33,6 +27,11 @@ class PublicKey extends Key {
    */
   constructor(packetlist) {
     super();
+    this.keyPacket = null;
+    this.revocationSignatures = [];
+    this.directSignatures = [];
+    this.users = [];
+    this.subKeys = [];
     if (packetlist) {
       this.packetListToStructure(packetlist, new Set([enums.packet.publicKey, enums.packet.publicSubkey]));
       if (!this.keyPacket) {

@@ -10,13 +10,7 @@ import enums from '../enums';
 import * as helper from './helper';
 
 /**
- * Class that represents an OpenPGP key. Must contain a primary key.
- * Can contain additional subkeys, signatures, user ids, user attributes.
- * @borrows PublicKeyPacket#getKeyID as Key#getKeyID
- * @borrows PublicKeyPacket#getFingerprint as Key#getFingerprint
- * @borrows PublicKeyPacket#hasSameFingerprintAs as Key#hasSameFingerprintAs
- * @borrows PublicKeyPacket#getAlgorithmInfo as Key#getAlgorithmInfo
- * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
+ * Class that represents an OpenPGP Private key
  */
 class PrivateKey extends PublicKey {
   /**
@@ -254,4 +248,3 @@ class PrivateKey extends PublicKey {
 }
 
 export default PrivateKey;
-
