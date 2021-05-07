@@ -489,7 +489,7 @@ class Key {
     }
     // from here on, either:
     // - destination key is private, source key is public
-    // - both keys are public
+    // - the keys are of the same type
     // hence we don't need to convert the destination key type
     const updatedKey = this.clone();
     // revocation signatures
