@@ -51,13 +51,13 @@ class Key {
    * @param {PacketList} packetlist - The packets that form a key
    * @param {Set<enums.packet>} disallowedPackets - disallowed packet tags
    */
-  packetListToStructure(packetlist, disallowedPackets = {}) {
+  packetListToStructure(packetlist, disallowedPackets = new Set()) {
     let user;
     let primaryKeyID;
     let subKey;
     for (const packet of packetlist) {
       const tag = packet.constructor.tag;
-      if (disallowedPackets[tag]) {
+      if (disallowedPackets.has(tag)) {
         throw new Error(`Unexpected packet type: ${tag}`);
       }
       switch (tag) {
@@ -150,9 +150,8 @@ class Key {
    * Clones the key object
    * @param {Boolean} [deep=false] Whether to return a deep clone
    * @returns {Promise<Key>} Clone of the key.
-   * @async
    */
-  async clone(deep = false) {
+  clone(deep = false) {
     const key = new this.constructor(this.toPacketList());
     if (deep) {
       key.getKeys().forEach(k => {
@@ -463,17 +462,16 @@ class Key {
    * users, subkeys, certificates are merged into the destination key,
    * duplicates and expired signatures are ignored.
    *
-   * If the specified key is a private key and the destination key is public,
-   * the destination key is transformed to a private key.
+   * If the source key is a private key and the destination key is public,
+   * a private key is returned.
    * @param {Key} sourceKey - Source key to merge
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Key>} updated key
    * @async
    */
   async update(sourceKey, config = defaultConfig) {
-    const updatedPacketList = this.toPacketList();
     if (!this.hasSameFingerprintAs(sourceKey)) {
-      throw new Error('Key update method: fingerprints of keys not equal');
+      throw new Error('Primary key fingerprints must be equal to update the key');
     }
     if (this.isPublic() && sourceKey.isPrivate()) {
       // check for equal subkey packets
@@ -486,44 +484,48 @@ class Key {
       if (!equal) {
         throw new Error('Cannot update public key with private key if subkeys mismatch');
       }
-      // the updated key will be private
-      updatedPacketList[0] = sourceKey.keyPacket;
+
+      return sourceKey.update(this, config);
     }
-    const updatedKey = createKey(updatedPacketList);
+    // from here on, either:
+    // - destination key is private, source key is public
+    // - both keys are public
+    // hence we don't need to convert the destination key type
+    const updatedKey = this.clone();
     // revocation signatures
     await helper.mergeSignatures(sourceKey, updatedKey, 'revocationSignatures', srcRevSig => {
       return helper.isDataRevoked(updatedKey.keyPacket, enums.signature.keyRevocation, updatedKey, [srcRevSig], null, sourceKey.keyPacket, undefined, config);
     });
     // direct signatures
     await helper.mergeSignatures(sourceKey, updatedKey, 'directSignatures');
-    // TODO replace when Promise.some or Promise.any are implemented
-    // users
+    // update users
     await Promise.all(sourceKey.users.map(async srcUser => {
-      let found = false;
-      await Promise.all(updatedKey.users.map(async dstUser => {
-        if ((srcUser.userID && dstUser.userID &&
-              (srcUser.userID.userID === dstUser.userID.userID)) ||
-            (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
-          await dstUser.update(srcUser, updatedKey.keyPacket, config);
-          found = true;
-        }
-      }));
-      if (!found) {
+      // multiple users with the same ID/attribute are not explicitly disallowed by the spec
+      // hence we support them, just in case
+      const usersToUpdate = updatedKey.users.filter(dstUser => (
+        (srcUser.userID && srcUser.userID.equals(dstUser.userID)) ||
+        (srcUser.userAttribute && srcUser.userAttribute.equals(dstUser.userAttribute))
+      ));
+      if (usersToUpdate.length > 0) {
+        await Promise.all(
+          usersToUpdate.map(userToUpdate => userToUpdate.update(srcUser, updatedKey.keyPacket, config))
+        );
+      } else {
         updatedKey.users.push(srcUser);
       }
     }));
-    // TODO replace when Promise.some or Promise.any are implemented
-    // subkeys
-    await Promise.all(sourceKey.subKeys.map(async srcSubKey => {
-      let found = false;
-      await Promise.all(updatedKey.subKeys.map(async dstSubKey => {
-        if (dstSubKey.hasSameFingerprintAs(srcSubKey)) {
-          await dstSubKey.update(srcSubKey, updatedKey.keyPacket, config);
-          found = true;
-        }
-      }));
-      if (!found) {
-        updatedKey.subKeys.push(srcSubKey);
+    // update subkeys
+    await Promise.all(sourceKey.subKeys.map(async srcSubkey => {
+      // multiple subkeys with same fingerprint might be preset
+      const subkeysToUpdate = updatedKey.subKeys.filter(dstSubkey => (
+        dstSubkey.hasSameFingerprintAs(srcSubkey)
+      ));
+      if (subkeysToUpdate.length > 0) {
+        await Promise.all(
+          subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, updatedKey.keyPacket, config))
+        );
+      } else {
+        updatedKey.subKeys.push(srcSubkey);
       }
     }));
 
@@ -573,7 +575,7 @@ class Key {
     } catch (e) {
       throw util.wrapError('Could not verify revocation signature', e);
     }
-    const key = await this.clone();
+    const key = this.clone();
     key.revocationSignatures.push(revocationSignature);
     return key;
   }
@@ -590,7 +592,7 @@ class Key {
   async signPrimaryUser(privateKeys, date, userID, config = defaultConfig) {
     const { index, user } = await this.getPrimaryUser(date, userID, config);
     const userSign = await user.sign(this.keyPacket, privateKeys, config);
-    const key = await this.clone();
+    const key = this.clone();
     key.users[index] = userSign;
     return key;
   }
@@ -604,7 +606,7 @@ class Key {
    */
   async signAllUsers(privateKeys, config = defaultConfig) {
     const that = this;
-    const key = await this.clone();
+    const key = this.clone();
     key.users = await Promise.all(this.users.map(function(user) {
       return user.sign(that.keyPacket, privateKeys, config);
     }));

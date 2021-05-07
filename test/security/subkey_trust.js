@@ -1,6 +1,6 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const { readKey, PrivateKey, readCleartextMessage, createCleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
+const { readKey, PublicKey, readCleartextMessage, createCleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
 
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
@@ -44,7 +44,7 @@ async function testSubkeyTrust() {
   const { victimPubKey, attackerPrivKey, signed } = await generateTestData();
 
   const pktPubVictim = victimPubKey.toPacketList();
-  const pktPrivAttacker = attackerPrivKey.toPacketList();
+  const pktPubAttacker = attackerPrivKey.toPublic().toPacketList();
   const dataToSign = {
     key: attackerPrivKey.toPublic().keyPacket,
     bind: pktPubVictim[3] // victim subkey
@@ -57,13 +57,13 @@ async function testSubkeyTrust() {
   await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign);
   const newList = new PacketList();
   newList.push(
-    pktPrivAttacker[0], // attacker private key
-    pktPrivAttacker[1], // attacker user
-    pktPrivAttacker[2], // attacker self signature
+    pktPubAttacker[0], // attacker private key
+    pktPubAttacker[1], // attacker user
+    pktPubAttacker[2], // attacker self signature
     pktPubVictim[3], // victim subkey
     fakeBindingSignature // faked key binding
   );
-  let fakeKey = new PrivateKey(newList);
+  let fakeKey = new PublicKey(newList);
   fakeKey = await readKey({ armoredKey: await fakeKey.toPublic().armor() });
   const verifyAttackerIsBatman = await openpgp.verify({
     message: await readCleartextMessage({ cleartextMessage: signed }),

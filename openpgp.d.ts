@@ -68,6 +68,8 @@ export class PrivateKey extends PublicKey {
   public isDecrypted(): boolean;
   public addSubkey(options: SubKeyOptions): Promise<PrivateKey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | SubKey>
+  public update(sourceKey: PublicKey, config?: Config): Promise<PrivateKey>;
+  public getKeys(keyID?: KeyID): (PrivateKey | SubKey)[];
 }
 
 export class SubKey {

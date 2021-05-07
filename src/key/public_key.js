@@ -33,7 +33,7 @@ class PublicKey extends Key {
     this.users = [];
     this.subKeys = [];
     if (packetlist) {
-      this.packetListToStructure(packetlist, new Set([enums.packet.publicKey, enums.packet.publicSubkey]));
+      this.packetListToStructure(packetlist, new Set([enums.packet.secretKey, enums.packet.secretSubkey]));
       if (!this.keyPacket) {
         throw new Error('Invalid key: need at least key packet');
       }

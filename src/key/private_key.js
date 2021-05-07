@@ -18,7 +18,7 @@ class PrivateKey extends PublicKey {
  */
   constructor(packetlist) {
     super();
-    this.packetListToStructure(packetlist, new Set([enums.packet.secretKey, enums.packet.secretSubkey]));
+    this.packetListToStructure(packetlist, new Set([enums.packet.publicKey, enums.packet.publicSubkey]));
     if (!this.keyPacket) {
       throw new Error('Invalid key: need at least key packet');
     }

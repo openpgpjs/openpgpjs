@@ -166,7 +166,7 @@ export async function decryptKey({ privateKey, passphrase, config }) {
   if (!privateKey.isPrivate()) {
     throw new Error("Cannot decrypt a public key");
   }
-  const clonedPrivateKey = await privateKey.clone(true);
+  const clonedPrivateKey = privateKey.clone(true);
 
   try {
     const passphrases = util.isArray(passphrase) ? passphrase : [passphrase];
@@ -198,7 +198,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
   if (!privateKey.isPrivate()) {
     throw new Error("Cannot encrypt a public key");
   }
-  const clonedPrivateKey = await privateKey.clone(true);
+  const clonedPrivateKey = privateKey.clone(true);
 
   try {
     const keys = clonedPrivateKey.getKeys();

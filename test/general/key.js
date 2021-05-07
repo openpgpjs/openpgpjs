@@ -3088,9 +3088,7 @@ module.exports = () => describe('Key', function() {
 
   it('update() - throw error if fingerprints not equal', async function() {
     const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
-    await expect(keys[0].update.bind(
-      keys[0], keys[1]
-    )()).to.be.rejectedWith('Key update method: fingerprints of keys not equal');
+    await expect(keys[0].update(keys[1])).to.be.rejectedWith(/Primary key fingerprints must be equal/);
   });
 
   it('update() - merge revocation signatures', async function() {
