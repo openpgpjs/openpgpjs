@@ -848,6 +848,24 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 -----END PGP SIGNATURE-----
 `;
 
+  it('Throws when reading a signature missing the creation time', async function () {
+    const armoredSignature = `-----BEGIN PGP SIGNATURE-----
+
+wsDtBAABCAAXFiEE0aZuGiOxgsmYD3iM+/zIKgFeczAACgkQ+/zIKgFeczDjiwv+
+LFUWJohCYtauaVDHBDHWF+tojls+ducY6uuU6iUTBb1969okh2sjUmvPwIjrVXuk
+cfPl616xRqVWolEU9T5sG6MjRlAaG31Oo/FVAVFXZn30ldEtuDss12+/IhES3Wfx
+M1jGdJZ1ZMZJpRsNBJXBegEBFKbPleEd66seuuFfvoIUbgsdj7IT/ZlEMlixelWW
+igXPVY1C05oPbkC8oo0lVSxwdq6gDvm8a52k3GCtXJELrYGH29C+eDqmyLP1zJOt
+NBoZBAqMd9XYVrJtuip436D9pdo5pbg4zCE6uPf2zzx4taK7jGkk6nn7LqVDxvQm
+3dAXUnIxw4V9eL3V8SFAKwmouUmHPRbjfnQ70hxYQxDXUcIwu1aYn13QS1s/F/jf
+DVRZWaAhNdL9BfHfhEsRVsmjMhe0zwRpaepvXnERbnA/lAUHEmEvgfPFz/2GsAo/
+kCNcH9WI6idSzFjuYegECf+ZA1xOCjS9oLTGbSeT7jNfC8dH5+E92qlBLq4Ctt7k
+=lMU7
+-----END PGP SIGNATURE-----`;
+
+    await expect(openpgp.readSignature({ armoredSignature })).to.be.rejectedWith(/missing signature creation time/);
+  });
+
   it('Testing signature checking on CAST5-enciphered message', async function() {
     const publicKey = await openpgp.readKey({ armoredKey: pub_key_arm1 });
     const privateKey = await openpgp.decryptKey({

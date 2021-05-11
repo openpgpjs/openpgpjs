@@ -36,11 +36,8 @@ class SignaturePacket {
     return enums.packet.signature;
   }
 
-  /**
-   * @param {Date} date - The creation date of the signature
-   */
-  constructor(date = new Date()) {
-    this.version = 4; // This is set to 5 below if we sign with a V5 key.
+  constructor() {
+    this.version = null;
     this.signatureType = null;
     this.hashAlgorithm = null;
     this.publicKeyAlgorithm = null;
@@ -49,7 +46,7 @@ class SignaturePacket {
     this.unhashedSubpackets = [];
     this.signedHashValue = null;
 
-    this.created = util.normalizeDate(date);
+    this.created = null;
     this.signatureExpirationTime = null;
     this.signatureNeverExpires = true;
     this.exportable = null;
@@ -108,6 +105,9 @@ class SignaturePacket {
 
     // hashed subpackets
     i += this.readSubPackets(bytes.subarray(i, bytes.length), true);
+    if (!this.created) {
+      throw new Error('Invalid signature packet: missing signature creation time in hashed area.');
+    }
 
     // A V4 signature hashes the packet body
     // starting from its first field, the version number, through the end
@@ -152,20 +152,24 @@ class SignaturePacket {
    * Signs provided data. This needs to be done prior to serialization.
    * @param {SecretKeyPacket} key - Private key used to sign the message.
    * @param {Object} data - Contains packets to be signed.
+   * @param {Date} [date] - The signature creation time.
    * @param {Boolean} [detached] - Whether to create a detached signature
    * @throws {Error} if signing failed
    * @async
    */
-  async sign(key, data, detached = false) {
+  async sign(key, data, date = new Date(), detached = false) {
     const signatureType = enums.write(enums.signature, this.signatureType);
     const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
     if (key.version === 5) {
       this.version = 5;
+    } else {
+      this.version = 4;
     }
     const arr = [new Uint8Array([this.version, signatureType, publicKeyAlgorithm, hashAlgorithm])];
 
+    this.created = util.normalizeDate(date);
     this.issuerKeyVersion = key.version;
     this.issuerFingerprint = key.getFingerprintBytes();
     this.issuerKeyID = key.getKeyID();
@@ -203,9 +207,10 @@ class SignaturePacket {
     const sub = enums.signatureSubpacket;
     const arr = [];
     let bytes;
-    if (this.created !== null) {
-      arr.push(writeSubPacket(sub.signatureCreationTime, util.writeDate(this.created)));
+    if (this.created === null) {
+      throw new Error('Missing signature creation time');
     }
+    arr.push(writeSubPacket(sub.signatureCreationTime, util.writeDate(this.created)));
     if (this.signatureExpirationTime !== null) {
       arr.push(writeSubPacket(sub.signatureExpirationTime, util.writeNumber(this.signatureExpirationTime, 4)));
     }
@@ -364,6 +369,9 @@ class SignaturePacket {
     // subpacket type
     switch (type) {
       case 2:
+        if (!trusted) {
+          throw new Error('Unexpected non-hashed signature creation time');
+        }
         // Signature Creation Time
         this.created = util.readDate(bytes.subarray(mypos, bytes.length));
         break;

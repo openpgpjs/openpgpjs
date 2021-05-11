@@ -162,7 +162,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     const dataToSign = {};
     dataToSign.userID = userIDPacket;
     dataToSign.key = secretKeyPacket;
-    const signaturePacket = new SignaturePacket(options.date);
+    const signaturePacket = new SignaturePacket();
     signaturePacket.signatureType = enums.signature.certGeneric;
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
     signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
@@ -205,7 +205,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-    await signaturePacket.sign(secretKeyPacket, dataToSign);
+    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {

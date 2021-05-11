@@ -91,7 +91,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
-  const subkeySignaturePacket = new SignaturePacket(options.date);
+  const subkeySignaturePacket = new SignaturePacket();
   subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
   subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
   subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey, undefined, undefined, config);
@@ -107,7 +107,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
     subkeySignaturePacket.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign);
+  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date);
   return subkeySignaturePacket;
 }
 
@@ -205,11 +205,11 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
-  const signaturePacket = new SignaturePacket(date);
+  const signaturePacket = new SignaturePacket();
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
-  await signaturePacket.sign(signingKeyPacket, dataToSign, detached);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
   return signaturePacket;
 }
 

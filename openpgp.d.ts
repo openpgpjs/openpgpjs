@@ -444,7 +444,7 @@ export class SignaturePacket extends BasePacket {
   public signatureData: null | Uint8Array;
   public unhashedSubpackets: null | Uint8Array;
   public signedHashValue: null | Uint8Array;
-  public created: Date;
+  public created: Date | null;
   public signatureExpirationTime: null | number;
   public signatureNeverExpires: boolean;
   public exportable: null | boolean;
@@ -480,7 +480,7 @@ export class SignaturePacket extends BasePacket {
   public preferredAEADAlgorithms: enums.aead[] | null;
   public verified: null | boolean;
   public revoked: null | boolean;
-  public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean): Promise<void>;
+  public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean): Promise<void>;
   public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
