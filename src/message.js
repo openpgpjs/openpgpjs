@@ -533,7 +533,7 @@ export class Message {
 
   /**
    * Verify message signatures
-   * @param {Array<Key>} signingKeys - Array of public keys to verify signatures
+   * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -543,7 +543,7 @@ export class Message {
    * }>>} List of signer's keyID and validity of signatures.
    * @async
    */
-  async verify(signingKeys, date = new Date(), config = defaultConfig) {
+  async verify(verificationKeys, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
@@ -582,14 +582,14 @@ export class Message {
           await writer.abort(e);
         }
       });
-      return createVerificationObjects(onePassSigList, literalDataList, signingKeys, date, false, config);
+      return createVerificationObjects(onePassSigList, literalDataList, verificationKeys, date, false, config);
     }
-    return createVerificationObjects(signatureList, literalDataList, signingKeys, date, false, config);
+    return createVerificationObjects(signatureList, literalDataList, verificationKeys, date, false, config);
   }
 
   /**
    * Verify detached message signature
-   * @param {Array<Key>} signingKeys - Array of public keys to verify signatures
+   * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
    * @param {Signature} signature
    * @param {Date} date - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -600,14 +600,14 @@ export class Message {
    * }>>} List of signer's keyID and validity of signature.
    * @async
    */
-  verifyDetached(signature, signingKeys, date = new Date(), config = defaultConfig) {
+  verifyDetached(signature, verificationKeys, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
     const signatureList = signature.packets;
-    return createVerificationObjects(signatureList, literalDataList, signingKeys, date, true, config);
+    return createVerificationObjects(signatureList, literalDataList, verificationKeys, date, true, config);
   }
 
   /**
@@ -696,7 +696,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * Create object containing signer's keyID and validity of signature
  * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
- * @param {Array<Key>} signingKeys - Array of public keys to verify signatures
+ * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
@@ -709,12 +709,12 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @async
  * @private
  */
-async function createVerificationObject(signature, literalDataList, signingKeys, date = new Date(), detached = false, config = defaultConfig) {
+async function createVerificationObject(signature, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
   let primaryKey;
   let signingKey;
   let keyError;
 
-  for (const key of signingKeys) {
+  for (const key of verificationKeys) {
     const issuerKeys = key.getKeys(signature.issuerKeyID);
     if (issuerKeys.length > 0) {
       primaryKey = key;
@@ -772,7 +772,7 @@ async function createVerificationObject(signature, literalDataList, signingKeys,
  * Create list of objects containing signer's keyID and validity of signature
  * @param {Array<SignaturePacket>} signatureList - Array of signature packets
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
- * @param {Array<Key>} signingKeys - Array of public keys to verify signatures
+ * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
@@ -785,11 +785,11 @@ async function createVerificationObject(signature, literalDataList, signingKeys,
  * @async
  * @private
  */
-export async function createVerificationObjects(signatureList, literalDataList, signingKeys, date = new Date(), detached = false, config = defaultConfig) {
+export async function createVerificationObjects(signatureList, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, signingKeys, date, detached, config);
+    return createVerificationObject(signature, literalDataList, verificationKeys, date, detached, config);
   }));
 }
 
