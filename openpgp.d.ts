@@ -249,9 +249,9 @@ export class Message<T extends MaybeStream<Data>> {
   public unwrapCompressed(): Message<T>;
 
   /** Verify message signatures
-      @param signingKeys array of public keys to verify signatures
+      @param verificationKeys array of public keys to verify signatures
   */
-  public verify(signingKeys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
+  public verify(verificationKeys: Key[], date?: Date, config?: Config): Promise<VerificationResult[]>;
 
   /**
    * Append signature to unencrypted message object
