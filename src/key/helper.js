@@ -37,37 +37,35 @@ export async function generateSecretKey(options, config) {
 /**
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
  * @param {Array<SignaturePacket>} signatures - List of signatures
+ * @param {PublicKeyPacket|PublicSubkeyPacket} publicKey - Public key packet to verify the signature
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} The latest valid signature.
  * @async
  */
-export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date(), config) {
-  let signature;
+export async function getLatestValidSignature(signatures, publicKey, signatureType, dataToVerify, date = new Date(), config) {
+  let latestValid;
   let exception;
   for (let i = signatures.length - 1; i >= 0; i--) {
     try {
       if (
-        (!signature || signatures[i].created >= signature.created) &&
-        // check binding signature is not expired (ie, check for V4 expiration time)
-        !signatures[i].isExpired(date)
+        (!latestValid || signatures[i].created >= latestValid.created)
       ) {
-        // check binding signature is verified
-        signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify, undefined, config);
-        signature = signatures[i];
+        signatures[i].verified || await signatures[i].verify(publicKey, signatureType, dataToVerify, date, undefined, config);
+        latestValid = signatures[i];
       }
     } catch (e) {
       exception = e;
     }
   }
-  if (!signature) {
+  if (!latestValid) {
     throw util.wrapError(
-      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyID().toHex()}`
+      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${publicKey.getKeyID().toHex()}`
         .replace('certGeneric ', 'self-')
         .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase())
       , exception);
   }
-  return signature;
+  return latestValid;
 }
 
 export function isDataExpired(keyPacket, signature, date = new Date()) {
@@ -256,7 +254,6 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
  */
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
   key = key || primaryKey;
-  const normDate = util.normalizeDate(date);
   const revocationKeyIDs = [];
   await Promise.all(revocations.map(async function(revocationSignature) {
     try {
@@ -269,10 +266,11 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // third-party revocation signatures here. (It could also be revoking a
         // third-party key certification, which should only affect
         // `verifyAllCertifications`.)
-        (!signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)) &&
-        !(config.revocationsExpire && revocationSignature.isExpired(normDate))
+        !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
-        revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify, undefined, config);
+        revocationSignature.verified || await revocationSignature.verify(
+          key, signatureType, dataToVerify, config.revocationsExpire ? date : null, false, config
+        );
 
         // TODO get an identifier of the revoked object instead
         revocationKeyIDs.push(revocationSignature.issuerKeyID);

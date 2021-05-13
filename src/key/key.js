@@ -268,6 +268,9 @@ class Key {
 
     try {
       const primaryUser = await this.getPrimaryUser(date, userID, config);
+      if (date && primaryKey.getCreationTime() > date) {
+        throw new Error('Primary key was created after the given date');
+      }
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
           helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
         helper.checkKeyStrength(primaryKey, config);
@@ -332,7 +335,7 @@ class Key {
    *          SecretSubkeyPacket|
    *          PublicKeyPacket|
    *          SecretKeyPacket} key, optional The key to verify the signature
-   * @param {Date} date - Use the given date instead of the current time
+   * @param {Date} [date] - Use the given date for verification, instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>} True if the certificate is revoked.
    * @async
@@ -467,11 +470,12 @@ class Key {
    * If the source key is a private key and the destination key is public,
    * a private key is returned.
    * @param {Key} sourceKey - Source key to merge
+   * @param {Date} [date] - Date to verify validity of signatures and keys
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Key>} updated key
    * @async
    */
-  async update(sourceKey, config = defaultConfig) {
+  async update(sourceKey, date = new Date(), config = defaultConfig) {
     if (!this.hasSameFingerprintAs(sourceKey)) {
       throw new Error('Primary key fingerprints must be equal to update the key');
     }
@@ -496,7 +500,7 @@ class Key {
     const updatedKey = this.clone();
     // revocation signatures
     await helper.mergeSignatures(sourceKey, updatedKey, 'revocationSignatures', srcRevSig => {
-      return helper.isDataRevoked(updatedKey.keyPacket, enums.signature.keyRevocation, updatedKey, [srcRevSig], null, sourceKey.keyPacket, undefined, config);
+      return helper.isDataRevoked(updatedKey.keyPacket, enums.signature.keyRevocation, updatedKey, [srcRevSig], null, sourceKey.keyPacket, date, config);
     });
     // direct signatures
     await helper.mergeSignatures(sourceKey, updatedKey, 'directSignatures');
@@ -510,7 +514,7 @@ class Key {
       ));
       if (usersToUpdate.length > 0) {
         await Promise.all(
-          usersToUpdate.map(userToUpdate => userToUpdate.update(srcUser, updatedKey.keyPacket, config))
+          usersToUpdate.map(userToUpdate => userToUpdate.update(srcUser, updatedKey.keyPacket, date, config))
         );
       } else {
         updatedKey.users.push(srcUser);
@@ -524,7 +528,7 @@ class Key {
       ));
       if (subkeysToUpdate.length > 0) {
         await Promise.all(
-          subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, updatedKey.keyPacket, config))
+          subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, updatedKey.keyPacket, date, config))
         );
       } else {
         updatedKey.subKeys.push(srcSubkey);
@@ -555,11 +559,12 @@ class Key {
    * This adds the first signature packet in the armored text to the key,
    * if it is a valid revocation signature.
    * @param {String} revocationCertificate - armored revocation certificate
+   * @param {Date} [date] - Date to verify the certificate
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Key>} Revoked key.
    * @async
    */
-  async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
+  async applyRevocationCertificate(revocationCertificate, date = new Date(), config = defaultConfig) {
     const input = await unarmor(revocationCertificate, config);
     const packetlist = await PacketList.fromBinary(input.data, allowedRevocationPackets, config);
     const revocationSignature = packetlist.findPacket(enums.packet.signature);
@@ -569,11 +574,8 @@ class Key {
     if (!revocationSignature.issuerKeyID.equals(this.getKeyID())) {
       throw new Error('Revocation signature does not match key');
     }
-    if (revocationSignature.isExpired()) {
-      throw new Error('Revocation signature is expired');
-    }
     try {
-      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, undefined, config);
+      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, date, undefined, config);
     } catch (e) {
       throw util.wrapError('Could not verify revocation signature', e);
     }
@@ -593,8 +595,8 @@ class Key {
    */
   async signPrimaryUser(privateKeys, date, userID, config = defaultConfig) {
     const { index, user } = await this.getPrimaryUser(date, userID, config);
-    const userSign = await user.sign(this.keyPacket, privateKeys, config);
-    const key = this.clone();
+    const userSign = await user.sign(this.keyPacket, privateKeys, date, config);
+    const key = await this.clone();
     key.users[index] = userSign;
     return key;
   }
@@ -602,15 +604,16 @@ class Key {
   /**
    * Signs all users of key
    * @param {Array<PrivateKey>} privateKeys - decrypted private keys for signing
+   * @param {Date} [date] - Use the given date for signing, instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Key>} Key with new certificate signature.
    * @async
    */
-  async signAllUsers(privateKeys, config = defaultConfig) {
+  async signAllUsers(privateKeys, date = new Date(), config = defaultConfig) {
     const that = this;
     const key = this.clone();
     key.users = await Promise.all(this.users.map(function(user) {
-      return user.sign(that.keyPacket, privateKeys, config);
+      return user.sign(that.keyPacket, privateKeys, date, config);
     }));
     return key;
   }
@@ -629,11 +632,11 @@ class Key {
    * }>>} List of signer's keyID and validity of signature
    * @async
    */
-  async verifyPrimaryUser(keys, date, userID, config = defaultConfig) {
+  async verifyPrimaryUser(keys, date = new Date(), userID, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const { user } = await this.getPrimaryUser(date, userID, config);
-    const results = keys ? await user.verifyAllCertifications(primaryKey, keys, undefined, config) :
-      [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
+    const results = keys ? await user.verifyAllCertifications(primaryKey, keys, date, config) :
+      [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, date, config).catch(() => false) }];
     return results;
   }
 
@@ -642,6 +645,7 @@ class Key {
    * - if no arguments are given, verifies the self certificates;
    * - otherwise, verifies all certificates signed with given keys.
    * @param {Array<Key>} keys - array of keys to verify certificate signatures
+   * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
    *   userID: String,
@@ -650,12 +654,12 @@ class Key {
    * }>>} List of userID, signer's keyID and validity of signature
    * @async
    */
-  async verifyAllUsers(keys, config = defaultConfig) {
+  async verifyAllUsers(keys, date = new Date(), config = defaultConfig) {
     const results = [];
     const primaryKey = this.keyPacket;
     await Promise.all(this.users.map(async function(user) {
-      const signatures = keys ? await user.verifyAllCertifications(primaryKey, keys, undefined, config) :
-        [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, undefined, config).catch(() => false) }];
+      const signatures = keys ? await user.verifyAllCertifications(primaryKey, keys, date, config) :
+        [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, date, config).catch(() => false) }];
       signatures.forEach(signature => {
         results.push({
           userID: user.userID.userID,

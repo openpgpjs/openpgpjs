@@ -45,7 +45,7 @@ class SubKey {
    *          SecretSubkeyPacket|
    *          PublicKeyPacket|
    *          SecretKeyPacket} key, optional The key to verify the signature
-   * @param {Date} date - Use the given date instead of the current time
+   * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>} True if the binding signature is revoked.
    * @async
@@ -111,13 +111,13 @@ class SubKey {
   /**
    * Update subkey with new components from specified subkey
    * @param {SubKey} subKey - Source subkey to merge
-   * @param  {SecretKeyPacket|
-              SecretSubkeyPacket} primaryKey primary key used for validation
+   * @param {SecretKeyPacket|SecretSubkeyPacket} primaryKey primary key used for validation
+   * @param {Date} [date] - Date to verify validity of signatures
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if update failed
    * @async
    */
-  async update(subKey, primaryKey, config = defaultConfig) {
+  async update(subKey, primaryKey, date = new Date(), config = defaultConfig) {
     if (!this.hasSameFingerprintAs(subKey)) {
       throw new Error('SubKey update method: fingerprints of subkeys not equal');
     }
@@ -139,7 +139,7 @@ class SubKey {
         }
       }
       try {
-        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, undefined, config);
+        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, date, undefined, config);
         return true;
       } catch (e) {
         return false;
@@ -147,7 +147,7 @@ class SubKey {
     });
     // revocation signatures
     await helper.mergeSignatures(subKey, this, 'revocationSignatures', function(srcRevSig) {
-      return helper.isDataRevoked(primaryKey, enums.signature.subkeyRevocation, dataToVerify, [srcRevSig], undefined, undefined, undefined, config);
+      return helper.isDataRevoked(primaryKey, enums.signature.subkeyRevocation, dataToVerify, [srcRevSig], undefined, undefined, date, config);
     });
   }
 

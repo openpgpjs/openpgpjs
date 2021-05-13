@@ -93,6 +93,9 @@ export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBi
 export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
+  if (userIDs.length === 0) {
+    throw new Error('UserIDs are required for key reformat');
+  }
   const options = { privateKey, userIDs, passphrase, keyExpirationTime, date };
 
   return reformat(options, config).then(async key => {
@@ -119,6 +122,7 @@ export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpi
  * @param {Object} [options.reasonForRevocation] - Object indicating the reason for revocation
  * @param {module:enums.reasonForRevocation} [options.reasonForRevocation.flag=[noReason]{@link module:enums.reasonForRevocation}] - Flag indicating the reason for revocation
  * @param {String} [options.reasonForRevocation.string=""] - String explaining the reason for revocation
+ * @param {Date} [options.date] - Date to verify validity of revocation certificate (if given), or to override the creation time of the revocation signature
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The revoked key object in the form:
  *                                     `{ privateKey:PrivateKey, privateKeyArmored:String, publicKey:PublicKey, publicKeyArmored:String }`
@@ -126,13 +130,13 @@ export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpi
  * @async
  * @static
  */
-export function revokeKey({ key, revocationCertificate, reasonForRevocation, config }) {
+export function revokeKey({ key, revocationCertificate, reasonForRevocation, date, config }) {
   config = { ...defaultConfig, ...config };
   return Promise.resolve().then(() => {
     if (revocationCertificate) {
-      return key.applyRevocationCertificate(revocationCertificate, config);
+      return key.applyRevocationCertificate(revocationCertificate, date, config);
     } else {
-      return key.revoke(reasonForRevocation, undefined, config);
+      return key.revoke(reasonForRevocation, date, config);
     }
   }).then(async key => {
     if (key.isPrivate()) {
@@ -309,7 +313,7 @@ export function decrypt({ message, decryptionKeys, passwords, sessionKeys, verif
   config = { ...defaultConfig, ...config };
   checkMessage(message); verificationKeys = toArray(verificationKeys); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
 
-  return message.decrypt(decryptionKeys, passwords, sessionKeys, config).then(async function(decrypted) {
+  return message.decrypt(decryptionKeys, passwords, sessionKeys, date, config).then(async function(decrypted) {
     if (!verificationKeys) {
       verificationKeys = [];
     }
@@ -515,6 +519,7 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKe
  * @param {Message} options.message - A message object containing the encrypted session key packets
  * @param {PrivateKey|PrivateKey[]} [options.decryptionKeys] - Private keys with decrypted secret key data
  * @param {String|String[]} [options.passwords] - Passwords to decrypt the session key
+ * @param {Date} [options.date] - Date to use for key verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} Array of decrypted session key, algorithm pairs in the form:
  *                                            { data:Uint8Array, algorithm:String }
@@ -522,13 +527,13 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKe
  * @async
  * @static
  */
-export function decryptSessionKeys({ message, decryptionKeys, passwords, config }) {
+export function decryptSessionKeys({ message, decryptionKeys, passwords, date = new Date(), config }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords);
 
   return Promise.resolve().then(async function() {
 
-    return message.decryptSessionKeys(decryptionKeys, passwords, config);
+    return message.decryptSessionKeys(decryptionKeys, passwords, date, config);
 
   }).catch(onError.bind(null, 'Error decrypting session keys'));
 }

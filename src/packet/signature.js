@@ -662,17 +662,26 @@ class SignaturePacket {
    *         SecretSubkeyPacket|SecretKeyPacket} key - the public key to verify the signature
    * @param {module:enums.signature} signatureType - Expected signature type
    * @param {String|Object} data - Data which on the signature applies
+   * @param {Date} date - Date to check for signature validity and expiration
    * @param {Boolean} [detached] - Whether to verify a detached signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if signature validation failed
    * @async
    */
-  async verify(key, signatureType, data, detached = false, config = defaultConfig) {
+  async verify(key, signatureType, data, date, detached = false, config = defaultConfig) {
     const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
     if (publicKeyAlgorithm !== enums.write(enums.publicKey, key.algorithm)) {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
+    }
+
+    const normDate = util.normalizeDate(date);
+    if (normDate && this.created > normDate) {
+      throw new Error('Signature is in the future');
+    }
+    if (this.isExpired(date)) {
+      throw new Error('Signature is expired');
     }
 
     let toHash;

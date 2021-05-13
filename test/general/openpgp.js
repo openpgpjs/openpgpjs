@@ -736,6 +736,51 @@ AP9fcXZg/Eo55YB/B5XKLkuzDFwJaTlncrD5jcUgtVXFCg==
 =q2yi
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const armoredDummyPrivateKey1 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+lQGqBFERnrMRBADmM0hIfkI3yosjgbWo9v0Lnr3CCE+8KsMszgVS+hBu0XfGraKm
+ivcA2aaJimHqVYOP7gEnwFAxHBBpeTJcu5wzCFyJwEYqVeS3nnaIhBPplSF14Duf
+i6bB9RV7KxVAg6aunmM2tAutqC+a0y2rDaf7jkJoZ9gWJe2zI+vraD6fiwCgxvHo
+3IgULB9RqIqpLoMgXfcjC+cD/1jeJlKRm+n71ryYwT/ECKsspFz7S36z6q3XyS8Q
+QfrsUz2p1fbFicvJwIOJ8B20J/N2/nit4P0gBUTUxv3QEa7XCM/56/xrGkyBzscW
+AzBoy/AK9K7GN6z13RozuAS60F1xO7MQc6Yi2VU3eASDQEKiyL/Ubf/s/rkZ+sGj
+yJizBACtwCbQzA+z9XBZNUat5NPgcZz5Qeh1nwF9Nxnr6pyBv7tkrLh/3gxRGHqG
+063dMbUk8pmUcJzBUyRsNiIPDoEUsLjY5zmZZmp/waAhpREsnK29WLCbqLdpUors
+c1JJBsObkA1IM8TZY8YUmvsMEvBLCCanuKpclZZXqeRAeOHJ0v4DZQJHTlUBtBZU
+ZXN0MiA8dGVzdDJAdGVzdC5jb20+iGIEExECACIFAlERnrMCGwMGCwkIBwMCBhUI
+AgkKCwQWAgMBAh4BAheAAAoJEBEnlAPLFp74xc0AoLNZINHe0ytOsNtMCuLvc3Vd
+vePUAJ9KX3L5IBqHarsa+aJHX7r796SokZ0BWARREZ6zEAQA2WkxmNbfeMzGUocN
+3JEVe0o6rxGt5eGrTSmWisduDP3MURabhUXnf4T8oaeYcbJjkLLxMrJmNq55ln1e
+4bSG5mDkh/ryKsV81m3F0DbqO/z/891nRSP5fondFVral4wsMOzBNgs4vVk7V/F2
+0MPjR90CIhnVDKPAQbQA+3PjUR8AAwUEALn922AEE+0d7xSMMFpR7ic3Me5QEGnp
+cT4ft6oc0UK5kAnvKoksZUc0hpBHjX1w3LTz847/5hRDuuDvwvGMWK8IfsjOF9T7
+rK8QtJuBEyJxjoScA/YZP5vX4y0U1reUEa0EdwmVrnZzatMAe2FhlaR9PlHkOcm5
+DZwkcExL0dbI/gMDArxZ+5N7kH4zYLtr9glJS/pJ7F0YJqJpNwCbqD8+8DqHD8Uv
+MgQ/rtBxBJJOaF+1AjCd123hLgzIkkfdTh8loV9hDXMKeJgmiEkEGBECAAkFAlER
+nrMCGwwACgkQESeUA8sWnvhBswCfdXjznvHCc73/6/MhWcv3dbeTT/wAoLyiZg8+
+iY3UT9QkV9d0sMgyLkug
+=GQsY
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+const armoredPublicKey1 = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+mQGiBFERlw4RBAD6Bmcf2w1dtUmtCLkdxeqZLArk3vYoQAjdibxA3gXVyur7fsWb
+ro0jVbBHqOCtC6jDxE2l52NP9+tTlWeVMaqqNvUE47LSaPq2DGI8Wx1Rj6bF3mTs
+obYEwhGbGh/MhJnME9AHODarvk8AZbzo0+k1EwrBWF6dTUBPfqO7rGU2ewCg80WV
+x5pt3evj8rRK3jQ8SMKTNRsD/1PhTdxdZTdXARAFzcW1VaaruWW0Rr1+XHKKwDCz
+i7HE76SO9qjnQfZCZG75CdQxI0h8GFeN3zsDqmhob2iSz2aJ1krtjM+iZ1FBFd57
+OqCV6wmk5IT0RBN12ZzMS19YvzN/ONXHrmTZlKExd9Mh9RKLeVNw+bf6JsKQEzcY
+JzFkBACX9X+hDYchO/2hiTwx4iOO9Fhsuh7eIWumB3gt+aUpm1jrSbas/QLTymmk
+uZuQVXI4NtnlvzlNgWv4L5s5RU5WqNGG7WSaKNdcrvJZRC2dgbUJt04J5CKrWp6R
+aIYal/81Ut1778lU01PEt563TcQnUBlnjU5OR25KhfSeN5CZY7QUVGVzdCA8dGVz
+dEB0ZXN0LmNvbT6IYgQTEQIAIgUCURGXDgIbAwYLCQgHAwIGFQgCCQoLBBYCAwEC
+HgECF4AACgkQikDlZK/UvLSspgCfcNaOpTg1W2ucR1JwBbBGvaERfuMAnRgt3/rs
+EplqEakMckCtikEnpxYe
+=b2Ln
+-----END PGP PUBLIC KEY BLOCK-----`;
+
 function withCompression(tests) {
   const compressionTypes = Object.keys(openpgp.enums.compression).map(k => openpgp.enums.compression[k]);
 
@@ -1246,6 +1291,60 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         stream.readToEnd(streamedData)
       ).to.be.eventually.rejectedWith(/Could not find signing key/);
     });
+
+    it('Supports decrypting with GnuPG dummy key', async function() {
+      const { rejectMessageHashAlgorithms } = openpgp.config;
+      Object.assign(openpgp.config, { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.md5, openpgp.enums.hash.ripemd]) });
+      try {
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+hQEOA1N4OCSSjECBEAP/diDJCQn4e88193PgqhbfAkohk9RQ0v0MPnXpJbCRTHKO
+8r9nxiAr/TQv4ZOingXdAp2JZEoE9pXxZ3r1UWew04czxmgJ8FP1ztZYWVFAWFVi
+Tj930TBD7L1fY/MD4fK6xjEG7z5GT8k4tn4mLm/PpWMbarIglfMopTy1M/py2cID
+/2Sj7Ikh3UFiG+zm4sViYc5roNbMy8ixeoKixxi99Mx8INa2cxNfqbabjblFyc0Z
+BwmbIc+ZiY2meRNI5y/tk0gRD7hT84IXGGl6/mH00bsX/kkWdKGeTvz8s5G8RDHa
+Za4HgLbXItkX/QarvRS9kvkD01ujHfj+1ZvgmOBttNfP0p8BQLIICqvg1eYD9aPB
++GtOZ2F3+k5VyBL5yIn/s65SBjNO8Fqs3aL0x+p7s1cfUzx8J8a8nWpqq/qIQIqg
+ZJH6MZRKuQwscwH6NWgsSVwcnVCAXnYOpbHxFQ+j7RbF/+uiuqU+DFH/Rd5pik8b
+0Dqnp0yfefrkjQ0nuvubgB6Rv89mHpnvuJfFJRInpg4lrHwLvRwdpN2HDozFHcKK
+aOU=
+=4iGt
+-----END PGP MESSAGE-----`;
+        const passphrase = 'abcd';
+        // exercises the GnuPG s2k type 1001 extension:
+        // the secrets on the primary key have been stripped.
+        const dummyKey = await openpgp.readKey({ armoredKey: armoredDummyPrivateKey1 });
+        const publicKey = await openpgp.readKey({ armoredKey: armoredPublicKey1 });
+        const message = await openpgp.readMessage({ armoredMessage });
+        const primaryKeyPacket = dummyKey.primaryKey.write();
+        expect(dummyKey.isDecrypted()).to.be.false;
+        const decryptedDummyKey = await openpgp.decryptKey({ privateKey: dummyKey, passphrase });
+        expect(decryptedDummyKey.isDecrypted()).to.be.true;
+        // decrypting with a secret subkey works
+        const msg = await openpgp.decrypt({
+          message, decryptionKeys: decryptedDummyKey, verificationKeys: publicKey, config: { rejectPublicKeyAlgorithms: new Set() }
+        });
+        expect(msg.signatures).to.exist;
+        expect(msg.signatures).to.have.length(1);
+        expect(msg.signatures[0].valid).to.be.true;
+        expect(msg.signatures[0].signature.packets.length).to.equal(1);
+        // secret key operations involving the primary key should fail
+        await expect(openpgp.sign({
+          message: await openpgp.createMessage({ text: 'test' }), signingKeys: decryptedDummyKey, config: { rejectPublicKeyAlgorithms: new Set() }
+        })).to.eventually.be.rejectedWith(/Cannot sign with a gnu-dummy key/);
+        await expect(
+          openpgp.reformatKey({ userIDs: { name: 'test' }, privateKey: decryptedDummyKey })
+        ).to.eventually.be.rejectedWith(/Cannot reformat a gnu-dummy primary key/);
+
+        const encryptedDummyKey = await openpgp.encryptKey({ privateKey: decryptedDummyKey, passphrase });
+        expect(encryptedDummyKey.isDecrypted()).to.be.false;
+        const primaryKeyPacket2 = encryptedDummyKey.primaryKey.write();
+        expect(primaryKeyPacket).to.deep.equal(primaryKeyPacket2);
+      } finally {
+        Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
+      }
+    });
   });
 
   describe('verify - unit tests', function() {
@@ -1383,6 +1482,14 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         ).to.be.eventually.rejectedWith(/Could not find signing key/);
       });
     }
+  });
+
+  describe('sign - unit tests', function() {
+    it('Supports signing with GnuPG dummy key', async function() {
+      const dummyKey = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
+      const sig = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), privateKeys: dummyKey, date: new Date('2018-12-17T03:24:00') });
+      expect(sig).to.match(/-----END PGP MESSAGE-----\n$/);
+    });
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
@@ -3441,5 +3548,4 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
       });
     });
   });
-
 });

@@ -107,12 +107,13 @@ export class Message {
    * @param {Array<PrivateKey>} [decryptionKeys] - Private keys with decrypted secret data
    * @param {Array<String>} [passwords] - Passwords used to decrypt
    * @param {Array<Object>} [sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
+   * @param {Date} [date] - Use the given date for key verification instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Message>} New message with decrypted content.
    * @async
    */
-  async decrypt(decryptionKeys, passwords, sessionKeys, config = defaultConfig) {
-    const keyObjs = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, config);
+  async decrypt(decryptionKeys, passwords, sessionKeys, date = new Date(), config = defaultConfig) {
+    const keyObjs = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config);
 
     const symEncryptedPacketlist = this.packets.filterByTag(
       enums.packet.symmetricallyEncryptedData,
@@ -157,6 +158,7 @@ export class Message {
    * Decrypt encrypted session keys either with private keys or passwords.
    * @param {Array<PrivateKey>} [decryptionKeys] - Private keys with decrypted secret data
    * @param {Array<String>} [passwords] - Passwords used to decrypt
+   * @param {Date} [date] - Use the given date for key verification, instead of current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
    *   data: Uint8Array,
@@ -164,7 +166,7 @@ export class Message {
    * }>>} array of object with potential sessionKey, algorithm pairs
    * @async
    */
-  async decryptSessionKeys(decryptionKeys, passwords, config = defaultConfig) {
+  async decryptSessionKeys(decryptionKeys, passwords, date = new Date(), config = defaultConfig) {
     let keyPackets = [];
 
     let exception;
@@ -203,7 +205,7 @@ export class Message {
             enums.symmetric.cast5 // Golang OpenPGP fallback
           ];
           try {
-            const primaryUser = await decryptionKey.getPrimaryUser(undefined, undefined, config); // TODO: Pass userID from somewhere.
+            const primaryUser = await decryptionKey.getPrimaryUser(date, undefined, config); // TODO: Pass userID from somewhere.
             if (primaryUser.selfCertification.preferredSymmetricAlgorithms) {
               algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
             }
@@ -697,8 +699,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
  * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
- * @param {Date} date - Verify the signature against the given date,
- *                    i.e. check signature creation time < date < expiration time
+ * @param {Date} [date] - Check signature validity with respect to the given date ()
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {Promise<{
@@ -721,39 +722,42 @@ async function createVerificationObject(signature, literalDataList, verification
       break;
     }
   }
+
+  const isOnePassSignature = signature instanceof OnePassSignaturePacket;
+  const signaturePacketPromise = isOnePassSignature ? signature.correspondingSig : signature;
+  const isSignaturePacketAvailable = !util.isPromise(signaturePacketPromise);
   if (!primaryKey) {
     keyError = new Error(`Could not find signing key with key ID ${signature.issuerKeyID.toHex()}`);
   } else {
     try {
-      signingKey = await primaryKey.getSigningKey(signature.issuerKeyID, null, undefined, config);
+      // We need the signature creation time to check whether the key was expired at the time of signing.
+      // If the signature packet is not available yet, we delay the check after verifying the signature
+      signingKey = await primaryKey.getSigningKey(
+        signature.issuerKeyID, isSignaturePacketAvailable ? signaturePacketPromise.created : null, undefined, config
+      );
     } catch (e) {
       keyError = e;
     }
   }
-  const signaturePacket = signature.correspondingSig || signature;
+
   const verifiedSig = {
     keyID: signature.issuerKeyID,
     verified: (async () => {
       if (keyError) {
         throw keyError;
       }
-      await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], detached, config);
-      const sig = await signaturePacket;
-      if (sig.isExpired(date) || !(
-        sig.created >= signingKey.getCreationTime() &&
-        sig.created < await (signingKey === primaryKey ?
-          signingKey.getExpirationTime(undefined, undefined, undefined, config) :
-          signingKey.getExpirationTime(primaryKey, date, undefined, config)
-        )
-      )) {
-        throw new Error('Signature is expired');
+      await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], date, detached, config);
+      const signaturePacket = await signaturePacketPromise;
+      if (!isSignaturePacketAvailable) {
+        // check validity of key w.r.t. signature creation time, which was not available before
+        await primaryKey.getSigningKey(signingKey.getKeyID(), signaturePacket.created, undefined, config);
       }
       return true;
     })(),
     signature: (async () => {
-      const sig = await signaturePacket;
+      const signaturePacket = await signaturePacketPromise;
       const packetlist = new PacketList();
-      sig && packetlist.push(sig);
+      signaturePacket && packetlist.push(signaturePacket);
       return new Signature(packetlist);
     })()
   };
