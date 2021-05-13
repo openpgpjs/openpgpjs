@@ -363,10 +363,18 @@ class Key {
     }
     // check for valid, unrevoked, unexpired self signature
     const { selfCertification } = await this.getPrimaryUser(date, userID, config);
-    // check for expiration time
+    // check for expiration time in binding signatures
     if (helper.isDataExpired(primaryKey, selfCertification, date)) {
       throw new Error('Primary key is expired');
     }
+    // check for expiration time in direct signatures
+    if (this.directSignatures.length > 0) {
+      const directSignature = await helper.getLatestValidSignature(this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config);
+      if (helper.isDataExpired(primaryKey, directSignature, date)) {
+        throw new Error('Primary key is expired by a direct signature');
+      }
+    }
+
   }
 
   /**
