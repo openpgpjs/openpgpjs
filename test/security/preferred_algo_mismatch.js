@@ -43,5 +43,5 @@ EnxUPL95HuMKoVkf4w==
 module.exports = () => it('Does not accept message encrypted with algo not mentioned in preferred algorithms', async function() {
   const message = await openpgp.readMessage({ armoredMessage });
   const privKey = await openpgp.readKey({ armoredKey: privateKeyArmor });
-  await expect(openpgp.decrypt({ message, privateKeys: [privKey] })).to.be.rejectedWith('A non-preferred symmetric algorithm was used.');
+  await expect(openpgp.decrypt({ message, decryptionKeys: [privKey] })).to.be.rejectedWith('A non-preferred symmetric algorithm was used.');
 });

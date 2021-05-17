@@ -20,29 +20,29 @@ module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-38
       const bye = secondKey.key;
       const pubBye = bye.toPublic();
 
-      const cleartextMessage = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), privateKeys: hi });
+      const cleartextMessage = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: hi });
       await openpgp.verify({
         message: await openpgp.readCleartextMessage({ cleartextMessage }),
-        publicKeys: pubHi
+        verificationKeys: pubHi
       }).then(output => expect(output.signatures[0].valid).to.be.true);
       // Verifying detached signature
       await openpgp.verify({
         message: await openpgp.createMessage({ text: util.removeTrailingSpaces(testData) }),
-        publicKeys: pubHi,
+        verificationKeys: pubHi,
         signature: (await openpgp.readCleartextMessage({ cleartextMessage })).signature
       }).then(output => expect(output.signatures[0].valid).to.be.true);
 
       // Encrypting and signing
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: testData2 }),
-        publicKeys: [pubBye],
-        privateKeys: [hi]
+        encryptionKeys: [pubBye],
+        signingKeys: [hi]
       });
       // Decrypting and verifying
       return openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
-        privateKeys: bye,
-        publicKeys: [pubHi]
+        decryptionKeys: bye,
+        verificationKeys: [pubHi]
       }).then(output => {
         expect(output.data).to.equal(testData2);
         expect(output.signatures[0].valid).to.be.true;
@@ -56,9 +56,9 @@ module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-38
     const testData = input.createSomeMessage();
     const options = { userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "p256" };
     const firstKey = await openpgp.generateKey(options);
-    const signature = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), privateKeys: firstKey.key });
+    const signature = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: firstKey.key });
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: signature });
-    const result = await openpgp.verify({ message: msg, publicKeys: firstKey.key.toPublic() });
+    const result = await openpgp.verify({ message: msg, verificationKeys: firstKey.key.toPublic() });
     expect(result.signatures[0].valid).to.be.true;
   });
 
@@ -70,14 +70,14 @@ module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-38
     const secondKey = await openpgp.generateKey(options);
     const encrypted = await openpgp.encrypt(
       { message: await openpgp.createMessage({ text: testData }),
-        publicKeys: [secondKey.key.toPublic()],
-        privateKeys: [firstKey.key] }
+        encryptionKeys: [secondKey.key.toPublic()],
+        signingKeys: [firstKey.key] }
     );
     const msg = await openpgp.readMessage({ armoredMessage: encrypted });
     const result = await openpgp.decrypt(
       { message: msg,
-        privateKeys: secondKey.key,
-        publicKeys: [firstKey.key.toPublic()] }
+        decryptionKeys: secondKey.key,
+        verificationKeys: [firstKey.key.toPublic()] }
     );
     expect(result.signatures[0].valid).to.be.true;
   });

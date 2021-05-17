@@ -28,7 +28,7 @@ async function generateTestData() {
   attackerPrivKey.revocationSignatures = [];
   const signed = await openpgp.sign({
     message: await createCleartextMessage({ text: 'I am batman' }),
-    privateKeys: victimPrivKey,
+    signingKeys: victimPrivKey,
     armor: true
   });
   return {
@@ -67,7 +67,7 @@ async function testSubkeyTrust() {
   fakeKey = await readKey({ armoredKey: await fakeKey.toPublic().armor() });
   const verifyAttackerIsBatman = await openpgp.verify({
     message: await readCleartextMessage({ cleartextMessage: signed }),
-    publicKeys: fakeKey
+    verificationKeys: fakeKey
   });
   expect(verifyAttackerIsBatman.signatures[0].keyID.equals(victimPubKey.subKeys[0].getKeyID())).to.be.true;
   expect(verifyAttackerIsBatman.signatures[0].valid).to.be.false;

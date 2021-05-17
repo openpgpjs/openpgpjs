@@ -59,7 +59,7 @@ async function makeKeyValid() {
     try {
       await openpgp.encrypt({
         message: await createMessage({ text: 'Hello', filename: 'hello.txt' }),
-        publicKeys: k
+        encryptionKeys: k
       });
       return false;
     } catch (e) {

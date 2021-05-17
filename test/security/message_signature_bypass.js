@@ -97,7 +97,7 @@ async function fakeSignature() {
   // faked message now verifies correctly
   const res = await openpgp.verify({
     message: fake,
-    publicKeys: await getOtherPubKey()
+    verificationKeys: await getOtherPubKey()
   });
   const { signatures } = res;
   expect(signatures).to.have.length(0);
