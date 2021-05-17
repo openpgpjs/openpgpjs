@@ -231,7 +231,8 @@ class Key {
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param  {Object} userID, optional user ID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey|null>} Key or null if no signing key has been found.
+   * @returns {Promise<Key|SubKey>} signing key
+   * @throws if no valid signing key was found
    * @async
    */
   async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
@@ -284,7 +285,8 @@ class Key {
    * @param  {Date}              date, optional
    * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey|null>} Key or null if no encryption key has been found.
+   * @returns {Promise<Key|SubKey>} encryption key
+   * @throws if no valid encryption key was found
    * @async
    */
   async getEncryptionKey(keyID, date = new Date(), userID = {}, config = defaultConfig) {
@@ -554,7 +556,7 @@ class Key {
    * if it is a valid revocation signature.
    * @param {String} revocationCertificate - armored revocation certificate
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New revoked key.
+   * @returns {Promise<Key>} Revoked key.
    * @async
    */
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
@@ -582,11 +584,11 @@ class Key {
 
   /**
    * Signs primary user of key
-   * @param {Array<Key>} privateKeys - decrypted private keys for signing
+   * @param {Array<PrivateKey>} privateKeys - decrypted private keys for signing
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New public key with new certificate signature.
+   * @returns {Promise<Key>} Key with new certificate signature.
    * @async
    */
   async signPrimaryUser(privateKeys, date, userID, config = defaultConfig) {
@@ -599,9 +601,9 @@ class Key {
 
   /**
    * Signs all users of key
-   * @param {Array<Key>} privateKeys - decrypted private keys for signing
+   * @param {Array<PrivateKey>} privateKeys - decrypted private keys for signing
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New public key with new certificate signature.
+   * @returns {Promise<Key>} Key with new certificate signature.
    * @async
    */
   async signAllUsers(privateKeys, config = defaultConfig) {

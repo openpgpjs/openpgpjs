@@ -44,7 +44,7 @@ class PrivateKey extends PublicKey {
 
   /**
    * Returns key as public key (shallow copy)
-   * @returns {Key} New public Key
+   * @returns {PublicKey} New public Key
    */
   toPublic() {
     const packetlist = new PacketList();

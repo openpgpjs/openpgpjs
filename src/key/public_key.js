@@ -60,7 +60,7 @@ class PublicKey extends Key {
 
   /**
    * Returns key as public key (shallow copy)
-   * @returns {Key} New public Key
+   * @returns {PublicKey} New public Key
    */
   toPublic() {
     return this;

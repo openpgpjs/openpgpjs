@@ -104,7 +104,7 @@ export class Message {
 
   /**
    * Decrypt the message. Either a private key, a session key, or a password must be specified.
-   * @param {Array<Key>} [decryptionKeys] - Private keys with decrypted secret data
+   * @param {Array<PrivateKey>} [decryptionKeys] - Private keys with decrypted secret data
    * @param {Array<String>} [passwords] - Passwords used to decrypt
    * @param {Array<Object>} [sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -155,7 +155,7 @@ export class Message {
 
   /**
    * Decrypt encrypted session keys either with private keys or passwords.
-   * @param {Array<Key>} [decryptionKeys] - Private keys with decrypted secret data
+   * @param {Array<PrivateKey>} [decryptionKeys] - Private keys with decrypted secret data
    * @param {Array<String>} [passwords] - Passwords used to decrypt
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -240,13 +240,13 @@ export class Message {
     if (keyPackets.length) {
       // Return only unique session keys
       if (keyPackets.length > 1) {
-        const seen = {};
-        keyPackets = keyPackets.filter(function(item) {
+        const seen = new Set();
+        keyPackets = keyPackets.filter(item => {
           const k = item.sessionKeyAlgorithm + util.uint8ArrayToString(item.sessionKey);
-          if (seen.hasOwnProperty(k)) {
+          if (seen.has(k)) {
             return false;
           }
-          seen[k] = true;
+          seen.add(k);
           return true;
         });
       }
@@ -291,7 +291,7 @@ export class Message {
 
   /**
    * Generate a new session key object, taking the algorithm preferences of the passed encryption keys into account, if any.
-   * @param {Array<Key>} [encryptionKeys] - Public key(s) to select algorithm preferences for
+   * @param {Array<PublicKey>} [encryptionKeys] - Public key(s) to select algorithm preferences for
    * @param {Date} [date] - Date to select algorithm preferences at
    * @param {Array<Object>} [userIDs] - User IDs to select algorithm preferences for
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -310,7 +310,7 @@ export class Message {
 
   /**
    * Encrypt the message either with public keys, passwords, or both at once.
-   * @param {Array<Key>} [encryptionKeys] - Public key(s) for message encryption
+   * @param {Array<PublicKey>} [encryptionKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - Password(s) for message encryption
    * @param {Object} [sessionKey] - Session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs
@@ -359,7 +359,7 @@ export class Message {
    * @param {Uint8Array} sessionKey - session key for encryption
    * @param {String} algorithm - session key algorithm
    * @param {String} [aeadAlgorithm] - AEAD algorithm, e.g. 'eax' or 'ocb'
-   * @param {Array<Key>} [encryptionKeys] - Public key(s) for message encryption
+   * @param {Array<PublicKey>} [encryptionKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - For message encryption
    * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs
    * @param {Array<module:type/keyid~KeyID>} [encryptionKeyIDs] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to encryptionKeys[i]
@@ -427,7 +427,7 @@ export class Message {
 
   /**
    * Sign the message (the literal data packet of the message)
-   * @param {Array<Key>} signingKeys - private keys with decrypted secret key data for signing
+   * @param {Array<PrivateKey>} signingKeys - private keys with decrypted secret key data for signing
    * @param {Signature} [signature] - Any existing detached signature to add to the message
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
    * @param {Date} [date] - Override the creation time of the signature
@@ -514,7 +514,7 @@ export class Message {
 
   /**
    * Create a detached signature for the message (the literal data packet of the message)
-   * @param {Array<Key>} signingKeys - private keys with decrypted secret key data for signing
+   * @param {Array<PrivateKey>} signingKeys - private keys with decrypted secret key data for signing
    * @param {Signature} [signature] - Any existing detached signature
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
    * @param {Date} [date] - Override the creation time of the signature
@@ -533,7 +533,7 @@ export class Message {
 
   /**
    * Verify message signatures
-   * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
+   * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -589,7 +589,7 @@ export class Message {
 
   /**
    * Verify detached message signature
-   * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
+   * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
    * @param {Signature} signature
    * @param {Date} date - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -656,7 +656,7 @@ export class Message {
 /**
  * Create signature packets for the message
  * @param {LiteralDataPacket} literalDataPacket - the literal data packet to sign
- * @param {Array<Key>} signingKeys - private keys with decrypted secret key data for signing
+ * @param {Array<PrivateKey>} signingKeys - private keys with decrypted secret key data for signing
  * @param {Signature} [signature] - Any existing detached signature to append
  * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [date] - Override the creationtime of the signature
@@ -696,7 +696,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * Create object containing signer's keyID and validity of signature
  * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
- * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
+ * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
@@ -772,7 +772,7 @@ async function createVerificationObject(signature, literalDataList, verification
  * Create list of objects containing signer's keyID and validity of signature
  * @param {Array<SignaturePacket>} signatureList - Array of signature packets
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
- * @param {Array<Key>} verificationKeys - Array of public keys to verify signatures
+ * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
