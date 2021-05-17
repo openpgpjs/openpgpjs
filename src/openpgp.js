@@ -35,7 +35,7 @@ import util from './util';
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
  * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
- * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key
+ * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
  *                                             curve25519 (default), p256, p384, p521, secp256k1,
@@ -81,7 +81,7 @@ export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBi
  * @param {Object} options
  * @param {PrivateKey} options.privateKey - Private key to reformat
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key
+ * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the reformatted private key. If omitted, the key won't be encrypted.
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Date}   [options.date] - Override the creation date of the key signatures
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}

@@ -35,7 +35,7 @@ class PublicKey extends Key {
     if (packetlist) {
       this.packetListToStructure(packetlist, new Set([enums.packet.secretKey, enums.packet.secretSubkey]));
       if (!this.keyPacket) {
-        throw new Error('Invalid key: need at least key packet');
+        throw new Error('Invalid key: missing public-key packet');
       }
     }
   }

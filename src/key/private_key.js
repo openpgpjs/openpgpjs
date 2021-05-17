@@ -20,7 +20,7 @@ class PrivateKey extends PublicKey {
     super();
     this.packetListToStructure(packetlist, new Set([enums.packet.publicKey, enums.packet.publicSubkey]));
     if (!this.keyPacket) {
-      throw new Error('Invalid key: need at least key packet');
+      throw new Error('Invalid key: missing private-key packet');
     }
   }
 
@@ -216,7 +216,7 @@ class PrivateKey extends PublicKey {
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
    * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in [config]{@link module:config}
-   * @returns {Promise<Key>}
+   * @returns {Promise<PrivateKey>}
    * @async
    */
   async addSubkey(options = {}) {
