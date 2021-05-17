@@ -122,7 +122,7 @@ export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpi
  * @param {Object} [options.reasonForRevocation] - Object indicating the reason for revocation
  * @param {module:enums.reasonForRevocation} [options.reasonForRevocation.flag=[noReason]{@link module:enums.reasonForRevocation}] - Flag indicating the reason for revocation
  * @param {String} [options.reasonForRevocation.string=""] - String explaining the reason for revocation
- * @param {Date} [options.date] - Date to verify validity of revocation certificate (if given), or to override the creation time of the revocation signature
+ * @param {Date} [options.date] - Use the given date instead of the current time to verify validity of revocation certificate (if provided), or as creation time of the revocation signature
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The revoked key object in the form:
  *                                     `{ privateKey:PrivateKey, privateKeyArmored:String, publicKey:PublicKey, publicKeyArmored:String }`
@@ -130,7 +130,7 @@ export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpi
  * @async
  * @static
  */
-export function revokeKey({ key, revocationCertificate, reasonForRevocation, date, config }) {
+export function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), config }) {
   config = { ...defaultConfig, ...config };
   return Promise.resolve().then(() => {
     if (revocationCertificate) {

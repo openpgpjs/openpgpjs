@@ -662,13 +662,13 @@ class SignaturePacket {
    *         SecretSubkeyPacket|SecretKeyPacket} key - the public key to verify the signature
    * @param {module:enums.signature} signatureType - Expected signature type
    * @param {String|Object} data - Data which on the signature applies
-   * @param {Date} date - Date to check for signature validity and expiration
+   * @param {Date} [date] - Use the given date instead of the current time to check for signature validity and expiration
    * @param {Boolean} [detached] - Whether to verify a detached signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if signature validation failed
    * @async
    */
-  async verify(key, signatureType, data, date, detached = false, config = defaultConfig) {
+  async verify(key, signatureType, data, date = new Date(), detached = false, config = defaultConfig) {
     const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
