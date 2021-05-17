@@ -685,6 +685,41 @@ kCNcH9WI6idSzFjuYegECf+ZA1xOCjS9oLTGbSeT7jNfC8dH5+E92qlBLq4Ctt7k
     expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
   });
 
+  it('Signing fails if primary key binding signature is expired', async function() {
+    const armoredExpiredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEYKKPDRYJKwYBBAHaRw8BAQdAwJcSQMkHVnZPesPJP1JaB9ptV+wG8Io1
+vxRKvXQe0wMAAP0fdn6gvpVwFUE4bIRcn9hx6eDxSxUu+tg/t959Oo+iahF1
+zRB0ZXN0IDx0ZXN0QGEuaXQ+wpIEEBYKACMFAmCijw0FCQAAAAEECwkHCAMV
+CAoEFgACAQIZAQIbAwIeAQAhCRD16pevybCusRYhBHjm9svlAjmgVWL4wvXq
+l6/JsK6xGUQBAPzxKS2Qs+vWGpxPT2N2T+PLHIgCOxVJVngj4fzREFH1AP9t
+wP+fn3eSsik+vFGy93REmlD1xdu7nW/sHuxY4roqBcddBGCijw0SCisGAQQB
+l1UBBQEBB0Cl1lr+aHfy6V4ePmZUULK6VKTCTPTMaPpR2TzKNIJQBQMBCAcA
+AP9DZWRqQLCIkF38Q0UC/YXLCDdBEQdnlwpHgA0W1bSWmA3uwn4EGBYIAA8F
+AmCijw0FCQAAAAECGwwAIQkQ9eqXr8mwrrEWIQR45vbL5QI5oFVi+ML16pev
+ybCusYE4AQCYbXw8ZWoMevbOM7lAttkwyrG3V/nTW6BVo7/M9Pr9swEA0mDI
+DQmhI0SZoTKy4EGhS0bNJ+g2+dJ8Y22fKzLWXwo=
+=qiIN
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const key = await openpgp.readKey({ armoredKey: armoredExpiredKey });
+    await expect(openpgp.sign({
+      signingKeys: key,
+      message: await openpgp.createMessage({ text: 'Hello World' })
+    })).to.be.rejectedWith(/key is expired/);
+  });
+
+  it('Signing fails if the signing date is before the key creation date', async function() {
+    const key = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
+      passphrase: 'hello world'
+    });
+    await expect(openpgp.sign({
+      signingKeys: key,
+      date: new Date(key.keyPacket.created - 3600),
+      message: await openpgp.createMessage({ text: 'Hello World' })
+    })).to.be.rejectedWith(/Signature is in the future/);
+  });
+
   it('Verification fails if primary key binding signature is expired', async function() {
     const armoredSignature = `-----BEGIN PGP SIGNATURE-----
 
@@ -765,7 +800,6 @@ aMsUdQBgnPAcSGVsbG8gV29ybGQgOik=
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
       config: { minRSABits: 1024 }
-
     });
     await expect(sigInfo.verified).to.be.rejectedWith(/Primary key is expired/);
   });
