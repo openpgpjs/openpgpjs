@@ -2074,6 +2074,57 @@ usLw5q4tc+I5gdq57aiulJ8r4Jj9rdzsZFA7PzNJ9WPGVYJ3
 =GSXO
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const keyExpiredBindingSig = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+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
+hW1Hj9AO8lzggBQ=
+=Nt+N
+-----END PGP PUBLIC KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2846,6 +2897,12 @@ module.exports = () => describe('Key', function() {
     } finally {
       openpgp.config.rejectPublicKeyAlgorithms = rejectPublicKeyAlgorithms;
     }
+  });
+
+  it('Detect that primary-key binding signature expired, after successful verification', async function() {
+    const key = await openpgp.readKey({ armoredKey: keyExpiredBindingSig });
+    key.subKeys[0].bindingSignatures[0].embeddedSignature.verified = true;
+    await expect(key.getSigningKey()).to.be.rejectedWith(/Signature is expired/);
   });
 
   it('Verify certificate of key with future creation date', async function() {

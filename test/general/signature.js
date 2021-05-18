@@ -761,7 +761,7 @@ AkLaG/AkATpuH+DMkYDmKbDLGgD+N4yuxXBJmBfC2IBe4J1S2Gg=
     });
     const { key: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
-      userIDs: key.users,
+      userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
       date: key.keyPacket.created
     });
@@ -791,7 +791,7 @@ aMsUdQBgnPAcSGVsbG8gV29ybGQgOik=
     });
     const { key: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
-      userIDs: key.users,
+      userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
       date: key.keyPacket.created
     });
@@ -820,7 +820,7 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
     });
     const { key: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
-      userIDs: key.users,
+      userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
       date: key.keyPacket.created
     });
@@ -849,7 +849,7 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
     });
     const { key: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
-      userIDs: key.users,
+      userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
       date: key.keyPacket.created
     });
