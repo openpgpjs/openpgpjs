@@ -15,7 +15,7 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
     - [Examples](#examples)
         - [Encrypt and decrypt *Uint8Array* data with a password](#encrypt-and-decrypt-uint8array-data-with-a-password)
         - [Encrypt and decrypt *String* data with PGP keys](#encrypt-and-decrypt-string-data-with-pgp-keys)
-        - [Encrypt with compression](#encrypt-with-compression)
+        - [Encrypt symmetrically with compression](#encrypt-symmetrically-with-compression)
         - [Streaming encrypt *Uint8Array* data with a password](#streaming-encrypt-uint8array-data-with-a-password)
         - [Streaming encrypt and decrypt *String* data with PGP keys](#streaming-encrypt-and-decrypt-string-data-with-pgp-keys)
         - [Generate new key pair](#generate-new-key-pair)
