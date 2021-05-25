@@ -717,7 +717,7 @@ DQmhI0SZoTKy4EGhS0bNJ+g2+dJ8Y22fKzLWXwo=
       signingKeys: key,
       date: new Date(key.keyPacket.created - 3600),
       message: await openpgp.createMessage({ text: 'Hello World' })
-    })).to.be.rejectedWith(/Signature is in the future/);
+    })).to.be.rejectedWith(/Signature creation time is in the future/);
   });
 
   it('Verification fails if primary key binding signature is expired', async function() {

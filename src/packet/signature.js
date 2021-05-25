@@ -336,30 +336,22 @@ class SignaturePacket {
   }
 
   // V4 signature sub packets
-
   readSubPacket(bytes, trusted = true) {
     let mypos = 0;
-
-    const readArray = (prop, bytes) => {
-      this[prop] = [];
-
-      for (let i = 0; i < bytes.length; i++) {
-        this[prop].push(bytes[i]);
-      }
-    };
 
     // The leftmost bit denotes a "critical" packet
     const critical = bytes[mypos] & 0x80;
     const type = bytes[mypos] & 0x7F;
 
     // GPG puts the Issuer and Signature subpackets in the unhashed area.
-    // Tampering with those invalidates the signature, so we can trust them.
-    // Ignore all other unhashed subpackets.
-    if (!trusted && ![
+    // Tampering with those invalidates the signature, so we still trust them and parse them.
+    // All other unhashed subpackets are not processed further.
+    const allowedUntrustedTypes = new Set([
       enums.signatureSubpacket.issuer,
       enums.signatureSubpacket.issuerFingerprint,
       enums.signatureSubpacket.embeddedSignature
-    ].includes(type)) {
+    ]);
+    if (!trusted && !allowedUntrustedTypes.has(type)) {
       this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
       return;
     }
@@ -368,14 +360,11 @@ class SignaturePacket {
 
     // subpacket type
     switch (type) {
-      case 2:
-        if (!trusted) {
-          throw new Error('Unexpected non-hashed signature creation time');
-        }
+      case enums.signatureSubpacket.signatureCreationTime:
         // Signature Creation Time
         this.created = util.readDate(bytes.subarray(mypos, bytes.length));
         break;
-      case 3: {
+      case enums.signatureSubpacket.signatureExpirationTime: {
         // Signature Expiration Time in seconds
         const seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
 
@@ -384,24 +373,24 @@ class SignaturePacket {
 
         break;
       }
-      case 4:
+      case enums.signatureSubpacket.exportableCertification:
         // Exportable Certification
         this.exportable = bytes[mypos++] === 1;
         break;
-      case 5:
+      case enums.signatureSubpacket.trustSignature:
         // Trust Signature
         this.trustLevel = bytes[mypos++];
         this.trustAmount = bytes[mypos++];
         break;
-      case 6:
+      case enums.signatureSubpacket.regularExpression:
         // Regular Expression
         this.regularExpression = bytes[mypos];
         break;
-      case 7:
+      case enums.signatureSubpacket.revocable:
         // Revocable
         this.revocable = bytes[mypos++] === 1;
         break;
-      case 9: {
+      case enums.signatureSubpacket.keyExpirationTime: {
         // Key Expiration Time in seconds
         const seconds = util.readNumber(bytes.subarray(mypos, bytes.length));
 
@@ -410,11 +399,11 @@ class SignaturePacket {
 
         break;
       }
-      case 11:
+      case enums.signatureSubpacket.preferredSymmetricAlgorithms:
         // Preferred Symmetric Algorithms
-        readArray('preferredSymmetricAlgorithms', bytes.subarray(mypos, bytes.length));
+        this.preferredSymmetricAlgorithms = [...bytes.subarray(mypos, bytes.length)];
         break;
-      case 12:
+      case enums.signatureSubpacket.revocationKey:
         // Revocation Key
         // (1 octet of class, 1 octet of public-key algorithm ID, 20
         // octets of
@@ -424,12 +413,12 @@ class SignaturePacket {
         this.revocationKeyFingerprint = bytes.subarray(mypos, mypos + 20);
         break;
 
-      case 16:
+      case enums.signatureSubpacket.issuer:
         // Issuer
         this.issuerKeyID.read(bytes.subarray(mypos, bytes.length));
         break;
 
-      case 20: {
+      case enums.signatureSubpacket.notationData: {
         // Notation Data
         const humanReadable = !!(bytes[mypos] & 0x80);
 
@@ -450,48 +439,48 @@ class SignaturePacket {
         }
         break;
       }
-      case 21:
+      case enums.signatureSubpacket.preferredHashAlgorithms:
         // Preferred Hash Algorithms
-        readArray('preferredHashAlgorithms', bytes.subarray(mypos, bytes.length));
+        this.preferredHashAlgorithms = [...bytes.subarray(mypos, bytes.length)];
         break;
-      case 22:
+      case enums.signatureSubpacket.preferredCompressionAlgorithms:
         // Preferred Compression Algorithms
-        readArray('preferredCompressionAlgorithms', bytes.subarray(mypos, bytes.length));
+        this.preferredCompressionAlgorithms = [...bytes.subarray(mypos, bytes.length)];
         break;
-      case 23:
+      case enums.signatureSubpacket.keyServerPreferences:
         // Key Server Preferences
-        readArray('keyServerPreferences', bytes.subarray(mypos, bytes.length));
+        this.keyServerPreferences = [...bytes.subarray(mypos, bytes.length)];
         break;
-      case 24:
+      case enums.signatureSubpacket.preferredKeyServer:
         // Preferred Key Server
         this.preferredKeyServer = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
-      case 25:
+      case enums.signatureSubpacket.primaryUserID:
         // Primary User ID
         this.isPrimaryUserID = bytes[mypos++] !== 0;
         break;
-      case 26:
+      case enums.signatureSubpacket.policyURI:
         // Policy URI
         this.policyURI = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
-      case 27:
+      case enums.signatureSubpacket.keyFlags:
         // Key Flags
-        readArray('keyFlags', bytes.subarray(mypos, bytes.length));
+        this.keyFlags = [...bytes.subarray(mypos, bytes.length)];
         break;
-      case 28:
+      case enums.signatureSubpacket.signersUserID:
         // Signer's User ID
         this.signersUserID = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
-      case 29:
+      case enums.signatureSubpacket.reasonForRevocation:
         // Reason for Revocation
         this.reasonForRevocationFlag = bytes[mypos++];
         this.reasonForRevocationString = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
         break;
-      case 30:
+      case enums.signatureSubpacket.features:
         // Features
-        readArray('features', bytes.subarray(mypos, bytes.length));
+        this.features = [...bytes.subarray(mypos, bytes.length)];
         break;
-      case 31: {
+      case enums.signatureSubpacket.signatureTarget: {
         // Signature Target
         // (1 octet public-key algorithm, 1 octet hash algorithm, N octets hash)
         this.signatureTargetPublicKeyAlgorithm = bytes[mypos++];
@@ -502,12 +491,12 @@ class SignaturePacket {
         this.signatureTargetHash = util.uint8ArrayToString(bytes.subarray(mypos, mypos + len));
         break;
       }
-      case 32:
+      case enums.signatureSubpacket.embeddedSignature:
         // Embedded Signature
         this.embeddedSignature = new SignaturePacket();
         this.embeddedSignature.read(bytes.subarray(mypos, bytes.length));
         break;
-      case 33:
+      case enums.signatureSubpacket.issuerFingerprint:
         // Issuer Fingerprint
         this.issuerKeyVersion = bytes[mypos++];
         this.issuerFingerprint = bytes.subarray(mypos, bytes.length);
@@ -517,12 +506,12 @@ class SignaturePacket {
           this.issuerKeyID.read(this.issuerFingerprint.subarray(-8));
         }
         break;
-      case 34:
+      case enums.signatureSubpacket.preferredAEADAlgorithms:
         // Preferred AEAD Algorithms
-        readArray.call(this, 'preferredAEADAlgorithms', bytes.subarray(mypos, bytes.length));
+        this.preferredAEADAlgorithms = [...bytes.subarray(mypos, bytes.length)];
         break;
       default: {
-        const err = new Error("Unknown signature subpacket type " + type + " @:" + mypos);
+        const err = new Error(`Unknown signature subpacket type ${type}`);
         if (critical) {
           throw err;
         } else {
@@ -676,14 +665,6 @@ class SignaturePacket {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
     }
 
-    const normDate = util.normalizeDate(date);
-    if (normDate && this.created > normDate) {
-      throw new Error('Signature is in the future');
-    }
-    if (this.isExpired(date)) {
-      throw new Error('Signature is expired');
-    }
-
     let toHash;
     let hash;
     if (this.hashed) {
@@ -706,6 +687,14 @@ class SignaturePacket {
     );
     if (!verified) {
       throw new Error('Signature verification failed');
+    }
+
+    const normDate = util.normalizeDate(date);
+    if (normDate && this.created > normDate) {
+      throw new Error('Signature creation time is in the future');
+    }
+    if (this.isExpired(date)) {
+      throw new Error('Signature is expired');
     }
     if (config.rejectHashAlgorithms.has(hashAlgorithm)) {
       throw new Error('Insecure hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
