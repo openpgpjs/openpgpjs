@@ -1,6 +1,8 @@
 import {
   readKey,
   readKeys,
+  readPrivateKey,
+  readPrivateKeys,
   generate,
   reformat
 } from './factory';
@@ -12,16 +14,20 @@ import {
   createSignaturePacket
 } from './helper';
 
-import Key from './key.js';
+import PrivateKey from './private_key.js';
+import PublicKey from './public_key.js';
 
 export {
   readKey,
   readKeys,
+  readPrivateKey,
+  readPrivateKeys,
   generate,
   reformat,
   getPreferredAlgo,
   isAEADSupported,
   getPreferredHashAlgo,
   createSignaturePacket,
-  Key
+  PrivateKey,
+  PublicKey
 };

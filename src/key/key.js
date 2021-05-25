@@ -18,8 +18,6 @@
 import { armor, unarmor } from '../encoding/armor';
 import {
   PacketList,
-  PublicKeyPacket,
-  PublicSubkeyPacket,
   SignaturePacket
 } from '../packet';
 import defaultConfig from '../config';
@@ -28,12 +26,14 @@ import util from '../util';
 import User from './user';
 import SubKey from './subkey';
 import * as helper from './helper';
+import PrivateKey from './private_key';
+import PublicKey from './public_key';
 
 // A key revocation certificate can contain the following packets
 const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
 /**
- * Class that represents an OpenPGP key. Must contain a primary key.
+ * Abstract class that represents an OpenPGP key. Must contain a primary key.
  * Can contain additional subkeys, signatures, user ids, user attributes.
  * @borrows PublicKeyPacket#getKeyID as Key#getKeyID
  * @borrows PublicKeyPacket#getFingerprint as Key#getFingerprint
@@ -42,25 +42,6 @@ const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([Sig
  * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
  */
 class Key {
-  /**
-   * @param {PacketList} packetlist - The packets that form this key
-   */
-  constructor(packetlist) {
-    if (!(this instanceof Key)) {
-      return new Key(packetlist);
-    }
-    // same data as in packetlist but in structured form
-    this.keyPacket = null;
-    this.revocationSignatures = [];
-    this.directSignatures = [];
-    this.users = [];
-    this.subKeys = [];
-    this.packetlist2structure(packetlist);
-    if (!this.keyPacket) {
-      throw new Error('Invalid key: need at least key packet');
-    }
-  }
-
   get primaryKey() {
     return this.keyPacket;
   }
@@ -68,19 +49,24 @@ class Key {
   /**
    * Transforms packetlist to structured key data
    * @param {PacketList} packetlist - The packets that form a key
+   * @param {Set<enums.packet>} disallowedPackets - disallowed packet tags
    */
-  packetlist2structure(packetlist) {
+  packetListToStructure(packetlist, disallowedPackets = new Set()) {
     let user;
     let primaryKeyID;
     let subKey;
-    for (let i = 0; i < packetlist.length; i++) {
-      switch (packetlist[i].constructor.tag) {
+    for (const packet of packetlist) {
+      const tag = packet.constructor.tag;
+      if (disallowedPackets.has(tag)) {
+        throw new Error(`Unexpected packet type: ${tag}`);
+      }
+      switch (tag) {
         case enums.packet.publicKey:
         case enums.packet.secretKey:
           if (this.keyPacket) {
             throw new Error('Key block contains multiple keys');
           }
-          this.keyPacket = packetlist[i];
+          this.keyPacket = packet;
           primaryKeyID = this.getKeyID();
           if (!primaryKeyID) {
             throw new Error('Missing Key ID');
@@ -88,17 +74,17 @@ class Key {
           break;
         case enums.packet.userID:
         case enums.packet.userAttribute:
-          user = new User(packetlist[i]);
+          user = new User(packet);
           this.users.push(user);
           break;
         case enums.packet.publicSubkey:
         case enums.packet.secretSubkey:
           user = null;
-          subKey = new SubKey(packetlist[i]);
+          subKey = new SubKey(packet);
           this.subKeys.push(subKey);
           break;
         case enums.packet.signature:
-          switch (packetlist[i].signatureType) {
+          switch (packet.signatureType) {
             case enums.signature.certGeneric:
             case enums.signature.certPersona:
             case enums.signature.certCasual:
@@ -107,38 +93,38 @@ class Key {
                 util.printDebug('Dropping certification signatures without preceding user packet');
                 continue;
               }
-              if (packetlist[i].issuerKeyID.equals(primaryKeyID)) {
-                user.selfCertifications.push(packetlist[i]);
+              if (packet.issuerKeyID.equals(primaryKeyID)) {
+                user.selfCertifications.push(packet);
               } else {
-                user.otherCertifications.push(packetlist[i]);
+                user.otherCertifications.push(packet);
               }
               break;
             case enums.signature.certRevocation:
               if (user) {
-                user.revocationSignatures.push(packetlist[i]);
+                user.revocationSignatures.push(packet);
               } else {
-                this.directSignatures.push(packetlist[i]);
+                this.directSignatures.push(packet);
               }
               break;
             case enums.signature.key:
-              this.directSignatures.push(packetlist[i]);
+              this.directSignatures.push(packet);
               break;
             case enums.signature.subkeyBinding:
               if (!subKey) {
                 util.printDebug('Dropping subkey binding signature without preceding subkey packet');
                 continue;
               }
-              subKey.bindingSignatures.push(packetlist[i]);
+              subKey.bindingSignatures.push(packet);
               break;
             case enums.signature.keyRevocation:
-              this.revocationSignatures.push(packetlist[i]);
+              this.revocationSignatures.push(packet);
               break;
             case enums.signature.subkeyRevocation:
               if (!subKey) {
                 util.printDebug('Dropping subkey revocation signature without preceding subkey packet');
                 continue;
               }
-              subKey.revocationSignatures.push(packetlist[i]);
+              subKey.revocationSignatures.push(packet);
               break;
           }
           break;
@@ -164,10 +150,9 @@ class Key {
    * Clones the key object
    * @param {Boolean} [deep=false] Whether to return a deep clone
    * @returns {Promise<Key>} Clone of the key.
-   * @async
    */
-  async clone(deep = false) {
-    const key = new Key(this.toPacketList());
+  clone(deep = false) {
+    const key = new this.constructor(this.toPacketList());
     if (deep) {
       key.getKeys().forEach(k => {
         // shallow clone the key packets
@@ -233,48 +218,6 @@ class Key {
   }
 
   /**
-   * Returns true if this is a public key
-   * @returns {Boolean}
-   */
-  isPublic() {
-    return this.keyPacket.constructor.tag === enums.packet.publicKey;
-  }
-
-  /**
-   * Returns true if this is a private key
-   * @returns {Boolean}
-   */
-  isPrivate() {
-    return this.keyPacket.constructor.tag === enums.packet.secretKey;
-  }
-
-  /**
-   * Returns key as public key (shallow copy)
-   * @returns {Key} New public Key
-   */
-  toPublic() {
-    const packetlist = new PacketList();
-    const keyPackets = this.toPacketList();
-    for (const keyPacket of keyPackets) {
-      switch (keyPacket.constructor.tag) {
-        case enums.packet.secretKey: {
-          const pubKeyPacket = PublicKeyPacket.fromSecretKeyPacket(keyPacket);
-          packetlist.push(pubKeyPacket);
-          break;
-        }
-        case enums.packet.secretSubkey: {
-          const pubSubkeyPacket = PublicSubkeyPacket.fromSecretSubkeyPacket(keyPacket);
-          packetlist.push(pubSubkeyPacket);
-          break;
-        }
-        default:
-          packetlist.push(keyPacket);
-      }
-    }
-    return new Key(packetlist);
-  }
-
-  /**
    * Returns binary encoded key
    * @returns {Uint8Array} Binary key.
    */
@@ -283,22 +226,13 @@ class Key {
   }
 
   /**
-   * Returns ASCII armored text of key
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {ReadableStream<String>} ASCII armor.
-   */
-  armor(config = defaultConfig) {
-    const type = this.isPublic() ? enums.armor.publicKey : enums.armor.privateKey;
-    return armor(type, this.toPacketList().write(), undefined, undefined, undefined, config);
-  }
-
-  /**
    * Returns last created key or key by given keyID that is available for signing and verification
    * @param  {module:type/keyid~KeyID} keyID, optional
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param  {Object} userID, optional user ID
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey|null>} Key or null if no signing key has been found.
+   * @returns {Promise<Key|SubKey>} signing key
+   * @throws if no valid signing key was found
    * @async
    */
   async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
@@ -351,7 +285,8 @@ class Key {
    * @param  {Date}              date, optional
    * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey|null>} Key or null if no encryption key has been found.
+   * @returns {Promise<Key|SubKey>} encryption key
+   * @throws if no valid encryption key was found
    * @async
    */
   async getEncryptionKey(keyID, date = new Date(), userID = {}, config = defaultConfig) {
@@ -388,106 +323,6 @@ class Key {
       exception = e;
     }
     throw util.wrapError('Could not find valid encryption key packet in key ' + this.getKeyID().toHex(), exception);
-  }
-
-  /**
-   * Returns all keys that are available for decryption, matching the keyID when given
-   * This is useful to retrieve keys for session key decryption
-   * @param  {module:type/keyid~KeyID} keyID, optional
-   * @param  {Date}              date, optional
-   * @param  {String}            userID, optional
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<Key|SubKey>>} Array of decryption keys.
-   * @async
-   */
-  async getDecryptionKeys(keyID, date = new Date(), userID = {}, config = defaultConfig) {
-    const primaryKey = this.keyPacket;
-    const keys = [];
-    for (let i = 0; i < this.subKeys.length; i++) {
-      if (!keyID || this.subKeys[i].getKeyID().equals(keyID, true)) {
-        try {
-          const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
-            keys.push(this.subKeys[i]);
-          }
-        } catch (e) {}
-      }
-    }
-
-    // evaluate primary key
-    const primaryUser = await this.getPrimaryUser(date, userID, config);
-    if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) &&
-        helper.isValidDecryptionKeyPacket(primaryUser.selfCertification, config)) {
-      keys.push(this);
-    }
-
-    return keys;
-  }
-
-  /**
-   * Returns true if the primary key or any subkey is decrypted.
-   * A dummy key is considered encrypted.
-   */
-  isDecrypted() {
-    return this.getKeys().some(({ keyPacket }) => keyPacket.isDecrypted());
-  }
-
-  /**
-   * Check whether the private and public primary key parameters correspond
-   * Together with verification of binding signatures, this guarantees key integrity
-   * In case of gnu-dummy primary key, it is enough to validate any signing subkeys
-   *   otherwise all encryption subkeys are validated
-   * If only gnu-dummy keys are found, we cannot properly validate so we throw an error
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @throws {Error} if validation was not successful and the key cannot be trusted
-   * @async
-   */
-  async validate(config = defaultConfig) {
-    if (!this.isPrivate()) {
-      throw new Error("Cannot validate a public key");
-    }
-
-    let signingKeyPacket;
-    if (!this.primaryKey.isDummy()) {
-      signingKeyPacket = this.primaryKey;
-    } else {
-      /**
-       * It is enough to validate any signing keys
-       * since its binding signatures are also checked
-       */
-      const signingKey = await this.getSigningKey(null, null, undefined, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 });
-      // This could again be a dummy key
-      if (signingKey && !signingKey.keyPacket.isDummy()) {
-        signingKeyPacket = signingKey.keyPacket;
-      }
-    }
-
-    if (signingKeyPacket) {
-      return signingKeyPacket.validate();
-    } else {
-      const keys = this.getKeys();
-      const allDummies = keys.map(key => key.keyPacket.isDummy()).every(Boolean);
-      if (allDummies) {
-        throw new Error("Cannot validate an all-gnu-dummy key");
-      }
-
-      return Promise.all(keys.map(async key => key.keyPacket.validate()));
-    }
-  }
-
-  /**
-   * Clear private key parameters
-   */
-  clearPrivateParams() {
-    if (!this.isPrivate()) {
-      throw new Error("Can't clear private parameters of a public key");
-    }
-    this.getKeys().forEach(({ keyPacket }) => {
-      if (keyPacket.isDecrypted()) {
-        keyPacket.clearPrivateParams();
-      }
-    });
   }
 
   /**
@@ -629,97 +464,74 @@ class Key {
    * users, subkeys, certificates are merged into the destination key,
    * duplicates and expired signatures are ignored.
    *
-   * If the specified key is a private key and the destination key is public,
-   * the destination key is transformed to a private key.
-   * @param {Key} key - Source key to merge
+   * If the source key is a private key and the destination key is public,
+   * a private key is returned.
+   * @param {Key} sourceKey - Source key to merge
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<undefined>}
+   * @returns {Promise<Key>} updated key
    * @async
    */
-  async update(key, config = defaultConfig) {
-    if (!this.hasSameFingerprintAs(key)) {
-      throw new Error('Key update method: fingerprints of keys not equal');
+  async update(sourceKey, config = defaultConfig) {
+    if (!this.hasSameFingerprintAs(sourceKey)) {
+      throw new Error('Primary key fingerprints must be equal to update the key');
     }
-    if (this.isPublic() && key.isPrivate()) {
+    if (this.isPublic() && sourceKey.isPrivate()) {
       // check for equal subkey packets
-      const equal = (this.subKeys.length === key.subKeys.length) &&
+      const equal = (this.subKeys.length === sourceKey.subKeys.length) &&
             (this.subKeys.every(destSubKey => {
-              return key.subKeys.some(srcSubKey => {
+              return sourceKey.subKeys.some(srcSubKey => {
                 return destSubKey.hasSameFingerprintAs(srcSubKey);
               });
             }));
       if (!equal) {
-        throw new Error('Cannot update public key with private key if subkey mismatch');
+        throw new Error('Cannot update public key with private key if subkeys mismatch');
       }
-      this.keyPacket = key.keyPacket;
+
+      return sourceKey.update(this, config);
     }
+    // from here on, either:
+    // - destination key is private, source key is public
+    // - the keys are of the same type
+    // hence we don't need to convert the destination key type
+    const updatedKey = this.clone();
     // revocation signatures
-    await helper.mergeSignatures(key, this, 'revocationSignatures', srcRevSig => {
-      return helper.isDataRevoked(this.keyPacket, enums.signature.keyRevocation, this, [srcRevSig], null, key.keyPacket, undefined, config);
+    await helper.mergeSignatures(sourceKey, updatedKey, 'revocationSignatures', srcRevSig => {
+      return helper.isDataRevoked(updatedKey.keyPacket, enums.signature.keyRevocation, updatedKey, [srcRevSig], null, sourceKey.keyPacket, undefined, config);
     });
     // direct signatures
-    await helper.mergeSignatures(key, this, 'directSignatures');
-    // TODO replace when Promise.some or Promise.any are implemented
-    // users
-    await Promise.all(key.users.map(async srcUser => {
-      let found = false;
-      await Promise.all(this.users.map(async dstUser => {
-        if ((srcUser.userID && dstUser.userID &&
-              (srcUser.userID.userID === dstUser.userID.userID)) ||
-            (srcUser.userAttribute && (srcUser.userAttribute.equals(dstUser.userAttribute)))) {
-          await dstUser.update(srcUser, this.keyPacket, config);
-          found = true;
-        }
-      }));
-      if (!found) {
-        this.users.push(srcUser);
+    await helper.mergeSignatures(sourceKey, updatedKey, 'directSignatures');
+    // update users
+    await Promise.all(sourceKey.users.map(async srcUser => {
+      // multiple users with the same ID/attribute are not explicitly disallowed by the spec
+      // hence we support them, just in case
+      const usersToUpdate = updatedKey.users.filter(dstUser => (
+        (srcUser.userID && srcUser.userID.equals(dstUser.userID)) ||
+        (srcUser.userAttribute && srcUser.userAttribute.equals(dstUser.userAttribute))
+      ));
+      if (usersToUpdate.length > 0) {
+        await Promise.all(
+          usersToUpdate.map(userToUpdate => userToUpdate.update(srcUser, updatedKey.keyPacket, config))
+        );
+      } else {
+        updatedKey.users.push(srcUser);
       }
     }));
-    // TODO replace when Promise.some or Promise.any are implemented
-    // subkeys
-    await Promise.all(key.subKeys.map(async srcSubKey => {
-      let found = false;
-      await Promise.all(this.subKeys.map(async dstSubKey => {
-        if (dstSubKey.hasSameFingerprintAs(srcSubKey)) {
-          await dstSubKey.update(srcSubKey, this.keyPacket, config);
-          found = true;
-        }
-      }));
-      if (!found) {
-        this.subKeys.push(srcSubKey);
+    // update subkeys
+    await Promise.all(sourceKey.subKeys.map(async srcSubkey => {
+      // multiple subkeys with same fingerprint might be preset
+      const subkeysToUpdate = updatedKey.subKeys.filter(dstSubkey => (
+        dstSubkey.hasSameFingerprintAs(srcSubkey)
+      ));
+      if (subkeysToUpdate.length > 0) {
+        await Promise.all(
+          subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, updatedKey.keyPacket, config))
+        );
+      } else {
+        updatedKey.subKeys.push(srcSubkey);
       }
     }));
-  }
 
-  /**
-   * Revokes the key
-   * @param {Object} reasonForRevocation - optional, object indicating the reason for revocation
-   * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
-   * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
-   * @param {Date} date - optional, override the creationtime of the revocation signature
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New key with revocation signature.
-   * @async
-   */
-  async revoke(
-    {
-      flag: reasonForRevocationFlag = enums.reasonForRevocation.noReason,
-      string: reasonForRevocationString = ''
-    } = {},
-    date = new Date(),
-    config = defaultConfig
-  ) {
-    if (this.isPublic()) {
-      throw new Error('Need private key for revoking');
-    }
-    const dataToSign = { key: this.keyPacket };
-    const key = await this.clone();
-    key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, this.keyPacket, {
-      signatureType: enums.signature.keyRevocation,
-      reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
-      reasonForRevocationString
-    }, date, undefined, undefined, config));
-    return key;
+    return updatedKey;
   }
 
   /**
@@ -744,7 +556,7 @@ class Key {
    * if it is a valid revocation signature.
    * @param {String} revocationCertificate - armored revocation certificate
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New revoked key.
+   * @returns {Promise<Key>} Revoked key.
    * @async
    */
   async applyRevocationCertificate(revocationCertificate, config = defaultConfig) {
@@ -765,38 +577,38 @@ class Key {
     } catch (e) {
       throw util.wrapError('Could not verify revocation signature', e);
     }
-    const key = await this.clone();
+    const key = this.clone();
     key.revocationSignatures.push(revocationSignature);
     return key;
   }
 
   /**
    * Signs primary user of key
-   * @param {Array<Key>} privateKeys - decrypted private keys for signing
+   * @param {Array<PrivateKey>} privateKeys - decrypted private keys for signing
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New public key with new certificate signature.
+   * @returns {Promise<Key>} Key with new certificate signature.
    * @async
    */
   async signPrimaryUser(privateKeys, date, userID, config = defaultConfig) {
     const { index, user } = await this.getPrimaryUser(date, userID, config);
     const userSign = await user.sign(this.keyPacket, privateKeys, config);
-    const key = await this.clone();
+    const key = this.clone();
     key.users[index] = userSign;
     return key;
   }
 
   /**
    * Signs all users of key
-   * @param {Array<Key>} privateKeys - decrypted private keys for signing
+   * @param {Array<PrivateKey>} privateKeys - decrypted private keys for signing
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key>} New public key with new certificate signature.
+   * @returns {Promise<Key>} Key with new certificate signature.
    * @async
    */
   async signAllUsers(privateKeys, config = defaultConfig) {
     const that = this;
-    const key = await this.clone();
+    const key = this.clone();
     key.users = await Promise.all(this.users.map(function(user) {
       return user.sign(that.keyPacket, privateKeys, config);
     }));
@@ -854,49 +666,6 @@ class Key {
     }));
     return results;
   }
-
-  /**
-   * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
-   * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
-   * @param {ecc|rsa} options.type       The subkey algorithm: ECC or RSA
-   * @param {String}  options.curve      (optional) Elliptic curve for ECC keys
-   * @param {Integer} options.rsaBits    (optional) Number of bits for RSA subkeys
-   * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
-   * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
-   * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false
-   * @param {Object}  options.config     (optional) custom configuration settings to overwrite those in [config]{@link module:config}
-   * @returns {Promise<Key>}
-   * @async
-   */
-  async addSubkey(options = {}) {
-    const config = { ...defaultConfig, ...options.config };
-    if (!this.isPrivate()) {
-      throw new Error("Cannot add a subkey to a public key");
-    }
-    if (options.passphrase) {
-      throw new Error("Subkey could not be encrypted here, please encrypt whole key");
-    }
-    if (options.rsaBits < config.minRSABits) {
-      throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${options.rsaBits}`);
-    }
-    const secretKeyPacket = this.primaryKey;
-    if (secretKeyPacket.isDummy()) {
-      throw new Error("Cannot add subkey to gnu-dummy primary key");
-    }
-    if (!secretKeyPacket.isDecrypted()) {
-      throw new Error("Key is not decrypted");
-    }
-    const defaultOptions = secretKeyPacket.getAlgorithmInfo();
-    defaultOptions.type = defaultOptions.curve ? 'ecc' : 'rsa'; // DSA keys default to RSA
-    defaultOptions.rsaBits = defaultOptions.bits || 4096;
-    defaultOptions.curve = defaultOptions.curve || 'curve25519';
-    options = helper.sanitizeKeyOptions(options, defaultOptions);
-    const keyPacket = await helper.generateSecretSubkey(options);
-    const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options, config);
-    const packetList = this.toPacketList();
-    packetList.push(keyPacket, bindingSignature);
-    return new Key(packetList);
-  }
 }
 
 ['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
@@ -906,3 +675,20 @@ class Key {
 
 export default Key;
 
+/**
+ * Creates a PublicKey or PrivateKey depending on the packetlist in input
+ * @param {PacketList} - packets to parse
+ * @return {Key} parsed key
+ * @throws if no key packet was found
+ */
+export function createKey(packetlist) {
+  for (const packet of packetlist) {
+    switch (packet.constructor.tag) {
+      case enums.packet.secretKey:
+        return new PrivateKey(packetlist);
+      case enums.packet.publicKey:
+        return new PublicKey(packetlist);
+    }
+  }
+  throw new Error('No key packet found');
+}

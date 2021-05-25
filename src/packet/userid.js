@@ -95,6 +95,10 @@ class UserIDPacket {
   write() {
     return util.encodeUTF8(this.userID);
   }
+
+  equals(otherUserID) {
+    return otherUserID && otherUserID.userID === this.userID;
+  }
 }
 
 export default UserIDPacket;

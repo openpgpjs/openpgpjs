@@ -19,9 +19,6 @@ import defaultConfig from '../config';
  */
 class SubKey {
   constructor(subKeyPacket) {
-    if (!(this instanceof SubKey)) {
-      return new SubKey(subKeyPacket);
-    }
     this.keyPacket = subKeyPacket;
     this.bindingSignatures = [];
     this.revocationSignatures = [];

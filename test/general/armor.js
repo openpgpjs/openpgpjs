@@ -315,7 +315,7 @@ module.exports = () => describe("ASCII armor", function() {
     ].join('\t \r\n');
 
     const result = await openpgp.readKey({ armoredKey: privKey });
-    expect(result).to.be.an.instanceof(openpgp.Key);
+    expect(result).to.be.an.instanceof(openpgp.PrivateKey);
   });
 
   it('Do not filter blank lines after header', async function () {

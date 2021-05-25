@@ -13,9 +13,6 @@ import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper'
  */
 class User {
   constructor(userPacket) {
-    if (!(this instanceof User)) {
-      return new User(userPacket);
-    }
     this.userID = userPacket.constructor.tag === enums.packet.userID ? userPacket : null;
     this.userAttribute = userPacket.constructor.tag === enums.packet.userAttribute ? userPacket : null;
     this.selfCertifications = [];

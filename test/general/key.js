@@ -2891,7 +2891,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 Key', async function() {
     const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
   });
@@ -2899,7 +2899,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime expired V4 Key', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: expiredKey });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime.toISOString()).to.be.equal('1970-01-01T00:22:18.000Z');
   });
@@ -2907,7 +2907,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 SubKey', async function() {
     const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.subKeys[0].getExpirationTime(pubKey.primaryKey);
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
   });
@@ -2915,7 +2915,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 Key with capabilities', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     pubKey.users[0].selfCertifications[0].keyFlags = [1];
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime).to.equal(Infinity);
@@ -2926,7 +2926,7 @@ module.exports = () => describe('Key', function() {
   it('Method getExpirationTime V4 Key with capabilities - capable primary key', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
     expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.Key);
+    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
     const expirationTime = await pubKey.getExpirationTime();
     expect(expirationTime).to.equal(Infinity);
     const encryptExpirationTime = await pubKey.getExpirationTime('encrypt_sign');
@@ -3088,9 +3088,7 @@ module.exports = () => describe('Key', function() {
 
   it('update() - throw error if fingerprints not equal', async function() {
     const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
-    await expect(keys[0].update.bind(
-      keys[0], keys[1]
-    )()).to.be.rejectedWith('Key update method: fingerprints of keys not equal');
+    await expect(keys[0].update(keys[1])).to.be.rejectedWith(/Primary key fingerprints must be equal/);
   });
 
   it('update() - merge revocation signatures', async function() {
@@ -3098,8 +3096,8 @@ module.exports = () => describe('Key', function() {
     const dest = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
     expect(source.revocationSignatures).to.exist;
     dest.revocationSignatures = [];
-    return dest.update(source).then(() => {
-      expect(dest.revocationSignatures[0]).to.exist.and.be.an.instanceof(openpgp.SignaturePacket);
+    return dest.update(source).then(updated => {
+      expect(updated.revocationSignatures[0]).to.exist.and.be.an.instanceof(openpgp.SignaturePacket);
     });
   });
 
@@ -3108,9 +3106,9 @@ module.exports = () => describe('Key', function() {
     const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.users[1]).to.exist;
     dest.users.pop();
-    return dest.update(source).then(() => {
-      expect(dest.users[1]).to.exist;
-      expect(dest.users[1].userID).to.equal(source.users[1].userID);
+    return dest.update(source).then(updated => {
+      expect(updated.users[1]).to.exist;
+      expect(updated.users[1].userID).to.equal(source.users[1].userID);
     });
   });
 
@@ -3121,11 +3119,11 @@ module.exports = () => describe('Key', function() {
     expect(source.users[1].revocationSignatures).to.exist;
     dest.users[1].otherCertifications = [];
     dest.users[1].revocationSignatures.pop();
-    return dest.update(source).then(() => {
-      expect(dest.users[1].otherCertifications).to.exist.and.to.have.length(1);
-      expect(dest.users[1].otherCertifications[0].signature).to.equal(source.users[1].otherCertifications[0].signature);
-      expect(dest.users[1].revocationSignatures).to.exist.and.to.have.length(2);
-      expect(dest.users[1].revocationSignatures[1].signature).to.equal(source.users[1].revocationSignatures[1].signature);
+    return dest.update(source).then(updated => {
+      expect(updated.users[1].otherCertifications).to.exist.and.to.have.length(1);
+      expect(updated.users[1].otherCertifications[0].signature).to.equal(source.users[1].otherCertifications[0].signature);
+      expect(updated.users[1].revocationSignatures).to.exist.and.to.have.length(2);
+      expect(updated.users[1].revocationSignatures[1].signature).to.equal(source.users[1].revocationSignatures[1].signature);
     });
   });
 
@@ -3134,10 +3132,10 @@ module.exports = () => describe('Key', function() {
     const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.subKeys[1]).to.exist;
     dest.subKeys.pop();
-    await dest.update(source);
-    expect(dest.subKeys[1]).to.exist;
+    const updated = await dest.update(source);
+    expect(updated.subKeys[1]).to.exist;
     expect(
-      dest.subKeys[1].getKeyID().toHex()
+      updated.subKeys[1].getKeyID().toHex()
     ).to.equal(
       source.subKeys[1].getKeyID().toHex()
     );
@@ -3148,9 +3146,9 @@ module.exports = () => describe('Key', function() {
     const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.subKeys[0].revocationSignatures).to.exist;
     dest.subKeys[0].revocationSignatures = [];
-    return dest.update(source).then(() => {
-      expect(dest.subKeys[0].revocationSignatures).to.exist;
-      expect(dest.subKeys[0].revocationSignatures[0].signature).to.equal(dest.subKeys[0].revocationSignatures[0].signature);
+    return dest.update(source).then(updated => {
+      expect(updated.subKeys[0].revocationSignatures).to.exist;
+      expect(updated.subKeys[0].revocationSignatures[0].signature).to.equal(updated.subKeys[0].revocationSignatures[0].signature);
     });
   });
 
@@ -3158,16 +3156,16 @@ module.exports = () => describe('Key', function() {
     const source = await openpgp.readKey({ armoredKey: priv_key_rsa });
     const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(dest.isPublic()).to.be.true;
-    return dest.update(source).then(async () => {
-      expect(dest.isPrivate()).to.be.true;
+    return dest.update(source).then(async updated => {
+      expect(updated.isPrivate()).to.be.true;
       return Promise.all([
-        dest.verifyPrimaryKey().then(async result => {
+        updated.verifyPrimaryKey().then(async result => {
           await expect(source.verifyPrimaryKey()).to.eventually.equal(result);
         }),
-        dest.users[0].verify(dest.primaryKey).then(async result => {
+        updated.users[0].verify(updated.primaryKey).then(async result => {
           await expect(source.users[0].verify(source.primaryKey)).to.eventually.equal(result);
         }),
-        dest.subKeys[0].verify(dest.primaryKey).then(async result => {
+        updated.subKeys[0].verify(updated.primaryKey).then(async result => {
           await expect(source.subKeys[0].verify(source.primaryKey)).to.eventually.deep.equal(result);
         })
       ]);
@@ -3181,19 +3179,19 @@ module.exports = () => describe('Key', function() {
     dest.subKeys = [];
     expect(dest.isPublic()).to.be.true;
 
-    await dest.update(source);
-    expect(dest.isPrivate()).to.be.true;
+    const updated = await dest.update(source);
+    expect(updated.isPrivate()).to.be.true;
 
-    const { selfCertification: destCertification } = await dest.getPrimaryUser();
+    const { selfCertification: destCertification } = await updated.getPrimaryUser();
     const { selfCertification: sourceCertification } = await source.getPrimaryUser();
     destCertification.verified = null;
     sourceCertification.verified = null;
-    await dest.verifyPrimaryKey().then(async () => expect(destCertification.verified).to.be.true);
+    await updated.verifyPrimaryKey().then(async () => expect(destCertification.verified).to.be.true);
     await source.verifyPrimaryKey().then(async () => expect(sourceCertification.verified).to.be.true);
 
     destCertification.verified = null;
     sourceCertification.verified = null;
-    await dest.users[0].verify(dest.primaryKey).then(async () => expect(destCertification.verified).to.be.true);
+    await updated.users[0].verify(updated.primaryKey).then(async () => expect(destCertification.verified).to.be.true);
     await source.users[0].verify(source.primaryKey).then(async () => expect(sourceCertification.verified).to.be.true);
   });
 
@@ -3204,7 +3202,7 @@ module.exports = () => describe('Key', function() {
     expect(dest.subKeys).to.exist;
     expect(dest.isPublic()).to.be.true;
     await expect(dest.update(source))
-      .to.be.rejectedWith('Cannot update public key with private key if subkey mismatch');
+      .to.be.rejectedWith('Cannot update public key with private key if subkeys mismatch');
   });
 
   it('update() - merge subkey binding signatures', async function() {
@@ -3213,9 +3211,9 @@ module.exports = () => describe('Key', function() {
     expect(source.subKeys[0].bindingSignatures[0]).to.exist;
     await source.subKeys[0].verify(source.primaryKey);
     expect(dest.subKeys[0].bindingSignatures[0]).to.not.exist;
-    await dest.update(source);
-    expect(dest.subKeys[0].bindingSignatures[0]).to.exist;
-    await dest.subKeys[0].verify(source.primaryKey);
+    const updated = await dest.update(source);
+    expect(updated.subKeys[0].bindingSignatures[0]).to.exist;
+    await updated.subKeys[0].verify(source.primaryKey);
   });
 
   it('update() - merge multiple subkey binding signatures', async function() {
@@ -3225,10 +3223,10 @@ module.exports = () => describe('Key', function() {
     dest.subKeys[0].bindingSignatures.length = 1;
     expect((await source.subKeys[0].getExpirationTime(source.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
     expect((await dest.subKeys[0].getExpirationTime(dest.primaryKey)).toISOString()).to.equal('2018-09-07T06:03:37.000Z');
-    return dest.update(source).then(async () => {
-      expect(dest.subKeys[0].bindingSignatures.length).to.equal(1);
+    return dest.update(source).then(async updated => {
+      expect(updated.subKeys[0].bindingSignatures.length).to.equal(1);
       // destination key gets new expiration date from source key which has newer subkey binding signature
-      expect((await dest.subKeys[0].getExpirationTime(dest.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
+      expect((await updated.subKeys[0].getExpirationTime(updated.primaryKey)).toISOString()).to.equal('2015-10-18T07:41:30.000Z');
     });
   });
 
@@ -3551,10 +3549,10 @@ VYGdb3eNlV8CfoEC
     expect(key).to.exist;
     expect(updateKey).to.exist;
     expect(key.users).to.have.length(1);
-    return key.update(updateKey).then(() => {
-      expect(key.getFingerprint()).to.equal(updateKey.getFingerprint());
-      expect(key.users).to.have.length(2);
-      expect(key.users[1].userID).to.be.null;
+    return key.update(updateKey).then(updated => {
+      expect(updated.getFingerprint()).to.equal(updateKey.getFingerprint());
+      expect(updated.users).to.have.length(2);
+      expect(updated.users[1].userID).to.be.null;
     });
   });
 
