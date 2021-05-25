@@ -2899,6 +2899,11 @@ module.exports = () => describe('Key', function() {
     }
   });
 
+  it('Verify primary key with authorized revocation key in a direct-key signature', async function() {
+    const pubKey = await openpgp.readKey({ armoredKey: key_with_authorized_revocation_key_in_separate_sig });
+    await expect(pubKey.verifyPrimaryKey()).to.be.fulfilled;
+  });
+
   it('Detect that primary-key binding signature expired, after successful verification', async function() {
     const key = await openpgp.readKey({ armoredKey: keyExpiredBindingSig });
     key.subKeys[0].bindingSignatures[0].embeddedSignature.verified = true;

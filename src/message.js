@@ -712,46 +712,31 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  */
 async function createVerificationObject(signature, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
   let primaryKey;
-  let signingKey;
-  let keyError;
+  let unverifiedSigningKey;
 
   for (const key of verificationKeys) {
     const issuerKeys = key.getKeys(signature.issuerKeyID);
     if (issuerKeys.length > 0) {
       primaryKey = key;
+      unverifiedSigningKey = issuerKeys[0];
       break;
     }
   }
 
   const isOnePassSignature = signature instanceof OnePassSignaturePacket;
   const signaturePacketPromise = isOnePassSignature ? signature.correspondingSig : signature;
-  const isSignaturePacketAvailable = !util.isPromise(signaturePacketPromise);
-  if (!primaryKey) {
-    keyError = new Error(`Could not find signing key with key ID ${signature.issuerKeyID.toHex()}`);
-  } else {
-    try {
-      // We need the signature creation time to check whether the key was expired at the time of signing.
-      // If the signature packet is not available yet, we delay the check after verifying the signature
-      signingKey = await primaryKey.getSigningKey(
-        signature.issuerKeyID, isSignaturePacketAvailable ? signaturePacketPromise.created : null, undefined, config
-      );
-    } catch (e) {
-      keyError = e;
-    }
-  }
 
   const verifiedSig = {
     keyID: signature.issuerKeyID,
     verified: (async () => {
-      if (keyError) {
-        throw keyError;
+      if (!unverifiedSigningKey) {
+        throw new Error(`Could not find signing key with key ID ${signature.issuerKeyID.toHex()}`);
       }
-      await signature.verify(signingKey.keyPacket, signature.signatureType, literalDataList[0], date, detached, config);
+      await signature.verify(unverifiedSigningKey.keyPacket, signature.signatureType, literalDataList[0], date, detached, config);
       const signaturePacket = await signaturePacketPromise;
-      if (!isSignaturePacketAvailable) {
-        // check validity of key w.r.t. signature creation time, which was not available before
-        await primaryKey.getSigningKey(signingKey.getKeyID(), signaturePacket.created, undefined, config);
-      }
+      // We pass the signature creation time to check whether the key was expired at the time of signing.
+      // We check this after signature verification because for streamed one-pass signatures, the creation time is not available before
+      await primaryKey.getSigningKey(unverifiedSigningKey.getKeyID(), signaturePacket.created, undefined, config);
       return true;
     })(),
     signature: (async () => {

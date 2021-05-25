@@ -41,8 +41,6 @@ const util = {
 
   isStream: stream.isStream,
 
-  isPromise: value => value && (typeof value.then === 'function'),
-
   readNumber: function (bytes) {
     let n = 0;
     for (let i = 0; i < bytes.length; i++) {
