@@ -679,12 +679,16 @@ export default Key;
  * Creates a PublicKey or PrivateKey depending on the packetlist in input
  * @param {PacketList} - packets to parse
  * @return {Key} parsed key
+ * @throws if no key packet was found
  */
 export function createKey(packetlist) {
-  switch (packetlist[0].constructor.tag) {
-    case enums.packet.secretKey:
-      return new PrivateKey(packetlist);
-    case enums.packet.publicKey:
-      return new PublicKey(packetlist);
+  for (const packet of packetlist) {
+    switch (packet.constructor.tag) {
+      case enums.packet.secretKey:
+        return new PrivateKey(packetlist);
+      case enums.packet.publicKey:
+        return new PublicKey(packetlist);
+    }
   }
+  throw new Error('No key packet found');
 }
