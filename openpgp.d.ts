@@ -119,6 +119,7 @@ export class Signature {
 interface VerificationResult {
   keyID: KeyID;
   verified: Promise<null | boolean>;
+  valid: boolean;
   signature: Promise<Signature>;
 }
 
