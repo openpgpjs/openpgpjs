@@ -51,7 +51,7 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
       if (
         (!latestValid || signatures[i].created >= latestValid.created)
       ) {
-        signatures[i].verified || await signatures[i].verify(publicKey, signatureType, dataToVerify, date, undefined, config);
+        await signatures[i].verify(publicKey, signatureType, dataToVerify, date, undefined, config);
         latestValid = signatures[i];
       }
     } catch (e) {
@@ -268,7 +268,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // `verifyAllCertifications`.)
         !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
-        revocationSignature.verified || await revocationSignature.verify(
+        await revocationSignature.verify(
           key, signatureType, dataToVerify, config.revocationsExpire ? date : null, false, config
         );
 

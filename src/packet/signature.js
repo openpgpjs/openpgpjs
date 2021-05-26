@@ -660,33 +660,41 @@ class SignaturePacket {
   async verify(key, signatureType, data, date = new Date(), detached = false, config = defaultConfig) {
     const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
-
+    if (!this.issuerKeyID.equals(key.getKeyID())) {
+      throw new Error('Signature was not issued by the given public key');
+    }
     if (publicKeyAlgorithm !== enums.write(enums.publicKey, key.algorithm)) {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
     }
 
-    let toHash;
-    let hash;
-    if (this.hashed) {
-      hash = await this.hashed;
-    } else {
-      toHash = this.toHash(signatureType, data, detached);
-      hash = await this.hash(signatureType, data, toHash);
-    }
-    hash = await stream.readToEnd(hash);
-    if (this.signedHashValue[0] !== hash[0] ||
-        this.signedHashValue[1] !== hash[1]) {
-      throw new Error('Message digest did not match');
-    }
+    const isMessageSignature = signatureType === enums.signature.binary || signatureType === enums.signature.text;
+    // Cryptographic validity is cached after one successful verification.
+    // However, for message signatures, we always re-verify, since the passed `data` can change
+    const skipVerify = this.verified && !isMessageSignature;
+    if (!skipVerify) {
+      let toHash;
+      let hash;
+      if (this.hashed) {
+        hash = await this.hashed;
+      } else {
+        toHash = this.toHash(signatureType, data, detached);
+        hash = await this.hash(signatureType, data, toHash);
+      }
+      hash = await stream.readToEnd(hash);
+      if (this.signedHashValue[0] !== hash[0] ||
+          this.signedHashValue[1] !== hash[1]) {
+        throw new Error('Invalid signature: Message digest did not match');
+      }
 
-    this.params = await this.params;
+      this.params = await this.params;
 
-    const verified = await crypto.signature.verify(
-      publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
-      toHash, hash
-    );
-    if (!verified) {
-      throw new Error('Signature verification failed');
+      const verified = await crypto.signature.verify(
+        publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
+        toHash, hash
+      );
+      if (!verified) {
+        throw new Error('Signature verification failed');
+      }
     }
 
     const normDate = util.normalizeDate(date);

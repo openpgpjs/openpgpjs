@@ -139,7 +139,7 @@ class SubKey {
         }
       }
       try {
-        srcBindSig.verified || await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, date, undefined, config);
+        await srcBindSig.verify(primaryKey, enums.signature.subkeyBinding, dataToVerify, date, undefined, config);
         return true;
       } catch (e) {
         return false;

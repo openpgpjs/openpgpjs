@@ -1532,6 +1532,33 @@ aOU=
           stream.readToEnd(streamedData)
         ).to.be.eventually.rejectedWith(/Could not find signing key/);
       });
+
+      it('verify should fail if the signature is re-used with a different message', async function () {
+        const privateKey = await openpgp.decryptKey({
+          privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+          passphrase
+        });
+
+        const message = await createMessage({ text });
+        const armoredSignature = await openpgp.sign({
+          message,
+          privateKeys: privateKey,
+          detached: true
+        });
+        const { signatures } = await openpgp.verify({
+          message,
+          signature: await openpgp.readSignature({ armoredSignature }),
+          publicKeys: privateKey.toPublic()
+        });
+        expect(await signatures[0].verified).to.be.true;
+        // pass a different message
+        await expect(openpgp.verify({
+          message: await createMessage({ text: 'a different message' }),
+          signature: await openpgp.readSignature({ armoredSignature }),
+          publicKeys: privateKey.toPublic(),
+          expectSigned: true
+        })).to.be.rejectedWith(/Message digest did not match/);
+      });
     }
   });
 

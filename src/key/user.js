@@ -120,7 +120,7 @@ class User {
         throw new Error('User certificate is revoked');
       }
       try {
-        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, date, undefined, config);
+        await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, date, undefined, config);
       } catch (e) {
         throw util.wrapError('User certificate is invalid', e);
       }
@@ -183,7 +183,7 @@ class User {
           throw new Error('Self-certification is revoked');
         }
         try {
-          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, undefined, config);
+          await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, undefined, config);
         } catch (e) {
           throw util.wrapError('Self-certification is invalid', e);
         }
@@ -214,7 +214,7 @@ class User {
     // self signatures
     await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
       try {
-        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, false, config);
+        await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, false, config);
         return true;
       } catch (e) {
         return false;
