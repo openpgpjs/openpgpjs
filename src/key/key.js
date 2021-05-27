@@ -380,14 +380,15 @@ class Key {
    * When `capabilities` is null, defaults to returning the expiry date of the primary key.
    * Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
    * Returns Infinity if the key doesn't expire.
-   * @param  {encrypt|sign|encrypt_sign} capabilities, optional
-   * @param  {module:type/keyid~KeyID} keyID, optional
-   * @param  {Object} userID, optional user ID
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @param  {encrypt|sign|encrypt_sign} [capabilities] - capabilities to look up
+   * @param  {module:type/keyid~KeyID} [keyID] - key ID of the specific key to check
+   * @param  {Object} [userID] - User ID to consider instead of the primary user
+   * @param  {Date} [date] - date to use for signature verification, instead of the current time
+   * @param  {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Date | Infinity | null>}
    * @async
    */
-  async getExpirationTime(capabilities, keyID, userID, config = defaultConfig) {
+  async getExpirationTime(capabilities, keyID, userID, date = new Date(), config = defaultConfig) {
     const primaryUser = await this.getPrimaryUser(null, userID, config);
     const selfCert = primaryUser.selfCertification;
     const keyExpiry = helper.getExpirationTime(this.keyPacket, selfCert);
@@ -398,7 +399,7 @@ class Key {
         await this.getEncryptionKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
         await this.getEncryptionKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!encryptKey) return null;
-      const encryptExpiry = await encryptKey.getExpirationTime(undefined, config);
+      const encryptExpiry = await encryptKey.getExpirationTime(date, config);
       if (encryptExpiry < expiry) expiry = encryptExpiry;
     }
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
@@ -406,7 +407,7 @@ class Key {
         await this.getSigningKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
         await this.getSigningKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!signKey) return null;
-      const signExpiry = await signKey.getExpirationTime(undefined, config);
+      const signExpiry = await signKey.getExpirationTime(date, config);
       if (signExpiry < expiry) expiry = signExpiry;
     }
     return expiry;
