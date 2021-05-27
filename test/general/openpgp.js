@@ -1566,7 +1566,7 @@ aOU=
   });
 
   describe('encrypt - unit tests', function() {
-    it('Does not encrypt to expired key (expiration time subpacket on a direct key signature)', async function() {
+    it('Does not encrypt to expired key (expiration time subpacket on a direct-key signature)', async function() {
       const expiredKey = await openpgp.readKey({ armoredKey: expiredPublicKeyThroughDirectSignature });
       await expect(
         openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: expiredKey })
