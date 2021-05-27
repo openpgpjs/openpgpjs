@@ -187,6 +187,7 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
 /**
  * Create signature packet
  * @param {Object} dataToSign - Contains packets to be signed
+ * @param {PrivateKey} privateKey - key to get preferences from
  * @param  {SecretKeyPacket|
  *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
  * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing

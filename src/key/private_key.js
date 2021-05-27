@@ -136,8 +136,8 @@ class PrivateKey extends PublicKey {
     }
 
     let signingKeyPacket;
-    if (!this.primaryKey.isDummy()) {
-      signingKeyPacket = this.primaryKey;
+    if (!this.keyPacket.isDummy()) {
+      signingKeyPacket = this.keyPacket;
     } else {
       /**
        * It is enough to validate any signing keys
@@ -227,7 +227,7 @@ class PrivateKey extends PublicKey {
     if (options.rsaBits < config.minRSABits) {
       throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${options.rsaBits}`);
     }
-    const secretKeyPacket = this.primaryKey;
+    const secretKeyPacket = this.keyPacket;
     if (secretKeyPacket.isDummy()) {
       throw new Error("Cannot add subkey to gnu-dummy primary key");
     }

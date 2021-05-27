@@ -24,7 +24,6 @@ export function encryptKey(options: { privateKey: PrivateKey; passphrase?: strin
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
 
 export abstract class Key {
-  private primaryKey: PublicKeyPacket | SecretKeyPacket;
   private keyPacket: PublicKeyPacket | SecretKeyPacket;
   public subKeys: SubKey[];
   public users: User[];
@@ -73,11 +72,12 @@ export class PrivateKey extends PublicKey {
 }
 
 export class SubKey {
-  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
+  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
   private keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
+  private mainKey: PublicKey;
   public bindingSignatures: SignaturePacket[];
   public revocationSignatures: SignaturePacket[];
-  public verify(primaryKey: PublicKeyPacket | SecretKeyPacket, date?: Date, config?: Config): Promise<SignaturePacket>;
+  public verify(date?: Date, config?: Config): Promise<SignaturePacket>;
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;

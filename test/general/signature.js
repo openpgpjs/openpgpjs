@@ -1449,7 +1449,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const revSig = pubKey.revocationSignatures[0];
     revSig.verified = null;
     await pubKey.revocationSignatures[0].verify(
-      pubKey.primaryKey, openpgp.enums.signature.keyRevocation, { key: pubKey.primaryKey }
+      pubKey.keyPacket, openpgp.enums.signature.keyRevocation, { key: pubKey.keyPacket }
     ).then(() => expect(revSig.verified).to.be.true);
   });
 
@@ -1459,7 +1459,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     const revSig = pubKey.subKeys[0].revocationSignatures[0];
     revSig.verified = null;
     await revSig.verify(
-      pubKey.primaryKey, openpgp.enums.signature.subkeyRevocation, { key: pubKey.primaryKey, bind: pubKey.subKeys[0].keyPacket }
+      pubKey.keyPacket, openpgp.enums.signature.subkeyRevocation, { key: pubKey.keyPacket, bind: pubKey.subKeys[0].keyPacket }
     ).then(() => expect(revSig.verified).to.be.true);
   });
 
@@ -1626,7 +1626,7 @@ iTuGu4fEU1UligAXSrZmCdE=
 
     const key = await openpgp.readKey({ armoredKey: armoredKeyWithPhoto });
     await Promise.all(key.users.map(async user => {
-      await user.verify(key.primaryKey);
+      await user.verify(key.keyPacket);
     }));
   });
 

@@ -389,12 +389,12 @@ function omnibus() {
       expect(firstKey.privateKeyArmored).to.exist;
       expect(firstKey.publicKeyArmored).to.exist;
       expect(firstKey.key).to.exist;
-      expect(firstKey.key.primaryKey).to.exist;
+      expect(firstKey.key.keyPacket).to.exist;
       expect(firstKey.key.subKeys).to.have.length(1);
       expect(firstKey.key.subKeys[0].keyPacket).to.exist;
 
       const hi = firstKey.key;
-      const primaryKey = hi.primaryKey;
+      const primaryKey = hi.keyPacket;
       const subKey = hi.subKeys[0];
       expect(hi.getAlgorithmInfo().curve).to.equal('ed25519');
       expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsa');
@@ -430,11 +430,11 @@ function omnibus() {
         const certificate = user.selfCertifications[0];
         certificate.verified = null;
         await certificate.verify(
-          bye.primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.primaryKey }
+          bye.keyPacket, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.keyPacket }
         ).then(async () => expect(certificate.verified).to.be.true);
         certificate.verified = null;
         await user.verifyCertificate(
-          bye.primaryKey, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
+          bye.keyPacket, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
         ).then(async () => expect(certificate.verified).to.be.true);
 
         return Promise.all([
@@ -444,7 +444,7 @@ function omnibus() {
             expect(hiCertificate.verified).to.be.true;
             hiCertificate.verified = null;
             return hiCertificate.verify(
-              primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.toPublic().primaryKey }
+              primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.toPublic().keyPacket }
             ).then(async () => expect(hiCertificate.verified).to.be.true);
           }),
           // Signing message

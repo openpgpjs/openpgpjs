@@ -42,10 +42,6 @@ const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([Sig
  * @borrows PublicKeyPacket#getCreationTime as Key#getCreationTime
  */
 class Key {
-  get primaryKey() {
-    return this.keyPacket;
-  }
-
   /**
    * Transforms packetlist to structured key data
    * @param {PacketList} packetlist - The packets that form a key
@@ -80,7 +76,7 @@ class Key {
         case enums.packet.publicSubkey:
         case enums.packet.secretSubkey:
           user = null;
-          subKey = new SubKey(packet);
+          subKey = new SubKey(packet, this);
           this.subKeys.push(subKey);
           break;
         case enums.packet.signature:
@@ -243,7 +239,7 @@ class Key {
     for (const subKey of subKeys) {
       if (!keyID || subKey.getKeyID().equals(keyID)) {
         try {
-          await subKey.verify(primaryKey, date, config);
+          await subKey.verify(date, config);
           const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(
             subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
@@ -301,7 +297,7 @@ class Key {
     for (const subKey of subKeys) {
       if (!keyID || subKey.getKeyID().equals(keyID)) {
         try {
-          await subKey.verify(primaryKey, date, config);
+          await subKey.verify(date, config);
           const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
           if (helper.isValidEncryptionKeyPacket(subKey.keyPacket, bindingSignature)) {
@@ -402,7 +398,7 @@ class Key {
         await this.getEncryptionKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
         await this.getEncryptionKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!encryptKey) return null;
-      const encryptExpiry = await encryptKey.getExpirationTime(this.keyPacket, undefined, config);
+      const encryptExpiry = await encryptKey.getExpirationTime(undefined, config);
       if (encryptExpiry < expiry) expiry = encryptExpiry;
     }
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
@@ -410,7 +406,7 @@ class Key {
         await this.getSigningKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
         await this.getSigningKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
       if (!signKey) return null;
-      const signExpiry = await signKey.getExpirationTime(this.keyPacket, undefined, config);
+      const signExpiry = await signKey.getExpirationTime(undefined, config);
       if (signExpiry < expiry) expiry = signExpiry;
     }
     return expiry;
@@ -538,7 +534,7 @@ class Key {
       ));
       if (subkeysToUpdate.length > 0) {
         await Promise.all(
-          subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, updatedKey.keyPacket, date, config))
+          subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, date, config))
         );
       } else {
         updatedKey.subKeys.push(srcSubkey);

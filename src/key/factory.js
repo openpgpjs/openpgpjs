@@ -94,7 +94,7 @@ export async function reformat(options, config) {
     throw new Error('Cannot reformat a public key');
   }
 
-  if (privateKey.primaryKey.isDummy()) {
+  if (privateKey.keyPacket.isDummy()) {
     throw new Error('Cannot reformat a gnu-dummy primary key');
   }
 
