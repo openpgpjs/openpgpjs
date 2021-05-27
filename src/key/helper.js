@@ -216,16 +216,17 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
  * @param {Object} source
  * @param {Object} dest
  * @param {String} attr
- * @param {Function} checkFn - optional, signature only merged if true
+ * @param {Date} [date] - date to use for signature expiration check, instead of the current time
+ * @param {(SignaturePacket) => Boolean} [checkFn] - signature only merged if true
  */
-export async function mergeSignatures(source, dest, attr, checkFn) {
+export async function mergeSignatures(source, dest, attr, date = new Date(), checkFn) {
   source = source[attr];
   if (source) {
     if (!dest[attr].length) {
       dest[attr] = source;
     } else {
       await Promise.all(source.map(async function(sourceSig) {
-        if (!sourceSig.isExpired() && (!checkFn || await checkFn(sourceSig)) &&
+        if (!sourceSig.isExpired(date) && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
               return util.equalsUint8Array(destSig.writeParams(), sourceSig.writeParams());
             })) {

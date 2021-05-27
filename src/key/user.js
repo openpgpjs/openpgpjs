@@ -212,7 +212,7 @@ class User {
       key: primaryKey
     };
     // self signatures
-    await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
+    await mergeSignatures(user, this, 'selfCertifications', date, async function(srcSelfSig) {
       try {
         await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, false, config);
         return true;
@@ -221,9 +221,9 @@ class User {
       }
     });
     // other signatures
-    await mergeSignatures(user, this, 'otherCertifications');
+    await mergeSignatures(user, this, 'otherCertifications', date);
     // revocation signatures
-    await mergeSignatures(user, this, 'revocationSignatures', function(srcRevSig) {
+    await mergeSignatures(user, this, 'revocationSignatures', date, function(srcRevSig) {
       return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig], undefined, undefined, date, config);
     });
   }

@@ -683,7 +683,7 @@ class SignaturePacket {
       hash = await stream.readToEnd(hash);
       if (this.signedHashValue[0] !== hash[0] ||
           this.signedHashValue[1] !== hash[1]) {
-        throw new Error('Invalid signature: Message digest did not match');
+        throw new Error('Signed digest did not match');
       }
 
       this.params = await this.params;
@@ -730,8 +730,7 @@ class SignaturePacket {
   isExpired(date = new Date()) {
     const normDate = util.normalizeDate(date);
     if (normDate !== null) {
-      const expirationTime = this.getExpirationTime();
-      return !(this.created <= normDate && normDate <= expirationTime);
+      return normDate > this.getExpirationTime();
     }
     return false;
   }

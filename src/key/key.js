@@ -506,11 +506,11 @@ class Key {
     // hence we don't need to convert the destination key type
     const updatedKey = this.clone();
     // revocation signatures
-    await helper.mergeSignatures(sourceKey, updatedKey, 'revocationSignatures', srcRevSig => {
+    await helper.mergeSignatures(sourceKey, updatedKey, 'revocationSignatures', date, srcRevSig => {
       return helper.isDataRevoked(updatedKey.keyPacket, enums.signature.keyRevocation, updatedKey, [srcRevSig], null, sourceKey.keyPacket, date, config);
     });
     // direct signatures
-    await helper.mergeSignatures(sourceKey, updatedKey, 'directSignatures');
+    await helper.mergeSignatures(sourceKey, updatedKey, 'directSignatures', date);
     // update users
     await Promise.all(sourceKey.users.map(async srcUser => {
       // multiple users with the same ID/attribute are not explicitly disallowed by the spec

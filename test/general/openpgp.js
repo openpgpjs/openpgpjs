@@ -1490,7 +1490,7 @@ aOU=
           signature: await openpgp.readSignature({ armoredSignature }),
           verificationKeys: privateKey.toPublic(),
           expectSigned: true
-        })).to.be.rejectedWith(/Message digest did not match/);
+        })).to.be.rejectedWith(/digest did not match/);
       });
     });
 

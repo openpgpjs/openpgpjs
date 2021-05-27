@@ -131,7 +131,7 @@ class SubKey {
     // update missing binding signatures
     const that = this;
     const dataToVerify = { key: primaryKey, bind: that.keyPacket };
-    await helper.mergeSignatures(subKey, this, 'bindingSignatures', async function(srcBindSig) {
+    await helper.mergeSignatures(subKey, this, 'bindingSignatures', date, async function(srcBindSig) {
       for (let i = 0; i < that.bindingSignatures.length; i++) {
         if (that.bindingSignatures[i].issuerKeyID.equals(srcBindSig.issuerKeyID)) {
           if (srcBindSig.created > that.bindingSignatures[i].created) {
@@ -148,7 +148,7 @@ class SubKey {
       }
     });
     // revocation signatures
-    await helper.mergeSignatures(subKey, this, 'revocationSignatures', function(srcRevSig) {
+    await helper.mergeSignatures(subKey, this, 'revocationSignatures', date, function(srcRevSig) {
       return helper.isDataRevoked(primaryKey, enums.signature.subkeyRevocation, dataToVerify, [srcRevSig], undefined, undefined, date, config);
     });
   }
