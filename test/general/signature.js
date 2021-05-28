@@ -922,7 +922,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(signature.rawNotations.length).to.equal(1);
     const notation = signature.rawNotations[0];
     expect(notation.name).to.equal('test@key.com');
-    expect(notation.value).to.deep.equal(Uint8Array.from([0x01, 0x02, 0x03]));
+    expect(notation.value).to.deep.equal(new Uint8Array([0x01, 0x02, 0x03]));
     expect(notation.humanReadable).to.equal(false);
   });
 

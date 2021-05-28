@@ -827,11 +827,11 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     expect(rawNotations.length).to.equal(2);
 
     expect(rawNotations[0].name).to.equal('test@example.com');
-    expect(rawNotations[0].value).to.deep.equal(Uint8Array.from(['2'.charCodeAt(0)]));
+    expect(rawNotations[0].value).to.deep.equal(new Uint8Array(['2'.charCodeAt(0)]));
     expect(rawNotations[0].humanReadable).to.equal(true);
 
     expect(rawNotations[1].name).to.equal('test@example.com');
-    expect(rawNotations[1].value).to.deep.equal(Uint8Array.from(['3'.charCodeAt(0)]));
+    expect(rawNotations[1].value).to.deep.equal(new Uint8Array(['3'.charCodeAt(0)]));
     expect(rawNotations[1].humanReadable).to.equal(true);
   });
 
