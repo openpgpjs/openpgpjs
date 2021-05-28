@@ -40,7 +40,7 @@ class PacketList extends Array {
   /**
    * Parses the given binary data and returns a list of packets.
    * Equivalent to calling `read` on an empty PacketList instance.
-   * @param {Uint8Array | ReadableStream<Uint8Array} bytes - binary data to parse
+   * @param {Uint8Array | ReadableStream<Uint8Array>} bytes - binary data to parse
    * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
    * @param {Object} [config] - full configuration, defaults to openpgp.config
    * @returns {PacketList} parsed list of packets
