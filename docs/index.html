@@ -62,7 +62,7 @@
 <ul>
 <li><a href="#encrypt-and-decrypt-uint8array-data-with-a-password">Encrypt and decrypt <em>Uint8Array</em> data with a password</a></li>
 <li><a href="#encrypt-and-decrypt-string-data-with-pgp-keys">Encrypt and decrypt <em>String</em> data with PGP keys</a></li>
-<li><a href="#encrypt-with-compression">Encrypt with compression</a></li>
+<li><a href="#encrypt-symmetrically-with-compression">Encrypt symmetrically with compression</a></li>
 <li><a href="#streaming-encrypt-uint8array-data-with-a-password">Streaming encrypt <em>Uint8Array</em> data with a password</a></li>
 <li><a href="#streaming-encrypt-and-decrypt-string-data-with-pgp-keys">Streaming encrypt and decrypt <em>String</em> data with PGP keys</a></li>
 <li><a href="#generate-new-key-pair">Generate new key pair</a></li>
@@ -410,7 +410,7 @@ It's possible to change that behaviour by enabling compression through the confi
 </ul>
 <h4 id="streaming-encrypt-uint8array-data-with-a-password">Streaming encrypt <em>Uint8Array</em> data with a password</h4>
 <pre class="prettyprint source lang-js"><code>(async () => {
-    const readableStream = new openpgp.stream.ReadableStream({
+    const readableStream = new ReadableStream({
         start(controller) {
             controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
             controller.close();
@@ -427,22 +427,17 @@ It's possible to change that behaviour by enabling compression through the confi
 
     // Either pipe the above stream somewhere, pass it to another function,
     // or read it manually as follows:
-    const reader = openpgp.stream.getReader(encrypted);
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        console.log('new chunk:', value); // Uint8Array
+    for await (const chunk of encrypted) {
+        console.log('new chunk:', chunk); // Uint8Array
     }
-
-    // Or, in Node.js, you can pipe the above stream as follows:
-    const nodeStream = openpgp.stream.webToNode(encrypted);
-    nodeStream.pipe(nodeWritableStream);
 })();
 </code></pre>
-<p>For more information on creating ReadableStreams, see <a href="https://developer.mozilla.org/docs/Web/API/ReadableStream/ReadableStream">the MDN Documentation on <code>new ReadableStream()</code></a>.
-For more information on reading streams using <code>openpgp.stream</code>, see the documentation of
-<a href="https://openpgpjs.org/web-stream-tools/">the web-stream-tools dependency</a>, particularly
-its <a href="https://openpgpjs.org/web-stream-tools/Reader.html">Reader class</a>.</p>
+<p>For more information on using ReadableStreams, see <a href="https://developer.mozilla.org/en-US/docs/Web/API/Streams_API">the MDN Documentation on the
+Streams API</a>.</p>
+<p>You can also pass a <a href="https://nodejs.org/api/stream.html#stream_class_stream_readable">Node.js <code>Readable</code>
+stream</a>, in
+which case OpenPGP.js will return a Node.js <code>Readable</code> stream as well, which you
+can <code>.pipe()</code> to a <code>Writable</code> stream, for example.</p>
 <h4 id="streaming-encrypt-and-decrypt-string-data-with-pgp-keys">Streaming encrypt and decrypt <em>String</em> data with PGP keys</h4>
 <pre class="prettyprint source lang-js"><code>(async () => {
     const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -460,7 +455,7 @@ its <a href="https://openpgpjs.org/web-stream-tools/Reader.html">Reader class</a
         passphrase
     });
 
-    const readableStream = new openpgp.stream.ReadableStream({
+    const readableStream = new ReadableStream({
         start(controller) {
             controller.enqueue('Hello, world!');
             controller.close();
@@ -482,7 +477,11 @@ its <a href="https://openpgpjs.org/web-stream-tools/Reader.html">Reader class</a
         publicKeys: publicKey, // for verification (optional)
         privateKeys: privateKey // for decryption
     });
-    const plaintext = await openpgp.stream.readToEnd(decrypted.data);
+    const chunks = [];
+    for await (const chunk of decrypted.data) {
+        chunks.push(chunk);
+    }
+    const plaintext = chunks.join('');
     console.log(plaintext); // 'Hello, World!'
 })();
 </code></pre>
@@ -614,7 +613,7 @@ and a subkey for encryption using Curve25519.</p>
 </code></pre>
 <h4 id="streaming-sign-and-verify-uint8array-data">Streaming sign and verify <em>Uint8Array</em> data</h4>
 <pre class="prettyprint source lang-js"><code>(async () => {
-    var readableStream = new openpgp.stream.ReadableStream({
+    var readableStream = new ReadableStream({
         start(controller) {
             controller.enqueue(new Uint8Array([0x01, 0x02, 0x03]));
             controller.close();
@@ -646,7 +645,7 @@ and a subkey for encryption using Curve25519.</p>
         publicKeys: await openpgp.readKey({ armoredKey: publicKeyArmored })   // for verification
     });
 
-    await openpgp.stream.readToEnd(verified.data);
+    for await (const chunk of verified.data) {}
     // Note: you *have* to read `verified.data` in some way or other,
     // even if you don't need it, as that is what triggers the
     // verification of the data.
@@ -687,7 +686,7 @@ and a subkey for encryption using Curve25519.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">

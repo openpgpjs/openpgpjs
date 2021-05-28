@@ -352,7 +352,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/encoding/armor.js#L357">line 357</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/encoding/armor.js#L362">line 362</a>
     </li></ul></dd>
     
 
@@ -565,7 +565,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/cleartext.js#L207">line 207</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/cleartext.js#L206">line 206</a>
     </li></ul></dd>
     
 
@@ -590,6 +590,179 @@
 
 
 
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="createKey"><span class="type-signature"></span>createKey<span class="signature">(packetlist)</span><span class="type-signature"> &rarr; {<a href="Key.html">Key</a>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Creates a PublicKey or PrivateKey depending on the packetlist in input</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>packetlist</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="PacketList.html">PacketList</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>packets to parse</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L684">line 684</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Throws:</h5>
+
+        
+
+    <div class="param-desc">
+    
+        <p>if no key packet was found</p>
+    
+    </div>
+
+
+    
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>parsed key</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="Key.html">Key</a></span>
+
+
+    </dd>
+</dl>
+
+    
 
 
 
@@ -940,7 +1113,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L848">line 848</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/message.js#L848">line 848</a>
     </li></ul></dd>
     
 
@@ -1124,16 +1297,16 @@ a session key or a password must be specified.</p>
 
         <tr>
             
-                <td class="name"><code>privateKeys</code></td>
+                <td class="name"><code>decryptionKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
             
@@ -1244,16 +1417,16 @@ a session key or a password must be specified.</p>
 
         <tr>
             
-                <td class="name"><code>publicKeys</code></td>
+                <td class="name"><code>verificationKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PublicKey.html">PublicKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
@@ -1521,7 +1694,7 @@ a session key or a password must be specified.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L307">line 307</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L308">line 308</a>
     </li></ul></dd>
     
 
@@ -1552,8 +1725,8 @@ a session key or a password must be specified.</p>
 <div class="param-desc">
     <p>Object containing decrypted and verified message in the form:</p>
 <pre><code>{
-  data: String|ReadableStream&lt;String&gt;|NodeStream, (if format was 'utf8', the default)
-  data: Uint8Array|ReadableStream&lt;Uint8Array&gt;|NodeStream, (if format was 'binary')
+  data: MaybeStream&lt;String&gt;, (if format was 'utf8', the default)
+  data: MaybeStream&lt;Uint8Array&gt;, (if format was 'binary')
   filename: String,
   signatures: [
     {
@@ -1591,7 +1764,7 @@ a session key or a password must be specified.</p>
     
 
     
-    <h4 class="name" id="decryptKey"><span class="type-signature">(async) </span>decryptKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
+    <h4 class="name" id="decryptKey"><span class="type-signature">(async) </span>decryptKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="PrivateKey.html">PrivateKey</a>>}</span></h4>
     
 
     
@@ -1686,7 +1859,7 @@ This method does not change the original key.</p>
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
 
 
             
@@ -1821,7 +1994,7 @@ This method does not change the original key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L163">line 163</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L164">line 164</a>
     </li></ul></dd>
     
 
@@ -1861,7 +2034,7 @@ This method does not change the original key.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Promise.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
     </dd>
@@ -1879,7 +2052,7 @@ This method does not change the original key.</p>
     
 
     
-    <h4 class="name" id="decryptSessionKeys"><span class="type-signature">(async) </span>decryptSessionKeys<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;(Object|undefined)>}</span></h4>
+    <h4 class="name" id="decryptSessionKeys"><span class="type-signature">(async) </span>decryptSessionKeys<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;Object>}</span></h4>
     
 
     
@@ -1999,16 +2172,16 @@ a password must be specified.</p>
 
         <tr>
             
-                <td class="name"><code>privateKeys</code></td>
+                <td class="name"><code>decryptionKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
             
@@ -2147,7 +2320,7 @@ a password must be specified.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L524">line 524</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L525">line 525</a>
     </li></ul></dd>
     
 
@@ -2170,6 +2343,18 @@ a password must be specified.</p>
 
 
 
+<h5>Throws:</h5>
+
+        
+
+    <div class="param-desc">
+    
+        <p>if no session key could be found or decrypted</p>
+    
+    </div>
+
+
+    
 
 
 <h5>Returns:</h5>
@@ -2177,8 +2362,7 @@ a password must be specified.</p>
         
 <div class="param-desc">
     <p>Array of decrypted session key, algorithm pairs in the form:
-{ data:Uint8Array, algorithm:String }
-or 'undefined' if no key packets found</p>
+{ data:Uint8Array, algorithm:String }</p>
 </div>
 
 
@@ -2189,7 +2373,7 @@ or 'undefined' if no key packets found</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(Object|undefined)></span>
+<span class="param-type">Promise.&lt;Object></span>
 
 
     </dd>
@@ -2207,7 +2391,7 @@ or 'undefined' if no key packets found</p>
     
 
     
-    <h4 class="name" id="encrypt"><span class="type-signature">(async) </span>encrypt<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)>}</span></h4>
+    <h4 class="name" id="encrypt"><span class="type-signature">(async) </span>encrypt<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;(MaybeStream.&lt;String>|MaybeStream.&lt;Uint8Array>)>}</span></h4>
     
 
     
@@ -2215,8 +2399,8 @@ or 'undefined' if no key packets found</p>
 
 
 <div class="description">
-    <p>Encrypts message text/data with public keys, passwords or both at once. At least either public keys or passwords
-must be specified. If private keys are specified, those will be used to sign the message.</p>
+    <p>Encrypts message text/data with public keys, passwords or both at once. At least either encryption keys or passwords
+must be specified. If signing keys are specified, those will be used to sign the message.</p>
 </div>
 
 
@@ -2333,16 +2517,16 @@ must be specified. If private keys are specified, those will be used to sign the
 
         <tr>
             
-                <td class="name"><code>publicKeys</code></td>
+                <td class="name"><code>encryptionKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PublicKey.html">PublicKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
@@ -2373,16 +2557,16 @@ must be specified. If private keys are specified, those will be used to sign the
 
         <tr>
             
-                <td class="name"><code>privateKeys</code></td>
+                <td class="name"><code>signingKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
             
@@ -2637,7 +2821,7 @@ must be specified. If private keys are specified, those will be used to sign the
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for signing. Each <code>signingKeyIDs[i]</code> corresponds to <code>privateKeys[i]</code></p></td>
+            <td class="description last"><p>Array of key IDs to use for signing. Each <code>signingKeyIDs[i]</code> corresponds to <code>signingKeys[i]</code></p></td>
         </tr>
 
     
@@ -2676,7 +2860,7 @@ must be specified. If private keys are specified, those will be used to sign the
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for encryption. Each <code>encryptionKeyIDs[i]</code> corresponds to <code>publicKeys[i]</code></p></td>
+            <td class="description last"><p>Array of key IDs to use for encryption. Each <code>encryptionKeyIDs[i]</code> corresponds to <code>encryptionKeys[i]</code></p></td>
         </tr>
 
     
@@ -2722,7 +2906,7 @@ must be specified. If private keys are specified, those will be used to sign the
 
         <tr>
             
-                <td class="name"><code>fromUserIDs</code></td>
+                <td class="name"><code>signingUserIDs</code></td>
             
 
             <td class="type">
@@ -2754,14 +2938,14 @@ must be specified. If private keys are specified, those will be used to sign the
                 </td>
             
 
-            <td class="description last"><p>Array of user IDs to sign with, one per key in <code>privateKeys</code>, e.g. <code>[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]</code></p></td>
+            <td class="description last"><p>Array of user IDs to sign with, one per key in <code>signingKeys</code>, e.g. <code>[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]</code></p></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>toUserIDs</code></td>
+                <td class="name"><code>encryptionUserIDs</code></td>
             
 
             <td class="type">
@@ -2793,7 +2977,7 @@ must be specified. If private keys are specified, those will be used to sign the
                 </td>
             
 
-            <td class="description last"><p>Array of user IDs to encrypt for, one per key in <code>publicKeys</code>, e.g. <code>[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]</code></p></td>
+            <td class="description last"><p>Array of user IDs to encrypt for, one per key in <code>encryptionKeys</code>, e.g. <code>[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]</code></p></td>
         </tr>
 
     
@@ -2880,7 +3064,7 @@ must be specified. If private keys are specified, those will be used to sign the
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L251">line 251</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L252">line 252</a>
     </li></ul></dd>
     
 
@@ -2920,7 +3104,7 @@ must be specified. If private keys are specified, those will be used to sign the
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)></span>
+<span class="param-type">Promise.&lt;(MaybeStream.&lt;String>|MaybeStream.&lt;Uint8Array>)></span>
 
 
     </dd>
@@ -2938,7 +3122,7 @@ must be specified. If private keys are specified, those will be used to sign the
     
 
     
-    <h4 class="name" id="encryptKey"><span class="type-signature">(async) </span>encryptKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
+    <h4 class="name" id="encryptKey"><span class="type-signature">(async) </span>encryptKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="PrivateKey.html">PrivateKey</a>>}</span></h4>
     
 
     
@@ -3033,7 +3217,7 @@ This method does not change the original key.</p>
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
 
 
             
@@ -3168,7 +3352,7 @@ This method does not change the original key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L195">line 195</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L196">line 196</a>
     </li></ul></dd>
     
 
@@ -3208,7 +3392,7 @@ This method does not change the original key.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Promise.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
     </dd>
@@ -3424,16 +3608,16 @@ or passwords must be specified.</p>
 
         <tr>
             
-                <td class="name"><code>publicKeys</code></td>
+                <td class="name"><code>encryptionKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PublicKey.html">PublicKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
@@ -3614,7 +3798,7 @@ or passwords must be specified.</p>
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to publicKeys[i]</p></td>
+            <td class="description last"><p>Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to encryptionKeys[i]</p></td>
         </tr>
 
     
@@ -3660,7 +3844,7 @@ or passwords must be specified.</p>
 
         <tr>
             
-                <td class="name"><code>toUserIDs</code></td>
+                <td class="name"><code>encryptionUserIDs</code></td>
             
 
             <td class="type">
@@ -3692,7 +3876,7 @@ or passwords must be specified.</p>
                 </td>
             
 
-            <td class="description last"><p>Array of user IDs to encrypt for, one per key in <code>publicKeys</code>, e.g. <code>[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]</code></p></td>
+            <td class="description last"><p>Array of user IDs to encrypt for, one per key in <code>encryptionKeys</code>, e.g. <code>[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]</code></p></td>
         </tr>
 
     
@@ -3779,7 +3963,7 @@ or passwords must be specified.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L498">line 498</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L499">line 499</a>
     </li></ul></dd>
     
 
@@ -4039,7 +4223,7 @@ or passwords must be specified.</p>
                 </td>
             
 
-            <td class="description last"><p>The passphrase used to encrypt the generated private key</p></td>
+            <td class="description last"><p>The passphrase used to encrypt the generated private key. If omitted, the key won't be encrypted.</p></td>
         </tr>
 
     
@@ -4236,8 +4420,8 @@ brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1</p></td>
                 </td>
             
 
-            <td class="description last"><p>Options for each subkey, default to main key options. e.g. <code>[{sign: true, passphrase: '123'}]</code>
-sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt</p></td>
+            <td class="description last"><p>Options for each subkey e.g. <code>[{sign: true, passphrase: '123'}]</code>
+default to main key options, except for <code>sign</code> parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt</p></td>
         </tr>
 
     
@@ -4324,7 +4508,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L53">line 53</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L53">line 53</a>
     </li></ul></dd>
     
 
@@ -4354,7 +4538,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
         
 <div class="param-desc">
     <p>The generated key object in the form:
-{ key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }</p>
+{ key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }</p>
 </div>
 
 
@@ -4473,16 +4657,16 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
-                <td class="name"><code>publicKeys</code></td>
+                <td class="name"><code>encryptionKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PublicKey.html">PublicKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
@@ -4550,7 +4734,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
 
         <tr>
             
-                <td class="name"><code>toUserIDs</code></td>
+                <td class="name"><code>encryptionUserIDs</code></td>
             
 
             <td class="type">
@@ -4669,7 +4853,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L468">line 468</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L469">line 469</a>
     </li></ul></dd>
     
 
@@ -4853,7 +5037,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/packetlist.js#L11">line 11</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/packetlist.js#L12">line 12</a>
     </li></ul></dd>
     
 
@@ -5106,7 +5290,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/cleartext.js#L135">line 135</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/cleartext.js#L135">line 135</a>
     </li></ul></dd>
     
 
@@ -5394,7 +5578,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/factory.js#L263">line 263</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js#L263">line 263</a>
     </li></ul></dd>
     
 
@@ -5682,7 +5866,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/factory.js#L299">line 299</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js#L333">line 333</a>
     </li></ul></dd>
     
 
@@ -5976,7 +6160,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/message.js#L805">line 805</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/message.js#L806">line 806</a>
     </li></ul></dd>
     
 
@@ -6017,6 +6201,582 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     <dd>
         
 <span class="param-type">Promise.&lt;<a href="Message.html">Message</a>></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="readPrivateKey"><span class="type-signature">(async) </span>readPrivateKey<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="PrivateKey.html">PrivateKey</a>>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Reads an (optionally armored) OpenPGP private key and returns a PrivateKey object</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>armoredKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Armored key to be parsed</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>binaryKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Uint8Array</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Binary key to be parsed</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js#L298">line 298</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Key object.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="readPrivateKeys"><span class="type-signature">(async) </span>readPrivateKeys<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;Array.&lt;<a href="PrivateKey.html">PrivateKey</a>>>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Reads an (optionally armored) OpenPGP private key block and returns a list of PrivateKey objects</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>armoredKeys</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">String</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Armored keys to be parsed</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>binaryKeys</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Uint8Array</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Binary keys to be parsed</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/factory.js#L376">line 376</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>Key objects.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise.&lt;Array.&lt;<a href="PrivateKey.html">PrivateKey</a>>></span>
 
 
     </dd>
@@ -6264,7 +7024,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/signature.js">signature.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/signature.js#L66">line 66</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/signature.js">signature.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/signature.js#L66">line 66</a>
     </li></ul></dd>
     
 
@@ -6418,7 +7178,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
 
 
             
@@ -6517,7 +7277,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
                 </td>
             
 
-            <td class="description last"><p>The passphrase used to encrypt the generated private key</p></td>
+            <td class="description last"><p>The passphrase used to encrypt the reformatted private key. If omitted, the key won't be encrypted.</p></td>
         </tr>
 
     
@@ -6557,6 +7317,43 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
             
 
             <td class="description last"><p>Number of seconds from the key creation time after which the key expires</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>date</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Date</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Override the creation date of the key signatures</p></td>
         </tr>
 
     
@@ -6643,7 +7440,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L92">line 92</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L93">line 93</a>
     </li></ul></dd>
     
 
@@ -6673,7 +7470,7 @@ sign parameter defaults to false, and indicates whether the subkey should sign r
         
 <div class="param-desc">
     <p>The generated key object in the form:
-{ key:Key, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }</p>
+{ key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }</p>
 </div>
 
 
@@ -7072,7 +7869,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L128">line 128</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L129">line 129</a>
     </li></ul></dd>
     
 
@@ -7102,8 +7899,8 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
         
 <div class="param-desc">
     <p>The revoked key object in the form:
-<code>{ privateKey:Key, privateKeyArmored:String, publicKey:Key, publicKeyArmored:String }</code>
-(if private key is passed) or <code>{ publicKey:Key, publicKeyArmored:String }</code> (otherwise)</p>
+<code>{ privateKey:PrivateKey, privateKeyArmored:String, publicKey:PublicKey, publicKeyArmored:String }</code>
+(if private key is passed) or <code>{ publicKey:PublicKey, publicKeyArmored:String }</code> (otherwise)</p>
 </div>
 
 
@@ -7132,7 +7929,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
     
 
     
-    <h4 class="name" id="sign"><span class="type-signature">(async) </span>sign<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)>}</span></h4>
+    <h4 class="name" id="sign"><span class="type-signature">(async) </span>sign<span class="signature">(options)</span><span class="type-signature"> &rarr; {Promise.&lt;(MaybeStream.&lt;String>|MaybeStream.&lt;Uint8Array>)>}</span></h4>
     
 
     
@@ -7260,16 +8057,16 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
 
         <tr>
             
-                <td class="name"><code>privateKeys</code></td>
+                <td class="name"><code>signingKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
             
@@ -7408,7 +8205,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
                 </td>
             
 
-            <td class="description last"><p>Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]</p></td>
+            <td class="description last"><p>Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]</p></td>
         </tr>
 
     
@@ -7454,7 +8251,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
 
         <tr>
             
-                <td class="name"><code>fromUserIDs</code></td>
+                <td class="name"><code>signingUserIDs</code></td>
             
 
             <td class="type">
@@ -7486,7 +8283,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
                 </td>
             
 
-            <td class="description last"><p>Array of user IDs to sign with, one per key in <code>privateKeys</code>, e.g. <code>[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]</code></p></td>
+            <td class="description last"><p>Array of user IDs to sign with, one per key in <code>signingKeys</code>, e.g. <code>[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]</code></p></td>
         </tr>
 
     
@@ -7573,7 +8370,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L364">line 364</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L365">line 365</a>
     </li></ul></dd>
     
 
@@ -7613,7 +8410,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(String|ReadableStream.&lt;String>|NodeStream.&lt;String>|Uint8Array|ReadableStream.&lt;Uint8Array>|NodeStream.&lt;Uint8Array>)></span>
+<span class="param-type">Promise.&lt;(MaybeStream.&lt;String>|MaybeStream.&lt;Uint8Array>)></span>
 
 
     </dd>
@@ -7735,7 +8532,7 @@ the encoded bytes</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/encoding/armor.js#L231">line 231</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/encoding/armor.js#L231">line 231</a>
     </li></ul></dd>
     
 
@@ -7922,16 +8719,16 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
 
         <tr>
             
-                <td class="name"><code>publicKeys</code></td>
+                <td class="name"><code>verificationKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type"><a href="PublicKey.html">PublicKey</a></span>
 |
 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
@@ -8197,7 +8994,7 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/openpgp.js#L417">line 417</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/openpgp.js#L418">line 418</a>
     </li></ul></dd>
     
 
@@ -8228,8 +9025,8 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
 <div class="param-desc">
     <p>Object containing verified message in the form:</p>
 <pre><code>{
-  data: String|ReadableStream&lt;String&gt;|NodeStream, (if `message` was a CleartextMessage)
-  data: Uint8Array|ReadableStream&lt;Uint8Array&gt;|NodeStream, (if `message` was a Message)
+  data: MaybeStream&lt;String&gt;, (if `message` was a CleartextMessage)
+  data: MaybeStream&lt;Uint8Array&gt;, (if `message` was a Message)
   signatures: [
     {
       keyID: module:type/keyid~KeyID,
@@ -8276,7 +9073,7 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">

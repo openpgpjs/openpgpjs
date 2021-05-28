@@ -28,9 +28,9 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>Key<span class="signature">(packetlist)</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>Key<span class="signature">()</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Class that represents an OpenPGP key. Must contain a primary key.
+            <div class="class-description"><p>Abstract class that represents an OpenPGP key. Must contain a primary key.
 Can contain additional subkeys, signatures, user ids, user attributes.</p></div>
         
     
@@ -46,7 +46,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</p></div>
     
 
     
-    <h4 class="name" id="Key"><span class="type-signature"></span>new Key<span class="signature">(packetlist)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="Key"><span class="type-signature"></span>new Key<span class="signature">()</span><span class="type-signature"></span></h4>
     
 
     
@@ -59,55 +59,6 @@ Can contain additional subkeys, signatures, user ids, user attributes.</p></div>
 
 
 
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>packetlist</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="PacketList.html">PacketList</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The packets that form this key</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
 
 
 
@@ -145,7 +96,7 @@ Can contain additional subkeys, signatures, user ids, user attributes.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L48">line 48</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L44">line 44</a>
     </li></ul></dd>
     
 
@@ -194,305 +145,6 @@ Can contain additional subkeys, signatures, user ids, user attributes.</p></div>
 
     
         <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="addSubkey"><span class="type-signature">(async) </span>addSubkey<span class="signature">()</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
-Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>options.type</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">ecc</span>
-|
-
-<span class="param-type">rsa</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The subkey algorithm: ECC or RSA</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options.curve</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(optional) Elliptic curve for ECC keys</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options.rsaBits</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(optional) Number of bits for RSA subkeys</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options.keyExpirationTime</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(optional) Number of seconds from the key creation time after which the key expires</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options.date</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Date</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(optional) Override the creation date of the key and the key signatures</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options.sign</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options.config</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>(optional) custom configuration settings to overwrite those in <a href="module-config.html">config</a></p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L878">line 878</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
 
         
             
@@ -648,7 +300,7 @@ if it is a valid revocation signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L756">line 756</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L562">line 562</a>
     </li></ul></dd>
     
 
@@ -677,7 +329,7 @@ if it is a valid revocation signature.</p>
 
         
 <div class="param-desc">
-    <p>New revoked key.</p>
+    <p>Revoked key.</p>
 </div>
 
 
@@ -706,270 +358,7 @@ if it is a valid revocation signature.</p>
     
 
     
-    <h4 class="name" id="armor"><span class="type-signature"></span>armor<span class="signature">(config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {ReadableStream.&lt;String>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns ASCII armored text of key</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>config</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Full configuration, defaults to openpgp.config</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L296">line 296</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>ASCII armor.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">ReadableStream.&lt;String></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="clearPrivateParams"><span class="type-signature"></span>clearPrivateParams<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Clear private key parameters</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L488">line 488</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="clone"><span class="type-signature">(async) </span>clone<span class="signature">(deep<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
+    <h4 class="name" id="clone"><span class="type-signature"></span>clone<span class="signature">(deep<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
     
 
     
@@ -1092,7 +481,7 @@ if it is a valid revocation signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L166">line 166</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L154">line 154</a>
     </li></ul></dd>
     
 
@@ -1204,119 +593,7 @@ if it is a valid revocation signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L230">line 230</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>An object of the form {algorithm: String, bits:int, curve:String}.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Object</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getAlgorithmInfo"><span class="type-signature"></span>getAlgorithmInfo<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns algorithm information</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L230">line 230</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L264">line 264</a>
     </li></ul></dd>
     
 
@@ -1428,7 +705,7 @@ if it is a valid revocation signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L172">line 172</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L192">line 192</a>
     </li></ul></dd>
     
 
@@ -1482,382 +759,7 @@ if it is a valid revocation signature.</p>
     
 
     
-    <h4 class="name" id="getCreationTime"><span class="type-signature"></span>getCreationTime<span class="signature">()</span><span class="type-signature"> &rarr; {Date}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns the creation time of the key</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L172">line 172</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Date</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getDecryptionKeys"><span class="type-signature">(async) </span>getDecryptionKeys<span class="signature">(keyID,, date,, userID,, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;Array.&lt;(<a href="Key.html">Key</a>|SubKey)>>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns all keys that are available for decryption, matching the keyID when given
-This is useful to retrieve keys for session key decryption</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>keyID,</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>optional</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>date,</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Date</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>optional</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>userID,</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>optional</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>config</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Full configuration, defaults to openpgp.config</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L409">line 409</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Array of decryption keys.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise.&lt;Array.&lt;(<a href="Key.html">Key</a>|SubKey)>></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getEncryptionKey"><span class="type-signature">(async) </span>getEncryptionKey<span class="signature">(keyID,, date,, userID,, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;(<a href="Key.html">Key</a>|SubKey|null)>}</span></h4>
+    <h4 class="name" id="getEncryptionKey"><span class="type-signature">(async) </span>getEncryptionKey<span class="signature">(keyID,, date,, userID,, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;(<a href="Key.html">Key</a>|SubKey)>}</span></h4>
     
 
     
@@ -2065,7 +967,7 @@ This is useful to retrieve keys for session key decryption</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L363">line 363</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L292">line 292</a>
     </li></ul></dd>
     
 
@@ -2088,13 +990,25 @@ This is useful to retrieve keys for session key decryption</p>
 
 
 
+<h5>Throws:</h5>
+
+        
+
+    <div class="param-desc">
+    
+        <p>if no valid encryption key was found</p>
+    
+    </div>
+
+
+    
 
 
 <h5>Returns:</h5>
 
         
 <div class="param-desc">
-    <p>Key or null if no encryption key has been found.</p>
+    <p>encryption key</p>
 </div>
 
 
@@ -2105,7 +1019,7 @@ This is useful to retrieve keys for session key decryption</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(<a href="Key.html">Key</a>|SubKey|null)></span>
+<span class="param-type">Promise.&lt;(<a href="Key.html">Key</a>|SubKey)></span>
 
 
     </dd>
@@ -2340,7 +1254,7 @@ Returns Infinity if the key doesn't expire.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L552">line 552</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L381">line 381</a>
     </li></ul></dd>
     
 
@@ -2402,7 +1316,7 @@ Returns Infinity if the key doesn't expire.</p>
 
 
 <div class="description">
-    <p>Calculates the fingerprint of the key</p>
+    <p>Calculates and returns the fingerprint of the key, as a string</p>
 </div>
 
 
@@ -2448,7 +1362,7 @@ Returns Infinity if the key doesn't expire.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L214">line 214</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L248">line 248</a>
     </li></ul></dd>
     
 
@@ -2477,119 +1391,7 @@ Returns Infinity if the key doesn't expire.</p>
 
         
 <div class="param-desc">
-    <p>A string containing the fingerprint in lowercase hex.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">String</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getFingerprint"><span class="type-signature"></span>getFingerprint<span class="signature">()</span><span class="type-signature"> &rarr; {String}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Calculates the fingerprint of the key</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L214">line 214</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>A string containing the fingerprint in lowercase hex.</p>
+    <p>A string containing the fingerprint in lowercase hex</p>
 </div>
 
 
@@ -2626,7 +1428,7 @@ Returns Infinity if the key doesn't expire.</p>
 
 
 <div class="description">
-    <p>Calculates the key id of the key</p>
+    <p>Return the key ID of the key</p>
 </div>
 
 
@@ -2672,7 +1474,7 @@ Returns Infinity if the key doesn't expire.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L180">line 180</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L200">line 200</a>
     </li></ul></dd>
     
 
@@ -2701,119 +1503,7 @@ Returns Infinity if the key doesn't expire.</p>
 
         
 <div class="param-desc">
-    <p>A 8 byte key id.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getKeyID"><span class="type-signature"></span>getKeyID<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Calculates the key id of the key</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L180">line 180</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>A 8 byte key id.</p>
+    <p>The 8-byte key ID</p>
 </div>
 
 
@@ -2896,7 +1586,7 @@ Returns Infinity if the key doesn't expire.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L221">line 221</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L206">line 206</a>
     </li></ul></dd>
     
 
@@ -2950,7 +1640,7 @@ Returns Infinity if the key doesn't expire.</p>
     
 
     
-    <h4 class="name" id="getKeys"><span class="type-signature"></span>getKeys<span class="signature">(keyID)</span><span class="type-signature"> &rarr; {Array.&lt;(<a href="Key.html">Key</a>|SubKey)>}</span></h4>
+    <h4 class="name" id="getKeys"><span class="type-signature"></span>getKeys<span class="signature">(keyID<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Array.&lt;(<a href="Key.html">Key</a>|SubKey)>}</span></h4>
     
 
     
@@ -2959,7 +1649,7 @@ Returns Infinity if the key doesn't expire.</p>
 
 <div class="description">
     <p>Returns an array containing all public or private keys matching keyID.
-If keyID is not present, returns all keys starting with the primary key.</p>
+If no keyID is given, returns all keys, starting with the primary key.</p>
 </div>
 
 
@@ -2983,6 +1673,8 @@ If keyID is not present, returns all keys starting with the primary key.</p>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
         <th>Default</th>
@@ -3003,12 +1695,22 @@ If keyID is not present, returns all keys starting with the primary key.</p>
             <td class="type">
             
                 
-<span class="param-type">type/keyid</span>
+<span class="param-type">type/keyid~KeyID</span>
 
 
             
             </td>
 
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -3019,7 +1721,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
                 </td>
             
 
-            <td class="description last"></td>
+            <td class="description last"><p>key ID to look for</p></td>
         </tr>
 
     
@@ -3062,7 +1764,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L209">line 209</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L194">line 194</a>
     </li></ul></dd>
     
 
@@ -3090,6 +1792,10 @@ If keyID is not present, returns all keys starting with the primary key.</p>
 <h5>Returns:</h5>
 
         
+<div class="param-desc">
+    <p>array of keys</p>
+</div>
+
 
 
 <dl>
@@ -3301,7 +2007,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L590">line 590</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L419">line 419</a>
     </li></ul></dd>
     
 
@@ -3506,7 +2212,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L739">line 739</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L545">line 545</a>
     </li></ul></dd>
     
 
@@ -3564,7 +2270,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
     
 
     
-    <h4 class="name" id="getSigningKey"><span class="type-signature">(async) </span>getSigningKey<span class="signature">(keyID,, date<span class="signature-attributes">opt</span>, userID,, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;(<a href="Key.html">Key</a>|SubKey|null)>}</span></h4>
+    <h4 class="name" id="getSigningKey"><span class="type-signature">(async) </span>getSigningKey<span class="signature">(keyID,, date<span class="signature-attributes">opt</span>, userID,, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;(<a href="Key.html">Key</a>|SubKey)>}</span></h4>
     
 
     
@@ -3774,7 +2480,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L310">line 310</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L238">line 238</a>
     </li></ul></dd>
     
 
@@ -3797,13 +2503,25 @@ If keyID is not present, returns all keys starting with the primary key.</p>
 
 
 
+<h5>Throws:</h5>
+
+        
+
+    <div class="param-desc">
+    
+        <p>if no valid signing key was found</p>
+    
+    </div>
+
+
+    
 
 
 <h5>Returns:</h5>
 
         
 <div class="param-desc">
-    <p>Key or null if no signing key has been found.</p>
+    <p>signing key</p>
 </div>
 
 
@@ -3814,7 +2532,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;(<a href="Key.html">Key</a>|SubKey|null)></span>
+<span class="param-type">Promise.&lt;(<a href="Key.html">Key</a>|SubKey)></span>
 
 
     </dd>
@@ -3832,7 +2550,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
     
 
     
-    <h4 class="name" id="getSubkeys"><span class="type-signature"></span>getSubkeys<span class="signature">(keyID)</span><span class="type-signature"> &rarr; {Array.&lt;SubKey>}</span></h4>
+    <h4 class="name" id="getSubkeys"><span class="type-signature"></span>getSubkeys<span class="signature">(keyID<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Array.&lt;SubKey>}</span></h4>
     
 
     
@@ -3841,7 +2559,7 @@ If keyID is not present, returns all keys starting with the primary key.</p>
 
 <div class="description">
     <p>Returns an array containing all public or private subkeys matching keyID;
-If keyID is not present, returns all subkeys.</p>
+If no keyID is given, returns all subkeys.</p>
 </div>
 
 
@@ -3865,6 +2583,8 @@ If keyID is not present, returns all subkeys.</p>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
         <th>Default</th>
@@ -3885,12 +2605,22 @@ If keyID is not present, returns all subkeys.</p>
             <td class="type">
             
                 
-<span class="param-type">type/keyid</span>
+<span class="param-type">type/keyID</span>
 
 
             
             </td>
 
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -3901,7 +2631,7 @@ If keyID is not present, returns all subkeys.</p>
                 </td>
             
 
-            <td class="description last"></td>
+            <td class="description last"><p>key ID to look for</p></td>
         </tr>
 
     
@@ -3944,7 +2674,7 @@ If keyID is not present, returns all subkeys.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L193">line 193</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L181">line 181</a>
     </li></ul></dd>
     
 
@@ -3972,6 +2702,10 @@ If keyID is not present, returns all subkeys.</p>
 <h5>Returns:</h5>
 
         
+<div class="param-desc">
+    <p>array of subkeys</p>
+</div>
+
 
 
 <dl>
@@ -4052,7 +2786,7 @@ If keyID is not present, returns all subkeys.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L229">line 229</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L214">line 214</a>
     </li></ul></dd>
     
 
@@ -4164,7 +2898,7 @@ If keyID is not present, returns all subkeys.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L222">line 222</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L256">line 256</a>
     </li></ul></dd>
     
 
@@ -4196,425 +2930,6 @@ If keyID is not present, returns all subkeys.</p>
     <p>Whether the two keys have the same version and public key data.</p>
 </div>
 
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Boolean</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="hasSameFingerprintAs"><span class="type-signature"></span>hasSameFingerprintAs<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Calculates whether two keys have the same fingerprint without actually calculating the fingerprint</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/packet/public_key.js#L222">line 222</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Whether the two keys have the same version and public key data.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Boolean</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="isDecrypted"><span class="type-signature"></span>isDecrypted<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns true if the primary key or any subkey is decrypted.
-A dummy key is considered encrypted.</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L438">line 438</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="isPrivate"><span class="type-signature"></span>isPrivate<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns true if this is a private key</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L247">line 247</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Boolean</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="isPublic"><span class="type-signature"></span>isPublic<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns true if this is a public key</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L239">line 239</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
 
 
 <dl>
@@ -4858,7 +3173,7 @@ A dummy key is considered encrypted.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L511">line 511</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L340">line 340</a>
     </li></ul></dd>
     
 
@@ -4916,7 +3231,7 @@ A dummy key is considered encrypted.</p>
     
 
     
-    <h4 class="name" id="packetlist2structure"><span class="type-signature"></span>packetlist2structure<span class="signature">(packetlist)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="packetListToStructure"><span class="type-signature"></span>packetListToStructure<span class="signature">(packetlist, disallowedPackets)</span><span class="type-signature"></span></h4>
     
 
     
@@ -4980,184 +3295,16 @@ A dummy key is considered encrypted.</p>
         </tr>
 
     
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L72">line 72</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="revoke"><span class="type-signature">(async) </span>revoke<span class="signature">(reasonForRevocation, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Revokes the key</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
 
         <tr>
             
-                <td class="name"><code>reasonForRevocation</code></td>
+                <td class="name"><code>disallowedPackets</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>optional, object indicating the reason for revocation</p>
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>flag</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="module-enums.html#.reasonForRevocation">module:enums.reasonForRevocation</a></span>
+<span class="param-type">Set.&lt;enums.packet></span>
 
 
             
@@ -5167,101 +3314,7 @@ A dummy key is considered encrypted.</p>
 
             
 
-            <td class="description last"><p>optional, flag indicating the reason for revocation</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>string</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>optional, string explaining the reason for revocation</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>date</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Date</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>optional, override the creationtime of the revocation signature</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>config</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Full configuration, defaults to openpgp.config</p></td>
+            <td class="description last"><p>disallowed packet tags</p></td>
         </tr>
 
     
@@ -5304,7 +3357,7 @@ A dummy key is considered encrypted.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L710">line 710</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L54">line 54</a>
     </li></ul></dd>
     
 
@@ -5329,28 +3382,6 @@ A dummy key is considered encrypted.</p>
 
 
 
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>New key with revocation signature.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
-
-
-    </dd>
-</dl>
-
-    
 
 
 
@@ -5414,7 +3445,7 @@ A dummy key is considered encrypted.</p>
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
             
@@ -5508,7 +3539,7 @@ A dummy key is considered encrypted.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L804">line 804</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L609">line 609</a>
     </li></ul></dd>
     
 
@@ -5537,7 +3568,7 @@ A dummy key is considered encrypted.</p>
 
         
 <div class="param-desc">
-    <p>New public key with new certificate signature.</p>
+    <p>Key with new certificate signature.</p>
 </div>
 
 
@@ -5618,7 +3649,7 @@ A dummy key is considered encrypted.</p>
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
             
@@ -5778,7 +3809,7 @@ A dummy key is considered encrypted.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L789">line 789</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L594">line 594</a>
     </li></ul></dd>
     
 
@@ -5807,7 +3838,7 @@ A dummy key is considered encrypted.</p>
 
         
 <div class="param-desc">
-    <p>New public key with new certificate signature.</p>
+    <p>Key with new certificate signature.</p>
 </div>
 
 
@@ -5836,7 +3867,7 @@ A dummy key is considered encrypted.</p>
     
 
     
-    <h4 class="name" id="toPacketlist"><span class="type-signature"></span>toPacketlist<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="PacketList.html">PacketList</a>}</span></h4>
+    <h4 class="name" id="toPacketList"><span class="type-signature"></span>toPacketList<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="PacketList.html">PacketList</a>}</span></h4>
     
 
     
@@ -5890,7 +3921,7 @@ A dummy key is considered encrypted.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L150">line 150</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L139">line 139</a>
     </li></ul></dd>
     
 
@@ -5948,180 +3979,7 @@ A dummy key is considered encrypted.</p>
     
 
     
-    <h4 class="name" id="toPublic"><span class="type-signature"></span>toPublic<span class="signature">(config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {<a href="Key.html">Key</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Returns key as public key (shallow copy)</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>config</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Full configuration, defaults to openpgp.config</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L256">line 256</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>New public Key.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Key.html">Key</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="update"><span class="type-signature">(async) </span>update<span class="signature">(key, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;undefined>}</span></h4>
+    <h4 class="name" id="update"><span class="type-signature">(async) </span>update<span class="signature">(sourceKey, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
     
 
     
@@ -6132,8 +3990,8 @@ A dummy key is considered encrypted.</p>
     <p>Update key with new components from specified key with same key ID:
 users, subkeys, certificates are merged into the destination key,
 duplicates and expired signatures are ignored.</p>
-<p>If the specified key is a private key and the destination key is public,
-the destination key is transformed to a private key.</p>
+<p>If the source key is a private key and the destination key is public,
+a private key is returned.</p>
 </div>
 
 
@@ -6171,7 +4029,7 @@ the destination key is transformed to a private key.</p>
 
         <tr>
             
-                <td class="name"><code>key</code></td>
+                <td class="name"><code>sourceKey</code></td>
             
 
             <td class="type">
@@ -6271,7 +4129,7 @@ the destination key is transformed to a private key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L645">line 645</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L474">line 474</a>
     </li></ul></dd>
     
 
@@ -6299,6 +4157,10 @@ the destination key is transformed to a private key.</p>
 <h5>Returns:</h5>
 
         
+<div class="param-desc">
+    <p>updated key</p>
+</div>
+
 
 
 <dl>
@@ -6307,197 +4169,13 @@ the destination key is transformed to a private key.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;undefined></span>
+<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
 
 
     </dd>
 </dl>
 
     
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="validate"><span class="type-signature">(async) </span>validate<span class="signature">(config<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Check whether the private and public primary key parameters correspond
-Together with verification of binding signatures, this guarantees key integrity
-In case of gnu-dummy primary key, it is enough to validate any signing subkeys
-otherwise all encryption subkeys are validated
-If only gnu-dummy keys are found, we cannot properly validate so we throw an error</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-        <th>Attributes</th>
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>config</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-                    &lt;optional><br>
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>Full configuration, defaults to openpgp.config</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L452">line 452</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        <p>if validation was not successful and the key cannot be trusted</p>
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
-
-
 
 
 
@@ -6659,7 +4337,7 @@ If only gnu-dummy keys are found, we cannot properly validate so we throw an err
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L848">line 848</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L653">line 653</a>
     </li></ul></dd>
     
 
@@ -6899,7 +4577,7 @@ and valid self signature. Throws if the primary key is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L526">line 526</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L355">line 355</a>
     </li></ul></dd>
     
 
@@ -7180,7 +4858,7 @@ and valid self signature. Throws if the primary key is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L827">line 827</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L632">line 632</a>
     </li></ul></dd>
     
 
@@ -7292,7 +4970,7 @@ and valid self signature. Throws if the primary key is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-2/src/key/key.js#L287">line 287</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js">key/key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/key.js#L224">line 224</a>
     </li></ul></dd>
     
 
@@ -7360,7 +5038,7 @@ and valid self signature. Throws if the primary key is invalid.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">

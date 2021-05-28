@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: UserIDPacket</title>
+    <title>JSDoc: Class: PublicKey</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: UserIDPacket</h1>
+    <h1 class="page-title">Class: PublicKey</h1>
 
     
 
@@ -28,14 +28,9 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>UserIDPacket<span class="signature">()</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>PublicKey<span class="signature">(packetlist)</span><span class="type-signature"></span></h2>
         
-            <div class="class-description"><p>Implementation of the User ID Packet (Tag 13)</p>
-<p>A User ID packet consists of UTF-8 text that is intended to represent
-the name and email address of the key holder.  By convention, it
-includes an RFC 2822 [RFC2822] mail name-addr, but there are no
-restrictions on its content.  The packet length in the header
-specifies the length of the User ID.</p></div>
+            <div class="class-description"><p>Class that represents an OpenPGP Public Key</p></div>
         
     
 </header>
@@ -50,7 +45,7 @@ specifies the length of the User ID.</p></div>
     
 
     
-    <h4 class="name" id="UserIDPacket"><span class="type-signature"></span>new UserIDPacket<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="PublicKey"><span class="type-signature"></span>new PublicKey<span class="signature">(packetlist)</span><span class="type-signature"></span></h4>
     
 
     
@@ -63,6 +58,55 @@ specifies the length of the User ID.</p></div>
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>packetlist</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="PacketList.html">PacketList</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The packets that form this key</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -100,7 +144,7 @@ specifies the length of the User ID.</p></div>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js">packet/userid.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js#L38">line 38</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js">key/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js#L28">line 28</a>
     </li></ul></dd>
     
 
@@ -146,85 +190,6 @@ specifies the length of the User ID.</p></div>
     
 
     
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<h4 class="name" id="userID"><span class="type-signature"></span>userID<span class="type-signature"> :String</span></h4>
-
-
-
-
-<div class="description">
-    <p>A string containing the user id. Usually in the form
-John Doe <a href="mailto:john@example.com">john@example.com</a></p>
-</div>
-
-
-
-    <h5>Type:</h5>
-    <ul>
-        <li>
-            
-<span class="param-type">String</span>
-
-
-        </li>
-    </ul>
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js">packet/userid.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js#L43">line 43</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-    
 
     
         <h3 class="subsection-title">Methods</h3>
@@ -235,7 +200,7 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
     
 
     
-    <h4 class="name" id=".fromObject"><span class="type-signature">(static) </span>fromObject<span class="signature">(userID)</span><span class="type-signature"> &rarr; {<a href="UserIDPacket.html">UserIDPacket</a>}</span></h4>
+    <h4 class="name" id="armor"><span class="type-signature"></span>armor<span class="signature">(config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {ReadableStream.&lt;String>}</span></h4>
     
 
     
@@ -243,7 +208,7 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
 
 
 <div class="description">
-    <p>Create UserIDPacket instance from object</p>
+    <p>Returns ASCII armored text of key</p>
 </div>
 
 
@@ -267,6 +232,8 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -279,7 +246,7 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
 
         <tr>
             
-                <td class="name"><code>userID</code></td>
+                <td class="name"><code>config</code></td>
             
 
             <td class="type">
@@ -292,167 +259,20 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
             </td>
 
             
-
-            
-
-            <td class="description last"><p>Object specifying userID name, email and comment</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js">packet/userid.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js#L56">line 56</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="UserIDPacket.html">UserIDPacket</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="read"><span class="type-signature"></span>read<span class="signature">(input)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Parsing function for a user id packet (tag 13).</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>input</code></td>
-            
-
-            <td class="type">
-            
+                <td class="attributes">
                 
-<span class="param-type">Uint8Array</span>
+                    &lt;optional><br>
+                
 
+                
+
+                
+                </td>
+            
 
             
-            </td>
 
-            
-
-            
-
-            <td class="description last"><p>Payload of a tag 13 packet</p></td>
+            <td class="description last"><p>Full configuration, defaults to openpgp.config</p></td>
         </tr>
 
     
@@ -495,97 +315,7 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js">packet/userid.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js#L77">line 77</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="write"><span class="type-signature"></span>write<span class="signature">()</span><span class="type-signature"> &rarr; {Uint8Array}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Creates a binary representation of the user id packet</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js">packet/userid.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/userid.js#L95">line 95</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js">key/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js#L74">line 74</a>
     </li></ul></dd>
     
 
@@ -614,7 +344,7 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
 
         
 <div class="param-desc">
-    <p>Binary representation.</p>
+    <p>ASCII armor.</p>
 </div>
 
 
@@ -625,7 +355,335 @@ John Doe <a href="mailto:john@example.com">john@example.com</a></p>
     </dt>
     <dd>
         
-<span class="param-type">Uint8Array</span>
+<span class="param-type">ReadableStream.&lt;String></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="isPrivate"><span class="type-signature"></span>isPrivate<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Returns true if this is a private key</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js">key/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js#L57">line 57</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="isPublic"><span class="type-signature"></span>isPublic<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Returns true if this is a public key</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js">key/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js#L48">line 48</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="toPublic"><span class="type-signature"></span>toPublic<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="PublicKey.html">PublicKey</a>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Returns key as public key (shallow copy)</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js">key/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/public_key.js#L65">line 65</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>New public Key</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="PublicKey.html">PublicKey</a></span>
 
 
     </dd>
