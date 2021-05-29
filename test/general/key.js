@@ -2973,24 +2973,33 @@ module.exports = () => describe('Key', function() {
   });
 
   it('Method getExpirationTime V4 Key with capabilities', async function() {
-    const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
-    expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
-    pubKey.users[0].selfCertifications[0].keyFlags = [1];
-    const expirationTime = await pubKey.getExpirationTime();
-    expect(expirationTime).to.equal(Infinity);
-    const encryptExpirationTime = await pubKey.getExpirationTime('encrypt_sign');
-    expect(encryptExpirationTime.toISOString()).to.equal('2008-02-12T17:12:08.000Z');
+    const { minRSABits } = openpgp.config;
+    try {
+      openpgp.config.minRSABits = 1024;
+      const privKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
+      privKey.users[0].selfCertifications[0].keyFlags = [1];
+      const expirationTime = await privKey.getExpirationTime();
+      expect(expirationTime).to.equal(Infinity);
+      const encryptExpirationTime = await privKey.getExpirationTime('encrypt_sign');
+      expect(encryptExpirationTime.toISOString()).to.equal('2008-02-12T17:12:08.000Z');
+    } finally {
+      openpgp.config.minRSABits = minRSABits;
+    }
+
   });
 
   it('Method getExpirationTime V4 Key with capabilities - capable primary key', async function() {
-    const pubKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
-    expect(pubKey).to.exist;
-    expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
-    const expirationTime = await pubKey.getExpirationTime();
-    expect(expirationTime).to.equal(Infinity);
-    const encryptExpirationTime = await pubKey.getExpirationTime('encrypt_sign');
-    expect(encryptExpirationTime).to.equal(Infinity);
+    const { minRSABits } = openpgp.config;
+    try {
+      openpgp.config.minRSABits = 1024;
+      const privKey = await openpgp.readKey({ armoredKey: priv_key_2000_2008 });
+      const expirationTime = await privKey.getExpirationTime();
+      expect(expirationTime).to.equal(Infinity);
+      const encryptExpirationTime = await privKey.getExpirationTime('encrypt_sign');
+      expect(encryptExpirationTime).to.equal(Infinity);
+    } finally {
+      openpgp.config.minRSABits = minRSABits;
+    }
   });
 
   it("decryptKey() - throw if key parameters don't correspond", async function() {

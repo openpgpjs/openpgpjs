@@ -105,7 +105,7 @@ class SubKey {
     } catch (e) {
       return null;
     }
-    const keyExpiry = helper.getExpirationTime(this.keyPacket, bindingSignature);
+    const keyExpiry = helper.getKeyExpirationTime(this.keyPacket, bindingSignature);
     const sigExpiry = bindingSignature.getExpirationTime();
     return keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
   }

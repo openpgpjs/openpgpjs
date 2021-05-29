@@ -71,8 +71,8 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
 export function isDataExpired(keyPacket, signature, date = new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
-    const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate <= expirationTime);
+    const expirationTime = getKeyExpirationTime(keyPacket, signature);
+    return !(keyPacket.created <= normDate && normDate < expirationTime);
   }
   return false;
 }
@@ -287,7 +287,14 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
   return revocationKeyIDs.length > 0;
 }
 
-export function getExpirationTime(keyPacket, signature) {
+/**
+ * Returns key expiration time based on the given certification signature.
+ * The expiration time of the signature is ignored.
+ * @param {PublicSubkeyPacket|PublicKeyPacket} keyPacket - key to check
+ * @param {SignaturePacket} signature - signature to process
+ * @returns {Date|Infinity} expiration time or infinity if the key does not expire
+ */
+export function getKeyExpirationTime(keyPacket, signature) {
   let expirationTime;
   // check V4 expiration time
   if (signature.keyNeverExpires === false) {

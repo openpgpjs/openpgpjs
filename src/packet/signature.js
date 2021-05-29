@@ -701,7 +701,7 @@ class SignaturePacket {
     if (normDate && this.created > normDate) {
       throw new Error('Signature creation time is in the future');
     }
-    if (this.isExpired(date)) {
+    if (normDate && normDate >= this.getExpirationTime()) {
       throw new Error('Signature is expired');
     }
     if (config.rejectHashAlgorithms.has(hashAlgorithm)) {
@@ -730,17 +730,17 @@ class SignaturePacket {
   isExpired(date = new Date()) {
     const normDate = util.normalizeDate(date);
     if (normDate !== null) {
-      return normDate > this.getExpirationTime();
+      return !(this.created <= normDate && normDate < this.getExpirationTime());
     }
     return false;
   }
 
   /**
    * Returns the expiration time of the signature or Infinity if signature does not expire
-   * @returns {Date} Expiration time.
+   * @returns {Date | Infinity} Expiration time.
    */
   getExpirationTime() {
-    return !this.signatureNeverExpires ? new Date(this.created.getTime() + this.signatureExpirationTime * 1000) : Infinity;
+    return this.signatureNeverExpires ? Infinity : new Date(this.created.getTime() + this.signatureExpirationTime * 1000);
   }
 }
 
