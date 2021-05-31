@@ -23,8 +23,17 @@ import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
 
-// store cryptographic validity of the signature, to avoid recomputing multiple times on verification
-const verified = Symbol("verified");
+// Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
+const verified = Symbol('verified');
+
+// GPG puts the Issuer and Signature subpackets in the unhashed area.
+// Tampering with those invalidates the signature, so we still trust them and parse them.
+// All other unhashed subpackets are ignored.
+const allowedUnhashedSubpackets = new Set([
+  enums.signatureSubpacket.issuer,
+  enums.signatureSubpacket.issuerFingerprint,
+  enums.signatureSubpacket.embeddedSignature
+]);
 
 /**
  * Implementation of the Signature Packet (Tag 2)
@@ -109,7 +118,7 @@ class SignaturePacket {
     // hashed subpackets
     i += this.readSubPackets(bytes.subarray(i, bytes.length), true);
     if (!this.created) {
-      throw new Error('Invalid signature packet: missing signature creation time in hashed area.');
+      throw new Error('Missing signature creation time subpacket.');
     }
 
     // A V4 signature hashes the packet body
@@ -339,22 +348,14 @@ class SignaturePacket {
   }
 
   // V4 signature sub packets
-  readSubPacket(bytes, trusted = true) {
+  readSubPacket(bytes, hashed = true) {
     let mypos = 0;
 
     // The leftmost bit denotes a "critical" packet
     const critical = bytes[mypos] & 0x80;
     const type = bytes[mypos] & 0x7F;
 
-    // GPG puts the Issuer and Signature subpackets in the unhashed area.
-    // Tampering with those invalidates the signature, so we still trust them and parse them.
-    // All other unhashed subpackets are not processed further.
-    const allowedUntrustedTypes = new Set([
-      enums.signatureSubpacket.issuer,
-      enums.signatureSubpacket.issuerFingerprint,
-      enums.signatureSubpacket.embeddedSignature
-    ]);
-    if (!trusted && !allowedUntrustedTypes.has(type)) {
+    if (!hashed && !allowedUnhashedSubpackets.has(type)) {
       this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
       return;
     }

@@ -699,7 +699,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
  * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
- * @param {Date} [date] - Check signature validity with respect to the given date ()
+ * @param {Date} [date] - Check signature validity with respect to the given date
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {Promise<{
@@ -732,8 +732,12 @@ async function createVerificationObject(signature, literalDataList, verification
       if (!unverifiedSigningKey) {
         throw new Error(`Could not find signing key with key ID ${signature.issuerKeyID.toHex()}`);
       }
+
       await signature.verify(unverifiedSigningKey.keyPacket, signature.signatureType, literalDataList[0], date, detached, config);
       const signaturePacket = await signaturePacketPromise;
+      if (unverifiedSigningKey.getCreationTime() > signaturePacket.created) {
+        throw new Error('Key is newer than the signature');
+      }
       // We pass the signature creation time to check whether the key was expired at the time of signing.
       // We check this after signature verification because for streamed one-pass signatures, the creation time is not available before
       await primaryKey.getSigningKey(unverifiedSigningKey.getKeyID(), signaturePacket.created, undefined, config);

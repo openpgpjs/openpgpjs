@@ -1570,7 +1570,7 @@ aOU=
       const expiredKey = await openpgp.readKey({ armoredKey: expiredPublicKeyThroughDirectSignature });
       await expect(
         openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: expiredKey })
-      ).to.be.rejectedWith(/Primary key is expired through a direct signature/);
+      ).to.be.rejectedWith(/Primary key is expired/);
     });
   });
 

@@ -264,9 +264,6 @@ class Key {
 
     try {
       const primaryUser = await this.getPrimaryUser(date, userID, config);
-      if (date && primaryKey.getCreationTime() > date) {
-        throw new Error('Primary key was created after the given date');
-      }
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
           helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
         helper.checkKeyStrength(primaryKey, config);
@@ -370,7 +367,7 @@ class Key {
       ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
 
       if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
-        throw new Error('Primary key is expired through a direct signature');
+        throw new Error('Primary key is expired');
       }
     }
   }

@@ -65,7 +65,7 @@ class SubKey {
 
   /**
    * Verify subkey. Checks for revocation signatures, expiration time
-   * and valid binding signature
+   * and valid binding signature.
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<SignaturePacket>}
