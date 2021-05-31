@@ -201,7 +201,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
   if (!signingKeyPacket.isDecrypted()) {
-    throw new Error('Private key is not decrypted.');
+    throw new Error('Signing key is not decrypted.');
   }
   const signaturePacket = new SignaturePacket();
   Object.assign(signaturePacket, signatureProperties);

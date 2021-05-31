@@ -50,7 +50,7 @@ import util from './util';
  * @async
  * @static
  */
-export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
+export async function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -73,7 +73,7 @@ export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBi
       revocationCertificate: revocationCertificate
 
     };
-  }).catch(onError.bind(null, 'Error generating keypair'));
+  }).catch(err => onError('Error generating keypair', err));
 }
 
 /**
@@ -90,7 +90,7 @@ export function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBi
  * @async
  * @static
  */
-export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, config }) {
+export async function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -110,7 +110,7 @@ export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpi
       revocationCertificate: revocationCertificate
 
     };
-  }).catch(onError.bind(null, 'Error reformatting keypair'));
+  }).catch(err => onError('Error reformatting keypair', err));
 }
 
 /**
@@ -130,29 +130,30 @@ export function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpi
  * @async
  * @static
  */
-export function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), config }) {
+export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), config }) {
   config = { ...defaultConfig, ...config };
-  return Promise.resolve().then(() => {
-    if (revocationCertificate) {
-      return key.applyRevocationCertificate(revocationCertificate, date, config);
-    } else {
-      return key.revoke(reasonForRevocation, date, config);
-    }
-  }).then(async key => {
-    if (key.isPrivate()) {
-      const publicKey = key.toPublic();
+  try {
+    const revokedKey = revocationCertificate ?
+      await key.applyRevocationCertificate(revocationCertificate, date, config) :
+      await key.revoke(reasonForRevocation, date, config);
+
+    if (revokedKey.isPrivate()) {
+      const publicKey = revokedKey.toPublic();
       return {
-        privateKey: key,
-        privateKeyArmored: key.armor(config),
+        privateKey: revokedKey,
+        privateKeyArmored: revokedKey.armor(config),
         publicKey: publicKey,
         publicKeyArmored: publicKey.armor(config)
       };
     }
+
     return {
-      publicKey: key,
-      publicKeyArmored: key.armor(config)
+      publicKey: revokedKey,
+      publicKeyArmored: revokedKey.armor(config)
     };
-  }).catch(onError.bind(null, 'Error revoking key'));
+  } catch (err) {
+    return onError('Error revoking key', err);
+  }
 }
 
 /**
@@ -253,7 +254,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @async
  * @static
  */
-export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, armor = true, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
+export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, armor = true, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.detached) {
@@ -262,7 +263,7 @@ export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessi
   if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encrypt, pass `encryptionKeys` instead");
   if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.encrypt, pass `signingKeys` instead");
 
-  return Promise.resolve().then(async function() {
+  try {
     const streaming = message.fromStream;
     if (!signingKeys) {
       signingKeys = [];
@@ -277,7 +278,9 @@ export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessi
     message = await message.encrypt(encryptionKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
-  }).catch(onError.bind(null, 'Error encrypting message'));
+  } catch (err) {
+    return onError('Error encrypting message', err);
+  }
 }
 
 /**
@@ -311,7 +314,7 @@ export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessi
  * @async
  * @static
  */
-export function decrypt({ message, decryptionKeys, passwords, sessionKeys, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
+export async function decrypt({ message, decryptionKeys, passwords, sessionKeys, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); verificationKeys = toArray(verificationKeys); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
   if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.decrypt, pass `decryptionKeys` instead");
@@ -344,7 +347,7 @@ export function decrypt({ message, decryptionKeys, passwords, sessionKeys, verif
     result.data = await convertStream(result.data, message.fromStream, format);
     if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
-  }).catch(onError.bind(null, 'Error decrypting message'));
+  }).catch(err => onError('Error decrypting message', err));
 }
 
 
@@ -370,7 +373,7 @@ export function decrypt({ message, decryptionKeys, passwords, sessionKeys, verif
  * @async
  * @static
  */
-export function sign({ message, signingKeys, armor = true, detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
+export async function sign({ message, signingKeys, armor = true, detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.sign, pass `signingKeys` instead");
@@ -378,8 +381,11 @@ export function sign({ message, signingKeys, armor = true, detached = false, sig
   if (message instanceof CleartextMessage && detached) throw new Error("Can't detach-sign a cleartext message");
 
   signingKeys = toArray(signingKeys); signingUserIDs = toArray(signingUserIDs);
+  if (!signingKeys || signingKeys.length === 0) {
+    throw new Error('No signing keys provided');
+  }
 
-  return Promise.resolve().then(async function() {
+  try {
     let signature;
     if (detached) {
       signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config);
@@ -396,7 +402,9 @@ export function sign({ message, signingKeys, armor = true, detached = false, sig
       });
     }
     return convertStream(signature, message.fromStream, armor ? 'utf8' : 'binary');
-  }).catch(onError.bind(null, 'Error signing message'));
+  } catch (e) {
+    return onError('Error signing message', e);
+  }
 }
 
 /**
@@ -425,7 +433,7 @@ export function sign({ message, signingKeys, armor = true, detached = false, sig
  * @async
  * @static
  */
-export function verify({ message, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
+export async function verify({ message, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
   if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.verify, pass `verificationKeys` instead");
@@ -434,7 +442,7 @@ export function verify({ message, verificationKeys, expectSigned = false, format
 
   verificationKeys = toArray(verificationKeys);
 
-  return Promise.resolve().then(async function() {
+  try {
     const result = {};
     if (signature) {
       result.signatures = await message.verifyDetached(signature, verificationKeys, date, config);
@@ -457,7 +465,9 @@ export function verify({ message, verificationKeys, expectSigned = false, format
     result.data = await convertStream(result.data, message.fromStream, format);
     if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
-  }).catch(onError.bind(null, 'Error verifying signed message'));
+  } catch (err) {
+    return onError('Error verifying signed message', err);
+  }
 }
 
 
@@ -478,16 +488,14 @@ export function verify({ message, verificationKeys, expectSigned = false, format
  * @async
  * @static
  */
-export function generateSessionKey({ encryptionKeys, date = new Date(), encryptionUserIDs = [], config, ...rest }) {
+export async function generateSessionKey({ encryptionKeys, date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   encryptionKeys = toArray(encryptionKeys); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.generateSessionKey, pass `encryptionKeys` instead");
 
-  return Promise.resolve().then(async function() {
-
-    return Message.generateSessionKey(encryptionKeys, date, encryptionUserIDs, config);
-
-  }).catch(onError.bind(null, 'Error generating session key'));
+  return Message.generateSessionKey(
+    encryptionKeys, date, encryptionUserIDs, config
+  ).catch(err => onError('Error generating session key', err));
 }
 
 /**
@@ -509,17 +517,17 @@ export function generateSessionKey({ encryptionKeys, date = new Date(), encrypti
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
+export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkBinary(data); checkString(algorithm, 'algorithm'); encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead");
 
-  return Promise.resolve().then(async function() {
-
+  try {
     const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
     return armor ? message.armor(config) : message.write();
-
-  }).catch(onError.bind(null, 'Error encrypting session key'));
+  } catch (err) {
+    return onError('Error encrypting session key', err);
+  }
 }
 
 /**
@@ -537,16 +545,14 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKe
  * @async
  * @static
  */
-export function decryptSessionKeys({ message, decryptionKeys, passwords, date = new Date(), config, ...rest }) {
+export async function decryptSessionKeys({ message, decryptionKeys, passwords, date = new Date(), config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords);
   if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.decryptSessionKeys, pass `decryptionKeys` instead");
 
-  return Promise.resolve().then(async function() {
-
-    return message.decryptSessionKeys(decryptionKeys, passwords, date, config);
-
-  }).catch(onError.bind(null, 'Error decrypting session keys'));
+  return message.decryptSessionKeys(
+    decryptionKeys, passwords, date, config
+  ).catch(err => onError('Error decrypting session keys', err));
 }
 
 

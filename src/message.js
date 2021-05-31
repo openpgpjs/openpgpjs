@@ -658,7 +658,7 @@ export class Message {
 /**
  * Create signature packets for the message
  * @param {LiteralDataPacket} literalDataPacket - the literal data packet to sign
- * @param {Array<PrivateKey>} signingKeys - private keys with decrypted secret key data for signing
+ * @param {Array<PrivateKey>} [signingKeys] - private keys with decrypted secret key data for signing
  * @param {Signature} [signature] - Any existing detached signature to append
  * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [date] - Override the creationtime of the signature
@@ -684,7 +684,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
     const signingKey = await primaryKey.getSigningKey(signingKeyIDs[i], date, userID, config);
     return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, date, userID, detached, config);
   })).then(signatureList => {
-    signatureList.forEach(signaturePacket => packetlist.push(signaturePacket));
+    packetlist.push(...signatureList);
   });
 
   if (signature) {
