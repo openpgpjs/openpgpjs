@@ -404,15 +404,13 @@ function omnibus() {
       // Self Certificate is valid
       const user = hi.users[0];
       const certificate = user.selfCertifications[0];
-      certificate.verified = null;
-      await certificate.verify(
+      await expect(certificate.verify(
         primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: primaryKey }
-      ).then(async () => expect(certificate.verified).to.be.true);
+      )).to.be.fulfilled;
 
-      certificate.verified = null;
-      await user.verifyCertificate(
+      await expect(user.verifyCertificate(
         primaryKey, certificate, [hi.toPublic()], undefined, openpgp.config
-      ).then(async () => expect(certificate.verified).to.be.true);
+      )).to.be.fulfilled;
 
       const options = {
         userIDs: { name: "Bye", email: "bye@good.bye" },
@@ -428,24 +426,20 @@ function omnibus() {
         // Self Certificate is valid
         const user = bye.users[0];
         const certificate = user.selfCertifications[0];
-        certificate.verified = null;
-        await certificate.verify(
+        await expect(certificate.verify(
           bye.keyPacket, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.keyPacket }
-        ).then(async () => expect(certificate.verified).to.be.true);
-        certificate.verified = null;
-        await user.verifyCertificate(
+        )).to.be.fulfilled;
+        await expect(user.verifyCertificate(
           bye.keyPacket, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
-        ).then(async () => expect(certificate.verified).to.be.true);
+        )).to.be.fulfilled;
 
         return Promise.all([
           // Hi trusts Bye!
           bye.toPublic().signPrimaryUser([hi]).then(trustedBye => {
             const hiCertificate = trustedBye.users[0].otherCertifications[0];
-            expect(hiCertificate.verified).to.be.true;
-            hiCertificate.verified = null;
-            return hiCertificate.verify(
+            return expect(hiCertificate.verify(
               primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.toPublic().keyPacket }
-            ).then(async () => expect(hiCertificate.verified).to.be.true);
+            )).to.be.fulfilled;
           }),
           // Signing message
           openpgp.sign(

@@ -706,15 +706,13 @@ module.exports = () => describe("Packet", function() {
   it('Secret key reading with signature verification.', async function() {
     const packets = await openpgp.PacketList.fromBinary((await openpgp.unarmor(armored_key)).data, allAllowedPackets);
     const [keyPacket, userIDPacket, keySigPacket, subkeyPacket, subkeySigPacket] = packets;
-    expect(keySigPacket.verified).to.be.null;
-    expect(subkeySigPacket.verified).to.be.null;
 
     await keySigPacket.verify(
       keyPacket, openpgp.enums.signature.certGeneric, { userID: userIDPacket, key: keyPacket }
-    ).then(async () => expect(keySigPacket.verified).to.be.true);
+    );
     await subkeySigPacket.verify(
       keyPacket, openpgp.enums.signature.keyBinding, { key: keyPacket, bind: subkeyPacket }
-    ).then(async () => expect(subkeySigPacket.verified).to.be.true);
+    );
   });
 
   it('Reading a signed, encrypted message.', async function() {

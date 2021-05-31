@@ -2902,12 +2902,6 @@ module.exports = () => describe('Key', function() {
     await expect(pubKey.verifyPrimaryKey()).to.be.fulfilled;
   });
 
-  it('Detect that primary-key binding signature expired, after successful verification', async function() {
-    const key = await openpgp.readKey({ armoredKey: keyExpiredBindingSig });
-    key.subKeys[0].bindingSignatures[0].embeddedSignature.verified = true;
-    await expect(key.getSigningKey()).to.be.rejectedWith(/Signature is expired/);
-  });
-
   it('Verify certificate of key with future creation date', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: key_created_2030 });
     const user = pubKey.users[0];
@@ -3251,17 +3245,11 @@ module.exports = () => describe('Key', function() {
     const updated = await dest.update(source);
     expect(updated.isPrivate()).to.be.true;
 
-    const { selfCertification: destCertification } = await updated.getPrimaryUser();
-    const { selfCertification: sourceCertification } = await source.getPrimaryUser();
-    destCertification.verified = null;
-    sourceCertification.verified = null;
-    await updated.verifyPrimaryKey().then(async () => expect(destCertification.verified).to.be.true);
-    await source.verifyPrimaryKey().then(async () => expect(sourceCertification.verified).to.be.true);
+    await expect(updated.verifyPrimaryKey()).to.be.fulfilled;
+    await expect(source.verifyPrimaryKey()).to.be.fulfilled;
 
-    destCertification.verified = null;
-    sourceCertification.verified = null;
-    await updated.users[0].verify(updated.keyPacket).then(async () => expect(destCertification.verified).to.be.true);
-    await source.users[0].verify(source.keyPacket).then(async () => expect(sourceCertification.verified).to.be.true);
+    await expect(updated.users[0].verify(updated.keyPacket)).to.be.fulfilled;
+    await expect(source.users[0].verify(source.keyPacket)).to.be.fulfilled;
   });
 
   it('update() - merge private key into public key - mismatch throws error', async function() {

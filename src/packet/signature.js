@@ -23,6 +23,9 @@ import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
 
+// store cryptographic validity of the signature, to avoid recomputing multiple times on verification
+const verified = Symbol("verified");
+
 /**
  * Implementation of the Signature Packet (Tag 2)
  *
@@ -82,8 +85,8 @@ class SignaturePacket {
     this.issuerFingerprint = null;
     this.preferredAEADAlgorithms = null;
 
-    this.verified = null;
     this.revoked = null;
+    this[verified] = null;
   }
 
   /**
@@ -195,7 +198,7 @@ class SignaturePacket {
       // getLatestValidSignature(this.revocationSignatures, key, data)` later.
       // Note that this only holds up if the key and data passed to verify are the
       // same as the ones passed to sign.
-      this.verified = true;
+      this[verified] = true;
     }
   }
 
@@ -670,7 +673,7 @@ class SignaturePacket {
     const isMessageSignature = signatureType === enums.signature.binary || signatureType === enums.signature.text;
     // Cryptographic validity is cached after one successful verification.
     // However, for message signatures, we always re-verify, since the passed `data` can change
-    const skipVerify = this.verified && !isMessageSignature;
+    const skipVerify = this[verified] && !isMessageSignature;
     if (!skipVerify) {
       let toHash;
       let hash;
@@ -688,11 +691,12 @@ class SignaturePacket {
 
       this.params = await this.params;
 
-      const verified = await crypto.signature.verify(
+      this[verified] = await crypto.signature.verify(
         publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
         toHash, hash
       );
-      if (!verified) {
+
+      if (!this[verified]) {
         throw new Error('Signature verification failed');
       }
     }
@@ -719,7 +723,6 @@ class SignaturePacket {
     if (this.revocationKeyClass !== null) {
       throw new Error('This key is intended to be revoked with an authorized key, which OpenPGP.js does not support.');
     }
-    this.verified = true;
   }
 
   /**

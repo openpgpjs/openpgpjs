@@ -361,10 +361,6 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
 }
 
 export function isValidSigningKeyPacket(keyPacket, signature) {
-  if (!signature.verified || signature.revoked !== false) { // Sanity check
-    throw new Error('Signature not verified');
-  }
-
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   return keyAlgo !== enums.publicKey.rsaEncrypt &&
     keyAlgo !== enums.publicKey.elgamal &&
@@ -374,10 +370,6 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
 }
 
 export function isValidEncryptionKeyPacket(keyPacket, signature) {
-  if (!signature.verified || signature.revoked !== false) { // Sanity check
-    throw new Error('Signature not verified');
-  }
-
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   return keyAlgo !== enums.publicKey.dsa &&
     keyAlgo !== enums.publicKey.rsaSign &&
@@ -389,10 +381,6 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
 }
 
 export function isValidDecryptionKeyPacket(signature, config) {
-  if (!signature.verified) { // Sanity check
-    throw new Error('Signature not verified');
-  }
-
   if (config.allowInsecureDecryptionWithSigningKeys) {
     // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
     return true;
