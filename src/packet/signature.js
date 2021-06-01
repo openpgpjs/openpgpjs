@@ -706,7 +706,7 @@ class SignaturePacket {
     if (normDate && this.created > normDate) {
       throw new Error('Signature creation time is in the future');
     }
-    if (normDate && normDate > this.getExpirationTime()) {
+    if (normDate && normDate >= this.getExpirationTime()) {
       throw new Error('Signature is expired');
     }
     if (config.rejectHashAlgorithms.has(hashAlgorithm)) {
@@ -734,7 +734,7 @@ class SignaturePacket {
   isExpired(date = new Date()) {
     const normDate = util.normalizeDate(date);
     if (normDate !== null) {
-      return !(this.created <= normDate && normDate <= this.getExpirationTime());
+      return !(this.created <= normDate && normDate < this.getExpirationTime());
     }
     return false;
   }
