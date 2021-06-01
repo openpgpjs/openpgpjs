@@ -1446,18 +1446,18 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   // TODO add test with multiple revocation signatures
   it('Verify primary key revocation signatures', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_revoked });
-    await expect(pubKey.revocationSignatures[0].verify(
+    await pubKey.revocationSignatures[0].verify(
       pubKey.keyPacket, openpgp.enums.signature.keyRevocation, { key: pubKey.keyPacket }
-    )).to.be.fulfilled;
+    );
   });
 
   // TODO add test with multiple revocation signatures
   it('Verify subkey revocation signatures', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_revoked });
     const revSig = pubKey.subKeys[0].revocationSignatures[0];
-    await expect(revSig.verify(
+    await revSig.verify(
       pubKey.keyPacket, openpgp.enums.signature.subkeyRevocation, { key: pubKey.keyPacket, bind: pubKey.subKeys[0].keyPacket }
-    )).to.be.fulfilled;
+    );
   });
 
   it('Verify key expiration date', async function() {

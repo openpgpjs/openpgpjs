@@ -2848,7 +2848,7 @@ module.exports = () => describe('Key', function() {
 
   it('Verify primary key with authorized revocation key in a direct-key signature', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: key_with_authorized_revocation_key_in_separate_sig });
-    await expect(pubKey.verifyPrimaryKey()).to.be.fulfilled;
+    await pubKey.verifyPrimaryKey();
   });
 
   it('Verify certificate of key with future creation date', async function() {
@@ -3194,11 +3194,11 @@ module.exports = () => describe('Key', function() {
     const updated = await dest.update(source);
     expect(updated.isPrivate()).to.be.true;
 
-    await expect(updated.verifyPrimaryKey()).to.be.fulfilled;
-    await expect(source.verifyPrimaryKey()).to.be.fulfilled;
+    await updated.verifyPrimaryKey();
+    await source.verifyPrimaryKey();
 
-    await expect(updated.users[0].verify(updated.keyPacket)).to.be.fulfilled;
-    await expect(source.users[0].verify(source.keyPacket)).to.be.fulfilled;
+    await updated.users[0].verify(updated.keyPacket);
+    await source.users[0].verify(source.keyPacket);
   });
 
   it('update() - merge private key into public key - mismatch throws error', async function() {

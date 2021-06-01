@@ -401,16 +401,15 @@ function omnibus() {
       expect(subKey.getAlgorithmInfo().curve).to.equal('curve25519');
       expect(subKey.getAlgorithmInfo().algorithm).to.equal('ecdh');
 
-      // Self Certificate is valid
+      // Verify that self Certificate is valid
       const user = hi.users[0];
       const certificate = user.selfCertifications[0];
-      await expect(certificate.verify(
+      await certificate.verify(
         primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: primaryKey }
-      )).to.be.fulfilled;
-
-      await expect(user.verifyCertificate(
+      );
+      await user.verifyCertificate(
         primaryKey, certificate, [hi.toPublic()], undefined, openpgp.config
-      )).to.be.fulfilled;
+      );
 
       const options = {
         userIDs: { name: "Bye", email: "bye@good.bye" },
@@ -423,23 +422,23 @@ function omnibus() {
         expect(bye.subKeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
         expect(bye.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
 
-        // Self Certificate is valid
+        // Verify that self Certificate is valid
         const user = bye.users[0];
         const certificate = user.selfCertifications[0];
-        await expect(certificate.verify(
+        await certificate.verify(
           bye.keyPacket, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.keyPacket }
-        )).to.be.fulfilled;
-        await expect(user.verifyCertificate(
+        );
+        await user.verifyCertificate(
           bye.keyPacket, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
-        )).to.be.fulfilled;
+        );
 
         return Promise.all([
           // Hi trusts Bye!
           bye.toPublic().signPrimaryUser([hi]).then(trustedBye => {
             const hiCertificate = trustedBye.users[0].otherCertifications[0];
-            return expect(hiCertificate.verify(
+            return hiCertificate.verify(
               primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.toPublic().keyPacket }
-            )).to.be.fulfilled;
+            );
           }),
           // Signing message
           openpgp.sign(
@@ -460,22 +459,18 @@ function omnibus() {
             ]);
           }),
           // Encrypting and signing
-          openpgp.encrypt(
-            {
-              message: await openpgp.createMessage({ text: 'Hi, Hi wrote this but only Bye can read it!' }),
-              encryptionKeys: [bye.toPublic()],
-              signingKeys: [hi]
-            }
-          ).then(async encrypted => {
+          openpgp.encrypt({
+            message: await openpgp.createMessage({ text: 'Hi, Hi wrote this but only Bye can read it!' }),
+            encryptionKeys: [bye.toPublic()],
+            signingKeys: [hi]
+          }).then(async encrypted => {
             const msg = await openpgp.readMessage({ armoredMessage: encrypted });
             // Decrypting and verifying
-            return openpgp.decrypt(
-              {
-                message: msg,
-                decryptionKeys: bye,
-                verificationKeys: [hi.toPublic()]
-              }
-            ).then(output => {
+            return openpgp.decrypt({
+              message: msg,
+              decryptionKeys: bye,
+              verificationKeys: [hi.toPublic()]
+            }).then(output => {
               expect(output.data).to.equal('Hi, Hi wrote this but only Bye can read it!');
               expect(output.signatures[0].valid).to.be.true;
             });
