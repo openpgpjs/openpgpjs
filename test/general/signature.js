@@ -688,8 +688,9 @@ kCNcH9WI6idSzFjuYegECf+ZA1xOCjS9oLTGbSeT7jNfC8dH5+E92qlBLq4Ctt7k
   it('Consider signature expired at the expiration time', async function() {
     const key = await openpgp.readKey({ armoredKey: keyExpiredBindingSig });
     const { embeddedSignature } = key.subKeys[0].bindingSignatures[0];
-    expect(embeddedSignature.isExpired(new Date(embeddedSignature.created))).to.be.false;
-    expect(embeddedSignature.isExpired(new Date(embeddedSignature.signatureExpirationTime))).to.be.true;
+    expect(embeddedSignature.isExpired(embeddedSignature.created)).to.be.false;
+    expect(embeddedSignature.isExpired(new Date(embeddedSignature.getExpirationTime() - 1))).to.be.false;
+    expect(embeddedSignature.isExpired(embeddedSignature.getExpirationTime())).to.be.true;
   });
 
   it('Signing fails if primary key is expired', async function() {

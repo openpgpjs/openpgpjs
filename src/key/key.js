@@ -363,7 +363,7 @@ class Key {
   }
 
   /**
-   * Returns the latest date when the key can be used for encrypting, signing, or both, depending on the `capabilities` paramater.
+   * Returns the earliest date when the key can no longer be used for encrypting, signing, or both, depending on the `capabilities` paramater.
    * When `capabilities` is null, defaults to returning the expiry date of the primary key.
    * Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
    * Returns Infinity if the key doesn't expire.
