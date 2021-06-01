@@ -619,7 +619,7 @@ class Key {
   async signPrimaryUser(privateKeys, date, userID, config = defaultConfig) {
     const { index, user } = await this.getPrimaryUser(date, userID, config);
     const userSign = await user.sign(this.keyPacket, privateKeys, date, config);
-    const key = await this.clone();
+    const key = this.clone();
     key.users[index] = userSign;
     return key;
   }

@@ -89,8 +89,8 @@ class SubKey {
   }
 
   /**
-   * Returns the expiration time of the subkey or Infinity if key does not expire
-   * Returns null if the subkey is invalid
+   * Returns the expiration time of the subkey or Infinity if key does not expire.
+   * Returns null if the subkey is invalid.
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Date | Infinity | null>}
