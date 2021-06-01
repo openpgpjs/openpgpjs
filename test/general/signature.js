@@ -685,7 +685,7 @@ kCNcH9WI6idSzFjuYegECf+ZA1xOCjS9oLTGbSeT7jNfC8dH5+E92qlBLq4Ctt7k
     expect(decrypted.signatures[0].signature.packets.length).to.equal(1);
   });
 
-  it('Signing fails if primary key binding signature is expired', async function() {
+  it('Signing fails if primary key is expired', async function() {
     const armoredExpiredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xVgEYKKPDRYJKwYBBAHaRw8BAQdAwJcSQMkHVnZPesPJP1JaB9ptV+wG8Io1
