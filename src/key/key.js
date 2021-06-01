@@ -385,48 +385,28 @@ class Key {
    * @async
    */
   async getExpirationTime(capabilities, keyID, userID, config = defaultConfig) {
-    const toDateOrInfinity = value => (value === Infinity ? value : new Date(value));
-    const minNotNull = (...args) => { // Like Math.min but aware of `null`, to avoid treating them as 0
-      const notNull = args.filter(arg => arg !== null);
-      if (notNull.length === 0) return null;
-      return Math.min(...notNull);
-    };
-
-    let primaryKeyExpiry;
-    try {
-      const { selfCertification } = await this.getPrimaryUser(null, userID, config);
-      const keyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCertification);
-      const sigExpiry = selfCertification.getExpirationTime();
-      // TODO check direct signatures
-      primaryKeyExpiry = toDateOrInfinity(Math.min(keyExpiry, sigExpiry));
-    } catch (e) {
-      primaryKeyExpiry = null;
-    }
-    if (!capabilities) return primaryKeyExpiry;
-
-    // loop through subkeys based on requested capabilities and retrieve their expiration times
-    const getLatestKeyExpiry = async keys => (keys.length === 0 ? null : toDateOrInfinity(
-      Math.max(...await Promise.all(
-        keys.map(async key => (key instanceof SubKey ? key.getExpirationTime(null, config) : primaryKeyExpiry))
-      ))
-    ));
-    let encryptExpiry = null;
+    const primaryUser = await this.getPrimaryUser(null, userID, config);
+    const selfCert = primaryUser.selfCertification;
+    const keyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCert);
+    const sigExpiry = selfCert.getExpirationTime();
+    let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
     if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-      const encryptionKeys = (await Promise.all(
-        this.getKeys(keyID).map(key => this.getEncryptionKey(key.getKeyID(), null, userID, config).catch(() => null))
-      )).filter(Boolean);
-      if (encryptionKeys.length === 0) return null; // the key cannot encrypt
-      encryptExpiry = await getLatestKeyExpiry(encryptionKeys);
+      const encryptKey =
+        await this.getEncryptionKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
+        await this.getEncryptionKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
+      if (!encryptKey) return null;
+      const encryptExpiry = await encryptKey.getExpirationTime(null, config);
+      if (encryptExpiry < expiry) expiry = encryptExpiry;
     }
-    let signExpiry = null;
     if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-      const signingKeys = (await Promise.all(
-        this.getKeys(keyID).map(key => this.getSigningKey(key.getKeyID(), null, userID, config).catch(() => null))
-      )).filter(Boolean);
-      if (signingKeys.length === 0) return null; // the key cannot sign
-      signExpiry = await getLatestKeyExpiry(signingKeys);
+      const signKey =
+        await this.getSigningKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
+        await this.getSigningKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
+      if (!signKey) return null;
+      const signExpiry = await signKey.getExpirationTime(null, config);
+      if (signExpiry < expiry) expiry = signExpiry;
     }
-    return toDateOrInfinity(minNotNull(encryptExpiry, signExpiry));
+    return expiry;
   }
 
   /**
