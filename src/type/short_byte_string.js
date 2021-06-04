@@ -1,6 +1,6 @@
 import util from '../util';
 
-class OctetString {
+class ShortByteString {
   constructor(data) {
     if (typeof data === 'undefined') {
       data = new Uint8Array([]);
@@ -29,4 +29,4 @@ class OctetString {
   }
 }
 
-export default OctetString;
+export default ShortByteString;

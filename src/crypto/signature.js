@@ -8,7 +8,7 @@ import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
 import createHmac from "./hmac";
-import OctetString from '../type/octet_string';
+import ShortByteString from '../type/short_byte_string';
 
 /**
  * Parse signature in binary form to get the parameters.
@@ -58,7 +58,7 @@ export function parseSignatureParams(algo, signature) {
     }
 
     case enums.publicKey.hmac: {
-      const mac = new OctetString(); mac.read(signature.subarray(read));
+      const mac = new ShortByteString(); mac.read(signature.subarray(read));
       return { mac };
     }
     default:
@@ -176,7 +176,7 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       hmac.update(hashed);
       const mac = hmac.finalize();
 
-      return { mac: new OctetString(mac) };
+      return { mac: new ShortByteString(mac) };
     }
     default:
       throw new Error('Invalid signature algorithm.');

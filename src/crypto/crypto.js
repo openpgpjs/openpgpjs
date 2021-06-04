@@ -28,7 +28,7 @@ import publicKey from './public_key';
 import * as cipher from './cipher';
 import { getRandomBytes } from './random';
 import ECDHSymkey from '../type/ecdh_symkey';
-import OctetString from '../type/octet_string';
+import ShortByteString from '../type/short_byte_string';
 import hash from './hash';
 import config from '../config';
 import KDFParams from '../type/kdf_params';
@@ -81,7 +81,7 @@ export async function publicKeyEncrypt(algo, publicParams, privateParams, data, 
       const iv = await getRandomBytes(ivLength);
       const modeInstance = await mode(algoName, keyMaterial);
       const c = await modeInstance.encrypt(data, iv, new Uint8Array());
-      return { aeadMode: new AEADEnum(aeadMode), iv, c: new OctetString(c) };
+      return { aeadMode: new AEADEnum(aeadMode), iv, c: new ShortByteString(c) };
     }
     default:
       return [];
@@ -293,7 +293,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
       const { tagLength, ivLength } = mode;
 
       const iv = bytes.subarray(read, read + ivLength); read += ivLength;
-      const c = new OctetString(); read += c.read(bytes.subarray(read));
+      const c = new ShortByteString(); read += c.read(bytes.subarray(read));
       const t = bytes.subarray(read, read + tagLength);
 
       return { aeadMode, iv, c, t };
