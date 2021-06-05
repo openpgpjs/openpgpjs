@@ -22,7 +22,7 @@ export function generateSessionKey(options: { encryptionKeys: PublicKey[], date?
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
-export function revokeKey(options: {key: Key, revocationCertificate?: String, reasonForRevocation?: {flag?: enums.reasonForRevocation, string?: String}, config?: PartialConfig}): {Promise.<KeyPair|PublicKey>}
+export function revokeKey(options: {key: Key, revocationCertificate?: String, reasonForRevocation?: {flag?: enums.reasonForRevocation, string?: String}, config?: PartialConfig}): Promise<KeyPair|PublicKey>
 
 export abstract class Key {
   private primaryKey: PublicKeyPacket | SecretKeyPacket;
