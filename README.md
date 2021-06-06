@@ -544,9 +544,9 @@ Using the private key:
         passphrase
     });
 
-    const cleartextMessage = await openpgp.createCleartextMessage({ text: 'Hello, World!' });
+    const message = await openpgp.createMessage({ text: 'Hello, World!' });
     const detachedSignature = await openpgp.sign({
-        message: cleartextMessage, // CleartextMessage or Message object
+        message, // Message object
         signingKeys: privateKey, // for signing
         detached: true
     });
@@ -556,7 +556,7 @@ Using the private key:
         armoredSignature: detachedSignature // parse detached signature
     });
     const verified = await openpgp.verify({
-        message: cleartextMessage, // CleartextMessage or Message object
+        message, // Message object
         signature,
         verificationKeys: publicKey // for verification
     });
