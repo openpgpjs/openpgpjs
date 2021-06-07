@@ -3749,8 +3749,10 @@ VYGdb3eNlV8CfoEC
     });
 
     it('create and add a new symmetric subkey to a rsa key', async function() {
-      const privateKey = await openpgp.readKey({ armoredKey: priv_key_rsa });
-      await privateKey.decrypt('hello world');
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+        passphrase: 'hello world'
+      });
       const total = privateKey.subKeys.length;
       const opt2 = { type: "symmetric", symmetricCipher: 'aes256' };
       let newPrivateKey = await privateKey.addSubkey(opt2);
@@ -3767,7 +3769,7 @@ VYGdb3eNlV8CfoEC
 
     it('create and add a new rsa key with a symmetric encryption subkey', async function() {
       const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { rsaBits: 512, userIds: [userId], subkeys:[{ type: "symmetric", symmetricCipher: 'aes256' }] };
+      const opt = { rsaBits: 512, userIDs: [userId], subkeys:[{ type: "symmetric", symmetricCipher: 'aes256' }] };
 
       const { key } = await openpgp.generateKey(opt);
       const armoredKey = await key.armor();
@@ -3785,7 +3787,7 @@ VYGdb3eNlV8CfoEC
 
     it('create and add a new encrypted rsa key with a symmetric encryption subkey', async function() {
       const userId = { name: 'test', email: 'a@b.com' };
-      const opt = { rsaBits: 512, userIds: [userId], subkeys:[{ type: "symmetric", symmetricCipher: 'aes256' }] };
+      const opt = { rsaBits: 512, userIDs: [userId], subkeys:[{ type: "symmetric", symmetricCipher: 'aes256' }] };
 
       const { key } = await openpgp.generateKey(opt);
       const subKey = key.subKeys[0];
@@ -3802,9 +3804,9 @@ VYGdb3eNlV8CfoEC
     it('create and add a symmetric signing key', async function() {
       const opt = { userIDs: [{ name: "test", email: "a@b.com" }], type: "symmetric", symmetricHash: 'sha256' };
       const { key } = await openpgp.generateKey(opt);
-      const signed = await openpgp.sign({ message: await openpgp.createMessage({ text: 'the data to signed' }), privateKeys: key, armor:false });
+      const signed = await openpgp.sign({ message: await openpgp.createMessage({ text: 'the data to be signed' }), signingKeys: key, armor:false });
       const message = await openpgp.readMessage({ binaryMessage: signed });
-      const { signatures } = await openpgp.verify({ message, publicKeys: [key] });
+      const { signatures } = await openpgp.verify({ message, verificationKeys: [key], expectSigned: true });
       expect(signatures).to.exist;
       expect(signatures.length).to.be.equal(1);
       expect(signatures[0].keyID.toHex()).to.be.equal(key.getKeyID().toHex());
