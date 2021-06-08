@@ -37,45 +37,42 @@ export async function generateSecretKey(options, config) {
 /**
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
  * @param {Array<SignaturePacket>} signatures - List of signatures
+ * @param {PublicKeyPacket|PublicSubkeyPacket} publicKey - Public key packet to verify the signature
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} The latest valid signature.
  * @async
  */
-export async function getLatestValidSignature(signatures, primaryKey, signatureType, dataToVerify, date = new Date(), config) {
-  let signature;
+export async function getLatestValidSignature(signatures, publicKey, signatureType, dataToVerify, date = new Date(), config) {
+  let latestValid;
   let exception;
   for (let i = signatures.length - 1; i >= 0; i--) {
     try {
       if (
-        (!signature || signatures[i].created >= signature.created) &&
-        // check binding signature is not expired (ie, check for V4 expiration time)
-        !signatures[i].isExpired(date)
+        (!latestValid || signatures[i].created >= latestValid.created)
       ) {
-        // check binding signature is verified
-        signatures[i].verified || await signatures[i].verify(primaryKey, signatureType, dataToVerify, undefined, config);
-        signature = signatures[i];
+        await signatures[i].verify(publicKey, signatureType, dataToVerify, date, undefined, config);
+        latestValid = signatures[i];
       }
     } catch (e) {
       exception = e;
     }
   }
-  if (!signature) {
+  if (!latestValid) {
     throw util.wrapError(
-      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${primaryKey.getKeyID().toHex()}`
+      `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${publicKey.getKeyID().toHex()}`
         .replace('certGeneric ', 'self-')
         .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase())
       , exception);
   }
-  return signature;
+  return latestValid;
 }
 
 export function isDataExpired(keyPacket, signature, date = new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
-    const expirationTime = getExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate <= expirationTime) ||
-      (signature && signature.isExpired(date));
+    const expirationTime = getKeyExpirationTime(keyPacket, signature);
+    return !(keyPacket.created <= normDate && normDate <= expirationTime);
   }
   return false;
 }
@@ -91,7 +88,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
-  const subkeySignaturePacket = new SignaturePacket(options.date);
+  const subkeySignaturePacket = new SignaturePacket();
   subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
   subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
   subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey, undefined, undefined, config);
@@ -107,7 +104,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
     subkeySignaturePacket.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign);
+  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date);
   return subkeySignaturePacket;
 }
 
@@ -189,6 +186,7 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
 /**
  * Create signature packet
  * @param {Object} dataToSign - Contains packets to be signed
+ * @param {PrivateKey} privateKey - key to get preferences from
  * @param  {SecretKeyPacket|
  *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
  * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing
@@ -205,11 +203,11 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Private key is not decrypted.');
   }
-  const signaturePacket = new SignaturePacket(date);
+  const signaturePacket = new SignaturePacket();
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
-  await signaturePacket.sign(signingKeyPacket, dataToSign, detached);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
   return signaturePacket;
 }
 
@@ -218,16 +216,17 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
  * @param {Object} source
  * @param {Object} dest
  * @param {String} attr
- * @param {Function} checkFn - optional, signature only merged if true
+ * @param {Date} [date] - date to use for signature expiration check, instead of the current time
+ * @param {(SignaturePacket) => Boolean} [checkFn] - signature only merged if true
  */
-export async function mergeSignatures(source, dest, attr, checkFn) {
+export async function mergeSignatures(source, dest, attr, date = new Date(), checkFn) {
   source = source[attr];
   if (source) {
     if (!dest[attr].length) {
       dest[attr] = source;
     } else {
       await Promise.all(source.map(async function(sourceSig) {
-        if (!sourceSig.isExpired() && (!checkFn || await checkFn(sourceSig)) &&
+        if (!sourceSig.isExpired(date) && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
               return util.equalsUint8Array(destSig.writeParams(), sourceSig.writeParams());
             })) {
@@ -256,7 +255,6 @@ export async function mergeSignatures(source, dest, attr, checkFn) {
  */
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
   key = key || primaryKey;
-  const normDate = util.normalizeDate(date);
   const revocationKeyIDs = [];
   await Promise.all(revocations.map(async function(revocationSignature) {
     try {
@@ -269,10 +267,11 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // third-party revocation signatures here. (It could also be revoking a
         // third-party key certification, which should only affect
         // `verifyAllCertifications`.)
-        (!signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)) &&
-        !(config.revocationsExpire && revocationSignature.isExpired(normDate))
+        !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
-        revocationSignature.verified || await revocationSignature.verify(key, signatureType, dataToVerify, undefined, config);
+        await revocationSignature.verify(
+          key, signatureType, dataToVerify, config.revocationsExpire ? date : null, false, config
+        );
 
         // TODO get an identifier of the revoked object instead
         revocationKeyIDs.push(revocationSignature.issuerKeyID);
@@ -288,7 +287,14 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
   return revocationKeyIDs.length > 0;
 }
 
-export function getExpirationTime(keyPacket, signature) {
+/**
+ * Returns key expiration time based on the given certification signature.
+ * The expiration time of the signature is ignored.
+ * @param {PublicSubkeyPacket|PublicKeyPacket} keyPacket - key to check
+ * @param {SignaturePacket} signature - signature to process
+ * @returns {Date|Infinity} expiration time or infinity if the key does not expire
+ */
+export function getKeyExpirationTime(keyPacket, signature) {
   let expirationTime;
   // check V4 expiration time
   if (signature.keyNeverExpires === false) {
@@ -355,10 +361,6 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
 }
 
 export function isValidSigningKeyPacket(keyPacket, signature) {
-  if (!signature.verified || signature.revoked !== false) { // Sanity check
-    throw new Error('Signature not verified');
-  }
-
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   return keyAlgo !== enums.publicKey.rsaEncrypt &&
     keyAlgo !== enums.publicKey.elgamal &&
@@ -368,10 +370,6 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
 }
 
 export function isValidEncryptionKeyPacket(keyPacket, signature) {
-  if (!signature.verified || signature.revoked !== false) { // Sanity check
-    throw new Error('Signature not verified');
-  }
-
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   return keyAlgo !== enums.publicKey.dsa &&
     keyAlgo !== enums.publicKey.rsaSign &&
@@ -383,10 +381,6 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
 }
 
 export function isValidDecryptionKeyPacket(signature, config) {
-  if (!signature.verified) { // Sanity check
-    throw new Error('Signature not verified');
-  }
-
   if (config.allowInsecureDecryptionWithSigningKeys) {
     // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
     return true;
