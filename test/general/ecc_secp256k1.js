@@ -231,7 +231,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
     return openpgp.generateKey(options).then(function (key) {
       expect(key).to.exist;
       expect(key.key).to.exist;
-      expect(key.key.primaryKey).to.exist;
+      expect(key.key.keyPacket).to.exist;
       expect(key.privateKeyArmored).to.exist;
       expect(key.publicKeyArmored).to.exist;
     });

@@ -389,30 +389,27 @@ function omnibus() {
       expect(firstKey.privateKeyArmored).to.exist;
       expect(firstKey.publicKeyArmored).to.exist;
       expect(firstKey.key).to.exist;
-      expect(firstKey.key.primaryKey).to.exist;
+      expect(firstKey.key.keyPacket).to.exist;
       expect(firstKey.key.subKeys).to.have.length(1);
       expect(firstKey.key.subKeys[0].keyPacket).to.exist;
 
       const hi = firstKey.key;
-      const primaryKey = hi.primaryKey;
+      const primaryKey = hi.keyPacket;
       const subKey = hi.subKeys[0];
       expect(hi.getAlgorithmInfo().curve).to.equal('ed25519');
       expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsa');
       expect(subKey.getAlgorithmInfo().curve).to.equal('curve25519');
       expect(subKey.getAlgorithmInfo().algorithm).to.equal('ecdh');
 
-      // Self Certificate is valid
+      // Verify that self Certificate is valid
       const user = hi.users[0];
       const certificate = user.selfCertifications[0];
-      certificate.verified = null;
       await certificate.verify(
         primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: primaryKey }
-      ).then(async () => expect(certificate.verified).to.be.true);
-
-      certificate.verified = null;
+      );
       await user.verifyCertificate(
         primaryKey, certificate, [hi.toPublic()], undefined, openpgp.config
-      ).then(async () => expect(certificate.verified).to.be.true);
+      );
 
       const options = {
         userIDs: { name: "Bye", email: "bye@good.bye" },
@@ -425,27 +422,23 @@ function omnibus() {
         expect(bye.subKeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
         expect(bye.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
 
-        // Self Certificate is valid
+        // Verify that self Certificate is valid
         const user = bye.users[0];
         const certificate = user.selfCertifications[0];
-        certificate.verified = null;
         await certificate.verify(
-          bye.primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.primaryKey }
-        ).then(async () => expect(certificate.verified).to.be.true);
-        certificate.verified = null;
+          bye.keyPacket, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.keyPacket }
+        );
         await user.verifyCertificate(
-          bye.primaryKey, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
-        ).then(async () => expect(certificate.verified).to.be.true);
+          bye.keyPacket, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
+        );
 
         return Promise.all([
           // Hi trusts Bye!
           bye.toPublic().signPrimaryUser([hi]).then(trustedBye => {
             const hiCertificate = trustedBye.users[0].otherCertifications[0];
-            expect(hiCertificate.verified).to.be.true;
-            hiCertificate.verified = null;
             return hiCertificate.verify(
-              primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.toPublic().primaryKey }
-            ).then(async () => expect(hiCertificate.verified).to.be.true);
+              primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.toPublic().keyPacket }
+            );
           }),
           // Signing message
           openpgp.sign(
@@ -466,22 +459,18 @@ function omnibus() {
             ]);
           }),
           // Encrypting and signing
-          openpgp.encrypt(
-            {
-              message: await openpgp.createMessage({ text: 'Hi, Hi wrote this but only Bye can read it!' }),
-              encryptionKeys: [bye.toPublic()],
-              signingKeys: [hi]
-            }
-          ).then(async encrypted => {
+          openpgp.encrypt({
+            message: await openpgp.createMessage({ text: 'Hi, Hi wrote this but only Bye can read it!' }),
+            encryptionKeys: [bye.toPublic()],
+            signingKeys: [hi]
+          }).then(async encrypted => {
             const msg = await openpgp.readMessage({ armoredMessage: encrypted });
             // Decrypting and verifying
-            return openpgp.decrypt(
-              {
-                message: msg,
-                decryptionKeys: bye,
-                verificationKeys: [hi.toPublic()]
-              }
-            ).then(output => {
+            return openpgp.decrypt({
+              message: msg,
+              decryptionKeys: bye,
+              verificationKeys: [hi.toPublic()]
+            }).then(output => {
               expect(output.data).to.equal('Hi, Hi wrote this but only Bye can read it!');
               expect(output.signatures[0].valid).to.be.true;
             });
