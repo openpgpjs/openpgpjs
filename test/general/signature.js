@@ -848,6 +848,30 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 -----END PGP SIGNATURE-----
 `;
 
+  it("Retrieve the issuer ID of a signature", async function () {
+    const { privateKeyArmored, publicKeyArmored } = await openpgp. generateKey({
+        type: "ecc", // Type of the key, defaults to ECC
+        curve: "curve25519", // ECC curve name, defaults to curve25519
+        userIDs: [{ name: "name", email: "test@email.com"}], // you can pass multiple user IDs
+        passphrase: "password", // protects the private key
+      });
+
+    const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+      passphrase: "password"
+    });
+    const message = await openpgp.createMessage({ text: "test " });
+    const armoredSignature = await openpgp.sign({
+      message,
+      signingKeys: privateKey,
+      detached: true
+    });
+    const signature = await openpgp.readSignature({ armoredSignature }); 
+    expect(signature.getIssuerIDs).to.exist;
+    expect(signature.getIssuerIDs().map(x => x.toHex())).to.include (publicKey.getKeyID().toHex()); 
+  })
+
   it('Testing signature checking on CAST5-enciphered message', async function() {
     const publicKey = await openpgp.readKey({ armoredKey: pub_key_arm1 });
     const privateKey = await openpgp.decryptKey({
