@@ -2074,6 +2074,57 @@ usLw5q4tc+I5gdq57aiulJ8r4Jj9rdzsZFA7PzNJ9WPGVYJ3
 =GSXO
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const expiredPublicKeyThroughDirectSignature = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xsDNBF2lnPIBDAC5cL9PQoQLTMuhjbYvb4Ncuuo0bfmgPRFywX53jPhoFf4Zg6mv
+/seOXpgecTdOcVttfzC8ycIKrt3aQTiwOG/ctaR4Bk/t6ayNFfdUNxHWk4WCKzdz
+/56fW2O0F23qIRd8UUJp5IIlN4RDdRCtdhVQIAuzvp2oVy/LaS2kxQoKvph/5pQ/
+5whqsyroEWDJoSV0yOb25B/iwk/pLUFoyhDG9bj0kIzDxrEqW+7Ba8nocQlecMF3
+X5KMN5kp2zraLv9dlBBpWW43XktjcCZgMy20SouraVma8Je/ECwUWYUiAZxLIlMv
+9CurEOtxUw6N3RdOtLmYZS9uEnn5y1UkF88o8Nku890uk6BrewFzJyLAx5wRZ4F0
+qV/yq36UWQ0JB/AUGhHVPdFf6pl6eaxBwT5GXvbBUibtf8YI2og5RsgTWtXfU7eb
+SGXrl5ZMpbA6mbfhd0R8aPxWfmDWiIOhBufhMCvUHh1sApMKVZnvIff9/0Dca3wb
+vLIwa3T4CyshfT0AEQEAAcLA+QQfAQoADAWCX2i/SgWJAT9MWAAhCRD7/MgqAV5z
+MBYhBNGmbhojsYLJmA94jPv8yCoBXnMwZNYL/RmU7kIYsi7w8d7sPLiqb5C9fs9k
+TJuxLREYpKE7zWz9z16+c9ketkoLpoMSDaZL+4+QEfyAJA+q8c8ZFHJ8E60cPNwe
+jN/ZI+vJRloDAfxMkH+BdKshMtvcmlLq2+AbQWzT0kAUkiiKiUiUsQwrTfenjkT5
+FCsZyKviLsarzdIhpwEdd6zCxWQDap55njXfpUh/vQFZo4aHHtWPwXXRjLZRlKA+
+gI8LQyYuIFOCFQMrhZVEwaLJQa6IbauL4B/qD4y5AMenNumW5M06p0G8yj1L22b6
+R2hWS7Ueo0iu9J4abTEDo1gGxeLwCiMRUGpN7L+4J3yrzGNcjjtXz1/FT6/YSvT2
+bnPraOOGaEO5tflQZ6plEOIc9bKnb2vySlwpxnWgJ7CQdAT+lGVT5xRZ//we5yja
+vsb4pdo0xIW32YDzFQ36HgAO8XUXnz0NkgVDHLujWsyhjq9xkfMOhSmGSeXxvsXa
+1O9uC2n+qX8hV7whWf20UPHKatYbBV0HHJeA280hQm9iIEJhYmJhZ2UgPGJvYkBv
+cGVucGdwLmV4YW1wbGU+wsEOBBMBCgA4AhsDBQsJCAcCBhUKCQgLAgQWAgMBAh4B
+AheAFiEE0aZuGiOxgsmYD3iM+/zIKgFeczAFAl2lnvoACgkQ+/zIKgFeczBvbAv/
+VNk90a6hG8Od9xTzXxH5YRFUSGfIA1yjPIVOnKqhMwps2U+sWE3urL+MvjyQRlyR
+V8oY9IOhQ5Esm6DOZYrTnE7qVETm1ajIAP2OFChEc55uH88x/anpPOXOJY7S8jbn
+3naC9qad75BrZ+3g9EBUWiy5p8TykP05WSnSxNRt7vFKLfEB4nGkehpwHXOVF0CR
+NwYle42bg8lpmdXFDcCZCi+qEbafmTQzkAqyzS3nCh3IAqq6Y0kBuaKLm2tSNUOl
+ZbD+OHYQNZ5Jix7cZUzs6Xh4+I55NRWl5smrLq66yOQoFPy9jot/Qxikx/wP3MsA
+zeGaZSEPc0fHp5G16rlGbxQ3vl8/usUV7W+TMEMljgwd5x8POR6HC8EaCDfVnUBC
+Pi/Gv+egLjsIbPJZZEroiE40e6/UoCiQtlpQB5exPJYSd1Q1txCwueih99PHepsD
+hmUQKiACszNU+RRozAYau2VdHqnRJ7QYdxHDiH49jPK4NTMyb/tJh2TiIwcmsIpG
+zsDNBF2lnPIBDADWML9cbGMrp12CtF9b2P6z9TTT74S8iyBOzaSvdGDQY/sUtZXR
+g21HWamXnn9sSXvIDEINOQ6A9QxdxoqWdCHrOuW3ofneYXoG+zeKc4dC86wa1TR2
+q9vW+RMXSO4uImA+Uzula/6k1DogDf28qhCxMwG/i/m9g1c/0aApuDyKdQ1PXsHH
+Nlgd/Dn6rrd5y2AObaifV7wIhEJnvqgFXDN2RXGjLeCOHV4Q2WTYPg/S4k1nMXVD
+wZXrvIsA0YwIMgIT86Rafp1qKlgPNbiIlC1g9RY/iFaGN2b4Ir6GDohBQSfZW2+L
+XoPZuVE/wGlQ01rh827KVZW4lXvqsge+wtnWlszcselGATyzqOK9LdHPdZGzROZY
+I2e8c+paLNDdVPL6vdRBUnkCaEkOtl1mr2JpQi5nTU+gTX4IeInC7E+1a9UDF/Y8
+5ybUz8XV8rUnR76UqVC7KidNepdHbZjjXCt8/Zo+Tec9JNbYNQB/e9ExmDntmlHE
+sSEQzFwzj8sxH48AEQEAAcLA9gQYAQoAIBYhBNGmbhojsYLJmA94jPv8yCoBXnMw
+BQJdpZzyAhsMAAoJEPv8yCoBXnMw6f8L/26C34dkjBffTzMj5Bdzm8MtF67OYneJ
+4TQMw7+41IL4rVcSKhIhk/3Ud5knaRtP2ef1+5F66h9/RPQOJ5+tvBwhBAcUWSup
+KnUrdVaZQanYmtSxcVV2PL9+QEiNN3tzluhaWO//rACxJ+K/ZXQlIzwQVTpNhfGz
+AaMVV9zpf3u0k14itcv6alKY8+rLZvO1wIIeRZLmU0tZDD5HtWDvUV7rIFI1WuoL
+b+KZgbYn3OWjCPHVdTrdZ2CqnZbG3SXw6awH9bzRLV9EXkbhIMez0deCVdeo+wFF
+klh8/5VK2b0vk/+wqMJxfpa1lHvJLobzOP9fvrswsr92MA2+k901WeISR7qEzcI0
+Fdg8AyFAExaEK6VyjP7SXGLwvfisw34OxuZr3qmx1Sufu4toH3XrB7QJN8Xyqqbs
+GxUCBqWif9RSK4xjzRTe56iPeiSJJOIciMP9i2ldI+KgLycyeDvGoBj0HCLO3gVa
+Be4ubVrj5KjhX2PVNEJd3XZRzaXZE2aAMQ==
+=ZeAz
+-----END PGP PUBLIC KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2891,7 +2942,7 @@ module.exports = () => describe('Key', function() {
     })).to.be.fulfilled;
   });
 
-  it('Method getExpirationTime V4 Key', async function() {
+  it('Key.getExpirationTime()', async function() {
     const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
@@ -2899,7 +2950,7 @@ module.exports = () => describe('Key', function() {
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
   });
 
-  it('Method getExpirationTime expired V4 Key', async function() {
+  it('Key.getExpirationTime() - expired key', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: expiredKey });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
@@ -2907,7 +2958,7 @@ module.exports = () => describe('Key', function() {
     expect(expirationTime.toISOString()).to.be.equal('1970-01-01T00:22:18.000Z');
   });
 
-  it('Method getExpirationTime V4 Subkey', async function() {
+  it('SubKey.getExpirationTime()', async function() {
     const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);
@@ -2915,7 +2966,7 @@ module.exports = () => describe('Key', function() {
     expect(expirationTime.toISOString()).to.be.equal('2018-11-26T10:58:29.000Z');
   });
 
-  it('Method getExpirationTime V4 Key with capabilities', async function() {
+  it('Key.getExpirationTime() with capabilities', async function() {
     const { minRSABits } = openpgp.config;
     try {
       openpgp.config.minRSABits = 1024;
@@ -2928,10 +2979,9 @@ module.exports = () => describe('Key', function() {
     } finally {
       openpgp.config.minRSABits = minRSABits;
     }
-
   });
 
-  it('Method getExpirationTime V4 Key with capabilities - capable primary key', async function() {
+  it('Key.getExpirationTime() with capabilities - capable primary key', async function() {
     const { minRSABits } = openpgp.config;
     try {
       openpgp.config.minRSABits = 1024;
@@ -2943,6 +2993,12 @@ module.exports = () => describe('Key', function() {
     } finally {
       openpgp.config.minRSABits = minRSABits;
     }
+  });
+
+  it('Key.getExpirationTime() - key expiration in direct-key signature', async function() {
+    const privKey = await openpgp.readKey({ armoredKey: expiredPublicKeyThroughDirectSignature });
+    const expirationTime = await privKey.getExpirationTime();
+    expect(expirationTime.toISOString()).to.equal('2020-06-13T14:57:14.000Z');
   });
 
   it("decryptKey() - throw if key parameters don't correspond", async function() {

@@ -360,6 +360,14 @@ class Key {
     if (helper.isDataExpired(primaryKey, selfCertification, date)) {
       throw new Error('Primary key is expired');
     }
+    // check for expiration time in direct signatures
+    const directSignature = await helper.getLatestValidSignature(
+      this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
+    ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
+
+    if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
+      throw new Error('Primary key is expired');
+    }
   }
 
   /**
@@ -378,14 +386,23 @@ class Key {
     let primaryKeyExpiry;
     try {
       const { selfCertification } = await this.getPrimaryUser(null, userID, config);
-      const keyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCertification);
-      const sigExpiry = selfCertification.getExpirationTime();
-      // TODO check direct signatures
-      primaryKeyExpiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
+      const selfSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCertification);
+      const selfSigExpiry = selfCertification.getExpirationTime();
+      const directSignature = await helper.getLatestValidSignature(
+        this.directSignatures, this.keyPacket, enums.signature.key, { key: this.keyPacket }, null, config
+      ).catch(() => {});
+      if (directSignature) {
+        const directSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, directSignature);
+        // We do not support the edge case where the direct signature expires, since it would invalidate the corresponding key expiration,
+        // causing a discountinous validy period for the key
+        primaryKeyExpiry = Math.min(selfSigKeyExpiry, selfSigExpiry, directSigKeyExpiry);
+      } else {
+        primaryKeyExpiry = selfSigKeyExpiry < selfSigExpiry ? selfSigKeyExpiry : selfSigExpiry;
+      }
     } catch (e) {
       primaryKeyExpiry = null;
     }
-    if (!capabilities) return primaryKeyExpiry;
+    if (!capabilities) return util.normalizeDate(primaryKeyExpiry);
 
     // loop through subkeys based on requested capabilities and retrieve their expiration times
     let encryptExpiry = null;
@@ -428,7 +445,7 @@ class Key {
     if (encryptExpiry === null) return signExpiry;
     if (signExpiry === null) return encryptExpiry;
     const expiry = Math.min(encryptExpiry, signExpiry);
-    return expiry === Infinity ? expiry : new Date(expiry);
+    return util.normalizeDate(expiry);
   }
 
 
