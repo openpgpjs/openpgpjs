@@ -526,34 +526,6 @@ Using the private key:
 })();
 ```
 
-#### Getting the IDs of the Issuers of a signature
-
-```js
-(async () => {
-    const { privateKeyArmored, publicKeyArmored } = await openpgp. generateKey({
-        type: "ecc", // Type of the key, defaults to ECC
-        curve: "curve25519", // ECC curve name, defaults to curve25519
-        userIDs: [{ name: "name", email: "test@email.com"}], // you can pass multiple user IDs
-        passphrase: "password", // protects the private key
-      });
-
-    const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
-    const privateKey = await openpgp.decryptKey({
-      privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
-      passphrase: "password"
-    });
-    const message = await openpgp.createMessage({ text: "test " });
-    const armoredSignature = await openpgp.sign({
-      message,
-      signingKeys: privateKey,
-      detached: true
-    });
-    const signature = await openpgp.readSignature({ armoredSignature }); 
-    
-    console.log(signature.getSigningKeyIDs().map(x => x.toHex()))
-})
-```
-
 #### Create and verify *detached* signatures
 
 ```js
