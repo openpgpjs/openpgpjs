@@ -114,7 +114,7 @@ export class Signature {
   constructor(packetlist: PacketList<SignaturePacket>);
   public write(): MaybeStream<Uint8Array>;
   public armor(config?: Config): string;
-  public getIssuerIDs(): Array<KeyID>;
+  public getSigningKeyIDs(): Array<KeyID>;
 }
 
 interface VerificationResult {

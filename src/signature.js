@@ -57,7 +57,7 @@ export class Signature {
    * @returns Returns an array of KeyIDs of all of the issuers who created this signature
    * @returns {Array<KeyID>} The IDs of the issuers
    */
-  getIssuerIDs() {
+  getSigningKeyIDs() {
     return this.packets.map(packet => packet.issuerKeyID)
   }
 }

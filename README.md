@@ -550,7 +550,7 @@ Using the private key:
     });
     const signature = await openpgp.readSignature({ armoredSignature }); 
     
-    console.log(signature.getIssuerIDs().map(x => x.toHex()))
+    console.log(signature.getSigningKeyIDs().map(x => x.toHex()))
 })
 ```
 

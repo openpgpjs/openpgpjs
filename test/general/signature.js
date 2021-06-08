@@ -868,8 +868,8 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
       detached: true
     });
     const signature = await openpgp.readSignature({ armoredSignature }); 
-    expect(signature.getIssuerIDs).to.exist;
-    expect(signature.getIssuerIDs().map(x => x.toHex())).to.include (publicKey.getKeyID().toHex()); 
+    expect(signature.getSigningKeyIDs).to.exist;
+    expect(signature.getSigningKeyIDs().map(x => x.toHex())).to.include (publicKey.getKeyID().toHex()); 
   })
 
   it('Testing signature checking on CAST5-enciphered message', async function() {
