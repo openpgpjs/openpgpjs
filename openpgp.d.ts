@@ -24,7 +24,6 @@ export function encryptKey(options: { privateKey: PrivateKey; passphrase?: strin
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
 
 export abstract class Key {
-  private primaryKey: PublicKeyPacket | SecretKeyPacket;
   private keyPacket: PublicKeyPacket | SecretKeyPacket;
   public subKeys: SubKey[];
   public users: User[];
@@ -38,12 +37,12 @@ export abstract class Key {
   public isPrivate(): boolean;
   public isPublic(): boolean;
   public toPublic(): PublicKey;
-  public update(sourceKey: PublicKey, config?: Config): Promise<PublicKey>;
+  public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PublicKey>;
   public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<PublicKey>
-  public signAllUsers(privateKeys: PrivateKey[], config?: Config): Promise<PublicKey>
+  public signAllUsers(privateKeys: PrivateKey[], date?: Date, config?: Config): Promise<PublicKey>
   public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
   public verifyPrimaryUser(publicKeys: PublicKey[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
-  public verifyAllUsers(publicKeys: PublicKey[], config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
+  public verifyAllUsers(publicKeys: PublicKey[], date?: Date, config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
   public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | SubKey>;
@@ -68,16 +67,17 @@ export class PrivateKey extends PublicKey {
   public isDecrypted(): boolean;
   public addSubkey(options: SubKeyOptions): Promise<PrivateKey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | SubKey>
-  public update(sourceKey: PublicKey, config?: Config): Promise<PrivateKey>;
+  public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
   public getKeys(keyID?: KeyID): (PrivateKey | SubKey)[];
 }
 
 export class SubKey {
-  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket);
+  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
   private keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
+  private mainKey: PublicKey;
   public bindingSignatures: SignaturePacket[];
   public revocationSignatures: SignaturePacket[];
-  public verify(primaryKey: PublicKeyPacket | SecretKeyPacket, date?: Date, config?: Config): Promise<SignaturePacket>;
+  public verify(date?: Date, config?: Config): Promise<SignaturePacket>;
   public isDecrypted(): boolean;
   public getFingerprint(): string;
   public getCreationTime(): Date;
@@ -230,7 +230,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Decrypt the message
       @param decryptionKeys array of private keys with decrypted secret data
   */
-  public decrypt(decryptionKeys?: PrivateKey[], passwords?: string[], sessionKeys?: SessionKey[], config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public decrypt(decryptionKeys?: PrivateKey[], passwords?: string[], sessionKeys?: SessionKey[], date?: Date, config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Encrypt the message
       @param encryptionKeys array of public keys, used to encrypt the message
@@ -444,7 +444,7 @@ export class SignaturePacket extends BasePacket {
   public signatureData: null | Uint8Array;
   public unhashedSubpackets: null | Uint8Array;
   public signedHashValue: null | Uint8Array;
-  public created: Date;
+  public created: Date | null;
   public signatureExpirationTime: null | number;
   public signatureNeverExpires: boolean;
   public exportable: null | boolean;
@@ -480,8 +480,8 @@ export class SignaturePacket extends BasePacket {
   public preferredAEADAlgorithms: enums.aead[] | null;
   public verified: null | boolean;
   public revoked: null | boolean;
-  public sign(key: AnySecretKeyPacket, data: Uint8Array, detached?: boolean): Promise<void>;
-  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, detached?: boolean, config?: Config): Promise<void>; // throws on error
+  public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean): Promise<void>;
+  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
 }
