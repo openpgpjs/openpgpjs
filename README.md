@@ -5,24 +5,25 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
 
 **Table of Contents**
 
-- [OpenPGP.js](#openpgpjs)
+- [OpenPGP.js ![BrowserStack Status](https://automate.browserstack.com/public-build/N1l2eHFOanVBMU9wYWxJM3ZnWERnc1lidkt5UkRqa3BralV3SWVhOGpGTT0tLVljSjE4Z3dzVmdiQjl6RWgxb2c3T2c9PQ==--5864052cd523f751b6b907d547ac9c4c5f88c8a3) [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openpgpjs/openpgpjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)](#openpgpjs--)
     - [Platform Support](#platform-support)
     - [Performance](#performance)
     - [Getting started](#getting-started)
-        - [Node.js](#nodejs)
-        - [Browser (webpack)](#browser-webpack)
-        - [Browser (plain files)](#browser-plain-files)
+      - [Node.js](#nodejs)
+      - [Browser (webpack)](#browser-webpack)
+      - [Browser (plain files)](#browser-plain-files)
     - [Examples](#examples)
-        - [Encrypt and decrypt *Uint8Array* data with a password](#encrypt-and-decrypt-uint8array-data-with-a-password)
-        - [Encrypt and decrypt *String* data with PGP keys](#encrypt-and-decrypt-string-data-with-pgp-keys)
-        - [Encrypt symmetrically with compression](#encrypt-symmetrically-with-compression)
-        - [Streaming encrypt *Uint8Array* data with a password](#streaming-encrypt-uint8array-data-with-a-password)
-        - [Streaming encrypt and decrypt *String* data with PGP keys](#streaming-encrypt-and-decrypt-string-data-with-pgp-keys)
-        - [Generate new key pair](#generate-new-key-pair)
-        - [Revoke a key](#revoke-a-key)
-        - [Sign and verify cleartext messages](#sign-and-verify-cleartext-messages)
-        - [Create and verify *detached* signatures](#create-and-verify-detached-signatures)
-        - [Streaming sign and verify *Uint8Array* data](#streaming-sign-and-verify-uint8array-data)
+      - [Encrypt and decrypt *Uint8Array* data with a password](#encrypt-and-decrypt-uint8array-data-with-a-password)
+      - [Encrypt and decrypt *String* data with PGP keys](#encrypt-and-decrypt-string-data-with-pgp-keys)
+      - [Encrypt symmetrically with compression](#encrypt-symmetrically-with-compression)
+      - [Streaming encrypt *Uint8Array* data with a password](#streaming-encrypt-uint8array-data-with-a-password)
+      - [Streaming encrypt and decrypt *String* data with PGP keys](#streaming-encrypt-and-decrypt-string-data-with-pgp-keys)
+      - [Generate new key pair](#generate-new-key-pair)
+      - [Revoke a key](#revoke-a-key)
+      - [Sign and verify cleartext messages](#sign-and-verify-cleartext-messages)
+      - [Getting the IDs of the Issuers of a signature](#getting-the-ids-of-the-issuers-of-a-signature)
+      - [Create and verify *detached* signatures](#create-and-verify-detached-signatures)
+      - [Streaming sign and verify *Uint8Array* data](#streaming-sign-and-verify-uint8array-data)
     - [Documentation](#documentation)
     - [Security Audit](#security-audit)
     - [Security recommendations](#security-recommendations)
@@ -523,6 +524,34 @@ Using the private key:
         throw new Error('signature could not be verified');
     }
 })();
+```
+
+#### Getting the IDs of the Issuers of a signature
+
+```js
+(async () => {
+    const { privateKeyArmored, publicKeyArmored } = await openpgp. generateKey({
+        type: "ecc", // Type of the key, defaults to ECC
+        curve: "curve25519", // ECC curve name, defaults to curve25519
+        userIDs: [{ name: "name", email: "test@email.com"}], // you can pass multiple user IDs
+        passphrase: "password", // protects the private key
+      });
+
+    const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+      passphrase: "password"
+    });
+    const message = await openpgp.createMessage({ text: "test " });
+    const armoredSignature = await openpgp.sign({
+      message,
+      signingKeys: privateKey,
+      detached: true
+    });
+    const signature = await openpgp.readSignature({ armoredSignature }); 
+    
+    console.log(signature.getIssuerIDs().map(x => x.toHex()))
+})
 ```
 
 #### Create and verify *detached* signatures
