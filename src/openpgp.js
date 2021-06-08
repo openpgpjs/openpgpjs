@@ -249,14 +249,14 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @async
  * @static
  */
-export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, armor = true, detached = false, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, privateKeys, publicKeys }) {
+export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, armor = true, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
-  if (detached) {
+  if (rest.detached) {
     throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");
   }
-  if (publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encrypt, pass `encryptionKeys` instead");
-  if (privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.encrypt, pass `signingKeys` instead");
+  if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encrypt, pass `encryptionKeys` instead");
+  if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.encrypt, pass `signingKeys` instead");
 
   return Promise.resolve().then(async function() {
     const streaming = message.fromStream;
@@ -307,11 +307,11 @@ export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessi
  * @async
  * @static
  */
-export function decrypt({ message, decryptionKeys, passwords, sessionKeys, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, privateKeys, publicKeys }) {
+export function decrypt({ message, decryptionKeys, passwords, sessionKeys, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); verificationKeys = toArray(verificationKeys); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
-  if (privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.decrypt, pass `decryptionKeys` instead");
-  if (publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.decrypt, pass `verificationKeys` instead");
+  if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.decrypt, pass `decryptionKeys` instead");
+  if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.decrypt, pass `verificationKeys` instead");
 
   return message.decrypt(decryptionKeys, passwords, sessionKeys, config).then(async function(decrypted) {
     if (!verificationKeys) {
@@ -366,12 +366,12 @@ export function decrypt({ message, decryptionKeys, passwords, sessionKeys, verif
  * @async
  * @static
  */
-export function sign({ message, signingKeys, armor = true, detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, privateKeys }) {
+export function sign({ message, signingKeys, armor = true, detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
+  if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.sign, pass `signingKeys` instead");
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
   if (message instanceof CleartextMessage && detached) throw new Error("Can't detach-sign a cleartext message");
-  if (privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.sign, pass `signingKeys` instead");
 
   signingKeys = toArray(signingKeys); signingUserIDs = toArray(signingUserIDs);
 
@@ -421,12 +421,12 @@ export function sign({ message, signingKeys, armor = true, detached = false, sig
  * @async
  * @static
  */
-export function verify({ message, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, publicKeys }) {
+export function verify({ message, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message);
+  if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.verify, pass `verificationKeys` instead");
   if (message instanceof CleartextMessage && format === 'binary') throw new Error("Can't return cleartext message data as binary");
   if (message instanceof CleartextMessage && signature) throw new Error("Can't verify detached cleartext signature");
-  if (publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.verify, pass `verificationKeys` instead");
 
   verificationKeys = toArray(verificationKeys);
 
@@ -474,9 +474,10 @@ export function verify({ message, verificationKeys, expectSigned = false, format
  * @async
  * @static
  */
-export function generateSessionKey({ encryptionKeys, date = new Date(), encryptionUserIDs = [], config }) {
+export function generateSessionKey({ encryptionKeys, date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   encryptionKeys = toArray(encryptionKeys); encryptionUserIDs = toArray(encryptionUserIDs);
+  if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.generateSessionKey, pass `encryptionKeys` instead");
 
   return Promise.resolve().then(async function() {
 
@@ -504,9 +505,10 @@ export function generateSessionKey({ encryptionKeys, date = new Date(), encrypti
  * @async
  * @static
  */
-export function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config }) {
+export function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkBinary(data); checkString(algorithm, 'algorithm'); encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionUserIDs = toArray(encryptionUserIDs);
+  if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead");
 
   return Promise.resolve().then(async function() {
 
@@ -530,9 +532,10 @@ export function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKe
  * @async
  * @static
  */
-export function decryptSessionKeys({ message, decryptionKeys, passwords, config }) {
+export function decryptSessionKeys({ message, decryptionKeys, passwords, config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords);
+  if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.decryptSessionKeys, pass `decryptionKeys` instead");
 
   return Promise.resolve().then(async function() {
 
