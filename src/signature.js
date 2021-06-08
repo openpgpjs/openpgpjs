@@ -57,7 +57,7 @@ export class Signature {
    * @returns {Array<KeyID>} The Key IDs of the signing keys
    */
   getSigningKeyIDs() {
-    return this.packets.filter(packet => packet.tag !== enums.packet.marker).map(packet => packet.issuerKeyID);
+    return this.packets.filter(packet => packet.tag === enums.packet.signature).map(packet => packet.issuerKeyID);
   }
 }
 
