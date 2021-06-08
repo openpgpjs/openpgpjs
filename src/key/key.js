@@ -360,16 +360,6 @@ class Key {
     if (helper.isDataExpired(primaryKey, selfCertification, date)) {
       throw new Error('Primary key is expired');
     }
-    // check for expiration time in direct signatures
-    if (this.directSignatures.length > 0) {
-      const directSignature = await helper.getLatestValidSignature(
-        this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
-      ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
-
-      if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
-        throw new Error('Primary key is expired');
-      }
-    }
   }
 
   /**
