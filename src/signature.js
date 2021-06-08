@@ -51,6 +51,15 @@ export class Signature {
   armor(config = defaultConfig) {
     return armor(enums.armor.signature, this.write(), undefined, undefined, undefined, config);
   }
+
+  /**
+   * 
+   * @returns Returns an array of KeyIDs of all of the issuers who created this signature
+   * @returns {Array<KeyID>} The IDs of the issuers
+   */
+  getIssuerIDs() {
+    return this.packets.map(packet => packet.issuerKeyID)
+  }
 }
 
 /**
