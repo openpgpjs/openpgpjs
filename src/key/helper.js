@@ -217,7 +217,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
  * @param {Object} dest
  * @param {String} attr
  * @param {Date} [date] - date to use for signature expiration check, instead of the current time
- * @param {(SignaturePacket) => Boolean} [checkFn] - signature only merged if true
+ * @param {Function} [checkFn] - signature only merged if true
  */
 export async function mergeSignatures(source, dest, attr, date = new Date(), checkFn) {
   source = source[attr];
