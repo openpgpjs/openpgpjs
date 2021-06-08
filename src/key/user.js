@@ -38,11 +38,12 @@ class User {
    * @param  {SecretKeyPacket|
    *          PublicKeyPacket}          primaryKey  The primary key packet
    * @param {Array<Key>} privateKeys - Decrypted private keys for signing
+   * @param {Date} date - Date to overwrite creation date of the signature
    * @param {Object} config - Full configuration
    * @returns {Promise<Key>} New user with new certificate signatures.
    * @async
    */
-  async sign(primaryKey, privateKeys, config) {
+  async sign(primaryKey, privateKeys, date, config) {
     const dataToSign = {
       userID: this.userID,
       userAttribute: this.userAttribute,
@@ -56,14 +57,14 @@ class User {
       if (privateKey.hasSameFingerprintAs(primaryKey)) {
         throw new Error('Not implemented for self signing');
       }
-      const signingKey = await privateKey.getSigningKey(undefined, undefined, undefined, config);
+      const signingKey = await privateKey.getSigningKey(undefined, date, undefined, config);
       return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
-      }, undefined, undefined, undefined, config);
+      }, date, undefined, undefined, config);
     }));
-    await user.update(this, primaryKey);
+    await user.update(this, primaryKey, date, config);
     return user;
   }
 
@@ -114,17 +115,14 @@ class User {
       if (!key.getKeyIDs().some(id => id.equals(keyID))) {
         return null;
       }
-      const signingKey = await key.getSigningKey(keyID, date, undefined, config);
+      const signingKey = await key.getSigningKey(keyID, certificate.created, undefined, config);
       if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
       try {
-        certificate.verified || await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, undefined, config);
+        await certificate.verify(signingKey.keyPacket, enums.signature.certGeneric, dataToVerify, date, undefined, config);
       } catch (e) {
         throw util.wrapError('User certificate is invalid', e);
-      }
-      if (certificate.isExpired(date)) {
-        throw new Error('User certificate is expired');
       }
       return true;
     }));
@@ -185,12 +183,9 @@ class User {
           throw new Error('Self-certification is revoked');
         }
         try {
-          selfCertification.verified || await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, config);
+          await selfCertification.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, undefined, config);
         } catch (e) {
           throw util.wrapError('Self-certification is invalid', e);
-        }
-        if (selfCertification.isExpired(date)) {
-          throw new Error('Self-certification is expired');
         }
         return true;
       } catch (e) {
@@ -205,30 +200,31 @@ class User {
    * @param {User} user - Source user to merge
    * @param  {SecretKeyPacket|
    *          SecretSubkeyPacket} primaryKey primary key used for validation
+   * @param {Date} date - Date to verify the validity of signatures
    * @param {Object} config - Full configuration
    * @returns {Promise<undefined>}
    * @async
    */
-  async update(user, primaryKey, config) {
+  async update(user, primaryKey, date, config) {
     const dataToVerify = {
       userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
     // self signatures
-    await mergeSignatures(user, this, 'selfCertifications', async function(srcSelfSig) {
+    await mergeSignatures(user, this, 'selfCertifications', date, async function(srcSelfSig) {
       try {
-        srcSelfSig.verified || await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, undefined, config);
+        await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, false, config);
         return true;
       } catch (e) {
         return false;
       }
     });
     // other signatures
-    await mergeSignatures(user, this, 'otherCertifications');
+    await mergeSignatures(user, this, 'otherCertifications', date);
     // revocation signatures
-    await mergeSignatures(user, this, 'revocationSignatures', function(srcRevSig) {
-      return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig], undefined, undefined, undefined, config);
+    await mergeSignatures(user, this, 'revocationSignatures', date, function(srcRevSig) {
+      return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig], undefined, undefined, date, config);
     });
   }
 }
