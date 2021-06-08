@@ -219,8 +219,8 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
 
     const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: 'Hello, World!' }), // input as Message object
-        encryptionKeys: publicKey, // for encryption (public keys)
-        signingKeys: privateKey // for signing (signing keys, optional)
+        encryptionKeys: publicKey,
+        signingKeys: privateKey // optional
     });
     console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
@@ -229,8 +229,8 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     });
     const { data: decrypted, signatures } = await openpgp.decrypt({
         message,
-        verificationKeys: publicKey, // for verification (optional)
-        decryptionKeys: privateKey // for decryption
+        verificationKeys: publicKey, // optional
+        decryptionKeys: privateKey
     });
     console.log(decrypted); // 'Hello, World!'
     console.log(signatures[0].valid) // signature validity (signed messages only)
@@ -265,8 +265,8 @@ Encrypt to multiple public keys:
     const message = await openpgp.createMessage({ text: plaintext });
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
-        encryptionKeys: publicKeys, // for encryption
-        signingKeys: privateKey // for signing (optional)
+        encryptionKeys: publicKeys,
+        signingKeys: privateKey // optional
     });
     console.log(encrypted); // '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 })();
@@ -301,9 +301,9 @@ If you expect an encrypted message to be signed with one of the public keys you 
     // decryption will fail if all signatures are invalid or missing
     const { data: decrypted, signatures } = await openpgp.decrypt({
         message,
-        decryptionKeys: privateKey, // for decryption
+        decryptionKeys: privateKey,
         expectSigned: true,
-        verificationKeys: publicKey, // for verification (mandatory with expectSigned=true)
+        verificationKeys: publicKey, // mandatory with expectSigned=true
     });
     console.log(decrypted); // 'Hello, World!'
 })();
@@ -401,8 +401,8 @@ can `.pipe()` to a `Writable` stream, for example.
 
     const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: readableStream }), // input as Message object
-        encryptionKeys: publicKey, // for encryption
-        signingKeys: privateKey // for signing (optional)
+        encryptionKeys: publicKey,
+        signingKeys: privateKey // optional
     });
     console.log(encrypted); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
@@ -411,8 +411,8 @@ can `.pipe()` to a `Writable` stream, for example.
     });
     const decrypted = await openpgp.decrypt({
         message,
-        verificationKeys: publicKey, // for verification (optional)
-        decryptionKeys: privateKey // for decryption
+        verificationKeys: publicKey, // optional
+        decryptionKeys: privateKey
     });
     const chunks = [];
     for await (const chunk of decrypted.data) {
@@ -505,7 +505,7 @@ Using the private key:
     const unsignedMessage = await openpgp.createCleartextMessage({ text: 'Hello, World!' });
     const cleartextMessage = await openpgp.sign({
         message: unsignedMessage, // CleartextMessage or Message object
-        signingKeys: privateKey // for signing
+        signingKeys: privateKey
     });
     console.log(cleartextMessage); // '-----BEGIN PGP SIGNED MESSAGE ... END PGP SIGNATURE-----'
 
@@ -514,7 +514,7 @@ Using the private key:
     });
     const verified = await openpgp.verify({
         message: signedMessage,
-        verificationKeys: publicKey // for verification
+        verificationKeys: publicKey
     });
     const { valid } = verified.signatures[0];
     if (valid) {
@@ -547,7 +547,7 @@ Using the private key:
     const message = await openpgp.createMessage({ text: 'Hello, World!' });
     const detachedSignature = await openpgp.sign({
         message, // Message object
-        signingKeys: privateKey, // for signing
+        signingKeys: privateKey,
         detached: true
     });
     console.log(detachedSignature);
@@ -558,7 +558,7 @@ Using the private key:
     const verified = await openpgp.verify({
         message, // Message object
         signature,
-        verificationKeys: publicKey // for verification
+        verificationKeys: publicKey
     });
     const { valid } = verified.signatures[0];
     if (valid) {
@@ -596,13 +596,13 @@ Using the private key:
     const message = await openpgp.createMessage({ binary: readableStream }); // or createMessage({ text: ReadableStream<String> })
     const signatureArmored = await openpgp.sign({
         message,
-        signingKeys: privateKey // for signing
+        signingKeys: privateKey
     });
     console.log(signatureArmored); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
     const verified = await openpgp.verify({
         message: await openpgp.readMessage({ armoredMessage: signatureArmored }), // parse armored signature
-        verificationKeys: await openpgp.readKey({ armoredKey: publicKeyArmored })   // for verification
+        verificationKeys: await openpgp.readKey({ armoredKey: publicKeyArmored })
     });
 
     for await (const chunk of verified.data) {}
