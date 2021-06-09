@@ -24,7 +24,7 @@ import defaultConfig from '../config';
 import enums from '../enums';
 import util from '../util';
 import User from './user';
-import SubKey from './subkey';
+import Subkey from './subkey';
 import * as helper from './helper';
 import PrivateKey from './private_key';
 import PublicKey from './public_key';
@@ -76,7 +76,7 @@ class Key {
         case enums.packet.publicSubkey:
         case enums.packet.secretSubkey:
           user = null;
-          subkey = new SubKey(packet, this);
+          subkey = new Subkey(packet, this);
           this.subkeys.push(subkey);
           break;
         case enums.packet.signature:
@@ -172,7 +172,7 @@ class Key {
    * Returns an array containing all public or private subkeys matching keyID;
    * If no keyID is given, returns all subkeys.
    * @param {type/keyID} [keyID] - key ID to look for
-   * @returns {Array<SubKey>} array of subkeys
+   * @returns {Array<Subkey>} array of subkeys
    */
   getSubkeys(keyID = null) {
     const subkeys = this.subkeys.filter(subkey => (
@@ -185,7 +185,7 @@ class Key {
    * Returns an array containing all public or private keys matching keyID.
    * If no keyID is given, returns all keys, starting with the primary key.
    * @param {type/keyid~KeyID} [keyID] - key ID to look for
-   * @returns {Array<Key|SubKey>} array of keys
+   * @returns {Array<Key|Subkey>} array of keys
    */
   getKeys(keyID = null) {
     const keys = [];
@@ -227,7 +227,7 @@ class Key {
    * @param  {Date} [date] - use the fiven date date to  to check key validity instead of the current date
    * @param  {Object} [userID] - filter keys for the given user ID
    * @param  {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey>} signing key
+   * @returns {Promise<Key|Subkey>} signing key
    * @throws if no valid signing key was found
    * @async
    */
@@ -281,7 +281,7 @@ class Key {
    * @param  {Date}   [date] - use the fiven date date to  to check key validity instead of the current date
    * @param  {Object} [userID] - filter keys for the given user ID
    * @param  {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Key|SubKey>} encryption key
+   * @returns {Promise<Key|Subkey>} encryption key
    * @throws if no valid encryption key was found
    * @async
    */
@@ -475,9 +475,9 @@ class Key {
     if (this.isPublic() && sourceKey.isPrivate()) {
       // check for equal subkey packets
       const equal = (this.subkeys.length === sourceKey.subkeys.length) &&
-            (this.subkeys.every(destSubKey => {
-              return sourceKey.subkeys.some(srcSubKey => {
-                return destSubKey.hasSameFingerprintAs(srcSubKey);
+            (this.subkeys.every(destSubkey => {
+              return sourceKey.subkeys.some(srcSubkey => {
+                return destSubkey.hasSameFingerprintAs(srcSubkey);
               });
             }));
       if (!equal) {
@@ -667,7 +667,7 @@ class Key {
 
 ['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'hasSameFingerprintAs'].forEach(name => {
   Key.prototype[name] =
-  SubKey.prototype[name];
+  Subkey.prototype[name];
 });
 
 export default Key;

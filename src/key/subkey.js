@@ -1,5 +1,5 @@
 /**
- * @module key/SubKey
+ * @module key/Subkey
  * @private
  */
 
@@ -10,14 +10,14 @@ import defaultConfig from '../config';
 
 /**
  * Class that represents a subkey packet and the relevant signatures.
- * @borrows PublicSubkeyPacket#getKeyID as SubKey#getKeyID
- * @borrows PublicSubkeyPacket#getFingerprint as SubKey#getFingerprint
- * @borrows PublicSubkeyPacket#hasSameFingerprintAs as SubKey#hasSameFingerprintAs
- * @borrows PublicSubkeyPacket#getAlgorithmInfo as SubKey#getAlgorithmInfo
- * @borrows PublicSubkeyPacket#getCreationTime as SubKey#getCreationTime
- * @borrows PublicSubkeyPacket#isDecrypted as SubKey#isDecrypted
+ * @borrows PublicSubkeyPacket#getKeyID as Subkey#getKeyID
+ * @borrows PublicSubkeyPacket#getFingerprint as Subkey#getFingerprint
+ * @borrows PublicSubkeyPacket#hasSameFingerprintAs as Subkey#hasSameFingerprintAs
+ * @borrows PublicSubkeyPacket#getAlgorithmInfo as Subkey#getAlgorithmInfo
+ * @borrows PublicSubkeyPacket#getCreationTime as Subkey#getCreationTime
+ * @borrows PublicSubkeyPacket#isDecrypted as Subkey#isDecrypted
  */
-class SubKey {
+class Subkey {
   /**
    * @param {SecretSubkeyPacket|PublicSubkeyPacket} subkeyPacket - subkey packet to hold in the Subkey
    * @param {Key} mainKey - reference to main Key object, containing the primary key packet corresponding to the subkey
@@ -112,7 +112,7 @@ class SubKey {
 
   /**
    * Update subkey with new components from specified subkey
-   * @param {SubKey} subkey - Source subkey to merge
+   * @param {Subkey} subkey - Source subkey to merge
    * @param {Date} [date] - Date to verify validity of signatures
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if update failed
@@ -121,7 +121,7 @@ class SubKey {
   async update(subkey, date = new Date(), config = defaultConfig) {
     const primaryKey = this.mainKey.keyPacket;
     if (!this.hasSameFingerprintAs(subkey)) {
-      throw new Error('SubKey update method: fingerprints of subkeys not equal');
+      throw new Error('Subkey update method: fingerprints of subkeys not equal');
     }
     // key packet
     if (this.keyPacket.constructor.tag === enums.packet.publicSubkey &&
@@ -161,7 +161,7 @@ class SubKey {
    * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
    * @param {Date} date - optional, override the creationtime of the revocation signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<SubKey>} New subkey with revocation signature.
+   * @returns {Promise<Subkey>} New subkey with revocation signature.
    * @async
    */
   async revoke(
@@ -174,7 +174,7 @@ class SubKey {
     config = defaultConfig
   ) {
     const dataToSign = { key: primaryKey, bind: this.keyPacket };
-    const subkey = new SubKey(this.keyPacket, this.mainKey);
+    const subkey = new Subkey(this.keyPacket, this.mainKey);
     subkey.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, primaryKey, {
       signatureType: enums.signature.subkeyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
@@ -190,10 +190,10 @@ class SubKey {
 }
 
 ['getKeyID', 'getFingerprint', 'getAlgorithmInfo', 'getCreationTime', 'isDecrypted'].forEach(name => {
-  SubKey.prototype[name] =
+  Subkey.prototype[name] =
     function() {
       return this.keyPacket[name]();
     };
 });
 
-export default SubKey;
+export default Subkey;

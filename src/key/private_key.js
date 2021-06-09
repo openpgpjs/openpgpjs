@@ -84,7 +84,7 @@ class PrivateKey extends PublicKey {
    * @param  {Date}              date, optional
    * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<Key|SubKey>>} Array of decryption keys.
+   * @returns {Promise<Array<Key|Subkey>>} Array of decryption keys.
    * @async
    */
   async getDecryptionKeys(keyID, date = new Date(), userID = {}, config = defaultConfig) {

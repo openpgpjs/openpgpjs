@@ -2907,7 +2907,7 @@ module.exports = () => describe('Key', function() {
     expect(expirationTime.toISOString()).to.be.equal('1970-01-01T00:22:18.000Z');
   });
 
-  it('Method getExpirationTime V4 SubKey', async function() {
+  it('Method getExpirationTime V4 Subkey', async function() {
     const [, pubKey] = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKey).to.exist;
     expect(pubKey).to.be.an.instanceof(openpgp.PublicKey);

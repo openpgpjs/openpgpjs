@@ -3177,8 +3177,8 @@ aOU=
           privateKey: await openpgp.readKey({ armoredKey: priv_key_de }),
           passphrase
         });
-        return privKeyDE.subkeys[0].revoke(privKeyDE.keyPacket).then(async function(revSubKey) {
-          pubKeyDE.subkeys[0] = revSubKey;
+        return privKeyDE.subkeys[0].revoke(privKeyDE.keyPacket).then(async function(revSubkey) {
+          pubKeyDE.subkeys[0] = revSubkey;
           return openpgp.encrypt({
             message: await openpgp.createMessage({ text: plaintext }),
             encryptionKeys: pubKeyDE,
