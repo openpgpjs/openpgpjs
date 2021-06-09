@@ -69,7 +69,7 @@ async function testSubkeyTrust() {
     message: await readCleartextMessage({ cleartextMessage: signed }),
     verificationKeys: fakeKey
   });
-  expect(verifyAttackerIsBatman.signatures[0].keyID.equals(victimPubKey.subKeys[0].getKeyID())).to.be.true;
+  expect(verifyAttackerIsBatman.signatures[0].keyID.equals(victimPubKey.subkeys[0].getKeyID())).to.be.true;
   expect(verifyAttackerIsBatman.signatures[0].valid).to.be.false;
   expect(verifyAttackerIsBatman.signatures[0].error).to.match(/Could not find valid signing key packet/);
 }

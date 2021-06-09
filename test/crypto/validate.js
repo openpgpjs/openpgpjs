@@ -110,7 +110,7 @@ module.exports = () => {
     let ecdsaKey;
     before(async () => {
       eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
-      ecdhKey = eddsaKey.subKeys[0];
+      ecdhKey = eddsaKey.subkeys[0];
       ecdsaKey = (await openpgp.generateKey({ curve: 'p256', userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
     });
 
@@ -195,10 +195,10 @@ module.exports = () => {
       before(async () => {
         if (curve !== 'curve25519') {
           ecdsaKey = (await openpgp.generateKey({ curve, userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
-          ecdhKey = ecdsaKey.subKeys[0];
+          ecdhKey = ecdsaKey.subkeys[0];
         } else {
           const eddsaKey = (await openpgp.generateKey({ curve: 'ed25519', userIDs: [{ name: 'Test', email: 'test@test.com' }] })).key;
-          ecdhKey = eddsaKey.subKeys[0];
+          ecdhKey = eddsaKey.subkeys[0];
         }
       });
 
@@ -306,7 +306,7 @@ module.exports = () => {
   describe('ElGamal parameter validation', function() {
     let egKey;
     before(async () => {
-      egKey = (await openpgp.readKey({ armoredKey: armoredElGamalKey })).subKeys[0];
+      egKey = (await openpgp.readKey({ armoredKey: armoredElGamalKey })).subkeys[0];
     });
 
     it('params should be valid', async function() {

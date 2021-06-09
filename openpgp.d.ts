@@ -25,7 +25,7 @@ export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|
 
 export abstract class Key {
   private keyPacket: PublicKeyPacket | SecretKeyPacket;
-  public subKeys: SubKey[];
+  public subkeys: SubKey[];
   public users: User[];
   public revocationSignatures: SignaturePacket[];
   public write(): Uint8Array;
@@ -72,7 +72,7 @@ export class PrivateKey extends PublicKey {
 }
 
 export class SubKey {
-  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
+  constructor(subkeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
   private keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
   private mainKey: PublicKey;
   public bindingSignatures: SignaturePacket[];

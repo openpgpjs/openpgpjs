@@ -390,16 +390,16 @@ function omnibus() {
       expect(firstKey.publicKeyArmored).to.exist;
       expect(firstKey.key).to.exist;
       expect(firstKey.key.keyPacket).to.exist;
-      expect(firstKey.key.subKeys).to.have.length(1);
-      expect(firstKey.key.subKeys[0].keyPacket).to.exist;
+      expect(firstKey.key.subkeys).to.have.length(1);
+      expect(firstKey.key.subkeys[0].keyPacket).to.exist;
 
       const hi = firstKey.key;
       const primaryKey = hi.keyPacket;
-      const subKey = hi.subKeys[0];
+      const subkey = hi.subkeys[0];
       expect(hi.getAlgorithmInfo().curve).to.equal('ed25519');
       expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsa');
-      expect(subKey.getAlgorithmInfo().curve).to.equal('curve25519');
-      expect(subKey.getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(subkey.getAlgorithmInfo().curve).to.equal('curve25519');
+      expect(subkey.getAlgorithmInfo().algorithm).to.equal('ecdh');
 
       // Verify that self Certificate is valid
       const user = hi.users[0];
@@ -419,8 +419,8 @@ function omnibus() {
         const bye = secondKey.key;
         expect(bye.getAlgorithmInfo().curve).to.equal('ed25519');
         expect(bye.getAlgorithmInfo().algorithm).to.equal('eddsa');
-        expect(bye.subKeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
-        expect(bye.subKeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+        expect(bye.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+        expect(bye.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
 
         // Verify that self Certificate is valid
         const user = bye.users[0];

@@ -50,7 +50,7 @@ class Key {
   packetListToStructure(packetlist, disallowedPackets = new Set()) {
     let user;
     let primaryKeyID;
-    let subKey;
+    let subkey;
     for (const packet of packetlist) {
       const tag = packet.constructor.tag;
       if (disallowedPackets.has(tag)) {
@@ -76,8 +76,8 @@ class Key {
         case enums.packet.publicSubkey:
         case enums.packet.secretSubkey:
           user = null;
-          subKey = new SubKey(packet, this);
-          this.subKeys.push(subKey);
+          subkey = new SubKey(packet, this);
+          this.subkeys.push(subkey);
           break;
         case enums.packet.signature:
           switch (packet.signatureType) {
@@ -106,21 +106,21 @@ class Key {
               this.directSignatures.push(packet);
               break;
             case enums.signature.subkeyBinding:
-              if (!subKey) {
+              if (!subkey) {
                 util.printDebug('Dropping subkey binding signature without preceding subkey packet');
                 continue;
               }
-              subKey.bindingSignatures.push(packet);
+              subkey.bindingSignatures.push(packet);
               break;
             case enums.signature.keyRevocation:
               this.revocationSignatures.push(packet);
               break;
             case enums.signature.subkeyRevocation:
-              if (!subKey) {
+              if (!subkey) {
                 util.printDebug('Dropping subkey revocation signature without preceding subkey packet');
                 continue;
               }
-              subKey.revocationSignatures.push(packet);
+              subkey.revocationSignatures.push(packet);
               break;
           }
           break;
@@ -138,7 +138,7 @@ class Key {
     packetlist.push(...this.revocationSignatures);
     packetlist.push(...this.directSignatures);
     this.users.map(user => packetlist.push(...user.toPacketList()));
-    this.subKeys.map(subKey => packetlist.push(...subKey.toPacketList()));
+    this.subkeys.map(subkey => packetlist.push(...subkey.toPacketList()));
     return packetlist;
   }
 
@@ -175,10 +175,10 @@ class Key {
    * @returns {Array<SubKey>} array of subkeys
    */
   getSubkeys(keyID = null) {
-    const subKeys = this.subKeys.filter(subKey => (
-      !keyID || subKey.getKeyID().equals(keyID, true)
+    const subkeys = this.subkeys.filter(subkey => (
+      !keyID || subkey.getKeyID().equals(keyID, true)
     ));
-    return subKeys;
+    return subkeys;
   }
 
   /**
@@ -234,17 +234,17 @@ class Key {
   async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
-    const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
+    const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
-    for (const subKey of subKeys) {
-      if (!keyID || subKey.getKeyID().equals(keyID)) {
+    for (const subkey of subkeys) {
+      if (!keyID || subkey.getKeyID().equals(keyID)) {
         try {
-          await subKey.verify(date, config);
-          const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
+          await subkey.verify(date, config);
+          const dataToVerify = { key: primaryKey, bind: subkey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(
-            subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
+            subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
           );
-          if (!helper.isValidSigningKeyPacket(subKey.keyPacket, bindingSignature)) {
+          if (!helper.isValidSigningKeyPacket(subkey.keyPacket, bindingSignature)) {
             continue;
           }
           if (!bindingSignature.embeddedSignature) {
@@ -252,10 +252,10 @@ class Key {
           }
           // verify embedded signature
           await helper.getLatestValidSignature(
-            [bindingSignature.embeddedSignature], subKey.keyPacket, enums.signature.keyBinding, dataToVerify, date, config
+            [bindingSignature.embeddedSignature], subkey.keyPacket, enums.signature.keyBinding, dataToVerify, date, config
           );
-          helper.checkKeyStrength(subKey.keyPacket, config);
-          return subKey;
+          helper.checkKeyStrength(subkey.keyPacket, config);
+          return subkey;
         } catch (e) {
           exception = e;
         }
@@ -289,17 +289,17 @@ class Key {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
     // V4: by convention subkeys are preferred for encryption service
-    const subKeys = this.subKeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
+    const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
-    for (const subKey of subKeys) {
-      if (!keyID || subKey.getKeyID().equals(keyID)) {
+    for (const subkey of subkeys) {
+      if (!keyID || subkey.getKeyID().equals(keyID)) {
         try {
-          await subKey.verify(date, config);
-          const dataToVerify = { key: primaryKey, bind: subKey.keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(subKey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (helper.isValidEncryptionKeyPacket(subKey.keyPacket, bindingSignature)) {
-            helper.checkKeyStrength(subKey.keyPacket, config);
-            return subKey;
+          await subkey.verify(date, config);
+          const dataToVerify = { key: primaryKey, bind: subkey.keyPacket };
+          const bindingSignature = await helper.getLatestValidSignature(subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
+          if (helper.isValidEncryptionKeyPacket(subkey.keyPacket, bindingSignature)) {
+            helper.checkKeyStrength(subkey.keyPacket, config);
+            return subkey;
           }
         } catch (e) {
           exception = e;
@@ -474,9 +474,9 @@ class Key {
     }
     if (this.isPublic() && sourceKey.isPrivate()) {
       // check for equal subkey packets
-      const equal = (this.subKeys.length === sourceKey.subKeys.length) &&
-            (this.subKeys.every(destSubKey => {
-              return sourceKey.subKeys.some(srcSubKey => {
+      const equal = (this.subkeys.length === sourceKey.subkeys.length) &&
+            (this.subkeys.every(destSubKey => {
+              return sourceKey.subkeys.some(srcSubKey => {
                 return destSubKey.hasSameFingerprintAs(srcSubKey);
               });
             }));
@@ -514,9 +514,9 @@ class Key {
       }
     }));
     // update subkeys
-    await Promise.all(sourceKey.subKeys.map(async srcSubkey => {
+    await Promise.all(sourceKey.subkeys.map(async srcSubkey => {
       // multiple subkeys with same fingerprint might be preset
-      const subkeysToUpdate = updatedKey.subKeys.filter(dstSubkey => (
+      const subkeysToUpdate = updatedKey.subkeys.filter(dstSubkey => (
         dstSubkey.hasSameFingerprintAs(srcSubkey)
       ));
       if (subkeysToUpdate.length > 0) {
@@ -524,7 +524,7 @@ class Key {
           subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, date, config))
         );
       } else {
-        updatedKey.subKeys.push(srcSubkey);
+        updatedKey.subkeys.push(srcSubkey);
       }
     }));
 

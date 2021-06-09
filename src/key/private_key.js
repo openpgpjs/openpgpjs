@@ -90,13 +90,13 @@ class PrivateKey extends PublicKey {
   async getDecryptionKeys(keyID, date = new Date(), userID = {}, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const keys = [];
-    for (let i = 0; i < this.subKeys.length; i++) {
-      if (!keyID || this.subKeys[i].getKeyID().equals(keyID, true)) {
+    for (let i = 0; i < this.subkeys.length; i++) {
+      if (!keyID || this.subkeys[i].getKeyID().equals(keyID, true)) {
         try {
-          const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
+          const dataToVerify = { key: primaryKey, bind: this.subkeys[i].keyPacket };
+          const bindingSignature = await helper.getLatestValidSignature(this.subkeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
           if (helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
-            keys.push(this.subKeys[i]);
+            keys.push(this.subkeys[i]);
           }
         } catch (e) {}
       }
