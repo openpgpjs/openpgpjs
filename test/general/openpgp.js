@@ -1509,7 +1509,7 @@ aOU=
   describe('sign - unit tests', function() {
     it('Supports signing with GnuPG dummy key', async function() {
       const dummyKey = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
-      const sig = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), privateKeys: dummyKey, date: new Date('2018-12-17T03:24:00') });
+      const sig = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: dummyKey, date: new Date('2018-12-17T03:24:00') });
       expect(sig).to.match(/-----END PGP MESSAGE-----\n$/);
     });
   });
