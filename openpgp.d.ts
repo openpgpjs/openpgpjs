@@ -23,7 +23,7 @@ export function decryptKey(options: { privateKey: PrivateKey; passphrase?: strin
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: { flag?: enums.reasonForRevocation, string?: String }, config?: PartialConfig }): Promise<PrivateKey>;
-export function revokeKey(options: { key: PublicKey, revocationCertificate?: String, config?: PartialConfig }): Promise<Key>;
+export function revokeKey(options: { key: PublicKey, revocationCertificate?: String, config?: PartialConfig }): Promise<PublicKey>;
 
 export abstract class Key {
   private primaryKey: PublicKeyPacket | SecretKeyPacket;
