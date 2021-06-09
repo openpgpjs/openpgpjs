@@ -257,7 +257,7 @@ export function encrypt({ message, encryptionKeys, signingKeys, passwords, sessi
   config = { ...defaultConfig, ...config };
   checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.detached) {
-    throw new Error("detached option has been removed from openpgp.encrypt. Separately call openpgp.sign instead. Don't forget to remove privateKeys option as well.");
+    throw new Error("The `detached` option has been removed from openpgp.encrypt, separately call openpgp.sign instead. Don't forget to remove the `privateKeys` option as well.");
   }
   if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encrypt, pass `encryptionKeys` instead");
   if (rest.privateKeys) throw new Error("The `privateKeys` option has been removed from openpgp.encrypt, pass `signingKeys` instead");
