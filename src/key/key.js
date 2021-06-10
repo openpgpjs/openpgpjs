@@ -620,8 +620,9 @@ class Key {
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
    *   keyID: module:type/keyid~KeyID,
-   *   valid: Boolean
-   * }>>} List of signer's keyID and validity of signature
+   *   valid: Boolean|null
+   * }>>} List of signer's keyID and validity of signature.
+   *      Signature validity is null if the verification keys do not correspond to the certificate.
    * @async
    */
   async verifyPrimaryUser(verificationKeys, date = new Date(), userID, config = defaultConfig) {
@@ -629,7 +630,7 @@ class Key {
     const { user } = await this.getPrimaryUser(date, userID, config);
     const results = verificationKeys ?
       await user.verifyAllCertifications(verificationKeys, date, config) :
-      [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, date, config).catch(() => false) }];
+      [{ keyID: primaryKey.getKeyID(), valid: await user.verify(date, config).catch(() => false) }];
     return results;
   }
 
@@ -644,7 +645,8 @@ class Key {
    *   userID: String,
    *   keyID: module:type/keyid~KeyID,
    *   valid: Boolean|null
-   * }>>} List of userID, signer's keyID and validity of signature
+   * }>>} List of userID, signer's keyID and validity of signature.
+   *      Signature validity is null if the verification keys do not correspond to the certificate.
    * @async
    */
   async verifyAllUsers(verificationKeys, date = new Date(), config = defaultConfig) {
@@ -653,7 +655,7 @@ class Key {
     await Promise.all(this.users.map(async user => {
       const signatures = verificationKeys ?
         await user.verifyAllCertifications(verificationKeys, date, config) :
-        [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, date, config).catch(() => false) }];
+        [{ keyID: primaryKey.getKeyID(), valid: await user.verify(date, config).catch(() => false) }];
 
       results.push(...signatures.map(
         signature => ({

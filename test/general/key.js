@@ -2857,7 +2857,7 @@ module.exports = () => describe('Key', function() {
     await user.verifyCertificate(user.selfCertifications[0], [pubKey], pubKey.keyPacket.created, openpgp.config);
     const verifyAllResult = await user.verifyAllCertifications([pubKey], pubKey.keyPacket.created, openpgp.config);
     expect(verifyAllResult[0].valid).to.be.true;
-    await user.verify(pubKey.keyPacket, pubKey.keyPacket.created);
+    await user.verify(pubKey.keyPacket.created, openpgp.config);
   });
 
   it('Evaluate key flags to find valid encryption key packet', async function() {
