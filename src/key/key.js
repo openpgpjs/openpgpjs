@@ -614,7 +614,7 @@ class Key {
    * Verifies primary user of key
    * - if no arguments are given, verifies the self certificates;
    * - otherwise, verifies all certificates signed with given keys.
-   * @param {Array<Key>} keys - array of keys to verify certificate signatures
+   * @param {Array<PublicKey>} [verificationKeys] - array of keys to verify certificate signatures, instead of the primary key
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [userID] - User ID to get instead of the primary user, if it exists
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -624,10 +624,11 @@ class Key {
    * }>>} List of signer's keyID and validity of signature
    * @async
    */
-  async verifyPrimaryUser(keys, date = new Date(), userID, config = defaultConfig) {
+  async verifyPrimaryUser(verificationKeys, date = new Date(), userID, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const { user } = await this.getPrimaryUser(date, userID, config);
-    const results = keys ? await user.verifyAllCertifications(primaryKey, keys, date, config) :
+    const results = verificationKeys ?
+      await user.verifyAllCertifications(verificationKeys, date, config) :
       [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, date, config).catch(() => false) }];
     return results;
   }
@@ -636,29 +637,31 @@ class Key {
    * Verifies all users of key
    * - if no arguments are given, verifies the self certificates;
    * - otherwise, verifies all certificates signed with given keys.
-   * @param {Array<Key>} keys - array of keys to verify certificate signatures
+   * @param {Array<PublicKey>} [verificationKeys] - array of keys to verify certificate signatures
    * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
    *   userID: String,
    *   keyID: module:type/keyid~KeyID,
-   *   valid: Boolean
+   *   valid: Boolean|null
    * }>>} List of userID, signer's keyID and validity of signature
    * @async
    */
-  async verifyAllUsers(keys, date = new Date(), config = defaultConfig) {
-    const results = [];
+  async verifyAllUsers(verificationKeys, date = new Date(), config = defaultConfig) {
     const primaryKey = this.keyPacket;
-    await Promise.all(this.users.map(async function(user) {
-      const signatures = keys ? await user.verifyAllCertifications(primaryKey, keys, date, config) :
+    const results = [];
+    await Promise.all(this.users.map(async user => {
+      const signatures = verificationKeys ?
+        await user.verifyAllCertifications(verificationKeys, date, config) :
         [{ keyID: primaryKey.getKeyID(), valid: await user.verify(primaryKey, date, config).catch(() => false) }];
-      signatures.forEach(signature => {
-        results.push({
+
+      results.push(...signatures.map(
+        signature => ({
           userID: user.userID.userID,
           keyID: signature.keyID,
           valid: signature.valid
-        });
-      });
+        }))
+      );
     }));
     return results;
   }

@@ -2840,7 +2840,7 @@ module.exports = () => describe('Key', function() {
       expect(signatures[1].valid).to.be.false;
 
       const { user } = await pubKey.getPrimaryUser();
-      await expect(user.verifyCertificate(pubKey.keyPacket, user.otherCertifications[0], [certifyingKey], undefined, openpgp.config)).to.be.rejectedWith('User certificate is revoked');
+      await expect(user.verifyCertificate(user.otherCertifications[0], [certifyingKey], undefined, openpgp.config)).to.be.rejectedWith('User certificate is revoked');
     } finally {
       openpgp.config.rejectPublicKeyAlgorithms = rejectPublicKeyAlgorithms;
     }
@@ -2854,8 +2854,8 @@ module.exports = () => describe('Key', function() {
   it('Verify certificate of key with future creation date', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: key_created_2030 });
     const user = pubKey.users[0];
-    await user.verifyCertificate(pubKey.keyPacket, user.selfCertifications[0], [pubKey], pubKey.keyPacket.created, openpgp.config);
-    const verifyAllResult = await user.verifyAllCertifications(pubKey.keyPacket, [pubKey], pubKey.keyPacket.created);
+    await user.verifyCertificate(user.selfCertifications[0], [pubKey], pubKey.keyPacket.created, openpgp.config);
+    const verifyAllResult = await user.verifyAllCertifications([pubKey], pubKey.keyPacket.created, openpgp.config);
     expect(verifyAllResult[0].valid).to.be.true;
     await user.verify(pubKey.keyPacket, pubKey.keyPacket.created);
   });

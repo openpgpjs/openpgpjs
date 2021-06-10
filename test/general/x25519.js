@@ -407,9 +407,7 @@ function omnibus() {
       await certificate.verify(
         primaryKey, openpgp.enums.signature.certGeneric, { userID: user.userID, key: primaryKey }
       );
-      await user.verifyCertificate(
-        primaryKey, certificate, [hi.toPublic()], undefined, openpgp.config
-      );
+      await user.verifyCertificate(certificate, [hi.toPublic()], undefined, openpgp.config);
 
       const options = {
         userIDs: { name: "Bye", email: "bye@good.bye" },
@@ -428,9 +426,7 @@ function omnibus() {
         await certificate.verify(
           bye.keyPacket, openpgp.enums.signature.certGeneric, { userID: user.userID, key: bye.keyPacket }
         );
-        await user.verifyCertificate(
-          bye.keyPacket, user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config
-        );
+        await user.verifyCertificate(user.selfCertifications[0], [bye.toPublic()], undefined, openpgp.config);
 
         return Promise.all([
           // Hi trusts Bye!

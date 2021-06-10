@@ -101,20 +101,21 @@ class User {
    * @throws if the user certificate is invalid.
    * @async
    */
-  async verifyCertificate(primaryKey, certificate, verificationKeys, date = new Date(), config) {
+  async verifyCertificate(certificate, verificationKeys, date = new Date(), config) {
     const that = this;
-    const keyID = certificate.issuerKeyID;
+    const primaryKey = this.mainKey.keyPacket;
     const dataToVerify = {
       userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
-    const issuerKeys = verificationKeys.filter(key => key.getKeys(keyID).length > 0);
+    const { issuerKeyID } = certificate;
+    const issuerKeys = verificationKeys.filter(key => key.getKeys(issuerKeyID).length > 0);
     if (issuerKeys.length === 0) {
       return null;
     }
     await Promise.all(issuerKeys.map(async key => {
-      const signingKey = await key.getSigningKey(keyID, certificate.created, undefined, config);
+      const signingKey = await key.getSigningKey(issuerKeyID, certificate.created, undefined, config);
       if (certificate.revoked || await that.isRevoked(certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
@@ -129,33 +130,29 @@ class User {
 
   /**
    * Verifies all user certificates
-   * @param  {SecretKeyPacket|
-   *          PublicKeyPacket} primaryKey The primary key packet
-   * @param {Array<Key>} keys - Array of keys to verify certificate signatures
+   * @param {Array<PublicKey>} verificationKeys - Array of keys to verify certificate signatures
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
    * @returns {Promise<Array<{
    *   keyID: module:type/keyid~KeyID,
-   *   valid: Boolean
-   * }>>} List of signer's keyID and validity of signature
+   *   valid: Boolean | null
+   * }>>} List of signer's keyID and validity of signature.
+   *   Signature validity is null if the verification keys do not correspond to the certificate
    * @async
    */
-  async verifyAllCertifications(primaryKey, keys, date = new Date(), config) {
+  async verifyAllCertifications(verificationKeys, date = new Date(), config) {
     const that = this;
     const certifications = this.selfCertifications.concat(this.otherCertifications);
-    return Promise.all(certifications.map(async function(certification) {
-      return {
-        keyID: certification.issuerKeyID,
-        valid: await that.verifyCertificate(primaryKey, certification, keys, date, config).catch(() => false)
-      };
-    }));
+    return Promise.all(certifications.map(async certification => ({
+      keyID: certification.issuerKeyID,
+      valid: await that.verifyCertificate(certification, verificationKeys, date, config).catch(() => false)
+    })));
   }
 
   /**
    * Verify User. Checks for existence of self signatures, revocation signatures
    * and validity of self signature.
-   * @param  {SecretKeyPacket|
-   *          PublicKeyPacket} primaryKey The primary key packet
+   * @param {SecretKeyPacket|PublicKeyPacket} primaryKey The primary key packet
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
    * @returns {Promise<true>} Status of user.
