@@ -38,15 +38,14 @@ class User {
 
   /**
    * Signs user
-   * @param  {SecretKeyPacket|
-   *          PublicKeyPacket}          primaryKey  The primary key packet
-   * @param {Array<Key>} privateKeys - Decrypted private keys for signing
+   * @param {Array<PrivateKey>} privateKeys - Decrypted private keys for signing
    * @param {Date} date - Date to overwrite creation date of the signature
    * @param {Object} config - Full configuration
-   * @returns {Promise<Key>} New user with new certificate signatures.
+   * @returns {Promise<User>} New user with new certificate signatures.
    * @async
    */
-  async sign(primaryKey, privateKeys, date, config) {
+  async sign(privateKeys, date, config) {
+    const primaryKey = this.mainKey.keyPacket;
     const dataToSign = {
       userID: this.userID,
       userAttribute: this.userAttribute,
