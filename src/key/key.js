@@ -70,7 +70,7 @@ class Key {
           break;
         case enums.packet.userID:
         case enums.packet.userAttribute:
-          user = new User(packet);
+          user = new User(packet, this);
           this.users.push(user);
           break;
         case enums.packet.publicSubkey:

@@ -10,14 +10,17 @@ import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper'
 
 /**
  * Class that represents an user ID or attribute packet and the relevant signatures.
+  * @param {UserIDPacket|UserAttributePacket} userPacket - packet containing the user info
+  * @param {Key} mainKey - reference to main Key object containing the primary key and subkeys that the user is associated with
  */
 class User {
-  constructor(userPacket) {
+  constructor(userPacket, mainKey) {
     this.userID = userPacket.constructor.tag === enums.packet.userID ? userPacket : null;
     this.userAttribute = userPacket.constructor.tag === enums.packet.userAttribute ? userPacket : null;
     this.selfCertifications = [];
     this.otherCertifications = [];
     this.revocationSignatures = [];
+    this.mainKey = mainKey;
   }
 
   /**
@@ -49,7 +52,7 @@ class User {
       userAttribute: this.userAttribute,
       key: primaryKey
     };
-    const user = new User(dataToSign.userID || dataToSign.userAttribute);
+    const user = new User(dataToSign.userID || dataToSign.userAttribute, this.mainKey);
     user.otherCertifications = await Promise.all(privateKeys.map(async function(privateKey) {
       if (privateKey.isPublic()) {
         throw new Error('Need private key for signing');
