@@ -93,17 +93,16 @@ class User {
   }
 
   /**
-   * Verifies the user certificate. Throws if the user certificate is invalid.
-   * @param  {SecretKeyPacket|
-   *          PublicKeyPacket} primaryKey  The primary key packet
+   * Verifies the user certificate.
    * @param {SignaturePacket} certificate - A certificate of this user
-   * @param {Array<Key>} keys - Array of keys to verify certificate signatures
+   * @param {Array<PublicKey>} verificationKeys - Array of keys to verify certificate signatures
    * @param {Date} date - Use the given date instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<true|null>} Status of the certificate.
+   * @returns {Promise<true|null>} true if the certificate could be verified, or null if the verification keys do not correspond to the certificate
+   * @throws if the user certificate is invalid.
    * @async
    */
-  async verifyCertificate(primaryKey, certificate, keys, date = new Date(), config) {
+  async verifyCertificate(primaryKey, certificate, verificationKeys, date = new Date(), config) {
     const that = this;
     const keyID = certificate.issuerKeyID;
     const dataToVerify = {
@@ -111,10 +110,11 @@ class User {
       userAttribute: this.userAttribute,
       key: primaryKey
     };
-    const results = await Promise.all(keys.map(async function(key) {
-      if (!key.getKeyIDs().some(id => id.equals(keyID))) {
-        return null;
-      }
+    const issuerKeys = verificationKeys.filter(key => key.getKeys(keyID).length > 0);
+    if (issuerKeys.length === 0) {
+      return null;
+    }
+    await Promise.all(issuerKeys.map(async key => {
       const signingKey = await key.getSigningKey(keyID, certificate.created, undefined, config);
       if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
@@ -124,9 +124,8 @@ class User {
       } catch (e) {
         throw util.wrapError('User certificate is invalid', e);
       }
-      return true;
     }));
-    return results.find(result => result !== null) || null;
+    return true;
   }
 
   /**
