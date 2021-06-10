@@ -247,7 +247,7 @@ export async function mergeSignatures(source, dest, attr, date = new Date(), che
  * @param  {PublicSubkeyPacket|
  *          SecretSubkeyPacket|
  *          PublicKeyPacket|
- *          SecretKeyPacket} key, optional The key packet to check the signature
+ *          SecretKeyPacket} key, optional The key packet to verify the signature, instead of the primary key
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - Full configuration
  * @returns {Promise<Boolean>} True if the signature revokes the data.

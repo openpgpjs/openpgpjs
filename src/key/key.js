@@ -440,7 +440,7 @@ class Key {
       throw exception || new Error('Could not find primary user');
     }
     await Promise.all(users.map(async function (a) {
-      return a.user.revoked || a.user.isRevoked(primaryKey, a.selfCertification, null, date, config);
+      return a.user.revoked || a.user.isRevoked(a.selfCertification, null, date, config);
     }));
     // sort by primary user flag and signature creation time
     const primaryUser = users.sort(function(a, b) {
@@ -449,7 +449,7 @@ class Key {
       return B.revoked - A.revoked || A.isPrimaryUserID - B.isPrimaryUserID || A.created - B.created;
     }).pop();
     const { user, selfCertification: cert } = primaryUser;
-    if (cert.revoked || await user.isRevoked(primaryKey, cert, null, date, config)) {
+    if (cert.revoked || await user.isRevoked(cert, null, date, config)) {
       throw new Error('Primary user is revoked');
     }
     return primaryUser;

@@ -72,26 +72,23 @@ class User {
 
   /**
    * Checks if a given certificate of the user is revoked
-   * @param  {SecretKeyPacket|
-   *          PublicKeyPacket} primaryKey    The primary key packet
    * @param {SignaturePacket} certificate - The certificate to verify
    * @param  {PublicSubkeyPacket|
    *          SecretSubkeyPacket|
    *          PublicKeyPacket|
-   *          SecretKeyPacket} key, optional The key to verify the signature
-   * @param {Date} date - Use the given date instead of the current time
+   *          SecretKeyPacket} [keyPacket] The key packet to verify the signature, instead of the primary key
+   * @param {Date} [date] - Use the given date for verification instead of the current time
    * @param {Object} config - Full configuration
    * @returns {Promise<Boolean>} True if the certificate is revoked.
    * @async
    */
-  async isRevoked(primaryKey, certificate, key, date = new Date(), config) {
-    return isDataRevoked(
-      primaryKey, enums.signature.certRevocation, {
-        key: primaryKey,
-        userID: this.userID,
-        userAttribute: this.userAttribute
-      }, this.revocationSignatures, certificate, key, date, config
-    );
+  async isRevoked(certificate, keyPacket, date = new Date(), config) {
+    const primaryKey = this.mainKey.keyPacket;
+    return isDataRevoked(primaryKey, enums.signature.certRevocation, {
+      key: primaryKey,
+      userID: this.userID,
+      userAttribute: this.userAttribute
+    }, this.revocationSignatures, certificate, keyPacket, date, config);
   }
 
   /**
@@ -118,7 +115,7 @@ class User {
     }
     await Promise.all(issuerKeys.map(async key => {
       const signingKey = await key.getSigningKey(keyID, certificate.created, undefined, config);
-      if (certificate.revoked || await that.isRevoked(primaryKey, certificate, signingKey.keyPacket, date, config)) {
+      if (certificate.revoked || await that.isRevoked(certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
       }
       try {
@@ -180,7 +177,7 @@ class User {
     for (let i = this.selfCertifications.length - 1; i >= 0; i--) {
       try {
         const selfCertification = this.selfCertifications[i];
-        if (selfCertification.revoked || await that.isRevoked(primaryKey, selfCertification, undefined, date, config)) {
+        if (selfCertification.revoked || await that.isRevoked(selfCertification, undefined, date, config)) {
           throw new Error('Self-certification is revoked');
         }
         try {
