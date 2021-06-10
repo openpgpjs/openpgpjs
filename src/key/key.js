@@ -507,10 +507,12 @@ class Key {
       ));
       if (usersToUpdate.length > 0) {
         await Promise.all(
-          usersToUpdate.map(userToUpdate => userToUpdate.update(srcUser, updatedKey.keyPacket, date, config))
+          usersToUpdate.map(userToUpdate => userToUpdate.update(srcUser, date, config))
         );
       } else {
-        updatedKey.users.push(srcUser);
+        const newUser = srcUser.clone();
+        newUser.mainKey = updatedKey;
+        updatedKey.users.push(newUser);
       }
     }));
     // update subkeys
@@ -524,7 +526,9 @@ class Key {
           subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, date, config))
         );
       } else {
-        updatedKey.subkeys.push(srcSubkey);
+        const newSubkey = srcSubkey.clone();
+        newSubkey.mainKey = updatedKey;
+        updatedKey.subkeys.push(newSubkey);
       }
     }));
 

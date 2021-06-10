@@ -3118,10 +3118,16 @@ module.exports = () => describe('Key', function() {
     const dest = await openpgp.readKey({ armoredKey: pub_sig_test });
     expect(source.users[1]).to.exist;
     dest.users.pop();
-    return dest.update(source).then(updated => {
-      expect(updated.users[1]).to.exist;
-      expect(updated.users[1].userID).to.equal(source.users[1].userID);
-    });
+    const updated = await dest.update(source);
+    expect(updated.users[1]).to.exist;
+    expect(updated.users[1].userID).to.equal(source.users[1].userID);
+    expect(updated.users[1].selfCertifications.length).to.equal(source.users[1].selfCertifications.length);
+    // check that the added users stores certifications separately
+    updated.users[1].selfCertifications.pop();
+    expect(updated.users[1].selfCertifications.length).to.not.equal(source.users[1].selfCertifications.length);
+    // merge self-signatures
+    const updatedAgain = await updated.update(source);
+    expect(updatedAgain.users[1].selfCertifications.length).to.equal(source.users[1].selfCertifications.length);
   });
 
   it('update() - merge user - other and certification revocation signatures', async function() {
@@ -3151,6 +3157,13 @@ module.exports = () => describe('Key', function() {
     ).to.equal(
       source.subkeys[1].getKeyID().toHex()
     );
+    expect(updated.subkeys[1].bindingSignatures.length).to.equal(source.subkeys[1].bindingSignatures.length);
+    // check that the added subkey stores binding signatures separately
+    updated.subkeys[1].bindingSignatures.pop();
+    expect(updated.subkeys[1].bindingSignatures.length).to.not.equal(source.subkeys[1].bindingSignatures.length);
+    // merge binding signature
+    const updatedAgain = await updated.update(source);
+    expect(updatedAgain.subkeys[1].bindingSignatures.length).to.equal(source.subkeys[1].bindingSignatures.length);
   });
 
   it('update() - merge subkey - revocation signature', async function() {

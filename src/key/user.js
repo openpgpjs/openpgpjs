@@ -37,6 +37,18 @@ class User {
   }
 
   /**
+   * Shallow clone
+   * @returns {User}
+   */
+  clone() {
+    const user = new User(this.userID || this.userAttribute, this.mainKey);
+    user.selfCertifications = [...this.selfCertifications];
+    user.otherCertifications = [...this.otherCertifications];
+    user.revocationSignatures = [...this.revocationSignatures];
+    return user;
+  }
+
+  /**
    * Signs user
    * @param {Array<PrivateKey>} signingKeys - Decrypted private keys for signing
    * @param {Date} date - Date to overwrite creation date of the signature
@@ -66,7 +78,7 @@ class User {
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
       }, date, undefined, undefined, config);
     }));
-    await user.update(this, primaryKey, date, config);
+    await user.update(this, date, config);
     return user;
   }
 
@@ -192,22 +204,21 @@ class User {
 
   /**
    * Update user with new components from specified user
-   * @param {User} user - Source user to merge
-   * @param  {SecretKeyPacket|
-   *          SecretSubkeyPacket} primaryKey primary key used for validation
+   * @param {User} sourceUser - Source user to merge
    * @param {Date} date - Date to verify the validity of signatures
    * @param {Object} config - Full configuration
    * @returns {Promise<undefined>}
    * @async
    */
-  async update(user, primaryKey, date, config) {
+  async update(sourceUser, date, config) {
+    const primaryKey = this.mainKey.keyPacket;
     const dataToVerify = {
       userID: this.userID,
       userAttribute: this.userAttribute,
       key: primaryKey
     };
     // self signatures
-    await mergeSignatures(user, this, 'selfCertifications', date, async function(srcSelfSig) {
+    await mergeSignatures(sourceUser, this, 'selfCertifications', date, async function(srcSelfSig) {
       try {
         await srcSelfSig.verify(primaryKey, enums.signature.certGeneric, dataToVerify, date, false, config);
         return true;
@@ -216,9 +227,9 @@ class User {
       }
     });
     // other signatures
-    await mergeSignatures(user, this, 'otherCertifications', date);
+    await mergeSignatures(sourceUser, this, 'otherCertifications', date);
     // revocation signatures
-    await mergeSignatures(user, this, 'revocationSignatures', date, function(srcRevSig) {
+    await mergeSignatures(sourceUser, this, 'revocationSignatures', date, function(srcRevSig) {
       return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig], undefined, undefined, date, config);
     });
   }

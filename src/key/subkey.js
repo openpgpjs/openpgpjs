@@ -42,6 +42,17 @@ class Subkey {
   }
 
   /**
+   * Shallow clone
+   * @return {Subkey}
+   */
+  clone() {
+    const subkey = new Subkey(this.keyPacket, this.mainKey);
+    subkey.bindingSignatures = [...this.bindingSignatures];
+    subkey.revocationSignatures = [...this.revocationSignatures];
+    return subkey;
+  }
+
+  /**
    * Checks if a binding signature of a subkey is revoked
    * @param {SignaturePacket} signature - The binding signature to verify
    * @param  {PublicSubkeyPacket|
