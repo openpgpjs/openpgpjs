@@ -49,14 +49,14 @@ class User {
   }
 
   /**
-   * Signs user
+   * Generate third-party certifications over this user and its primary key
    * @param {Array<PrivateKey>} signingKeys - Decrypted private keys for signing
-   * @param {Date} date - Date to overwrite creation date of the signature
+   * @param {Date} [date] - Date to use as creation date of the certificate, instead of the current time
    * @param {Object} config - Full configuration
-   * @returns {Promise<User>} New user with new certificate signatures.
+   * @returns {Promise<User>} New user with new certifications.
    * @async
    */
-  async sign(signingKeys, date, config) {
+  async certify(signingKeys, date, config) {
     const primaryKey = this.mainKey.keyPacket;
     const dataToSign = {
       userID: this.userID,
@@ -69,7 +69,7 @@ class User {
         throw new Error('Need private key for signing');
       }
       if (privateKey.hasSameFingerprintAs(primaryKey)) {
-        throw new Error('Not implemented for self signing');
+        throw new Error(`The user's own key can only be used for self-certifications`);
       }
       const signingKey = await privateKey.getSigningKey(undefined, date, undefined, config);
       return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
@@ -172,7 +172,7 @@ class User {
    */
   async verify(date = new Date(), config) {
     if (!this.selfCertifications.length) {
-      throw new Error('No self-certifications');
+      throw new Error('No self-certifications found');
     }
     const that = this;
     const primaryKey = this.mainKey.keyPacket;

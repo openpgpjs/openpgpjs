@@ -592,7 +592,7 @@ class Key {
    */
   async signPrimaryUser(privateKeys, date, userID, config = defaultConfig) {
     const { index, user } = await this.getPrimaryUser(date, userID, config);
-    const userSign = await user.sign(privateKeys, date, config);
+    const userSign = await user.certify(privateKeys, date, config);
     const key = this.clone();
     key.users[index] = userSign;
     return key;
@@ -609,7 +609,7 @@ class Key {
   async signAllUsers(privateKeys, date = new Date(), config = defaultConfig) {
     const key = this.clone();
     key.users = await Promise.all(this.users.map(function(user) {
-      return user.sign(privateKeys, date, config);
+      return user.certify(privateKeys, date, config);
     }));
     return key;
   }
