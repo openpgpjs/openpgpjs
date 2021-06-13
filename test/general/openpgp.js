@@ -941,11 +941,11 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         expect(newKey.key.getAlgorithmInfo().curve).to.equal('ed25519');
         expect(+newKey.key.getCreationTime()).to.equal(+now);
         expect(await newKey.key.getExpirationTime()).to.equal(Infinity);
-        expect(newKey.key.subKeys.length).to.equal(1);
-        expect(newKey.key.subKeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
-        expect(newKey.key.subKeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
-        expect(+newKey.key.subKeys[0].getCreationTime()).to.equal(+now);
-        expect(await newKey.key.subKeys[0].getExpirationTime()).to.equal(Infinity);
+        expect(newKey.key.subkeys.length).to.equal(1);
+        expect(newKey.key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
+        expect(newKey.key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+        expect(+newKey.key.subkeys[0].getCreationTime()).to.equal(+now);
+        expect(await newKey.key.subkeys[0].getExpirationTime()).to.equal(Infinity);
         expect(newKey.privateKeyArmored).to.exist;
         expect(newKey.publicKeyArmored).to.exist;
       });
@@ -979,7 +979,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         passphrase: passphrase
       }).then(unlocked => {
         expect(unlocked.getKeyID().toHex()).to.equal(privateKey.getKeyID().toHex());
-        expect(unlocked.subKeys[0].getKeyID().toHex()).to.equal(privateKey.subKeys[0].getKeyID().toHex());
+        expect(unlocked.subkeys[0].getKeyID().toHex()).to.equal(privateKey.subkeys[0].getKeyID().toHex());
         expect(unlocked.isDecrypted()).to.be.true;
         expect(unlocked.keyPacket.privateParams).to.not.be.null;
         // original key should be unchanged
@@ -997,7 +997,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         passphrase: ['rubbish', passphrase]
       }).then(unlocked => {
         expect(unlocked.getKeyID().toHex()).to.equal(privateKey.getKeyID().toHex());
-        expect(unlocked.subKeys[0].getKeyID().toHex()).to.equal(privateKey.subKeys[0].getKeyID().toHex());
+        expect(unlocked.subkeys[0].getKeyID().toHex()).to.equal(privateKey.subkeys[0].getKeyID().toHex());
         expect(unlocked.isDecrypted()).to.be.true;
         expect(unlocked.keyPacket.privateParams).to.not.be.null;
         // original key should be unchanged
@@ -1052,7 +1052,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         passphrase: passphrase
       }).then(locked => {
         expect(locked.getKeyID().toHex()).to.equal(key.getKeyID().toHex());
-        expect(locked.subKeys[0].getKeyID().toHex()).to.equal(key.subKeys[0].getKeyID().toHex());
+        expect(locked.subkeys[0].getKeyID().toHex()).to.equal(key.subkeys[0].getKeyID().toHex());
         expect(locked.isDecrypted()).to.be.false;
         expect(locked.keyPacket.privateParams).to.be.null;
         // original key should be unchanged
@@ -1716,7 +1716,7 @@ aOU=
           }).then(async function(encrypted) {
             const message = await openpgp.readMessage({ binaryMessage: encrypted });
             const invalidPrivateKey = await openpgp.readKey({ armoredKey: priv_key });
-            invalidPrivateKey.subKeys[0].bindingSignatures = [];
+            invalidPrivateKey.subkeys[0].bindingSignatures = [];
             return openpgp.decryptSessionKeys({
               message,
               decryptionKeys: invalidPrivateKey
@@ -3177,8 +3177,8 @@ aOU=
           privateKey: await openpgp.readKey({ armoredKey: priv_key_de }),
           passphrase
         });
-        return privKeyDE.subKeys[0].revoke(privKeyDE.keyPacket).then(async function(revSubKey) {
-          pubKeyDE.subKeys[0] = revSubKey;
+        return privKeyDE.subkeys[0].revoke(privKeyDE.keyPacket).then(async function(revSubkey) {
+          pubKeyDE.subkeys[0] = revSubkey;
           return openpgp.encrypt({
             message: await openpgp.createMessage({ text: plaintext }),
             encryptionKeys: pubKeyDE,
@@ -3202,7 +3202,7 @@ aOU=
           encryptionKeys: pubKeyDE,
           config: { rejectPublicKeyAlgorithms: new Set() }
         });
-        privKeyDE.subKeys[0] = await privKeyDE.subKeys[0].revoke(privKeyDE.keyPacket);
+        privKeyDE.subkeys[0] = await privKeyDE.subkeys[0].revoke(privKeyDE.keyPacket);
         const decOpt = {
           message: await openpgp.readMessage({ armoredMessage: encrypted }),
           decryptionKeys: privKeyDE,
@@ -3216,7 +3216,7 @@ aOU=
         const pubKeyDE = await openpgp.readKey({ armoredKey: pub_key_de });
         const privKeyDE = await openpgp.readKey({ armoredKey: priv_key_de });
         // corrupt the public key params
-        privKeyDE.subKeys[0].keyPacket.publicParams.p[0]++;
+        privKeyDE.subkeys[0].keyPacket.publicParams.p[0]++;
         // validation will check the primary key -- not the decryption subkey -- and will succeed (for now)
         const decryptedKeyDE = await openpgp.decryptKey({
           privateKey: privKeyDE,

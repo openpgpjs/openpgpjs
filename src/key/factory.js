@@ -106,7 +106,7 @@ export async function reformat(options, config) {
   const secretKeyPacket = privateKey.keyPacket;
 
   if (!options.subkeys) {
-    options.subkeys = await Promise.all(privateKey.subKeys.map(async subkey => {
+    options.subkeys = await Promise.all(privateKey.subkeys.map(async subkey => {
       const secretSubkeyPacket = subkey.keyPacket;
       const dataToVerify = { key: secretKeyPacket, bind: secretSubkeyPacket };
       const bindingSignature = await (
@@ -118,7 +118,7 @@ export async function reformat(options, config) {
     }));
   }
 
-  const secretSubkeyPackets = privateKey.subKeys.map(subkey => subkey.keyPacket);
+  const secretSubkeyPackets = privateKey.subkeys.map(subkey => subkey.keyPacket);
   if (options.subkeys.length !== secretSubkeyPackets.length) {
     throw new Error('Number of subkey options does not match number of subkeys');
   }

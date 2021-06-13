@@ -25,7 +25,7 @@ export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|
 
 export abstract class Key {
   private keyPacket: PublicKeyPacket | SecretKeyPacket;
-  public subKeys: SubKey[];
+  public subkeys: Subkey[];
   public users: User[];
   public revocationSignatures: SignaturePacket[];
   public write(): Uint8Array;
@@ -45,10 +45,10 @@ export abstract class Key {
   public verifyAllUsers(publicKeys: PublicKey[], date?: Date, config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
-  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | SubKey>;
-  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | SubKey>;
-  public getKeys(keyID?: KeyID): (PublicKey | SubKey)[];
-  public getSubkeys(keyID?: KeyID): SubKey[];
+  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | Subkey>;
+  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | Subkey>;
+  public getKeys(keyID?: KeyID): (PublicKey | Subkey)[];
+  public getSubkeys(keyID?: KeyID): Subkey[];
   public getFingerprint(): string;
   public getCreationTime(): Date;
   public getAlgorithmInfo(): AlgorithmInfo;
@@ -65,14 +65,14 @@ export class PrivateKey extends PublicKey {
   constructor(packetlist: PacketList<AnyKeyPacket>);
   public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date, config?: Config): Promise<PrivateKey>;
   public isDecrypted(): boolean;
-  public addSubkey(options: SubKeyOptions): Promise<PrivateKey>;
-  public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | SubKey>
+  public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
+  public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
-  public getKeys(keyID?: KeyID): (PrivateKey | SubKey)[];
+  public getKeys(keyID?: KeyID): (PrivateKey | Subkey)[];
 }
 
-export class SubKey {
-  constructor(subKeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
+export class Subkey {
+  constructor(subkeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
   private keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
   private mainKey: PublicKey;
   public bindingSignatures: SignaturePacket[];
@@ -635,11 +635,11 @@ interface KeyOptions {
   rsaBits?: number;
   keyExpirationTime?: number;
   date?: Date;
-  subkeys?: SubKeyOptions[];
+  subkeys?: SubkeyOptions[];
   config?: PartialConfig;
 }
 
-interface SubKeyOptions {
+interface SubkeyOptions {
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
   rsaBits?: number;

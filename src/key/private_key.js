@@ -84,19 +84,19 @@ class PrivateKey extends PublicKey {
    * @param  {Date}              date, optional
    * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<Array<Key|SubKey>>} Array of decryption keys.
+   * @returns {Promise<Array<Key|Subkey>>} Array of decryption keys.
    * @async
    */
   async getDecryptionKeys(keyID, date = new Date(), userID = {}, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const keys = [];
-    for (let i = 0; i < this.subKeys.length; i++) {
-      if (!keyID || this.subKeys[i].getKeyID().equals(keyID, true)) {
+    for (let i = 0; i < this.subkeys.length; i++) {
+      if (!keyID || this.subkeys[i].getKeyID().equals(keyID, true)) {
         try {
-          const dataToVerify = { key: primaryKey, bind: this.subKeys[i].keyPacket };
-          const bindingSignature = await helper.getLatestValidSignature(this.subKeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
+          const dataToVerify = { key: primaryKey, bind: this.subkeys[i].keyPacket };
+          const bindingSignature = await helper.getLatestValidSignature(this.subkeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
           if (helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
-            keys.push(this.subKeys[i]);
+            keys.push(this.subkeys[i]);
           }
         } catch (e) {}
       }

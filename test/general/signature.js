@@ -1480,9 +1480,9 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   // TODO add test with multiple revocation signatures
   it('Verify subkey revocation signatures', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_revoked });
-    const revSig = pubKey.subKeys[0].revocationSignatures[0];
+    const revSig = pubKey.subkeys[0].revocationSignatures[0];
     await revSig.verify(
-      pubKey.keyPacket, openpgp.enums.signature.subkeyRevocation, { key: pubKey.keyPacket, bind: pubKey.subKeys[0].keyPacket }
+      pubKey.keyPacket, openpgp.enums.signature.subkeyRevocation, { key: pubKey.keyPacket, bind: pubKey.subkeys[0].keyPacket }
     );
   });
 

@@ -31,7 +31,7 @@ class PublicKey extends Key {
     this.revocationSignatures = [];
     this.directSignatures = [];
     this.users = [];
-    this.subKeys = [];
+    this.subkeys = [];
     if (packetlist) {
       this.packetListToStructure(packetlist, new Set([enums.packet.secretKey, enums.packet.secretSubkey]));
       if (!this.keyPacket) {
