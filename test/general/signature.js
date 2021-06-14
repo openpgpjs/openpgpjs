@@ -692,7 +692,6 @@ kCNcH9WI6idSzFjuYegECf+ZA1xOCjS9oLTGbSeT7jNfC8dH5+E92qlBLq4Ctt7k
     await expect(openpgp.readSignature({ armoredSignature })).to.be.rejectedWith(/Missing signature creation time/);
   });
 
-
   it('Testing signature checking on CAST5-enciphered message', async function() {
     const publicKey = await openpgp.readKey({ armoredKey: pub_key_arm1 });
     const privateKey = await openpgp.decryptKey({
