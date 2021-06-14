@@ -31,7 +31,7 @@ describe('Unit Tests', function () {
   openpgp.config.s2kIterationCountByte = 0;
 
   if (typeof window !== 'undefined') {
-    window.addEventListener("unhandledrejection", function (event) {
+    window.addEventListener('unhandledrejection', function (event) {
       throw event.reason;
     });
 
