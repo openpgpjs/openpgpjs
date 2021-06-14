@@ -3589,7 +3589,7 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
       });
 
       it('Returns the appropriate count of symmetrically encrypted session keys for password encryption', async function () {
-        const helloWorld = await openpgp.createMessage({ text: "Hello World"});
+        const helloWorld = await openpgp.createMessage({ text: "Hello World" });
         const message1 = await openpgp.readMessage({
           armoredMessage: await openpgp.encrypt({
             message: helloWorld,
@@ -3605,6 +3605,6 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
         expect(message1.getPasswordCount()).equals(1);
         expect(message2.getPasswordCount()).equals(3);
       });
-    })
+    });
   });
 });
