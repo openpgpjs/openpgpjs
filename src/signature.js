@@ -58,7 +58,7 @@ export class Signature {
    */
   getSigningKeyIDs() {
     const keyIDs = [];
-    const signatureList = this.packets.filterByTag(enums.packet.signature)
+    const signatureList = this.packets.filterByTag(enums.packet.signature);
     signatureList.forEach(function(packet) {
       keyIDs.push(packet.issuerKeyID);
     });
