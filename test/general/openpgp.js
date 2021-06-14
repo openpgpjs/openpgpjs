@@ -3574,5 +3574,37 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
         checkSignatures(sIds, signatures);
       });
     });
+
+    describe('Symmetrically encrypted session key count testing', function () {
+      it('Returns 0 symmetrically encrypted session key count for pub key encryption', async function () {
+        const key = await openpgp.readKey({
+          armoredKey: multipleEncryptionAndSigningSubkeys
+        });
+        const encrypted = await openpgp.encrypt({
+          encryptionKeys: key,
+          message: await openpgp.createMessage({ text: "Hello World" })
+        });
+        const message = await openpgp.readMessage({ armoredMessage: encrypted });
+        expect(message.getPasswordCount()).equals(0);
+      });
+
+      it('Returns the appropriate count of symmetrically encrypted session keys for password encryption', async function () {
+        const helloWorld = await openpgp.createMessage({ text: "Hello World"});
+        const message1 = await openpgp.readMessage({
+          armoredMessage: await openpgp.encrypt({
+            message: helloWorld,
+            passwords: "heythere"
+          })
+        });
+        const message2 = await openpgp.readMessage({
+          armoredMessage: await openpgp.encrypt({
+            message: helloWorld,
+            passwords: ["qwerty", "azerty", "1337"]
+          })
+        });
+        expect(message1.getPasswordCount()).equals(1);
+        expect(message2.getPasswordCount()).equals(3);
+      });
+    })
   });
 });

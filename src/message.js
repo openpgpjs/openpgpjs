@@ -81,6 +81,14 @@ export class Message {
   }
 
   /**
+   * Returns the number of symmetrically encrypted session keys
+   * @returns {number}
+   */
+  getPasswordCount() {
+    return this.packets.filterByTag(enums.packet.symEncryptedSessionKey).length;
+  }
+
+  /**
    * Returns the key IDs of the keys that signed the message
    * @returns {Array<module:type/keyid~KeyID>} Array of keyID objects.
    */

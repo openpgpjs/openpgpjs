@@ -241,6 +241,10 @@ export class Message<T extends MaybeStream<Data>> {
    */
   public getEncryptionKeyIDs(): KeyID[];
 
+  /** Returns the number of symmetrically encrypted session keys
+   */
+  public getPasswordCount(): number;
+
   /** Get literal data that is the body of the message
    */
   public getLiteralData(): Uint8Array | Stream<Uint8Array> | null;
