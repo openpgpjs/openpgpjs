@@ -72,7 +72,7 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
   const normDate = util.normalizeDate(date);
   if (normDate !== null) {
     const expirationTime = getKeyExpirationTime(keyPacket, signature);
-    return !(keyPacket.created <= normDate && normDate <= expirationTime);
+    return !(keyPacket.created <= normDate && normDate < expirationTime);
   }
   return false;
 }

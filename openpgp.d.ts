@@ -30,7 +30,7 @@ export abstract class Key {
   public revocationSignatures: SignaturePacket[];
   public write(): Uint8Array;
   public armor(config?: Config): string;
-  public getExpirationTime(capability?: 'encrypt' | 'encrypt_sign' | 'sign', keyID?: KeyID, userID?: UserID, config?: Config): Promise<Date | typeof Infinity | null>; // Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
+  public getExpirationTime(userID?: UserID, config?: Config): Promise<Date | typeof Infinity | null>;
   public getKeyIDs(): KeyID[];
   public getPrimaryUser(date?: Date, userID?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
   public getUserIDs(): string[];

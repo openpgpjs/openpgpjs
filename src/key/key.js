@@ -360,44 +360,48 @@ class Key {
     if (helper.isDataExpired(primaryKey, selfCertification, date)) {
       throw new Error('Primary key is expired');
     }
+    // check for expiration time in direct signatures
+    const directSignature = await helper.getLatestValidSignature(
+      this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
+    ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
+
+    if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
+      throw new Error('Primary key is expired');
+    }
   }
 
   /**
-   * Returns the latest date when the key can be used for encrypting, signing, or both, depending on the `capabilities` paramater.
-   * When `capabilities` is null, defaults to returning the expiry date of the primary key.
-   * Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
-   * Returns Infinity if the key doesn't expire.
-   * @param  {encrypt|sign|encrypt_sign} [capabilities] - capabilities to look up
-   * @param  {module:type/keyid~KeyID} [keyID] - key ID of the specific key to check
+   * Returns the expiration date of the primary key, considering self-certifications and direct-key signatures.
+   * Returns `Infinity` if the key doesn't expire, or `null` if the key is revoked or invalid.
    * @param  {Object} [userID] - User ID to consider instead of the primary user
    * @param  {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Date | Infinity | null>}
    * @async
    */
-  async getExpirationTime(capabilities, keyID, userID, config = defaultConfig) {
-    const primaryUser = await this.getPrimaryUser(null, userID, config);
-    const selfCert = primaryUser.selfCertification;
-    const keyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCert);
-    const sigExpiry = selfCert.getExpirationTime();
-    let expiry = keyExpiry < sigExpiry ? keyExpiry : sigExpiry;
-    if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-      const encryptKey =
-        await this.getEncryptionKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
-        await this.getEncryptionKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
-      if (!encryptKey) return null;
-      const encryptExpiry = await encryptKey.getExpirationTime(null, config);
-      if (encryptExpiry < expiry) expiry = encryptExpiry;
+  async getExpirationTime(userID, config = defaultConfig) {
+    let primaryKeyExpiry;
+    try {
+      const { selfCertification } = await this.getPrimaryUser(null, userID, config);
+      const selfSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCertification);
+      const selfSigExpiry = selfCertification.getExpirationTime();
+      const directSignature = await helper.getLatestValidSignature(
+        this.directSignatures, this.keyPacket, enums.signature.key, { key: this.keyPacket }, null, config
+      ).catch(() => {});
+      if (directSignature) {
+        const directSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, directSignature);
+        // We do not support the edge case where the direct signature expires, since it would invalidate the corresponding key expiration,
+        // causing a discountinous validy period for the key
+        primaryKeyExpiry = Math.min(selfSigKeyExpiry, selfSigExpiry, directSigKeyExpiry);
+      } else {
+        primaryKeyExpiry = selfSigKeyExpiry < selfSigExpiry ? selfSigKeyExpiry : selfSigExpiry;
+      }
+    } catch (e) {
+      primaryKeyExpiry = null;
     }
-    if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-      const signKey =
-        await this.getSigningKey(keyID, expiry, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {}) ||
-        await this.getSigningKey(keyID, null, userID, { ...config, rejectPublicKeyAlgorithms: new Set(), minRSABits: 0 }).catch(() => {});
-      if (!signKey) return null;
-      const signExpiry = await signKey.getExpirationTime(null, config);
-      if (signExpiry < expiry) expiry = signExpiry;
-    }
-    return expiry;
+
+    return util.normalizeDate(primaryKeyExpiry);
   }
+
 
   /**
    * Returns primary user and most significant (latest valid) self signature
