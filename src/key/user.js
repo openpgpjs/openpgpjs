@@ -69,7 +69,7 @@ class User {
         throw new Error('Need private key for signing');
       }
       if (privateKey.hasSameFingerprintAs(primaryKey)) {
-        throw new Error(`The user's own key can only be used for self-certifications`);
+        throw new Error("The user's own key can only be used for self-certifications");
       }
       const signingKey = await privateKey.getSigningKey(undefined, date, undefined, config);
       return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
