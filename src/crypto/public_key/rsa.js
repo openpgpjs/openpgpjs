@@ -175,11 +175,7 @@ export async function generate(bits, e) {
 
     // export the generated keys as JsonWebKey (JWK)
     // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-    let jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
-    // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari quirk)
-    if (jwk instanceof ArrayBuffer) {
-      jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(jwk)));
-    }
+    const jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
     // map JWK parameters to corresponding OpenPGP names
     return {
       n: b64ToUint8Array(jwk.n),
