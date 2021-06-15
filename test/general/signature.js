@@ -650,7 +650,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 -----END PGP SIGNATURE-----
 `;
 
-  it("Retrieve the issuer ID of a signature", async function () {
+  it("Retrieve the issuer Key ID of a signature", async function () {
     const { privateKeyArmored, publicKeyArmored } = await openpgp.generateKey({
       type: "ecc", // Type of the key, defaults to ECC
       curve: "curve25519", // ECC curve name, defaults to curve25519
