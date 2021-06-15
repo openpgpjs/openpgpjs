@@ -1623,7 +1623,7 @@ iTuGu4fEU1UligAXSrZmCdE=
 
     const key = await openpgp.readKey({ armoredKey: armoredKeyWithPhoto });
     await Promise.all(key.users.map(async user => {
-      await user.verify(key.keyPacket);
+      await user.verify(undefined, openpgp.config);
     }));
   });
 
