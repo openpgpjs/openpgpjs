@@ -73,7 +73,7 @@ export async function generateKey({ userIDs = [], passphrase = "", type = "ecc",
       revocationCertificate: revocationCertificate
     };
   } catch (err) {
-    return onError('Error generating keypair', err);
+    throw util.wrapError('Error generating keypair', err);
   }
 }
 
@@ -111,7 +111,7 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = "", k
       revocationCertificate: revocationCertificate
     };
   } catch (err) {
-    return onError('Error reformatting keypair', err);
+    throw util.wrapError('Error reformatting keypair', err);
   }
 }
 
@@ -154,7 +154,7 @@ export async function revokeKey({ key, revocationCertificate, reasonForRevocatio
       publicKeyArmored: revokedKey.armor(config)
     };
   } catch (err) {
-    return onError('Error revoking key', err);
+    throw util.wrapError('Error revoking key', err);
   }
 }
 
@@ -186,7 +186,7 @@ export async function decryptKey({ privateKey, passphrase, config }) {
     return clonedPrivateKey;
   } catch (err) {
     clonedPrivateKey.clearPrivateParams();
-    return onError('Error decrypting private key', err);
+    throw util.wrapError('Error decrypting private key', err);
   }
 }
 
@@ -222,7 +222,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
     return clonedPrivateKey;
   } catch (err) {
     clonedPrivateKey.clearPrivateParams();
-    return onError('Error encrypting private key', err);
+    throw util.wrapError('Error encrypting private key', err);
   }
 }
 
@@ -282,7 +282,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
   } catch (err) {
-    return onError('Error encrypting message', err);
+    throw util.wrapError('Error encrypting message', err);
   }
 }
 
@@ -352,7 +352,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
     if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
   } catch (err) {
-    return onError('Error decrypting message', err);
+    throw util.wrapError('Error decrypting message', err);
   }
 }
 
@@ -409,7 +409,7 @@ export async function sign({ message, signingKeys, armor = true, detached = fals
     }
     return convertStream(signature, message.fromStream, armor ? 'utf8' : 'binary');
   } catch (err) {
-    return onError('Error signing message', err);
+    throw util.wrapError('Error signing message', err);
   }
 }
 
@@ -472,7 +472,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
     if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
   } catch (err) {
-    return onError('Error verifying signed message', err);
+    throw util.wrapError('Error verifying signed message', err);
   }
 }
 
@@ -503,7 +503,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
     const sessionKeys = await Message.generateSessionKey(encryptionKeys, date, encryptionUserIDs, config);
     return sessionKeys;
   } catch (err) {
-    return onError('Error generating session key', err);
+    throw util.wrapError('Error generating session key', err);
   }
 }
 
@@ -535,7 +535,7 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
     const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
     return armor ? message.armor(config) : message.write();
   } catch (err) {
-    return onError('Error encrypting session key', err);
+    throw util.wrapError('Error encrypting session key', err);
   }
 }
 
@@ -563,7 +563,7 @@ export async function decryptSessionKeys({ message, decryptionKeys, passwords, d
     const sessionKeys = await message.decryptSessionKeys(decryptionKeys, passwords, date, config);
     return sessionKeys;
   } catch (err) {
-    return onError('Error decrypting session keys', err);
+    throw util.wrapError('Error decrypting session keys', err);
   }
 }
 
@@ -679,23 +679,4 @@ async function prepareSignatures(signatures) {
       util.printDebugError(e);
     }
   }));
-}
-
-
-/**
- * Global error handler that logs the stack trace and rethrows a high lvl error message.
- * @param {String} message - A human readable high level error Message
- * @param {Error} error - The internal error that caused the failure
- * @private
- */
-function onError(message, error) {
-  // log the stack trace
-  util.printDebugError(error);
-
-  // update error message
-  try {
-    error.message = message + ': ' + error.message;
-  } catch (e) {}
-
-  throw error;
 }
