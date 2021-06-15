@@ -32,21 +32,6 @@ const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 
-// Helper for IE11 KeyOperation objects
-function promisifyIE11Op(keyObj, err) {
-  if (typeof keyObj.then !== 'function') { // IE11 KeyOperation
-    return new Promise(function(resolve, reject) {
-      keyObj.onerror = function () {
-        reject(new Error(err));
-      };
-      keyObj.oncomplete = function (e) {
-        resolve(e.target.result);
-      };
-    });
-  }
-  return keyObj;
-}
-
 /* eslint-disable no-invalid-this */
 const RSAPrivateKey = util.detectNode() ? asn1.define('RSAPrivateKey', function () {
   this.seq().obj( // used for native NodeJS crypto
@@ -178,44 +163,19 @@ export async function generate(bits, e) {
 
   // Native RSA keygen using Web Crypto
   if (util.getWebCrypto()) {
-    let keyPair;
-    let keyGenOpt;
-    if ((globalThis.crypto && globalThis.crypto.subtle) || globalThis.msCrypto) {
-      // current standard spec
-      keyGenOpt = {
-        name: 'RSASSA-PKCS1-v1_5',
-        modulusLength: bits, // the specified keysize in bits
-        publicExponent: e.toUint8Array(), // take three bytes (max 65537) for exponent
-        hash: {
-          name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
-        }
-      };
-      keyPair = webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
-      keyPair = await promisifyIE11Op(keyPair, 'Error generating RSA key pair.');
-    } else if (globalThis.crypto && globalThis.crypto.webkitSubtle) {
-      // outdated spec implemented by old Webkit
-      keyGenOpt = {
-        name: 'RSA-OAEP',
-        modulusLength: bits, // the specified keysize in bits
-        publicExponent: e.toUint8Array(), // take three bytes (max 65537) for exponent
-        hash: {
-          name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
-        }
-      };
-      keyPair = await webCrypto.generateKey(keyGenOpt, true, ['encrypt', 'decrypt']);
-    } else {
-      throw new Error('Unknown WebCrypto implementation');
-    }
+    const keyGenOpt = {
+      name: 'RSASSA-PKCS1-v1_5',
+      modulusLength: bits, // the specified keysize in bits
+      publicExponent: e.toUint8Array(), // take three bytes (max 65537) for exponent
+      hash: {
+        name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
+      }
+    };
+    const keyPair = await webCrypto.generateKey(keyGenOpt, true, ['sign', 'verify']);
 
     // export the generated keys as JsonWebKey (JWK)
     // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
-    let jwk = webCrypto.exportKey('jwk', keyPair.privateKey);
-    jwk = await promisifyIE11Op(jwk, 'Error exporting RSA key pair.');
-
-    // parse raw ArrayBuffer bytes to jwk/json (WebKit/Safari/IE11 quirk)
-    if (jwk instanceof ArrayBuffer) {
-      jwk = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(jwk)));
-    }
+    const jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
     // map JWK parameters to corresponding OpenPGP names
     return {
       n: b64ToUint8Array(jwk.n),
@@ -261,15 +221,23 @@ export async function generate(bits, e) {
   // RSA keygen fallback using 40 iterations of the Miller-Rabin test
   // See https://stackoverflow.com/a/6330138 for justification
   // Also see section C.3 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST
-  let q = await randomProbablePrime(bits - (bits >> 1), e, 40);
-  let p = await randomProbablePrime(bits >> 1, e, 40);
+  let p;
+  let q;
+  let n;
+  do {
+    q = await randomProbablePrime(bits - (bits >> 1), e, 40);
+    p = await randomProbablePrime(bits >> 1, e, 40);
+    n = p.mul(q);
+  } while (n.bitLength() !== bits);
+
+  const phi = p.dec().imul(q.dec());
 
   if (q.lt(p)) {
     [p, q] = [q, p];
   }
-  const phi = p.dec().imul(q.dec());
+
   return {
-    n: p.mul(q).toUint8Array(),
+    n: n.toUint8Array(),
     e: e.toUint8Array(),
     d: e.modInv(phi).toUint8Array(),
     p: p.toUint8Array(),

@@ -10,10 +10,8 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-/* eslint-disable no-unused-expressions */
 /* eslint-disable no-invalid-this */
-const native = util.getWebCrypto() || util.getNodeCrypto();
-module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptography with native crypto', function () {
+module.exports = () => describe('basic RSA cryptography', function () {
   let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;
@@ -47,6 +45,21 @@ module.exports = () => (!native ? describe.skip : describe)('basic RSA cryptogra
     expect(keyObject.p).to.exist;
     expect(keyObject.q).to.exist;
     expect(keyObject.u).to.exist;
+    expect(util.uint8ArrayBitLength(keyObject.n)).to.equal(bits);
+  });
+
+  it('generate rsa key - without native crypto', async function() {
+    const bits = 1024;
+    disableNative();
+    const keyObject = await crypto.publicKey.rsa.generate(bits, 65537);
+    enableNative();
+    expect(keyObject.n).to.exist;
+    expect(keyObject.e).to.exist;
+    expect(keyObject.d).to.exist;
+    expect(keyObject.p).to.exist;
+    expect(keyObject.q).to.exist;
+    expect(keyObject.u).to.exist;
+    expect(util.uint8ArrayBitLength(keyObject.n)).to.equal(bits);
   });
 
   it('sign and verify using generated key params', async function() {

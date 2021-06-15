@@ -25,7 +25,7 @@ import util from '../../util';
 import { getRandomBigInteger } from '../random';
 
 /**
- * Probabilistic random number generator
+ * Generate a probably prime random number
  * @param {Integer} bits - Bit length of the prime
  * @param {BigInteger} e - Optional RSA exponent to check against the prime
  * @param {Integer} k - Optional number of iterations of Miller-Rabin test
