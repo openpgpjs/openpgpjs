@@ -30,7 +30,7 @@ export abstract class Key {
   public revocationSignatures: SignaturePacket[];
   public write(): Uint8Array;
   public armor(config?: Config): string;
-  public getExpirationTime(keyID?: KeyID, userID?: UserID, config?: Config): Promise<Date | typeof Infinity | null>;
+  public getExpirationTime(userID?: UserID, config?: Config): Promise<Date | typeof Infinity | null>;
   public getKeyIDs(): KeyID[];
   public getPrimaryUser(date?: Date, userID?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
   public getUserIDs(): string[];

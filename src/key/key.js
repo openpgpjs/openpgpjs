@@ -371,27 +371,14 @@ class Key {
   }
 
   /**
-   * Returns the expiration date of the key.
-   * If no keyID is specified, it returns the expiration date of the primary key.
+   * Returns the expiration date of the primary key, considering self-certifications and direct-key signatures.
    * Returns `Infinity` if the key doesn't expire, or `null` if the key is revoked or invalid.
-   * @param  {module:type/keyid~KeyID} [keyID] - key ID of the specific (sub)key to check
    * @param  {Object} [userID] - User ID to consider instead of the primary user
    * @param  {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Date | Infinity | null>}
    * @async
    */
-  async getExpirationTime(keyID, userID, config = defaultConfig) {
-    if (keyID) {
-      const keys = this.getKeys(keyID);
-      if (keys.length === 0) {
-        throw new Error(`Could not find key with key ID ${keyID.toHex()}`);
-      }
-      const [key] = keys;
-      if (key instanceof Subkey) {
-        return key.getExpirationTime(null, config);
-      }
-    }
-
+  async getExpirationTime(userID, config = defaultConfig) {
     let primaryKeyExpiry;
     try {
       const { selfCertification } = await this.getPrimaryUser(null, userID, config);
