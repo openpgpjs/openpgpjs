@@ -371,18 +371,27 @@ class Key {
   }
 
   /**
-   * Returns the earliest date when the key can no longer be used for encrypting, signing, or both, depending on the `capabilities` paramater.
-   * When `capabilities` is null, defaults to returning the expiry date of the primary key.
-   * Returns null if `capabilities` is passed and the key does not have the specified capabilities or is revoked or invalid.
-   * Returns Infinity if the key doesn't expire.
-   * @param  {encrypt|sign|encrypt_sign} [capabilities] - capabilities to look up
-   * @param  {module:type/keyid~KeyID} [keyID] - key ID of the specific key to check
+   * Returns the expiration date of the key.
+   * If no keyID is specified, it returns the expiration date of the primary key.
+   * Returns `Infinity` if the key doesn't expire, or `null` if the key is revoked or invalid.
+   * @param  {module:type/keyid~KeyID} [keyID] - key ID of the specific (sub)key to check
    * @param  {Object} [userID] - User ID to consider instead of the primary user
    * @param  {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Date | Infinity | null>}
    * @async
    */
-  async getExpirationTime(capabilities, keyID, userID, config = defaultConfig) {
+  async getExpirationTime(keyID, userID, config = defaultConfig) {
+    if (keyID) {
+      const keys = this.getKeys(keyID);
+      if (keys.length === 0) {
+        throw new Error(`Could not find key with key ID ${keyID.toHex()}`);
+      }
+      const [key] = keys;
+      if (key instanceof Subkey) {
+        return key.getExpirationTime(null, config);
+      }
+    }
+
     let primaryKeyExpiry;
     try {
       const { selfCertification } = await this.getPrimaryUser(null, userID, config);
@@ -402,50 +411,8 @@ class Key {
     } catch (e) {
       primaryKeyExpiry = null;
     }
-    if (!capabilities) return util.normalizeDate(primaryKeyExpiry);
 
-    // loop through subkeys based on requested capabilities and retrieve their expiration times
-    let encryptExpiry = null;
-    if (capabilities === 'encrypt' || capabilities === 'encrypt_sign') {
-
-      const primaryKeyCanEncrypt = !keyID && !!(await this.getEncryptionKey(this.getKeyID(), null, userID, config).catch(() => null));
-      if (primaryKeyCanEncrypt) {
-        // the subkeys can no longer be used after the primary key has expired
-        encryptExpiry = primaryKeyExpiry;
-      } else {
-        const encryptionKeys = (await Promise.all(
-          this.getSubkeys(keyID).map(key => this.getEncryptionKey(key.getKeyID(), null, userID, config).catch(() => null))
-        )).filter(Boolean);
-
-        if (encryptionKeys.length === 0) return null; // the key cannot encrypt
-        encryptExpiry = Math.max(
-          ...await Promise.all(encryptionKeys.map(key => key.getExpirationTime(null, config)))
-        );
-      }
-    }
-    let signExpiry = null;
-    if (capabilities === 'sign' || capabilities === 'encrypt_sign') {
-
-      const primaryKeyCanSign = !keyID && !!(await this.getSigningKey(this.getKeyID(), null, userID, config).catch(() => null));
-      if (primaryKeyCanSign) {
-        // the subkeys can no longer be used after the primary key has expired
-        encryptExpiry = primaryKeyExpiry;
-      } else {
-        const signingKeys = (await Promise.all(
-          this.getSubkeys(keyID).map(key => this.getSigningKey(key.getKeyID(), null, userID, config).catch(() => null))
-        )).filter(Boolean);
-
-        if (signingKeys.length === 0) return null; // the key cannot sign
-        signExpiry = Math.max(
-          ...await Promise.all(signingKeys.map(key => key.getExpirationTime(null, config)))
-        );
-      }
-    }
-
-    if (encryptExpiry === null) return signExpiry;
-    if (signExpiry === null) return encryptExpiry;
-    const expiry = Math.min(encryptExpiry, signExpiry);
-    return util.normalizeDate(expiry);
+    return util.normalizeDate(primaryKeyExpiry);
   }
 
 
