@@ -952,7 +952,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
 
     it('should throw if missing userIDs', async function() {
-      expect(() => openpgp.generateKey({})).to.throw(/UserIDs are required/);
+      await expect(openpgp.generateKey({})).to.be.rejectedWith(/UserIDs are required/);
     });
   });
 
@@ -1124,6 +1124,22 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
     afterEach(function() {
       openpgp.config.minRSABits = minRSABitsVal;
+    });
+
+    it('Calling decrypt with encrypted key leads to exception', async function() {
+      const publicKey = await openpgp.readKey({ armoredKey: pub_key });
+      const privateKey = await openpgp.readKey({ armoredKey: priv_key });
+
+      const encOpt = {
+        message: await openpgp.createMessage({ text: plaintext }),
+        encryptionKeys: publicKey
+      };
+      const decOpt = {
+        decryptionKeys: privateKey
+      };
+      const encrypted = await openpgp.encrypt(encOpt);
+      decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
+      await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith('Error decrypting message: Decryption key is not decrypted.');
     });
 
     it('decrypt/verify should succeed with valid signature  (expectSigned=true)', async function () {
@@ -1517,6 +1533,12 @@ aOU=
       });
       expect(sig).to.match(/-----END PGP MESSAGE-----\n$/);
     });
+
+    it('Calling sign with no signing key leads to exception', async function() {
+      await expect(openpgp.sign({
+        message: await openpgp.createMessage({ text: plaintext })
+      })).to.be.rejectedWith(/No signing keys provided/);
+    });
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
@@ -1586,32 +1608,6 @@ aOU=
         openpgp.config.showVersion = showVersionVal;
         openpgp.config.commentString = commentStringVal;
       }
-    });
-
-    it('Decrypting key with wrong passphrase should be rejected', async function () {
-      await expect(openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
-        passphrase: 'wrong passphrase'
-      })).to.eventually.be.rejectedWith('Incorrect key passphrase');
-    });
-
-    it('Can decrypt key with correct passphrase', async function () {
-      expect(privateKey.isDecrypted()).to.be.false;
-      const decryptedKey = await openpgp.decryptKey({ privateKey, passphrase });
-      expect(decryptedKey.isDecrypted()).to.be.true;
-    });
-
-    it('Calling decrypt with not decrypted key leads to exception', async function() {
-      const encOpt = {
-        message: await openpgp.createMessage({ text: plaintext }),
-        encryptionKeys: publicKey
-      };
-      const decOpt = {
-        decryptionKeys: privateKey
-      };
-      const encrypted = await openpgp.encrypt(encOpt);
-      decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-      await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith('Error decrypting message: Decryption key is not decrypted.');
     });
 
     tryTests('CFB mode (asm.js)', tests, {
