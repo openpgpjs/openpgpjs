@@ -248,7 +248,8 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  */
 export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, armor = true, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
-  checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
+  checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords);
+  signingKeyIDs = toArray(signingKeyIDs); encryptionKeyIDs = toArray(encryptionKeyIDs); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.detached) {
     throw new Error("The `detached` option has been removed from openpgp.encrypt, separately call openpgp.sign instead. Don't forget to remove the `privateKeys` option as well.");
   }
@@ -376,7 +377,7 @@ export async function sign({ message, signingKeys, armor = true, detached = fals
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
   if (message instanceof CleartextMessage && detached) throw new Error("Can't detach-sign a cleartext message");
 
-  signingKeys = toArray(signingKeys); signingUserIDs = toArray(signingUserIDs);
+  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs);
   if (!signingKeys || signingKeys.length === 0) {
     throw new Error('No signing keys provided');
   }
@@ -518,7 +519,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
  */
 export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
-  checkBinary(data); checkString(algorithm, 'algorithm'); encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionUserIDs = toArray(encryptionUserIDs);
+  checkBinary(data); checkString(algorithm, 'algorithm'); encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionKeyIDs = toArray(encryptionKeyIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead");
 
   try {
