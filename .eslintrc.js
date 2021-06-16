@@ -72,7 +72,7 @@ module.exports = {
       }
     ],
     "capitalized-comments": "off",
-    "class-methods-use-this": "error",
+    "class-methods-use-this": "off",
     "comma-dangle": [ "error", "never" ],
     "comma-spacing": "off",
     "comma-style": [

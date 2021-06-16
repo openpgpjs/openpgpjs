@@ -28,7 +28,6 @@ class PrivateKey extends PublicKey {
    * Returns true if this is a private key
    * @returns {Boolean}
    */
-  // eslint-disable-next-line class-methods-use-this
   isPrivate() {
     return true;
   }
