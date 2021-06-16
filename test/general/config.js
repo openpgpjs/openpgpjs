@@ -6,16 +6,16 @@ module.exports = () => describe('Custom configuration', function() {
   it('openpgp.readMessage', async function() {
     const armoredMessage = await openpgp.encrypt({ message: await openpgp.createMessage({ text:"hello world" }), passwords: 'password' });
     const message = await openpgp.readMessage({ armoredMessage });
-    message.packets.unshift(new openpgp.MarkerPacket()); // MarkerPacket is not allowed in the Message context
+    message.packets.findPacket(openpgp.SymEncryptedSessionKeyPacket.tag).version = 1; // unsupported SKESK version
 
     const config = { tolerant: true };
     const parsedMessage = await openpgp.readMessage({ armoredMessage: message.armor(), config });
-    expect(parsedMessage.packets.length).to.equal(2);
+    expect(parsedMessage.packets.length).to.equal(1);
 
     config.tolerant = false;
     await expect(
       openpgp.readMessage({ armoredMessage: message.armor(), config })
-    ).to.be.rejectedWith(/Packet not allowed in this context/);
+    ).to.be.rejectedWith(/Version 1 of the SKESK packet is unsupported/);
   });
 
   it('openpgp.readSignature', async function() {
@@ -28,44 +28,26 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
 -----END PGP SIGNATURE-----`;
 
     const signature = await openpgp.readSignature({ armoredSignature });
-    signature.packets.unshift(new openpgp.MarkerPacket()); // MarkerPacket is not allowed in the Signature context
+    signature.packets[0].signatureData[0] = 1; // set unsupported signature version
 
     const config = { tolerant: true };
     const parsedSignature = await openpgp.readSignature({ armoredSignature: signature.armor(), config });
-    expect(parsedSignature.packets.length).to.equal(1);
+    expect(parsedSignature.packets.length).to.equal(0);
 
     config.tolerant = false;
     await expect(
       openpgp.readSignature({ armoredSignature: signature.armor(), config })
-    ).to.be.rejectedWith(/Packet not allowed in this context/);
+    ).to.be.rejectedWith(/Version 1 of the signature packet is unsupported/);
   });
 
   it('openpgp.readKey', async function() {
-    const armoredKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
-
-xjMEYI/KsBYJKwYBBAHaRw8BAQdAW2lu0r97hQztwP8+WbSF9N/QJ5hkevhm
-CGJbM3HBvznNEHRlc3QgPHRlc3RAYS5pdD7CjAQQFgoAHQUCYI/KsAQLCQcI
-AxUICgQWAAIBAhkBAhsDAh4BACEJEKgxHS8jVhd9FiEE8hy8OerCaNGuKPDw
-qDEdLyNWF32XOQD/dq2/D394eW67VwUhvRpQl9gwToDf+SixATEFigok5JgA
-/3ZeH9eXiZqo3rChfdQ+3VKTd7yoI2gM/pjbHupemYYAzjgEYI/KsBIKKwYB
-BAGXVQEFAQEHQN/8mxAaro95FmvPQ4wlAfk3WKUHZtNvpaqzXo1K6WdMAwEI
-B8J4BBgWCAAJBQJgj8qwAhsMACEJEKgxHS8jVhd9FiEE8hy8OerCaNGuKPDw
-qDEdLyNWF30o6wD/fZYCV8aS4dAu2U3fpN5y5+PbuXFRYljA5gQ/1zrGN/UA
-/3r62WsCVupzKdISZYOMPwEY5qN/4f9i6ZWxIynmVX0E
-=6+P3
------END PGP PUBLIC KEY BLOCK-----`;
-
-    const keyPackets = (await openpgp.readKey({ armoredKey })).toPacketList();
-    keyPackets.unshift(new openpgp.MarkerPacket()); // MarkerPacket is not allowed in the Signature context
-
-    const config = { tolerant: true };
-    const parsedKey = await openpgp.readKey({ binaryKey: keyPackets.write(), config });
-    expect(parsedKey.toPacketList().length).to.equal(5);
-
-    config.tolerant = false;
+    const { privateKeyArmored: armoredKey } = await openpgp.generateKey({ userIDs:[{ name:'test', email:'test@a.it' }] });
     await expect(
-      openpgp.readKey({ binaryKey: keyPackets.write(), config })
-    ).to.be.rejectedWith(/Packet not allowed in this context/);
+      openpgp.readKey({ armoredKey, config: { tolerant: false, maxUserIDLength: 2 } })
+    ).to.be.rejectedWith(/User ID string is too long/);
+    await expect(
+      openpgp.readKey({ armoredKey, config: { tolerant: true, maxUserIDLength: 2 } })
+    ).to.be.rejectedWith(/User ID string is too long/);
   });
 
 

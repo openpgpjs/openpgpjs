@@ -950,25 +950,68 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   });
 
   describe('PacketList parsing', function () {
-    it('Ignores disallowed packet with tolerant mode enabled', async function() {
+    it('Ignores unknown packet version with tolerant mode enabled', async function() {
+      const armoredSignature = `-----BEGIN PGP SIGNATURE-----
+
+iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
+QG1ldGFjb2RlLmJpegAKCRBrpV7YOrrhuw1PB/9KhFRR/M3OR6NmIent6ri1ekWn
+vlcnVqj6N4Xqi1ahRVw19/Jx36mGyijxNwqqGrziqRiPCdT0pKfCfv7nXQf2Up1Z
+LoR1StqpBMSDQfuF6JAJmJuB9T+mPQO8wYeUp+O63vQnm5CgqyoRlIoqX8MN6GTY
+xK5PdTRjw6IEIGr9uLgSoUwTd0ECY1F9ptyuLGD5ET5ZtyUenQSbX+cw5WCGLFzi
+7TwKTY+kGQpkwDJKZJSGpoP7ob6xdDfZx6dHV6IfIJg8/F9gtAXFp8uE51L90cV2
+kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
+=wEIR
+-----END PGP SIGNATURE-----`;
+
+      const { packets: [signaturePacket] } = await openpgp.readSignature({ armoredSignature });
       const packets = new openpgp.PacketList();
-      packets.push(new openpgp.MarkerPacket());
+      signaturePacket.signatureData[0] = 1;
+      packets.push(signaturePacket);
       const bytes = packets.write();
-      const parsed = await openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: true });
+      const parsed = await openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, tolerant: true });
       expect(parsed.length).to.equal(0);
     });
 
-    it('Throws on disallowed packet with tolerant mode disabled', async function() {
+    it('Throws on unknown packet version with tolerant mode disabled', async function() {
+      const armoredSignature = `-----BEGIN PGP SIGNATURE-----
+
+iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
+QG1ldGFjb2RlLmJpegAKCRBrpV7YOrrhuw1PB/9KhFRR/M3OR6NmIent6ri1ekWn
+vlcnVqj6N4Xqi1ahRVw19/Jx36mGyijxNwqqGrziqRiPCdT0pKfCfv7nXQf2Up1Z
+LoR1StqpBMSDQfuF6JAJmJuB9T+mPQO8wYeUp+O63vQnm5CgqyoRlIoqX8MN6GTY
+xK5PdTRjw6IEIGr9uLgSoUwTd0ECY1F9ptyuLGD5ET5ZtyUenQSbX+cw5WCGLFzi
+7TwKTY+kGQpkwDJKZJSGpoP7ob6xdDfZx6dHV6IfIJg8/F9gtAXFp8uE51L90cV2
+kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
+=wEIR
+-----END PGP SIGNATURE-----`;
+
+      const { packets: [signaturePacket] } = await openpgp.readSignature({ armoredSignature });
       const packets = new openpgp.PacketList();
-      packets.push(new openpgp.MarkerPacket());
+      signaturePacket.signatureData[0] = 1;
+      packets.push(signaturePacket);
+      const bytes = packets.write();
+      await expect(
+        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, tolerant: false })
+      ).to.be.rejectedWith(/Version 1 of the signature packet is unsupported/);
+    });
+
+    it('Throws on disallowed packet even with tolerant mode enabled', async function() {
+      const packets = new openpgp.PacketList();
+      packets.push(new openpgp.LiteralDataPacket());
       const bytes = packets.write();
       await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: false })).to.be.rejectedWith(/Packet not allowed in this context/);
+      await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: true })).to.be.rejectedWith(/Packet not allowed in this context/);
     });
 
     it('Throws on parsing errors even with tolerant mode enabled', async function () {
-      const { privateKeyArmored: armoredKey } = await openpgp.generateKey({ userIDs:[{ name:'test', email:'test@a.it' }] });
+      const packets = new openpgp.PacketList();
+      packets.push(openpgp.UserIDPacket.fromObject({ name:'test', email:'test@a.it' }));
+      const bytes = packets.write();
       await expect(
-        openpgp.readKey({ armoredKey, config: { tolerant: true, maxUserIDLength: 2 } })
+        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, tolerant: false })
+      ).to.be.rejectedWith(/User ID string is too long/);
+      await expect(
+        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, tolerant: true })
       ).to.be.rejectedWith(/User ID string is too long/);
     });
   });

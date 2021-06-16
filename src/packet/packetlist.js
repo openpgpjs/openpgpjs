@@ -5,6 +5,8 @@ import {
   writePartialLength, writeSimpleLength,
   UnsupportedError
 } from './packet';
+import TrustPacket from './trust';
+import MarkerPacket from './marker';
 import util from '../util';
 import enums from '../enums';
 import defaultConfig from '../config';
@@ -15,6 +17,7 @@ import defaultConfig from '../config';
  * @param {module:enums.packet} tag - Property value from {@link module:enums.packet}
  * @param {Object} allowedPackets - mapping where keys are allowed packet tags, pointing to their Packet class
  * @returns {Object} New packet object with type based on tag
+ * @throws {Error|UnsupportedError} for disallowed or unknown packets
  */
 export function newPacketFromTag(tag, allowedPackets) {
   if (!allowedPackets[tag]) {
@@ -25,7 +28,7 @@ export function newPacketFromTag(tag, allowedPackets) {
     } catch (e) {
       throw new UnsupportedError(`Unknown packet type with tag: ${tag}`);
     }
-    throw new UnsupportedError(`Packet not allowed in this context: ${packetType}`);
+    throw new Error(`Packet not allowed in this context: ${packetType}`);
   }
   return new allowedPackets[tag]();
 }
@@ -69,6 +72,12 @@ class PacketList extends Array {
           await writer.ready;
           const done = await readPackets(readable, async parsed => {
             try {
+              if (parsed.tag === MarkerPacket.tag || parsed.tag === TrustPacket.tag) {
+                // According to the spec, these packet types should be ignored and not cause parsing errors, even if not esplicitly allowed:
+                // - Marker packets MUST be ignored when received: https://github.com/openpgpjs/openpgpjs/issues/1145
+                // - Trust packets SHOULD be ignored outside of keyrings (unsupported): https://datatracker.ietf.org/doc/html/rfc4880#section-5.10
+                return;
+              }
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
               packet.packets = new PacketList();
               packet.fromStream = util.isStream(parsed.packet);
