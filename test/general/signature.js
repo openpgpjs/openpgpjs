@@ -650,6 +650,30 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 -----END PGP SIGNATURE-----
 `;
 
+  it("Retrieve the issuer Key ID of a signature", async function () {
+    const { privateKeyArmored, publicKeyArmored } = await openpgp.generateKey({
+      type: "ecc", // Type of the key, defaults to ECC
+      curve: "curve25519", // ECC curve name, defaults to curve25519
+      userIDs: [{ name: "name", email: "test@email.com" }], // you can pass multiple user IDs
+      passphrase: "password" // protects the private key
+    });
+
+    const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+      passphrase: "password"
+    });
+    const message = await openpgp.createMessage({ text: "test" });
+    const armoredSignature = await openpgp.sign({
+      message,
+      signingKeys: privateKey,
+      detached: true
+    });
+    const signature = await openpgp.readSignature({ armoredSignature });
+    expect(signature.getSigningKeyIDs).to.exist;
+    expect(signature.getSigningKeyIDs().map(x => x.toHex())).to.include(publicKey.getKeyID().toHex());
+  });
+
   it('Throws when reading a signature missing the creation time', async function () {
     const armoredSignature = `-----BEGIN PGP SIGNATURE-----
 
