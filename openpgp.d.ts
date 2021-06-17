@@ -22,11 +22,11 @@ export function generateKey(options: KeyOptions & { format: 'binary' }): Promise
 export function generateKey(options: KeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
 
 export function generateSessionKey(options: { encryptionKeys: PublicKey[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
-export function decryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
-export function encryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
+export function decryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
+export function encryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
@@ -171,6 +171,14 @@ export class CleartextMessage {
 }
 
 /* ############## v5 MSG #################### */
+export function generateSessionKey(options: { encryptionKeys: MaybeArray<PublicKey>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig }): Promise<SessionKey>;
+export function encryptSessionKey(options: SessionKey & { 
+  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, armor?: true, wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
+}) : Promise<string>;
+export function encryptSessionKey(options: SessionKey & { 
+  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, armor: false, wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
+}) : Promise<Uint8Array>;
+export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { message: Message<T>, decryptionKeys?: MaybeArray<PrivateKey>, passwords?: MaybeArray<string>, date?: Date, config?: PartialConfig }): Promise<SessionKey[]>;
 
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binaryMessage: T, config?: PartialConfig }): Promise<Message<T>>;
@@ -547,9 +555,14 @@ export namespace stream {
 }
 
 /* ############## v5 GENERAL #################### */
+type MaybeArray<T> = T | Array<T>;
 
 export interface UserID { name?: string; email?: string; comment?: string; }
-export interface SessionKey { data: Uint8Array; algorithm: string; }
+export interface SessionKey {
+  data: Uint8Array;
+  algorithm: enums.symmetricNames;
+  aeadAlgorithm?: enums.aeadNames;
+}
 
 export interface ReasonForRevocation { flag?: enums.reasonForRevocation, string?: string }
 
@@ -557,12 +570,12 @@ interface EncryptOptions {
   /** message to be encrypted as created by createMessage */
   message: Message<MaybeStream<Data>>;
   /** (optional) array of keys or single key, used to encrypt the message */
-  encryptionKeys?: PublicKey | PublicKey[];
+  encryptionKeys?: MaybeArray<PublicKey>;
   /** (optional) private keys for signing. If omitted message will not be signed */
-  signingKeys?: PrivateKey | PrivateKey[];
+  signingKeys?: MaybeArray<PrivateKey>;
   /** (optional) array of passwords or a single password to encrypt the message */
-  passwords?: string | string[];
-  /** (optional) session key in the form: { data:Uint8Array, algorithm:String } */
+  passwords?: MaybeArray<string>;
+  /** (optional) session key */
   sessionKey?: SessionKey;
   /** if the return values should be ascii armored or the message/signature objects */
   armor?: boolean;
@@ -573,13 +586,13 @@ interface EncryptOptions {
   /** (optional) use a key ID of 0 instead of the public key IDs */
   wildcard?: boolean;
   /** (optional) Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]` */
-  signingKeyIDs?: KeyID | KeyID[];
+  signingKeyIDs?: MaybeArray<KeyID>;
   /** (optional) Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`*/
-  encryptionKeyIDs?: KeyID | KeyID[];
+  encryptionKeyIDs?: MaybeArray<KeyID>;
   /** (optional) Array of user IDs to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
-  signingUserIDs?: UserID | UserID[];
+  signingUserIDs?: MaybeArray<UserID>;
   /** (optional) array of user IDs to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
-  encryptionUserIDs?: UserID | UserID[];
+  encryptionUserIDs?: MaybeArray<UserID>;
   config?: PartialConfig;
 }
 
@@ -587,13 +600,13 @@ interface DecryptOptions {
   /** the message object with the encrypted data */
   message: Message<MaybeStream<Data>>;
   /** (optional) private keys with decrypted secret key data or session key */
-  decryptionKeys?: PrivateKey | PrivateKey[];
+  decryptionKeys?: MaybeArray<PrivateKey>;
   /** (optional) passwords to decrypt the message */
-  passwords?: string | string[];
+  passwords?: MaybeArray<string>;
   /** (optional) session keys in the form: { data:Uint8Array, algorithm:String } */
   sessionKeys?: SessionKey | SessionKey[];
   /** (optional) array of public keys or single key, to verify signatures */
-  verificationKeys?: PublicKey | PublicKey[];
+  verificationKeys?: MaybeArray<PublicKey>;
   /** (optional) whether data decryption should fail if the message is not signed with the provided publicKeys */
   expectSigned?: boolean;
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
@@ -607,13 +620,13 @@ interface DecryptOptions {
 
 interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
-  signingKeys?: PrivateKey | PrivateKey[];
+  signingKeys?: MaybeArray<PrivateKey>;
   armor?: boolean;
   dataType?: DataPacketType;
   detached?: boolean;
-  signingKeyIDs?: KeyID | KeyID[];
+  signingKeyIDs?: MaybeArray<KeyID>;
   date?: Date;
-  signingUserIDs?: UserID | UserID[];
+  signingUserIDs?: MaybeArray<UserID>;
   config?: PartialConfig;
 }
 
@@ -621,7 +634,7 @@ interface VerifyOptions {
   /** (cleartext) message object with signatures */
   message: CleartextMessage | Message<MaybeStream<Data>>;
   /** array of publicKeys or single key, to verify signatures */
-  verificationKeys: PublicKey | PublicKey[];
+  verificationKeys: MaybeArray<PublicKey>;
   /** (optional) whether verification should throw if the message is not signed with the provided publicKeys */
   expectSigned?: boolean;
   /** (optional) whether to return data as a string(Stream) or Uint8Array(Stream). If 'utf8' (the default), also normalize newlines. */
@@ -646,7 +659,7 @@ interface KeyPair {
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
 interface KeyOptions {
-  userIDs: UserID|UserID[];
+  userIDs: MaybeArray<UserID>;
   passphrase?: string;
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
@@ -837,6 +850,7 @@ export namespace enums {
     thirdParty = 80
   }
 
+  export type aeadNames = 'eax' | 'ocb' | 'gcm';
   enum aead {
     eax = 1,
     ocb = 2,

@@ -479,7 +479,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
  * @param {Object} options
  * @param {PublicKey|PublicKey[]} options.encryptionKeys - Array of public keys or single key used to select algorithm preferences for
  * @param {Date} [options.date=current date] - Date to select algorithm preferences at
- * @param {KeyID|KeyID[]} [options.encryptionUserIDs=primary user IDs] - User IDs to select algorithm preferences for
+ * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - User IDs to select algorithm preferences for
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<{ data: Uint8Array, algorithm: String }>} Object with session key data and algorithm.
  * @async
@@ -499,7 +499,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
 }
 
 /**
- * Encrypt a symmetric session key with public keys, passwords, or both at once. At least either public keys
+ * Encrypt a symmetric session key with public keys, passwords, or both at once. Either public keys
  *   or passwords must be specified.
  * @param {Object} options
  * @param {Uint8Array} options.data - The session key to be encrypted e.g. 16 random bytes (for aes128)
@@ -539,7 +539,7 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
  * @param {String|String[]} [options.passwords] - Passwords to decrypt the session key
  * @param {Date} [options.date] - Date to use for key verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} Array of decrypted session key, algorithm pairs in the form:
+ * @returns {Promise<Object[]>} Array of decrypted session key, algorithm pairs in the form:
  *                                            { data:Uint8Array, algorithm:String }
  * @throws if no session key could be found or decrypted
  * @async

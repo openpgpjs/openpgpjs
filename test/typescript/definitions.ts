@@ -11,6 +11,7 @@ import {
   generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key, PublicKey, revokeKey,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
+  generateSessionKey, encryptSessionKey, decryptSessionKeys,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
 } from '../..';
 
@@ -57,9 +58,7 @@ import {
   expect(encryptedArmor).to.include('-----BEGIN PGP MESSAGE-----');
 
   // Encrypt binary message (unarmored)
-  const binary = new Uint8Array(2);
-  binary[0] = 1;
-  binary[1] = 2;
+  const binary = new Uint8Array([1, 2]);
   const binaryMessage = await createMessage({ binary });
   const encryptedBinary: Uint8Array = await encrypt({ encryptionKeys: publicKeys, message: binaryMessage, armor: false });
   expect(encryptedBinary).to.be.instanceOf(Uint8Array);
@@ -79,6 +78,15 @@ import {
   // Encrypt message (inspect packets)
   const encryptedMessage = await readMessage({ binaryMessage: encryptedBinary });
   expect(encryptedMessage).to.be.instanceOf(Message);
+
+  // Session key functions
+  const sessionKeys = await decryptSessionKeys({ message: await readMessage({ binaryMessage: encryptedBinary }), decryptionKeys: privateKeys });
+  expect(sessionKeys).to.have.length(1);
+  // eslint-disable-next-line no-unused-vars
+  const encryptedSessionKeys: string = await encryptSessionKey({ ...sessionKeys[0], passwords: 'pass' });
+  const newSessionKey = await generateSessionKey({ encryptionKeys: privateKey.toPublic() });
+  expect(newSessionKey.data).to.exist;
+  expect(newSessionKey.algorithm).to.exist;
 
   // Sign cleartext message (armored)
   const cleartextMessage = await createCleartextMessage({ text: 'hello' });
