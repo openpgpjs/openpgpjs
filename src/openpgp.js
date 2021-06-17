@@ -225,7 +225,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
 
 
 /**
- * Encrypts message text/data with public keys, passwords or both at once. At least either encryption keys or passwords
+ * Encrypts message text/data with public keys, passwords or both at once. Either encryption keys or passwords
  *   must be specified. If signing keys are specified, those will be used to sign the message.
  * @param {Object} options
  * @param {Message} options.message - Message to be encrypted as created by {@link createMessage}
@@ -237,7 +237,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @param {Signature} [options.signature] - A detached signature to add to the encrypted message
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]`
- * @param {KeyID|KeyID[]>} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`
+ * @param {KeyID|KeyID[]} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`
  * @param {Date} [options.date=current date] - Override the creation date of the message signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `encryptionKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
@@ -278,7 +278,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
 }
 
 /**
- * Decrypts a message with the user's private key, a session key or a password. Either a private key,
+ * Decrypts a message with the user's private key, a session key or a password (multiple options are not supported). Either a private key,
  *   a session key or a password must be specified.
  * @param {Object} options
  * @param {Message} options.message - The message object with the encrypted data
@@ -531,7 +531,7 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
 }
 
 /**
- * Decrypt symmetric session keys with a private key or password. Either a private key or
+ * Decrypt symmetric session keys with private keys or passwords (not both). Either a private key or
  *   a password must be specified.
  * @param {Object} options
  * @param {Message} options.message - A message object containing the encrypted session key packets
