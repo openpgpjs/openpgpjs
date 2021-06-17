@@ -206,8 +206,8 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       const disableNative = () => {
         enableNative();
         // stubbed functions return undefined
-        getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
-        getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
+        getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
+        getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
       };
       const enableNative = () => {
         getWebCryptoStub && getWebCryptoStub.restore();

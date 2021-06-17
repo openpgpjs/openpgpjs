@@ -33,7 +33,7 @@ import util from '../util';
  * @returns {Uint8Array}
  */
 export function wrap(key, data) {
-  const aes = new cipher["aes" + (key.length * 8)](key);
+  const aes = new cipher['aes' + (key.length * 8)](key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const P = unpack(data);
   let A = IV;
@@ -73,7 +73,7 @@ export function wrap(key, data) {
  * @throws {Error}
  */
 export function unwrap(key, data) {
-  const aes = new cipher["aes" + (key.length * 8)](key);
+  const aes = new cipher['aes' + (key.length * 8)](key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const C = unpack(data);
   let A = C.subarray(0, 2);
@@ -102,7 +102,7 @@ export function unwrap(key, data) {
   if (A[0] === IV[0] && A[1] === IV[1]) {
     return pack(R);
   }
-  throw new Error("Key Data Integrity failed");
+  throw new Error('Key Data Integrity failed');
 }
 
 function createArrayBuffer(data) {

@@ -4,7 +4,7 @@ const chai = require('chai');
 
 const { expect } = chai;
 
-module.exports = () => describe("ASCII armor", function() {
+module.exports = () => describe('ASCII armor', function() {
 
   function getArmor(headers, signatureHeaders) {
     return ['-----BEGIN PGP SIGNED MESSAGE-----']

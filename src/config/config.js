@@ -154,12 +154,12 @@ export default {
    * @memberof module:config
    * @property {String} versionString A version string to be included in armored messages
    */
-  versionString: "OpenPGP.js VERSION",
+  versionString: 'OpenPGP.js VERSION',
   /**
    * @memberof module:config
    * @property {String} commentString A comment string to be included in armored messages
    */
-  commentString: "https://openpgpjs.org",
+  commentString: 'https://openpgpjs.org',
 
   /**
    * Max userID string length (used for parsing)
@@ -173,7 +173,7 @@ export default {
    * @memberof module:config
    * @property {Array} knownNotations
    */
-  knownNotations: ["preferred-email-encoding@pgp.com", "pka-address@gnupg.org"],
+  knownNotations: ['preferred-email-encoding@pgp.com', 'pka-address@gnupg.org'],
   /**
    * @memberof module:config
    * @property {Boolean} useIndutnyElliptic Whether to use the indutny/elliptic library. When false, certain curves will not be supported.

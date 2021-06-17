@@ -4,7 +4,7 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 
 module.exports = () => describe('Custom configuration', function() {
   it('openpgp.readMessage', async function() {
-    const armoredMessage = await openpgp.encrypt({ message: await openpgp.createMessage({ text:"hello world" }), passwords: 'password' });
+    const armoredMessage = await openpgp.encrypt({ message: await openpgp.createMessage({ text:'hello world' }), passwords: 'password' });
     const message = await openpgp.readMessage({ armoredMessage });
     message.packets.findPacket(openpgp.SymEncryptedSessionKeyPacket.tag).version = 1; // unsupported SKESK version
 
@@ -201,7 +201,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
 
     try {
       const passwords = ['12345678'];
-      const message = await openpgp.createMessage({ text: "test" });
+      const message = await openpgp.createMessage({ text: 'test' });
 
       const armored = await openpgp.encrypt({ message, passwords });
       const encrypted = await openpgp.readMessage({ armoredMessage: armored });
@@ -223,7 +223,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
       expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.aeadEncryptedData);
       const { packets: [compressed] } = await encrypted2.decrypt(null, passwords, null, encrypted2.fromStream, openpgp.config);
       expect(compressed.constructor.tag).to.equal(openpgp.enums.packet.compressedData);
-      expect(compressed.algorithm).to.equal("zip");
+      expect(compressed.algorithm).to.equal('zip');
 
       const userIDs = { name: 'Test User', email: 'text2@example.com' };
       const { privateKey: key } = await openpgp.generateKey({ userIDs, format: 'object' });
@@ -276,7 +276,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     const userIDs = { name: 'Test User', email: 'text2@example.com' };
     const { privateKey: key } = await openpgp.generateKey({ userIDs, format: 'object' });
 
-    const message = await openpgp.createMessage({ text: "test" });
+    const message = await openpgp.createMessage({ text: 'test' });
     const opt = {
       message,
       signingKeys: key,
@@ -286,7 +286,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     opt.detached = true;
     await expect(openpgp.sign(opt)).to.be.rejectedWith(/Insecure hash algorithm/);
 
-    const clearText = await openpgp.createCleartextMessage({ text: "test" });
+    const clearText = await openpgp.createCleartextMessage({ text: 'test' });
     const opt2 = {
       message: clearText,
       signingKeys: key,
@@ -305,7 +305,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     const config = { rejectMessageHashAlgorithms: new Set([openpgp.enums.hash.sha256, openpgp.enums.hash.sha512]) };
 
 
-    const message = await openpgp.createMessage({ text: "test" });
+    const message = await openpgp.createMessage({ text: 'test' });
     const signed = await openpgp.sign({ message, signingKeys: key });
     const opt = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
@@ -324,7 +324,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     const { signatures: [sig2] } = await openpgp.verify(opt2);
     await expect(sig2.error).to.match(/Insecure message hash algorithm/);
 
-    const cleartext = await openpgp.createCleartextMessage({ text: "test" });
+    const cleartext = await openpgp.createCleartextMessage({ text: 'test' });
     const signedCleartext = await openpgp.sign({ message: cleartext, signingKeys: key });
     const opt3 = {
       message: await openpgp.readCleartextMessage({ cleartextMessage: signedCleartext }),

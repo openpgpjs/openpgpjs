@@ -384,7 +384,7 @@ function desAddPadding(message, padding) {
 
   let pad;
   if (padding === 2 && (padLength < 8)) { //pad the message with spaces
-    pad = " ".charCodeAt(0);
+    pad = ' '.charCodeAt(0);
   } else if (padding === 1) { //PKCS7 padding
     pad = padLength;
   } else if (!padding && (padLength < 8)) { //pad the message out with null bytes
@@ -410,7 +410,7 @@ function desRemovePadding(message, padding) {
   let padLength = null;
   let pad;
   if (padding === 2) { // space padded
-    pad = " ".charCodeAt(0);
+    pad = ' '.charCodeAt(0);
   } else if (padding === 1) { // PKCS7
     padLength = message[message.length - 1];
   } else if (!padding) { // null padding

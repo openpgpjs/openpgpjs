@@ -125,7 +125,7 @@ export async function readPackets(input, callback) {
     const peekedBytes = await reader.peekBytes(2);
     // some sanity checks
     if (!peekedBytes || peekedBytes.length < 2 || (peekedBytes[0] & 0x80) === 0) {
-      throw new Error("Error during parsing. This message / key probably does not conform to a valid OpenPGP format.");
+      throw new Error('Error during parsing. This message / key probably does not conform to a valid OpenPGP format.');
     }
     const headerByte = await reader.readByte();
     let tag = -1;

@@ -175,7 +175,7 @@ class Curve {
         try {
           return await webGenKeyPair(this.name);
         } catch (err) {
-          util.printDebugError("Browser did not support generating ec key " + err.message);
+          util.printDebugError('Browser did not support generating ec key ' + err.message);
           break;
         }
       case 'node':
@@ -299,10 +299,10 @@ export {
 
 async function webGenKeyPair(name) {
   // Note: keys generated with ECDSA and ECDH are structurally equivalent
-  const webCryptoKey = await webCrypto.generateKey({ name: "ECDSA", namedCurve: webCurves[name] }, true, ["sign", "verify"]);
+  const webCryptoKey = await webCrypto.generateKey({ name: 'ECDSA', namedCurve: webCurves[name] }, true, ['sign', 'verify']);
 
-  const privateKey = await webCrypto.exportKey("jwk", webCryptoKey.privateKey);
-  const publicKey = await webCrypto.exportKey("jwk", webCryptoKey.publicKey);
+  const privateKey = await webCrypto.exportKey('jwk', webCryptoKey.privateKey);
+  const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
 
   return {
     publicKey: jwkToRawPublic(publicKey),
@@ -354,7 +354,7 @@ function rawPublicToJWK(payloadSize, name, publicKey) {
   const bufY = publicKey.slice(len + 1, len * 2 + 1);
   // https://www.rfc-editor.org/rfc/rfc7518.txt
   const jwk = {
-    kty: "EC",
+    kty: 'EC',
     crv: name,
     x: uint8ArrayToB64(bufX, true),
     y: uint8ArrayToB64(bufY, true),

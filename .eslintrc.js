@@ -278,7 +278,7 @@ module.exports = {
     "prefer-spread": "off",
     "prefer-template": "off",
     "quote-props": "off",
-    "quotes": "off",
+    "quotes": ["error", "single", { "avoidEscape": true }],
     "require-await": "error",
     "require-jsdoc": "off",
     "semi-spacing": [

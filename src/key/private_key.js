@@ -122,7 +122,7 @@ class PrivateKey extends PublicKey {
    */
   async validate(config = defaultConfig) {
     if (!this.isPrivate()) {
-      throw new Error("Cannot validate a public key");
+      throw new Error('Cannot validate a public key');
     }
 
     let signingKeyPacket;
@@ -146,7 +146,7 @@ class PrivateKey extends PublicKey {
       const keys = this.getKeys();
       const allDummies = keys.map(key => key.keyPacket.isDummy()).every(Boolean);
       if (allDummies) {
-        throw new Error("Cannot validate an all-gnu-dummy key");
+        throw new Error('Cannot validate an all-gnu-dummy key');
       }
 
       return Promise.all(keys.map(async key => key.keyPacket.validate()));
@@ -212,17 +212,17 @@ class PrivateKey extends PublicKey {
   async addSubkey(options = {}) {
     const config = { ...defaultConfig, ...options.config };
     if (options.passphrase) {
-      throw new Error("Subkey could not be encrypted here, please encrypt whole key");
+      throw new Error('Subkey could not be encrypted here, please encrypt whole key');
     }
     if (options.rsaBits < config.minRSABits) {
       throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${options.rsaBits}`);
     }
     const secretKeyPacket = this.keyPacket;
     if (secretKeyPacket.isDummy()) {
-      throw new Error("Cannot add subkey to gnu-dummy primary key");
+      throw new Error('Cannot add subkey to gnu-dummy primary key');
     }
     if (!secretKeyPacket.isDecrypted()) {
-      throw new Error("Key is not decrypted");
+      throw new Error('Key is not decrypted');
     }
     const defaultOptions = secretKeyPacket.getAlgorithmInfo();
     defaultOptions.type = defaultOptions.curve ? 'ecc' : 'rsa'; // DSA keys default to RSA

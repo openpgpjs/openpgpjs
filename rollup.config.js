@@ -5,7 +5,7 @@ import { builtinModules } from 'module';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
-import { terser } from "rollup-plugin-terser";
+import { terser } from 'rollup-plugin-terser';
 
 import pkg from './package.json';
 
@@ -16,7 +16,7 @@ const banner =
   `${new Date().toISOString().split('T')[0]} - ` +
   `this is LGPL licensed code, see LICENSE/our website ${pkg.homepage} for more information. */`;
 
-const intro = `const globalThis = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};`;
+const intro = "const globalThis = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};";
 
 const terserOptions = {
   ecma: 2017,

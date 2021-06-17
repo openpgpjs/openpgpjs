@@ -25,8 +25,8 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
-    getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
-    getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
+    getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
+    getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
   };
   const enableNative = () => {
     getWebCryptoStub && getWebCryptoStub.restore();
@@ -73,14 +73,14 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
   }
 
   describe('Symmetric AES-GCM (native)', function() {
-    testAESGCM("12345678901234567890123456789012345678901234567890", true, true);
+    testAESGCM('12345678901234567890123456789012345678901234567890', true, true);
   });
 
   describe('Symmetric AES-GCM (asm.js fallback)', function() {
-    testAESGCM("12345678901234567890123456789012345678901234567890", false, false);
+    testAESGCM('12345678901234567890123456789012345678901234567890', false, false);
   });
 
   describe('Symmetric AES-GCM (native encrypt, asm.js decrypt)', function() {
-    testAESGCM("12345678901234567890123456789012345678901234567890", true, false);
+    testAESGCM('12345678901234567890123456789012345678901234567890', true, false);
   });
 });
