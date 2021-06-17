@@ -85,17 +85,15 @@ export class Message {
    * @returns {Array<module:type/keyid~KeyID>} Array of keyID objects.
    */
   getSigningKeyIDs() {
-    let keyIDs = [];
     const msg = this.unwrapCompressed();
     // search for one pass signatures
     const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature);
-    keyIDs = onePassSigList.map(packet => packet.issuerKeyID);
-    // if nothing found look for signature packets
-    if (!keyIDs.length) {
-      const signatureList = msg.packets.filterByTag(enums.packet.signature);
-      keyIDs = signatureList.map(packet => packet.issuerKeyID);
+    if (onePassSigList.length > 0) {
+      return onePassSigList.map(packet => packet.issuerKeyID);
     }
-    return keyIDs;
+    // if nothing found look for signature packets
+    const signatureList = msg.packets.filterByTag(enums.packet.signature);
+    return signatureList.map(packet => packet.issuerKeyID);
   }
 
   /**
