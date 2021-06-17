@@ -83,7 +83,7 @@ import {
   const sessionKeys = await decryptSessionKeys({ message: await readMessage({ binaryMessage: encryptedBinary }), decryptionKeys: privateKeys });
   expect(sessionKeys).to.have.length(1);
   // eslint-disable-next-line no-unused-vars
-  const encryptedSessionKeys: string = await encryptSessionKey({ ...sessionKeys[0], passwords: 'pass' });
+  const encryptedSessionKeys: string = await encryptSessionKey({ ...sessionKeys[0], passwords: 'pass', algorithm: 'aes128', aeadAlgorithm: 'eax' });
   const newSessionKey = await generateSessionKey({ encryptionKeys: privateKey.toPublic() });
   expect(newSessionKey.data).to.exist;
   expect(newSessionKey.algorithm).to.exist;
@@ -145,7 +145,7 @@ import {
 
   expect(LiteralDataPacket.tag).to.equal(enums.packet.literalData);
 
-  // // Detached - sign cleartext message (armored)
+  // // Detached - sign text message (armored)
   // import { Message, sign } from 'openpgp';
   // const message = await createMessage({ text: util.removeTrailingSpaces(text) });
   // const signed = await sign({ privateKeys, message, detached: true });
@@ -155,14 +155,6 @@ import {
   // const message = await createMessage({ text });
   // const signed = await sign({ privateKeys, message, detached: true, armor: false });
   // console.log(signed); // Uint8Array
-
-  // // Encrypt session keys (armored)
-  // const encrypted = await encryptSessionKey({ publicKeys, data, algorithm });
-  // console.log(encrypted); // String
-
-  // // Encrypt session keys (unarmored)
-  // const encrypted = await encryptSessionKey({ publicKeys, data, algorithm, armor: false });
-  // console.log(encrypted); // Uint8Array
 
   // // Streaming - encrypt text message on Node.js (armored)
   // const data = fs.createReadStream(filename, { encoding: 'utf8' });
