@@ -5,8 +5,6 @@ import {
   writePartialLength, writeSimpleLength,
   UnsupportedError
 } from './packet';
-import TrustPacket from './trust';
-import MarkerPacket from './marker';
 import util from '../util';
 import enums from '../enums';
 import defaultConfig from '../config';
@@ -72,7 +70,7 @@ class PacketList extends Array {
           await writer.ready;
           const done = await readPackets(readable, async parsed => {
             try {
-              if (parsed.tag === MarkerPacket.tag || parsed.tag === TrustPacket.tag) {
+              if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust) {
                 // According to the spec, these packet types should be ignored and not cause parsing errors, even if not esplicitly allowed:
                 // - Marker packets MUST be ignored when received: https://github.com/openpgpjs/openpgpjs/issues/1145
                 // - Trust packets SHOULD be ignored outside of keyrings (unsupported): https://datatracker.ietf.org/doc/html/rfc4880#section-5.10
