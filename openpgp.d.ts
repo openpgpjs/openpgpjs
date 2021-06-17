@@ -573,13 +573,13 @@ interface EncryptOptions {
   /** (optional) use a key ID of 0 instead of the public key IDs */
   wildcard?: boolean;
   /** (optional) Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]` */
-  signingKeyIDs?: KeyID[];
+  signingKeyIDs?: KeyID | KeyID[];
   /** (optional) Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`*/
-  encryptionKeyIDs?: KeyID[];
+  encryptionKeyIDs?: KeyID | KeyID[];
   /** (optional) Array of user IDs to sign with, e.g. { name:'Steve Sender', email:'steve@openpgp.org' } */
-  signingUserIDs?: UserID[];
+  signingUserIDs?: UserID | UserID[];
   /** (optional) array of user IDs to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
-  encryptionUserIDs?: UserID[];
+  encryptionUserIDs?: UserID | UserID[];
   config?: PartialConfig;
 }
 
@@ -611,9 +611,9 @@ interface SignOptions {
   armor?: boolean;
   dataType?: DataPacketType;
   detached?: boolean;
-  signingKeyIDs?: KeyID[];
+  signingKeyIDs?: KeyID | KeyID[];
   date?: Date;
-  signingUserIDs?: UserID[];
+  signingUserIDs?: UserID | UserID[];
   config?: PartialConfig;
 }
 
