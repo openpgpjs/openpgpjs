@@ -41,8 +41,14 @@ import {
   await revokeKey({ key: privateKey });
   // @ts-expect-error for missing revocation certificate
   try { await revokeKey({ key: publicKey }); } catch (e) {}
-  await revokeKey({ key: privateKey, revocationCertificate, format: 'object' }) as PrivateKey;
-  await revokeKey({ key: publicKey, revocationCertificate, format: 'object' }) as PublicKey;
+  const { privateKey: revokedPrivateKey, publicKey: revokedPublicKey } = await revokeKey({ key: privateKey, revocationCertificate, format: 'object' });
+  expect(revokedPrivateKey).to.be.instanceOf(PrivateKey);
+  expect(revokedPublicKey).to.be.instanceOf(PublicKey);
+  const revokedKeyPair = await revokeKey({ key: publicKey, revocationCertificate, format: 'object' });
+  // @ts-expect-error for null private key
+  try { revokedKeyPair.privateKey.armor(); } catch (e) {}
+  expect(revokedKeyPair.privateKey).to.be.null;
+  expect(revokedKeyPair.publicKey).to.be.instanceOf(PublicKey);
 
   // Encrypt text message (armored)
   const text = 'hello';

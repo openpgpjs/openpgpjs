@@ -1057,13 +1057,16 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       });
 
       const armored = await openpgp.revokeKey({ key, format: 'armor' });
-      expect((await openpgp.readKey({ armoredKey: armored })).isPrivate()).to.be.true;
+      expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
+      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPublic()).to.be.true;
 
       const binary = await openpgp.revokeKey({ key, format: 'binary' });
-      expect((await openpgp.readKey({ binaryKey: binary })).isPrivate()).to.be.true;
+      expect((await openpgp.readKey({ binaryKey: binary.privateKey })).isPrivate()).to.be.true;
+      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPublic()).to.be.true;
 
-      const revokedKey = await openpgp.revokeKey({ key, format: 'object' });
-      expect(revokedKey.isPrivate()).to.be.true;
+      const { privateKey, publicKey } = await openpgp.revokeKey({ key, format: 'object' });
+      expect(privateKey.isPrivate()).to.be.true;
+      expect(publicKey.isPublic()).to.be.true;
     });
   });
 
@@ -3268,7 +3271,7 @@ aOU=
         return openpgp.revokeKey({
           key: privateKey,
           format: 'object'
-        }).then(async function(revKey) {
+        }).then(async function({ publicKey: revKey }) {
           return openpgp.encrypt({
             message: await openpgp.createMessage({ text: plaintext }),
             encryptionKeys: revKey

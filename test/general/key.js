@@ -2650,7 +2650,7 @@ function versionSpecificTests() {
   it('Revoke generated key with revocation certificate', async function() {
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: '1234', format: 'object' };
     const { publicKey, revocationCertificate } = await openpgp.generateKey(opt);
-    return openpgp.revokeKey({ key: publicKey, revocationCertificate, format: 'object' }).then(async function(revKey) {
+    return openpgp.revokeKey({ key: publicKey, revocationCertificate, format: 'object' }).then(async function({ publicKey: revKey }) {
       expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.noReason);
       expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
       await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
@@ -2660,7 +2660,7 @@ function versionSpecificTests() {
   it('Revoke generated key with private key', async function() {
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, format: 'object' };
     const { privateKey: key } = await openpgp.generateKey(opt);
-    return openpgp.revokeKey({ key, reasonForRevocation: { string: 'Testing key revocation' }, format: 'object' }).then(async function(revKey) {
+    return openpgp.revokeKey({ key, reasonForRevocation: { string: 'Testing key revocation' }, format: 'object' }).then(async function({ publicKey: revKey }) {
       expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.noReason);
       expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
       await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
@@ -2673,7 +2673,7 @@ function versionSpecificTests() {
 
     const opt = { privateKey, userIDs: { name: 'test', email: 'a@b.com' }, format: 'object' };
     const { publicKey: refKey, revocationCertificate } = await openpgp.reformatKey(opt);
-    return openpgp.revokeKey({ key: refKey, revocationCertificate, format: 'object' }).then(async function(revKey) {
+    return openpgp.revokeKey({ key: refKey, revocationCertificate, format: 'object' }).then(async function({ publicKey: revKey }) {
       expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.noReason);
       expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
       await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');

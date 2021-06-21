@@ -86,7 +86,7 @@ export async function generateKey({ userIDs = [], passphrase = "", type = "ecc",
  * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
- *                                     { key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
+ *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
@@ -121,9 +121,11 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = "", k
  * @param {module:enums.reasonForRevocation} [options.reasonForRevocation.flag=[noReason]{@link module:enums.reasonForRevocation}] - Flag indicating the reason for revocation
  * @param {String} [options.reasonForRevocation.string=""] - String explaining the reason for revocation
  * @param {Date} [options.date] - Use the given date instead of the current time to verify validity of revocation certificate (if provided), or as creation time of the revocation signature
- * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output key
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output key(s)
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<PrivateKey|PublicKey|String|Uint8Array>} The revoked key object or in serialized form
+ * @returns {Promise<Object>} The revoked key in the form:
+ *                              { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String } if private key is passed, or
+ *                              { privateKey: null, publicKey:PublicKey|Uint8Array|String } otherwise
  * @async
  * @static
  */
@@ -134,7 +136,13 @@ export async function revokeKey({ key, revocationCertificate, reasonForRevocatio
       await key.applyRevocationCertificate(revocationCertificate, date, config) :
       await key.revoke(reasonForRevocation, date, config);
 
-    return formatKey(revokedKey, format, config);
+    return revokedKey.isPrivate() ? {
+      privateKey: formatKey(revokedKey, format, config),
+      publicKey: formatKey(revokedKey.toPublic(), format, config)
+    } : {
+      privateKey: null,
+      publicKey: formatKey(revokedKey, format, config)
+    };
   } catch (err) {
     throw util.wrapError('Error revoking key', err);
   }

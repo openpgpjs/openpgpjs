@@ -140,11 +140,11 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
       const { privateKey: key, revocationCertificate } = await openpgp.generateKey({ userIDs, format: 'object' });
 
       const opt = { key };
-      const revKeyArmored = await openpgp.revokeKey(opt);
+      const { privateKey: revKeyArmored } = await openpgp.revokeKey(opt);
       expect(revKeyArmored.indexOf(openpgp.config.commentString) > 0).to.be.false;
 
       const opt2 = { key, config: { showComment: true } };
-      const revKeyArmored2 = await openpgp.revokeKey(opt2);
+      const { privateKey: revKeyArmored2 } = await openpgp.revokeKey(opt2);
       expect(revKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
 
       const opt3 = {
