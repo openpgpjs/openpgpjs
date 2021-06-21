@@ -13,12 +13,8 @@ module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-38
       const testData = input.createSomeMessage();
       const testData2 = input.createSomeMessage();
 
-      const firstKey = await openpgp.generateKey({ userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "p256" });
-      const hi = firstKey.key;
-      const pubHi = hi.toPublic();
-      const secondKey = await openpgp.generateKey({ userIDs: { name: "Bye", email: "bye@good.bye" }, curve: "p256" });
-      const bye = secondKey.key;
-      const pubBye = bye.toPublic();
+      const { privateKey: hi, publicKey: pubHi } = await openpgp.generateKey({ userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "p256", format: 'object' });
+      const { privateKey: bye, publicKey: pubBye } = await openpgp.generateKey({ userIDs: { name: "Bye", email: "bye@good.bye" }, curve: "p256", format: 'object' });
 
       const cleartextMessage = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: hi });
       await openpgp.verify({
@@ -54,31 +50,27 @@ module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-38
 
   it('Sign message', async function () {
     const testData = input.createSomeMessage();
-    const options = { userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "p256" };
-    const firstKey = await openpgp.generateKey(options);
-    const signature = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: firstKey.key });
+    const options = { userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "p256", format: 'object' };
+    const { privateKey, publicKey } = await openpgp.generateKey(options);
+    const signature = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: privateKey });
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: signature });
-    const result = await openpgp.verify({ message: msg, verificationKeys: firstKey.key.toPublic() });
+    const result = await openpgp.verify({ message: msg, verificationKeys: publicKey });
     expect(result.signatures[0].valid).to.be.true;
   });
 
-  it('encrypt and sign message', async function () {
+  it('Encrypt and sign message', async function () {
     const testData = input.createSomeMessage();
-    let options = { userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "p256" };
+    let options = { userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "p256", format: 'object' };
     const firstKey = await openpgp.generateKey(options);
-    options = { userIDs: { name: "Bye", email: "bye@good.bye" }, curve: "p256" };
+    options = { userIDs: { name: "Bye", email: "bye@good.bye" }, curve: "p256", format: 'object' };
     const secondKey = await openpgp.generateKey(options);
-    const encrypted = await openpgp.encrypt(
-      { message: await openpgp.createMessage({ text: testData }),
-        encryptionKeys: [secondKey.key.toPublic()],
-        signingKeys: [firstKey.key] }
-    );
-    const msg = await openpgp.readMessage({ armoredMessage: encrypted });
-    const result = await openpgp.decrypt(
-      { message: msg,
-        decryptionKeys: secondKey.key,
-        verificationKeys: [firstKey.key.toPublic()] }
-    );
+    const encrypted = await openpgp.encrypt({
+      message: await openpgp.createMessage({ text: testData }),
+      encryptionKeys: secondKey.publicKey,
+      signingKeys: firstKey.privateKey
+    });
+    const message = await openpgp.readMessage({ armoredMessage: encrypted });
+    const result = await openpgp.decrypt({ message, decryptionKeys: secondKey.privateKey, verificationKeys: firstKey.publicKey });
     expect(result.signatures[0].valid).to.be.true;
   });
 

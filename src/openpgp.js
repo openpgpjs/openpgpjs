@@ -40,17 +40,18 @@ import util from './util';
  * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
  *                                             curve25519 (default), p256, p384, p521, secp256k1,
  *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
  *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
- *                                     { key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
+ *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
+export async function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", format = 'armor', keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -62,15 +63,12 @@ export async function generateKey({ userIDs = [], passphrase = "", type = "ecc",
   const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
 
   try {
-    const key = await generate(options, config);
-    const revocationCertificate = await key.getRevocationCertificate(date, config);
-    key.revocationSignatures = [];
+    const { key, revocationCertificate } = await generate(options, config);
 
     return {
-      key,
-      privateKeyArmored: key.armor(config),
-      publicKeyArmored: key.toPublic().armor(config),
-      revocationCertificate: revocationCertificate
+      privateKey: applyFormat(key, format, config),
+      publicKey: applyFormat(key.toPublic(), format, config),
+      revocationCertificate
     };
   } catch (err) {
     throw util.wrapError('Error generating keypair', err);
@@ -679,4 +677,24 @@ async function prepareSignatures(signatures) {
       util.printDebugError(e);
     }
   }));
+}
+
+/**
+ * Convert the object to the given format
+ * @param {Key} object
+ * @param {'armor'|'binary'|'object'} format
+ * @param {Object} config - Full configuration
+ * @returns {String|Uint8Array|Object}
+ */
+function applyFormat(object, format, config) {
+  switch (format) {
+    case 'object':
+      return object;
+    case 'armor':
+      return object.armor(config);
+    case 'binary':
+      return object.write();
+    default:
+      throw new Error(`Unsupported format ${format}`);
+  }
 }

@@ -382,18 +382,17 @@ function omnibus() {
   it('Omnibus Ed25519/Curve25519 Test', function() {
     const options = {
       userIDs: { name: "Hi", email: "hi@hel.lo" },
-      curve: "ed25519"
+      curve: "ed25519",
+      format: 'object'
     };
-    return openpgp.generateKey(options).then(async function(firstKey) {
-      expect(firstKey).to.exist;
-      expect(firstKey.privateKeyArmored).to.exist;
-      expect(firstKey.publicKeyArmored).to.exist;
-      expect(firstKey.key).to.exist;
-      expect(firstKey.key.keyPacket).to.exist;
-      expect(firstKey.key.subkeys).to.have.length(1);
-      expect(firstKey.key.subkeys[0].keyPacket).to.exist;
+    return openpgp.generateKey(options).then(async function({ privateKey, publicKey }) {
+      expect(privateKey).to.exist;
+      expect(publicKey).to.exist;
+      expect(privateKey.keyPacket).to.exist;
+      expect(privateKey.subkeys).to.have.length(1);
+      expect(privateKey.subkeys[0].keyPacket).to.exist;
 
-      const hi = firstKey.key;
+      const hi = privateKey;
       const primaryKey = hi.keyPacket;
       const subkey = hi.subkeys[0];
       expect(hi.getAlgorithmInfo().curve).to.equal('ed25519');
@@ -411,10 +410,11 @@ function omnibus() {
 
       const options = {
         userIDs: { name: "Bye", email: "bye@good.bye" },
-        curve: "curve25519"
+        curve: "curve25519",
+        format: 'object'
       };
-      return openpgp.generateKey(options).then(async function(secondKey) {
-        const bye = secondKey.key;
+
+      return openpgp.generateKey(options).then(async function({ privateKey: bye }) {
         expect(bye.getAlgorithmInfo().curve).to.equal('ed25519');
         expect(bye.getAlgorithmInfo().algorithm).to.equal('eddsa');
         expect(bye.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');

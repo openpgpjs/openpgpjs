@@ -57,7 +57,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @param {Object} config - Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @returns {Promise<PrivateKey>}
+ * @returns {Promise<{{ key: PrivateKey, revocationCertificate: String }}>}
  * @async
  * @static
  * @private
@@ -68,7 +68,12 @@ export async function generate(options, config) {
   options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));
   let promises = [helper.generateSecretKey(options, config)];
   promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config)));
-  return Promise.all(promises).then(packets => wrapKeyObject(packets[0], packets.slice(1), options, config));
+  const packets = await Promise.all(promises);
+
+  const key = await wrapKeyObject(packets[0], packets.slice(1), options, config);
+  const revocationCertificate = await key.getRevocationCertificate(options.date, config);
+  key.revocationSignatures = [];
+  return { key, revocationCertificate };
 }
 
 /**
@@ -81,7 +86,7 @@ export async function generate(options, config) {
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
  * @param {Object} config - Full configuration
  *
- * @returns {Promise<PrivateKey>}
+ * @returns {Promise<{{ key: PrivateKey, revocationCertificate: String }}>}
  * @async
  * @static
  * @private
@@ -136,7 +141,15 @@ export async function reformat(options, config) {
   }
 }
 
-
+/**
+ * Construct PrivateKey object from the given key packets, add certification signatures and set passphrase protection
+ * The new key includes a revocation certificate that must be removed before returning the key, otherwise the key is considered revoked.
+ * @param {SecretKeyPacket} secretKeyPacket
+ * @param {SecretSubkeyPacket} secretSubkeyPackets
+ * @param {Object} options
+ * @param {Object} config - Full configuration
+ * @returns {PrivateKey}
+ */
 async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config) {
   // set passphrase protection
   if (options.passphrase) {
@@ -235,7 +248,6 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     reasonForRevocationString: ''
   }, options.date, undefined, undefined, config));
 
-  // set passphrase protection
   if (options.passphrase) {
     secretKeyPacket.clearPrivateParams();
   }

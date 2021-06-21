@@ -17,7 +17,10 @@ export function readPrivateKey(options: { armoredKey: string, config?: PartialCo
 export function readPrivateKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PrivateKey>;
 export function readPrivateKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PrivateKey[]>;
 export function readPrivateKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<PrivateKey[]>;
-export function generateKey(options: KeyOptions): Promise<KeyPair>;
+export function generateKey(options: KeyOptions & { format?: 'armor' }): Promise<SerializedKeyPair<string>>;
+export function generateKey(options: KeyOptions & { format: 'object' }): Promise<KeyPair>;
+export function generateKey(options: KeyOptions & { format: 'binary' }): Promise<SerializedKeyPair<Uint8Array>>;
+
 export function generateSessionKey(options: { encryptionKeys: PublicKey[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
@@ -618,10 +621,15 @@ interface VerifyOptions {
   config?: PartialConfig;
 }
 
+
+interface SerializedKeyPair<T extends string|Uint8Array> {
+  privateKey: T;
+  publicKey: T;
+  revocationCertificate: string;
+}
 interface KeyPair {
-  key: PrivateKey;
-  privateKeyArmored: string;
-  publicKeyArmored: string;
+  privateKey: PrivateKey;
+  publicKey: PublicKey;
   revocationCertificate: string;
 }
 
@@ -633,6 +641,7 @@ interface KeyOptions {
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
   rsaBits?: number;
+  format?: 'armor' | 'object' | 'binary';
   keyExpirationTime?: number;
   date?: Date;
   subkeys?: SubkeyOptions[];

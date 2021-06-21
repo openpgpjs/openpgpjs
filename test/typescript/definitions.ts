@@ -8,7 +8,7 @@
 
 import { expect } from 'chai';
 import {
-  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key,
+  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key, PublicKey,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
@@ -17,18 +17,25 @@ import {
 (async () => {
 
   // Generate keys
-  const { publicKeyArmored, privateKeyArmored, key: privateKey } = await generateKey({ userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } });
+  const keyOptions = { userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } };
+  const { privateKey: privateKeyArmored, publicKey: publicKeyArmored } = await generateKey(keyOptions);
+  const { privateKey: privateKeyBinary } = await generateKey({ ...keyOptions, format: 'binary' });
+  const { privateKey, publicKey, revocationCertificate } = await generateKey({ ...keyOptions, format: 'object' });
   expect(privateKey).to.be.instanceOf(PrivateKey);
+  expect(publicKey).to.be.instanceOf(PublicKey);
+  expect(typeof revocationCertificate).to.equal('string');
   const privateKeys = [privateKey];
   const publicKeys = [privateKey.toPublic()];
-  expect(privateKey.toPublic().armor(config)).to.equal(publicKeyArmored);
 
   // Parse keys
   expect(await readKeys({ armoredKeys: publicKeyArmored })).to.have.lengthOf(1);
   const parsedKey: Key = await readKey({ armoredKey: publicKeyArmored });
-  parsedKey.armor();
+  expect(parsedKey.armor(config)).to.equal(publicKeyArmored);
+  expect(parsedKey.isPublic()).to.be.true;
   const parsedPrivateKey: PrivateKey = await readPrivateKey({ armoredKey: privateKeyArmored });
   expect(parsedPrivateKey.isPrivate()).to.be.true;
+  const parsedBinaryPrivateKey: PrivateKey = await readPrivateKey({ binaryKey: privateKeyBinary });
+  expect(parsedBinaryPrivateKey.isPrivate()).to.be.true;
 
   // Encrypt text message (armored)
   const text = 'hello';

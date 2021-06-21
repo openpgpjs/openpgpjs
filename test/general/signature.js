@@ -694,23 +694,18 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 `;
 
   it("Retrieve the issuer Key ID of a signature", async function () {
-    const { privateKeyArmored, publicKeyArmored } = await openpgp.generateKey({
-      type: "ecc", // Type of the key, defaults to ECC
-      curve: "curve25519", // ECC curve name, defaults to curve25519
-      userIDs: [{ name: "name", email: "test@email.com" }], // you can pass multiple user IDs
-      passphrase: "password" // protects the private key
-    });
-
-    const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
+    const publicKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
     const privateKey = await openpgp.decryptKey({
-      privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
-      passphrase: "password"
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
+      passphrase: 'hello world'
     });
     const message = await openpgp.createMessage({ text: "test" });
     const armoredSignature = await openpgp.sign({
       message,
       signingKeys: privateKey,
-      detached: true
+      signingKeyIDs: [privateKey.getKeyID()],
+      detached: true,
+      config: { minRSABits: 1024 }
     });
     const signature = await openpgp.readSignature({ armoredSignature });
     expect(signature.getSigningKeyIDs).to.exist;
@@ -1638,8 +1633,8 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
       passphrase: 'hello world'
     });
 
-    const opt = { rsaBits: 2048, userIDs: { name:'test', email:'a@b.com' }, passphrase: null };
-    const { key: generatedKey } = await openpgp.generateKey(opt);
+    const opt = { userIDs: { name:'test', email:'a@b.com' }, format: 'object' };
+    const { privateKey: generatedKey } = await openpgp.generateKey(opt);
     const armoredSignature = await openpgp.sign({ signingKeys: [generatedKey, privKey], message, detached: true, config: { minRSABits: 1024 } });
     const signature = await openpgp.readSignature({ armoredSignature });
     const { data, signatures } = await openpgp.verify({ verificationKeys: [generatedKey.toPublic(), pubKey], message, signature, config: { minRSABits: 1024 } });
@@ -1649,9 +1644,8 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
   });
 
   it('Sign message with key without password', function() {
-    const opt = { userIDs: { name:'test', email:'a@b.com' }, passphrase: null };
-    return openpgp.generateKey(opt).then(async function(gen) {
-      const key = gen.key;
+    const opt = { userIDs: { name:'test', email:'a@b.com' }, passphrase: null, format: 'object' };
+    return openpgp.generateKey(opt).then(async function({ privateKey: key }) {
       const message = await openpgp.createMessage({ text: 'hello world' });
       return message.sign([key]);
     });

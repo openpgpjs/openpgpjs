@@ -8,24 +8,23 @@ chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 
 async function generateTestData() {
-  const victimPrivKey = (await openpgp.generateKey({
+  const { privateKey: victimPrivKey } = await openpgp.generateKey({
     userIDs: [{ name: 'Victim', email: 'victim@example.com' }],
     type: 'rsa',
     rsaBits: 2048,
-    subkeys: [{
-      sign: true
-    }]
-  })).key;
-  victimPrivKey.revocationSignatures = [];
+    subkeys: [{ sign: true }],
+    format: 'object'
+  });
 
-  const attackerPrivKey = (await openpgp.generateKey({
+  const { privateKey: attackerPrivKey } = await openpgp.generateKey({
     userIDs: [{ name: 'Attacker', email: 'attacker@example.com' }],
     type: 'rsa',
     rsaBits: 2048,
     subkeys: [],
-    sign: false
-  })).key;
-  attackerPrivKey.revocationSignatures = [];
+    sign: false,
+    format: 'object'
+  });
+
   const signed = await openpgp.sign({
     message: await createCleartextMessage({ text: 'I am batman' }),
     signingKeys: victimPrivKey,
