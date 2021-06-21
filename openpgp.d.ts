@@ -27,6 +27,12 @@ export function encryptKey(options: { privateKey: PrivateKey; passphrase?: strin
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
+export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<string>;
+export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'binary', config?: PartialConfig }): Promise<Uint8Array>;
+export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'object', config?: PartialConfig }): Promise<PrivateKey>;
+export function revokeKey<T extends PublicKey>(options: { key: T, revocationCertificate: string, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<string>;
+export function revokeKey<T extends PublicKey>(options: { key: T, revocationCertificate: string, date?: Date, format: 'binary', config?: PartialConfig }): Promise<Uint8Array>;
+export function revokeKey<T extends PublicKey>(options: { key: T, revocationCertificate: string, date?: Date, format: 'object', config?: PartialConfig }): Promise<T>;
 
 export abstract class Key {
   public readonly keyPacket: PublicKeyPacket | SecretKeyPacket;
@@ -68,7 +74,7 @@ export class PublicKey extends Key {
 
 export class PrivateKey extends PublicKey {
   constructor(packetlist: PacketList<AnyKeyPacket>);
-  public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date, config?: Config): Promise<PrivateKey>;
+  public revoke(reason?: ReasonForRevocation, date?: Date, config?: Config): Promise<PrivateKey>;
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>
@@ -542,6 +548,7 @@ export namespace stream {
 export interface UserID { name?: string; email?: string; comment?: string; }
 export interface SessionKey { data: Uint8Array; algorithm: string; }
 
+export interface ReasonForRevocation { flag?: enums.reasonForRevocation, string?: string }
 
 interface EncryptOptions {
   /** message to be encrypted as created by createMessage */

@@ -61,7 +61,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
 
     try {
       const opt = {
-        userIDs: { name: 'Test User', email: 'text@example.com' },
+        userIDs: { name: 'Test User', email: 'text@example.com' }
       };
       const { privateKey: privateKeyArmored } = await openpgp.generateKey(opt);
       const key = await openpgp.readKey({ armoredKey: privateKeyArmored });
@@ -140,11 +140,11 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
       const { privateKey: key, revocationCertificate } = await openpgp.generateKey({ userIDs, format: 'object' });
 
       const opt = { key };
-      const { privateKeyArmored: revKeyArmored } = await openpgp.revokeKey(opt);
+      const revKeyArmored = await openpgp.revokeKey(opt);
       expect(revKeyArmored.indexOf(openpgp.config.commentString) > 0).to.be.false;
 
       const opt2 = { key, config: { showComment: true } };
-      const { privateKeyArmored: revKeyArmored2 } = await openpgp.revokeKey(opt2);
+      const revKeyArmored2 = await openpgp.revokeKey(opt2);
       expect(revKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
 
       const opt3 = {

@@ -1048,6 +1048,25 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
   });
 
+  describe('revokeKey - unit tests', function() {
+    it('should output key with expected format', async function() {
+      const encryptedKey = await openpgp.readKey({ armoredKey: priv_key });
+      const key = await openpgp.decryptKey({
+        privateKey: encryptedKey,
+        passphrase: passphrase
+      });
+
+      const armored = await openpgp.revokeKey({ key, format: 'armor' });
+      expect((await openpgp.readKey({ armoredKey: armored })).isPrivate()).to.be.true;
+
+      const binary = await openpgp.revokeKey({ key, format: 'binary' });
+      expect((await openpgp.readKey({ binaryKey: binary })).isPrivate()).to.be.true;
+
+      const revokedKey = await openpgp.revokeKey({ key, format: 'object' });
+      expect(revokedKey.isPrivate()).to.be.true;
+    });
+  });
+
   describe('decryptKey - unit tests', function() {
     it('should work for correct passphrase', async function() {
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });
@@ -3247,11 +3266,12 @@ aOU=
 
       it('should fail to encrypt with revoked key', function() {
         return openpgp.revokeKey({
-          key: privateKey
+          key: privateKey,
+          format: 'object'
         }).then(async function(revKey) {
           return openpgp.encrypt({
             message: await openpgp.createMessage({ text: plaintext }),
-            encryptionKeys: revKey.publicKey
+            encryptionKeys: revKey
           }).then(function() {
             throw new Error('Should not encrypt with revoked key');
           }).catch(function(error) {

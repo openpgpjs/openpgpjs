@@ -66,8 +66,8 @@ export async function generateKey({ userIDs = [], passphrase = "", type = "ecc",
     const { key, revocationCertificate } = await generate(options, config);
 
     return {
-      privateKey: applyFormat(key, format, config),
-      publicKey: applyFormat(key.toPublic(), format, config),
+      privateKey: formatKey(key, format, config),
+      publicKey: formatKey(key.toPublic(), format, config),
       revocationCertificate
     };
   } catch (err) {
@@ -102,8 +102,8 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = "", k
     const { key: reformattedKey, revocationCertificate } = await reformat(options, config);
 
     return {
-      privateKey: applyFormat(reformattedKey, format, config),
-      publicKey: applyFormat(reformattedKey.toPublic(), format, config),
+      privateKey: formatKey(reformattedKey, format, config),
+      publicKey: formatKey(reformattedKey.toPublic(), format, config),
       revocationCertificate
     };
   } catch (err) {
@@ -121,34 +121,20 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = "", k
  * @param {module:enums.reasonForRevocation} [options.reasonForRevocation.flag=[noReason]{@link module:enums.reasonForRevocation}] - Flag indicating the reason for revocation
  * @param {String} [options.reasonForRevocation.string=""] - String explaining the reason for revocation
  * @param {Date} [options.date] - Use the given date instead of the current time to verify validity of revocation certificate (if provided), or as creation time of the revocation signature
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output key
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} The revoked key object in the form:
- *                                     `{ privateKey:PrivateKey, privateKeyArmored:String, publicKey:PublicKey, publicKeyArmored:String }`
- *                                     (if private key is passed) or `{ publicKey:PublicKey, publicKeyArmored:String }` (otherwise)
+ * @returns {Promise<PrivateKey|PublicKey|String|Uint8Array>} The revoked key object or in serialized form
  * @async
  * @static
  */
-export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), config }) {
+export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), format = 'armor', config }) {
   config = { ...defaultConfig, ...config };
   try {
     const revokedKey = revocationCertificate ?
       await key.applyRevocationCertificate(revocationCertificate, date, config) :
       await key.revoke(reasonForRevocation, date, config);
 
-    if (revokedKey.isPrivate()) {
-      const publicKey = revokedKey.toPublic();
-      return {
-        privateKey: revokedKey,
-        privateKeyArmored: revokedKey.armor(config),
-        publicKey: publicKey,
-        publicKeyArmored: publicKey.armor(config)
-      };
-    }
-
-    return {
-      publicKey: revokedKey,
-      publicKeyArmored: revokedKey.armor(config)
-    };
+    return formatKey(revokedKey, format, config);
   } catch (err) {
     throw util.wrapError('Error revoking key', err);
   }
@@ -678,20 +664,20 @@ async function prepareSignatures(signatures) {
 }
 
 /**
- * Convert the object to the given format
- * @param {Key} object
+ * Convert the key object to the given format
+ * @param {Key} key
  * @param {'armor'|'binary'|'object'} format
  * @param {Object} config - Full configuration
  * @returns {String|Uint8Array|Object}
  */
-function applyFormat(object, format, config) {
+function formatKey(key, format, config) {
   switch (format) {
     case 'object':
-      return object;
+      return key;
     case 'armor':
-      return object.armor(config);
+      return key.armor(config);
     case 'binary':
-      return object.write();
+      return key.write();
     default:
       throw new Error(`Unsupported format ${format}`);
   }

@@ -8,7 +8,7 @@
 
 import { expect } from 'chai';
 import {
-  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key, PublicKey,
+  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key, PublicKey, revokeKey,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
@@ -36,6 +36,13 @@ import {
   expect(parsedPrivateKey.isPrivate()).to.be.true;
   const parsedBinaryPrivateKey: PrivateKey = await readPrivateKey({ binaryKey: privateKeyBinary });
   expect(parsedBinaryPrivateKey.isPrivate()).to.be.true;
+
+  // Revoke keys
+  await revokeKey({ key: privateKey });
+  // @ts-expect-error for missing revocation certificate
+  try { await revokeKey({ key: publicKey }); } catch (e) {}
+  await revokeKey({ key: privateKey, revocationCertificate, format: 'object' }) as PrivateKey;
+  await revokeKey({ key: publicKey, revocationCertificate, format: 'object' }) as PublicKey;
 
   // Encrypt text message (armored)
   const text = 'hello';
