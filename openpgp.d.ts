@@ -643,10 +643,10 @@ interface KeyOptions {
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
   rsaBits?: number;
-  format?: 'armor' | 'object' | 'binary';
   keyExpirationTime?: number;
   date?: Date;
   subkeys?: SubkeyOptions[];
+  format?: 'armor' | 'object' | 'binary';
   config?: PartialConfig;
 }
 
