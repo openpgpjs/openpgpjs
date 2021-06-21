@@ -20,8 +20,6 @@ export function readPrivateKeys(options: { binaryKeys: Uint8Array, config?: Part
 export function generateKey(options: KeyOptions & { format?: 'armor' }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
 export function generateKey(options: KeyOptions & { format: 'binary' }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
 export function generateKey(options: KeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
-
-export function generateSessionKey(options: { encryptionKeys: PublicKey[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
