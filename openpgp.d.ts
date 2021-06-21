@@ -24,7 +24,9 @@ export function generateKey(options: KeyOptions & { format: 'binary' }): Promise
 export function generateSessionKey(options: { encryptionKeys: PublicKey[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
 
 export abstract class Key {
   public readonly keyPacket: PublicKeyPacket | SecretKeyPacket;

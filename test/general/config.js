@@ -103,11 +103,12 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
       const { privateKey: origKey } = await openpgp.generateKey({ userIDs, format: 'object' });
 
       const opt = { privateKey: origKey, userIDs };
-      const { key: refKey, privateKeyArmored: refKeyArmored } = await openpgp.reformatKey(opt);
+      const { privateKey: refKeyArmored } = await openpgp.reformatKey(opt);
+      expect(refKeyArmored.indexOf(openpgp.config.commentString) > 0).to.be.false;
+      const refKey = await openpgp.readKey({ armoredKey: refKeyArmored });
       const prefs = refKey.users[0].selfCertifications[0];
       expect(prefs.preferredCompressionAlgorithms[0]).to.equal(openpgp.config.preferredCompressionAlgorithm);
       expect(prefs.preferredHashAlgorithms[0]).to.equal(openpgp.config.preferredHashAlgorithm);
-      expect(refKeyArmored.indexOf(openpgp.config.commentString) > 0).to.be.false;
 
       const config = {
         showComment: true,
@@ -116,11 +117,12 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
         rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) // should not matter in this context
       };
       const opt2 = { privateKey: origKey, userIDs, config };
-      const { key: refKey2, privateKeyArmored: refKeyArmored2 } = await openpgp.reformatKey(opt2);
+      const { privateKey: refKeyArmored2 } = await openpgp.reformatKey(opt2);
+      expect(refKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
+      const refKey2 = await openpgp.readKey({ armoredKey: refKeyArmored2 });
       const prefs2 = refKey2.users[0].selfCertifications[0];
       expect(prefs2.preferredCompressionAlgorithms[0]).to.equal(config.preferredCompressionAlgorithm);
       expect(prefs2.preferredHashAlgorithms[0]).to.equal(config.preferredHashAlgorithm);
-      expect(refKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
     } finally {
       openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
       openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;

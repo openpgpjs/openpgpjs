@@ -130,7 +130,10 @@ export async function reformat(options, config) {
 
   options.subkeys = options.subkeys.map(subkeyOptions => sanitize(subkeyOptions, options));
 
-  return wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config);
+  const key = await wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config);
+  const revocationCertificate = await key.getRevocationCertificate(options.date, config);
+  key.revocationSignatures = [];
+  return { key, revocationCertificate };
 
   function sanitize(options, subkeyDefaults = {}) {
     options.keyExpirationTime = options.keyExpirationTime || subkeyDefaults.keyExpirationTime;

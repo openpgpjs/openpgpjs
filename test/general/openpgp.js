@@ -1022,6 +1022,32 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
     });
   });
 
+  describe('reformatKey - unit tests', function() {
+    it('should output keypair with expected format', async function() {
+      const encryptedKey = await openpgp.readKey({ armoredKey: priv_key });
+      const original = await openpgp.decryptKey({
+        privateKey: encryptedKey,
+        passphrase: passphrase
+      });
+
+      const opt = {
+        privateKey: original,
+        userIDs: { name: 'Test User', email: 'text@example.com' }
+      };
+      const armored = await openpgp.reformatKey({ ...opt, format: 'armor' });
+      expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
+      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPublic()).to.be.true;
+
+      const binary = await openpgp.reformatKey({ ...opt, format: 'binary' });
+      expect((await openpgp.readKey({ binaryKey: binary.privateKey })).isPrivate()).to.be.true;
+      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPublic()).to.be.true;
+
+      const { privateKey, publicKey } = await openpgp.reformatKey({ ...opt, format: 'object' });
+      expect(privateKey.isPrivate()).to.be.true;
+      expect(publicKey.isPublic()).to.be.true;
+    });
+  });
+
   describe('decryptKey - unit tests', function() {
     it('should work for correct passphrase', async function() {
       const privateKey = await openpgp.readKey({ armoredKey: priv_key });

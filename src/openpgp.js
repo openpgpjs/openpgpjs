@@ -40,18 +40,18 @@ import util from './util';
  * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
  *                                             curve25519 (default), p256, p384, p521, secp256k1,
  *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
- * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
  *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", format = 'armor', keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
+export async function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armor', config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -83,13 +83,14 @@ export async function generateKey({ userIDs = [], passphrase = "", type = "ecc",
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the reformatted private key. If omitted, the key won't be encrypted.
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Date}   [options.date] - Override the creation date of the key signatures
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, config }) {
+export async function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, format = 'armor', config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -98,15 +99,12 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = "", k
   const options = { privateKey, userIDs, passphrase, keyExpirationTime, date };
 
   try {
-    const reformattedKey = await reformat(options, config);
-    const revocationCertificate = await reformattedKey.getRevocationCertificate(date, config);
-    reformattedKey.revocationSignatures = [];
+    const { key: reformattedKey, revocationCertificate } = await reformat(options, config);
 
     return {
-      key: reformattedKey,
-      privateKeyArmored: reformattedKey.armor(config),
-      publicKeyArmored: reformattedKey.toPublic().armor(config),
-      revocationCertificate: revocationCertificate
+      privateKey: applyFormat(reformattedKey, format, config),
+      publicKey: applyFormat(reformattedKey.toPublic(), format, config),
+      revocationCertificate
     };
   } catch (err) {
     throw util.wrapError('Error reformatting keypair', err);

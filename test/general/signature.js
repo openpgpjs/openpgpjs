@@ -853,11 +853,12 @@ AkLaG/AkATpuH+DMkYDmKbDLGgD+N4yuxXBJmBfC2IBe4J1S2Gg=
       privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
       passphrase: 'hello world'
     });
-    const { key: expiredKey } = await openpgp.reformatKey({
+    const { privateKey: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
       userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
-      date: key.keyPacket.created
+      date: key.keyPacket.created,
+      format: 'object'
     });
     await stream.loadStreamsPonyfill();
     const { signatures: [sigInfo] } = await openpgp.verify({
@@ -883,11 +884,12 @@ aMsUdQBgnPAcSGVsbG8gV29ybGQgOik=
       privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
       passphrase: 'hello world'
     });
-    const { key: expiredKey } = await openpgp.reformatKey({
+    const { privateKey: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
       userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
-      date: key.keyPacket.created
+      date: key.keyPacket.created,
+      format: 'object'
     });
     await stream.loadStreamsPonyfill();
     const { signatures: [sigInfo] } = await openpgp.verify({
@@ -912,11 +914,12 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
       passphrase: 'hello world'
     });
-    const { key: expiredKey } = await openpgp.reformatKey({
+    const { privateKey: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
       userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
-      date: key.keyPacket.created
+      date: key.keyPacket.created,
+      format: 'object'
     });
     await stream.loadStreamsPonyfill();
     const { signatures: [sigInfo] } = await openpgp.verify({
@@ -941,11 +944,12 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
       passphrase: 'hello world'
     });
-    const { key: expiredKey } = await openpgp.reformatKey({
+    const { privateKey: expiredKey } = await openpgp.reformatKey({
       privateKey: key,
       userIDs: key.users.map(user => user.userID),
       keyExpirationTime: 1,
-      date: key.keyPacket.created
+      date: key.keyPacket.created,
+      format: 'object'
     });
     const { signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
