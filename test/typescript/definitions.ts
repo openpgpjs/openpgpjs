@@ -32,7 +32,7 @@ import {
   expect(await readKeys({ armoredKeys: publicKeyArmored })).to.have.lengthOf(1);
   const parsedKey: Key = await readKey({ armoredKey: publicKeyArmored });
   expect(parsedKey.armor(config)).to.equal(publicKeyArmored);
-  expect(parsedKey.isPublic()).to.be.true;
+  expect(parsedKey.isPrivate()).to.be.false;
   const parsedPrivateKey: PrivateKey = await readPrivateKey({ armoredKey: privateKeyArmored });
   expect(parsedPrivateKey.isPrivate()).to.be.true;
   const parsedBinaryPrivateKey: PrivateKey = await readPrivateKey({ binaryKey: privateKeyBinary });
@@ -50,6 +50,15 @@ import {
   try { revokedKeyPair.privateKey.armor(); } catch (e) {}
   expect(revokedKeyPair.privateKey).to.be.null;
   expect(revokedKeyPair.publicKey).to.be.instanceOf(PublicKey);
+  if (parsedKey.isPrivate()) {
+    expect(parsedKey.isDecrypted()).to.be.true;
+  } else {
+    // @ts-expect-error undefined method for public keys
+    try { parsedKey.isDecrypted(); } catch (e) {}
+  }
+  // a generic Key can be directly used as PublicKey, since both classes have the same properties
+  // eslint-disable-next-line no-unused-vars
+  const unusedPublicKey: PublicKey = parsedKey;
 
   // Encrypt text message (armored)
   const text = 'hello';

@@ -65,7 +65,7 @@ class User {
     };
     const user = new User(dataToSign.userID || dataToSign.userAttribute, this.mainKey);
     user.otherCertifications = await Promise.all(signingKeys.map(async function(privateKey) {
-      if (privateKey.isPublic()) {
+      if (!privateKey.isPrivate()) {
         throw new Error('Need private key for signing');
       }
       if (privateKey.hasSameFingerprintAs(primaryKey)) {

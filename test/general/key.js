@@ -3164,7 +3164,7 @@ module.exports = () => describe('Key', function() {
   it('update() - merge private key into public key', async function() {
     const source = await openpgp.readKey({ armoredKey: priv_key_rsa });
     const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
-    expect(dest.isPublic()).to.be.true;
+    expect(dest.isPrivate()).to.be.false;
     return dest.update(source).then(async updated => {
       expect(updated.isPrivate()).to.be.true;
       return Promise.all([
@@ -3186,7 +3186,7 @@ module.exports = () => describe('Key', function() {
     const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
     source.subkeys = [];
     dest.subkeys = [];
-    expect(dest.isPublic()).to.be.true;
+    expect(dest.isPrivate()).to.be.false;
 
     const updated = await dest.update(source);
     expect(updated.isPrivate()).to.be.true;
@@ -3203,7 +3203,7 @@ module.exports = () => describe('Key', function() {
     const [dest] = await openpgp.readKeys({ armoredKeys: twoKeys });
     source.subkeys = [];
     expect(dest.subkeys).to.exist;
-    expect(dest.isPublic()).to.be.true;
+    expect(dest.isPrivate()).to.be.false;
     await expect(dest.update(source))
       .to.be.rejectedWith('Cannot update public key with private key if subkeys mismatch');
   });

@@ -46,8 +46,7 @@ export abstract class Key {
   public getKeyIDs(): KeyID[];
   public getPrimaryUser(date?: Date, userID?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
   public getUserIDs(): string[];
-  public isPrivate(): boolean;
-  public isPublic(): boolean;
+  public isPrivate(): this is PrivateKey;
   public toPublic(): PublicKey;
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PublicKey>;
   public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<PublicKey>
