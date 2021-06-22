@@ -37,6 +37,20 @@ import {
   expect(parsedPrivateKey.isPrivate()).to.be.true;
   const parsedBinaryPrivateKey: PrivateKey = await readPrivateKey({ binaryKey: privateKeyBinary });
   expect(parsedBinaryPrivateKey.isPrivate()).to.be.true;
+  // a generic Key can be directly used as PublicKey, since both classes have the same properties
+  // eslint-disable-next-line no-unused-vars
+  const unusedPublicKey: PublicKey = parsedKey;
+
+  // Check PrivateKey type inference
+  if (parsedKey.isPrivate()) {
+    expect(parsedKey.isDecrypted()).to.be.true;
+  } else {
+    // @ts-expect-error isDecrypted is not defined for public keys
+    try { parsedKey.isDecrypted(); } catch (e) {}
+  }
+  (await privateKey.update(privateKey)).isDecrypted();
+  // @ts-expect-error isDecrypted is not defined for public keys
+  (await privateKey.toPublic().update(privateKey)).isDecrypted();
 
   // Revoke keys
   await revokeKey({ key: privateKey });
@@ -50,15 +64,6 @@ import {
   try { revokedKeyPair.privateKey.armor(); } catch (e) {}
   expect(revokedKeyPair.privateKey).to.be.null;
   expect(revokedKeyPair.publicKey).to.be.instanceOf(PublicKey);
-  if (parsedKey.isPrivate()) {
-    expect(parsedKey.isDecrypted()).to.be.true;
-  } else {
-    // @ts-expect-error undefined method for public keys
-    try { parsedKey.isDecrypted(); } catch (e) {}
-  }
-  // a generic Key can be directly used as PublicKey, since both classes have the same properties
-  // eslint-disable-next-line no-unused-vars
-  const unusedPublicKey: PublicKey = parsedKey;
 
   // Encrypt text message (armored)
   const text = 'hello';
