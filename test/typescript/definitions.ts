@@ -49,8 +49,9 @@ import {
     try { parsedKey.isDecrypted(); } catch (e) {}
   }
   (await privateKey.update(privateKey)).isDecrypted();
-  // @ts-expect-error isDecrypted is not defined for public keys
   (await privateKey.toPublic().update(privateKey)).isDecrypted();
+  // @ts-expect-error isDecrypted is not defined for public keys
+  try { (await privateKey.toPublic().update(privateKey.toPublic())).isDecrypted(); } catch (e) {}
 
   // Revoke keys
   await revokeKey({ key: privateKey });

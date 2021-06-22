@@ -49,7 +49,9 @@ export abstract class Key {
   public getUserIDs(): string[];
   public isPrivate(): this is PrivateKey;
   public toPublic(): PublicKey;
-  public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<this>;
+  // NB: the order of the `update` declarations matters, since PublicKey includes PrivateKey
+  public update(sourceKey: PrivateKey, date?: Date, config?: Config): Promise<PrivateKey>;
+  public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PublicKey>;
   public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<this>
   public signAllUsers(privateKeys: PrivateKey[], date?: Date, config?: Config): Promise<this>
   public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
@@ -79,6 +81,7 @@ export class PrivateKey extends PublicKey {
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>
+  public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
 }
 
 export class Subkey {
