@@ -24,7 +24,7 @@ export function encryptKey(options: { privateKey: PrivateKey; passphrase?: strin
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
 
 export abstract class Key {
-  private keyPacket: PublicKeyPacket | SecretKeyPacket;
+  public readonly keyPacket: PublicKeyPacket | SecretKeyPacket;
   public subkeys: Subkey[];
   public users: User[];
   public revocationSignatures: SignaturePacket[];
@@ -73,8 +73,8 @@ export class PrivateKey extends PublicKey {
 
 export class Subkey {
   constructor(subkeyPacket: SecretSubkeyPacket | PublicSubkeyPacket, mainKey: PublicKey);
-  private keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
-  private mainKey: PublicKey;
+  public readonly keyPacket: SecretSubkeyPacket | PublicSubkeyPacket;
+  public readonly mainKey: PublicKey;
   public bindingSignatures: SignaturePacket[];
   public revocationSignatures: SignaturePacket[];
   public verify(date?: Date, config?: Config): Promise<SignaturePacket>;
@@ -110,7 +110,7 @@ export function readSignature(options: { armoredSignature: string, config?: Part
 export function readSignature(options: { binarySignature: Uint8Array, config?: PartialConfig }): Promise<Signature>;
 
 export class Signature {
-  private packets: PacketList<SignaturePacket>;
+  public readonly packets: PacketList<SignaturePacket>;
   constructor(packetlist: PacketList<SignaturePacket>);
   public write(): MaybeStream<Uint8Array>;
   public armor(config?: Config): string;
@@ -217,7 +217,7 @@ export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { m
  */
 export class Message<T extends MaybeStream<Data>> {
 
-  private packets: PacketList<AnyPacket>;
+  public readonly packets: PacketList<AnyPacket>;
   constructor(packetlist: PacketList<AnyPacket>);
 
   /** Returns binary representation of message
