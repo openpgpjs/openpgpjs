@@ -683,7 +683,7 @@ function tests() {
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);
-    expect(verified.signatures[0].valid).to.be.true;
+    expect(await verified.signatures[0].verified).to.be.true;
   });
 
   it('Detached sign small message using brainpool curve keys', async function() {
@@ -722,7 +722,7 @@ function tests() {
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);
-    expect(verified.signatures[0].valid).to.be.true;
+    expect(await verified.signatures[0].verified).to.be.true;
   });
 
   it('Detached sign small message using x25519 curve keys', async function() {
@@ -761,7 +761,7 @@ function tests() {
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);
-    expect(verified.signatures[0].valid).to.be.true;
+    expect(await verified.signatures[0].verified).to.be.true;
   });
 
   it("Detached sign is expected to pull entire input stream when we're not pulling signed stream", async function() {

@@ -535,7 +535,7 @@ export class Message {
    * @returns {Promise<Array<{
    *   keyID: module:type/keyid~KeyID,
    *   signature: Promise<Signature>,
-   *   verified: Promise<Boolean>
+   *   verified: Promise<true>
    * }>>} List of signer's keyID and validity of signatures.
    * @async
    */
@@ -592,7 +592,7 @@ export class Message {
    * @returns {Promise<Array<{
    *   keyID: module:type/keyid~KeyID,
    *   signature: Promise<Signature>,
-   *   verified: Promise<Boolean>
+   *   verified: Promise<true>
    * }>>} List of signer's keyID and validity of signature.
    * @async
    */
@@ -699,7 +699,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @returns {Promise<{
  *   keyID: module:type/keyid~KeyID,
  *   signature: Promise<Signature>,
- *   verified: Promise<Boolean>
+ *   verified: Promise<true>
  * }>} signer's keyID and validity of signature
  * @async
  * @private
@@ -767,7 +767,7 @@ async function createVerificationObject(signature, literalDataList, verification
  * @returns {Promise<Array<{
  *   keyID: module:type/keyid~KeyID,
  *   signature: Promise<Signature>,
- *   verified: Promise<Boolean>
+ *   verified: Promise<true>
  * }>>} list of signer's keyID and validity of signatures
  * @async
  * @private

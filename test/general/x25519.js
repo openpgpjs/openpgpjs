@@ -164,11 +164,11 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     const name = 'light';
     const pub = await load_pub_key(name);
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: data[name].message_signed });
-    return openpgp.verify({ verificationKeys: [pub], message: msg }).then(function(result) {
+    return openpgp.verify({ verificationKeys: [pub], message: msg }).then(async function(result) {
       expect(result).to.exist;
       expect(result.data).to.equal(data[name].message);
       expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.be.true;
+      expect(await result.signatures[0].verified).to.be.true;
     });
   });
 
@@ -184,7 +184,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     expect(result).to.exist;
     expect(result.data).to.equal(randomData.replace(/[ \t]+$/mg, ''));
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
 
   it('Decrypt and verify message', async function () {
@@ -196,7 +196,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     expect(result).to.exist;
     expect(result.data).to.equal(data.night.message);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
 
   it('Encrypt and sign message', async function () {
@@ -213,7 +213,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     expect(result).to.exist;
     expect(result.data).to.equal(randomData);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
 
   describe('Ed25519 Test Vectors from RFC8032', function () {
@@ -445,13 +445,13 @@ function omnibus() {
             return Promise.all([
               openpgp.verify(
                 { message: msg, verificationKeys: hi.toPublic() }
-              ).then(output => expect(output.signatures[0].valid).to.be.true),
+              ).then(output => expect(output.signatures[0].verified).to.eventually.be.true),
               // Verifying detached signature
               openpgp.verify({
                 message: await openpgp.createMessage({ text: 'Hi, this is me, Hi!' }),
                 verificationKeys: hi.toPublic(),
                 signature: msg.signature
-              }).then(output => expect(output.signatures[0].valid).to.be.true)
+              }).then(output => expect(output.signatures[0].verified).to.eventually.be.true)
             ]);
           }),
           // Encrypting and signing
@@ -466,9 +466,9 @@ function omnibus() {
               message: msg,
               decryptionKeys: bye,
               verificationKeys: [hi.toPublic()]
-            }).then(output => {
+            }).then(async output => {
               expect(output.data).to.equal('Hi, Hi wrote this but only Bye can read it!');
-              expect(output.signatures[0].valid).to.be.true;
+              await expect(output.signatures[0].verified).to.eventually.be.true;
             });
           })
         ]);

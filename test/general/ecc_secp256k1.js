@@ -177,11 +177,11 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
   it('Verify clear signed message', async function () {
     const pub = await load_pub_key('juliet');
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: data.juliet.message_signed });
-    return openpgp.verify({ verificationKeys: [pub], message: msg }).then(function(result) {
+    return openpgp.verify({ verificationKeys: [pub], message: msg }).then(async function(result) {
       expect(result).to.exist;
       expect(result.data).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.be.true;
+      expect(await result.signatures[0].verified).to.be.true;
     });
   });
   it('Sign message', async function () {
@@ -194,7 +194,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
   it('Decrypt and verify message', async function () {
     const juliet = await load_pub_key('juliet');
@@ -205,7 +205,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
     expect(result).to.exist;
     expect(result.data).to.equal(data.juliet.message);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
   it('Encrypt and sign message', async function () {
     const romeoPrivate = await load_priv_key('romeo');
@@ -220,7 +220,7 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
   it('Generate key', function () {
     const options = {

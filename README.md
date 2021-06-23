@@ -233,7 +233,13 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
         decryptionKeys: privateKey
     });
     console.log(decrypted); // 'Hello, World!'
-    console.log(signatures[0].valid) // signature validity (signed messages only)
+    // check signature validity (signed messages only)
+    try {
+        await signatures[0].verified; // throws on invalid signature
+        console.log('signature is valid');
+    } catch (e) {
+        throw new Error('Signature could not be verified: ' + e.message);
+    }
 })();
 ```
 
@@ -515,15 +521,16 @@ Using the private key:
     const signedMessage = await openpgp.readCleartextMessage({
         cleartextMessage // parse armored message
     });
-    const verified = await openpgp.verify({
+    const verificationResult = await openpgp.verify({
         message: signedMessage,
         verificationKeys: publicKey
     });
-    const { valid } = verified.signatures[0];
-    if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
-    } else {
-        throw new Error('signature could not be verified');
+    const { verified, keyID } = verificationResult.signatures[0];
+    try {
+        await verified; // throws on invalid signature
+        console.log('signed by key id ' + keyID.toHex());
+    } catch (e) {
+        throw new Error('Signature could not be verified: ' + e.message);
     }
 })();
 ```
@@ -558,16 +565,17 @@ Using the private key:
     const signature = await openpgp.readSignature({
         armoredSignature: detachedSignature // parse detached signature
     });
-    const verified = await openpgp.verify({
+    const verificationResult = await openpgp.verify({
         message, // Message object
         signature,
         verificationKeys: publicKey
     });
-    const { valid } = verified.signatures[0];
-    if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
-    } else {
-        throw new Error('signature could not be verified');
+    const { verified, keyID } = verificationResult.signatures[0];
+    try {
+        await verified; // throws on invalid signature
+        console.log('signed by key id ' + keyID.toHex());
+    } catch (e) {
+        throw new Error('Signature could not be verified: ' + e.message);
     }
 })();
 ```
@@ -603,21 +611,21 @@ Using the private key:
     });
     console.log(signatureArmored); // ReadableStream containing '-----BEGIN PGP MESSAGE ... END PGP MESSAGE-----'
 
-    const verified = await openpgp.verify({
+    const verificationResult = await openpgp.verify({
         message: await openpgp.readMessage({ armoredMessage: signatureArmored }), // parse armored signature
         verificationKeys: await openpgp.readKey({ armoredKey: publicKeyArmored })
     });
 
-    for await (const chunk of verified.data) {}
-    // Note: you *have* to read `verified.data` in some way or other,
+    for await (const chunk of verificationResult.data) {}
+    // Note: you *have* to read `verificationResult.data` in some way or other,
     // even if you don't need it, as that is what triggers the
     // verification of the data.
 
-    const valid = await verified.signatures[0].verified;
-    if (valid) {
-        console.log('signed by key id ' + verified.signatures[0].keyID.toHex());
-    } else {
-        throw new Error('signature could not be verified');
+    try {
+        await verificationResult.signatures[0].verified; // throws on invalid signature
+        console.log('signed by key id ' + verificationResult.signatures[0].keyID.toHex());
+     } catch (e) {
+        throw new Error('Signature could not be verified: ' + e.message);
     }
 })();
 ```

@@ -83,7 +83,7 @@ export class CleartextMessage {
    * @returns {Promise<Array<{
    *   keyID: module:type/keyid~KeyID,
    *   signature: Promise<Signature>,
-   *   verified: Promise<Boolean>
+   *   verified: Promise<true>
    * }>>} List of signer's keyID and validity of signature.
    * @async
    */

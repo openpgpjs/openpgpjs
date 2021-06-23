@@ -68,9 +68,7 @@ onmessage = async function({ data: { action, message }, ports: [port] }) {
           verificationKeys: publicKey,
           decryptionKeys: privateKey
         });
-        if (!signatures[0].valid) {
-          throw new Error("Couldn't veriy signature");
-        }
+        await signatures[0].verified;
         result = data;
         break;
       }

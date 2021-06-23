@@ -132,7 +132,7 @@ export class Signature {
 
 interface VerificationResult {
   keyID: KeyID;
-  verified: Promise<null | boolean>;
+  verified: Promise<true>; // throws on invalid signature
   signature: Promise<Signature>;
 }
 

@@ -300,8 +300,8 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
  *       signatures: [
  *         {
  *           keyID: module:type/keyid~KeyID,
- *           verified: Promise<Boolean>,
- *           valid: Boolean (if `message` was not created from a stream)
+ *           verified: Promise<true>,
+ *           signature: Promise<Signature>
  *         }, ...
  *       ]
  *     }
@@ -340,7 +340,6 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
       ]);
     }
     result.data = await convertStream(result.data, message.fromStream, format);
-    if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
   } catch (err) {
     throw util.wrapError('Error decrypting message', err);
@@ -422,8 +421,8 @@ export async function sign({ message, signingKeys, armor = true, detached = fals
  *       signatures: [
  *         {
  *           keyID: module:type/keyid~KeyID,
- *           verified: Promise<Boolean>,
- *           valid: Boolean (if `message` was not created from a stream)
+ *           verified: Promise<true>,
+ *           signature: Promise<Signature>
  *         }, ...
  *       ]
  *     }
@@ -460,7 +459,6 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
       ]);
     }
     result.data = await convertStream(result.data, message.fromStream, format);
-    if (!message.fromStream) await prepareSignatures(result.signatures);
     return result;
   } catch (err) {
     throw util.wrapError('Error verifying signed message', err);
@@ -651,25 +649,6 @@ function linkStreams(result, message) {
       await writer.abort(e);
     }
   });
-}
-
-/**
- * Wait until signature objects have been verified
- * @param {Object} signatures - list of signatures
- * @async
- * @private
- */
-async function prepareSignatures(signatures) {
-  await Promise.all(signatures.map(async signature => {
-    signature.signature = await signature.signature;
-    try {
-      signature.valid = await signature.verified;
-    } catch (e) {
-      signature.valid = false;
-      signature.error = e;
-      util.printDebugError(e);
-    }
-  }));
 }
 
 /**
