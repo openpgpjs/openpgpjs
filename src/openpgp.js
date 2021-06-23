@@ -139,20 +139,7 @@ export async function revokeKey({ key, revocationCertificate, reasonForRevocatio
       await key.applyRevocationCertificate(revocationCertificate, date, config) :
       await key.revoke(reasonForRevocation, date, config);
 
-    if (revokedKey.isPrivate()) {
-      const publicKey = revokedKey.toPublic();
-      return {
-        privateKey: revokedKey,
-        privateKeyArmored: revokedKey.armor(config),
-        publicKey: publicKey,
-        publicKeyArmored: publicKey.armor(config)
-      };
-    }
-
-    return {
-      publicKey: revokedKey,
-      publicKeyArmored: revokedKey.armor(config)
-    };
+    return revokedKey;
   } catch (err) {
     throw util.wrapError('Error revoking key', err);
   }
