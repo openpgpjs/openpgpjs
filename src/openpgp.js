@@ -225,7 +225,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
 
 
 /**
- * Encrypts message text/data with public keys, passwords or both at once. Either encryption keys or passwords
+ * Encrypts a message using public keys, passwords or both at once. At least one of `encryptionKeys` or `passwords`
  *   must be specified. If signing keys are specified, those will be used to sign the message.
  * @param {Object} options
  * @param {Message} options.message - Message to be encrypted as created by {@link createMessage}
@@ -278,8 +278,8 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
 }
 
 /**
- * Decrypts a message with the user's private key, a session key or a password (multiple options are not supported). Either a private key,
- *   a session key or a password must be specified.
+ * Decrypts a message with the user's private key, a session key or a password.
+ * One of `decryptionKeys`, `sessionkeys` or `passwords` must be specified (passing a combination of these options is not supported).
  * @param {Object} options
  * @param {Message} options.message - The message object with the encrypted data
  * @param {PrivateKey|PrivateKey[]} [options.decryptionKeys] - Private keys with decrypted secret key data or session key
@@ -499,8 +499,8 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
 }
 
 /**
- * Encrypt a symmetric session key with public keys, passwords, or both at once. Either public keys
- *   or passwords must be specified.
+ * Encrypt a symmetric session key with public keys, passwords, or both at once.
+ * At least one of `encryptionKeys` or `passwords` must be specified.
  * @param {Object} options
  * @param {Uint8Array} options.data - The session key to be encrypted e.g. 16 random bytes (for aes128)
  * @param {String} options.algorithm - Algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
@@ -531,8 +531,8 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
 }
 
 /**
- * Decrypt symmetric session keys with private keys or passwords (not both). Either a private key or
- *   a password must be specified.
+ * Decrypt symmetric session keys using private keys or passwords (not both).
+ * One of `decryptionKeys` or `passwords` must be specified.
  * @param {Object} options
  * @param {Message} options.message - A message object containing the encrypted session key packets
  * @param {PrivateKey|PrivateKey[]} [options.decryptionKeys] - Private keys with decrypted secret key data
