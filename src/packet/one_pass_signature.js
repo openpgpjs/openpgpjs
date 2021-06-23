@@ -109,7 +109,7 @@ class OnePassSignaturePacket {
    * @returns {Uint8Array} A Uint8Array representation of a one-pass signature packet.
    */
   write() {
-    const start = new Uint8Array([3, enums.write(enums.signature, this.signatureType),
+    const start = new Uint8Array([VERSION, enums.write(enums.signature, this.signatureType),
       enums.write(enums.hash, this.hashAlgorithm),
       enums.write(enums.publicKey, this.publicKeyAlgorithm)]);
 
