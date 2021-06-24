@@ -155,9 +155,9 @@ export default class BigInteger {
    * @returns {BigInteger} this ** e mod n.
    */
   modExp(e, n) {
-    if (n.isZero()) throw Error("Modulo cannot be zero");
+    if (n.isZero()) throw Error('Modulo cannot be zero');
     if (n.isOne()) return new BigInteger(0);
-    if (e.isNegative()) throw Error("Unsopported negative exponent");
+    if (e.isNegative()) throw Error('Unsopported negative exponent');
 
     let exp = e.value;
     let x = this.value;

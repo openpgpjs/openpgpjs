@@ -318,7 +318,7 @@ function createTwofish() {
   }
 
   return {
-    name: "twofish",
+    name: 'twofish',
     blocksize: 128 / 8,
     open: tfsInit,
     close: tfsClose,

@@ -54,7 +54,7 @@ function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
     oid.write(),
     new Uint8Array([public_algo]),
     kdfParams.write(),
-    util.stringToUint8Array("Anonymous Sender    "),
+    util.stringToUint8Array('Anonymous Sender    '),
     fingerprint.subarray(0, 20)
   ]);
 }
@@ -219,21 +219,21 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
 async function webPrivateEphemeralKey(curve, V, Q, d) {
   const recipient = privateToJWK(curve.payloadSize, curve.web.web, Q, d);
   let privateKey = webCrypto.importKey(
-    "jwk",
+    'jwk',
     recipient,
     {
-      name: "ECDH",
+      name: 'ECDH',
       namedCurve: curve.web.web
     },
     true,
-    ["deriveKey", "deriveBits"]
+    ['deriveKey', 'deriveBits']
   );
   const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, V);
   let sender = webCrypto.importKey(
-    "jwk",
+    'jwk',
     jwk,
     {
-      name: "ECDH",
+      name: 'ECDH',
       namedCurve: curve.web.web
     },
     true,
@@ -242,7 +242,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
   [privateKey, sender] = await Promise.all([privateKey, sender]);
   let S = webCrypto.deriveBits(
     {
-      name: "ECDH",
+      name: 'ECDH',
       namedCurve: curve.web.web,
       public: sender
     },
@@ -250,7 +250,7 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
     curve.web.sharedSize
   );
   let secret = webCrypto.exportKey(
-    "jwk",
+    'jwk',
     privateKey
   );
   [S, secret] = await Promise.all([S, secret]);
@@ -271,17 +271,17 @@ async function webPublicEphemeralKey(curve, Q) {
   const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, Q);
   let keyPair = webCrypto.generateKey(
     {
-      name: "ECDH",
+      name: 'ECDH',
       namedCurve: curve.web.web
     },
     true,
-    ["deriveKey", "deriveBits"]
+    ['deriveKey', 'deriveBits']
   );
   let recipient = webCrypto.importKey(
-    "jwk",
+    'jwk',
     jwk,
     {
-      name: "ECDH",
+      name: 'ECDH',
       namedCurve: curve.web.web
     },
     false,
@@ -290,7 +290,7 @@ async function webPublicEphemeralKey(curve, Q) {
   [keyPair, recipient] = await Promise.all([keyPair, recipient]);
   let s = webCrypto.deriveBits(
     {
-      name: "ECDH",
+      name: 'ECDH',
       namedCurve: curve.web.web,
       public: recipient
     },
@@ -298,7 +298,7 @@ async function webPublicEphemeralKey(curve, Q) {
     curve.web.sharedSize
   );
   let p = webCrypto.exportKey(
-    "jwk",
+    'jwk',
     keyPair.publicKey
   );
   [s, p] = await Promise.all([s, p]);

@@ -72,7 +72,7 @@ module.exports = {
       }
     ],
     "capitalized-comments": "off",
-    "class-methods-use-this": "error",
+    "class-methods-use-this": "off",
     "comma-dangle": [ "error", "never" ],
     "comma-spacing": "off",
     "comma-style": [
@@ -278,7 +278,7 @@ module.exports = {
     "prefer-spread": "off",
     "prefer-template": "off",
     "quote-props": "off",
-    "quotes": "off",
+    "quotes": ["error", "single", { "avoidEscape": true }],
     "require-await": "error",
     "require-jsdoc": "off",
     "semi-spacing": [

@@ -62,7 +62,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
           if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
             throw err;
           }
-          util.printDebugError("Browser did not support signing: " + err.message);
+          util.printDebugError('Browser did not support signing: ' + err.message);
         }
         break;
       }
@@ -105,7 +105,7 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
           if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
             throw err;
           }
-          util.printDebugError("Browser did not support verifying: " + err.message);
+          util.printDebugError('Browser did not support verifying: ' + err.message);
         }
         break;
       case 'node':
@@ -178,22 +178,22 @@ async function webSign(curve, hashAlgo, message, keyPair) {
   const len = curve.payloadSize;
   const jwk = privateToJWK(curve.payloadSize, webCurves[curve.name], keyPair.publicKey, keyPair.privateKey);
   const key = await webCrypto.importKey(
-    "jwk",
+    'jwk',
     jwk,
     {
-      "name": "ECDSA",
-      "namedCurve": webCurves[curve.name],
-      "hash": { name: enums.read(enums.webHash, curve.hash) }
+      'name': 'ECDSA',
+      'namedCurve': webCurves[curve.name],
+      'hash': { name: enums.read(enums.webHash, curve.hash) }
     },
     false,
-    ["sign"]
+    ['sign']
   );
 
   const signature = new Uint8Array(await webCrypto.sign(
     {
-      "name": 'ECDSA',
-      "namedCurve": webCurves[curve.name],
-      "hash": { name: enums.read(enums.webHash, hashAlgo) }
+      'name': 'ECDSA',
+      'namedCurve': webCurves[curve.name],
+      'hash': { name: enums.read(enums.webHash, hashAlgo) }
     },
     key,
     message
@@ -208,24 +208,24 @@ async function webSign(curve, hashAlgo, message, keyPair) {
 async function webVerify(curve, hashAlgo, { r, s }, message, publicKey) {
   const jwk = rawPublicToJWK(curve.payloadSize, webCurves[curve.name], publicKey);
   const key = await webCrypto.importKey(
-    "jwk",
+    'jwk',
     jwk,
     {
-      "name": "ECDSA",
-      "namedCurve": webCurves[curve.name],
-      "hash": { name: enums.read(enums.webHash, curve.hash) }
+      'name': 'ECDSA',
+      'namedCurve': webCurves[curve.name],
+      'hash': { name: enums.read(enums.webHash, curve.hash) }
     },
     false,
-    ["verify"]
+    ['verify']
   );
 
   const signature = util.concatUint8Array([r, s]).buffer;
 
   return webCrypto.verify(
     {
-      "name": 'ECDSA',
-      "namedCurve": webCurves[curve.name],
-      "hash": { name: enums.read(enums.webHash, hashAlgo) }
+      'name': 'ECDSA',
+      'namedCurve': webCurves[curve.name],
+      'hash': { name: enums.read(enums.webHash, hashAlgo) }
     },
     key,
     signature,

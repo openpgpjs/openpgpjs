@@ -115,8 +115,8 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
     const disableNative = () => {
       enableNative();
       // stubbed functions return undefined
-      getWebCryptoStub = sinonSandbox.stub(util, "getWebCrypto");
-      getNodeCryptoStub = sinonSandbox.stub(util, "getNodeCrypto");
+      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
+      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
     };
     const enableNative = () => {
       getWebCryptoStub && getWebCryptoStub.restore();
@@ -169,7 +169,7 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
           'invalid oid', 8, [], [], [], []
         )).to.be.rejectedWith(Error, /Not valid curve/),
         expect(verify_signature(
-          "\x00", 8, [], [], [], []
+          '\x00', 8, [], [], [], []
         )).to.be.rejectedWith(Error, /Not valid curve/)
       ]);
     });

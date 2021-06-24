@@ -141,7 +141,7 @@ module.exports = () => describe('Util unit tests', function() {
     });
   });
 
-  describe("Misc.", function() {
+  describe('Misc.', function() {
     it('util.readNumber should not overflow until full range of uint32', function () {
       const ints = [2 ** 20, 2 ** 25, 2 ** 30, 2 ** 32 - 1];
       for (let i = 0; i < ints.length; i++) {

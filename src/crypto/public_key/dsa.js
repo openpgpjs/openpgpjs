@@ -113,13 +113,13 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
 
   if (r.lte(zero) || r.gte(q) ||
       s.lte(zero) || s.gte(q)) {
-    util.printDebug("invalid DSA Signature");
+    util.printDebug('invalid DSA Signature');
     return false;
   }
   const h = new BigInteger(hashed.subarray(0, q.byteLength())).imod(q);
   const w = s.modInv(q); // s**-1 mod q
   if (w.isZero()) {
-    util.printDebug("invalid DSA Signature");
+    util.printDebug('invalid DSA Signature');
     return false;
   }
 

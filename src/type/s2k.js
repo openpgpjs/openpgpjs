@@ -88,22 +88,22 @@ class S2K {
         break;
 
       case 'gnu':
-        if (util.uint8ArrayToString(bytes.subarray(i, i + 3)) === "GNU") {
+        if (util.uint8ArrayToString(bytes.subarray(i, i + 3)) === 'GNU') {
           i += 3; // GNU
           const gnuExtType = 1000 + bytes[i++];
           if (gnuExtType === 1001) {
             this.type = 'gnu-dummy';
             // GnuPG extension mode 1001 -- don't write secret key at all
           } else {
-            throw new Error("Unknown s2k gnu protection mode.");
+            throw new Error('Unknown s2k gnu protection mode.');
           }
         } else {
-          throw new Error("Unknown s2k type.");
+          throw new Error('Unknown s2k type.');
         }
         break;
 
       default:
-        throw new Error("Unknown s2k type.");
+        throw new Error('Unknown s2k type.');
     }
 
     return i;
@@ -131,9 +131,9 @@ class S2K {
         arr.push(new Uint8Array([this.c]));
         break;
       case 'gnu':
-        throw new Error("GNU s2k type not supported.");
+        throw new Error('GNU s2k type not supported.');
       default:
-        throw new Error("Unknown s2k type.");
+        throw new Error('Unknown s2k type.');
     }
 
     return util.concatUint8Array(arr);
@@ -176,9 +176,9 @@ class S2K {
           break;
         }
         case 'gnu':
-          throw new Error("GNU s2k type not supported.");
+          throw new Error('GNU s2k type not supported.');
         default:
-          throw new Error("Unknown s2k type.");
+          throw new Error('Unknown s2k type.');
       }
       const result = await crypto.hash.digest(algorithm, toHash);
       arr.push(result);

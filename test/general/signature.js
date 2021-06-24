@@ -11,7 +11,7 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
-module.exports = () => describe("Signature", function() {
+module.exports = () => describe('Signature', function() {
   const priv_key_arm1 =
     ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: GnuPG v1.4.11 (GNU/Linux)',
@@ -39,7 +39,7 @@ module.exports = () => describe("Signature", function() {
       'AgAJBQJREZ6zAhsMAAoJEBEnlAPLFp74QbMAn3V4857xwnO9/+vzIVnL93W3k0/8',
       'AKC8omYPPomN1E/UJFfXdLDIMi5LoA==',
       '=LSrW',
-      '-----END PGP PRIVATE KEY BLOCK-----'].join("\n");
+      '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
   const pub_key_arm1 =
     ['-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -58,7 +58,7 @@ module.exports = () => describe("Signature", function() {
       'HgECF4AACgkQikDlZK/UvLSspgCfcNaOpTg1W2ucR1JwBbBGvaERfuMAnRgt3/rs',
       'EplqEakMckCtikEnpxYe',
       '=b2Ln',
-      '-----END PGP PUBLIC KEY BLOCK-----'].join("\n");
+      '-----END PGP PUBLIC KEY BLOCK-----'].join('\n');
 
   const msg_arm1 =
     ['-----BEGIN PGP MESSAGE-----',
@@ -75,7 +75,7 @@ module.exports = () => describe("Signature", function() {
       '0Dqnp0yfefrkjQ0nuvubgB6Rv89mHpnvuJfFJRInpg4lrHwLvRwdpN2HDozFHcKK',
       'aOU=',
       '=4iGt',
-      '-----END PGP MESSAGE-----'].join("\n");
+      '-----END PGP MESSAGE-----'].join('\n');
 
   const priv_key_arm2 =
     ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
@@ -693,13 +693,13 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
 -----END PGP SIGNATURE-----
 `;
 
-  it("Retrieve the issuer Key ID of a signature", async function () {
+  it('Retrieve the issuer Key ID of a signature', async function () {
     const publicKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
     const privateKey = await openpgp.decryptKey({
       privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
       passphrase: 'hello world'
     });
-    const message = await openpgp.createMessage({ text: "test" });
+    const message = await openpgp.createMessage({ text: 'test' });
     const armoredSignature = await openpgp.sign({
       message,
       signingKeys: privateKey,

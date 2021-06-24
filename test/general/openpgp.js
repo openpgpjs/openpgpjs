@@ -2272,7 +2272,7 @@ aOU=
           try {
             openpgp.config.rejectPublicKeyAlgorithms = new Set();
 
-            const plaintext = "  \t┍ͤ޵၂༫዇◧˘˻ᙑ᎚⏴ំந⛑nٓኵΉⅶ⋋ŵ⋲΂ͽᣏ₅ᄶɼ┋⌔û᬴Ƚᔡᧅ≃ṱἆ⃷݂૿ӌ᰹෇ٹჵ⛇໶⛌  \t\n한국어/조선말";
+            const plaintext = '  \t┍ͤ޵၂༫዇◧˘˻ᙑ᎚⏴ំந⛑nٓኵΉⅶ⋋ŵ⋲΂ͽᣏ₅ᄶɼ┋⌔û᬴Ƚᔡᧅ≃ṱἆ⃷݂૿ӌ᰹෇ٹჵ⛇໶⛌  \t\n한국어/조선말';
 
             const privKeyDE = await openpgp.decryptKey({
               privateKey: await openpgp.readKey({ armoredKey: priv_key_de }),
@@ -2500,7 +2500,7 @@ aOU=
             badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=bbbb');
           }
           if (badSumEncrypted === data) {
-            throw new Error("Was not able to successfully modify checksum");
+            throw new Error('Was not able to successfully modify checksum');
           }
           const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
           await stream.loadStreamsPonyfill();
@@ -2602,7 +2602,7 @@ aOU=
         });
       });
 
-      describe("3DES decrypt", function() {
+      describe('3DES decrypt', function() {
         const pgp_msg = [
           '-----BEGIN PGP MESSAGE-----',
           'Version: GnuPG/MacGPG2 v2.0.19 (Darwin)',
@@ -3599,14 +3599,14 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
 
     describe('Specific encryption/signing key testing', async function () {
       const encryptionKeyIDs = [
-        keyIDType.fromID("87EAE0977B2185EA"),
-        keyIDType.fromID("F94F9B34AF93FA14"),
-        keyIDType.fromID("08F7D4C7C59545C0")
+        keyIDType.fromID('87EAE0977B2185EA'),
+        keyIDType.fromID('F94F9B34AF93FA14'),
+        keyIDType.fromID('08F7D4C7C59545C0')
       ];
       const signingKeyIDs = [
-        keyIDType.fromID("663277AF60400638"),
-        keyIDType.fromID("BBE14491E6EE6366"),
-        keyIDType.fromID("3E0F20F1A71D6DFD")
+        keyIDType.fromID('663277AF60400638'),
+        keyIDType.fromID('BBE14491E6EE6366'),
+        keyIDType.fromID('3E0F20F1A71D6DFD')
       ];
       const getPrimaryKey = async () => openpgp.readKey({
         armoredKey: multipleEncryptionAndSigningSubkeys
@@ -3619,7 +3619,7 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
         for (let i = 0; i < encryptionKeyIDs.length; i++) {
           m = await openpgp.readMessage({
             armoredMessage: await openpgp.encrypt({
-              message: await openpgp.createMessage({ text: "Hello World\n" }),
+              message: await openpgp.createMessage({ text: 'Hello World\n' }),
               encryptionKeys: primaryKey,
               encryptionKeyIDs: [encryptionKeyIDs[i]]
             })
@@ -3637,7 +3637,7 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
         for (let i = 0; i < signingKeyIDs.length; i++) {
           s = await openpgp.readSignature({
             armoredSignature: await openpgp.sign({
-              message: await openpgp.createMessage({ text: "Hello World\n" }),
+              message: await openpgp.createMessage({ text: 'Hello World\n' }),
               signingKeys: primaryKey,
               signingKeyIDs: [signingKeyIDs[i]],
               detached: true
@@ -3651,7 +3651,7 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
 
       it('Encrypt and sign with specific encryption/signing key ids', async function () {
         const primaryKey = await getPrimaryKey();
-        const plaintextMessage = await openpgp.createMessage({ text: "Hello World\n" });
+        const plaintextMessage = await openpgp.createMessage({ text: 'Hello World\n' });
 
         const checkEncryptedPackets = (encryptionKeyIDs, pKESKList) => {
           pKESKList.forEach(({ publicKeyID }, i) => {

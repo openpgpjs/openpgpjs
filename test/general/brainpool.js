@@ -285,8 +285,8 @@ function omnibus() {
     const testData = input.createSomeMessage();
     const testData2 = input.createSomeMessage();
 
-    const { privateKey: hi, publicKey: pubHi } = await openpgp.generateKey({ userIDs: { name: "Hi", email: "hi@hel.lo" }, curve: "brainpoolP256r1", format: 'object' });
-    const { privateKey: bye, publicKey: pubBye } = await openpgp.generateKey({ userIDs: { name: "Bye", email: "bye@good.bye" }, curve: "brainpoolP256r1", format: 'object' });
+    const { privateKey: hi, publicKey: pubHi } = await openpgp.generateKey({ userIDs: { name: 'Hi', email: 'hi@hel.lo' }, curve: 'brainpoolP256r1', format: 'object' });
+    const { privateKey: bye, publicKey: pubBye } = await openpgp.generateKey({ userIDs: { name: 'Bye', email: 'bye@good.bye' }, curve: 'brainpoolP256r1', format: 'object' });
 
     const cleartextMessage = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: hi });
     await openpgp.verify({

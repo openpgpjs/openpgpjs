@@ -2558,7 +2558,7 @@ function versionSpecificTests() {
   it('Reformat and encrypt key with no subkey', async function() {
     const userID = { name: 'test', email: 'a@b.com' };
     const key = await openpgp.readKey({ armoredKey: key_without_subkey });
-    const opt = { privateKey: key, userIDs: [userID], passphrase: "test", format: 'object' };
+    const opt = { privateKey: key, userIDs: [userID], passphrase: 'test', format: 'object' };
     return openpgp.reformatKey(opt).then(function({ privateKey: newKey }) {
       expect(newKey.users.length).to.equal(1);
       expect(newKey.users[0].userID.userID).to.equal('test <a@b.com>');
@@ -2939,27 +2939,27 @@ module.exports = () => describe('Key', function() {
     await expect(key.validate()).to.not.be.rejected;
   });
 
-  it("validate() - throw if all-gnu-dummy key", async function() {
+  it('validate() - throw if all-gnu-dummy key', async function() {
     const key = await openpgp.readKey({ armoredKey: gnuDummyKey });
     await expect(key.validate()).to.be.rejectedWith('Cannot validate an all-gnu-dummy key');
   });
 
-  it("validate() - gnu-dummy primary key with signing subkey", async function() {
+  it('validate() - gnu-dummy primary key with signing subkey', async function() {
     const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
     await expect(key.validate()).to.not.be.rejected;
   });
 
-  it("validate() - gnu-dummy primary key with encryption subkey", async function() {
+  it('validate() - gnu-dummy primary key with encryption subkey', async function() {
     const key = await openpgp.readKey({ armoredKey: dsaGnuDummyKeyWithElGamalSubkey });
     await expect(key.validate()).to.not.be.rejected;
   });
 
-  it("validate() - curve ed25519 (eddsa) cannot be used for ecdsa", async function() {
+  it('validate() - curve ed25519 (eddsa) cannot be used for ecdsa', async function() {
     const key = await openpgp.readKey({ armoredKey: eddsaKeyAsEcdsa });
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
-  it("isDecrypted() - should reflect whether all (sub)keys are encrypted", async function() {
+  it('isDecrypted() - should reflect whether all (sub)keys are encrypted', async function() {
     const passphrase = '12345678';
     const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519', passphrase, format: 'object' });
     expect(key.isDecrypted()).to.be.false;
@@ -2967,14 +2967,14 @@ module.exports = () => describe('Key', function() {
     expect(key.isDecrypted()).to.be.true;
   });
 
-  it("isDecrypted() - gnu-dummy primary key", async function() {
+  it('isDecrypted() - gnu-dummy primary key', async function() {
     const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
     expect(key.isDecrypted()).to.be.true;
     const encryptedKey = await openpgp.encryptKey({ privateKey: key, passphrase: '12345678' });
     expect(encryptedKey.isDecrypted()).to.be.false;
   });
 
-  it("isDecrypted() - all-gnu-dummy key", async function() {
+  it('isDecrypted() - all-gnu-dummy key', async function() {
     const key = await openpgp.readKey({ armoredKey: gnuDummyKey });
     expect(key.isDecrypted()).to.be.false;
   });
@@ -3606,7 +3606,7 @@ VYGdb3eNlV8CfoEC
       const opt = { type: 'rsa', rsaBits, userIDs: [userID], format: 'object', subkeys: [] };
       const { privateKey: key } = await openpgp.generateKey(opt);
       expect(key.subkeys).to.have.length(0);
-      key.getAlgorithmInfo().algorithm = "rsaSign";
+      key.getAlgorithmInfo().algorithm = 'rsaSign';
       const newKey = await key.addSubkey();
       expect(newKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('rsaEncryptSign');
     });
@@ -3854,13 +3854,13 @@ VYGdb3eNlV8CfoEC
   });
 
   it('Subkey.verify returns the latest valid signature', async function () {
-    const { privateKey: encryptionKey } = await openpgp.generateKey({ userIDs: { name: "purple" }, format: 'object' });
+    const { privateKey: encryptionKey } = await openpgp.generateKey({ userIDs: { name: 'purple' }, format: 'object' });
     const encryptionKeySignature = await encryptionKey.getSubkeys()[0].verify();
     expect(encryptionKeySignature instanceof openpgp.SignaturePacket).to.be.true;
     expect(encryptionKeySignature.keyFlags[0] & openpgp.enums.keyFlags.encryptCommunication).to.be.equals(openpgp.enums.keyFlags.encryptCommunication);
     expect(encryptionKeySignature.keyFlags[0] & openpgp.enums.keyFlags.encryptStorage).to.be.equals(openpgp.enums.keyFlags.encryptStorage);
 
-    const { privateKey: signingKey } = await openpgp.generateKey({ userIDs: { name: "purple" }, format: 'object', subkeys: [{ sign: true }] });
+    const { privateKey: signingKey } = await openpgp.generateKey({ userIDs: { name: 'purple' }, format: 'object', subkeys: [{ sign: true }] });
     const signingKeySignature = await signingKey.getSubkeys()[0].verify();
     expect(signingKeySignature instanceof openpgp.SignaturePacket).to.be.true;
     expect(signingKeySignature.keyFlags[0] & openpgp.enums.keyFlags.signData).to.be.equals(openpgp.enums.keyFlags.signData);

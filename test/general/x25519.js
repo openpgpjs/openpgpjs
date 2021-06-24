@@ -381,8 +381,8 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
 function omnibus() {
   it('Omnibus Ed25519/Curve25519 Test', function() {
     const options = {
-      userIDs: { name: "Hi", email: "hi@hel.lo" },
-      curve: "ed25519",
+      userIDs: { name: 'Hi', email: 'hi@hel.lo' },
+      curve: 'ed25519',
       format: 'object'
     };
     return openpgp.generateKey(options).then(async function({ privateKey, publicKey }) {
@@ -409,8 +409,8 @@ function omnibus() {
       await user.verifyCertificate(certificate, [hi.toPublic()], undefined, openpgp.config);
 
       const options = {
-        userIDs: { name: "Bye", email: "bye@good.bye" },
-        curve: "curve25519",
+        userIDs: { name: 'Bye', email: 'bye@good.bye' },
+        curve: 'curve25519',
         format: 'object'
       };
 

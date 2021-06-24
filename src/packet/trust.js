@@ -1,5 +1,3 @@
-/* eslint class-methods-use-this: ["error", { "exceptMethods": ["read"] }] */
-
 import enums from '../enums';
 import { UnsupportedError } from './packet';
 
@@ -31,7 +29,6 @@ class TrustPacket {
     throw new UnsupportedError('Trust packets are not supported');
   }
 
-  // eslint-disable-next-line class-methods-use-this
   write() {
     throw new UnsupportedError('Trust packets are not supported');
   }

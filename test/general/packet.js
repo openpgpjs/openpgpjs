@@ -29,7 +29,7 @@ function stringify(array) {
   return result.join('');
 }
 
-module.exports = () => describe("Packet", function() {
+module.exports = () => describe('Packet', function() {
   const allAllowedPackets = util.constructAllowedPackets([...Object.values(openpgp).filter(packetClass => !!packetClass.tag)]);
 
   const armored_key =
@@ -531,10 +531,10 @@ module.exports = () => describe("Packet", function() {
     openpgp.config.aeadChunkSizeByte = 14;
     openpgp.config.s2kIterationCountByte = 0x90;
 
-    const salt = util.hexToUint8Array(`cd5a9f70fbe0bc65`);
-    const sessionKey = util.hexToUint8Array(`86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d`.replace(/\s+/g, ''));
-    const sessionIV = util.hexToUint8Array(`bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35`.replace(/\s+/g, ''));
-    const dataIV = util.hexToUint8Array(`b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10`.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('cd5a9f70fbe0bc65');
+    const sessionKey = util.hexToUint8Array('86 f1 ef b8 69 52 32 9f 24 ac d3 bf d0 e5 34 6d'.replace(/\s+/g, ''));
+    const sessionIV = util.hexToUint8Array('bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35'.replace(/\s+/g, ''));
+    const dataIV = util.hexToUint8Array('b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10'.replace(/\s+/g, ''));
 
     const randomBytesStub = stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
@@ -608,10 +608,10 @@ module.exports = () => describe("Packet", function() {
     openpgp.config.aeadChunkSizeByte = 14;
     openpgp.config.s2kIterationCountByte = 0x90;
 
-    const salt = util.hexToUint8Array(`9f0b7da3e5ea6477`);
-    const sessionKey = util.hexToUint8Array(`d1 f0 1b a3 0e 13 0a a7 d2 58 2c 16 e0 50 ae 44`.replace(/\s+/g, ''));
-    const sessionIV = util.hexToUint8Array(`99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c`.replace(/\s+/g, ''));
-    const dataIV = util.hexToUint8Array(`5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56`.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('9f0b7da3e5ea6477');
+    const sessionKey = util.hexToUint8Array('d1 f0 1b a3 0e 13 0a a7 d2 58 2c 16 e0 50 ae 44'.replace(/\s+/g, ''));
+    const sessionIV = util.hexToUint8Array('99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c'.replace(/\s+/g, ''));
+    const dataIV = util.hexToUint8Array('5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56'.replace(/\s+/g, ''));
 
     const randomBytesStub = stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
@@ -840,7 +840,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
-    secretKeyPacket.algorithm = "rsaSign";
+    secretKeyPacket.algorithm = 'rsaSign';
     secretKeyPacket.isEncrypted = false;
     await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: true });
     expect(secretKeyPacket.s2kUsage).to.equal(253);
@@ -864,7 +864,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       packet.privateParams = { key: new Uint8Array([1, 2, 3]) };
       packet.publicParams = { pubKey: new Uint8Array([4, 5, 6]) };
-      packet.algorithm = "rsaSign";
+      packet.algorithm = 'rsaSign';
       packet.isEncrypted = false;
       packet.s2kUsage = 0;
 
@@ -896,7 +896,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
-    secretKeyPacket.algorithm = "rsaSign";
+    secretKeyPacket.algorithm = 'rsaSign';
     secretKeyPacket.isEncrypted = false;
     await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: false });
     expect(secretKeyPacket.s2kUsage).to.equal(254);
@@ -917,7 +917,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       key.publicParams = publicParams;
       key.privateParams = privateParams;
-      key.algorithm = "rsaSign";
+      key.algorithm = 'rsaSign';
       await key.computeFingerprintAndKeyID();
 
       const signed = new openpgp.PacketList();

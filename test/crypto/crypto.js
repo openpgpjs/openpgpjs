@@ -207,7 +207,7 @@ module.exports = () => describe('API functional testing', function() {
   const elGamalPublicParams = crypto.parsePublicKeyParams(algoElGamal, elGamalPublicKeyMaterial).publicParams;
   const elGamalPrivateParams = crypto.parsePrivateKeyParams(algoElGamal, elGamalPrivateKeyMaterial).privateParams;
 
-  const data = util.stringToUint8Array("foobar");
+  const data = util.stringToUint8Array('foobar');
 
   describe('Sign and verify', function () {
     it('RSA', async function () {
@@ -247,11 +247,11 @@ module.exports = () => describe('API functional testing', function() {
         expect(text).to.equal(plaintext);
       }));
     }
-    it("Symmetric with OpenPGP CFB", async function () {
-      await testCFB("hello");
-      await testCFB("1234567");
-      await testCFB("foobarfoobar1234567890");
-      await testCFB("12345678901234567890123456789012345678901234567890");
+    it('Symmetric with OpenPGP CFB', async function () {
+      await testCFB('hello');
+      await testCFB('1234567');
+      await testCFB('foobarfoobar1234567890');
+      await testCFB('12345678901234567890123456789012345678901234567890');
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', async function () {

@@ -154,9 +154,9 @@ const util = {
     while (c < e) {
       h = bytes[c++].toString(16);
       while (h.length < 2) {
-        h = "0" + h;
+        h = '0' + h;
       }
-      r.push("" + h);
+      r.push('' + h);
     }
     return r.join('');
   },

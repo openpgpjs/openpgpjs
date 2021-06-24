@@ -318,12 +318,12 @@ async function webSign(hashName, data, n, e, d, p, q, u) {
    */
   const jwk = await privateToJWK(n, e, d, p, q, u);
   const algo = {
-    name: "RSASSA-PKCS1-v1_5",
+    name: 'RSASSA-PKCS1-v1_5',
     hash: { name: hashName }
   };
-  const key = await webCrypto.importKey("jwk", jwk, algo, false, ["sign"]);
+  const key = await webCrypto.importKey('jwk', jwk, algo, false, ['sign']);
   // add hash field for ms edge support
-  return new Uint8Array(await webCrypto.sign({ "name": "RSASSA-PKCS1-v1_5", "hash": hashName }, key, data));
+  return new Uint8Array(await webCrypto.sign({ 'name': 'RSASSA-PKCS1-v1_5', 'hash': hashName }, key, data));
 }
 
 async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
@@ -374,12 +374,12 @@ async function bnVerify(hashAlgo, s, n, e, hashed) {
 
 async function webVerify(hashName, data, s, n, e) {
   const jwk = publicToJWK(n, e);
-  const key = await webCrypto.importKey("jwk", jwk, {
-    name: "RSASSA-PKCS1-v1_5",
+  const key = await webCrypto.importKey('jwk', jwk, {
+    name: 'RSASSA-PKCS1-v1_5',
     hash: { name:  hashName }
-  }, false, ["verify"]);
+  }, false, ['verify']);
   // add hash field for ms edge support
-  return webCrypto.verify({ "name": "RSASSA-PKCS1-v1_5", "hash": hashName }, key, s, data);
+  return webCrypto.verify({ 'name': 'RSASSA-PKCS1-v1_5', 'hash': hashName }, key, s, data);
 }
 
 async function nodeVerify(hashAlgo, data, s, n, e) {
