@@ -41,7 +41,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
   });
 
   it('openpgp.readKey', async function() {
-    const { privateKeyArmored: armoredKey } = await openpgp.generateKey({ userIDs:[{ name:'test', email:'test@a.it' }] });
+    const { privateKey: armoredKey } = await openpgp.generateKey({ userIDs:[{ name:'test', email:'test@a.it' }] });
     await expect(
       openpgp.readKey({ armoredKey, config: { tolerant: false, maxUserIDLength: 2 } })
     ).to.be.rejectedWith(/User ID string is too long/);
