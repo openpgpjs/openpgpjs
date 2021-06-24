@@ -8,11 +8,12 @@
  */
 
 /* ############## v5 KEY #################### */
-
-export function readKey(options: { armoredKey: string, config?: PartialConfig }): Promise<PublicKey>;
-export function readKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PublicKey>;
-export function readKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PublicKey[]>;
-export function readKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<PublicKey[]>;
+// The Key and PublicKey types can be used interchangably since TS cannot detect the difference, as they have the same class properties.
+// The declared readKey(s) return type is Key instead of a PublicKey since it seems more obvious that a Key can be cast to a PrivateKey.
+export function readKey(options: { armoredKey: string, config?: PartialConfig }): Promise<Key>;
+export function readKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<Key>;
+export function readKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<Key[]>;
+export function readKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<Key[]>;
 export function readPrivateKey(options: { armoredKey: string, config?: PartialConfig }): Promise<PrivateKey>;
 export function readPrivateKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PrivateKey>;
 export function readPrivateKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PrivateKey[]>;
@@ -46,20 +47,21 @@ export abstract class Key {
   public getKeyIDs(): KeyID[];
   public getPrimaryUser(date?: Date, userID?: UserID, config?: Config): Promise<PrimaryUser>; // throws on error
   public getUserIDs(): string[];
-  public isPrivate(): boolean;
-  public isPublic(): boolean;
+  public isPrivate(): this is PrivateKey;
   public toPublic(): PublicKey;
+  // NB: the order of the `update` declarations matters, since PublicKey includes PrivateKey
+  public update(sourceKey: PrivateKey, date?: Date, config?: Config): Promise<PrivateKey>;
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PublicKey>;
-  public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<PublicKey>
-  public signAllUsers(privateKeys: PrivateKey[], date?: Date, config?: Config): Promise<PublicKey>
+  public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<this>
+  public signAllUsers(privateKeys: PrivateKey[], date?: Date, config?: Config): Promise<this>
   public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
   public verifyPrimaryUser(publicKeys: PublicKey[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
   public verifyAllUsers(publicKeys: PublicKey[], date?: Date, config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
-  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | Subkey>;
-  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PublicKey | Subkey>;
-  public getKeys(keyID?: KeyID): (PublicKey | Subkey)[];
+  public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
+  public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
+  public getKeys(keyID?: KeyID): (this | Subkey)[];
   public getSubkeys(keyID?: KeyID): Subkey[];
   public getFingerprint(): string;
   public getCreationTime(): Date;
@@ -80,7 +82,6 @@ export class PrivateKey extends PublicKey {
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
-  public getKeys(keyID?: KeyID): (PrivateKey | Subkey)[];
 }
 
 export class Subkey {

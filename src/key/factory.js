@@ -95,7 +95,7 @@ export async function reformat(options, config) {
   options = sanitize(options);
   const { privateKey } = options;
 
-  if (privateKey.isPublic()) {
+  if (!privateKey.isPrivate()) {
     throw new Error('Cannot reformat a public key');
   }
 

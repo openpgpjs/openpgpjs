@@ -463,7 +463,7 @@ export class Message {
     }
 
     await Promise.all(Array.from(signingKeys).reverse().map(async function (primaryKey, i) {
-      if (primaryKey.isPublic()) {
+      if (!primaryKey.isPrivate()) {
         throw new Error('Need private key for signing');
       }
       const signingKeyID = signingKeyIDs[signingKeys.length - 1 - i];
@@ -672,7 +672,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
 
   await Promise.all(signingKeys.map(async (primaryKey, i) => {
     const userID = userIDs[i];
-    if (primaryKey.isPublic()) {
+    if (!primaryKey.isPrivate()) {
       throw new Error('Need private key for signing');
     }
     const signingKey = await primaryKey.getSigningKey(signingKeyIDs[i], date, userID, config);

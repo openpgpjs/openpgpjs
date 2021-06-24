@@ -476,7 +476,7 @@ class Key {
     if (!this.hasSameFingerprintAs(sourceKey)) {
       throw new Error('Primary key fingerprints must be equal to update the key');
     }
-    if (this.isPublic() && sourceKey.isPrivate()) {
+    if (!this.isPrivate() && sourceKey.isPrivate()) {
       // check for equal subkey packets
       const equal = (this.subkeys.length === sourceKey.subkeys.length) &&
             (this.subkeys.every(destSubkey => {

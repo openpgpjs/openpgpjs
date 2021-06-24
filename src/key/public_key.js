@@ -41,17 +41,8 @@ class PublicKey extends Key {
   }
 
   /**
-   * Returns true if this is a public key
-   * @returns {Boolean}
-   */
-  // eslint-disable-next-line class-methods-use-this
-  isPublic() {
-    return true;
-  }
-
-  /**
    * Returns true if this is a private key
-   * @returns {Boolean}
+   * @returns {false}
    */
   // eslint-disable-next-line class-methods-use-this
   isPrivate() {

@@ -25,15 +25,6 @@ class PrivateKey extends PublicKey {
   }
 
   /**
-   * Returns true if this is a public key
-   * @returns {Boolean}
-   */
-  // eslint-disable-next-line class-methods-use-this
-  isPublic() {
-    return false;
-  }
-
-  /**
    * Returns true if this is a private key
    * @returns {Boolean}
    */
@@ -192,7 +183,7 @@ class PrivateKey extends PublicKey {
     date = new Date(),
     config = defaultConfig
   ) {
-    if (this.isPublic()) {
+    if (!this.isPrivate()) {
       throw new Error('Need private key for revoking');
     }
     const dataToSign = { key: this.keyPacket };

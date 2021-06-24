@@ -32,11 +32,26 @@ import {
   expect(await readKeys({ armoredKeys: publicKeyArmored })).to.have.lengthOf(1);
   const parsedKey: Key = await readKey({ armoredKey: publicKeyArmored });
   expect(parsedKey.armor(config)).to.equal(publicKeyArmored);
-  expect(parsedKey.isPublic()).to.be.true;
+  expect(parsedKey.isPrivate()).to.be.false;
   const parsedPrivateKey: PrivateKey = await readPrivateKey({ armoredKey: privateKeyArmored });
   expect(parsedPrivateKey.isPrivate()).to.be.true;
   const parsedBinaryPrivateKey: PrivateKey = await readPrivateKey({ binaryKey: privateKeyBinary });
   expect(parsedBinaryPrivateKey.isPrivate()).to.be.true;
+  // a generic Key can be directly used as PublicKey, since both classes have the same properties
+  // eslint-disable-next-line no-unused-vars
+  const unusedPublicKey: PublicKey = parsedKey;
+
+  // Check PrivateKey type inference
+  if (parsedKey.isPrivate()) {
+    expect(parsedKey.isDecrypted()).to.be.true;
+  } else {
+    // @ts-expect-error isDecrypted is not defined for public keys
+    try { parsedKey.isDecrypted(); } catch (e) {}
+  }
+  (await privateKey.update(privateKey)).isDecrypted();
+  (await privateKey.toPublic().update(privateKey)).isDecrypted();
+  // @ts-expect-error isDecrypted is not defined for public keys
+  try { (await privateKey.toPublic().update(privateKey.toPublic())).isDecrypted(); } catch (e) {}
 
   // Revoke keys
   await revokeKey({ key: privateKey });
