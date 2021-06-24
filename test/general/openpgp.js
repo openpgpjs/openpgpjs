@@ -1010,15 +1010,15 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       };
       const armored = await openpgp.generateKey({ ...opt, format: 'armor' });
       expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
-      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPublic()).to.be.true;
+      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPrivate()).to.be.false;
 
       const binary = await openpgp.generateKey({ ...opt, format: 'binary' });
       expect((await openpgp.readKey({ binaryKey: binary.privateKey })).isPrivate()).to.be.true;
-      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPublic()).to.be.true;
+      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPrivate()).to.be.false;
 
       const { privateKey, publicKey } = await openpgp.generateKey({ ...opt, format: 'object' });
       expect(privateKey.isPrivate()).to.be.true;
-      expect(publicKey.isPublic()).to.be.true;
+      expect(publicKey.isPrivate()).to.be.false;
     });
   });
 
@@ -1036,15 +1036,15 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       };
       const armored = await openpgp.reformatKey({ ...opt, format: 'armor' });
       expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
-      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPublic()).to.be.true;
+      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPrivate()).to.be.false;
 
       const binary = await openpgp.reformatKey({ ...opt, format: 'binary' });
       expect((await openpgp.readKey({ binaryKey: binary.privateKey })).isPrivate()).to.be.true;
-      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPublic()).to.be.true;
+      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPrivate()).to.be.false;
 
       const { privateKey, publicKey } = await openpgp.reformatKey({ ...opt, format: 'object' });
       expect(privateKey.isPrivate()).to.be.true;
-      expect(publicKey.isPublic()).to.be.true;
+      expect(publicKey.isPrivate()).to.be.false;
     });
   });
 
@@ -1058,15 +1058,15 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
 
       const armored = await openpgp.revokeKey({ key, format: 'armor' });
       expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
-      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPublic()).to.be.true;
+      expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPrivate()).to.be.false;
 
       const binary = await openpgp.revokeKey({ key, format: 'binary' });
       expect((await openpgp.readKey({ binaryKey: binary.privateKey })).isPrivate()).to.be.true;
-      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPublic()).to.be.true;
+      expect((await openpgp.readKey({ binaryKey: binary.publicKey })).isPrivate()).to.be.false;
 
       const { privateKey, publicKey } = await openpgp.revokeKey({ key, format: 'object' });
       expect(privateKey.isPrivate()).to.be.true;
-      expect(publicKey.isPublic()).to.be.true;
+      expect(publicKey.isPrivate()).to.be.false;
     });
   });
 
