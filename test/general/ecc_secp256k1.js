@@ -226,14 +226,12 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
     const options = {
       userIDs: { name: "Hamlet (secp256k1)", email: "hamlet@example.net" },
       curve: "secp256k1",
-      passphrase: "ophelia"
+      passphrase: "ophelia",
+      format: 'object'
     };
-    return openpgp.generateKey(options).then(function (key) {
-      expect(key).to.exist;
-      expect(key.key).to.exist;
-      expect(key.key.keyPacket).to.exist;
-      expect(key.privateKeyArmored).to.exist;
-      expect(key.publicKeyArmored).to.exist;
+    return openpgp.generateKey(options).then(function ({ privateKey, publicKey }) {
+      expect(privateKey.getAlgorithmInfo().curve).to.equal('secp256k1');
+      expect(publicKey.getAlgorithmInfo().curve).to.equal('secp256k1');
     });
   });
 });

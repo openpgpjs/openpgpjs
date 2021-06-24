@@ -8,7 +8,7 @@
 
 import { expect } from 'chai';
 import {
-  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key,
+  generateKey, readKey, readKeys, readPrivateKey, PrivateKey, Key, PublicKey, revokeKey,
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
@@ -17,18 +17,38 @@ import {
 (async () => {
 
   // Generate keys
-  const { publicKeyArmored, privateKeyArmored, key: privateKey } = await generateKey({ userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } });
+  const keyOptions = { userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } };
+  const { privateKey: privateKeyArmored, publicKey: publicKeyArmored } = await generateKey(keyOptions);
+  const { privateKey: privateKeyBinary } = await generateKey({ ...keyOptions, format: 'binary' });
+  const { privateKey, publicKey, revocationCertificate } = await generateKey({ ...keyOptions, format: 'object' });
   expect(privateKey).to.be.instanceOf(PrivateKey);
+  expect(publicKey).to.be.instanceOf(PublicKey);
+  expect(typeof revocationCertificate).to.equal('string');
   const privateKeys = [privateKey];
   const publicKeys = [privateKey.toPublic()];
-  expect(privateKey.toPublic().armor(config)).to.equal(publicKeyArmored);
 
   // Parse keys
   expect(await readKeys({ armoredKeys: publicKeyArmored })).to.have.lengthOf(1);
   const parsedKey: Key = await readKey({ armoredKey: publicKeyArmored });
-  parsedKey.armor();
+  expect(parsedKey.armor(config)).to.equal(publicKeyArmored);
+  expect(parsedKey.isPublic()).to.be.true;
   const parsedPrivateKey: PrivateKey = await readPrivateKey({ armoredKey: privateKeyArmored });
   expect(parsedPrivateKey.isPrivate()).to.be.true;
+  const parsedBinaryPrivateKey: PrivateKey = await readPrivateKey({ binaryKey: privateKeyBinary });
+  expect(parsedBinaryPrivateKey.isPrivate()).to.be.true;
+
+  // Revoke keys
+  await revokeKey({ key: privateKey });
+  // @ts-expect-error for missing revocation certificate
+  try { await revokeKey({ key: publicKey }); } catch (e) {}
+  const { privateKey: revokedPrivateKey, publicKey: revokedPublicKey } = await revokeKey({ key: privateKey, revocationCertificate, format: 'object' });
+  expect(revokedPrivateKey).to.be.instanceOf(PrivateKey);
+  expect(revokedPublicKey).to.be.instanceOf(PublicKey);
+  const revokedKeyPair = await revokeKey({ key: publicKey, revocationCertificate, format: 'object' });
+  // @ts-expect-error for null private key
+  try { revokedKeyPair.privateKey.armor(); } catch (e) {}
+  expect(revokedKeyPair.privateKey).to.be.null;
+  expect(revokedKeyPair.publicKey).to.be.instanceOf(PublicKey);
 
   // Encrypt text message (armored)
   const text = 'hello';

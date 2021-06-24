@@ -435,15 +435,15 @@ and a subkey for encryption using Curve25519.
 
 ```js
 (async () => {
-    const { privateKeyArmored, publicKeyArmored, revocationCertificate } = await openpgp.generateKey({
+    const { privateKey, publicKey, revocationCertificate } = await openpgp.generateKey({
         type: 'ecc', // Type of the key, defaults to ECC
         curve: 'curve25519', // ECC curve name, defaults to curve25519
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
-        passphrase: 'super long and hard to guess secret' // protects the private key
-    });
+        passphrase: 'super long and hard to guess secret', // protects the private key
+        format: 'armor' // output key format, defaults to 'armor' (other options: 'binary' or 'object')
 
-    console.log(privateKeyArmored);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
-    console.log(publicKeyArmored);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
+    console.log(privateKey);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
+    console.log(publicKey);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
     console.log(revocationCertificate); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 })();
 ```
@@ -452,7 +452,7 @@ RSA keys (increased compatibility):
 
 ```js
 (async () => {
-    const key = await openpgp.generateKey({
+    const { privateKey, publicKey } = await openpgp.generateKey({
         type: 'rsa', // Type of the key
         rsaBits: 4096, // RSA key size (defaults to 4096 bits)
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
@@ -466,9 +466,10 @@ RSA keys (increased compatibility):
 Using a revocation certificate:
 ```js
 (async () => {
-    const { publicKeyArmored: revokedKeyArmored } = await openpgp.revokeKey({
+    const { publicKey: revokedKeyArmored } = await openpgp.revokeKey({
         key: await openpgp.readKey({ armoredKey: publicKeyArmored }),
-        revocationCertificate
+        revocationCertificate,
+        format: 'armor' // output armored keys
     });
     console.log(revokedKeyArmored); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 })();
@@ -477,9 +478,11 @@ Using a revocation certificate:
 Using the private key:
 ```js
 (async () => {
-    const { publicKeyArmored, publicKey } = await openpgp.revokeKey({
-        key: await openpgp.readKey({ armoredKey: privateKeyArmored })
+    const { publicKey: revokedKeyArmored } = await openpgp.revokeKey({
+        key: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        format: 'armor' // output armored keys
     });
+    console.log(revokedKeyArmored); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 })();
 ```
 

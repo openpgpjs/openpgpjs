@@ -44,13 +44,14 @@ import util from './util';
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
  *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
- *                                     { key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
+ *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], config }) {
+export async function generateKey({ userIDs = [], passphrase = "", type = "ecc", rsaBits = 4096, curve = "curve25519", keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armor', config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -62,15 +63,12 @@ export async function generateKey({ userIDs = [], passphrase = "", type = "ecc",
   const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
 
   try {
-    const key = await generate(options, config);
-    const revocationCertificate = await key.getRevocationCertificate(date, config);
-    key.revocationSignatures = [];
+    const { key, revocationCertificate } = await generate(options, config);
 
     return {
-      key,
-      privateKeyArmored: key.armor(config),
-      publicKeyArmored: key.toPublic().armor(config),
-      revocationCertificate: revocationCertificate
+      privateKey: formatKey(key, format, config),
+      publicKey: formatKey(key.toPublic(), format, config),
+      revocationCertificate
     };
   } catch (err) {
     throw util.wrapError('Error generating keypair', err);
@@ -85,13 +83,14 @@ export async function generateKey({ userIDs = [], passphrase = "", type = "ecc",
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the reformatted private key. If omitted, the key won't be encrypted.
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Date}   [options.date] - Override the creation date of the key signatures
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
- *                                     { key:PrivateKey, privateKeyArmored:String, publicKeyArmored:String, revocationCertificate:String }
+ *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, config }) {
+export async function reformatKey({ privateKey, userIDs = [], passphrase = "", keyExpirationTime = 0, date, format = 'armor', config }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   if (userIDs.length === 0) {
@@ -100,15 +99,12 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = "", k
   const options = { privateKey, userIDs, passphrase, keyExpirationTime, date };
 
   try {
-    const reformattedKey = await reformat(options, config);
-    const revocationCertificate = await reformattedKey.getRevocationCertificate(date, config);
-    reformattedKey.revocationSignatures = [];
+    const { key: reformattedKey, revocationCertificate } = await reformat(options, config);
 
     return {
-      key: reformattedKey,
-      privateKeyArmored: reformattedKey.armor(config),
-      publicKeyArmored: reformattedKey.toPublic().armor(config),
-      revocationCertificate: revocationCertificate
+      privateKey: formatKey(reformattedKey, format, config),
+      publicKey: formatKey(reformattedKey.toPublic(), format, config),
+      revocationCertificate
     };
   } catch (err) {
     throw util.wrapError('Error reformatting keypair', err);
@@ -125,33 +121,27 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = "", k
  * @param {module:enums.reasonForRevocation} [options.reasonForRevocation.flag=[noReason]{@link module:enums.reasonForRevocation}] - Flag indicating the reason for revocation
  * @param {String} [options.reasonForRevocation.string=""] - String explaining the reason for revocation
  * @param {Date} [options.date] - Use the given date instead of the current time to verify validity of revocation certificate (if provided), or as creation time of the revocation signature
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output key(s)
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} The revoked key object in the form:
- *                                     `{ privateKey:PrivateKey, privateKeyArmored:String, publicKey:PublicKey, publicKeyArmored:String }`
- *                                     (if private key is passed) or `{ publicKey:PublicKey, publicKeyArmored:String }` (otherwise)
+ * @returns {Promise<Object>} The revoked key in the form:
+ *                              { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String } if private key is passed, or
+ *                              { privateKey: null, publicKey:PublicKey|Uint8Array|String } otherwise
  * @async
  * @static
  */
-export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), config }) {
+export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), format = 'armor', config }) {
   config = { ...defaultConfig, ...config };
   try {
     const revokedKey = revocationCertificate ?
       await key.applyRevocationCertificate(revocationCertificate, date, config) :
       await key.revoke(reasonForRevocation, date, config);
 
-    if (revokedKey.isPrivate()) {
-      const publicKey = revokedKey.toPublic();
-      return {
-        privateKey: revokedKey,
-        privateKeyArmored: revokedKey.armor(config),
-        publicKey: publicKey,
-        publicKeyArmored: publicKey.armor(config)
-      };
-    }
-
-    return {
-      publicKey: revokedKey,
-      publicKeyArmored: revokedKey.armor(config)
+    return revokedKey.isPrivate() ? {
+      privateKey: formatKey(revokedKey, format, config),
+      publicKey: formatKey(revokedKey.toPublic(), format, config)
+    } : {
+      privateKey: null,
+      publicKey: formatKey(revokedKey, format, config)
     };
   } catch (err) {
     throw util.wrapError('Error revoking key', err);
@@ -679,4 +669,24 @@ async function prepareSignatures(signatures) {
       util.printDebugError(e);
     }
   }));
+}
+
+/**
+ * Convert the key object to the given format
+ * @param {Key} key
+ * @param {'armor'|'binary'|'object'} format
+ * @param {Object} config - Full configuration
+ * @returns {String|Uint8Array|Object}
+ */
+function formatKey(key, format, config) {
+  switch (format) {
+    case 'object':
+      return key;
+    case 'armor':
+      return key.armor(config);
+    case 'binary':
+      return key.write();
+    default:
+      throw new Error(`Unsupported format ${format}`);
+  }
 }

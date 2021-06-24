@@ -17,11 +17,25 @@ export function readPrivateKey(options: { armoredKey: string, config?: PartialCo
 export function readPrivateKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PrivateKey>;
 export function readPrivateKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PrivateKey[]>;
 export function readPrivateKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<PrivateKey[]>;
-export function generateKey(options: KeyOptions): Promise<KeyPair>;
+export function generateKey(options: KeyOptions & { format?: 'armor' }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function generateKey(options: KeyOptions & { format: 'binary' }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
+export function generateKey(options: KeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
+
 export function generateSessionKey(options: { encryptionKeys: PublicKey[], date?: Date, encryptionUserIDs?: UserID[], config?: PartialConfig }): Promise<SessionKey>;
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: string | string[]; config?: PartialConfig }): Promise<PrivateKey>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; config?: PartialConfig }): Promise<KeyPair>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: UserID|UserID[]; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
+export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
+export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
+export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
+export function revokeKey(options: { key: PrivateKey, revocationCertificate: string, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
+export function revokeKey(options: { key: PrivateKey, revocationCertificate: string, date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
+export function revokeKey(options: { key: PrivateKey, revocationCertificate: string, date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
+export function revokeKey(options: { key: PublicKey, revocationCertificate: string, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<{ publicKey: string, privateKey: null }>;
+export function revokeKey(options: { key: PublicKey, revocationCertificate: string, date?: Date, format: 'binary', config?: PartialConfig }): Promise<{ publicKey: Uint8Array, privateKey: null }>;
+export function revokeKey(options: { key: PublicKey, revocationCertificate: string, date?: Date, format: 'object', config?: PartialConfig }): Promise<{ publicKey: PublicKey, privateKey: null }>;
 
 export abstract class Key {
   public readonly keyPacket: PublicKeyPacket | SecretKeyPacket;
@@ -63,7 +77,7 @@ export class PublicKey extends Key {
 
 export class PrivateKey extends PublicKey {
   constructor(packetlist: PacketList<AnyKeyPacket>);
-  public revoke(reason: { flag?: enums.reasonForRevocation; string?: string; }, date?: Date, config?: Config): Promise<PrivateKey>;
+  public revoke(reason?: ReasonForRevocation, date?: Date, config?: Config): Promise<PrivateKey>;
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>
@@ -537,6 +551,7 @@ export namespace stream {
 export interface UserID { name?: string; email?: string; comment?: string; }
 export interface SessionKey { data: Uint8Array; algorithm: string; }
 
+export interface ReasonForRevocation { flag?: enums.reasonForRevocation, string?: string }
 
 interface EncryptOptions {
   /** message to be encrypted as created by createMessage */
@@ -618,11 +633,14 @@ interface VerifyOptions {
   config?: PartialConfig;
 }
 
+
+interface SerializedKeyPair<T extends string|Uint8Array> {
+  privateKey: T;
+  publicKey: T;
+}
 interface KeyPair {
-  key: PrivateKey;
-  privateKeyArmored: string;
-  publicKeyArmored: string;
-  revocationCertificate: string;
+  privateKey: PrivateKey;
+  publicKey: PublicKey;
 }
 
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
@@ -636,6 +654,7 @@ interface KeyOptions {
   keyExpirationTime?: number;
   date?: Date;
   subkeys?: SubkeyOptions[];
+  format?: 'armor' | 'object' | 'binary';
   config?: PartialConfig;
 }
 
