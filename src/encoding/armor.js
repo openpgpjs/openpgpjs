@@ -360,6 +360,7 @@ export function unarmor(input, config = defaultConfig) {
  * @static
  */
 export function armor(messageType, body, partIndex, partTotal, customComment, config = defaultConfig) {
+  config = { ...defaultConfig, ...config };
   let text;
   let hash;
   if (messageType === enums.armor.signed) {

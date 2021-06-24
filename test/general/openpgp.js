@@ -3218,7 +3218,7 @@ aOU=
         }).then(async function(revKey) {
           return openpgp.encrypt({
             message: await openpgp.createMessage({ text: plaintext }),
-            encryptionKeys: revKey.publicKey
+            encryptionKeys: revKey
           }).then(function() {
             throw new Error('Should not encrypt with revoked key');
           }).catch(function(error) {

@@ -2717,7 +2717,6 @@ function versionSpecificTests() {
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: '1234' };
     return openpgp.generateKey(opt).then(function(original) {
       return openpgp.revokeKey({ key: original.key.toPublic(), revocationCertificate: original.revocationCertificate }).then(async function(revKey) {
-        revKey = revKey.publicKey;
         expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.noReason);
         expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('');
         await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
@@ -2729,7 +2728,6 @@ function versionSpecificTests() {
     const opt = { userIDs: { name: 'test', email: 'a@b.com' } };
     return openpgp.generateKey(opt).then(async function(original) {
       return openpgp.revokeKey({ key: original.key, reasonForRevocation: { string: 'Testing key revocation' } }).then(async function(revKey) {
-        revKey = revKey.publicKey;
         expect(revKey.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.noReason);
         expect(revKey.revocationSignatures[0].reasonForRevocationString).to.equal('Testing key revocation');
         await expect(revKey.verifyPrimaryKey()).to.be.rejectedWith('Primary key is revoked');
