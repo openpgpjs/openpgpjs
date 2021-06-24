@@ -703,7 +703,7 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     const armoredSignature = await openpgp.sign({
       message,
       signingKeys: privateKey,
-      signingKeyIDs: [privateKey.getKeyID()],
+      signingKeyIDs: privateKey.getKeyID(),
       detached: true,
       config: { minRSABits: 1024 }
     });

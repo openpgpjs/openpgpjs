@@ -225,7 +225,7 @@ export async function encryptKey({ privateKey, passphrase, config }) {
 
 
 /**
- * Encrypts message text/data with public keys, passwords or both at once. At least either encryption keys or passwords
+ * Encrypts a message using public keys, passwords or both at once. At least one of `encryptionKeys` or `passwords`
  *   must be specified. If signing keys are specified, those will be used to sign the message.
  * @param {Object} options
  * @param {Message} options.message - Message to be encrypted as created by {@link createMessage}
@@ -236,11 +236,11 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  * @param {Boolean} [options.armor=true] - Whether the return values should be ascii armored (true, the default) or binary (false)
  * @param {Signature} [options.signature] - A detached signature to add to the encrypted message
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
- * @param {Array<module:type/keyid~KeyID>} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]`
- * @param {Array<module:type/keyid~KeyID>} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`
+ * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]`
+ * @param {KeyID|KeyID[]} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`
  * @param {Date} [options.date=current date] - Override the creation date of the message signature
- * @param {Array<Object>} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
- * @param {Array<Object>} [options.encryptionUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `encryptionKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
+ * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
+ * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `encryptionKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String>|MaybeStream<Uint8Array>>} Encrypted message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
@@ -248,7 +248,8 @@ export async function encryptKey({ privateKey, passphrase, config }) {
  */
 export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, armor = true, signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
-  checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
+  checkMessage(message); encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords);
+  signingKeyIDs = toArray(signingKeyIDs); encryptionKeyIDs = toArray(encryptionKeyIDs); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.detached) {
     throw new Error("The `detached` option has been removed from openpgp.encrypt, separately call openpgp.sign instead. Don't forget to remove the `privateKeys` option as well.");
   }
@@ -277,8 +278,8 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
 }
 
 /**
- * Decrypts a message with the user's private key, a session key or a password. Either a private key,
- *   a session key or a password must be specified.
+ * Decrypts a message with the user's private key, a session key or a password.
+ * One of `decryptionKeys`, `sessionkeys` or `passwords` must be specified (passing a combination of these options is not supported).
  * @param {Object} options
  * @param {Message} options.message - The message object with the encrypted data
  * @param {PrivateKey|PrivateKey[]} [options.decryptionKeys] - Private keys with decrypted secret key data or session key
@@ -361,9 +362,9 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {PrivateKey|PrivateKey[]} options.signingKeys - Array of keys or single key with decrypted secret key data to sign cleartext
  * @param {Boolean} [options.armor=true] - Whether the return values should be ascii armored (true, the default) or binary (false)
  * @param {Boolean} [options.detached=false] - If the return value should contain a detached signature
- * @param {Array<module:type/keyid~KeyID>} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
+ * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
- * @param {Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
+ * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String>|MaybeStream<Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
@@ -376,7 +377,7 @@ export async function sign({ message, signingKeys, armor = true, detached = fals
   if (message instanceof CleartextMessage && !armor) throw new Error("Can't sign non-armored cleartext message");
   if (message instanceof CleartextMessage && detached) throw new Error("Can't detach-sign a cleartext message");
 
-  signingKeys = toArray(signingKeys); signingUserIDs = toArray(signingUserIDs);
+  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs);
   if (!signingKeys || signingKeys.length === 0) {
     throw new Error('No signing keys provided');
   }
@@ -478,7 +479,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
  * @param {Object} options
  * @param {PublicKey|PublicKey[]} options.encryptionKeys - Array of public keys or single key used to select algorithm preferences for
  * @param {Date} [options.date=current date] - Date to select algorithm preferences at
- * @param {Array} [options.encryptionUserIDs=primary user IDs] - User IDs to select algorithm preferences for
+ * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - User IDs to select algorithm preferences for
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<{ data: Uint8Array, algorithm: String }>} Object with session key data and algorithm.
  * @async
@@ -498,8 +499,8 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
 }
 
 /**
- * Encrypt a symmetric session key with public keys, passwords, or both at once. At least either public keys
- *   or passwords must be specified.
+ * Encrypt a symmetric session key with public keys, passwords, or both at once.
+ * At least one of `encryptionKeys` or `passwords` must be specified.
  * @param {Object} options
  * @param {Uint8Array} options.data - The session key to be encrypted e.g. 16 random bytes (for aes128)
  * @param {String} options.algorithm - Algorithm of the symmetric session key e.g. 'aes128' or 'aes256'
@@ -508,9 +509,9 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
  * @param {String|String[]} [options.passwords] - Passwords for the message
  * @param {Boolean} [options.armor=true] - Whether the return values should be ascii armored (true, the default) or binary (false)
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
- * @param {Array<module:type/keyid~KeyID>} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to encryptionKeys[i]
+ * @param {KeyID|KeyID[]} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to encryptionKeys[i]
  * @param {Date} [options.date=current date] - Override the date
- * @param {Array} [options.encryptionUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `encryptionKeys`, e.g. `[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]`
+ * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `encryptionKeys`, e.g. `[{ name: 'Phil Zimmermann', email: 'phil@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<String|Uint8Array>} Encrypted session keys (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
@@ -518,7 +519,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
  */
 export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, armor = true, wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
-  checkBinary(data); checkString(algorithm, 'algorithm'); encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionUserIDs = toArray(encryptionUserIDs);
+  checkBinary(data); checkString(algorithm, 'algorithm'); encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionKeyIDs = toArray(encryptionKeyIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error("The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead");
 
   try {
@@ -530,15 +531,15 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
 }
 
 /**
- * Decrypt symmetric session keys with a private key or password. Either a private key or
- *   a password must be specified.
+ * Decrypt symmetric session keys using private keys or passwords (not both).
+ * One of `decryptionKeys` or `passwords` must be specified.
  * @param {Object} options
  * @param {Message} options.message - A message object containing the encrypted session key packets
  * @param {PrivateKey|PrivateKey[]} [options.decryptionKeys] - Private keys with decrypted secret key data
  * @param {String|String[]} [options.passwords] - Passwords to decrypt the session key
  * @param {Date} [options.date] - Date to use for key verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<Object>} Array of decrypted session key, algorithm pairs in the form:
+ * @returns {Promise<Object[]>} Array of decrypted session key, algorithm pairs in the form:
  *                                            { data:Uint8Array, algorithm:String }
  * @throws if no session key could be found or decrypted
  * @async

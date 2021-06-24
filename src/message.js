@@ -291,7 +291,7 @@ export class Message {
    * @param {Date} [date] - Date to select algorithm preferences at
    * @param {Array<Object>} [userIDs] - User IDs to select algorithm preferences for
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @returns {Promise<{ data: Uint8Array, algorithm: String }>} Object with session key data and algorithm.
+   * @returns {Promise<{ data: Uint8Array, algorithm: String, aeadAlgorithm: undefined|String }>} Object with session key data and algorithms.
    * @async
    */
   static async generateSessionKey(encryptionKeys = [], date = new Date(), userIDs = [], config = defaultConfig) {
