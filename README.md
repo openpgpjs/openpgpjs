@@ -447,6 +447,7 @@ and a subkey for encryption using Curve25519.
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret', // protects the private key
         format: 'armor' // output key format, defaults to 'armor' (other options: 'binary' or 'object')
+    });
 
     console.log(privateKey);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
     console.log(publicKey);      // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
