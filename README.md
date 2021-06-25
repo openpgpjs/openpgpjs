@@ -236,7 +236,7 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     // check signature validity (signed messages only)
     try {
         await signatures[0].verified; // throws on invalid signature
-        console.log('signature is valid');
+        console.log('Signature is valid');
     } catch (e) {
         throw new Error('Signature could not be verified: ' + e.message);
     }
