@@ -38,8 +38,8 @@ export function revokeKey(options: { key: PublicKey, revocationCertificate: stri
 
 export abstract class Key {
   public readonly keyPacket: PublicKeyPacket | SecretKeyPacket;
-  public subkeys: Subkey[];
-  public users: User[];
+  public subkeys: Subkey[]; // do not add/replace users directly
+  public users: User[]; // do not add/replace subkeys directly
   public revocationSignatures: SignaturePacket[];
   public write(): Uint8Array;
   public armor(config?: Config): string;
