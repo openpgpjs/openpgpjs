@@ -177,7 +177,7 @@ Encryption will use the algorithm specified in config.preferredSymmetricAlgorith
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
-        armor: false // don't ASCII armor (for Uint8Array output)
+        format: 'binary' // don't ASCII armor (for Uint8Array output)
     });
     console.log(encrypted); // Uint8Array
 
@@ -358,7 +358,7 @@ Where the value can be any of:
     const encrypted = await openpgp.encrypt({
         message, // input as Message object
         passwords: ['secret stuff'], // multiple passwords possible
-        armor: false // don't ASCII armor (for Uint8Array output)
+        format: 'binary' // don't ASCII armor (for Uint8Array output)
     });
     console.log(encrypted); // raw encrypted packets as ReadableStream<Uint8Array>
 

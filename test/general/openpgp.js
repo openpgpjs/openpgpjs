@@ -1783,7 +1783,7 @@ aOU=
             data: sk,
             algorithm: 'aes128',
             encryptionKeys: publicKey,
-            armor: false
+            format: 'binary'
           }).then(async function(encrypted) {
             const message = await openpgp.readMessage({ binaryMessage: encrypted });
             return openpgp.decryptSessionKeys({
@@ -1800,7 +1800,7 @@ aOU=
             data: sk,
             algorithm: 'aes128',
             passwords: password1,
-            armor: false
+            format: 'binary'
           }).then(async function(encrypted) {
             const message = await openpgp.readMessage({ binaryMessage: encrypted });
             return openpgp.decryptSessionKeys({
@@ -1817,7 +1817,7 @@ aOU=
             data: sk,
             algorithm: 'aes128',
             encryptionKeys: publicKey,
-            armor: false
+            format: 'binary'
           }).then(async function(encrypted) {
             const message = await openpgp.readMessage({ binaryMessage: encrypted });
             const invalidPrivateKey = await openpgp.readKey({ armoredKey: priv_key });
@@ -2552,7 +2552,7 @@ aOU=
 
         it('should fail to decrypt unarmored message with garbage data appended', async function() {
           const key = privateKey;
-          const message = await openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: key, signingKeys: key, armor: false });
+          const message = await openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: key, signingKeys: key, format: 'binary' });
           const encrypted = util.concat([message, new Uint8Array([11])]);
           await expect((async () => {
             await openpgp.decrypt({ message: await openpgp.readMessage({ binaryMessage: encrypted }), decryptionKeys: key, verificationKeys: key });
@@ -2705,7 +2705,7 @@ aOU=
           const encOpt = {
             message: await openpgp.createMessage({ text: plaintext }),
             passwords: password1,
-            armor: false
+            format: 'binary'
           };
           const decOpt = {
             passwords: password1
@@ -2723,7 +2723,7 @@ aOU=
           const encOpt = {
             message: await openpgp.createMessage({ binary: new Uint8Array([0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01]) }),
             passwords: password1,
-            armor: false
+            format: 'binary'
           };
           const decOpt = {
             passwords: password1,
@@ -2950,7 +2950,7 @@ aOU=
         const signOpt = {
           message,
           signingKeys: privateKey,
-          armor: false
+          format: 'binary'
         };
         const verifyOpt = {
           verificationKeys: publicKey
@@ -2974,7 +2974,7 @@ aOU=
           message,
           signingKeys: privateKey,
           detached: true,
-          armor: false
+          format: 'binary'
         };
         const verifyOpt = {
           message,
@@ -3002,7 +3002,7 @@ aOU=
           signingKeys: privateKey_1337,
           detached: true,
           date: past,
-          armor: false
+          format: 'binary'
         };
         const verifyOpt = {
           message,
@@ -3040,7 +3040,7 @@ aOU=
           signingKeys: privateKey_2038_2045,
           detached: true,
           date: future,
-          armor: false
+          format: 'binary'
         };
         const verifyOpt = {
           verificationKeys: publicKey_2038_2045,
@@ -3066,7 +3066,7 @@ aOU=
         const signOpt = {
           message: await openpgp.createMessage({ binary: data }),
           signingKeys: privateKey,
-          armor: false
+          format: 'binary'
         };
         const verifyOpt = {
           verificationKeys: publicKey,
@@ -3105,7 +3105,7 @@ aOU=
         const signOpt = {
           message: await openpgp.createMessage({ binary: dataStream }),
           signingKeys: privateKey,
-          armor: false
+          format: 'binary'
         };
         const verifyOpt = {
           verificationKeys: publicKey,
@@ -3140,7 +3140,7 @@ aOU=
           message: await openpgp.createMessage({ text: plaintext, date: future }),
           encryptionKeys: publicKey_2038_2045,
           date: future,
-          armor: false
+          format: 'binary'
         };
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
@@ -3161,7 +3161,7 @@ aOU=
           message: await openpgp.createMessage({ binary: data, date: past }),
           encryptionKeys: publicKey_2000_2008,
           date: past,
-          armor: false
+          format: 'binary'
         };
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
@@ -3182,7 +3182,7 @@ aOU=
           encryptionKeys: publicKey_2000_2008,
           signingKeys: privateKey_2000_2008,
           date: past,
-          armor: false
+          format: 'binary'
         };
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
@@ -3210,7 +3210,7 @@ aOU=
           encryptionKeys: publicKey_2038_2045,
           signingKeys: privateKey_2038_2045,
           date: future,
-          armor: false
+          format: 'binary'
         };
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
@@ -3239,7 +3239,7 @@ aOU=
           encryptionKeys: publicKey_2038_2045,
           signingKeys: privateKey_2038_2045,
           date: future,
-          armor: false
+          format: 'binary'
         };
 
         return openpgp.encrypt(encryptOpt).then(async function (encrypted) {

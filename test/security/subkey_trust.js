@@ -21,14 +21,12 @@ async function generateTestData() {
     type: 'rsa',
     rsaBits: 2048,
     subkeys: [],
-    sign: false,
     format: 'object'
   });
 
   const signed = await openpgp.sign({
     message: await createCleartextMessage({ text: 'I am batman' }),
-    signingKeys: victimPrivKey,
-    armor: true
+    signingKeys: victimPrivKey
   });
   return {
     victimPubKey: victimPrivKey.toPublic(),
@@ -37,7 +35,7 @@ async function generateTestData() {
   };
 }
 
-async function testSubkeyTrust() {
+module.exports = () => it('Does not trust subkeys without Primary Key Binding Signature', async function() {
   // attacker only has his own private key,
   // the victim's public key and a signed message
   const { victimPubKey, attackerPrivKey, signed } = await generateTestData();
@@ -68,8 +66,7 @@ async function testSubkeyTrust() {
     message: await readCleartextMessage({ cleartextMessage: signed }),
     verificationKeys: fakeKey
   });
+  // expect the signature to have the expected keyID, but be invalid due to fake key binding signature in the subkey
   expect(verifyAttackerIsBatman.signatures[0].keyID.equals(victimPubKey.subkeys[0].getKeyID())).to.be.true;
   await expect(verifyAttackerIsBatman.signatures[0].verified).to.be.rejectedWith(/Could not find valid signing key packet/);
-}
-
-module.exports = () => it('Does not trust subkeys without Primary Key Binding Signature', testSubkeyTrust);
+});

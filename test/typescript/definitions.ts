@@ -18,7 +18,7 @@ import {
 (async () => {
 
   // Generate keys
-  const keyOptions = { userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } };
+  const keyOptions = { userIDs: [{ email: 'user@corp.co' }], config: { v5Keys: true } };
   const { privateKey: privateKeyArmored, publicKey: publicKeyArmored } = await generateKey(keyOptions);
   const { privateKey: privateKeyBinary } = await generateKey({ ...keyOptions, format: 'binary' });
   const { privateKey, publicKey, revocationCertificate } = await generateKey({ ...keyOptions, format: 'object' });
@@ -75,7 +75,7 @@ import {
   // Encrypt binary message (unarmored)
   const binary = new Uint8Array([1, 2]);
   const binaryMessage = await createMessage({ binary });
-  const encryptedBinary: Uint8Array = await encrypt({ encryptionKeys: publicKeys, message: binaryMessage, armor: false });
+  const encryptedBinary: Uint8Array = await encrypt({ encryptionKeys: publicKeys, message: binaryMessage, format: 'binary' });
   expect(encryptedBinary).to.be.instanceOf(Uint8Array);
 
   // Decrypt text message (armored)
@@ -117,7 +117,7 @@ import {
   expect(textSignedArmor).to.include('-----BEGIN PGP MESSAGE-----');
 
   // Sign text message (unarmored)
-  const textSignedBinary: Uint8Array = await sign({ signingKeys: privateKeys, message: binaryMessage, armor: false });
+  const textSignedBinary: Uint8Array = await sign({ signingKeys: privateKeys, message: binaryMessage, format: 'binary' });
   expect(textSignedBinary).to.be.instanceOf(Uint8Array);
 
   // Verify signed text message (armored)
@@ -168,7 +168,7 @@ import {
 
   // // Detached - sign binary message (unarmored)
   // const message = await createMessage({ text });
-  // const signed = await sign({ privateKeys, message, detached: true, armor: false });
+  // const signed = await sign({ privateKeys, message, detached: true, format: 'binary' });
   // console.log(signed); // Uint8Array
 
   // // Streaming - encrypt text message on Node.js (armored)
@@ -182,7 +182,7 @@ import {
   // // Streaming - encrypt binary message on Node.js (unarmored)
   // const data = fs.createReadStream(filename);
   // const message = await createMessage({ binary: data });
-  // const encrypted = await encrypt({ publicKeys, message, armor: false });
+  // const encrypted = await encrypt({ publicKeys, message, format: 'binary' });
   // encrypted.pipe(targetStream);
 
   console.log('TypeScript definitions are correct');
