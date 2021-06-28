@@ -529,7 +529,7 @@ Using the private key:
     const { verified, keyID } = verificationResult.signatures[0];
     try {
         await verified; // throws on invalid signature
-        console.log('signed by key id ' + keyID.toHex());
+        console.log('Signed by key id ' + keyID.toHex());
     } catch (e) {
         throw new Error('Signature could not be verified: ' + e.message);
     }
@@ -574,7 +574,7 @@ Using the private key:
     const { verified, keyID } = verificationResult.signatures[0];
     try {
         await verified; // throws on invalid signature
-        console.log('signed by key id ' + keyID.toHex());
+        console.log('Signed by key id ' + keyID.toHex());
     } catch (e) {
         throw new Error('Signature could not be verified: ' + e.message);
     }
@@ -624,7 +624,7 @@ Using the private key:
 
     try {
         await verificationResult.signatures[0].verified; // throws on invalid signature
-        console.log('signed by key id ' + verificationResult.signatures[0].keyID.toHex());
+        console.log('Signed by key id ' + verificationResult.signatures[0].keyID.toHex());
      } catch (e) {
         throw new Error('Signature could not be verified: ' + e.message);
     }
