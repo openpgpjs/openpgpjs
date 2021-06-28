@@ -71,7 +71,7 @@ export class Signature {
  * @async
  * @static
  */
-export async function readSignature({ armoredSignature, binarySignature, config }) {
+export async function readSignature({ armoredSignature, binarySignature, config, ...rest }) {
   config = { ...defaultConfig, ...config };
   let input = armoredSignature || binarySignature;
   if (!input) {
@@ -83,6 +83,8 @@ export async function readSignature({ armoredSignature, binarySignature, config 
   if (binarySignature && !util.isUint8Array(binarySignature)) {
     throw new Error('readSignature: options.binarySignature must be a Uint8Array');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   if (armoredSignature) {
     const { type, data } = await unarmor(input, config);
     if (type !== enums.armor.signature) {

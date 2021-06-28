@@ -790,7 +790,7 @@ export async function createVerificationObjects(signatureList, literalDataList, 
  * @async
  * @static
  */
-export async function readMessage({ armoredMessage, binaryMessage, config }) {
+export async function readMessage({ armoredMessage, binaryMessage, config, ...rest }) {
   config = { ...defaultConfig, ...config };
   let input = armoredMessage || binaryMessage;
   if (!input) {
@@ -802,6 +802,8 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
   if (binaryMessage && !util.isUint8Array(binaryMessage) && !util.isStream(binaryMessage)) {
     throw new Error('readMessage: options.binaryMessage must be a Uint8Array or stream');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   const streamType = util.isStream(input);
   if (streamType) {
     await stream.loadStreamsPonyfill();
@@ -832,7 +834,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config }) {
  * @async
  * @static
  */
-export async function createMessage({ text, binary, filename, date = new Date(), format = text !== undefined ? 'utf8' : 'binary' }) {
+export async function createMessage({ text, binary, filename, date = new Date(), format = text !== undefined ? 'utf8' : 'binary', ...rest }) {
   let input = text !== undefined ? text : binary;
   if (input === undefined) {
     throw new Error('createMessage: must pass options object containing `text` or `binary`');
@@ -843,6 +845,8 @@ export async function createMessage({ text, binary, filename, date = new Date(),
   if (binary && !util.isUint8Array(binary) && !util.isStream(binary)) {
     throw new Error('createMessage: options.binary must be a Uint8Array or stream');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   const streamType = util.isStream(input);
   if (streamType) {
     await stream.loadStreamsPonyfill();
