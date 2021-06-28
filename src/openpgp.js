@@ -259,7 +259,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  */
 export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, format = 'armor', signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
-  checkMessage(message); checkMessageFormat(format);
+  checkMessage(message); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords);
   signingKeyIDs = toArray(signingKeyIDs); encryptionKeyIDs = toArray(encryptionKeyIDs); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.detached) {
@@ -386,7 +386,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  */
 export async function sign({ message, signingKeys, format = 'armor', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
-  checkCleartextOrMessage(message); checkMessageFormat(format);
+  checkCleartextOrMessage(message); checkOutputMessageFormat(format);
   signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs);
 
   if (rest.privateKeys) throw new Error('The `privateKeys` option has been removed from openpgp.sign, pass `signingKeys` instead');
@@ -538,7 +538,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
  */
 export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, format = 'armor', wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
-  checkBinary(data); checkString(algorithm, 'algorithm'); checkMessageFormat(format);
+  checkBinary(data); checkString(algorithm, 'algorithm'); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionKeyIDs = toArray(encryptionKeyIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error('The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead');
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -612,7 +612,7 @@ function checkCleartextOrMessage(message) {
     throw new Error('Parameter [message] needs to be of type Message or CleartextMessage');
   }
 }
-function checkMessageFormat(format) {
+function checkOutputMessageFormat(format) {
   if (format !== 'armor' && format !== 'binary') {
     throw new Error(`Unsupported format ${format}`);
   }
