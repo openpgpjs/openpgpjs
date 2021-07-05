@@ -32,7 +32,7 @@ import util from './util';
 
 /**
  * Generates a new OpenPGP key pair. Supports RSA and ECC keys. By default, primary and subkeys will be of same type.
- * The primary key will not have encryption capabilities.
+ * The generated primary key will have signing capabilities. By default, one subkey with encryption capabilities is also generated.
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
  * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
