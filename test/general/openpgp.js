@@ -1906,7 +1906,6 @@ aOU=
       expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
 
       const objectMessage = await openpgp.encryptSessionKey({ ...sessionKey, passwords, format: 'object' });
-      console.log(objectMessage);
       expect(objectMessage.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
       const [decryptedSessionKey] = await openpgp.decryptSessionKeys({ message: objectMessage, passwords });
       expect(decryptedSessionKey).to.deep.equal(sessionKey);
