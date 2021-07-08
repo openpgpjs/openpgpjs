@@ -121,8 +121,8 @@ import {
   const textSignedArmor: string = await sign({ signingKeys: privateKeys, message: textMessage });
   expect(textSignedArmor).to.include('-----BEGIN PGP MESSAGE-----');
   // Sign text message (unarmored)
-  const textSignedBinary: Uint8Array = await sign({ signingKeys: privateKeys, message: textMessage, format: 'binary' });
-  expect(textSignedBinary).to.be.instanceOf(Uint8Array);
+  const binarySignedBinary: Uint8Array = await sign({ signingKeys: privateKeys, message: binaryMessage, format: 'binary' });
+  expect(binarySignedBinary).to.be.instanceOf(Uint8Array);
   // Sign text and binary messages (inspect packages)
   const binarySignedObject: Message<Uint8Array> = await sign({ signingKeys: privateKeys, message: binaryMessage, format: 'object' });
   expect(binarySignedObject).to.be.instanceOf(Message);
@@ -136,7 +136,7 @@ import {
   expect(verifiedTextData).to.equal(text);
 
   // Verify signed binary message (unarmored)
-  const message = await readMessage({ binaryMessage: textSignedBinary });
+  const message = await readMessage({ binaryMessage: binarySignedBinary });
   const verifiedBinary = await verify({ verificationKeys: publicKeys, message, format: 'binary' });
   const verifiedBinaryData: Uint8Array = verifiedBinary.data;
   expect(verifiedBinaryData).to.deep.equal(binary);
