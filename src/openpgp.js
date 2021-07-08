@@ -69,8 +69,8 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
     const { key, revocationCertificate } = await generate(options, config);
 
     return {
-      privateKey: formatKey(key, format, config),
-      publicKey: formatKey(key.toPublic(), format, config),
+      privateKey: formatObject(key, format, config),
+      publicKey: formatObject(key.toPublic(), format, config),
       revocationCertificate
     };
   } catch (err) {
@@ -107,8 +107,8 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = '', k
     const { key: reformattedKey, revocationCertificate } = await reformat(options, config);
 
     return {
-      privateKey: formatKey(reformattedKey, format, config),
-      publicKey: formatKey(reformattedKey.toPublic(), format, config),
+      privateKey: formatObject(reformattedKey, format, config),
+      publicKey: formatObject(reformattedKey.toPublic(), format, config),
       revocationCertificate
     };
   } catch (err) {
@@ -144,11 +144,11 @@ export async function revokeKey({ key, revocationCertificate, reasonForRevocatio
       await key.revoke(reasonForRevocation, date, config);
 
     return revokedKey.isPrivate() ? {
-      privateKey: formatKey(revokedKey, format, config),
-      publicKey: formatKey(revokedKey.toPublic(), format, config)
+      privateKey: formatObject(revokedKey, format, config),
+      publicKey: formatObject(revokedKey.toPublic(), format, config)
     } : {
       privateKey: null,
-      publicKey: formatKey(revokedKey, format, config)
+      publicKey: formatObject(revokedKey, format, config)
     };
   } catch (err) {
     throw util.wrapError('Error revoking key', err);
@@ -244,7 +244,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @param {PrivateKey|PrivateKey[]} [options.signingKeys] - Private keys for signing. If omitted message will not be signed
  * @param {String|String[]} [options.passwords] - Array of passwords or a single password to encrypt the message
  * @param {Object} [options.sessionKey] - Session key in the form: `{ data:Uint8Array, algorithm:String }`
- * @param {'armor'|'binary'} [options.format='armor'] - Format of the returned message
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - Format of the returned message
  * @param {Signature} [options.signature] - A detached signature to add to the encrypted message
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]`
@@ -273,7 +273,6 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
   if (!signingKeys) {
     signingKeys = [];
   }
-  const armor = format === 'armor';
   const streaming = message.fromStream;
   try {
     if (signingKeys.length || signature) { // sign the message only if signing keys or signature is specified
@@ -284,6 +283,9 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
       config
     );
     message = await message.encrypt(encryptionKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
+    if (format === 'object') return message;
+    // serialize data
+    const armor = format === 'armor';
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
   } catch (err) {
@@ -374,13 +376,13 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {Object} options
  * @param {CleartextMessage|Message} options.message - (cleartext) message to be signed
  * @param {PrivateKey|PrivateKey[]} options.signingKeys - Array of keys or single key with decrypted secret key data to sign cleartext
- * @param {'armor'|'binary'} [options.format='armor'] - Format of the returned message
+ * @param {'armor'|'binary'|'object'} [options.format='armor'] - Format of the returned message
  * @param {Boolean} [options.detached=false] - If the return value should contain a detached signature
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @returns {Promise<MaybeStream<String>|MaybeStream<Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
+ * @returns {Promise<MaybeStream<String|Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
@@ -393,8 +395,7 @@ export async function sign({ message, signingKeys, format = 'armor', detached = 
   if (rest.armor !== undefined) throw new Error('The `armor` option has been removed from openpgp.sign, pass `format` instead.');
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  const armor = format === 'armor';
-  if (message instanceof CleartextMessage && !armor) throw new Error('Cannot return signed cleartext message in binary format');
+  if (message instanceof CleartextMessage && format === 'binary') throw new Error('Cannot return signed cleartext message in binary format');
   if (message instanceof CleartextMessage && detached) throw new Error('Cannot detach-sign a cleartext message');
 
   if (!signingKeys || signingKeys.length === 0) {
@@ -408,6 +409,9 @@ export async function sign({ message, signingKeys, format = 'armor', detached = 
     } else {
       signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config);
     }
+    if (format === 'object') return signature;
+
+    const armor = format === 'armor';
     signature = armor ? signature.armor(config) : signature.write();
     if (detached) {
       signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
@@ -545,7 +549,7 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
 
   try {
     const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
-    return format === 'armor' ? message.armor(config) : message.write();
+    return formatObject(message, format, config);
   } catch (err) {
     throw util.wrapError('Error encrypting session key', err);
   }
@@ -613,7 +617,7 @@ function checkCleartextOrMessage(message) {
   }
 }
 function checkOutputMessageFormat(format) {
-  if (format !== 'armor' && format !== 'binary') {
+  if (format !== 'armor' && format !== 'binary' && format !== 'object') {
     throw new Error(`Unsupported format ${format}`);
   }
 }
@@ -681,20 +685,20 @@ function linkStreams(result, message) {
 }
 
 /**
- * Convert the key object to the given format
- * @param {Key} key
+ * Convert the object to the given format
+ * @param {Key|Message} object
  * @param {'armor'|'binary'|'object'} format
  * @param {Object} config - Full configuration
  * @returns {String|Uint8Array|Object}
  */
-function formatKey(key, format, config) {
+function formatObject(object, format, config) {
   switch (format) {
     case 'object':
-      return key;
+      return object;
     case 'armor':
-      return key.armor(config);
+      return object.armor(config);
     case 'binary':
-      return key.write();
+      return object.write();
     default:
       throw new Error(`Unsupported format ${format}`);
   }

@@ -1639,6 +1639,187 @@ aOU=
         message: await openpgp.createMessage({ text: plaintext })
       })).to.be.rejectedWith(/No signing keys provided/);
     });
+
+    it('should output cleartext message of expected format', async function() {
+      const text = 'test';
+      const message = await openpgp.createCleartextMessage({ text });
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+      const config = { minRSABits: 1024 };
+
+      const cleartextMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armor' });
+      const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
+      expect(parsedArmored.text).to.equal(text);
+      expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+
+      await expect(openpgp.sign({ message, signingKeys: privateKey, config, format: 'binary' })).to.be.rejectedWith('');
+
+      const objectMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'object' });
+      expect(objectMessage.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      const verified = await openpgp.verify({ message: objectMessage, verificationKeys: privateKey, expectSigned: true, config });
+      expect(verified.data).to.equal(text);
+    });
+
+    it('should output message of expected format', async function() {
+      const text = 'test';
+      const message = await openpgp.createMessage({ text });
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+      const config = { minRSABits: 1024 };
+
+      const armoredMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armor' });
+      const parsedArmored = await openpgp.readMessage({ armoredMessage });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+
+      const binaryMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'binary' });
+      const parsedBinary = await openpgp.readMessage({ binaryMessage });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+
+      const objectMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'object' });
+      expect(objectMessage.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+      const verified = await openpgp.verify({ message: objectMessage, verificationKeys: privateKey, expectSigned: true, config });
+      expect(verified.data).to.equal(text);
+    });
+
+    it('should output message of expected format', async function() {
+      const text = 'test';
+      const message = await openpgp.createMessage({ text });
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+      const config = { minRSABits: 1024 };
+
+      const armoredMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armor' });
+      const parsedArmored = await openpgp.readMessage({ armoredMessage });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+
+      const binaryMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'binary' });
+      const parsedBinary = await openpgp.readMessage({ binaryMessage });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+
+      const objectMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'object' });
+      expect(objectMessage.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+      const verified = await openpgp.verify({ message: objectMessage, verificationKeys: privateKey, expectSigned: true, config });
+      expect(verified.data).to.equal(text);
+    });
+
+    it('should output message of expected format (with streaming)', async function() {
+      const text = 'test';
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+      const config = { minRSABits: 1024 };
+
+      const armoredMessage = await openpgp.sign({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        signingKeys: privateKey,
+        format: 'armor',
+        config
+      });
+      const parsedArmored = await openpgp.readMessage({ armoredMessage });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+
+      const binaryMessage = await openpgp.sign({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        signingKeys: privateKey,
+        format: 'binary',
+        config
+      });
+      const parsedBinary = await openpgp.readMessage({ binaryMessage });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+
+      const objectMessage = await openpgp.sign({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        signingKeys: privateKey,
+        format: 'object',
+        config
+      });
+      expect(objectMessage.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
+      objectMessage.packets[1].data = await stream.readToEnd(objectMessage.packets[1].data);
+      objectMessage.packets[2].signedHashValue = await stream.readToEnd(objectMessage.packets[2].signedHashValue);
+      const { data: streamedData } = await openpgp.verify({ message: objectMessage, verificationKeys: privateKey, expectSigned: true, config });
+      expect(await stream.readToEnd(streamedData)).to.equal(text);
+      expect(streamedData).to.equal(text);
+    });
+
+    it('should output message of expected format (detached)', async function() {
+      const text = 'test';
+      const message = await openpgp.createMessage({ text });
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+      const config = { minRSABits: 1024 };
+
+      const armoredSignature = await openpgp.sign({ message, signingKeys: privateKey, detached: true, config, format: 'armor' });
+      const parsedArmored = await openpgp.readSignature({ armoredSignature });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+
+      const binarySignature = await openpgp.sign({ message, signingKeys: privateKey, detached: true, config, format: 'binary' });
+      const parsedBinary = await openpgp.readSignature({ binarySignature });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+
+      const objectSignature = await openpgp.sign({ message, signingKeys: privateKey, detached: true, config, format: 'object' });
+      expect(objectSignature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      const verified = await openpgp.verify({ message, signature: objectSignature, verificationKeys: privateKey, expectSigned: true, config });
+      expect(verified.data).to.equal(text);
+    });
+
+    it('should output message of expected format (detached, with streaming)', async function() {
+      const text = 'test';
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+      const config = { minRSABits: 1024 };
+
+      const armoredSignature = await openpgp.sign({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        signingKeys: privateKey,
+        detached: true,
+        format: 'armor',
+        config
+      });
+      const parsedArmored = await openpgp.readSignature({ armoredSignature: await stream.readToEnd(armoredSignature) });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+
+      const binarySignature = await openpgp.sign({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        signingKeys: privateKey,
+        detached: true,
+        format: 'binary',
+        config
+      });
+      const parsedBinary = await openpgp.readSignature({ binarySignature: await stream.readToEnd(binarySignature) });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+
+      const streamedMessage = await openpgp.createMessage({ text: stream.toStream(text) });
+      const objectSignature = await openpgp.sign({
+        message: streamedMessage,
+        signingKeys: privateKey,
+        detached: true,
+        format: 'object',
+        config
+      });
+      expect(objectSignature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+
+      const armoredStreamedMessage = streamedMessage.armor(); // consume input message stream, to allow to read the signed hash
+      objectSignature.packets[0].signedHashValue = await stream.readToEnd(objectSignature.packets[0].signedHashValue);
+      const { data: streamedData } = await openpgp.verify({
+        message: await openpgp.readMessage({ armoredMessage: armoredStreamedMessage }),
+        signature: objectSignature,
+        verificationKeys: privateKey,
+        expectSigned: true,
+        config
+      });
+      expect(await stream.readToEnd(streamedData)).to.equal(text);
+    });
   });
 
   describe('encrypt - unit tests', function() {
@@ -1647,6 +1828,88 @@ aOU=
       await expect(
         openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: expiredKey })
       ).to.be.rejectedWith(/Primary key is expired/);
+    });
+
+    it('should output message of expected format', async function() {
+      const passwords = 'password';
+      const text = 'test';
+      const message = await openpgp.createMessage({ text });
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+
+      const armoredMessage = await openpgp.encrypt({ message, passwords, format: 'armor' });
+      const parsedArmored = await openpgp.readMessage({ armoredMessage });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+
+      const binaryMessage = await openpgp.encrypt({ message, passwords, format: 'binary' });
+      const parsedBinary = await openpgp.readMessage({ binaryMessage });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+
+      const config = { minRSABits: 1024 };
+      const objectMessage = await openpgp.encrypt({ message, passwords, signingKeys: privateKey, config, format: 'object' });
+      expect(objectMessage.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+      const decrypted = await openpgp.decrypt({ message: objectMessage, passwords, verificationKeys: privateKey, expectSigned: true, config });
+      expect(decrypted.data).to.equal(text);
+    });
+
+    it('should output message of expected format (with streaming)', async function() {
+      const passwords = 'password';
+      const text = 'test';
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+
+      const armoredMessage = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        passwords,
+        format: 'armor'
+      });
+      const parsedArmored = await openpgp.readMessage({ armoredMessage });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+
+      const binaryMessage = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        passwords,
+        format: 'binary'
+      });
+      const parsedBinary = await openpgp.readMessage({ binaryMessage });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+
+      const config = { minRSABits: 1024 };
+      const objectMessage = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: stream.toStream(text) }),
+        passwords,
+        signingKeys: privateKey,
+        format: 'object',
+        config
+      });
+      expect(objectMessage.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+      const { data: streamedData } = await openpgp.decrypt({ message: objectMessage, passwords, verificationKeys: privateKey, expectSigned: true, config });
+      expect(await stream.readToEnd(streamedData)).to.equal(text);
+    });
+  });
+
+  describe('encryptSessionKey - unit tests', function() {
+    it('should output message of expected format', async function() {
+      const passwords = 'password';
+      const sessionKey = { data: new Uint8Array(16).fill(1), algorithm: 'aes128' };
+
+      const armoredMessage = await openpgp.encryptSessionKey({ ...sessionKey, passwords, format: 'armor' });
+      const parsedArmored = await openpgp.readMessage({ armoredMessage });
+      expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+
+      const binaryMessage = await openpgp.encryptSessionKey({ ...sessionKey, passwords, format: 'binary' });
+      const parsedBinary = await openpgp.readMessage({ binaryMessage });
+      expect(parsedBinary.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+
+      const objectMessage = await openpgp.encryptSessionKey({ ...sessionKey, passwords, format: 'object' });
+      console.log(objectMessage);
+      expect(objectMessage.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
+      const [decryptedSessionKey] = await openpgp.decryptSessionKeys({ message: objectMessage, passwords });
+      expect(decryptedSessionKey).to.deep.equal(sessionKey);
     });
   });
 

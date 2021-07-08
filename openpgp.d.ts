@@ -177,6 +177,9 @@ export function encryptSessionKey(options: SessionKey & {
 export function encryptSessionKey(options: SessionKey & { 
   encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format: 'binary', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
 }) : Promise<Uint8Array>;
+export function encryptSessionKey(options: SessionKey & { 
+  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format: 'object', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
+}) : Promise<Message<Data>>;
 export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { message: Message<T>, decryptionKeys?: MaybeArray<PrivateKey>, passwords?: MaybeArray<string>, date?: Date, config?: PartialConfig }): Promise<SessionKey[]>;
 
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
@@ -185,28 +188,31 @@ export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binary
 export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
 export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
 
+export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format?: 'armor' }): Promise<
+  T extends WebStream<infer X> ? WebStream<string> :
+  T extends NodeStream<infer X> ? NodeStream<string> :
+  string
+>;
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format: 'binary' }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
   Uint8Array
 >;
-export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T> }): Promise<
+export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
+
+export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format?: 'armor' }): Promise<
   T extends WebStream<infer X> ? WebStream<string> :
   T extends NodeStream<infer X> ? NodeStream<string> :
   string
 >;
-
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format: 'binary' }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
   Uint8Array
 >;
-export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T> }): Promise<
-  T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeStream<infer X> ? NodeStream<string> :
-  string
->;
-export function sign(options: SignOptions & { message: CleartextMessage }): Promise<string>;
+export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
+export function sign(options: SignOptions & { message: CleartextMessage, format?: 'armor' }): Promise<string>;
+export function sign(options: SignOptions & { message: CleartextMessage, format: 'object' }): Promise<CleartextMessage>;
 
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & {
   data:
@@ -577,7 +583,7 @@ interface EncryptOptions {
   /** (optional) session key */
   sessionKey?: SessionKey;
   /** if the return values should be ascii armored or the message/signature objects */
-  format?: 'armor' | 'binary';
+  format?: 'armor' | 'binary' | 'object';
   /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
   signature?: Signature;
   /** (optional) encrypt as of a certain date */
@@ -620,7 +626,7 @@ interface DecryptOptions {
 interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   signingKeys?: MaybeArray<PrivateKey>;
-  format?: 'armor' | 'binary';
+  format?: 'armor' | 'binary' | 'object';
   dataType?: DataPacketType;
   detached?: boolean;
   signingKeyIDs?: MaybeArray<KeyID>;
