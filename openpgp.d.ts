@@ -38,8 +38,8 @@ export function revokeKey(options: { key: PublicKey, revocationCertificate: stri
 
 export abstract class Key {
   public readonly keyPacket: PublicKeyPacket | SecretKeyPacket;
-  public subkeys: Subkey[];
-  public users: User[];
+  public subkeys: Subkey[]; // do not add/replace users directly
+  public users: User[]; // do not add/replace subkeys directly
   public revocationSignatures: SignaturePacket[];
   public write(): Uint8Array;
   public armor(config?: Config): string;
@@ -58,7 +58,7 @@ export abstract class Key {
   public verifyPrimaryUser(publicKeys: PublicKey[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
   public verifyAllUsers(publicKeys: PublicKey[], date?: Date, config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
   public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
-  public getRevocationCertificate(date?: Date, config?: Config): Promise<Stream<string> | string | undefined>;
+  public getRevocationCertificate(date?: Date, config?: Config): Promise<MaybeStream<string> | undefined>;
   public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getKeys(keyID?: KeyID): (this | Subkey)[];
@@ -132,7 +132,7 @@ export class Signature {
 
 interface VerificationResult {
   keyID: KeyID;
-  verified: Promise<null | boolean>;
+  verified: Promise<true>; // throws on invalid signature
   signature: Promise<Signature>;
 }
 
@@ -265,7 +265,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data that is the body of the message
    */
-  public getLiteralData(): Uint8Array | Stream<Uint8Array> | null;
+  public getLiteralData(): MaybeStream<Uint8Array> | null;
 
   /** Returns the key IDs of the keys that signed the message
    */
@@ -273,7 +273,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data as text
    */
-  public getText(): string | Stream<string> | null;
+  public getText(): MaybeStream<string> | null;
 
   public getFilename(): string | null;
 
@@ -603,7 +603,7 @@ interface DecryptOptions {
   /** (optional) passwords to decrypt the message */
   passwords?: MaybeArray<string>;
   /** (optional) session keys in the form: { data:Uint8Array, algorithm:String } */
-  sessionKeys?: SessionKey | SessionKey[];
+  sessionKeys?: MaybeArray<SessionKey>;
   /** (optional) array of public keys or single key, to verify signatures */
   verificationKeys?: MaybeArray<PublicKey>;
   /** (optional) whether data decryption should fail if the message is not signed with the provided publicKeys */

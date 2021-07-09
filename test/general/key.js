@@ -2595,10 +2595,10 @@ function versionSpecificTests() {
         return openpgp.verify(
           { message: await openpgp.readCleartextMessage({ cleartextMessage: signed }), verificationKeys: newKeyPublic }
         ).then(async function(verified) {
-          expect(verified.signatures[0].valid).to.be.true;
+          expect(await verified.signatures[0].verified).to.be.true;
           const newSigningKey = await newKey.getSigningKey();
           expect(verified.signatures[0].keyID.toHex()).to.equal(newSigningKey.getKeyID().toHex());
-          expect(verified.signatures[0].signature.packets.length).to.equal(1);
+          expect((await verified.signatures[0].signature).packets.length).to.equal(1);
         });
       });
     });
@@ -2635,7 +2635,7 @@ function versionSpecificTests() {
         message: await openpgp.readMessage({ armoredMessage: encrypted }), decryptionKeys: newKey, verificationKeys: newKeyPublic, config: { minRSABits: 1024 }
       });
       expect(decrypted.data).to.equal('hello');
-      expect(decrypted.signatures[0].valid).to.be.true;
+      expect(await decrypted.signatures[0].verified).to.be.true;
     });
   });
 
@@ -3484,7 +3484,7 @@ VYGdb3eNlV8CfoEC
       message: await openpgp.createMessage({ text: 'hello' }), passwords: 'test', signingKeys: privateKey, signingUserIDs: { name: 'Test McTestington', email: 'test@example.com' }, armor: false, config
     });
     const { signatures } = await openpgp.decrypt({ message: await openpgp.readMessage({ binaryMessage: encrypted }), passwords: 'test' });
-    expect(signatures[0].signature.packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
+    expect((await signatures[0].signature).packets[0].hashAlgorithm).to.equal(openpgp.enums.hash.sha512);
     await expect(openpgp.encrypt({
       message: await openpgp.createMessage({ text: 'hello' }), encryptionKeys: publicKey, signingKeys: privateKey, signingUserIDs: { name: 'Not Test McTestington', email: 'test@example.com' }, armor: false, config
     })).to.be.rejectedWith('Could not find user that matches that user ID');

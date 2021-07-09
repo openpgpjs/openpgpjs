@@ -203,11 +203,11 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   it('Verify clear signed message', async function () {
     const pub = await load_pub_key('juliet');
     const msg = await openpgp.readCleartextMessage({ cleartextMessage: data.juliet.message_signed });
-    return openpgp.verify({ verificationKeys: [pub], message: msg }).then(function(result) {
+    return openpgp.verify({ verificationKeys: [pub], message: msg }).then(async function(result) {
       expect(result).to.exist;
       expect(result.data).to.equal(data.juliet.message);
       expect(result.signatures).to.have.length(1);
-      expect(result.signatures[0].valid).to.be.true;
+      expect(await result.signatures[0].verified).to.be.true;
     });
   });
   it('Sign message', async function () {
@@ -220,7 +220,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
   it('Decrypt and verify message', async function () {
     const juliet = await load_pub_key('juliet');
@@ -231,7 +231,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
   it('Decrypt and verify message with leading zero in hash', async function () {
     const juliet = await load_priv_key('juliet');
@@ -242,7 +242,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message_with_leading_zero_in_hash);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
   it('Decrypt and verify message with leading zero in hash signed with old elliptic algorithm', async function () {
     //this test would not work with nodeCrypto, since message is signed with leading zero stripped from the hash
@@ -256,7 +256,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message_with_leading_zero_in_hash_old_elliptic_implementation);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
 
   it('Encrypt and sign message', async function () {
@@ -272,7 +272,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(result).to.exist;
     expect(result.data).to.equal(data.romeo.message);
     expect(result.signatures).to.have.length(1);
-    expect(result.signatures[0].valid).to.be.true;
+    expect(await result.signatures[0].verified).to.be.true;
   });
 
   tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
@@ -292,13 +292,13 @@ function omnibus() {
     await openpgp.verify({
       message: await openpgp.readCleartextMessage({ cleartextMessage }),
       verificationKeys: pubHi
-    }).then(output => expect(output.signatures[0].valid).to.be.true);
+    }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
     // Verifying detached signature
     await openpgp.verify({
       message: await openpgp.createMessage({ text: util.removeTrailingSpaces(testData) }),
       verificationKeys: pubHi,
       signature: (await openpgp.readCleartextMessage({ cleartextMessage })).signature
-    }).then(output => expect(output.signatures[0].valid).to.be.true);
+    }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
 
     // Encrypting and signing
     const encrypted = await openpgp.encrypt({
@@ -311,9 +311,9 @@ function omnibus() {
       message: await openpgp.readMessage({ armoredMessage: encrypted }),
       decryptionKeys: bye,
       verificationKeys: [pubHi]
-    }).then(output => {
+    }).then(async output => {
       expect(output.data).to.equal(testData2);
-      expect(output.signatures[0].valid).to.be.true;
+      await expect(output.signatures[0].verified).to.eventually.be.true;
     });
   });
 }
