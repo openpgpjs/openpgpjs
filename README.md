@@ -213,7 +213,7 @@ const openpgp = require('openpgp'); // use as CommonJS, AMD, ES6 module or via w
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
     const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
         passphrase
     });
 
@@ -293,7 +293,7 @@ If you expect an encrypted message to be signed with one of the public keys you 
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
     const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
         passphrase
     });
 
@@ -394,7 +394,7 @@ can `.pipe()` to a `Writable` stream, for example.
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
     const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
         passphrase
     });
 
@@ -508,7 +508,7 @@ Using the private key:
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
     const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
         passphrase
     });
 
@@ -551,7 +551,7 @@ Using the private key:
     const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored });
 
     const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
         passphrase
     });
 
@@ -601,7 +601,7 @@ Using the private key:
     const passphrase = `yourPassphrase`; // what the private key is encrypted with
 
     const privateKey = await openpgp.decryptKey({
-        privateKey: await openpgp.readKey({ armoredKey: privateKeyArmored }),
+        privateKey: await openpgp.readPrivateKey({ armoredKey: privateKeyArmored }),
         passphrase
     });
 
