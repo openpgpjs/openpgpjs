@@ -531,7 +531,7 @@ export class PacketList<T extends AnyPacket> extends Array<T> {
 /* ############## v5 STREAM #################### */
 
 type Data = Uint8Array | string;
-interface BaseStream<T extends Data> { }
+interface BaseStream<T extends Data> extends AsyncIterable<T> { }
 interface WebStream<T extends Data> extends BaseStream<T> { // copied+simplified version of ReadableStream from lib.dom.d.ts
   readonly locked: boolean; getReader: Function; pipeThrough: Function; pipeTo: Function; tee: Function;
   cancel(reason?: any): Promise<void>;
