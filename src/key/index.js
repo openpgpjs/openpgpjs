@@ -16,6 +16,7 @@ import {
 
 import PrivateKey from './private_key.js';
 import PublicKey from './public_key.js';
+import Subkey from './subkey.js';
 
 export {
   readKey,
@@ -29,5 +30,6 @@ export {
   getPreferredHashAlgo,
   createSignaturePacket,
   PrivateKey,
-  PublicKey
+  PublicKey,
+  Subkey
 };
