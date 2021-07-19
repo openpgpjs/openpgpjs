@@ -257,7 +257,7 @@ function tests() {
     const encrypted = await openpgp.encrypt({
       message: await openpgp.createMessage({ binary: data }),
       passwords: ['test'],
-      armor: false
+      format: 'binary'
     });
     expect(stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -285,7 +285,7 @@ function tests() {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
         passwords: ['test'],
-        armor: false
+        format: 'binary'
       });
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -316,7 +316,7 @@ function tests() {
         message: await openpgp.createMessage({ binary: data }),
         encryptionKeys: pubKey,
         signingKeys: privKey,
-        armor: false,
+        format: 'binary',
         config: { minRSABits: 1024 }
       });
       expect(stream.isStream(encrypted)).to.equal(expectedType);
@@ -352,7 +352,7 @@ function tests() {
         message: await openpgp.createMessage({ binary: data }),
         encryptionKeys: pub,
         signingKeys: priv,
-        armor: false
+        format: 'binary'
       });
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -387,7 +387,7 @@ function tests() {
         message: await openpgp.createMessage({ binary: data }),
         encryptionKeys: pub,
         signingKeys: priv,
-        armor: false
+        format: 'binary'
       });
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -814,7 +814,7 @@ function tests() {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
         passwords: ['test'],
-        armor: false
+        format: 'binary'
       });
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -1035,7 +1035,7 @@ module.exports = () => describe('Streaming', function() {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
         passwords: ['test'],
-        armor: false
+        format: 'binary'
       });
       expect(stream.isStream(encrypted)).to.equal('node');
 

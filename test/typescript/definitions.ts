@@ -12,13 +12,13 @@ import {
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
-  LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket
+  LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage
 } from '../..';
 
 (async () => {
 
   // Generate keys
-  const keyOptions = { userIDs: [{ email: "user@corp.co" }], config: { v5Keys: true } };
+  const keyOptions = { userIDs: [{ email: 'user@corp.co' }], config: { v5Keys: true } };
   const { privateKey: privateKeyArmored, publicKey: publicKeyArmored } = await generateKey(keyOptions);
   const { privateKey: privateKeyBinary } = await generateKey({ ...keyOptions, format: 'binary' });
   const { privateKey, publicKey, revocationCertificate } = await generateKey({ ...keyOptions, format: 'object' });
@@ -75,7 +75,7 @@ import {
   // Encrypt binary message (unarmored)
   const binary = new Uint8Array([1, 2]);
   const binaryMessage = await createMessage({ binary });
-  const encryptedBinary: Uint8Array = await encrypt({ encryptionKeys: publicKeys, message: binaryMessage, armor: false });
+  const encryptedBinary: Uint8Array = await encrypt({ encryptionKeys: publicKeys, message: binaryMessage, format: 'binary' });
   expect(encryptedBinary).to.be.instanceOf(Uint8Array);
 
   // Decrypt text message (armored)
@@ -91,14 +91,17 @@ import {
   expect(decryptedBinaryData).to.deep.equal(binary);
 
   // Encrypt message (inspect packets)
-  const encryptedMessage = await readMessage({ binaryMessage: encryptedBinary });
-  expect(encryptedMessage).to.be.instanceOf(Message);
+  const encryptedBinaryObject: Message<Uint8Array> = await encrypt({ encryptionKeys: publicKeys, message: binaryMessage, format: 'object' });
+  expect(encryptedBinaryObject).to.be.instanceOf(Message);
+  const encryptedTextObject: Message<string> = await encrypt({ encryptionKeys: publicKeys, message: textMessage, format: 'object' });
+  expect(encryptedTextObject).to.be.instanceOf(Message);
 
   // Session key functions
+  // Get session keys from encrypted message
   const sessionKeys = await decryptSessionKeys({ message: await readMessage({ binaryMessage: encryptedBinary }), decryptionKeys: privateKeys });
   expect(sessionKeys).to.have.length(1);
-  // eslint-disable-next-line no-unused-vars
   const encryptedSessionKeys: string = await encryptSessionKey({ ...sessionKeys[0], passwords: 'pass', algorithm: 'aes128', aeadAlgorithm: 'eax' });
+  expect(encryptedSessionKeys).to.include('-----BEGIN PGP MESSAGE-----');
   const newSessionKey = await generateSessionKey({ encryptionKeys: privateKey.toPublic() });
   expect(newSessionKey.data).to.exist;
   expect(newSessionKey.algorithm).to.exist;
@@ -107,6 +110,8 @@ import {
   const cleartextMessage = await createCleartextMessage({ text: 'hello' });
   const clearSignedArmor = await sign({ signingKeys: privateKeys, message: cleartextMessage });
   expect(clearSignedArmor).to.include('-----BEGIN PGP SIGNED MESSAGE-----');
+  const clearSignedObject: CleartextMessage = await sign({ signingKeys: privateKeys, message: cleartextMessage, format: 'object' });
+  expect(clearSignedObject).to.be.instanceOf(CleartextMessage);
   // @ts-expect-error PublicKey not assignable to PrivateKey
   try { await sign({ signingKeys: publicKeys, message: cleartextMessage }); } catch (e) {}
   // @ts-expect-error Key not assignable to PrivateKey
@@ -115,10 +120,14 @@ import {
   // Sign text message (armored)
   const textSignedArmor: string = await sign({ signingKeys: privateKeys, message: textMessage });
   expect(textSignedArmor).to.include('-----BEGIN PGP MESSAGE-----');
-
   // Sign text message (unarmored)
-  const textSignedBinary: Uint8Array = await sign({ signingKeys: privateKeys, message: binaryMessage, armor: false });
+  const textSignedBinary: Uint8Array = await sign({ signingKeys: privateKeys, message: binaryMessage, format: 'binary' });
   expect(textSignedBinary).to.be.instanceOf(Uint8Array);
+  // Sign text and binary messages (inspect packages)
+  const binarySignedObject: Message<Uint8Array> = await sign({ signingKeys: privateKeys, message: binaryMessage, format: 'object' });
+  expect(binarySignedObject).to.be.instanceOf(Message);
+  const textSignedObject: Message<string> = await sign({ signingKeys: privateKeys, message: textMessage, format: 'object' });
+  expect(textSignedObject).to.be.instanceOf(Message);
 
   // Verify signed text message (armored)
   const signedMessage = await readMessage({ armoredMessage: textSignedArmor });
@@ -168,7 +177,7 @@ import {
 
   // // Detached - sign binary message (unarmored)
   // const message = await createMessage({ text });
-  // const signed = await sign({ privateKeys, message, detached: true, armor: false });
+  // const signed = await sign({ privateKeys, message, detached: true, format: 'binary' });
   // console.log(signed); // Uint8Array
 
   // // Streaming - encrypt text message on Node.js (armored)
@@ -182,7 +191,7 @@ import {
   // // Streaming - encrypt binary message on Node.js (unarmored)
   // const data = fs.createReadStream(filename);
   // const message = await createMessage({ binary: data });
-  // const encrypted = await encrypt({ publicKeys, message, armor: false });
+  // const encrypted = await encrypt({ publicKeys, message, format: 'binary' });
   // encrypted.pipe(targetStream);
 
   console.log('TypeScript definitions are correct');

@@ -275,7 +275,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
  * @async
  * @static
  */
-export async function readKey({ armoredKey, binaryKey, config }) {
+export async function readKey({ armoredKey, binaryKey, config, ...rest }) {
   config = { ...defaultConfig, ...config };
   if (!armoredKey && !binaryKey) {
     throw new Error('readKey: must pass options object containing `armoredKey` or `binaryKey`');
@@ -286,6 +286,8 @@ export async function readKey({ armoredKey, binaryKey, config }) {
   if (binaryKey && !util.isUint8Array(binaryKey)) {
     throw new Error('readKey: options.binaryKey must be a Uint8Array');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   let input;
   if (armoredKey) {
     const { type, data } = await unarmor(armoredKey, config);
@@ -310,7 +312,7 @@ export async function readKey({ armoredKey, binaryKey, config }) {
  * @async
  * @static
  */
-export async function readPrivateKey({ armoredKey, binaryKey, config }) {
+export async function readPrivateKey({ armoredKey, binaryKey, config, ...rest }) {
   config = { ...defaultConfig, ...config };
   if (!armoredKey && !binaryKey) {
     throw new Error('readPrivateKey: must pass options object containing `armoredKey` or `binaryKey`');
@@ -321,6 +323,8 @@ export async function readPrivateKey({ armoredKey, binaryKey, config }) {
   if (binaryKey && !util.isUint8Array(binaryKey)) {
     throw new Error('readPrivateKey: options.binaryKey must be a Uint8Array');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   let input;
   if (armoredKey) {
     const { type, data } = await unarmor(armoredKey, config);
@@ -345,7 +349,7 @@ export async function readPrivateKey({ armoredKey, binaryKey, config }) {
  * @async
  * @static
  */
-export async function readKeys({ armoredKeys, binaryKeys, config }) {
+export async function readKeys({ armoredKeys, binaryKeys, config, ...rest }) {
   config = { ...defaultConfig, ...config };
   let input = armoredKeys || binaryKeys;
   if (!input) {
@@ -357,6 +361,8 @@ export async function readKeys({ armoredKeys, binaryKeys, config }) {
   if (binaryKeys && !util.isUint8Array(binaryKeys)) {
     throw new Error('readKeys: options.binaryKeys must be a Uint8Array');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   if (armoredKeys) {
     const { type, data } = await unarmor(armoredKeys, config);
     if (type !== enums.armor.publicKey && type !== enums.armor.privateKey) {

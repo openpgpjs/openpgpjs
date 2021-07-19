@@ -182,11 +182,11 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
       const userIDs = { name: 'Test User', email: 'text2@example.com' };
       const { privateKey } = await openpgp.generateKey({ userIDs, format: 'object' });
 
-      const encKey = await openpgp.encryptKey({ privateKey, userIDs, passphrase });
+      const encKey = await openpgp.encryptKey({ privateKey, passphrase });
       expect(encKey.keyPacket.s2k.c).to.equal(openpgp.config.s2kIterationCountByte);
 
       const config = { s2kIterationCountByte: 123 };
-      const encKey2 = await openpgp.encryptKey({ privateKey, userIDs, passphrase, config });
+      const encKey2 = await openpgp.encryptKey({ privateKey, passphrase, config });
       expect(encKey2.keyPacket.s2k.c).to.equal(config.s2kIterationCountByte);
     } finally {
       openpgp.config.s2kIterationCountByte = s2kIterationCountByteVal;

@@ -132,7 +132,7 @@ export class CleartextMessage {
  * @async
  * @static
  */
-export async function readCleartextMessage({ cleartextMessage, config }) {
+export async function readCleartextMessage({ cleartextMessage, config, ...rest }) {
   config = { ...defaultConfig, ...config };
   if (!cleartextMessage) {
     throw new Error('readCleartextMessage: must pass options object containing `cleartextMessage`');
@@ -140,6 +140,8 @@ export async function readCleartextMessage({ cleartextMessage, config }) {
   if (!util.isString(cleartextMessage)) {
     throw new Error('readCleartextMessage: options.cleartextMessage must be a string');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   const input = await unarmor(cleartextMessage);
   if (input.type !== enums.armor.signed) {
     throw new Error('No cleartext signed message.');
@@ -203,12 +205,14 @@ function verifyHeaders(headers, packetlist) {
  * @static
  * @async
  */
-export async function createCleartextMessage({ text }) {
+export async function createCleartextMessage({ text, ...rest }) {
   if (!text) {
     throw new Error('createCleartextMessage: must pass options object containing `text`');
   }
   if (!util.isString(text)) {
     throw new Error('createCleartextMessage: options.text must be a string');
   }
+  const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
   return new CleartextMessage(text);
 }

@@ -1462,7 +1462,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
 
     const config = { minRSABits: 1024 };
-    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createMessage({ binary: plaintext }), armor: false, config }).then(async signed => {
+    return openpgp.sign({ signingKeys: privKey, message: await openpgp.createMessage({ binary: plaintext }), format: 'binary', config }).then(async signed => {
 
       const message = await openpgp.readMessage({ binaryMessage: signed });
       return openpgp.verify({ verificationKeys: pubKey, message, format: 'binary', config });
