@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Feature request
+    url: https://github.com/openpgpjs/openpgpjs/discussions/categories/ideas
+    about: Suggest an idea for this project
+  - name: Question
+    url: https://github.com/openpgpjs/openpgpjs/discussions/categories/q-a
+    about: Please ask any questions here
