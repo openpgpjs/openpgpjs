@@ -45,14 +45,14 @@ import util from './util';
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
  *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
- * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
+ * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armor', config, ...rest }) {
+export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -86,14 +86,14 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the reformatted private key. If omitted, the key won't be encrypted.
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Date}   [options.date] - Override the creation date of the key signatures
- * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output keys
+ * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function reformatKey({ privateKey, userIDs = [], passphrase = '', keyExpirationTime = 0, date, format = 'armor', config, ...rest }) {
+export async function reformatKey({ privateKey, userIDs = [], passphrase = '', keyExpirationTime = 0, date, format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config };
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -126,7 +126,7 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = '', k
  * @param {module:enums.reasonForRevocation} [options.reasonForRevocation.flag=[noReason]{@link module:enums.reasonForRevocation}] - Flag indicating the reason for revocation
  * @param {String} [options.reasonForRevocation.string=""] - String explaining the reason for revocation
  * @param {Date} [options.date] - Use the given date instead of the current time to verify validity of revocation certificate (if provided), or as creation time of the revocation signature
- * @param {'armor'|'binary'|'object'} [options.format='armor'] - format of the output key(s)
+ * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output key(s)
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The revoked key in the form:
  *                              { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String } if private key is passed, or
@@ -134,7 +134,7 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = '', k
  * @async
  * @static
  */
-export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), format = 'armor', config, ...rest }) {
+export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config };
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
@@ -244,7 +244,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @param {PrivateKey|PrivateKey[]} [options.signingKeys] - Private keys for signing. If omitted message will not be signed
  * @param {String|String[]} [options.passwords] - Array of passwords or a single password to encrypt the message
  * @param {Object} [options.sessionKey] - Session key in the form: `{ data:Uint8Array, algorithm:String }`
- * @param {'armor'|'binary'|'object'} [options.format='armor'] - Format of the returned message
+ * @param {'armored'|'binary'|'object'} [options.format='armored'] - Format of the returned message
  * @param {Signature} [options.signature] - A detached signature to add to the encrypted message
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]`
@@ -257,7 +257,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @async
  * @static
  */
-export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, format = 'armor', signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
+export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkMessage(message); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords);
@@ -285,7 +285,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
     message = await message.encrypt(encryptionKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
     if (format === 'object') return message;
     // serialize data
-    const armor = format === 'armor';
+    const armor = format === 'armored';
     const data = armor ? message.armor(config) : message.write();
     return convertStream(data, streaming, armor ? 'utf8' : 'binary');
   } catch (err) {
@@ -376,7 +376,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {Object} options
  * @param {CleartextMessage|Message} options.message - (cleartext) message to be signed
  * @param {PrivateKey|PrivateKey[]} options.signingKeys - Array of keys or single key with decrypted secret key data to sign cleartext
- * @param {'armor'|'binary'|'object'} [options.format='armor'] - Format of the returned message
+ * @param {'armored'|'binary'|'object'} [options.format='armored'] - Format of the returned message
  * @param {Boolean} [options.detached=false] - If the return value should contain a detached signature
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
@@ -386,7 +386,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @async
  * @static
  */
-export async function sign({ message, signingKeys, format = 'armor', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
+export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkCleartextOrMessage(message); checkOutputMessageFormat(format);
   signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs);
@@ -411,7 +411,7 @@ export async function sign({ message, signingKeys, format = 'armor', detached = 
     }
     if (format === 'object') return signature;
 
-    const armor = format === 'armor';
+    const armor = format === 'armored';
     signature = armor ? signature.armor(config) : signature.write();
     if (detached) {
       signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
@@ -530,7 +530,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
  * @param {String} [options.aeadAlgorithm] - AEAD algorithm, e.g. 'eax' or 'ocb'
  * @param {PublicKey|PublicKey[]} [options.encryptionKeys] - Array of public keys or single key, used to encrypt the key
  * @param {String|String[]} [options.passwords] - Passwords for the message
- * @param {'armor'|'binary'} [options.format='armor'] - Format of the returned value
+ * @param {'armored'|'binary'} [options.format='armored'] - Format of the returned value
  * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
  * @param {KeyID|KeyID[]} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to encryptionKeys[i]
  * @param {Date} [options.date=current date] - Override the date
@@ -540,7 +540,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
  * @async
  * @static
  */
-export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, format = 'armor', wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
+export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, format = 'armored', wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config };
   checkBinary(data); checkString(algorithm, 'algorithm'); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionKeyIDs = toArray(encryptionKeyIDs); encryptionUserIDs = toArray(encryptionUserIDs);
@@ -617,7 +617,7 @@ function checkCleartextOrMessage(message) {
   }
 }
 function checkOutputMessageFormat(format) {
-  if (format !== 'armor' && format !== 'binary' && format !== 'object') {
+  if (format !== 'armored' && format !== 'binary' && format !== 'object') {
     throw new Error(`Unsupported format ${format}`);
   }
 }
@@ -687,7 +687,7 @@ function linkStreams(result, message) {
 /**
  * Convert the object to the given format
  * @param {Key|Message} object
- * @param {'armor'|'binary'|'object'} format
+ * @param {'armored'|'binary'|'object'} format
  * @param {Object} config - Full configuration
  * @returns {String|Uint8Array|Object}
  */
@@ -695,7 +695,7 @@ function formatObject(object, format, config) {
   switch (format) {
     case 'object':
       return object;
-    case 'armor':
+    case 'armored':
       return object.armor(config);
     case 'binary':
       return object.write();
