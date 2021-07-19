@@ -1008,7 +1008,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       const opt = {
         userIDs: { name: 'Test User', email: 'text@example.com' }
       };
-      const armored = await openpgp.generateKey({ ...opt, format: 'armor' });
+      const armored = await openpgp.generateKey({ ...opt, format: 'armored' });
       expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
       expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPrivate()).to.be.false;
 
@@ -1034,7 +1034,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         privateKey: original,
         userIDs: { name: 'Test User', email: 'text@example.com' }
       };
-      const armored = await openpgp.reformatKey({ ...opt, format: 'armor' });
+      const armored = await openpgp.reformatKey({ ...opt, format: 'armored' });
       expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
       expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPrivate()).to.be.false;
 
@@ -1056,7 +1056,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         passphrase: passphrase
       });
 
-      const armored = await openpgp.revokeKey({ key, format: 'armor' });
+      const armored = await openpgp.revokeKey({ key, format: 'armored' });
       expect((await openpgp.readKey({ armoredKey: armored.privateKey })).isPrivate()).to.be.true;
       expect((await openpgp.readKey({ armoredKey: armored.publicKey })).isPrivate()).to.be.false;
 
@@ -1649,7 +1649,7 @@ aOU=
       });
       const config = { minRSABits: 1024 };
 
-      const cleartextMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armor' });
+      const cleartextMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armored' });
       const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
       expect(parsedArmored.text).to.equal(text);
       expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
@@ -1671,7 +1671,7 @@ aOU=
       });
       const config = { minRSABits: 1024 };
 
-      const armoredMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armor' });
+      const armoredMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armored' });
       const parsedArmored = await openpgp.readMessage({ armoredMessage });
       expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
 
@@ -1694,7 +1694,7 @@ aOU=
       });
       const config = { minRSABits: 1024 };
 
-      const armoredMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armor' });
+      const armoredMessage = await openpgp.sign({ message, signingKeys: privateKey, config, format: 'armored' });
       const parsedArmored = await openpgp.readMessage({ armoredMessage });
       expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.onePassSignature)).to.have.length(1);
 
@@ -1719,7 +1719,7 @@ aOU=
       const armoredMessage = await openpgp.sign({
         message: await openpgp.createMessage({ text: stream.toStream(text) }),
         signingKeys: privateKey,
-        format: 'armor',
+        format: 'armored',
         config
       });
       const parsedArmored = await openpgp.readMessage({ armoredMessage });
@@ -1757,7 +1757,7 @@ aOU=
       });
       const config = { minRSABits: 1024 };
 
-      const armoredSignature = await openpgp.sign({ message, signingKeys: privateKey, detached: true, config, format: 'armor' });
+      const armoredSignature = await openpgp.sign({ message, signingKeys: privateKey, detached: true, config, format: 'armored' });
       const parsedArmored = await openpgp.readSignature({ armoredSignature });
       expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
 
@@ -1783,7 +1783,7 @@ aOU=
         message: await openpgp.createMessage({ text: stream.toStream(text) }),
         signingKeys: privateKey,
         detached: true,
-        format: 'armor',
+        format: 'armored',
         config
       });
       const parsedArmored = await openpgp.readSignature({ armoredSignature: await stream.readToEnd(armoredSignature) });
@@ -1839,7 +1839,7 @@ aOU=
         passphrase
       });
 
-      const armoredMessage = await openpgp.encrypt({ message, passwords, format: 'armor' });
+      const armoredMessage = await openpgp.encrypt({ message, passwords, format: 'armored' });
       const parsedArmored = await openpgp.readMessage({ armoredMessage });
       expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
 
@@ -1865,7 +1865,7 @@ aOU=
       const armoredMessage = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: stream.toStream(text) }),
         passwords,
-        format: 'armor'
+        format: 'armored'
       });
       const parsedArmored = await openpgp.readMessage({ armoredMessage });
       expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
@@ -1897,7 +1897,7 @@ aOU=
       const passwords = 'password';
       const sessionKey = { data: new Uint8Array(16).fill(1), algorithm: 'aes128' };
 
-      const armoredMessage = await openpgp.encryptSessionKey({ ...sessionKey, passwords, format: 'armor' });
+      const armoredMessage = await openpgp.encryptSessionKey({ ...sessionKey, passwords, format: 'armored' });
       const parsedArmored = await openpgp.readMessage({ armoredMessage });
       expect(parsedArmored.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
 

@@ -446,7 +446,7 @@ and a subkey for encryption using Curve25519.
         curve: 'curve25519', // ECC curve name, defaults to curve25519
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
         passphrase: 'super long and hard to guess secret', // protects the private key
-        format: 'armor' // output key format, defaults to 'armor' (other options: 'binary' or 'object')
+        format: 'armored' // output key format, defaults to 'armored' (other options: 'binary' or 'object')
     });
 
     console.log(privateKey);     // '-----BEGIN PGP PRIVATE KEY BLOCK ... '
@@ -476,7 +476,7 @@ Using a revocation certificate:
     const { publicKey: revokedKeyArmored } = await openpgp.revokeKey({
         key: await openpgp.readKey({ armoredKey: publicKeyArmored }),
         revocationCertificate,
-        format: 'armor' // output armored keys
+        format: 'armored' // output armored keys
     });
     console.log(revokedKeyArmored); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 })();
@@ -487,7 +487,7 @@ Using the private key:
 (async () => {
     const { publicKey: revokedKeyArmored } = await openpgp.revokeKey({
         key: await openpgp.readKey({ armoredKey: privateKeyArmored }),
-        format: 'armor' // output armored keys
+        format: 'armored' // output armored keys
     });
     console.log(revokedKeyArmored); // '-----BEGIN PGP PUBLIC KEY BLOCK ... '
 })();

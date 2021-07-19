@@ -18,21 +18,21 @@ export function readPrivateKey(options: { armoredKey: string, config?: PartialCo
 export function readPrivateKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PrivateKey>;
 export function readPrivateKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PrivateKey[]>;
 export function readPrivateKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<PrivateKey[]>;
-export function generateKey(options: KeyOptions & { format?: 'armor' }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function generateKey(options: KeyOptions & { format?: 'armored' }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
 export function generateKey(options: KeyOptions & { format: 'binary' }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
 export function generateKey(options: KeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
-export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
+export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
-export function revokeKey(options: { key: PrivateKey, revocationCertificate: string, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
+export function revokeKey(options: { key: PrivateKey, revocationCertificate: string, date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
 export function revokeKey(options: { key: PrivateKey, revocationCertificate: string, date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
 export function revokeKey(options: { key: PrivateKey, revocationCertificate: string, date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
-export function revokeKey(options: { key: PublicKey, revocationCertificate: string, date?: Date, format?: 'armor', config?: PartialConfig }): Promise<{ publicKey: string, privateKey: null }>;
+export function revokeKey(options: { key: PublicKey, revocationCertificate: string, date?: Date, format?: 'armored', config?: PartialConfig }): Promise<{ publicKey: string, privateKey: null }>;
 export function revokeKey(options: { key: PublicKey, revocationCertificate: string, date?: Date, format: 'binary', config?: PartialConfig }): Promise<{ publicKey: Uint8Array, privateKey: null }>;
 export function revokeKey(options: { key: PublicKey, revocationCertificate: string, date?: Date, format: 'object', config?: PartialConfig }): Promise<{ publicKey: PublicKey, privateKey: null }>;
 
@@ -172,7 +172,7 @@ export class CleartextMessage {
 /* ############## v5 MSG #################### */
 export function generateSessionKey(options: { encryptionKeys: MaybeArray<PublicKey>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig }): Promise<SessionKey>;
 export function encryptSessionKey(options: SessionKey & { 
-  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format?: 'armor', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
+  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format?: 'armored', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
 }) : Promise<string>;
 export function encryptSessionKey(options: SessionKey & { 
   encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format: 'binary', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
@@ -188,7 +188,7 @@ export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binary
 export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
 export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
 
-export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format?: 'armor' }): Promise<
+export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format?: 'armored' }): Promise<
   T extends WebStream<infer X> ? WebStream<string> :
   T extends NodeStream<infer X> ? NodeStream<string> :
   string
@@ -200,7 +200,7 @@ export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & {
 >;
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
 
-export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format?: 'armor' }): Promise<
+export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format?: 'armored' }): Promise<
   T extends WebStream<infer X> ? WebStream<string> :
   T extends NodeStream<infer X> ? NodeStream<string> :
   string
@@ -211,7 +211,7 @@ export function sign<T extends MaybeStream<Data>>(options: SignOptions & { messa
   Uint8Array
 >;
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
-export function sign(options: SignOptions & { message: CleartextMessage, format?: 'armor' }): Promise<string>;
+export function sign(options: SignOptions & { message: CleartextMessage, format?: 'armored' }): Promise<string>;
 export function sign(options: SignOptions & { message: CleartextMessage, format: 'object' }): Promise<CleartextMessage>;
 
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & {
@@ -583,7 +583,7 @@ interface EncryptOptions {
   /** (optional) session key */
   sessionKey?: SessionKey;
   /** if the return values should be ascii armored or the message/signature objects */
-  format?: 'armor' | 'binary' | 'object';
+  format?: 'armored' | 'binary' | 'object';
   /** (optional) if the signature should be detached (if true, signature will be added to returned object) */
   signature?: Signature;
   /** (optional) encrypt as of a certain date */
@@ -626,7 +626,7 @@ interface DecryptOptions {
 interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   signingKeys?: MaybeArray<PrivateKey>;
-  format?: 'armor' | 'binary' | 'object';
+  format?: 'armored' | 'binary' | 'object';
   dataType?: DataPacketType;
   detached?: boolean;
   signingKeyIDs?: MaybeArray<KeyID>;
@@ -672,7 +672,7 @@ interface KeyOptions {
   keyExpirationTime?: number;
   date?: Date;
   subkeys?: SubkeyOptions[];
-  format?: 'armor' | 'object' | 'binary';
+  format?: 'armored' | 'object' | 'binary';
   config?: PartialConfig;
 }
 
