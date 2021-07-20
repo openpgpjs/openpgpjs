@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>User<span class="signature">()</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>User<span class="signature">(userPacket, mainKey)</span><span class="type-signature"></span></h2>
         
             <div class="class-description"><p>Class that represents an user ID or attribute packet and the relevant signatures.</p></div>
         
@@ -45,7 +45,7 @@
     
 
     
-    <h4 class="name" id="User"><span class="type-signature"></span>new User<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="User"><span class="type-signature"></span>new User<span class="signature">(userPacket, mainKey)</span><span class="type-signature"></span></h4>
     
 
     
@@ -58,6 +58,81 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>userPacket</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="UserIDPacket.html">UserIDPacket</a></span>
+|
+
+<span class="param-type"><a href="UserAttributePacket.html">UserAttributePacket</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>packet containing the user info</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mainKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Key.html">Key</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>reference to main Key object containing the primary key and subkeys that the user is associated with</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -95,7 +170,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L15">line 15</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L17">line 17</a>
     </li></ul></dd>
     
 
@@ -151,7 +226,7 @@
     
 
     
-    <h4 class="name" id="isRevoked"><span class="type-signature">(async) </span>isRevoked<span class="signature">(primaryKey, certificate, key,, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Boolean>}</span></h4>
+    <h4 class="name" id="certify"><span class="type-signature">(async) </span>certify<span class="signature">(signingKeys, date<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;User>}</span></h4>
     
 
     
@@ -159,7 +234,7 @@
 
 
 <div class="description">
-    <p>Checks if a given certificate of the user is revoked</p>
+    <p>Generate third-party certifications over this user and its primary key</p>
 </div>
 
 
@@ -183,6 +258,8 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -195,81 +272,31 @@
 
         <tr>
             
-                <td class="name"><code>primaryKey</code></td>
+                <td class="name"><code>signingKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
+<span class="param-type">Array.&lt;<a href="PrivateKey.html">PrivateKey</a>></span>
 
 
             
             </td>
 
             
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>certificate</code></td>
-            
-
-            <td class="type">
-            
+                <td class="attributes">
                 
-<span class="param-type"><a href="SignaturePacket.html">SignaturePacket</a></span>
 
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The certificate to verify</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>key,</code></td>
-            
-
-            <td class="type">
-            
                 
-<span class="param-type"><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></span>
-|
 
-<span class="param-type"><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-
-
-            
-            </td>
-
+                
+                </td>
             
 
             
 
-            <td class="description last"><p>optional The key to verify the signature</p></td>
+            <td class="description last"><p>Decrypted private keys for signing</p></td>
         </tr>
 
     
@@ -289,10 +316,20 @@
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
-            <td class="description last"><p>Use the given date instead of the current time</p></td>
+            <td class="description last"><p>Date to use as creation date of the certificate, instead of the current time</p></td>
         </tr>
 
     
@@ -311,6 +348,14 @@
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -358,7 +403,392 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L84">line 84</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L59">line 59</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>New user with new certifications.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise.&lt;User></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="clone"><span class="type-signature"></span>clone<span class="signature">()</span><span class="type-signature"> &rarr; {User}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Shallow clone</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L43">line 43</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">User</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="isRevoked"><span class="type-signature">(async) </span>isRevoked<span class="signature">(certificate, keyPacket<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Boolean>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Checks if a given certificate of the user is revoked</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>certificate</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="SignaturePacket.html">SignaturePacket</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The certificate to verify</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>keyPacket</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></span>
+|
+
+<span class="param-type"><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></span>
+|
+
+<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
+|
+
+<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The key packet to verify the signature, instead of the primary key</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>date</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Date</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Use the given date for verification instead of the current time</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Full configuration</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L97">line 97</a>
     </li></ul></dd>
     
 
@@ -399,216 +829,6 @@
     <dd>
         
 <span class="param-type">Promise.&lt;Boolean></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="sign"><span class="type-signature">(async) </span>sign<span class="signature">(primaryKey, privateKeys, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="Key.html">Key</a>>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Signs user</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>primaryKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>privateKeys</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Decrypted private keys for signing</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>config</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Full configuration</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L45">line 45</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>New user with new certificate signatures.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise.&lt;<a href="Key.html">Key</a>></span>
 
 
     </dd>
@@ -680,7 +900,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L27">line 27</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L30">line 30</a>
     </li></ul></dd>
     
 
@@ -734,7 +954,7 @@
     
 
     
-    <h4 class="name" id="update"><span class="type-signature">(async) </span>update<span class="signature">(user, primaryKey, config)</span><span class="type-signature"> &rarr; {Promise.&lt;undefined>}</span></h4>
+    <h4 class="name" id="update"><span class="type-signature">(async) </span>update<span class="signature">(sourceUser, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;undefined>}</span></h4>
     
 
     
@@ -778,7 +998,7 @@
 
         <tr>
             
-                <td class="name"><code>user</code></td>
+                <td class="name"><code>sourceUser</code></td>
             
 
             <td class="type">
@@ -801,16 +1021,13 @@
 
         <tr>
             
-                <td class="name"><code>primaryKey</code></td>
+                <td class="name"><code>date</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></span>
+<span class="param-type">Date</span>
 
 
             
@@ -820,7 +1037,7 @@
 
             
 
-            <td class="description last"><p>primary key used for validation</p></td>
+            <td class="description last"><p>Date to verify the validity of signatures</p></td>
         </tr>
 
     
@@ -886,7 +1103,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L212">line 212</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L213">line 213</a>
     </li></ul></dd>
     
 
@@ -940,7 +1157,7 @@
     
 
     
-    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(primaryKey, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;true>}</span></h4>
+    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;true>}</span></h4>
     
 
     
@@ -981,32 +1198,6 @@ and validity of self signature.</p>
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>primaryKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
     
 
         <tr>
@@ -1093,7 +1284,7 @@ and validity of self signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L169">line 169</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L173">line 173</a>
     </li></ul></dd>
     
 
@@ -1180,7 +1371,7 @@ and validity of self signature.</p>
     
 
     
-    <h4 class="name" id="verifyAllCertifications"><span class="type-signature">(async) </span>verifyAllCertifications<span class="signature">(primaryKey, keys, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, valid: Boolean}>>}</span></h4>
+    <h4 class="name" id="verifyAllCertifications"><span class="type-signature">(async) </span>verifyAllCertifications<span class="signature">(verificationKeys, date<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, valid: (Boolean|null)}>>}</span></h4>
     
 
     
@@ -1212,6 +1403,8 @@ and validity of self signature.</p>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -1224,44 +1417,26 @@ and validity of self signature.</p>
 
         <tr>
             
-                <td class="name"><code>primaryKey</code></td>
+                <td class="name"><code>verificationKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
             </td>
 
             
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>keys</code></td>
-            
-
-            <td class="type">
-            
+                <td class="attributes">
                 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
 
+                
 
-            
-            </td>
-
+                
+                </td>
             
 
             
@@ -1286,6 +1461,16 @@ and validity of self signature.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -1308,6 +1493,14 @@ and validity of self signature.</p>
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -1355,7 +1548,7 @@ and validity of self signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L147">line 147</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L155">line 155</a>
     </li></ul></dd>
     
 
@@ -1384,7 +1577,8 @@ and validity of self signature.</p>
 
         
 <div class="param-desc">
-    <p>List of signer's keyID and validity of signature</p>
+    <p>List of signer's keyID and validity of signature.
+Signature validity is null if the verification keys do not correspond to the certificate.</p>
 </div>
 
 
@@ -1395,7 +1589,7 @@ and validity of self signature.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, valid: Boolean}>></span>
+<span class="param-type">Promise.&lt;Array.&lt;{keyID: <a href="module-type_keyid-KeyID.html">module:type/keyid~KeyID</a>, valid: (Boolean|null)}>></span>
 
 
     </dd>
@@ -1413,7 +1607,7 @@ and validity of self signature.</p>
     
 
     
-    <h4 class="name" id="verifyCertificate"><span class="type-signature">(async) </span>verifyCertificate<span class="signature">(primaryKey, certificate, keys, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;(true|null)>}</span></h4>
+    <h4 class="name" id="verifyCertificate"><span class="type-signature">(async) </span>verifyCertificate<span class="signature">(certificate, verificationKeys, date<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;(true|null)>}</span></h4>
     
 
     
@@ -1421,7 +1615,7 @@ and validity of self signature.</p>
 
 
 <div class="description">
-    <p>Verifies the user certificate. Throws if the user certificate is invalid.</p>
+    <p>Verifies the user certificate.</p>
 </div>
 
 
@@ -1445,6 +1639,8 @@ and validity of self signature.</p>
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -1453,32 +1649,6 @@ and validity of self signature.</p>
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>primaryKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
     
 
         <tr>
@@ -1496,6 +1666,14 @@ and validity of self signature.</p>
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -1506,18 +1684,26 @@ and validity of self signature.</p>
 
         <tr>
             
-                <td class="name"><code>keys</code></td>
+                <td class="name"><code>verificationKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
+<span class="param-type">Array.&lt;<a href="PublicKey.html">PublicKey</a>></span>
 
 
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -1542,6 +1728,16 @@ and validity of self signature.</p>
             </td>
 
             
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
 
             
 
@@ -1564,6 +1760,14 @@ and validity of self signature.</p>
             
             </td>
 
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
             
 
             
@@ -1611,7 +1815,7 @@ and validity of self signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/user.js#L105">line 105</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js">key/user.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/user.js#L116">line 116</a>
     </li></ul></dd>
     
 
@@ -1634,13 +1838,25 @@ and validity of self signature.</p>
 
 
 
+<h5>Throws:</h5>
+
+        
+
+    <div class="param-desc">
+    
+        <p>if the user certificate is invalid.</p>
+    
+    </div>
+
+
+    
 
 
 <h5>Returns:</h5>
 
         
 <div class="param-desc">
-    <p>Status of the certificate.</p>
+    <p>true if the certificate could be verified, or null if the verification keys do not correspond to the certificate</p>
 </div>
 
 
@@ -1679,7 +1895,7 @@ and validity of self signature.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#formatObject">formatObject</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li><li><a href="global.html#wrapKeyObject">wrapKeyObject</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_Subkey-Subkey.html">Subkey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">

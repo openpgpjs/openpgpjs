@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: SubKey</title>
+    <title>JSDoc: Class: Subkey</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: SubKey</h1>
+    <h1 class="page-title">Class: Subkey</h1>
 
     
 
@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>SubKey<span class="signature">()</span><span class="type-signature"></span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>Subkey<span class="signature">(subkeyPacket, mainKey)</span><span class="type-signature"></span></h2>
         
             <div class="class-description"><p>Class that represents a subkey packet and the relevant signatures.</p></div>
         
@@ -45,7 +45,7 @@
     
 
     
-    <h4 class="name" id="SubKey"><span class="type-signature"></span>new SubKey<span class="signature">()</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="Subkey"><span class="type-signature"></span>new Subkey<span class="signature">(subkeyPacket, mainKey)</span><span class="type-signature"></span></h4>
     
 
     
@@ -58,6 +58,81 @@
 
 
 
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>subkeyPacket</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></span>
+|
+
+<span class="param-type"><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>subkey packet to hold in the Subkey</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mainKey</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="Key.html">Key</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>reference to main Key object, containing the primary key packet corresponding to the subkey</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -95,7 +170,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js#L21">line 21</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L25">line 25</a>
     </li></ul></dd>
     
 
@@ -151,6 +226,114 @@
     
 
     
+    <h4 class="name" id="clone"><span class="type-signature"></span>clone<span class="signature">()</span><span class="type-signature"> &rarr; {Subkey}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Shallow clone</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L48">line 48</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Subkey</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="getAlgorithmInfo"><span class="type-signature"></span>getAlgorithmInfo<span class="signature">()</span><span class="type-signature"> &rarr; {Object}</span></h4>
     
 
@@ -210,7 +393,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L264">line 264</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L262">line 262</a>
     </li></ul></dd>
     
 
@@ -327,7 +510,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L264">line 264</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L262">line 262</a>
     </li></ul></dd>
     
 
@@ -444,7 +627,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L192">line 192</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L190">line 190</a>
     </li></ul></dd>
     
 
@@ -557,7 +740,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L192">line 192</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L190">line 190</a>
     </li></ul></dd>
     
 
@@ -611,7 +794,7 @@
     
 
     
-    <h4 class="name" id="getExpirationTime"><span class="type-signature">(async) </span>getExpirationTime<span class="signature">(primaryKey, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;(Date|Infinity|null)>}</span></h4>
+    <h4 class="name" id="getExpirationTime"><span class="type-signature">(async) </span>getExpirationTime<span class="signature">(date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;(Date|Infinity|null)>}</span></h4>
     
 
     
@@ -619,7 +802,7 @@
 
 
 <div class="description">
-    <p>Returns the expiration time of the subkey or Infinity if key does not expire
+    <p>Returns the expiration time of the subkey or Infinity if key does not expire.
 Returns null if the subkey is invalid.</p>
 </div>
 
@@ -654,40 +837,6 @@ Returns null if the subkey is invalid.</p>
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>primaryKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
     
 
         <tr>
@@ -792,7 +941,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js#L98">line 98</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L110">line 110</a>
     </li></ul></dd>
     
 
@@ -905,7 +1054,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L248">line 248</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L246">line 246</a>
     </li></ul></dd>
     
 
@@ -1022,7 +1171,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L248">line 248</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L246">line 246</a>
     </li></ul></dd>
     
 
@@ -1139,7 +1288,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L200">line 200</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L198">line 198</a>
     </li></ul></dd>
     
 
@@ -1256,7 +1405,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L200">line 200</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L198">line 198</a>
     </li></ul></dd>
     
 
@@ -1373,7 +1522,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L256">line 256</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L254">line 254</a>
     </li></ul></dd>
     
 
@@ -1490,7 +1639,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L256">line 256</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L254">line 254</a>
     </li></ul></dd>
     
 
@@ -1607,7 +1756,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L184">line 184</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L182">line 182</a>
     </li></ul></dd>
     
 
@@ -1723,7 +1872,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/packet/public_key.js#L184">line 184</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js">packet/public_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/packet/public_key.js#L182">line 182</a>
     </li></ul></dd>
     
 
@@ -1780,7 +1929,7 @@ Returns null if the subkey is invalid.</p>
     
 
     
-    <h4 class="name" id="isRevoked"><span class="type-signature">(async) </span>isRevoked<span class="signature">(primaryKey, signature, key,, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;Boolean>}</span></h4>
+    <h4 class="name" id="isRevoked"><span class="type-signature">(async) </span>isRevoked<span class="signature">(signature, key,, date<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;Boolean>}</span></h4>
     
 
     
@@ -1822,40 +1971,6 @@ Returns null if the subkey is invalid.</p>
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>primaryKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
     
 
         <tr>
@@ -1946,6 +2061,8 @@ Returns null if the subkey is invalid.</p>
             
                 <td class="attributes">
                 
+                    &lt;optional><br>
+                
 
                 
 
@@ -1955,7 +2072,7 @@ Returns null if the subkey is invalid.</p>
 
             
 
-            <td class="description last"><p>Use the given date instead of the current time</p></td>
+            <td class="description last"><p>Use the given date for verification instead of the current time</p></td>
         </tr>
 
     
@@ -2031,7 +2148,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js#L53">line 53</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L67">line 67</a>
     </li></ul></dd>
     
 
@@ -2089,7 +2206,7 @@ Returns null if the subkey is invalid.</p>
     
 
     
-    <h4 class="name" id="revoke"><span class="type-signature">(async) </span>revoke<span class="signature">(primaryKey, reasonForRevocation, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;SubKey>}</span></h4>
+    <h4 class="name" id="revoke"><span class="type-signature">(async) </span>revoke<span class="signature">(primaryKey, reasonForRevocation, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;Subkey>}</span></h4>
     
 
     
@@ -2369,7 +2486,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js#L165">line 165</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L178">line 178</a>
     </li></ul></dd>
     
 
@@ -2409,7 +2526,7 @@ Returns null if the subkey is invalid.</p>
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;SubKey></span>
+<span class="param-type">Promise.&lt;Subkey></span>
 
 
     </dd>
@@ -2481,7 +2598,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js#L31">line 31</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L36">line 36</a>
     </li></ul></dd>
     
 
@@ -2535,7 +2652,7 @@ Returns null if the subkey is invalid.</p>
     
 
     
-    <h4 class="name" id="update"><span class="type-signature">(async) </span>update<span class="signature">(subKey, primaryKey, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="update"><span class="type-signature">(async) </span>update<span class="signature">(subkey, date<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
     
 
     
@@ -2581,13 +2698,13 @@ Returns null if the subkey is invalid.</p>
 
         <tr>
             
-                <td class="name"><code>subKey</code></td>
+                <td class="name"><code>subkey</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">SubKey</span>
+<span class="param-type">Subkey</span>
 
 
             
@@ -2612,16 +2729,13 @@ Returns null if the subkey is invalid.</p>
 
         <tr>
             
-                <td class="name"><code>primaryKey</code></td>
+                <td class="name"><code>date</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></span>
+<span class="param-type">Date</span>
 
 
             
@@ -2629,6 +2743,8 @@ Returns null if the subkey is invalid.</p>
 
             
                 <td class="attributes">
+                
+                    &lt;optional><br>
                 
 
                 
@@ -2639,7 +2755,7 @@ Returns null if the subkey is invalid.</p>
 
             
 
-            <td class="description last"><p>primary key used for validation</p></td>
+            <td class="description last"><p>Date to verify validity of signatures</p></td>
         </tr>
 
     
@@ -2715,7 +2831,7 @@ Returns null if the subkey is invalid.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js#L120">line 120</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L132">line 132</a>
     </li></ul></dd>
     
 
@@ -2780,7 +2896,7 @@ Returns null if the subkey is invalid.</p>
     
 
     
-    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(primaryKey, date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="SignaturePacket.html">SignaturePacket</a>>}</span></h4>
+    <h4 class="name" id="verify"><span class="type-signature">(async) </span>verify<span class="signature">(date, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="SignaturePacket.html">SignaturePacket</a>>}</span></h4>
     
 
     
@@ -2823,40 +2939,6 @@ and valid binding signature.</p>
     </thead>
 
     <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>primaryKey</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type"><a href="SecretKeyPacket.html">SecretKeyPacket</a></span>
-|
-
-<span class="param-type"><a href="PublicKeyPacket.html">PublicKeyPacket</a></span>
-
-
-            
-            </td>
-
-            
-                <td class="attributes">
-                
-
-                
-
-                
-                </td>
-            
-
-            
-
-            <td class="description last"><p>The primary key packet</p></td>
-        </tr>
-
     
 
         <tr>
@@ -2961,7 +3043,7 @@ and valid binding signature.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-3/src/key/subkey.js#L73">line 73</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js">key/subkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0-4/src/key/subkey.js#L86">line 86</a>
     </li></ul></dd>
     
 
@@ -3054,7 +3136,7 @@ and valid binding signature.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_SubKey-SubKey.html">SubKey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#formatObject">formatObject</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li><li><a href="global.html#wrapKeyObject">wrapKeyObject</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-crypto_random-RandomBuffer.html">RandomBuffer</a></li><li><a href="module-key_Subkey-Subkey.html">Subkey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">
