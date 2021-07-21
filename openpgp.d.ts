@@ -311,7 +311,14 @@ interface Config {
   preferredHashAlgorithm: enums.hash;
   preferredSymmetricAlgorithm: enums.symmetric;
   preferredCompressionAlgorithm: enums.compression;
+  preferredAEADAlgorithm: enums.aead;
+  aeadChunkSizeByte: number;
+  s2kIterationCountByte: number;
+  minBytesForWebCrypto: number;
+  maxUserIDLength: number;
   showVersion: boolean;
+  knownNotations: string[];
+  useIndutnyElliptic: boolean;
   showComment: boolean;
   deflateLevel: number;
   aeadProtect: boolean;
@@ -326,6 +333,9 @@ interface Config {
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;
   v5Keys: boolean;
+  rejectHashAlgorithms: Set<enums.hash>;
+  rejectMessageHashAlgorithms: Set<enums.hash>;
+  rejectPublicKeyAlgorithms: Set<enums.publicKey>;
 }
 export var config: Config;
 
