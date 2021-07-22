@@ -53,7 +53,7 @@ import util from './util';
  * @static
  */
 export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
@@ -94,7 +94,7 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
  * @static
  */
 export async function reformatKey({ privateKey, userIDs = [], passphrase = '', keyExpirationTime = 0, date, format = 'armored', config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
@@ -135,7 +135,7 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase = '', k
  * @static
  */
 export async function revokeKey({ key, revocationCertificate, reasonForRevocation, date = new Date(), format = 'armored', config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   try {
@@ -166,7 +166,7 @@ export async function revokeKey({ key, revocationCertificate, reasonForRevocatio
  * @async
  */
 export async function decryptKey({ privateKey, passphrase, config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   if (!privateKey.isPrivate()) {
@@ -200,7 +200,7 @@ export async function decryptKey({ privateKey, passphrase, config, ...rest }) {
  * @async
  */
 export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   if (!privateKey.isPrivate()) {
@@ -258,7 +258,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @static
  */
 export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   checkMessage(message); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords);
   signingKeyIDs = toArray(signingKeyIDs); encryptionKeyIDs = toArray(encryptionKeyIDs); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
@@ -325,7 +325,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
  * @static
  */
 export async function decrypt({ message, decryptionKeys, passwords, sessionKeys, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   checkMessage(message); verificationKeys = toArray(verificationKeys); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
   if (rest.privateKeys) throw new Error('The `privateKeys` option has been removed from openpgp.decrypt, pass `decryptionKeys` instead');
   if (rest.publicKeys) throw new Error('The `publicKeys` option has been removed from openpgp.decrypt, pass `verificationKeys` instead');
@@ -387,7 +387,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @static
  */
 export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   checkCleartextOrMessage(message); checkOutputMessageFormat(format);
   signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs);
 
@@ -454,7 +454,7 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
  * @static
  */
 export async function verify({ message, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   checkCleartextOrMessage(message); verificationKeys = toArray(verificationKeys);
   if (rest.publicKeys) throw new Error('The `publicKeys` option has been removed from openpgp.verify, pass `verificationKeys` instead');
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -508,7 +508,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
  * @static
  */
 export async function generateSessionKey({ encryptionKeys, date = new Date(), encryptionUserIDs = [], config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   encryptionKeys = toArray(encryptionKeys); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error('The `publicKeys` option has been removed from openpgp.generateSessionKey, pass `encryptionKeys` instead');
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -541,7 +541,7 @@ export async function generateSessionKey({ encryptionKeys, date = new Date(), en
  * @static
  */
 export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryptionKeys, passwords, format = 'armored', wildcard = false, encryptionKeyIDs = [], date = new Date(), encryptionUserIDs = [], config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   checkBinary(data); checkString(algorithm, 'algorithm'); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionKeyIDs = toArray(encryptionKeyIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error('The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead');
@@ -571,7 +571,7 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
  * @static
  */
 export async function decryptSessionKeys({ message, decryptionKeys, passwords, date = new Date(), config, ...rest }) {
-  config = { ...defaultConfig, ...config };
+  config = { ...defaultConfig, ...config }; checkConfig(config);
   checkMessage(message); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords);
   if (rest.privateKeys) throw new Error('The `privateKeys` option has been removed from openpgp.decryptSessionKeys, pass `decryptionKeys` instead');
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -619,6 +619,17 @@ function checkCleartextOrMessage(message) {
 function checkOutputMessageFormat(format) {
   if (format !== 'armored' && format !== 'binary' && format !== 'object') {
     throw new Error(`Unsupported format ${format}`);
+  }
+}
+const defaultConfigPropsCount = Object.keys(defaultConfig).length;
+function checkConfig(config) {
+  const inputConfigProps = Object.keys(config);
+  if (inputConfigProps.length !== defaultConfigPropsCount) {
+    for (const inputProp of inputConfigProps) {
+      if (defaultConfig[inputProp] === undefined) {
+        throw new Error(`Unknown config property: ${inputProp}`);
+      }
+    }
   }
 }
 

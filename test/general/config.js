@@ -340,4 +340,12 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     const { signatures: [sig4] } = await openpgp.verify(opt4);
     await expect(sig4.verified).to.be.rejectedWith(/eddsa keys are considered too weak/);
   });
+
+  describe('detects unknown config property', async function() {
+    const invalidConfig = { invalidProp: false };
+    const fnNames = ['generateKey', 'encryptKey', 'decryptKey', 'reformatKey', 'revokeKey', 'sign', 'encrypt', 'verify', 'decrypt', 'generateSessionKey', 'encryptSessionKey', 'decryptSessionKeys'];
+    fnNames.forEach(name => it(`openpgp.${name}`, async function() {
+      await expect(openpgp[name]({ config: invalidConfig })).to.be.rejectedWith(/Unknown config property: invalidProp/);
+    }));
+  });
 });
