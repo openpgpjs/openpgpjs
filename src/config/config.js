@@ -136,10 +136,14 @@ export default {
   minBytesForWebCrypto: 1000,
   /**
    * @memberof module:config
-   * @property {Boolean} tolerant Ignore unsupported/unrecognizable packets instead of throwing an error
+   * @property {Boolean} ignoreUnsupportedPackets Ignore unsupported/unrecognizable packets on parsing instead of throwing an error
    */
-  tolerant: true,
-
+  ignoreUnsupportedPackets: true,
+  /**
+   * @memberof module:config
+   * @property {Boolean} ignoreMalformedPackets Ignore malformed packets on parsing instead of throwing an error
+   */
+  ignoreMalformedPackets: false,
   /**
    * @memberof module:config
    * @property {Boolean} showVersion Whether to include {@link module:config/config.versionString} in armored messages

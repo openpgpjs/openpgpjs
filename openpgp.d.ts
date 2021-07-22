@@ -321,7 +321,8 @@ interface Config {
   minRSABits: number;
   passwordCollisionCheck: boolean;
   revocationsExpire: boolean;
-  tolerant: boolean;
+  ignoreUnsupportedPackets: boolean;
+  ignoreMalformedPackets: boolean;
   versionString: string;
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;

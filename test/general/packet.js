@@ -950,7 +950,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   });
 
   describe('PacketList parsing', function () {
-    it('Ignores unknown packet version with tolerant mode enabled', async function() {
+    it('Ignores unknown packet version with `config.ignoreUnsupportedPackets` enabled', async function() {
       const armoredSignature = `-----BEGIN PGP SIGNATURE-----
 
 iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
@@ -968,11 +968,11 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       signaturePacket.signatureData[0] = 1;
       packets.push(signaturePacket);
       const bytes = packets.write();
-      const parsed = await openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, tolerant: true });
+      const parsed = await openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true });
       expect(parsed.length).to.equal(0);
     });
 
-    it('Throws on unknown packet version with tolerant mode disabled', async function() {
+    it('Throws on unknown packet version with `config.ignoreUnsupportedPackets` disabled', async function() {
       const armoredSignature = `-----BEGIN PGP SIGNATURE-----
 
 iQFKBAEBCgA0FiEEdOyNPagqedqiXfEMa6Ve2Dq64bsFAlszXwQWHHRlc3Qtd2tk
@@ -991,7 +991,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       packets.push(signaturePacket);
       const bytes = packets.write();
       await expect(
-        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, tolerant: false })
+        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false })
       ).to.be.rejectedWith(/Version 1 of the signature packet is unsupported/);
     });
 
@@ -999,20 +999,19 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       const packets = new openpgp.PacketList();
       packets.push(new openpgp.LiteralDataPacket());
       const bytes = packets.write();
-      await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: false })).to.be.rejectedWith(/Packet not allowed in this context/);
-      await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, tolerant: true })).to.be.rejectedWith(/Packet not allowed in this context/);
+      await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, ignoreUnsupportedPackets: false, ignoreMalformedPackets: false })).to.be.rejectedWith(/Packet not allowed in this context/);
+      await expect(openpgp.PacketList.fromBinary(bytes, {}, { ...openpgp.config, ignoreUnsupportedPackets: true, ignoreMalformedPackets: true })).to.be.rejectedWith(/Packet not allowed in this context/);
     });
 
-    it('Throws on parsing errors even with tolerant mode enabled', async function () {
+    it('Throws on parsing errors `config.ignoreMalformedPackets` disabled', async function () {
       const packets = new openpgp.PacketList();
       packets.push(openpgp.UserIDPacket.fromObject({ name:'test', email:'test@a.it' }));
       const bytes = packets.write();
       await expect(
-        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, tolerant: false })
+        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, ignoreMalformedPackets: false })
       ).to.be.rejectedWith(/User ID string is too long/);
-      await expect(
-        openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, tolerant: true })
-      ).to.be.rejectedWith(/User ID string is too long/);
+      const parsed = await openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, ignoreMalformedPackets: true });
+      expect(parsed.length).to.equal(0);
     });
   });
 });

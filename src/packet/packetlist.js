@@ -82,8 +82,9 @@ class PacketList extends Array {
               await packet.read(parsed.packet, config);
               await writer.write(packet);
             } catch (e) {
-              const isTolerableError = config.tolerant && e instanceof UnsupportedError;
-              if (!isTolerableError || supportsStreaming(parsed.tag)) {
+              const throwUnsupportedError = !config.ignoreUnsupportedPackets && e instanceof UnsupportedError;
+              const throwMalformedError = !config.ignoreMalformedPackets && !(e instanceof UnsupportedError);
+              if (throwUnsupportedError || throwMalformedError || supportsStreaming(parsed.tag)) {
                 // The packets that support streaming are the ones that contain message data.
                 // Those are also the ones we want to be more strict about and throw on parse errors
                 // (since we likely cannot process the message without these packets anyway).
