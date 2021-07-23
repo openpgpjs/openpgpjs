@@ -326,6 +326,16 @@ interface Config {
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;
   v5Keys: boolean;
+  preferredAEADAlgorithm: enums.aead;
+  aeadChunkSizeByte: number;
+  s2kIterationCountByte: number;
+  minBytesForWebCrypto: number;
+  maxUserIDLength: number;
+  knownNotations: string[];
+  useIndutnyElliptic: boolean;
+  rejectHashAlgorithms: Set<enums.hash>;
+  rejectMessageHashAlgorithms: Set<enums.hash>;
+  rejectPublicKeyAlgorithms: Set<enums.publicKey>;
 }
 export var config: Config;
 
