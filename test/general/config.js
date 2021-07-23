@@ -8,11 +8,11 @@ module.exports = () => describe('Custom configuration', function() {
     const message = await openpgp.readMessage({ armoredMessage });
     message.packets.findPacket(openpgp.SymEncryptedSessionKeyPacket.tag).version = 1; // unsupported SKESK version
 
-    const config = { tolerant: true };
+    const config = { ignoreUnsupportedPackets: true };
     const parsedMessage = await openpgp.readMessage({ armoredMessage: message.armor(), config });
     expect(parsedMessage.packets.length).to.equal(1);
 
-    config.tolerant = false;
+    config.ignoreUnsupportedPackets = false;
     await expect(
       openpgp.readMessage({ armoredMessage: message.armor(), config })
     ).to.be.rejectedWith(/Version 1 of the SKESK packet is unsupported/);
@@ -30,11 +30,11 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     const signature = await openpgp.readSignature({ armoredSignature });
     signature.packets[0].signatureData[0] = 1; // set unsupported signature version
 
-    const config = { tolerant: true };
+    const config = { ignoreUnsupportedPackets: true };
     const parsedSignature = await openpgp.readSignature({ armoredSignature: signature.armor(), config });
     expect(parsedSignature.packets.length).to.equal(0);
 
-    config.tolerant = false;
+    config.ignoreUnsupportedPackets = false;
     await expect(
       openpgp.readSignature({ armoredSignature: signature.armor(), config })
     ).to.be.rejectedWith(/Version 1 of the signature packet is unsupported/);
@@ -43,10 +43,10 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
   it('openpgp.readKey', async function() {
     const { privateKey: armoredKey } = await openpgp.generateKey({ userIDs:[{ name:'test', email:'test@a.it' }] });
     await expect(
-      openpgp.readKey({ armoredKey, config: { tolerant: false, maxUserIDLength: 2 } })
+      openpgp.readKey({ armoredKey, config: { ignoreUnsupportedPackets: false, maxUserIDLength: 2 } })
     ).to.be.rejectedWith(/User ID string is too long/);
     await expect(
-      openpgp.readKey({ armoredKey, config: { tolerant: true, maxUserIDLength: 2 } })
+      openpgp.readKey({ armoredKey, config: { ignoreUnsupportedPackets: true, maxUserIDLength: 2 } })
     ).to.be.rejectedWith(/User ID string is too long/);
   });
 
