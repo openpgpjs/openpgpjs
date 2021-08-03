@@ -81,7 +81,8 @@ async function cloneKeyPacket(key) {
 }
 
 async function generatePrivateKeyObject(options) {
-  const { privateKey } = await openpgp.generateKey({ ...options, userIDs: [{ name: 'Test', email: 'test@test.com' }], format: 'object' });
+  const config = { rejectCurves: new Set() };
+  const { privateKey } = await openpgp.generateKey({ ...options, userIDs: [{ name: 'Test', email: 'test@test.com' }], format: 'object', config });
   return privateKey;
 }
 

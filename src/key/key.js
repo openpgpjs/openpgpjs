@@ -254,7 +254,7 @@ class Key {
           await helper.getLatestValidSignature(
             [bindingSignature.embeddedSignature], subkey.keyPacket, enums.signature.keyBinding, dataToVerify, date, config
           );
-          helper.checkKeyStrength(subkey.keyPacket, config);
+          helper.checkKeyRequirements(subkey.keyPacket, config);
           return subkey;
         } catch (e) {
           exception = e;
@@ -266,7 +266,7 @@ class Key {
       const primaryUser = await this.getPrimaryUser(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
           helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
-        helper.checkKeyStrength(primaryKey, config);
+        helper.checkKeyRequirements(primaryKey, config);
         return this;
       }
     } catch (e) {
@@ -298,7 +298,7 @@ class Key {
           const dataToVerify = { key: primaryKey, bind: subkey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
           if (helper.isValidEncryptionKeyPacket(subkey.keyPacket, bindingSignature)) {
-            helper.checkKeyStrength(subkey.keyPacket, config);
+            helper.checkKeyRequirements(subkey.keyPacket, config);
             return subkey;
           }
         } catch (e) {
@@ -312,7 +312,7 @@ class Key {
       const primaryUser = await this.getPrimaryUser(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
           helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
-        helper.checkKeyStrength(primaryKey, config);
+        helper.checkKeyRequirements(primaryKey, config);
         return this;
       }
     } catch (e) {

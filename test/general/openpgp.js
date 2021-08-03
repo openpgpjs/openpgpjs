@@ -3724,10 +3724,11 @@ amnR6g==
       const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
       curves.forEach(curve => {
         it(`sign/verify with ${curve}`, async function() {
+          const config = { rejectCurves: new Set() };
           const plaintext = 'short message';
-          const { privateKey: key } = await openpgp.generateKey({ curve, userIDs: { name: 'Alice', email: 'info@alice.com' }, format: 'object' });
-          const signed = await openpgp.sign({ signingKeys:[key], message: await openpgp.createCleartextMessage({ text: plaintext }) });
-          const verified = await openpgp.verify({ verificationKeys:[key], message: await openpgp.readCleartextMessage({ cleartextMessage: signed }) });
+          const { privateKey: key } = await openpgp.generateKey({ curve, userIDs: { name: 'Alice', email: 'info@alice.com' }, format: 'object', config });
+          const signed = await openpgp.sign({ signingKeys:[key], message: await openpgp.createCleartextMessage({ text: plaintext }), config });
+          const verified = await openpgp.verify({ verificationKeys:[key], message: await openpgp.readCleartextMessage({ cleartextMessage: signed }), config });
           expect(await verified.signatures[0].verified).to.be.true;
         });
       });

@@ -10,12 +10,23 @@ const input = require('./testInputs.js');
 const expect = chai.expect;
 
 module.exports = () => (openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
-  //only x25519 crypto is fully functional in lightbuild
-  if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
-    before(function() {
+  let rejectCurvesVal;
+  before(function() {
+    //only x25519 crypto is fully functional in lightbuild
+    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
       this.skip(); // eslint-disable-line no-invalid-this
-    });
-  }
+    }
+  });
+
+  beforeEach(function () {
+    rejectCurvesVal = openpgp.config.rejectCurves;
+    openpgp.config.rejectCurves = new Set();
+  });
+
+  afterEach(function () {
+    openpgp.config.rejectCurves = rejectCurvesVal;
+  });
+
   const data = {
     romeo: {
       id: 'fa3d64c9bcf338bc',
@@ -282,39 +293,46 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
 
 function omnibus() {
   it('Omnibus BrainpoolP256r1 Test', async function() {
-    const testData = input.createSomeMessage();
-    const testData2 = input.createSomeMessage();
+    const { rejectCurves } = openpgp.config;
+    openpgp.config.rejectCurves = new Set();
 
-    const { privateKey: hi, publicKey: pubHi } = await openpgp.generateKey({ userIDs: { name: 'Hi', email: 'hi@hel.lo' }, curve: 'brainpoolP256r1', format: 'object' });
-    const { privateKey: bye, publicKey: pubBye } = await openpgp.generateKey({ userIDs: { name: 'Bye', email: 'bye@good.bye' }, curve: 'brainpoolP256r1', format: 'object' });
+    try {
+      const testData = input.createSomeMessage();
+      const testData2 = input.createSomeMessage();
 
-    const cleartextMessage = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: hi });
-    await openpgp.verify({
-      message: await openpgp.readCleartextMessage({ cleartextMessage }),
-      verificationKeys: pubHi
-    }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
-    // Verifying detached signature
-    await openpgp.verify({
-      message: await openpgp.createMessage({ text: util.removeTrailingSpaces(testData) }),
-      verificationKeys: pubHi,
-      signature: (await openpgp.readCleartextMessage({ cleartextMessage })).signature
-    }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
+      const { privateKey: hi, publicKey: pubHi } = await openpgp.generateKey({ userIDs: { name: 'Hi', email: 'hi@hel.lo' }, curve: 'brainpoolP256r1', format: 'object' });
+      const { privateKey: bye, publicKey: pubBye } = await openpgp.generateKey({ userIDs: { name: 'Bye', email: 'bye@good.bye' }, curve: 'brainpoolP256r1', format: 'object' });
 
-    // Encrypting and signing
-    const encrypted = await openpgp.encrypt({
-      message: await openpgp.createMessage({ text: testData2 }),
-      encryptionKeys: [pubBye],
-      signingKeys: [hi]
-    });
-    // Decrypting and verifying
-    return openpgp.decrypt({
-      message: await openpgp.readMessage({ armoredMessage: encrypted }),
-      decryptionKeys: bye,
-      verificationKeys: [pubHi]
-    }).then(async output => {
-      expect(output.data).to.equal(testData2);
-      await expect(output.signatures[0].verified).to.eventually.be.true;
-    });
+      const cleartextMessage = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: testData }), signingKeys: hi });
+      await openpgp.verify({
+        message: await openpgp.readCleartextMessage({ cleartextMessage }),
+        verificationKeys: pubHi
+      }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
+      // Verifying detached signature
+      await openpgp.verify({
+        message: await openpgp.createMessage({ text: util.removeTrailingSpaces(testData) }),
+        verificationKeys: pubHi,
+        signature: (await openpgp.readCleartextMessage({ cleartextMessage })).signature
+      }).then(output => expect(output.signatures[0].verified).to.eventually.be.true);
+
+      // Encrypting and signing
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: testData2 }),
+        encryptionKeys: [pubBye],
+        signingKeys: [hi]
+      });
+      // Decrypting and verifying
+      return openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: encrypted }),
+        decryptionKeys: bye,
+        verificationKeys: [pubHi]
+      }).then(async output => {
+        expect(output.data).to.equal(testData2);
+        await expect(output.signatures[0].verified).to.eventually.be.true;
+      });
+    } finally {
+      openpgp.config.rejectCurves = rejectCurves;
+    }
   });
 }
 

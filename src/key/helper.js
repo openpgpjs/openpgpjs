@@ -391,13 +391,35 @@ export function isValidDecryptionKeyPacket(signature, config) {
     (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
 }
 
-export function checkKeyStrength(keyPacket, config) {
+/**
+ * Check key against blacklisted algorithms and minimum strength requirements.
+ * @param {SecretKeyPacket|PublicKeyPacket|
+ *        SecretSubkeyPacket|PublicSubkeyPacket} keyPacket
+ * @param {Config} config
+ * @throws {Error} if the key packet does not meet the requirements
+ */
+export function checkKeyRequirements(keyPacket, config) {
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
   if (config.rejectPublicKeyAlgorithms.has(keyAlgo)) {
     throw new Error(`${keyPacket.algorithm} keys are considered too weak.`);
   }
-  const rsaAlgos = new Set([enums.publicKey.rsaEncryptSign, enums.publicKey.rsaSign, enums.publicKey.rsaEncrypt]);
-  if (rsaAlgos.has(keyAlgo) && util.uint8ArrayBitLength(keyPacket.publicParams.n) < config.minRSABits) {
-    throw new Error(`RSA keys shorter than ${config.minRSABits} bits are considered too weak.`);
+  const algoInfo = keyPacket.getAlgorithmInfo();
+  switch (keyAlgo) {
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaSign:
+    case enums.publicKey.rsaEncrypt:
+      if (algoInfo.bits < config.minRSABits) {
+        throw new Error(`RSA keys shorter than ${config.minRSABits} bits are considered too weak.`);
+      }
+      break;
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsa:
+    case enums.publicKey.ecdh:
+      if (config.rejectCurves.has(algoInfo.curve)) {
+        throw new Error(`Support for ${keyPacket.algorithm} keys using curve ${algoInfo.curve} is disabled.`);
+      }
+      break;
+    default:
+      break;
   }
 }
