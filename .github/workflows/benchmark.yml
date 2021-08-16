@@ -1,0 +1,42 @@
+name: Performance Regression Check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  benchmark:
+    name: Time benchmark
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '15'
+
+      - name: Run benchmark
+        run: npm install && node benchmarks/benchmark.js | tee output.txt
+
+      - name: Download previous benchmark data
+        uses: actions/cache@v1
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+
+      - name: Store benchmark result
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          tool: 'benchmarkjs'
+          output-file-path: output.txt
+          external-data-json-path: ./cache/benchmark-data.json
+          save-data-file: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          alert-threshold: '30%'
+          fail-threshold: '100%'
+          comment-on-alert: true
+          fail-on-alert: true
+          alert-comment-cc-users: '@larabr'

@@ -63,6 +63,7 @@
     "@rollup/plugin-replace": "^2.3.2",
     "@types/chai": "^4.2.14",
     "babel-eslint": "^10.1.0",
+    "benchmark": "^2.1.4",
     "bn.js": "^4.11.8",
     "chai": "^4.1.2",
     "chai-as-promised": "^7.1.1",
