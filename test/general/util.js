@@ -115,12 +115,12 @@ module.exports = () => describe('Util unit tests', function() {
       const data = 'test@xn--wgv.xn--q9jyb4c';
       expect(util.isEmailAddress(data)).to.be.true;
     });
-    it('should return false for invalid email address', function() {
-      const data = 'Test User <test@example.com>';
-      expect(util.isEmailAddress(data)).to.be.false;
+    it('should return true for valid email address', function() {
+      const data = 'test@localhost';
+      expect(util.isEmailAddress(data)).to.be.true;
     });
     it('should return false for invalid email address', function() {
-      const data = 'test@examplecom';
+      const data = 'Test User <test@example.com>';
       expect(util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for invalid email address', function() {
