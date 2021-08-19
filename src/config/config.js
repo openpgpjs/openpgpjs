@@ -104,10 +104,12 @@ export default {
    */
   checksumRequired: false,
   /**
+   * Minimum RSA key size allowed for key generation and message signing, verification and encryption.
+   * The default is 2047 since due to a bug, previous versions of OpenPGP.js could generate 2047-bit keys instead of 2048-bit ones.
    * @memberof module:config
-   * @property {Number} minRSABits Minimum RSA key size allowed for key generation and message signing, verification and encryption
+   * @property {Number} minRSABits
    */
-  minRSABits: 2048,
+  minRSABits: 2047,
   /**
    * Work-around for rare GPG decryption bug when encrypting with multiple passwords.
    * **Slower and slightly less secure**
