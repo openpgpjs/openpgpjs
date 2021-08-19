@@ -321,6 +321,8 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
  *         }, ...
  *       ]
  *     }
+ *
+ *     where `signatures` contains a separate entry for each signature packet found in the input message.
  * @async
  * @static
  */
@@ -450,6 +452,8 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
  *         }, ...
  *       ]
  *     }
+ *
+ *     where `signatures` contains a separate entry for each signature packet found in the input message.
  * @async
  * @static
  */
