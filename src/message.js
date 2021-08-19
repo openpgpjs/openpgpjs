@@ -768,7 +768,7 @@ async function createVerificationObject(signature, literalDataList, verification
  *   keyID: module:type/keyid~KeyID,
  *   signature: Promise<Signature>,
  *   verified: Promise<true>
- * }>>} list of signer's keyID and validity of signatures
+ * }>>} list of signer's keyID and validity of signatures (one entry per signature packet in input)
  * @async
  * @private
  */
