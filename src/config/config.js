@@ -179,7 +179,7 @@ export default {
    */
   knownNotations: ['preferred-email-encoding@pgp.com', 'pka-address@gnupg.org'],
   /**
-   * Whether to use the indutny/elliptic library for NIST and Brainpool curves that are not supported by the available native crypto library.
+   * Whether to use the indutny/elliptic library for curves (other than Curve25519) that are not supported by the available native crypto API.
    * When false, certain standard curves will not be supported (depending on the platform).
    * Note: the indutny/elliptic curve library is not designed to be constant time.
    * @memberof module:config
