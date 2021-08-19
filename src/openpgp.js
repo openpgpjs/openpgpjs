@@ -69,7 +69,7 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
 
   try {
     const { key, revocationCertificate } = await generate(options, config);
-    checkKeyRequirements(key.keyPacket, config);
+    key.getKeys().forEach(({ keyPacket }) => checkKeyRequirements(keyPacket, config));
 
     return {
       privateKey: formatObject(key, format, config),

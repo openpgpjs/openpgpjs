@@ -12,6 +12,17 @@ module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve
       this.skip(); // eslint-disable-line no-invalid-this
     });
   }
+
+  let rejectCurvesVal;
+  beforeEach(() => {
+    rejectCurvesVal = openpgp.config.rejectCurves;
+    openpgp.config.rejectCurves = new Set();
+  });
+
+  afterEach(() => {
+    openpgp.config.rejectCurves = rejectCurvesVal;
+  });
+
   const data = {
     romeo: {
       id: 'c2b12389b401a43d',
