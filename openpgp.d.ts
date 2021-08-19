@@ -337,6 +337,7 @@ interface Config {
   rejectHashAlgorithms: Set<enums.hash>;
   rejectMessageHashAlgorithms: Set<enums.hash>;
   rejectPublicKeyAlgorithms: Set<enums.publicKey>;
+  rejectCurves: Set<enums.curve>;
 }
 export var config: Config;
 
@@ -812,6 +813,18 @@ export namespace enums {
     eddsa = 22,
     aedh = 23,
     aedsa = 24,
+  }
+
+  enum curve {
+    p256 = 'p256',
+    p384 = 'p384',
+    p521 = 'p521',
+    ed25519 = 'ed25519',
+    curve25519 = 'curve25519',
+    secp256k1 = 'secp256k1',
+    brainpoolP256r1 = 'brainpoolP256r1',
+    brainpoolP384r1 = 'brainpoolP384r1',
+    brainpoolP512r1 = 'brainpoolP512r1'
   }
 
   export type symmetricNames = 'plaintext' | 'idea' | 'tripledes' | 'cast5' | 'blowfish' | 'aes128' | 'aes192' | 'aes256' | 'twofish';
