@@ -383,11 +383,13 @@ function tests() {
     });
 
     try {
+      const config = { rejectCurves: new Set() };
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
         encryptionKeys: pub,
         signingKeys: priv,
-        format: 'binary'
+        format: 'binary',
+        config
       });
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
@@ -396,7 +398,8 @@ function tests() {
         verificationKeys: pub,
         decryptionKeys: priv,
         message,
-        format: 'binary'
+        format: 'binary',
+        config
       });
       expect(stream.isStream(decrypted.data)).to.equal(expectedType);
       const reader = stream.getReader(decrypted.data);
@@ -706,11 +709,13 @@ function tests() {
       privateKey: await openpgp.readKey({ armoredKey: brainpoolPriv }),
       passphrase: brainpoolPass
     });
+    const config = { rejectCurves: new Set() };
 
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
       signingKeys: priv,
-      detached: true
+      detached: true,
+      config
     });
     expect(stream.isStream(signed)).to.equal(expectedType);
     const armoredSignature = await stream.readToEnd(signed);
@@ -718,7 +723,8 @@ function tests() {
     const verified = await openpgp.verify({
       signature,
       verificationKeys: pub,
-      message: await openpgp.createMessage({ text: 'hello world' })
+      message: await openpgp.createMessage({ text: 'hello world' }),
+      config
     });
     expect(verified.data).to.equal('hello world');
     expect(verified.signatures).to.exist.and.have.length(1);

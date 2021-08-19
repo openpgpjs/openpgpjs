@@ -230,6 +230,15 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
       await expect(openpgp.encrypt({
         message, encryptionKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.ecdh]) }
       })).to.be.eventually.rejectedWith(/ecdh keys are considered too weak/);
+
+      await expect(openpgp.encrypt({
+        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.curve25519]) }
+      })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519 is disabled/);
+
+      const echdEncrypted = await openpgp.encrypt({
+        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519]) }
+      });
+      expect(echdEncrypted).to.match(/---BEGIN PGP MESSAGE---/);
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
@@ -295,6 +304,9 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     await expect(openpgp.sign({
       message, signingKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
     })).to.be.eventually.rejectedWith(/eddsa keys are considered too weak/);
+    await expect(openpgp.sign({
+      message, signingKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519]) }
+    })).to.be.eventually.rejectedWith(/Support for eddsa keys using curve ed25519 is disabled/);
   });
 
   it('openpgp.verify', async function() {
@@ -339,6 +351,14 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     };
     const { signatures: [sig4] } = await openpgp.verify(opt4);
     await expect(sig4.verified).to.be.rejectedWith(/eddsa keys are considered too weak/);
+
+    const opt5 = {
+      message: await openpgp.readMessage({ armoredMessage: signed }),
+      verificationKeys: [key],
+      config: { rejectCurves: new Set([openpgp.enums.curve.ed25519]) }
+    };
+    const { signatures: [sig5] } = await openpgp.verify(opt5);
+    await expect(sig5.verified).to.be.eventually.rejectedWith(/Support for eddsa keys using curve ed25519 is disabled/);
   });
 
   describe('detects unknown config property', async function() {

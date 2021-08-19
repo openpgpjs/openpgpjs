@@ -21,6 +21,7 @@ import { CleartextMessage } from './cleartext';
 import { generate, reformat, getPreferredAlgo } from './key';
 import defaultConfig from './config';
 import util from './util';
+import { checkKeyRequirements } from './key/helper';
 
 
 //////////////////////
@@ -63,10 +64,12 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
   if (type === 'rsa' && rsaBits < config.minRSABits) {
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
   }
+
   const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
 
   try {
     const { key, revocationCertificate } = await generate(options, config);
+    key.getKeys().forEach(({ keyPacket }) => checkKeyRequirements(keyPacket, config));
 
     return {
       privateKey: formatObject(key, format, config),

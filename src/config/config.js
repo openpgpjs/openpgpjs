@@ -181,8 +181,11 @@ export default {
    */
   knownNotations: ['preferred-email-encoding@pgp.com', 'pka-address@gnupg.org'],
   /**
+   * Whether to use the indutny/elliptic library for curves (other than Curve25519) that are not supported by the available native crypto API.
+   * When false, certain standard curves will not be supported (depending on the platform).
+   * Note: the indutny/elliptic curve library is not designed to be constant time.
    * @memberof module:config
-   * @property {Boolean} useIndutnyElliptic Whether to use the indutny/elliptic library. When false, certain curves will not be supported.
+   * @property {Boolean} useIndutnyElliptic
    */
   useIndutnyElliptic: true,
   /**
@@ -198,9 +201,15 @@ export default {
    */
   rejectMessageHashAlgorithms: new Set([enums.hash.md5, enums.hash.ripemd, enums.hash.sha1]),
   /**
-   * Reject insecure public key algorithms for message encryption, signing or verification
+   * Reject insecure public key algorithms for key generation and message encryption, signing or verification
    * @memberof module:config
    * @property {Set<Integer>} rejectPublicKeyAlgorithms {@link module:enums.publicKey}
    */
-  rejectPublicKeyAlgorithms: new Set([enums.publicKey.elgamal, enums.publicKey.dsa])
+  rejectPublicKeyAlgorithms: new Set([enums.publicKey.elgamal, enums.publicKey.dsa]),
+  /**
+   * Reject non-standard curves for key generation, message encryption, signing or verification
+   * @memberof module:config
+   * @property {Set<String>} rejectCurves {@link module:enums.curve}
+   */
+  rejectCurves: new Set([enums.curve.brainpoolP256r1, enums.curve.brainpoolP384r1, enums.curve.brainpoolP512r1, enums.curve.secp256k1])
 };
