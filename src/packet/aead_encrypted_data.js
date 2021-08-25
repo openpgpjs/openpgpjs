@@ -134,9 +134,8 @@ class AEADEncryptedDataPacket {
    * @async
    */
   async crypt(fn, key, data) {
-    const cipherName = enums.read(enums.symmetric, this.cipherAlgorithm);
     const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgorithm)];
-    const modeInstance = await mode(cipherName, key);
+    const modeInstance = await mode(this.cipherAlgorithm, key);
     const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
     const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;
     const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))

@@ -1,7 +1,7 @@
 // Modified by ProtonTech AG
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
-
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const OCB = require('../../src/crypto/mode/ocb');
 const util = require('../../src/util');
 
@@ -115,7 +115,7 @@ module.exports = () => describe('Symmetric AES-OCB', function() {
       }
     ];
 
-    const cipher = 'aes128';
+    const cipher = openpgp.enums.symmetric.aes128;
 
     await Promise.all(vectors.map(async vec => {
       const msgBytes = util.hexToUint8Array(vec.P);
@@ -163,7 +163,8 @@ module.exports = () => describe('Symmetric AES-OCB', function() {
       const k = new Uint8Array(keylen / 8);
       k[k.length - 1] = taglen;
 
-      const ocb = await OCB('aes' + keylen, k);
+      const algo = openpgp.enums.write(openpgp.enums.symmetric, 'aes' + keylen);
+      const ocb = await OCB(algo, k);
 
       const c = [];
       let n;

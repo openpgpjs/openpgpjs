@@ -61,7 +61,7 @@ class SecretKeyPacket extends PublicKeyPacket {
      * Symmetric algorithm
      * @type {String}
      */
-    this.symmetric = null;
+    this.symmetric = null; // TODO change
     /**
      * AEAD algorithm
      * @type {String}
@@ -297,7 +297,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.s2kUsage = 253;
       this.aead = 'eax';
       const mode = crypto.mode[this.aead];
-      const modeInstance = await mode(this.symmetric, key);
+      const modeInstance = await mode(enums.write(enums.symmetric, this.symmetric), key);
       this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
     } else {
       this.s2kUsage = 254;
@@ -339,7 +339,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     if (this.s2kUsage === 253) {
       const mode = crypto.mode[this.aead];
       try {
-        const modeInstance = await mode(this.symmetric, key);
+        const modeInstance = await mode(enums.write(enums.symmetric, this.symmetric), key);
         cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
       } catch (err) {
         if (err.message === 'Authentication tag mismatch') {

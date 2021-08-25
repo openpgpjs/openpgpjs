@@ -52,12 +52,12 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
         const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'decrypt') : sinonSandbox.spy(nodeCrypto, 'createDecipheriv');
 
         nativeEncrypt || disableNative();
-        let modeInstance = await crypto.mode.gcm(algoName, key);
+        let modeInstance = await crypto.mode.gcm(algo, key);
         const ciphertext = await modeInstance.encrypt(util.stringToUint8Array(plaintext), iv);
         enableNative();
 
         nativeDecrypt || disableNative();
-        modeInstance = await crypto.mode.gcm(algoName, key);
+        modeInstance = await crypto.mode.gcm(algo, key);
         const decrypted = await modeInstance.decrypt(util.stringToUint8Array(util.uint8ArrayToString(ciphertext)), iv);
         enableNative();
 
