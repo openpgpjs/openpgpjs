@@ -51,6 +51,10 @@ class PublicKeyEncryptedSessionKeyPacket {
     this.publicKeyAlgorithm = null;
 
     this.sessionKey = null;
+    /**
+     * Algorithm to encrypt the message with
+     * @type {enums.symmetric}
+     */
     this.sessionKeyAlgorithm = null;
 
     /** @type {Object} */
@@ -68,10 +72,8 @@ class PublicKeyEncryptedSessionKeyPacket {
       throw new UnsupportedError(`Version ${this.version} of the PKESK packet is unsupported.`);
     }
     this.publicKeyID.read(bytes.subarray(1, bytes.length));
-    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]); // TODO use integer
-
-    const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-    this.encrypted = crypto.parseEncSessionKeyParams(algo, bytes.subarray(10));
+    this.publicKeyAlgorithm = enums.write(enums.publicKey, bytes[9]);
+    this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(10));
   }
 
   /**
@@ -80,13 +82,11 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @returns {Uint8Array} The Uint8Array representation.
    */
   write() {
-    const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-
     const arr = [
       new Uint8Array([this.version]),
       this.publicKeyID.write(),
-      new Uint8Array([enums.write(enums.publicKey, this.publicKeyAlgorithm)]),
-      crypto.serializeParams(algo, this.encrypted)
+      new Uint8Array([this.publicKeyAlgorithm]),
+      crypto.serializeParams(this.publicKeyAlgorithm, this.encrypted)
     ];
 
     return util.concatUint8Array(arr);
@@ -117,20 +117,18 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @async
    */
   async decrypt(key) {
-    const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-    const keyAlgo = enums.write(enums.publicKey, key.algorithm);
     // check that session key algo matches the secret key algo
-    if (algo !== keyAlgo) {
+    if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
     }
-    const decoded = await crypto.publicKeyDecrypt(algo, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes());
+    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes());
     const checksum = decoded.subarray(decoded.length - 2);
     const sessionKey = decoded.subarray(1, decoded.length - 2);
     if (!util.equalsUint8Array(checksum, util.writeChecksum(sessionKey))) {
       throw new Error('Decryption error');
     } else {
       this.sessionKey = sessionKey;
-      this.sessionKeyAlgorithm = enums.read(enums.symmetric, decoded[0]);
+      this.sessionKeyAlgorithm = enums.write(enums.symmetric, decoded[0]);
     }
   }
 }

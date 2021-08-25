@@ -348,7 +348,8 @@ export async function validateParams(algo, publicParams, privateParams) {
  * @async
  */
 export async function getPrefixRandom(algo) {
-  const prefixrandom = await getRandomBytes(cipher[algo].blockSize);
+  const algoName = enums.read(enums.symmetric, algo);
+  const prefixrandom = await getRandomBytes(cipher[algoName].blockSize);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   return util.concat([prefixrandom, repeat]);
 }
@@ -361,5 +362,6 @@ export async function getPrefixRandom(algo) {
  * @async
  */
 export function generateSessionKey(algo) {
-  return getRandomBytes(cipher[algo].keySize);
+  const algoName = enums.read(enums.symmetric, algo);
+  return getRandomBytes(cipher[algoName].keySize);
 }

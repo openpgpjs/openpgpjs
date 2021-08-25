@@ -77,7 +77,7 @@ async function CTR(key) {
  * @param {String} cipher - The symmetric cipher algorithm to use e.g. 'aes128'
  * @param {Uint8Array} key - The encryption key
  */
-async function EAX(cipher, key) {
+async function EAX(cipher, key) { // TODO take integer
   if (cipher.substr(0, 3) !== 'aes') {
     throw new Error('EAX mode supports only AES cipher');
   }

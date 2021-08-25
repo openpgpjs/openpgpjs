@@ -52,9 +52,10 @@ class AEADEncryptedDataPacket {
 
   constructor() {
     this.version = VERSION;
-    this.cipherAlgo = null;
-    this.aeadAlgorithm = 'eax';
-    this.aeadAlgo = null;
+    /** @type {enums.symmetric} */
+    this.cipherAlgorithm = null;
+    /** @type {enums.aead} */
+    this.aeadAlgorithm = enums.aead.eax;
     this.chunkSizeByte = null;
     this.iv = null;
     this.encrypted = null;
@@ -64,6 +65,7 @@ class AEADEncryptedDataPacket {
   /**
    * Parse an encrypted payload of bytes in the order: version, IV, ciphertext (see specification)
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
+   * @throws {Error} on parsing failure
    */
   async read(bytes) {
     await stream.parse(bytes, async reader => {
@@ -71,10 +73,11 @@ class AEADEncryptedDataPacket {
       if (version !== VERSION) { // The only currently defined value is 1.
         throw new UnsupportedError(`Version ${version} of the AEAD-encrypted data packet is not supported.`);
       }
-      this.cipherAlgo = await reader.readByte();
-      this.aeadAlgo = await reader.readByte();
+      this.cipherAlgorithm = enums.write(enums.symmetric, await reader.readByte());
+      this.aeadAlgorithm = enums.write(enums.aead, await reader.readByte());
       this.chunkSizeByte = await reader.readByte();
-      const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
+
+      const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgorithm)];
       this.iv = await reader.readBytes(mode.ivLength);
       this.encrypted = reader.remainder();
     });
@@ -85,12 +88,12 @@ class AEADEncryptedDataPacket {
    * @returns {Uint8Array | ReadableStream<Uint8Array>} The encrypted payload.
    */
   write() {
-    return util.concat([new Uint8Array([this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte]), this.iv, this.encrypted]);
+    return util.concat([new Uint8Array([this.version, this.cipherAlgorithm, this.aeadAlgorithm, this.chunkSizeByte]), this.iv, this.encrypted]);
   }
 
   /**
    * Decrypt the encrypted payload.
-   * @param {String} sessionKeyAlgorithm - The session key's cipher algorithm e.g. 'aes128'
+   * @param {enums.symmetric} sessionKeyAlgorithm - The session key's cipher algorithm
    * @param {Uint8Array} key - The session key used to encrypt the payload
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if decryption was not successful
@@ -105,17 +108,17 @@ class AEADEncryptedDataPacket {
   }
 
   /**
-   * Encrypt the packet list payload.
-   * @param {String} sessionKeyAlgorithm - The session key's cipher algorithm e.g. 'aes128'
+   * Encrypt the packet payload.
+   * @param {enums.symmetric} sessionKeyAlgorithm - The session key's cipher algorithm
    * @param {Uint8Array} key - The session key used to encrypt the payload
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
-    this.cipherAlgo = enums.write(enums.symmetric, sessionKeyAlgorithm);
-    this.aeadAlgo = enums.write(enums.aead, this.aeadAlgorithm);
-    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
+    this.cipherAlgorithm = sessionKeyAlgorithm;
+    const aeadAlgoName = enums.read(enums.aead, this.aeadAlgorithm);
+    const mode = crypto.mode[aeadAlgoName];
     this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
     this.chunkSizeByte = config.aeadChunkSizeByte;
     const data = this.packets.write();
@@ -131,9 +134,9 @@ class AEADEncryptedDataPacket {
    * @async
    */
   async crypt(fn, key, data) {
-    const cipher = enums.read(enums.symmetric, this.cipherAlgo);
-    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgo)];
-    const modeInstance = await mode(cipher, key);
+    const cipherName = enums.read(enums.symmetric, this.cipherAlgorithm);
+    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgorithm)];
+    const modeInstance = await mode(cipherName, key);
     const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
     const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;
     const chunkSize = 2 ** (this.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
@@ -142,7 +145,7 @@ class AEADEncryptedDataPacket {
     const adataTagArray = new Uint8Array(adataBuffer);
     const adataView = new DataView(adataBuffer);
     const chunkIndexArray = new Uint8Array(adataBuffer, 5, 8);
-    adataArray.set([0xC0 | AEADEncryptedDataPacket.tag, this.version, this.cipherAlgo, this.aeadAlgo, this.chunkSizeByte], 0);
+    adataArray.set([0xC0 | AEADEncryptedDataPacket.tag, this.version, this.cipherAlgorithm, this.aeadAlgorithm, this.chunkSizeByte], 0);
     let chunkIndex = 0;
     let latestPromise = Promise.resolve();
     let cryptedBytes = 0;

@@ -147,7 +147,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
 
 /**
  * Returns the preferred symmetric/aead/compression algorithm for a set of keys
- * @param {symmetric|aead|compression} type - Type of preference to return
+ * @param {'symmetric'|'aead'|'compression'} type - Type of preference to return
  * @param {Array<Key>} [keys] - Set of keys
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Array} [userIDs] - User IDs

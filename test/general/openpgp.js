@@ -2307,7 +2307,7 @@ aOU=
 
         it('should encrypt using custom session key and decrypt using session key', async function () {
           const sessionKey = {
-            data: await crypto.generateSessionKey('aes256'),
+            data: await crypto.generateSessionKey(openpgp.enums.symmetric.aes256),
             algorithm: 'aes256'
           };
           const encOpt = {
@@ -2330,7 +2330,7 @@ aOU=
 
         it('should encrypt using custom session key and decrypt using private key', async function () {
           const sessionKey = {
-            data: await crypto.generateSessionKey('aes128'),
+            data: await crypto.generateSessionKey(openpgp.enums.symmetric.aes128),
             algorithm: 'aes128'
           };
           const encOpt = {

@@ -34,16 +34,17 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
   };
 
   function testAESGCM(plaintext, nativeEncrypt, nativeDecrypt) {
-    const aesAlgos = Object.keys(openpgp.enums.symmetric).filter(
+    const aesAlgoNames = Object.keys(openpgp.enums.symmetric).filter(
       algo => algo.substr(0,3) === 'aes'
     );
-    aesAlgos.forEach(function(algo) {
-      it(algo, async function() {
+    aesAlgoNames.forEach(function(algoName) {
+      it(algoName, async function() {
         const nodeCrypto = util.getNodeCrypto();
         const webCrypto = util.getWebCrypto();
         if (!nodeCrypto && !webCrypto) {
           this.skip(); // eslint-disable-line no-invalid-this
         }
+        const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const key = await crypto.generateSessionKey(algo);
         const iv = await crypto.random.getRandomBytes(crypto.mode.gcm.ivLength);
 
@@ -51,19 +52,19 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
         const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'decrypt') : sinonSandbox.spy(nodeCrypto, 'createDecipheriv');
 
         nativeEncrypt || disableNative();
-        let modeInstance = await crypto.mode.gcm(algo, key);
+        let modeInstance = await crypto.mode.gcm(algoName, key);
         const ciphertext = await modeInstance.encrypt(util.stringToUint8Array(plaintext), iv);
         enableNative();
 
         nativeDecrypt || disableNative();
-        modeInstance = await crypto.mode.gcm(algo, key);
+        modeInstance = await crypto.mode.gcm(algoName, key);
         const decrypted = await modeInstance.decrypt(util.stringToUint8Array(util.uint8ArrayToString(ciphertext)), iv);
         enableNative();
 
         const decryptedStr = util.uint8ArrayToString(decrypted);
         expect(decryptedStr).to.equal(plaintext);
 
-        if (algo !== 'aes192') { // not implemented by webcrypto
+        if (algo !== openpgp.enums.symmetric.aes192) { // not implemented by webcrypto
           // sanity check: native crypto was indeed on/off
           expect(nativeEncryptSpy.called).to.equal(nativeEncrypt);
           expect(nativeDecryptSpy.called).to.equal(nativeDecrypt);

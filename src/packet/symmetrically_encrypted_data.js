@@ -85,11 +85,13 @@ class SymmetricallyEncryptedDataPacket {
     if (!config.allowUnauthenticatedMessages) {
       throw new Error('Message is not authenticated.');
     }
+    const algoName = enums.read(enums.symmetric, sessionKeyAlgorithm);
+    const { blockSize } = crypto.cipher[algoName];
 
     const encrypted = await stream.readToEnd(stream.clone(this.encrypted));
-    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key,
-      encrypted.subarray(crypto.cipher[sessionKeyAlgorithm].blockSize + 2),
-      encrypted.subarray(2, crypto.cipher[sessionKeyAlgorithm].blockSize + 2)
+    const decrypted = await crypto.mode.cfb.decrypt(algoName, key,
+      encrypted.subarray(blockSize + 2),
+      encrypted.subarray(2, blockSize + 2)
     );
 
     this.packets = await PacketList.fromBinary(decrypted, allowedPackets, config);
@@ -104,12 +106,14 @@ class SymmetricallyEncryptedDataPacket {
    * @throws {Error} if encryption was not successful
    * @async
    */
-  async encrypt(algo, key, config = defaultConfig) {
+  async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     const data = this.packets.write();
+    const algoName = enums.read(enums.symmetric, sessionKeyAlgorithm);
+    const { blockSize } = crypto.cipher[algoName];
 
-    const prefix = await crypto.getPrefixRandom(algo);
-    const FRE = await crypto.mode.cfb.encrypt(algo, key, prefix, new Uint8Array(crypto.cipher[algo].blockSize), config);
-    const ciphertext = await crypto.mode.cfb.encrypt(algo, key, data, FRE.subarray(2), config);
+    const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
+    const FRE = await crypto.mode.cfb.encrypt(algoName, key, prefix, new Uint8Array(blockSize), config);
+    const ciphertext = await crypto.mode.cfb.encrypt(algoName, key, data, FRE.subarray(2), config);
     this.encrypted = util.concat([FRE, ciphertext]);
   }
 }
