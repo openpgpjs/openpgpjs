@@ -301,7 +301,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
     } else {
       this.s2kUsage = 254;
-      this.keyMaterial = await crypto.mode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
+      this.keyMaterial = await crypto.mode.cfb.encrypt(enums.write(enums.symmetric, this.symmetric), key, util.concatUint8Array([
         cleartext,
         await crypto.hash.sha1(cleartext, config)
       ]), this.iv, config);
@@ -348,7 +348,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         throw err;
       }
     } else {
-      const cleartextWithHash = await crypto.mode.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
+      const cleartextWithHash = await crypto.mode.cfb.decrypt(enums.write(enums.symmetric, this.symmetric), key, this.keyMaterial, this.iv);
 
       cleartext = cleartextWithHash.subarray(0, -20);
       const hash = await crypto.hash.sha1(cleartext);

@@ -89,7 +89,7 @@ class SymmetricallyEncryptedDataPacket {
     const { blockSize } = crypto.cipher[algoName];
 
     const encrypted = await stream.readToEnd(stream.clone(this.encrypted));
-    const decrypted = await crypto.mode.cfb.decrypt(algoName, key,
+    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key,
       encrypted.subarray(blockSize + 2),
       encrypted.subarray(2, blockSize + 2)
     );
@@ -112,8 +112,8 @@ class SymmetricallyEncryptedDataPacket {
     const { blockSize } = crypto.cipher[algoName];
 
     const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
-    const FRE = await crypto.mode.cfb.encrypt(algoName, key, prefix, new Uint8Array(blockSize), config);
-    const ciphertext = await crypto.mode.cfb.encrypt(algoName, key, data, FRE.subarray(2), config);
+    const FRE = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, prefix, new Uint8Array(blockSize), config);
+    const ciphertext = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, data, FRE.subarray(2), config);
     this.encrypted = util.concat([FRE, ciphertext]);
   }
 }

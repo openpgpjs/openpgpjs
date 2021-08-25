@@ -35,7 +35,7 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
 
   function testAESGCM(plaintext, nativeEncrypt, nativeDecrypt) {
     const aesAlgoNames = Object.keys(openpgp.enums.symmetric).filter(
-      algo => algo.substr(0,3) === 'aes'
+      algoName => algoName.substr(0,3) === 'aes'
     );
     aesAlgoNames.forEach(function(algoName) {
       it(algoName, async function() {

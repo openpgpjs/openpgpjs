@@ -160,7 +160,7 @@ class SymEncryptedSessionKeyPacket {
       const modeInstance = await mode(algo, key);
       this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
     } else if (this.encrypted !== null) {
-      const decrypted = await crypto.mode.cfb.decrypt(algoName, key, this.encrypted, new Uint8Array(blockCipher.blockSize)); // TODO pass integer
+      const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(blockCipher.blockSize)); // TODO pass integer
 
       this.sessionKeyAlgorithm = enums.write(enums.symmetric, decrypted[0]);
       this.sessionKey = decrypted.subarray(1, decrypted.length);
@@ -207,7 +207,7 @@ class SymEncryptedSessionKeyPacket {
         new Uint8Array([this.sessionKeyAlgorithm]),
         this.sessionKey
       ]);
-      this.encrypted = await crypto.mode.cfb.encrypt(algoName, encryptionKey, toEncrypt, new Uint8Array(blockCipher.blockSize), config);
+      this.encrypted = await crypto.mode.cfb.encrypt(algo, encryptionKey, toEncrypt, new Uint8Array(blockCipher.blockSize), config);
     }
   }
 }
