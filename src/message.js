@@ -128,7 +128,7 @@ export class Message {
 
       try {
         const algo = enums.write(enums.symmetric, algorithmName);
-        await symEncryptedPacket.decrypt(algo, data, config); // TODO pass integer
+        await symEncryptedPacket.decrypt(algo, data, config);
       } catch (e) {
         util.printDebugError(e);
         exception = e;

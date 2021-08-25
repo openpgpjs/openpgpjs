@@ -78,7 +78,7 @@ async function CTR(key) {
  * @param {enums.symmetric} cipher - The symmetric cipher algorithm to use
  * @param {Uint8Array} key - The encryption key
  */
-async function EAX(cipher, key) { // TODO take integer
+async function EAX(cipher, key) {
   if (cipher !== enums.symmetric.aes128 &&
     cipher !== enums.symmetric.aes192 &&
     cipher !== enums.symmetric.aes256) {
