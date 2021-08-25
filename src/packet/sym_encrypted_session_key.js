@@ -93,8 +93,7 @@ class SymEncryptedSessionKeyPacket {
     offset += this.s2k.read(bytes.subarray(offset, bytes.length));
 
     if (this.version === 5) {
-      const aeadAlgoName = enums.read(enums.aead, this.aeadAlgorithm);
-      const mode = crypto.mode[aeadAlgoName];
+      const mode = crypto.getAEADMode(this.aeadAlgorithm);
 
       // A starting initialization vector of size specified by the AEAD
       // algorithm.
@@ -147,20 +146,16 @@ class SymEncryptedSessionKeyPacket {
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
-    const algoName = enums.read(enums.symmetric, algo);
-    const aeadAlgoName = enums.read(enums.aead, this.aeadAlgorithm)
-
-    const blockCipher = crypto.cipher[algoName];
-    const length = blockCipher.keySize;
-    const key = await this.s2k.produceKey(passphrase, length);
+    const { blockSize, keySize } = crypto.getCipher(algo);
+    const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.version === 5) {
-      const mode = crypto.mode[aeadAlgoName];
+      const mode = crypto.getAEADMode(this.aeadAlgorithm);
       const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
       const modeInstance = await mode(algo, key);
       this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
     } else if (this.encrypted !== null) {
-      const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(blockCipher.blockSize)); // TODO pass integer
+      const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(blockSize));
 
       this.sessionKeyAlgorithm = enums.write(enums.symmetric, decrypted[0]);
       this.sessionKey = decrypted.subarray(1, decrypted.length);
@@ -186,18 +181,15 @@ class SymEncryptedSessionKeyPacket {
     this.s2k = new S2K(config);
     this.s2k.salt = await crypto.random.getRandomBytes(8);
 
-    const algoName = enums.read(enums.symmetric, algo);
-    const blockCipher = crypto.cipher[algoName]; // TODO add crypto.getCipher()?
-    const length = blockCipher.keySize;
-    const encryptionKey = await this.s2k.produceKey(passphrase, length);
+    const { blockSize, keySize } = crypto.getCipher(algo);
+    const encryptionKey = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.sessionKey === null) {
       this.sessionKey = await crypto.generateSessionKey(this.sessionKeyAlgorithm);
     }
 
     if (this.version === 5) {
-      const aeadAlgoName = enums.read(enums.aead, this.aeadAlgorithm);
-      const mode = crypto.mode[aeadAlgoName];
+      const mode = crypto.getAEADMode(this.aeadAlgorithm);
       this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
       const associatedData = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
       const modeInstance = await mode(algo, encryptionKey);
@@ -207,7 +199,7 @@ class SymEncryptedSessionKeyPacket {
         new Uint8Array([this.sessionKeyAlgorithm]),
         this.sessionKey
       ]);
-      this.encrypted = await crypto.mode.cfb.encrypt(algo, encryptionKey, toEncrypt, new Uint8Array(blockCipher.blockSize), config);
+      this.encrypted = await crypto.mode.cfb.encrypt(algo, encryptionKey, toEncrypt, new Uint8Array(blockSize), config);
     }
   }
 }

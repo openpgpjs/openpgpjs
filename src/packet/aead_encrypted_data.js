@@ -77,7 +77,7 @@ class AEADEncryptedDataPacket {
       this.aeadAlgorithm = enums.write(enums.aead, await reader.readByte());
       this.chunkSizeByte = await reader.readByte();
 
-      const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgorithm)];
+      const mode = crypto.getAEADMode(this.aeadAlgorithm);
       this.iv = await reader.readBytes(mode.ivLength);
       this.encrypted = reader.remainder();
     });
@@ -117,9 +117,9 @@ class AEADEncryptedDataPacket {
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     this.cipherAlgorithm = sessionKeyAlgorithm;
-    const aeadAlgoName = enums.read(enums.aead, this.aeadAlgorithm);
-    const mode = crypto.mode[aeadAlgoName];
-    this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
+
+    const { ivLength } = crypto.getAEADMode(this.aeadAlgorithm);
+    this.iv = await crypto.random.getRandomBytes(ivLength); // generate new random IV
     this.chunkSizeByte = config.aeadChunkSizeByte;
     const data = this.packets.write();
     this.encrypted = await this.crypt('encrypt', key, data);
@@ -134,7 +134,7 @@ class AEADEncryptedDataPacket {
    * @async
    */
   async crypt(fn, key, data) {
-    const mode = crypto.mode[enums.read(enums.aead, this.aeadAlgorithm)];
+    const mode = crypto.getAEADMode(this.aeadAlgorithm);
     const modeInstance = await mode(this.cipherAlgorithm, key);
     const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
     const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;

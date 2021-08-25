@@ -126,10 +126,9 @@ class SecretKeyPacket extends PublicKeyPacket {
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
     if (this.s2kUsage) {
-      const symmetricName = enums.read(enums.symmetric, this.symmetric);
       this.iv = bytes.subarray(
         i,
-        i + crypto.cipher[symmetricName].blockSize
+        i + crypto.getCipher(this.symmetric).blockSize
       );
 
       i += this.iv.length;
@@ -288,15 +287,14 @@ class SecretKeyPacket extends PublicKeyPacket {
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;
     const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
-    const symmetricName = enums.read(enums.symmetric, this.symmetric);
-    const blockLen = crypto.cipher[symmetricName].blockSize;
-    this.iv = await crypto.random.getRandomBytes(blockLen);
+
+    const { blockSize } = crypto.getCipher(this.symmetric);
+    this.iv = await crypto.random.getRandomBytes(blockSize);
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
       this.aead = enums.aead.eax;
-      const aeadName = enums.read(enums.aead, this.aead);
-      const mode = crypto.mode[aeadName];
+      const mode = crypto.getAEADMode(this.aead);
       const modeInstance = await mode(this.symmetric, key);
       this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
     } else {
@@ -337,10 +335,9 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     let cleartext;
     if (this.s2kUsage === 253) {
-      const aeadName = enums.read(enums.aead, this.aead);
-      const mode = crypto.mode[aeadName];
+      const mode = crypto.getAEADMode(this.aead);
+      const modeInstance = await mode(this.symmetric, key);
       try {
-        const modeInstance = await mode(this.symmetric, key);
         cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
       } catch (err) {
         if (err.message === 'Authentication tag mismatch') {
@@ -422,11 +419,8 @@ class SecretKeyPacket extends PublicKeyPacket {
 }
 
 async function produceEncryptionKey(s2k, passphrase, algorithm) {
-  const algoName = enums.read(enums.symmetric, algorithm);
-  return s2k.produceKey(
-    passphrase,
-    crypto.cipher[algoName].keySize
-  );
+  const { keySize } = crypto.getCipher(algorithm);
+  return s2k.produceKey(passphrase, keySize);
 }
 
 export default SecretKeyPacket;

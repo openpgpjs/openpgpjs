@@ -88,8 +88,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @async
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
-    const algorithmName = enums.read(enums.symmetric, sessionKeyAlgorithm);
-    const { blockSize } = crypto.cipher[algorithmName];
+    const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
 
     let bytes = this.packets.write();
     if (stream.isArrayStream(bytes)) bytes = await stream.readToEnd(bytes);
@@ -114,8 +113,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
-    const algorithmName = enums.read(enums.symmetric, sessionKeyAlgorithm);
-    const { blockSize } = crypto.cipher[algorithmName];
+    const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
     let encrypted = stream.clone(this.encrypted);
     if (stream.isArrayStream(encrypted)) encrypted = await stream.readToEnd(encrypted);
     const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(blockSize));

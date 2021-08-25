@@ -26,6 +26,7 @@
 
 import publicKey from './public_key';
 import * as cipher from './cipher';
+import mode from './mode';
 import { getRandomBytes } from './random';
 import ECDHSymkey from '../type/ecdh_symkey';
 import KDFParams from '../type/kdf_params';
@@ -348,8 +349,8 @@ export async function validateParams(algo, publicParams, privateParams) {
  * @async
  */
 export async function getPrefixRandom(algo) {
-  const algoName = enums.read(enums.symmetric, algo);
-  const prefixrandom = await getRandomBytes(cipher[algoName].blockSize);
+  const { blockSize } = getCipher(algo);
+  const prefixrandom = await getRandomBytes(blockSize);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   return util.concat([prefixrandom, repeat]);
 }
@@ -362,6 +363,28 @@ export async function getPrefixRandom(algo) {
  * @async
  */
 export function generateSessionKey(algo) {
+  const { keySize } = getCipher(algo);
+  return getRandomBytes(keySize);
+}
+
+/**
+ * Get implementation of the given AEAD mode
+ * @param {enums.aead} algo
+ * @returns {Function} with signature (cipher: Function, key: Uint8Array) => { encrypt: Function, decrypt: Function }
+ * @throws {Error} on invalid algo
+ */
+export function getAEADMode(algo) {
+  const algoName = enums.read(enums.aead, algo);
+  return mode[algoName];
+}
+
+/**
+ * Get implementation of the given cipher
+ * @param {enums.symmetric} algo
+ * @returns {Function} with signature (key: Uint8Array) => { keySize: Integer, blockSize: Integer, encrypt: Function, decrypt: Function }
+ * @throws {Error} on invalid algo
+ */
+export function getCipher(algo) {
   const algoName = enums.read(enums.symmetric, algo);
-  return getRandomBytes(cipher[algoName].keySize);
+  return cipher[algoName];
 }

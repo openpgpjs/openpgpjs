@@ -240,10 +240,11 @@ module.exports = () => describe('API functional testing', function() {
     async function testCFB(plaintext) {
       await Promise.all(symmAlgoNames.map(async function(algoName) {
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
+        const { blockSize } = crypto.getCipher(algo);
         const symmKey = await crypto.generateSessionKey(algo);
-        const IV = new Uint8Array(crypto.cipher[algoName].blockSize);
+        const IV = new Uint8Array(blockSize);
         const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, openpgp.config);
-        const text = util.uint8ArrayToString(await crypto.mode.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(crypto.cipher[algoName].blockSize)));
+        const text = util.uint8ArrayToString(await crypto.mode.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(blockSize)));
         expect(text).to.equal(plaintext);
       }));
     }
