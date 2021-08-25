@@ -39,13 +39,13 @@ class S2K {
    */
   constructor(config = defaultConfig) {
     /** @type {module:enums.hash} */
-    this.algorithm = 'sha256';
+    this.algorithm = enums.hash.sha256;
     /** @type {module:enums.s2k} */
     this.type = 'iterated';
     /** @type {Integer} */
     this.c = config.s2kIterationCountByte;
     /** Eight bytes of salt in a binary string.
-     * @type {String}
+     * @type {Uint8Array}
      */
     this.salt = null;
   }
@@ -59,7 +59,7 @@ class S2K {
 
   /**
    * Parsing function for a string-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
-   * @param {String} bytes - Payload of string-to-key specifier
+   * @param {Uint8Array} bytes - Payload of string-to-key specifier
    * @returns {Integer} Actual length of the object.
    */
   read(bytes) {
@@ -67,7 +67,7 @@ class S2K {
     this.type = enums.read(enums.s2k, bytes[i++]);
     this.algorithm = bytes[i++];
     if (this.type !== 'gnu') {
-      this.algorithm = enums.read(enums.hash, this.algorithm);
+      this.algorithm = enums.write(enums.hash, this.algorithm);
     }
 
     switch (this.type) {
@@ -117,8 +117,7 @@ class S2K {
     if (this.type === 'gnu-dummy') {
       return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 1]);
     }
-
-    const arr = [new Uint8Array([enums.write(enums.s2k, this.type), enums.write(enums.hash, this.algorithm)])];
+    const arr = [new Uint8Array([enums.write(enums.s2k, this.type), this.algorithm])];
 
     switch (this.type) {
       case 'simple':
@@ -149,7 +148,6 @@ class S2K {
    */
   async produceKey(passphrase, numBytes) {
     passphrase = util.encodeUTF8(passphrase);
-    const algorithm = enums.write(enums.hash, this.algorithm);
 
     const arr = [];
     let rlength = 0;
@@ -180,7 +178,7 @@ class S2K {
         default:
           throw new Error('Unknown s2k type.');
       }
-      const result = await crypto.hash.digest(algorithm, toHash);
+      const result = await crypto.hash.digest(this.algorithm, toHash);
       arr.push(result);
       rlength += result.length;
       prefixlen++;
