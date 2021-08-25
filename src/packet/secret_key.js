@@ -155,8 +155,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         throw new Error('Key checksum mismatch');
       }
       try {
-        const algo = enums.write(enums.publicKey, this.algorithm);
-        const { privateParams } = crypto.parsePrivateKeyParams(algo, cleartext, this.publicParams);
+        const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
         this.privateParams = privateParams;
       } catch (err) {
         throw new Error('Error reading MPIs');
@@ -205,8 +204,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     if (!this.isDummy()) {
       if (!this.s2kUsage) {
-        const algo = enums.write(enums.publicKey, this.algorithm);
-        this.keyMaterial = crypto.serializeParams(algo, this.privateParams);
+        this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
       }
 
       if (this.version === 5) {
@@ -289,8 +287,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     this.s2k = new S2K(config);
     this.s2k.salt = await crypto.random.getRandomBytes(8);
-    const algo = enums.write(enums.publicKey, this.algorithm);
-    const cleartext = crypto.serializeParams(algo, this.privateParams);
+    const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = 'aes256';
     const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
     const blockLen = crypto.cipher[this.symmetric].blockSize;

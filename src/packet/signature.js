@@ -171,7 +171,6 @@ class SignaturePacket {
    */
   async sign(key, data, date = new Date(), detached = false) {
     const signatureType = enums.write(enums.signature, this.signatureType);
-    const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
 
     if (key.version === 5) {
@@ -179,7 +178,7 @@ class SignaturePacket {
     } else {
       this.version = 4;
     }
-    const arr = [new Uint8Array([this.version, signatureType, publicKeyAlgorithm, hashAlgorithm])];
+    const arr = [new Uint8Array([this.version, signatureType, this.publicKeyAlgorithm, hashAlgorithm])];
 
     this.created = util.normalizeDate(date);
     this.issuerKeyVersion = key.version;
@@ -196,7 +195,7 @@ class SignaturePacket {
 
     this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
     const signed = async () => crypto.signature.sign(
-      publicKeyAlgorithm, hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
+      this.publicKeyAlgorithm, hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
     );
     if (util.isStream(hash)) {
       this.params = signed();
@@ -662,12 +661,11 @@ class SignaturePacket {
    * @async
    */
   async verify(key, signatureType, data, date = new Date(), detached = false, config = defaultConfig) {
-    const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
     if (!this.issuerKeyID.equals(key.getKeyID())) {
       throw new Error('Signature was not issued by the given public key');
     }
-    if (publicKeyAlgorithm !== enums.write(enums.publicKey, key.algorithm)) {
+    if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
     }
 
@@ -693,7 +691,7 @@ class SignaturePacket {
       this.params = await this.params;
 
       this[verified] = await crypto.signature.verify(
-        publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
+        this.publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
         toHash, hash
       );
 

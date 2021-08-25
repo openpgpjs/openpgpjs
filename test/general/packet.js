@@ -840,7 +840,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
-    secretKeyPacket.algorithm = 'rsaSign';
+    secretKeyPacket.algorithm = openpgp.enums.publicKey.rsaSign;
     secretKeyPacket.isEncrypted = false;
     await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: true });
     expect(secretKeyPacket.s2kUsage).to.equal(253);
@@ -864,7 +864,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       packet.privateParams = { key: new Uint8Array([1, 2, 3]) };
       packet.publicParams = { pubKey: new Uint8Array([4, 5, 6]) };
-      packet.algorithm = 'rsaSign';
+      packet.algorithm = openpgp.enums.publicKey.rsaSign;
       packet.isEncrypted = false;
       packet.s2kUsage = 0;
 
@@ -896,7 +896,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     const secretKeyPacket = new openpgp.SecretKeyPacket();
     secretKeyPacket.privateParams = privateParams;
     secretKeyPacket.publicParams = publicParams;
-    secretKeyPacket.algorithm = 'rsaSign';
+    secretKeyPacket.algorithm = openpgp.enums.publicKey.rsaSign;
     secretKeyPacket.isEncrypted = false;
     await secretKeyPacket.encrypt('hello', { ...openpgp.config, aeadProtect: false });
     expect(secretKeyPacket.s2kUsage).to.equal(254);
@@ -917,7 +917,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
 
       key.publicParams = publicParams;
       key.privateParams = privateParams;
-      key.algorithm = 'rsaSign';
+      key.algorithm = openpgp.enums.publicKey.rsaSign;
       await key.computeFingerprintAndKeyID();
 
       const signed = new openpgp.PacketList();

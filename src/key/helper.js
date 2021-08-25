@@ -19,7 +19,7 @@ import defaultConfig from '../config';
 export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
-  secretSubkeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+  secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
   await secretSubkeyPacket.generate(options.rsaBits, options.curve);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
@@ -28,7 +28,7 @@ export async function generateSecretSubkey(options, config) {
 export async function generateSecretKey(options, config) {
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
-  secretKeyPacket.algorithm = enums.read(enums.publicKey, options.algorithm);
+  secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
   await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
@@ -135,9 +135,9 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
     case SecretSubkeyPacket.prototype:
     case PublicSubkeyPacket.prototype:
       switch (keyPacket.algorithm) {
-        case 'ecdh':
-        case 'ecdsa':
-        case 'eddsa':
+        case enums.publicKey.ecdh:
+        case enums.publicKey.ecdsa:
+        case enums.publicKey.eddsa:
           prefAlgo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
       }
   }
@@ -361,7 +361,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
 }
 
 export function isValidSigningKeyPacket(keyPacket, signature) {
-  const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
+  const keyAlgo = keyPacket.algorithm;
   return keyAlgo !== enums.publicKey.rsaEncrypt &&
     keyAlgo !== enums.publicKey.elgamal &&
     keyAlgo !== enums.publicKey.ecdh &&
@@ -370,7 +370,7 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
 }
 
 export function isValidEncryptionKeyPacket(keyPacket, signature) {
-  const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
+  const keyAlgo = keyPacket.algorithm;
   return keyAlgo !== enums.publicKey.dsa &&
     keyAlgo !== enums.publicKey.rsaSign &&
     keyAlgo !== enums.publicKey.ecdsa &&
@@ -400,10 +400,10 @@ export function isValidDecryptionKeyPacket(signature, config) {
  */
 export function checkKeyRequirements(keyPacket, config) {
   const keyAlgo = enums.write(enums.publicKey, keyPacket.algorithm);
-  if (config.rejectPublicKeyAlgorithms.has(keyAlgo)) {
-    throw new Error(`${keyPacket.algorithm} keys are considered too weak.`);
-  }
   const algoInfo = keyPacket.getAlgorithmInfo();
+  if (config.rejectPublicKeyAlgorithms.has(keyAlgo)) {
+    throw new Error(`${algoInfo.algorithm} keys are considered too weak.`);
+  }
   switch (keyAlgo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign:
@@ -416,7 +416,7 @@ export function checkKeyRequirements(keyPacket, config) {
     case enums.publicKey.eddsa:
     case enums.publicKey.ecdh:
       if (config.rejectCurves.has(algoInfo.curve)) {
-        throw new Error(`Support for ${keyPacket.algorithm} keys using curve ${algoInfo.curve} is disabled.`);
+        throw new Error(`Support for ${algoInfo.algorithm} keys using curve ${algoInfo.curve} is disabled.`);
       }
       break;
     default:

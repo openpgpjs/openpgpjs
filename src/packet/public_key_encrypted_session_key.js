@@ -68,7 +68,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       throw new UnsupportedError(`Version ${this.version} of the PKESK packet is unsupported.`);
     }
     this.publicKeyID.read(bytes.subarray(1, bytes.length));
-    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]);
+    this.publicKeyAlgorithm = enums.read(enums.publicKey, bytes[9]); // TODO use integer
 
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
     this.encrypted = crypto.parseEncSessionKeyParams(algo, bytes.subarray(10));

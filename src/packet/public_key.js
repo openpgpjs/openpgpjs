@@ -55,7 +55,7 @@ class PublicKeyPacket {
     this.created = util.normalizeDate(date);
     /**
      * Public key algorithm.
-     * @type {String}
+     * @type {enums.publicKey}
      */
     this.algorithm = null;
     /**
@@ -115,8 +115,11 @@ class PublicKeyPacket {
       pos += 4;
 
       // - A one-octet number denoting the public-key algorithm of this key.
-      this.algorithm = enums.read(enums.publicKey, bytes[pos++]);
-      const algo = enums.write(enums.publicKey, this.algorithm);
+      try {
+        this.algorithm = enums.write(enums.publicKey, bytes[pos++]);
+      } catch (e) {
+        throw new Error('Error reading public key algorithm');
+      }
 
       if (this.version === 5) {
         // - A four-octet scalar octet count for the following key material.
@@ -125,7 +128,7 @@ class PublicKeyPacket {
 
       // - A series of values comprising the key material.
       try {
-        const { read, publicParams } = crypto.parsePublicKeyParams(algo, bytes.subarray(pos));
+        const { read, publicParams } = crypto.parsePublicKeyParams(this.algorithm, bytes.subarray(pos));
         this.publicParams = publicParams;
         pos += read;
       } catch (err) {
@@ -149,10 +152,9 @@ class PublicKeyPacket {
     arr.push(new Uint8Array([this.version]));
     arr.push(util.writeDate(this.created));
     // A one-octet number denoting the public-key algorithm of this key
-    const algo = enums.write(enums.publicKey, this.algorithm);
-    arr.push(new Uint8Array([algo]));
+    arr.push(new Uint8Array([this.algorithm]));
 
-    const params = crypto.serializeParams(algo, this.publicParams);
+    const params = crypto.serializeParams(this.algorithm, this.publicParams);
     if (this.version === 5) {
       // A four-octet scalar octet count for the following key material
       arr.push(util.writeNumber(params.length, 4));
@@ -261,7 +263,7 @@ class PublicKeyPacket {
    */
   getAlgorithmInfo() {
     const result = {};
-    result.algorithm = this.algorithm;
+    result.algorithm = enums.read(enums.publicKey, this.algorithm);
     // RSA, DSA or ElGamal public modulo
     const modulo = this.publicParams.n || this.publicParams.p;
     if (modulo) {
