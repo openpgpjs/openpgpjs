@@ -13,8 +13,8 @@ jobs:
     steps:
       # check out pull request branch
       - uses: actions/checkout@v2
-          with:
-            path: pr
+        with:
+          path: pr
       # check out master branch (to compare performance)
       - uses: actions/checkout@v2
         with:
