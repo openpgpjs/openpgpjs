@@ -5,6 +5,38 @@ on:
     branches: [master]
 
 jobs:
+  baseline:
+    name: Time baseline benchmark
+
+    runs-on: ubuntu-latest
+
+    steps:
+      # check out master branch (to compare performance)
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '15'
+      - name: Download previous benchmark data
+        uses: actions/cache@v1
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+
+      - name: Run master benchmark (baseline)
+        run: npm install && node benchmarks/benchmark.js | tee benchmarks.txt
+      - name: Store baseline benchmark result
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          tool: 'benchmarkjs'
+          # Where the output from the benchmark tool is stored
+          output-file-path: benchmarks.txt
+          save-data-file: true
+          # Where to save the json
+          external-data-json-path: ./cache/benchmark-data.json
+          comment-on-alert: false
+          fail-on-alert: false
   benchmark:
     name: Time benchmark
 
@@ -13,45 +45,34 @@ jobs:
     steps:
       # check out pull request branch
       - uses: actions/checkout@v2
-        with:
-          path: pr
-      # check out master branch (to compare performance)
-      - uses: actions/checkout@v2
-        with:
-          ref: master
-          path: baseline
       - uses: actions/setup-node@v1
         with:
           node-version: '15'
 
-      - name: Run master benchmark (baseline)
-        run: cd baseline && npm install && node benchmarks/benchmark.js | tee benchmarks.txt
-      - name: Store baseline benchmark result
-        uses: rhysd/github-action-benchmark@v1
-        with:
-          tool: 'benchmarkjs'
-          # Where the output from the benchmark tool is stored
-          output-file-path: baseline/benchmarks.txt
-          save-data-file: true
-          # Where to save the json
-          external-data-json-path: baseline/benchmarks.json
 
       - name: Run pull request benchmark
-        run: cd pr && npm install && node benchmarks/benchmark.js | tee benchmarks.txt
+        run: npm install && node benchmarks/benchmark.js | tee benchmarks.txt
+
+      # Download previous benchmark result from cache (if exists)
+      - name: Download previous benchmark data
+        uses: actions/cache@v1
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
 
       - name: Compare benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
           tool: 'benchmarkjs'
           # Where the output from the benchmark tool is stored
-          output-file-path: pr/benchmarks.txt
+          output-file-path: benchmarks.txt
           # Where the baseline data file is stored
-          external-data-json-path: baseline/benchmarks.json-off
-          save-data-file: false # irrelevant
+          external-data-json-path: ./cache/benchmark-data.json
+          save-data-file: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # alert-threshold: '30%'
-          # fail-threshold: '30%'
+          alert-threshold: '30%'
+          fail-threshold: '30%'
+          comment-always: true
           comment-on-alert: true
           fail-on-alert: true
           alert-comment-cc-users: '@larabr'
-          comment-always: true
