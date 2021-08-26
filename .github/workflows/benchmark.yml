@@ -54,3 +54,4 @@ jobs:
           comment-on-alert: true
           fail-on-alert: true
           alert-comment-cc-users: '@larabr'
+          comment-always: true
