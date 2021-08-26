@@ -24,10 +24,19 @@ jobs:
         with:
           node-version: '15'
 
-      - name: Run baseline benchmark (master)
+      - name: Run master benchmark (baseline)
         run: cd baseline && npm install && node benchmarks/benchmark.js | tee benchmarks.txt
+      - name: Store baseline benchmark result
+        uses: rhysd/github-action-benchmark@v1
+        with:
+          tool: 'benchmarkjs'
+          # Where the output from the benchmark tool is stored
+          output-file-path: baseline/benchmarks.txt
+          save-data-file: true
+          # Where to save the json
+          external-data-json-path: baseline/benchmarks.json
 
-      - name: Run benchmark
+      - name: Run pull request benchmark
         run: cd pr && npm install && node benchmarks/benchmark.js | tee benchmarks.txt
 
       - name: Compare benchmark result
@@ -37,7 +46,7 @@ jobs:
           # Where the output from the benchmark tool is stored
           output-file-path: pr/benchmarks.txt
           # Where the baseline data file is stored
-          external-data-json-path: baseline/benchmarks.txt
+          external-data-json-path: baseline/benchmarks.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           alert-threshold: '30%'
           fail-threshold: '100%'
