@@ -1,8 +1,6 @@
 name: Performance Regression Check
 
 on:
-  push:
-    branches: [master]
   pull_request:
     branches: [master]
 
@@ -13,27 +11,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # check out pull request branch
       - uses: actions/checkout@v2
+          with:
+            path: pr
+      # check out master branch (to compare performance)
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+          path: master
       - uses: actions/setup-node@v1
         with:
           node-version: '15'
 
+      - name: Run baseline benchmark (master)
+        run: npm install && node master/benchmarks/benchmark.js | tee baseline.txt
+
       - name: Run benchmark
-        run: npm install && node benchmarks/benchmark.js | tee output.txt
+        run: npm install && node pr/benchmarks/benchmark.js | tee pr.txt
 
-      - name: Download previous benchmark data
-        uses: actions/cache@v1
-        with:
-          path: ./cache
-          key: ${{ runner.os }}-benchmark
-
-      - name: Store benchmark result
+      - name: Compare benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
           tool: 'benchmarkjs'
-          output-file-path: output.txt
-          external-data-json-path: ./cache/benchmark-data.json
-          save-data-file: true
+          # Where the output from the benchmark tool is stored
+          output-file-path: pr.txt
+          # Where the baseline data file is stored
+          external-data-json-path: baseline.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           alert-threshold: '30%'
           fail-threshold: '100%'
