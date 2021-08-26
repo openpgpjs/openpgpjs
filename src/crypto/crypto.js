@@ -370,7 +370,7 @@ export function generateSessionKey(algo) {
 /**
  * Get implementation of the given AEAD mode
  * @param {enums.aead} algo
- * @returns {Function} with signature (cipher: Function, key: Uint8Array) => { encrypt: Function, decrypt: Function }
+ * @returns {Object}
  * @throws {Error} on invalid algo
  */
 export function getAEADMode(algo) {
@@ -381,7 +381,7 @@ export function getAEADMode(algo) {
 /**
  * Get implementation of the given cipher
  * @param {enums.symmetric} algo
- * @returns {Function} with signature (key: Uint8Array) => { keySize: Integer, blockSize: Integer, encrypt: Function, decrypt: Function }
+ * @returns {Object}
  * @throws {Error} on invalid algo
  */
 export function getCipher(algo) {

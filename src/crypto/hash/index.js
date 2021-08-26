@@ -16,6 +16,7 @@ import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
 import defaultConfig from '../../config';
+import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -143,18 +144,18 @@ export default {
    */
   getHashByteLength: function(algo) {
     switch (algo) {
-      case 1: // - MD5 [HAC]
+      case enums.hash.md5: // - MD5 [HAC]
         return 16;
-      case 2: // - SHA-1 [FIPS180]
-      case 3: // - RIPE-MD/160 [HAC]
+      case enums.hash.sha1: // - SHA-1 [FIPS180]
+      case enums.hash.ripemd: // - RIPE-MD/160 [HAC]
         return 20;
-      case 8: // - SHA256 [FIPS180]
+      case enums.hash.sha256: // - SHA256 [FIPS180]
         return 32;
-      case 9: // - SHA384 [FIPS180]
+      case enums.hash.sha384: // - SHA384 [FIPS180]
         return 48;
-      case 10: // - SHA512 [FIPS180]
+      case enums.hash.sha512: // - SHA512 [FIPS180]
         return 64;
-      case 11: // - SHA224 [FIPS180]
+      case enums.hash.sha224: // - SHA224 [FIPS180]
         return 28;
       default:
         throw new Error('Invalid hash algorithm.');

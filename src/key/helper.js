@@ -115,7 +115,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Object} [userID] - User ID
  * @param {Object} config - full configuration
- * @returns {Promise<String>}
+ * @returns {Promise<enums.hash>}
  * @async
  */
 export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userID = {}, config) {
