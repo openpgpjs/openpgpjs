@@ -834,7 +834,7 @@ Be4ubVrj5KjhX2PVNEJd3XZRzaXZE2aAMQ==
 -----END PGP PUBLIC KEY BLOCK-----`;
 
 function withCompression(tests) {
-  const compressionTypes = Object.keys(openpgp.enums.compression).map(k => openpgp.enums.compression[k]);
+  const compressionTypes = Object.values(openpgp.enums.compression);
 
   compressionTypes.forEach(function (compression) {
     const compressionName = openpgp.enums.read(openpgp.enums.compression, compression);
@@ -870,9 +870,9 @@ function withCompression(tests) {
           }
 
           expect(compressSpy.called).to.be.true;
-          expect(compressSpy.thisValues[0].algorithm).to.equal(compressionName);
+          expect(compressSpy.thisValues[0].algorithm).to.equal(compression);
           expect(decompressSpy.called).to.be.true;
-          expect(decompressSpy.thisValues[0].algorithm).to.equal(compressionName);
+          expect(decompressSpy.thisValues[0].algorithm).to.equal(compression);
         }
       );
     });

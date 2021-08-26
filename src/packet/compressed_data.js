@@ -60,9 +60,9 @@ class CompressedDataPacket {
     this.packets = null;
     /**
      * Compression algorithm
-     * @type {compression}
+     * @type {enums.compression}
      */
-    this.algorithm = enums.read(enums.compression, config.preferredCompressionAlgorithm);
+    this.algorithm = config.preferredCompressionAlgorithm;
 
     /**
      * Compressed packet data
@@ -85,7 +85,7 @@ class CompressedDataPacket {
     await stream.parse(bytes, async reader => {
 
       // One octet that gives the algorithm used to compress the packet.
-      this.algorithm = enums.read(enums.compression, await reader.readByte());
+      this.algorithm = enums.write(enums.compression, await reader.readByte());
 
       // Compressed data, which makes up the remainder of the packet.
       this.compressed = reader.remainder();
@@ -104,7 +104,7 @@ class CompressedDataPacket {
       this.compress();
     }
 
-    return util.concat([new Uint8Array([enums.write(enums.compression, this.algorithm)]), this.compressed]);
+    return util.concat([new Uint8Array([this.algorithm]), this.compressed]);
   }
 
 
@@ -114,23 +114,26 @@ class CompressedDataPacket {
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   async decompress(config = defaultConfig) {
-
-    if (!decompress_fns[this.algorithm]) {
-      throw new Error(this.algorithm + ' decompression not supported');
+    const compressionName = enums.read(enums.compression, this.algorithm);
+    const decompressionFn = decompress_fns[compressionName];
+    if (!decompressionFn) {
+      throw new Error(`${compressionName} decompression not supported`);
     }
 
-    this.packets = await PacketList.fromBinary(decompress_fns[this.algorithm](this.compressed), allowedPackets, config);
+    this.packets = await PacketList.fromBinary(decompressionFn(this.compressed), allowedPackets, config);
   }
 
   /**
    * Compress the packet data (member decompressedData)
    */
   compress() {
-    if (!compress_fns[this.algorithm]) {
-      throw new Error(this.algorithm + ' compression not supported');
+    const compressionName = enums.read(enums.compression, this.algorithm);
+    const compressionFn = compress_fns[compressionName];
+    if (!compressionFn) {
+      throw new Error(`${compressionName} compression not supported`);
     }
 
-    this.compressed = compress_fns[this.algorithm](this.packets.write(), this.deflateLevel);
+    this.compressed = compressionFn(this.packets.write(), this.deflateLevel);
   }
 }
 

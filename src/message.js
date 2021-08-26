@@ -507,7 +507,7 @@ export class Message {
     }
 
     const compressed = new CompressedDataPacket(config);
-    compressed.algorithm = enums.read(enums.compression, algo);
+    compressed.algorithm = algo;
     compressed.packets = this.packets;
 
     const packetList = new PacketList();
