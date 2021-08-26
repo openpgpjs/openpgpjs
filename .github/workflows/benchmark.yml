@@ -46,11 +46,11 @@ jobs:
           # Where the output from the benchmark tool is stored
           output-file-path: pr/benchmarks.txt
           # Where the baseline data file is stored
-          external-data-json-path: baseline/benchmarks.json
+          external-data-json-path: baseline/benchmarks.json-off
           save-data-file: false # irrelevant
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          alert-threshold: '30%'
-          fail-threshold: '30%'
+          # alert-threshold: '30%'
+          # fail-threshold: '30%'
           comment-on-alert: true
           fail-on-alert: true
           alert-comment-cc-users: '@larabr'
