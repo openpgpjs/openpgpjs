@@ -49,16 +49,16 @@ jobs:
         with:
           node-version: '15'
 
-
-      - name: Run pull request benchmark
-        run: npm install && node benchmarks/benchmark.js | tee benchmarks.txt
-
       # Download previous benchmark result from cache (if exists)
       - name: Download previous benchmark data
         uses: actions/cache@v1
         with:
           path: ./cache
           key: ${{ runner.os }}-benchmark
+      - name: Run pull request benchmark
+        run: npm install && node benchmarks/benchmark.js | tee benchmarks.txt && cat ./cache/benchmark-data.json
+
+
 
       - name: Compare benchmark result
         uses: rhysd/github-action-benchmark@v1
