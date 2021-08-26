@@ -38,9 +38,15 @@ class S2K {
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   constructor(config = defaultConfig) {
-    /** @type {module:enums.hash} */
+    /**
+     * Hash function identifier, or 0 for gnu-dummy keys
+     * @type {module:enums.hash | 0}
+     */
     this.algorithm = enums.hash.sha256;
-    /** @type {module:enums.s2k} */
+    /**
+     * enums.s2k identifier or 'gnu-dummy'
+     * @type {String}
+     */
     this.type = 'iterated';
     /** @type {Integer} */
     this.c = config.s2kIterationCountByte;

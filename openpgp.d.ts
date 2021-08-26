@@ -359,7 +359,7 @@ declare abstract class BasePacket {
  * - A Subkey Packet cannot always be used when a Primary Key Packet is expected (and vice versa).
  */
 declare abstract class BasePublicKeyPacket extends BasePacket {
-  public algorithm: enums.publicKeyNames;
+  public algorithm: enums.publicKey;
   public created: Date;
   public version: number;
   public getAlgorithmInfo(): AlgorithmInfo;
@@ -417,8 +417,8 @@ export class SymEncryptedIntegrityProtectedDataPacket extends BasePacket {
 
 export class AEADEncryptedDataPacket extends BasePacket {
   static readonly tag: enums.packet.aeadEncryptedData;
-  private decrypt(sessionKeyAlgorithm: string, sessionKey: Uint8Array, config?: Config): void;
-  private encrypt(sessionKeyAlgorithm: string, sessionKey: Uint8Array, config?: Config): void;
+  private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
+  private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
   private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>
 }
 

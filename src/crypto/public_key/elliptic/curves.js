@@ -223,7 +223,7 @@ async function generate(curve) {
 /**
  * Get preferred hash algo to use with the given curve
  * @param {module:type/oid} oid - curve oid
- * @returns {module:enums.hash} hash algorithm
+ * @returns {enums.hash} hash algorithm
  */
 function getPreferredHashAlgo(oid) {
   return curves[enums.write(enums.curve, oid.toHex())].hash;
