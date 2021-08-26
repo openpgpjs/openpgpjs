@@ -14,6 +14,7 @@ function runBenchmarks() {
 
   suite.add('some test case', wrapAsync(async () => {
     await openpgp.generateKey({ userIDs: { email: 'test@test.it' } });
+    await openpgp.generateKey({ userIDs: { email: 'test@test.it' } });
   }));
 
   suite.on('cycle', event => {
