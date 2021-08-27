@@ -33,11 +33,10 @@ jobs:
         uses: larabr/github-action-benchmark@master
         with:
           tool: 'benchmarkjs'
-          output-file-path: pr/benchmarks.txt
-          base-file-path: master/benchmarks.txt
+          pr-benchmark-file-path: pr/benchmarks.txt
+          base-benchmark-file-path: master/benchmarks.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
           alert-threshold: '30%'
-          fail-threshold: '30%'
           comment-on-alert: true
-          fail-on-alert: false
-          alert-comment-cc-users: '@larabr'
+          fail-threshold: '50%'
+          fail-on-alert: true
