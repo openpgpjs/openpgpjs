@@ -37,8 +37,8 @@ jobs:
           pr-benchmark-file-path: pr/benchmarks.txt
           base-benchmark-file-path: master/benchmarks.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          # trigger alert comment if 1.2 times slower
-          alert-threshold: '120%'
+          # trigger alert comment if 1.3 times slower
+          alert-threshold: '130%'
           comment-on-alert: true
           # fail workdlow if 1.5 times slower
           fail-threshold: '150%'
