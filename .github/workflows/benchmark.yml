@@ -1,4 +1,4 @@
-name: Performance Regression Check
+name: Performance Regression Test
 
 on:
   pull_request:
@@ -24,19 +24,20 @@ jobs:
           node-version: '15'
 
       - name: Run benchmark on master (baseline)
-        run: cd master && npm install && node benchmarks/benchmark.js | tee benchmarks.txt
+        run: cd master && npm install && node test/benchmarks/benchmark.js | tee benchmarks.txt
 
       - name: Run pull request benchmark
-        run: cd pr && npm install && node benchmarks/benchmark.js | tee benchmarks.txt
+        run: cd pr && npm install && node test/benchmarks/benchmark.js | tee benchmarks.txt
 
       - name: Compare benchmark result
         uses: larabr/github-action-benchmark@master
         with:
           tool: 'benchmarkjs'
+          name: 'time benchmark'
           pr-benchmark-file-path: pr/benchmarks.txt
           base-benchmark-file-path: master/benchmarks.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          alert-threshold: '30%'
+          alert-threshold: '20%'
           comment-on-alert: true
           fail-threshold: '50%'
           fail-on-alert: true
