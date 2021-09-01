@@ -23,11 +23,11 @@ jobs:
         with:
           node-version: '15'
 
-      - name: Run benchmark on master (baseline)
-        run: cd master && npm install && node test/benchmarks/benchmark.js | tee benchmarks.txt
-
       - name: Run pull request benchmark
-        run: cd pr && npm install && node test/benchmarks/benchmark.js | tee benchmarks.txt
+        run: cd pr && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
+
+      - name: Run benchmark on master (baseline)
+        run: cd master && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
 
       - name: Compare benchmark result
         uses: openpgpjs/github-action-pull-request-benchmark@v1

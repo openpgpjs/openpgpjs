@@ -3,17 +3,24 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 
 const wrapAsync = func => ({
   fn: async deferred => {
-    await func();
+    await func().catch(onError);
     deferred.resolve();
   },
   defer: true
 });
 
+const onError = err => {
+  console.error('The time benchmark tests failed by throwing the following error:');
+  console.error(err);
+  // eslint-disable-next-line no-process-exit
+  process.exit(1);
+};
+
 /**
  * Time benchmark tests.
  * NB: each test will be run multiple times, so any input must be consumable multiple times.
  */
-(async function() {
+(async () => {
   const suite = new Benchmark.Suite();
   const { armoredKey, privateKey, publicKey, armoredEncryptedMessage, armoredSignedMessage } = await getTestData();
 
@@ -55,7 +62,7 @@ const wrapAsync = func => ({
   });
 
   suite.run({ 'async': true });
-}());
+})();
 
 async function getTestData() {
   const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
