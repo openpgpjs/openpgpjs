@@ -30,7 +30,7 @@ jobs:
         run: cd pr && npm install && node test/benchmarks/benchmark.js | tee benchmarks.txt
 
       - name: Compare benchmark result
-        uses: larabr/github-action-benchmark@master
+        uses: openpgpjs/github-action-pull-request-benchmark@v1
         with:
           tool: 'benchmarkjs'
           name: 'time benchmark'
