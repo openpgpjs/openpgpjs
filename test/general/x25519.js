@@ -241,7 +241,7 @@ export default () => describe('X25519 Cryptography (legacy format)', function ()
           expect(R).to.deep.eq(r);
           expect(S).to.deep.eq(s);
         }),
-        signature.verify(22, openpgp.enums.hash.sha256, { r: R, s: S }, publicParams, undefined, data).then(result => {
+        signature.verify(22, openpgp.enums.hash.sha256, { r: R, s: S }, publicParams, null, undefined, data).then(result => {
           expect(result).to.be.true;
         })
       ]);

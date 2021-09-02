@@ -523,7 +523,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
   }
 
-  async generate(bits, curve) {
+  async generate(bits, curve, symmetric) {
     // The deprecated OIDs for Ed25519Legacy and Curve25519Legacy are used in legacy version 4 keys and signatures.
     // Implementations MUST NOT accept or generate v6 key material using the deprecated OIDs.
     if (this.version === 6 && (
@@ -532,7 +532,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     )) {
       throw new Error(`Cannot generate v6 keys of type 'ecc' with curve ${curve}. Generate a key of type 'curve25519' instead`);
     }
-    const { privateParams, publicParams } = await generateParams(this.algorithm, bits, curve);
+    const { privateParams, publicParams } = await generateParams(this.algorithm, bits, curve, symmetric);
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;

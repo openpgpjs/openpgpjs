@@ -39,14 +39,28 @@ class PrivateKey extends PublicKey {
   toPublic() {
     const packetlist = new PacketList();
     const keyPackets = this.toPacketList();
+    let symmetricFound = false;
     for (const keyPacket of keyPackets) {
+      if (symmetricFound &&
+          keyPacket.constructor.tag === enums.packet.Signature) {
+        continue;
+      } else if (symmetricFound) {
+        symmetricFound = false;
+      }
       switch (keyPacket.constructor.tag) {
         case enums.packet.secretKey: {
+          if (keyPacket.algorithm === enums.publicKey.aead || keyPacket.algorithm === enums.publicKey.hmac) {
+            throw new Error('Cannot create public key from symmetric private');
+          }
           const pubKeyPacket = PublicKeyPacket.fromSecretKeyPacket(keyPacket);
           packetlist.push(pubKeyPacket);
           break;
         }
         case enums.packet.secretSubkey: {
+          if (keyPacket.algorithm === enums.publicKey.aead || keyPacket.algorithm === enums.publicKey.hmac) {
+            symmetricFound = true;
+            break;
+          }
           const pubSubkeyPacket = PublicSubkeyPacket.fromSecretSubkeyPacket(keyPacket);
           packetlist.push(pubSubkeyPacket);
           break;
@@ -219,10 +233,12 @@ class PrivateKey extends PublicKey {
    * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
    * Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519.
    * Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
-   * @param {ecc|rsa|curve25519|curve448} options.type The subkey algorithm: ECC, RSA, Curve448 or Curve25519 (new format).
+   * @param {ecc|rsa|curve25519|curve448|symmetric} options.type The subkey algorithm: ECC, RSA, Curve448 or Curve25519 (new format).
    *                                                   Note: Curve448 and Curve25519 are not widely supported yet.
    * @param {String}  options.curve      (optional) Elliptic curve for ECC keys
    * @param {Integer} options.rsaBits    (optional) Number of bits for RSA subkeys
+   * @param {String}  options.symmetricCipher   (optional) Symmetric algorithm for persistent symmetric aead keys
+   * @param {String}  options.symmetricHash     (optional)Hash lgorithm for persistent symmetric hmac keys
    * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false

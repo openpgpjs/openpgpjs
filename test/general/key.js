@@ -4725,6 +4725,71 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       await subkey.verify();
     });
 
+    it('create and add a new symmetric subkey to a rsa key', async function() {
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+        passphrase: 'hello world'
+      });
+      const total = privateKey.getSubkeys().length;
+      const opt2 = { type: 'symmetric', symmetricCipher: 'aes256' };
+      let newPrivateKey = await privateKey.addSubkey(opt2);
+      const armoredKey = await newPrivateKey.armor();
+      newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
+      const subKey = newPrivateKey.getSubkeys()[total];
+      expect(subKey).to.exist;
+      expect(newPrivateKey.getSubkeys().length).to.be.equal(total + 1);
+      expect(subKey.getAlgorithmInfo().symmetric).to.be.equal('aes256');
+      expect(subKey.keyPacket.publicParams.digest).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.privateParams.keyMaterial).to.exist.and.to.have.length(32);
+      await subKey.verify(privateKey.primaryKey);
+    });
+
+    it('create and add a new rsa key with a symmetric encryption subkey', async function() {
+      const userId = { name: 'test', email: 'a@b.com' };
+      const opt = { rsaBits: 512, userIDs: [userId], subkeys:[{ type: 'symmetric', symmetricCipher: 'aes256' }], format: 'object' };
+
+      const { privateKey } = await openpgp.generateKey(opt);
+      const armoredKey = await privateKey.armor();
+      const newKey = await openpgp.readKey({ armoredKey: armoredKey });
+      const subKey = newKey.getSubkeys()[0];
+      expect(newKey.getSubkeys().length).to.be.equal(1);
+      expect(subKey).to.exist;
+      expect(subKey.getAlgorithmInfo().symmetric).to.be.equal('aes256');
+      expect(subKey.keyPacket.publicParams.cipher).to.exist;
+      expect(subKey.keyPacket.publicParams.cipher.getValue()).to.be.equal(openpgp.enums.symmetric.aes256);
+      expect(subKey.keyPacket.publicParams.digest).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.privateParams.keyMaterial).to.exist.and.to.have.length(32);
+      await subKey.verify(newKey.primaryKey);
+    });
+
+    it('create and add a new encrypted rsa key with a symmetric encryption subkey', async function() {
+      const userId = { name: 'test', email: 'a@b.com' };
+      const opt = { rsaBits: 512, userIDs: [userId], subkeys:[{ type: 'symmetric', symmetricCipher: 'aes256' }], format: 'object' };
+
+      const { privateKey } = await openpgp.generateKey(opt);
+      const subKey = privateKey.getSubkeys()[0];
+      expect(privateKey.getSubkeys().length).to.be.equal(1);
+      expect(subKey).to.exist;
+      expect(subKey.getAlgorithmInfo().symmetric).to.be.equal('aes256');
+      expect(subKey.keyPacket.publicParams.cipher).to.exist;
+      expect(subKey.keyPacket.publicParams.cipher.getValue()).to.be.equal(openpgp.enums.symmetric.aes256);
+      expect(subKey.keyPacket.publicParams.digest).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.privateParams.keyMaterial).to.exist.and.to.have.length(32);
+      await subKey.verify(privateKey.primaryKey);
+    });
+
+    it('create and add a symmetric signing key', async function() {
+      const opt = { userIDs: [{ name: 'test', email: 'a@b.com' }], type: 'symmetric', symmetricHash: 'sha256', format: 'object' };
+      const { privateKey } = await openpgp.generateKey(opt);
+      const signed = await openpgp.sign({ message: await openpgp.createMessage({ text: 'the data to be signed' }), signingKeys: privateKey, format: 'binary' });
+      const message = await openpgp.readMessage({ binaryMessage: signed });
+      const { signatures } = await openpgp.verify({ message, verificationKeys: [privateKey], expectSigned: true });
+      expect(signatures).to.exist;
+      expect(signatures.length).to.be.equal(1);
+      expect(signatures[0].keyID.toHex()).to.be.equal(privateKey.getKeyID().toHex());
+      expect(await signatures[0].verified).to.be.true;
+    });
+
     it('sign/verify data with the new subkey correctly using curve25519 (legacy format)', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
       const opt = { curve: 'curve25519', userIDs: [userID], format: 'object', subkeys:[] };

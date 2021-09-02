@@ -75,6 +75,8 @@ function createKey(packetlist) {
  * @param {Date}    options.date                  Creation date of the key and the key signatures
  * @param {Object} config - Full configuration
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
+ * @param {String} options.symmetricHash          (optional) hash algorithm for symmetric keys
+ * @param {String} options.symmetricCipher        (optional) cipher algorithm for symmetric keys
  *                                                  sign parameter defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @returns {Promise<{{ key: PrivateKey, revocationCertificate: String }}>}
  * @async

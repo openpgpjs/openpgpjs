@@ -214,7 +214,7 @@ export default () => describe('API functional testing', function() {
         openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAPublicParams, RSAPrivateParams, data, await crypto.computeDigest(2, data)
       );
       const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, data, await crypto.computeDigest(2, data)
+        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, null, data, await crypto.computeDigest(2, data)
       );
       return expect(success).to.be.true;
     });
@@ -224,7 +224,7 @@ export default () => describe('API functional testing', function() {
         openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAPublicParams, DSAPrivateParams, data, await crypto.computeDigest(2, data)
       );
       const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, data, await crypto.computeDigest(2, data)
+        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, null, data, await crypto.computeDigest(2, data)
       );
 
       return expect(success).to.be.true;
@@ -239,7 +239,7 @@ export default () => describe('API functional testing', function() {
         openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, { A }, { seed }, data, toSign
       );
       const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, signedData, { A }, data, toSign
+        openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, signedData, { A }, null, data, toSign
       );
 
       return expect(success).to.be.true;
@@ -271,7 +271,7 @@ export default () => describe('API functional testing', function() {
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {
       const symmKey = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
-      return crypto.publicKeyEncrypt(algoRSA, openpgp.enums.symmetric.aes256, RSAPublicParams, symmKey).then(RSAEncryptedData => {
+      return crypto.publicKeyEncrypt(algoRSA, openpgp.enums.symmetric.aes256, RSAPublicParams, null, symmKey).then(RSAEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoRSA, RSAPublicParams, RSAPrivateParams, RSAEncryptedData
         ).then(data => {
@@ -282,7 +282,7 @@ export default () => describe('API functional testing', function() {
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', function () {
       const symmKey = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
-      return crypto.publicKeyEncrypt(algoElGamal, openpgp.enums.symmetric.aes256, elGamalPublicParams, symmKey).then(ElgamalEncryptedData => {
+      return crypto.publicKeyEncrypt(algoElGamal, openpgp.enums.symmetric.aes256, elGamalPublicParams, null, symmKey).then(ElgamalEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoElGamal, elGamalPublicParams, elGamalPrivateParams, ElgamalEncryptedData
         ).then(data => {

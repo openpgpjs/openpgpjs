@@ -1225,6 +1225,119 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
     });
   });
 
+  describe('Persistent symmetric keys', function() {
+    it('Parse persistent key encrypted session key packet (PKESK encrypted with persistent symmetric key)', () => {
+      const serializedPacket = new Uint8Array([
+        0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x64, 0x01, 0x4c, 0x80, 0x3d, 0x9b, 0xb6,
+        0x44, 0x13, 0x25, 0x90, 0x24, 0x6e, 0x59, 0x0d,
+        0x68, 0xee, 0x1e, 0x23, 0x75, 0x8a, 0x90, 0x85,
+        0x78, 0x1b, 0xf7, 0xc4, 0x4d, 0x58, 0xc7, 0x64,
+        0xd2, 0xe5, 0xb3, 0x4f, 0xf6, 0x6e, 0xef, 0x53,
+        0xc4, 0xc3, 0x76, 0x7b, 0xba, 0xf9, 0x03, 0x86,
+        0xee, 0xc0, 0x9d, 0x60, 0x23, 0xa6, 0x8a
+      ]);
+      const expectedIV = new Uint8Array([
+        0x4c, 0x80, 0x3d, 0x9b, 0xb6, 0x44, 0x13, 0x25,
+        0x90, 0x24, 0x6e, 0x59, 0x0d, 0x68, 0xee, 0x1e
+      ]);
+      const expectedCiphertext = new Uint8Array([
+        0x75, 0x8a, 0x90, 0x85, 0x78, 0x1b, 0xf7, 0xc4,
+        0x4d, 0x58, 0xc7, 0x64, 0xd2, 0xe5, 0xb3, 0x4f,
+        0xf6, 0x6e, 0xef, 0x53, 0xc4, 0xc3, 0x76, 0x7b,
+        0xba, 0xf9, 0x03, 0x86, 0xee, 0xc0, 0x9d, 0x60,
+        0x23, 0xa6, 0x8a
+      ]);
+      const packet = new openpgp.PublicKeyEncryptedSessionKeyPacket();
+      packet.read(serializedPacket);
+
+      expect(packet.publicKeyAlgorithm).to.equal(openpgp.enums.publicKey.aead);
+      expect(packet.encrypted.aeadMode.data).to.equal(openpgp.enums.aead.eax);
+      expect(util.equalsUint8Array(packet.encrypted.iv, expectedIV)).to.be.true;
+      expect(util.equalsUint8Array(packet.encrypted.c.data, expectedCiphertext)).to.be.true;
+    });
+
+    it('Parse signature packet from persistent symmetric key', () => {
+      const serializedPacket = new Uint8Array([
+        0x04, 0x00, 0x65, 0x08, 0x00, 0x10, 0x05, 0x02,
+        0x60, 0x64, 0x52, 0x28, 0x09, 0x10, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x6b, 0x1d, 0x40, 0x76, 0xf9, 0x35, 0xf8,
+        0xe4, 0xc5, 0x2f, 0x49, 0xce, 0xf7, 0x91, 0x23,
+        0xb4, 0x00, 0x3b, 0x77, 0x92, 0x60, 0x2a, 0xfe,
+        0x2e, 0x4c, 0xf5, 0x5f, 0x6c, 0x75, 0x80, 0x5a,
+        0x3a, 0xf4, 0x38, 0x09, 0x22, 0x97, 0x1a, 0x01,
+        0x2e, 0x8a, 0x59, 0x86, 0x26, 0x77, 0x79, 0xe1,
+        0xb7, 0xd7, 0x4d, 0x7c, 0xa6, 0x61, 0xe7, 0x00,
+        0xf1, 0x4b, 0xa4, 0x5b, 0xc8, 0x3a, 0xe2, 0x35,
+        0x9e, 0x67, 0x4a, 0x44
+      ]);
+
+      const expectedMAC = new Uint8Array([
+        0x76, 0xf9, 0x35, 0xf8, 0xe4, 0xc5, 0x2f, 0x49,
+        0xce, 0xf7, 0x91, 0x23, 0xb4, 0x00, 0x3b, 0x77,
+        0x92, 0x60, 0x2a, 0xfe, 0x2e, 0x4c, 0xf5, 0x5f,
+        0x6c, 0x75, 0x80, 0x5a, 0x3a, 0xf4, 0x38, 0x09,
+        0x22, 0x97, 0x1a, 0x01, 0x2e, 0x8a, 0x59, 0x86,
+        0x26, 0x77, 0x79, 0xe1, 0xb7, 0xd7, 0x4d, 0x7c,
+        0xa6, 0x61, 0xe7, 0x00, 0xf1, 0x4b, 0xa4, 0x5b,
+        0xc8, 0x3a, 0xe2, 0x35, 0x9e, 0x67, 0x4a, 0x44
+      ]);
+
+      const packet = new openpgp.SignaturePacket();
+      packet.read(serializedPacket);
+
+      const readMAC = packet.params.mac.data;
+
+      expect(packet.publicKeyAlgorithm).to.equal(openpgp.enums.publicKey.hmac);
+      expect(util.equalsUint8Array(readMAC, expectedMAC)).to.be.true;
+    });
+
+    it('encrypt/decrypt using persistent symmetric key', async () => {
+      const persistentSymmetricKeyPacket = new openpgp.SecretSubkeyPacket();
+      persistentSymmetricKeyPacket.version = 4;
+      persistentSymmetricKeyPacket.algorithm = openpgp.enums.publicKey.aead;
+      await persistentSymmetricKeyPacket.generate(null, null, openpgp.enums.symmetric.aes256);
+      await persistentSymmetricKeyPacket.computeFingerprintAndKeyID();
+
+      const sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+
+      const pkesk = openpgp.PublicKeyEncryptedSessionKeyPacket.fromObject({
+        version: 3,
+        encryptionKeyPacket: persistentSymmetricKeyPacket,
+        sessionKey,
+        sessionKeyAlgorithm: openpgp.enums.symmetric.aes256
+      });
+      await pkesk.encrypt(persistentSymmetricKeyPacket);
+
+      const parsedPKESK = new openpgp.PublicKeyEncryptedSessionKeyPacket();
+      parsedPKESK.read(pkesk.write());
+      await parsedPKESK.decrypt(persistentSymmetricKeyPacket);
+      expect(util.equalsUint8Array(sessionKey, parsedPKESK.sessionKey)).to.be.true;
+    });
+
+    it('throws when encrypting with encrypted symmetric key', async () => {
+      const persistentSymmetricKeyPacket = new openpgp.SecretSubkeyPacket();
+      persistentSymmetricKeyPacket.version = 4;
+      persistentSymmetricKeyPacket.algorithm = openpgp.enums.publicKey.aead;
+      await persistentSymmetricKeyPacket.generate(null, null, openpgp.enums.symmetric.aes256);
+      await persistentSymmetricKeyPacket.computeFingerprintAndKeyID();
+      await persistentSymmetricKeyPacket.encrypt('passphrase');
+      await persistentSymmetricKeyPacket.clearPrivateParams();
+
+      const sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+
+      const pkesk = openpgp.PublicKeyEncryptedSessionKeyPacket.fromObject({
+        version: 3,
+        encryptionKeyPacket: persistentSymmetricKeyPacket,
+        sessionKey,
+        sessionKeyAlgorithm: openpgp.enums.symmetric.aes256
+      });
+
+      await expect(pkesk.encrypt(persistentSymmetricKeyPacket)).to.be.rejectedWith('Cannot encrypt with symmetric key missing private parameters');
+    });
+  });
+
   describe('PacketList parsing', function () {
     it('Ignores unknown packet version with `config.ignoreUnsupportedPackets` enabled', async function() {
       const armoredSignature = `-----BEGIN PGP SIGNATURE-----

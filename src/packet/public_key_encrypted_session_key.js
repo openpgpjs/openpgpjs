@@ -182,8 +182,9 @@ class PublicKeyEncryptedSessionKeyPacket {
     const sessionKeyAlgorithm = this.version === 3 ? this.sessionKeyAlgorithm : null;
     const fingerprint = key.version === 5 ? key.getFingerprintBytes().subarray(0, 20) : key.getFingerprintBytes();
     const encoded = encodeSessionKey(this.version, algo, sessionKeyAlgorithm, this.sessionKey);
+    const privateParams = algo === enums.publicKey.aead ? key.privateParams : null;
     this.encrypted = await publicKeyEncrypt(
-      algo, sessionKeyAlgorithm, key.publicParams, encoded, fingerprint);
+      algo, sessionKeyAlgorithm, key.publicParams, privateParams, encoded, fingerprint);
   }
 
   /**
@@ -230,6 +231,7 @@ function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.elgamal:
     case enums.publicKey.ecdh:
+    case enums.publicKey.aead:
       // add checksum
       return util.concatUint8Array([
         new Uint8Array(version === 6 ? [] : [cipherAlgo]),
@@ -250,7 +252,8 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.elgamal:
-    case enums.publicKey.ecdh: {
+    case enums.publicKey.ecdh:
+    case enums.publicKey.aead: {
       // verify checksum in constant time
       const result = decryptedData.subarray(0, decryptedData.length - 2);
       const checksum = decryptedData.subarray(decryptedData.length - 2);

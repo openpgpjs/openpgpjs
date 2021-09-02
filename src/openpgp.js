@@ -37,13 +37,15 @@ import { checkKeyRequirements } from './key/helper';
  * The generated primary key will have signing capabilities. By default, one subkey with encryption capabilities is also generated.
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {'ecc'|'rsa'|'curve448'|'curve25519'} [options.type='ecc'] - The primary key algorithm type: ECC (default for v4 keys), RSA, Curve448 or Curve25519 (new format, default for v6 keys).
+ * @param {'ecc'|'rsa'|'curve448'|'curve25519'|'symmetric'} [options.type='ecc'] - The primary key algorithm type: ECC (default for v4 keys), RSA, Curve448, Curve25519 (new format, default for v6 keys) or symmetric.
  *                                                                     Note: Curve448 and Curve25519 (new format) are not widely supported yet.
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519Legacy'] - Elliptic curve for ECC keys:
  *                                             curve25519Legacy (default), nistP256, nistP384, nistP521, secp256k1,
  *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
+* @param {String}  options.symmetricCipher   (optional) Symmetric algorithm for persistent symmetric aead keys
+* @param {String}  options.symmetricHash     (optional)Hash lgorithm for persistent symmetric hmac keys
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`
@@ -55,7 +57,7 @@ import { checkKeyRequirements } from './key/helper';
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBits = 4096, keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
+export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBits = 4096, symmetricHash = 'sha256', symmetricCipher = 'aes256', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   if (!type && !curve) {
     type = config.v6Keys ? 'curve25519' : 'ecc'; // default to new curve25519 for v6 keys (legacy curve25519 cannot be used with them)
@@ -74,7 +76,7 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
   }
 
-  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
+  const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys, symmetricHash, symmetricCipher };
 
   try {
     const { key, revocationCertificate } = await generate(options, config);
@@ -82,7 +84,7 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
 
     return {
       privateKey: formatObject(key, format, config),
-      publicKey: formatObject(key.toPublic(), format, config),
+      publicKey: type !== 'symmetric' ? formatObject(key.toPublic(), format, config) : null,
       revocationCertificate
     };
   } catch (err) {
