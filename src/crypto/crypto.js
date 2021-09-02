@@ -28,7 +28,11 @@ import mode from './mode';
 import { getRandomBytes } from './random';
 import { getCipherParams } from './cipher';
 import ECDHSymkey from '../type/ecdh_symkey';
+import ShortByteString from '../type/short_byte_string';
+import hash from './hash';
+import config from '../config';
 import KDFParams from '../type/kdf_params';
+import { SymAlgoEnum, AEADEnum, HashEnum } from '../type/enum';
 import enums from '../enums';
 import util from '../util';
 import OID from '../type/oid';
@@ -41,12 +45,13 @@ import ECDHXSymmetricKey from '../type/ecdh_x_symkey';
  * @param {module:enums.publicKey} keyAlgo - Public key algorithm
  * @param {module:enums.symmetric|null} symmetricAlgo - Cipher algorithm (v3 only)
  * @param {Object} publicParams - Algorithm-specific public key parameters
- * @param {Uint8Array} data - Session key data to be encrypted
+ * @param {Object} privateParams - Algorithm-specific private key parameters
+ * @param {Uint8Array} data - Data to be encrypted
  * @param {Uint8Array} fingerprint - Recipient fingerprint
  * @returns {Promise<Object>} Encrypted session key parameters.
  * @async
  */
-export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, data, fingerprint) {
+export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, privateParams, data, fingerprint) {
   switch (keyAlgo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign: {
@@ -75,6 +80,21 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
         keyAlgo, data, A);
       const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
       return { ephemeralPublicKey, C };
+    }
+    case enums.publicKey.aead: {
+      if (!privateParams) {
+        throw new Error('Cannot encrypt with symmetric key missing private parameters');
+      }
+      const { cipher: algo } = publicParams;
+      const algoValue = algo.getValue();
+      const { keyMaterial } = privateParams;
+      const aeadMode = config.preferredAEADAlgorithm;
+      const mode = getAEADMode(config.preferredAEADAlgorithm);
+      const { ivLength } = mode;
+      const iv = getRandomBytes(ivLength);
+      const modeInstance = await mode(algoValue, keyMaterial);
+      const c = await modeInstance.encrypt(data, iv, new Uint8Array());
+      return { aeadMode: new AEADEnum(aeadMode), iv, c: new ShortByteString(c) };
     }
     default:
       return [];
@@ -127,6 +147,17 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       }
       return publicKey.elliptic.ecdhX.decrypt(
         algo, ephemeralPublicKey, C.wrappedKey, A, k);
+    }
+    case enums.publicKey.aead: {
+      const { cipher: algo } = publicKeyParams;
+      const algoValue = algo.getValue();
+      const { keyMaterial } = privateKeyParams;
+
+      const { aeadMode, iv, c } = sessionKeyParams;
+
+      const mode = getAEADMode(aeadMode.getValue());
+      const modeInstance = await mode(algoValue, keyMaterial);
+      return modeInstance.decrypt(c.data, iv, new Uint8Array());
     }
     default:
       throw new Error('Unknown public key encryption algorithm.');
@@ -192,6 +223,13 @@ export function parsePublicKeyParams(algo, bytes) {
       const A = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(algo)); read += A.length;
       return { read, publicParams: { A } };
     }
+    case enums.publicKey.hmac:
+    case enums.publicKey.aead: {
+      const algo = new SymAlgoEnum(); read += algo.read(bytes);
+      const digestLength = hash.getHashByteLength(enums.hash.sha256);
+      const digest = bytes.subarray(read, read + digestLength); read += digestLength;
+      return { read: read, publicParams: { cipher: algo, digest } };
+    }
     default:
       throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
@@ -201,7 +239,7 @@ export function parsePublicKeyParams(algo, bytes) {
  * Parse private key material in binary form to get the key parameters
  * @param {module:enums.publicKey} algo - The key algorithm
  * @param {Uint8Array} bytes - The key material to parse
- * @param {Object} publicParams - (ECC only) public params, needed to format some private params
+ * @param {Object} publicParams - (ECC and symmetric only) public params, needed to format some private params
  * @returns {{ read: Number, privateParams: Object }} Number of read bytes plus the key parameters referenced by name.
  */
 export function parsePrivateKeyParams(algo, bytes, publicParams) {
@@ -248,6 +286,20 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       const payloadSize = getCurvePayloadSize(algo);
       const k = util.readExactSubarray(bytes, read, read + payloadSize); read += k.length;
       return { read, privateParams: { k } };
+    }
+    case enums.publicKey.hmac: {
+      const { cipher: algo } = publicParams;
+      const keySize = hash.getHashByteLength(algo.getValue());
+      const hashSeed = bytes.subarray(read, read + 32); read += 32;
+      const keyMaterial = bytes.subarray(read, read + keySize); read += keySize;
+      return { read, privateParams: { hashSeed, keyMaterial } };
+    }
+    case enums.publicKey.aead: {
+      const { cipher: algo } = publicParams;
+      const hashSeed = bytes.subarray(read, read + 32); read += 32;
+      const { keySize } = getCipherParams(algo.getValue());
+      const keyMaterial = bytes.subarray(read, read + keySize); read += keySize;
+      return { read, privateParams: { hashSeed, keyMaterial } };
     }
     default:
       throw new UnsupportedError('Unknown public key encryption algorithm.');
@@ -298,6 +350,20 @@ export function parseEncSessionKeyParams(algo, bytes) {
       const C = new ECDHXSymmetricKey(); C.read(bytes.subarray(read));
       return { ephemeralPublicKey, C };
     }
+    //   Algorithm-Specific Fields for symmetric AEAD encryption:
+    //       - AEAD algorithm
+    //       - Starting initialization vector
+    //       - Symmetric key encryption of "m" dependent on cipher and AEAD mode prefixed with a one-octet length
+    //       - An authentication tag generated by the AEAD mode.
+    case enums.publicKey.aead: {
+      const aeadMode = new AEADEnum(); read += aeadMode.read(bytes.subarray(read));
+      const { ivLength } = getAEADMode(aeadMode.getValue());
+
+      const iv = bytes.subarray(read, read + ivLength); read += ivLength;
+      const c = new ShortByteString(); read += c.read(bytes.subarray(read));
+
+      return { aeadMode, iv, c };
+    }
     default:
       throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
@@ -315,7 +381,9 @@ export function serializeParams(algo, params) {
     enums.publicKey.ed25519,
     enums.publicKey.x25519,
     enums.publicKey.ed448,
-    enums.publicKey.x448
+    enums.publicKey.x448,
+    enums.publicKey.aead,
+    enums.publicKey.hmac
   ]);
   const orderedParams = Object.keys(params).map(name => {
     const param = params[name];
@@ -330,10 +398,11 @@ export function serializeParams(algo, params) {
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Integer} bits - Bit length for RSA keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
+ * @param {module:enums.symmetric|enums.hash} symmetric - Hash or cipher algorithm for symmetric keys
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
-export function generateParams(algo, bits, oid) {
+export async function generateParams(algo, bits, oid, symmetric) {
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
@@ -373,12 +442,35 @@ export function generateParams(algo, bits, oid) {
         privateParams: { k },
         publicParams: { A }
       }));
+    case enums.publicKey.hmac: {
+      const keyMaterial = await publicKey.hmac.generate(symmetric);
+      return createSymmetricParams(keyMaterial, new HashEnum(symmetric));
+    }
+    case enums.publicKey.aead: {
+      const keyMaterial = generateSessionKey(symmetric);
+      return createSymmetricParams(keyMaterial, new SymAlgoEnum(symmetric));
+    }
     case enums.publicKey.dsa:
     case enums.publicKey.elgamal:
       throw new Error('Unsupported algorithm for key generation.');
     default:
       throw new Error('Unknown public key algorithm.');
   }
+}
+
+async function createSymmetricParams(key, algo) {
+  const seed = getRandomBytes(32);
+  const bindingHash = await hash.sha256(seed);
+  return {
+    privateParams: {
+      hashSeed: seed,
+      keyMaterial: key
+    },
+    publicParams: {
+      cipher: algo,
+      digest: bindingHash
+    }
+  };
 }
 
 /**
@@ -434,6 +526,20 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { A } = publicParams;
       const { k } = privateParams;
       return publicKey.elliptic.ecdhX.validateParams(algo, A, k);
+    }
+    case enums.publicKey.hmac: {
+      const { cipher: algo, digest } = publicParams;
+      const { hashSeed, keyMaterial } = privateParams;
+      const keySize = hash.getHashByteLength(algo.getValue());
+      return keySize === keyMaterial.length &&
+        util.equalsUint8Array(digest, await hash.sha256(hashSeed));
+    }
+    case enums.publicKey.aead: {
+      const { cipher: algo, digest } = publicParams;
+      const { hashSeed, keyMaterial } = privateParams;
+      const { keySize } = getCipherParams(algo.getValue());
+      return keySize === keyMaterial.length &&
+        util.equalsUint8Array(digest, await hash.sha256(hashSeed));
     }
     default:
       throw new Error('Unknown public key algorithm.');

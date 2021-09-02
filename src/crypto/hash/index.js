@@ -126,5 +126,26 @@ export default {
       default:
         throw new Error('Invalid hash algorithm.');
     }
+  },
+
+  /**
+   * Returns the internal block size in bytes of the specified hash algorithm type
+   * @param {module:enums.hash} algo - Hash algorithm type (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
+   * @returns {Integer} Underlying block size in bytes.
+   */
+  getBlockSize: function(algo) {
+    switch (algo) {
+      case enums.hash.md5:
+      case enums.hash.sha1:
+      case enums.hash.ripemd:
+      case enums.hash.sha224:
+      case enums.hash.sha256:
+        return 64;
+      case enums.hash.sha384:
+      case enums.hash.sha512:
+        return 128;
+      default:
+        throw new Error('Invalid hash algorithm.');
+    }
   }
 };

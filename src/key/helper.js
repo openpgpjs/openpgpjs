@@ -17,7 +17,7 @@ export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
 }
@@ -26,7 +26,7 @@ export async function generateSecretKey(options, config) {
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }
@@ -388,6 +388,8 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.type = options.type || subkeyDefaults.type;
   options.curve = options.curve || subkeyDefaults.curve;
   options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
+  options.symmetricHash = options.symmetricHash || subkeyDefaults.symmetricHash;
+  options.symmetricCipher = options.symmetricCipher || subkeyDefaults.symmetricCipher;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
   options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
   options.date = options.date || subkeyDefaults.date;
@@ -420,6 +422,23 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
     case 'rsa':
       options.algorithm = enums.publicKey.rsaEncryptSign;
       break;
+    case 'symmetric':
+      if (options.sign) {
+        options.algorithm = enums.publicKey.hmac;
+        try {
+          options.symmetric = enums.write(enums.hash, options.symmetricHash);
+        } catch (e) {
+          throw new Error('Unknown hash algorithm');
+        }
+      } else {
+        options.algorithm = enums.publicKey.aead;
+        try {
+          options.symmetric = enums.write(enums.symmetric, options.symmetricCipher);
+        } catch (e) {
+          throw new Error('Unknown symmetric algorithm');
+        }
+      }
+      break;
     default:
       throw new Error(`Unsupported key type ${options.type}`);
   }
@@ -435,6 +454,7 @@ export function validateSigningKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.eddsaLegacy:
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448:
+    case enums.publicKey.hmac:
       if (!signature.keyFlags && !config.allowMissingKeyFlags) {
         throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
       }
@@ -453,6 +473,7 @@ export function validateEncryptionKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ecdh:
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
+    case enums.publicKey.aead:
       if (!signature.keyFlags && !config.allowMissingKeyFlags) {
         throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
       }
