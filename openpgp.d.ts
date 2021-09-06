@@ -562,15 +562,6 @@ interface NodeStream<T extends Data> extends BaseStream<T> { // copied+simplifie
 type Stream<T extends Data> = WebStream<T> | NodeStream<T>;
 type MaybeStream<T extends Data> = T | Stream<T>;
 
-export namespace stream {
-  function readToEnd<T extends Data>(input: MaybeStream<T>, concat?: (list: T[]) => T): Promise<T>;
-  // concat
-  // slice
-  // clone
-  // webToNode
-  // nodeToWeb
-}
-
 /* ############## v5 GENERAL #################### */
 type MaybeArray<T> = T | Array<T>;
 
