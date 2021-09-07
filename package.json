@@ -40,7 +40,7 @@
     "test": "mocha --require esm --timeout 120000 test/unittests.js",
     "test-type-definitions": "tsc test/typescript/definitions.ts && node test/typescript/definitions.js",
     "benchmark-time": "node test/benchmarks/benchmark.js",
-    "benchmark-memory-usage": "node --expose-gc --require esm test/benchmarks/memory_usage.js",
+    "benchmark-memory-usage": "node --require esm test/benchmarks/memory_usage.js",
     "start": "http-server",
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
