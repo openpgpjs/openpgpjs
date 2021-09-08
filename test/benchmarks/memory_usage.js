@@ -92,7 +92,7 @@ class MemoryBenchamrkSuite {
       stats.push({
         name,
         value: memoryUsage.rss,
-        range: memoryUsage,
+        range: Object.entries(memoryUsage).map(([name, value]) => `${name}: ${value}`).join(',\n'),
         unit: 'MB',
         biggerIsBetter: false
       });

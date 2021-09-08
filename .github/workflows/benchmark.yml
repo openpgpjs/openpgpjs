@@ -6,7 +6,7 @@ on:
 
 jobs:
   benchmark:
-    name: Time benchmark
+    name: Time and memory usage benchmark
     runs-on: ubuntu-latest
 
     steps:
@@ -23,13 +23,19 @@ jobs:
         with:
           node-version: '15'
 
-      - name: Run pull request benchmark
+      - name: Run pull request time benchmark
         run: cd pr && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
+      
+      - name: Run pull request memory usage benchmark
+        run: cd pr && npm run benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
 
-      - name: Run benchmark on master (baseline)
+      - name: Run time benchmark on master (baseline)
         run: cd master && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
+      
+      - name: Run memory usage benchmark on master (baseline)
+        run: cd master && npm run benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
 
-      - name: Compare benchmark result
+      - name: Compare time benchmark result
         uses: openpgpjs/github-action-pull-request-benchmark@v1
         with:
           tool: 'benchmarkjs'
@@ -42,4 +48,17 @@ jobs:
           comment-on-alert: true
           # fail workdlow if 1.5 times slower
           fail-threshold: '150%'
+          fail-on-alert: true
+
+      - name: Compare memory usage benchmark result
+        uses: openpgpjs/github-action-pull-request-benchmark@memory-usage
+        with:
+          tool: 'raw'
+          name: 'memory usage benchmark'
+          pr-benchmark-file-path: pr/memory_usage.txt
+          base-benchmark-file-path: master/memory_usage.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          alert-threshold: '110%'
+          comment-on-alert: true
+          fail-threshold: '110%'
           fail-on-alert: true
