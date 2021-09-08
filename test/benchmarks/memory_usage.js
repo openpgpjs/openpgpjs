@@ -24,7 +24,7 @@ let activeSampling = false;
 
 function sampleOnce() {
   const memUsage = process.memoryUsage();
-  if (!maxMemoryComsumption || memUsage.rss - memUsage.heapTotal > maxMemoryComsumption.rss - maxMemoryComsumption.heapTotal) {
+  if (!maxMemoryComsumption || memUsage.rss > maxMemoryComsumption.rss) {
     maxMemoryComsumption = memUsage;
   }
 }
@@ -82,17 +82,17 @@ class MemoryBenchamrkSuite {
   async run() {
     const stats = []; // the size of this data should be negligible compared to the tests
     for (const { name, fn } of this.tests) {
-      const memoryUsageBytes = await benchmark(fn).catch(onError);
-      const memoryUsage = {};
+      const memoryUsage = await benchmark(fn).catch(onError);
       // convert values to MB
-      Object.entries(memoryUsageBytes).forEach(([name, value]) => {
+      Object.entries(memoryUsage).forEach(([name, value]) => {
         memoryUsage[name] = (value / 1024 / 1024).toFixed(2);
       });
+      const { rss, ...usageDetails } = memoryUsage;
       // raw entry format accepted by github-action-pull-request-benchmark
       stats.push({
         name,
-        value: memoryUsage.rss,
-        range: Object.entries(memoryUsage).map(([name, value]) => `${name}: ${value}`).join(',\n'),
+        value: rss,
+        range: Object.entries(usageDetails).map(([name, value]) => `${name}: ${value}`).join(', '),
         unit: 'MB',
         biggerIsBetter: false
       });

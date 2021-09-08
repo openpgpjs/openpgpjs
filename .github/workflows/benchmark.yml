@@ -24,16 +24,16 @@ jobs:
           node-version: '15'
 
       - name: Run pull request time benchmark
-        run: cd pr && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
+        run: cd pr && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt
       
       - name: Run pull request memory usage benchmark
-        run: cd pr && npm run benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
+        run: cd pr && npm run --silent benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
 
       - name: Run time benchmark on master (baseline)
-        run: cd master && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
+        run: cd master && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt
       
       - name: Run memory usage benchmark on master (baseline)
-        run: cd master && npm run benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
+        run: cd master && npm run --silent benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
 
       - name: Compare time benchmark result
         uses: openpgpjs/github-action-pull-request-benchmark@v1
@@ -58,7 +58,7 @@ jobs:
           pr-benchmark-file-path: pr/memory_usage.txt
           base-benchmark-file-path: master/memory_usage.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          alert-threshold: '110%'
+          alert-threshold: '102%'
           comment-on-alert: true
           fail-threshold: '110%'
           fail-on-alert: true
