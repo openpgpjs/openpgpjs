@@ -51,7 +51,7 @@ jobs:
           fail-on-alert: true
 
       - name: Compare memory usage benchmark result
-        uses: openpgpjs/github-action-pull-request-benchmark@memory-usage
+        uses: openpgpjs/github-action-pull-request-benchmark@v1
         with:
           tool: 'raw'
           name: 'memory usage benchmark'
