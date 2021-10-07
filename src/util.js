@@ -28,7 +28,7 @@ import { getBigInteger } from './biginteger';
 
 const debugMode = (() => {
   try {
-    return process.env.NODE_ENV === 'development'; // eslint-disable-line
+    return process.env.NODE_ENV === 'development'; // eslint-disable-line no-process-env
   } catch (e) {}
   return false;
 })();
