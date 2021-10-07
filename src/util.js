@@ -26,10 +26,12 @@
 import * as stream from '@openpgp/web-stream-tools';
 import { getBigInteger } from './biginteger';
 
-
-const envVar = 'NODE_ENV';
-
-const debugMode = globalThis.process && globalThis.process.env[envVar] === 'development';
+const debugMode = (() => {
+  try {
+    return process.env.NODE_ENV === 'development';
+  } catch (e) {}
+  return false;
+})();
 
 const util = {
   isString: function(data) {
