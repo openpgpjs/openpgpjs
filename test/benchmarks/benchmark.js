@@ -10,7 +10,9 @@ const wrapAsync = func => ({
 });
 
 const onError = err => {
+  // eslint-disable-next-line no-console
   console.error('The time benchmark tests failed by throwing the following error:');
+  // eslint-disable-next-line no-console
   console.error(err);
   // eslint-disable-next-line no-process-exit
   process.exit(1);
@@ -58,6 +60,7 @@ const onError = err => {
 
   suite.on('cycle', event => {
     // Output benchmark result by converting benchmark result to string
+    // eslint-disable-next-line no-console
     console.log(String(event.target));
   });
 
