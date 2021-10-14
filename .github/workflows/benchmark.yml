@@ -1,0 +1,45 @@
+name: Performance Regression Test
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  benchmark:
+    name: Time benchmark
+    runs-on: ubuntu-latest
+
+    steps:
+      # check out pull request branch
+      - uses: actions/checkout@v2
+        with:
+          path: pr
+      # check out master branch (to compare performance)
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+          path: master
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '15'
+
+      - name: Run pull request benchmark
+        run: cd pr && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
+
+      - name: Run benchmark on master (baseline)
+        run: cd master && npm install && node test/benchmarks/benchmark.js > benchmarks.txt && cat benchmarks.txt
+
+      - name: Compare benchmark result
+        uses: openpgpjs/github-action-pull-request-benchmark@v1
+        with:
+          tool: 'benchmarkjs'
+          name: 'time benchmark'
+          pr-benchmark-file-path: pr/benchmarks.txt
+          base-benchmark-file-path: master/benchmarks.txt
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # trigger alert comment if 1.3 times slower
+          alert-threshold: '130%'
+          comment-on-alert: true
+          # fail workdlow if 1.5 times slower
+          fail-threshold: '150%'
+          fail-on-alert: true
