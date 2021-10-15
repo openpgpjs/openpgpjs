@@ -25,13 +25,13 @@ jobs:
 
       - name: Run pull request time benchmark
         run: cd pr && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt
-      
+
       - name: Run pull request memory usage benchmark
         run: cd pr && npm run --silent benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
 
       - name: Run time benchmark on master (baseline)
         run: cd master && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt
-      
+
       - name: Run memory usage benchmark on master (baseline)
         run: cd master && npm run --silent benchmark-memory-usage > memory_usage.txt && cat memory_usage.txt
 

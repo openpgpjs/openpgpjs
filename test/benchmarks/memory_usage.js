@@ -80,7 +80,7 @@ class MemoryBenchamrkSuite {
   }
 
   async run() {
-    const stats = []; // the size of this data should be negligible compared to the tests
+    const stats = [];
     for (const { name, fn } of this.tests) {
       const memoryUsage = await benchmark(fn).catch(onError);
       // convert values to MB
