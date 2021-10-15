@@ -88,7 +88,8 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the reformatted private key. If omitted, the key won't be encrypted.
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
- * @param {Date}   [options.date] - Override the creation date of the key signatures
+ * @param {Date}   [options.date] - Override the creation date of the key signatures. If the key was previously used to sign messages, it is recommended
+ *                                  to set the same date as the key creation time to ensure that old message signatures will still be verifiable using the reformatted key.
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Object>} The generated key object in the form:

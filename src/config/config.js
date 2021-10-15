@@ -130,6 +130,15 @@ export default {
    * @property {Boolean} allowInsecureDecryptionWithSigningKeys
    */
   allowInsecureDecryptionWithSigningKeys: false,
+  /**
+   * Allow verification of message signatures with keys whose validity at the time of signing cannot be determined.
+   * Instead, a verification key will also be consider valid as long as it is valid at the current time.
+   * This setting is potentially insecure, but it is needed to verify messages signed with keys that were later reformatted,
+   * and have self-signature's creation date that does not match the primary key creation date.
+   * @memberof module:config
+   * @property {Boolean} allowInsecureDecryptionWithSigningKeys
+   */
+  allowInsecureVerificationWithReformattedKeys: false,
 
   /**
    * @memberof module:config
