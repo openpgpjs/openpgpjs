@@ -839,6 +839,49 @@ ITEG9mMgp3TGS9ZzSifMZ8UGtHdp9QdBg8NEVPFzDOMGxpc/Bftav7RRRuPiAER+
     await expect(sigInfo.verified).to.be.rejectedWith(/Signature is expired/);
   });
 
+  it('Verification fails if signing key\'s self-sig were created after the time of signing, unless config allows it', async function() {
+    const armoredReformattedKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEYWmlshYJKwYBBAHaRw8BAQdAAxpFNPiHxz9q4HBzWqveHdP/knjwlgv8
+pEQCMHDpIZIAAP9WFlwHDuVlvNb7CyoikwmG01nmdMDe9wXQRWA5vasWKA+g
+zSV0ZXN0QHJlZm9ybWF0LmNvbSA8dGVzdEByZWZvcm1hdC5jb20+wowEEBYK
+AB0FAmFppjQECwkHCAMVCAoEFgACAQIZAQIbAwIeAQAhCRAOZNKOg+/XQxYh
+BGqP/hIaYCSJsZ4TrQ5k0o6D79dD+c8BAIXdh2hrC+l49WPN/KZF+ZzvWCWa
+W5n+ozbp/sOGXvODAP4oGEj0RUDDA33b6x7fhQysBZxdrrnHxP9AXEdOTQC3
+CsddBGFppbISCisGAQQBl1UBBQEBB0Cjy8Z2K7rl6J6AK1lCfVozmyLE0Gbv
+1cspce6oCF6oCwMBCAcAAP9OL5V80EaYm2ic19aM+NtTj4UNOqKqIt10AaH9
+SlcdMBDgwngEGBYIAAkFAmFppjQCGwwAIQkQDmTSjoPv10MWIQRqj/4SGmAk
+ibGeE60OZNKOg+/XQx/EAQCM0UYrObp60YbOCxu07Dm6XjCVylbOcsaxCnE7
+2eMU4AD+OkgajZgbqSIdAR1ud76FW+W+3xlDi/SMFdU7D49SbQI=
+=ASQu
+-----END PGP PRIVATE KEY BLOCK-----
+
+`;
+    const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+xA0DAQoWDmTSjoPv10MByw91AGFpplFwbGFpbnRleHTCdQQBFgoABgUCYWml
+sgAhCRAOZNKOg+/XQxYhBGqP/hIaYCSJsZ4TrQ5k0o6D79dDDWwBAKUnRWXj
+P3HTW521iD/DngK54mYS3feQzhDokhkYjO3UAP0ZlsYShKaJvXh+JgvR5BPP
+gjVcn04JVVlxqgVnMqeVBw==
+=eyO7
+-----END PGP MESSAGE-----`;
+    // the key was reformatted and the message signature date preceeds the key self-signature creation date
+    const key = await openpgp.readKey({ armoredKey: armoredReformattedKey });
+    const { signatures: [sigInfoRejected] } = await openpgp.verify({
+      verificationKeys: key,
+      message: await openpgp.readMessage({ armoredMessage })
+    });
+    await expect(sigInfoRejected.verified).to.be.rejectedWith(/Signature creation time is in the future/);
+
+    // since the key is valid at the current time, the message should be verifiable if the `config` allows it
+    const { signatures: [sigInfoValid] } = await openpgp.verify({
+      verificationKeys: key,
+      message: await openpgp.readMessage({ armoredMessage }),
+      config: { allowInsecureVerificationWithReformattedKeys: true }
+    });
+    expect(await sigInfoValid.verified).to.be.true;
+  });
+
   it('Verification fails if signing key was already expired at the time of signing (one-pass signature, streamed)', async function() {
     const armoredMessage = `-----BEGIN PGP MESSAGE-----
 
