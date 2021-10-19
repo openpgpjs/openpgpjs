@@ -230,6 +230,7 @@ class PrivateKey extends PublicKey {
     defaultOptions.curve = defaultOptions.curve || 'curve25519';
     options = helper.sanitizeKeyOptions(options, defaultOptions);
     const keyPacket = await helper.generateSecretSubkey(options);
+    helper.checkKeyRequirements(keyPacket, config);
     const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options, config);
     const packetList = this.toPacketList();
     packetList.push(keyPacket, bindingSignature);
