@@ -170,11 +170,11 @@ module.exports = () => describe('ASCII armor', function() {
     ].join('\n');
 
     // try with default config
-    await expect(openpgp.readKey({ armoredKey: privKey })).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
+    await expect(openpgp.readKey({ armoredKey: privKey })).to.be.rejectedWith(/Ascii armor integrity check failed/);
 
     // try opposite config
     openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
-    await expect(openpgp.readKey({ armoredKey: privKey })).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
+    await expect(openpgp.readKey({ armoredKey: privKey })).to.be.rejectedWith(/Ascii armor integrity check failed/);
 
     // back to default
     openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
@@ -234,7 +234,7 @@ module.exports = () => describe('ASCII armor', function() {
 
     // try with default config
     if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSum })).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
+      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSum })).to.be.rejectedWith(/Ascii armor integrity check failed/);
     } else {
       await openpgp.readKey({ armoredKey: privKeyNoCheckSum });
     }
@@ -242,7 +242,7 @@ module.exports = () => describe('ASCII armor', function() {
     // try opposite config
     openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
     if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSum })).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
+      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSum })).to.be.rejectedWith(/Ascii armor integrity check failed/);
     } else {
       await openpgp.readKey({ armoredKey: privKeyNoCheckSum });
     }
@@ -274,7 +274,7 @@ module.exports = () => describe('ASCII armor', function() {
 
     // try with default config
     if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline })).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
+      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline })).to.be.rejectedWith(/Ascii armor integrity check failed/);
     } else {
       await openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline });
     }
@@ -282,7 +282,7 @@ module.exports = () => describe('ASCII armor', function() {
     // try opposite config
     openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
     if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline })).to.be.rejectedWith(/Ascii armor integrity check on message failed/);
+      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline })).to.be.rejectedWith(/Ascii armor integrity check failed/);
     } else {
       await openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline });
     }
