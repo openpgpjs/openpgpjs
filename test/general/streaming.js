@@ -479,7 +479,7 @@ function tests() {
       const reader = stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       dataArrived();
-      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
     } finally {
       openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStreamValue;
@@ -515,7 +515,7 @@ function tests() {
       const reader = stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       dataArrived();
-      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
+      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
       expect(decrypted.signatures).to.exist.and.have.length(1);
       await expect(decrypted.signatures[0].verified).to.be.eventually.rejectedWith(/Could not find signing key/);
     } finally {
@@ -549,7 +549,7 @@ function tests() {
     const reader = stream.getReader(verified.data);
     expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
     dataArrived();
-    await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check on message failed');
+    await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
     expect(verified.signatures).to.exist.and.have.length(1);
   });
 

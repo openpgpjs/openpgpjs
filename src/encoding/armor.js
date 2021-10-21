@@ -328,8 +328,7 @@ export function unarmor(input, config = defaultConfig) {
         try {
           const checksumVerifiedString = (await checksumVerified).replace('\n', '');
           if (checksum !== checksumVerifiedString && (checksum || config.checksumRequired)) {
-            throw new Error("Ascii armor integrity check on message failed: '" + checksum + "' should be '" +
-                    checksumVerifiedString + "'");
+            throw new Error('Ascii armor integrity check failed');
           }
           await writer.ready;
           await writer.close();

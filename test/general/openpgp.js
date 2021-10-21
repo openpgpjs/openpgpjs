@@ -2795,7 +2795,7 @@ aOU=
                     stepReached = 2;
                     await stream.readToEnd(decrypted);
                   } catch (e) {
-                    expect(e.message).to.match(/Ascii armor integrity check on message failed/);
+                    expect(e.message).to.match(/Ascii armor integrity check failed/);
                     expect(stepReached).to.equal(
                       j === 0 ? 0 :
                         (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || util.detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
@@ -2803,7 +2803,7 @@ aOU=
                     );
                     return;
                   }
-                  throw new Error(`Expected "Ascii armor integrity check on message failed" error in subtest ${i}.${j}`);
+                  throw new Error(`Expected "Ascii armor integrity check failed" error in subtest ${i}.${j}`);
                 }));
               }));
             }
