@@ -130,8 +130,8 @@ class LiteralDataPacket {
 
       this.date = util.readDate(await reader.readBytes(4));
 
-      const data = reader.remainder();
-
+      let data = reader.remainder();
+      if (stream.isArrayStream(data)) data = await stream.readToEnd(data);
       this.setBytes(data, format);
     });
   }
