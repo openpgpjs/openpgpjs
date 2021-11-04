@@ -125,7 +125,7 @@ class SymEncryptedSessionKeyPacket {
 
   /**
    * Decrypts the session key
-   * @param {String} passphrase - The passphrase in string form
+   * @param {String|Uint8Array} passphrase - The passphrase in string or uint8Array form
    * @throws {Error} if decryption was not successful
    * @async
    */
@@ -154,7 +154,7 @@ class SymEncryptedSessionKeyPacket {
 
   /**
    * Encrypts the session key
-   * @param {String} passphrase - The passphrase in string form
+   * @param {String|Uint8Array} passphrase - The passphrase in string or uint8Array form
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async

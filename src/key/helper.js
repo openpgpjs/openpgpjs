@@ -330,7 +330,9 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.curve = options.curve || subkeyDefaults.curve;
   options.rsaBits = options.rsaBits || subkeyDefaults.rsaBits;
   options.keyExpirationTime = options.keyExpirationTime !== undefined ? options.keyExpirationTime : subkeyDefaults.keyExpirationTime;
-  options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
+  if (!util.isString(options.passphrase) || !util.isUint8Array(options.passphrase)) {
+    options.passphrase = subkeyDefaults.passphrase;
+  }
   options.date = options.date || subkeyDefaults.date;
 
   options.sign = options.sign || false;

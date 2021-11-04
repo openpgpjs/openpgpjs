@@ -142,13 +142,16 @@ class S2K {
   /**
    * Produces a key using the specified passphrase and the defined
    * hashAlgorithm
-   * @param {String} passphrase - Passphrase containing user input
+   * @param {String|Uint8Array} passphrase - Passphrase containing user input
    * @returns {Promise<Uint8Array>} Produced key with a length corresponding to.
    * hashAlgorithm hash length
    * @async
    */
   async produceKey(passphrase, numBytes) {
-    passphrase = util.encodeUTF8(passphrase);
+    if (!util.isUint8Array(passphrase)) {
+      passphrase = util.encodeUTF8(passphrase);
+    }
+
     const algorithm = enums.write(enums.hash, this.algorithm);
 
     const arr = [];

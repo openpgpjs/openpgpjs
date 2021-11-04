@@ -21,11 +21,11 @@ export function readPrivateKeys(options: { binaryKeys: Uint8Array, config?: Part
 export function generateKey(options: KeyOptions & { format?: 'armored' }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
 export function generateKey(options: KeyOptions & { format: 'binary' }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
 export function generateKey(options: KeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
-export function decryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
-export function encryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
-export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
+export function decryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string> | MaybeArray<Uint8Array>; config?: PartialConfig }): Promise<PrivateKey>;
+export function encryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string> | MaybeArray<Uint8Array>; config?: PartialConfig }): Promise<PrivateKey>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string | Uint8Array; keyExpirationTime?: number; date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string | Uint8Array; keyExpirationTime?: number; date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
+export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string | Uint8Array; keyExpirationTime?: number; date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair & { revocationCertificate: string }>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'binary', config?: PartialConfig }): Promise<SerializedKeyPair<Uint8Array>>;
 export function revokeKey(options: { key: PrivateKey, reasonForRevocation?: ReasonForRevocation, date?: Date, format: 'object', config?: PartialConfig }): Promise<KeyPair>;
@@ -388,8 +388,8 @@ export class PublicSubkeyPacket extends BasePublicKeyPacket {
 
 declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
   public privateParams: object | null;
-  public encrypt(passphrase: string, config?: Config): Promise<void>; // throws on error
-  public decrypt(passphrase: string): Promise<void>; // throws on error
+  public encrypt(passphrase: string | Uint8Array, config?: Config): Promise<void>; // throws on error
+  public decrypt(passphrase: string | Uint8Array): Promise<void>; // throws on error
   public validate(): Promise<void>; // throws on error
   public isDummy(): boolean;
   public makeDummy(config?: Config): void;
@@ -430,8 +430,8 @@ export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
 
 export class SymEncryptedSessionKey extends BasePacket {
   static readonly tag: enums.packet.symEncryptedSessionKey;
-  private decrypt(passphrase: string): Promise<void>;
-  private encrypt(passphrase: string, config?: Config): Promise<void>;
+  private decrypt(passphrase: string | Uint8Array): Promise<void>;
+  private encrypt(passphrase: string | Uint8Array, config?: Config): Promise<void>;
 }
 
 export class LiteralDataPacket extends BasePacket {
@@ -668,7 +668,7 @@ export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p5
 
 interface KeyOptions {
   userIDs: MaybeArray<UserID>;
-  passphrase?: string;
+  passphrase?: string | Uint8Array;
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
   rsaBits?: number;

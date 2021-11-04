@@ -51,7 +51,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @param {String}  options.curve                 Elliptic curve for ECC keys
  * @param {Integer} options.rsaBits               Number of bits for RSA keys
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
- * @param {String}  options.passphrase            Passphrase used to encrypt the resulting private key
+ * @param {String|Uint8Array}  options.passphrase - Passphrase used to encrypt the resulting private key
  * @param {Number}  options.keyExpirationTime     (optional) Number of seconds from the key creation time after which the key expires
  * @param {Date}    options.date                  Creation date of the key and the key signatures
  * @param {Object} config - Full configuration
@@ -80,7 +80,7 @@ export async function generate(options, config) {
  * Reformats and signs an OpenPGP key with a given User ID. Currently only supports RSA keys.
  * @param {PrivateKey} options.privateKey         The private key to reformat
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
- * @param {String} options.passphrase             Passphrase used to encrypt the resulting private key
+ * @param {String|Uint8Array} options.passphrase  Passphrase used to encrypt the resulting private key
  * @param {Number} options.keyExpirationTime      Number of seconds from the key creation time after which the key expires
  * @param {Date}   options.date                   Override the creation date of the key signatures
  * @param {Array<Object>} options.subkeys         (optional) options for each subkey, default to main key options. e.g. [{sign: true, passphrase: '123'}]
@@ -137,7 +137,9 @@ export async function reformat(options, config) {
 
   function sanitize(options, subkeyDefaults = {}) {
     options.keyExpirationTime = options.keyExpirationTime || subkeyDefaults.keyExpirationTime;
-    options.passphrase = util.isString(options.passphrase) ? options.passphrase : subkeyDefaults.passphrase;
+    if (!util.isString(options.passphrase) || !util.isUint8Array(options.passphrase)) {
+      options.passphrase = subkeyDefaults.passphrase;
+    }
     options.date = options.date || subkeyDefaults.date;
 
     return options;

@@ -266,7 +266,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * to key specifier. If the key is in a decrypted state (isEncrypted === false)
    * and the passphrase is empty or undefined, the key will be set as not encrypted.
    * This can be used to remove passphrase protection after calling decrypt().
-   * @param {String} passphrase
+   * @param {String|Uint8Array} passphrase
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
    * @async
@@ -316,7 +316,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Successful decryption does not imply key integrity, call validate() to confirm that.
    * {@link SecretKeyPacket.isDecrypted} should be false, as
    * otherwise calls to this function will throw an error.
-   * @param {String} passphrase - The passphrase for this private key as string
+   * @param {String|Uint8Array} passphrase - The passphrase for this private key as string or uint8Array
    * @throws {Error} if the key is already decrypted, or if decryption was not successful
    * @async
    */
