@@ -49,7 +49,7 @@ jobs:
           # fail workdlow if 1.5 times slower
           fail-threshold: '150%'
           fail-on-alert: true
-          file-to-annotate: pr/test/benchmarks/time.js
+          file-to-annotate: test/benchmarks/time.js
 
       - name: Compare memory usage benchmark result
         uses: openpgpjs/github-action-pull-request-benchmark@v1
@@ -63,5 +63,5 @@ jobs:
           comment-on-alert: true
           fail-threshold: '110%'
           fail-on-alert: true
-          file-to-annotate: pr/test/benchmarks/memory_usage.js
+          file-to-annotate: test/benchmarks/memory_usage.js
 
