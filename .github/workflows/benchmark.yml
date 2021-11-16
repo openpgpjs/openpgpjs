@@ -39,7 +39,7 @@ jobs:
         uses: openpgpjs/github-action-pull-request-benchmark@v1
         with:
           tool: 'benchmarkjs'
-          name: 'time benchmark'
+          name: 'Time benchmark'
           pr-benchmark-file-path: pr/benchmarks.txt
           base-benchmark-file-path: master/benchmarks.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -55,7 +55,7 @@ jobs:
         uses: openpgpjs/github-action-pull-request-benchmark@v1
         with:
           tool: 'raw'
-          name: 'memory usage benchmark'
+          name: 'Memory usage benchmark'
           pr-benchmark-file-path: pr/memory_usage.txt
           base-benchmark-file-path: master/memory_usage.txt
           github-token: ${{ secrets.GITHUB_TOKEN }}
