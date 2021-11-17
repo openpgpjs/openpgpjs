@@ -87,13 +87,13 @@ class OnePassSignaturePacket {
 
     // A one-octet signature type.  Signature types are described in
     //   Section 5.2.1.
-    this.signatureType = enums.write(enums.signature, bytes[mypos++]);
+    this.signatureType = bytes[mypos++];
 
     // A one-octet number describing the hash algorithm used.
-    this.hashAlgorithm = enums.write(enums.hash, bytes[mypos++]);
+    this.hashAlgorithm = bytes[mypos++];
 
     // A one-octet number describing the public-key algorithm used.
-    this.publicKeyAlgorithm = enums.write(enums.publicKey, bytes[mypos++]);
+    this.publicKeyAlgorithm = bytes[mypos++];
 
     // An eight-octet number holding the Key ID of the signing key.
     this.issuerKeyID = new KeyID();

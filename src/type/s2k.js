@@ -72,9 +72,6 @@ class S2K {
     let i = 0;
     this.type = enums.read(enums.s2k, bytes[i++]);
     this.algorithm = bytes[i++];
-    if (this.type !== 'gnu') {
-      this.algorithm = enums.write(enums.hash, this.algorithm);
-    }
 
     switch (this.type) {
       case 'simple':

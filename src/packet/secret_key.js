@@ -49,7 +49,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = null;
     /**
      * S2K usage
-     * @type {Integer}
+     * @type {enums.symmetric}
      */
     this.s2kUsage = 0;
     /**
@@ -101,12 +101,12 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
     //   one-octet symmetric encryption algorithm.
     if (this.s2kUsage === 255 || this.s2kUsage === 254 || this.s2kUsage === 253) {
-      this.symmetric = enums.write(enums.symmetric, bytes[i++]);
+      this.symmetric = bytes[i++];
 
       // - [Optional] If string-to-key usage octet was 253, a one-octet
       //   AEAD algorithm.
       if (this.s2kUsage === 253) {
-        this.aead = enums.write(enums.aead, bytes[i++]);
+        this.aead = bytes[i++];
       }
 
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
@@ -119,7 +119,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         return;
       }
     } else if (this.s2kUsage) {
-      this.symmetric = enums.write(enums.symmetric, this.s2kUsage);
+      this.symmetric = this.s2kUsage;
     }
 
     // - [Optional] If secret data is encrypted (string-to-key usage octet

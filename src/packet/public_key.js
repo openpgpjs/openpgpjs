@@ -115,11 +115,7 @@ class PublicKeyPacket {
       pos += 4;
 
       // - A one-octet number denoting the public-key algorithm of this key.
-      try {
-        this.algorithm = enums.write(enums.publicKey, bytes[pos++]);
-      } catch (e) {
-        throw new Error('Error reading public key algorithm');
-      }
+      this.algorithm = bytes[pos++];
 
       if (this.version === 5) {
         // - A four-octet scalar octet count for the following key material.

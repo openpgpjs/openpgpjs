@@ -73,8 +73,8 @@ class AEADEncryptedDataPacket {
       if (version !== VERSION) { // The only currently defined value is 1.
         throw new UnsupportedError(`Version ${version} of the AEAD-encrypted data packet is not supported.`);
       }
-      this.cipherAlgorithm = enums.write(enums.symmetric, await reader.readByte());
-      this.aeadAlgorithm = enums.write(enums.aead, await reader.readByte());
+      this.cipherAlgorithm = await reader.readByte();
+      this.aeadAlgorithm = await reader.readByte();
       this.chunkSizeByte = await reader.readByte();
 
       const mode = crypto.getAEADMode(this.aeadAlgorithm);

@@ -85,7 +85,7 @@ class CompressedDataPacket {
     await stream.parse(bytes, async reader => {
 
       // One octet that gives the algorithm used to compress the packet.
-      this.algorithm = enums.write(enums.compression, await reader.readByte());
+      this.algorithm = await reader.readByte();
 
       // Compressed data, which makes up the remainder of the packet.
       this.compressed = reader.remainder();

@@ -114,9 +114,9 @@ class SignaturePacket {
       throw new UnsupportedError(`Version ${this.version} of the signature packet is unsupported.`);
     }
 
-    this.signatureType = enums.write(enums.signature, bytes[i++]);
-    this.publicKeyAlgorithm = enums.write(enums.publicKey, bytes[i++]);
-    this.hashAlgorithm = enums.write(enums.hash, bytes[i++]);
+    this.signatureType = bytes[i++];
+    this.publicKeyAlgorithm = bytes[i++];
+    this.hashAlgorithm = bytes[i++];
 
     // hashed subpackets
     i += this.readSubPackets(bytes.subarray(i, bytes.length), true);

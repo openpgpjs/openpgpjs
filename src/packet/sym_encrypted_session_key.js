@@ -81,11 +81,11 @@ class SymEncryptedSessionKeyPacket {
     }
 
     // A one-octet number describing the symmetric algorithm used.
-    const algo = enums.write(enums.symmetric, bytes[offset++]);
+    const algo = bytes[offset++];
 
     if (this.version === 5) {
       // A one-octet AEAD algorithm.
-      this.aeadAlgorithm = enums.write(enums.aead, bytes[offset++]);
+      this.aeadAlgorithm = bytes[offset++];
     }
 
     // A string-to-key (S2K) specifier, length as defined above.
