@@ -44,7 +44,7 @@ async function GCM(cipher, key) {
   if (cipher !== enums.symmetric.aes128 &&
     cipher !== enums.symmetric.aes192 &&
     cipher !== enums.symmetric.aes256) {
-    throw new Error('EAX mode supports only AES cipher');
+    throw new Error('GCM mode supports only AES cipher');
   }
 
   if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
