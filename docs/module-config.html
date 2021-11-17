@@ -89,7 +89,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/index.js">config/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/index.js#L1">line 1</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/index.js">config/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/index.js#L1">line 1</a>
     </li></ul></dd>
     
 
@@ -247,7 +247,7 @@ Must be an integer value from 0 to 56.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L69">line 69</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L69">line 69</a>
     </li></ul></dd>
     
 
@@ -365,7 +365,7 @@ Note: not all OpenPGP implementations are compatible with this option.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L54">line 54</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L54">line 54</a>
     </li></ul></dd>
     
 
@@ -490,7 +490,126 @@ where key flags were ignored when selecting a key for encryption.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L132">line 132</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L132">line 132</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".allowInsecureVerificationWithReformattedKeys"><span class="type-signature">(static) </span>allowInsecureVerificationWithReformattedKeys<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>Allow verification of message signatures with keys whose validity at the time of signing cannot be determined.
+Instead, a verification key will also be consider valid as long as it is valid at the current time.
+This setting is potentially insecure, but it is needed to verify messages signed with keys that were later reformatted,
+and have self-signature's creation date that does not match the primary key creation date.</p>
+</div>
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>allowInsecureDecryptionWithSigningKeys</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L141">line 141</a>
     </li></ul></dd>
     
 
@@ -611,7 +730,7 @@ This is an <strong>insecure</strong> setting:</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L93">line 93</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L93">line 93</a>
     </li></ul></dd>
     
 
@@ -728,7 +847,7 @@ This setting is <strong>insecure</strong> if the partially decrypted message is 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L100">line 100</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L100">line 100</a>
     </li></ul></dd>
     
 
@@ -840,7 +959,7 @@ This setting is <strong>insecure</strong> if the partially decrypted message is 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L105">line 105</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L105">line 105</a>
     </li></ul></dd>
     
 
@@ -952,7 +1071,7 @@ This setting is <strong>insecure</strong> if the partially decrypted message is 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L168">line 168</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L177">line 177</a>
     </li></ul></dd>
     
 
@@ -1064,7 +1183,7 @@ This setting is <strong>insecure</strong> if the partially decrypted message is 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L44">line 44</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L44">line 44</a>
     </li></ul></dd>
     
 
@@ -1176,7 +1295,7 @@ This setting is <strong>insecure</strong> if the partially decrypted message is 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L148">line 148</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L157">line 157</a>
     </li></ul></dd>
     
 
@@ -1288,7 +1407,7 @@ This setting is <strong>insecure</strong> if the partially decrypted message is 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L143">line 143</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L152">line 152</a>
     </li></ul></dd>
     
 
@@ -1405,7 +1524,7 @@ validation error when the notation is marked as critical.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L182">line 182</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L191">line 191</a>
     </li></ul></dd>
     
 
@@ -1521,7 +1640,7 @@ validation error when the notation is marked as critical.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L175">line 175</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L184">line 184</a>
     </li></ul></dd>
     
 
@@ -1633,7 +1752,7 @@ validation error when the notation is marked as critical.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L138">line 138</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L147">line 147</a>
     </li></ul></dd>
     
 
@@ -1750,7 +1869,7 @@ The default is 2047 since due to a bug, previous versions of OpenPGP.js could ge
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L112">line 112</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L112">line 112</a>
     </li></ul></dd>
     
 
@@ -1867,7 +1986,7 @@ The default is 2047 since due to a bug, previous versions of OpenPGP.js could ge
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L119">line 119</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L119">line 119</a>
     </li></ul></dd>
     
 
@@ -1984,7 +2103,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L61">line 61</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L61">line 61</a>
     </li></ul></dd>
     
 
@@ -2096,7 +2215,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L39">line 39</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L39">line 39</a>
     </li></ul></dd>
     
 
@@ -2208,7 +2327,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L29">line 29</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L29">line 29</a>
     </li></ul></dd>
     
 
@@ -2320,7 +2439,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L34">line 34</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L34">line 34</a>
     </li></ul></dd>
     
 
@@ -2436,7 +2555,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L214">line 214</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L223">line 223</a>
     </li></ul></dd>
     
 
@@ -2552,7 +2671,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L196">line 196</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L205">line 205</a>
     </li></ul></dd>
     
 
@@ -2668,7 +2787,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L202">line 202</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L211">line 211</a>
     </li></ul></dd>
     
 
@@ -2784,7 +2903,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L208">line 208</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L217">line 217</a>
     </li></ul></dd>
     
 
@@ -2896,7 +3015,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L124">line 124</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L124">line 124</a>
     </li></ul></dd>
     
 
@@ -3013,7 +3132,7 @@ Iteration Count Byte for S2K (String to Key)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L84">line 84</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L84">line 84</a>
     </li></ul></dd>
     
 
@@ -3125,7 +3244,7 @@ Iteration Count Byte for S2K (String to Key)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L158">line 158</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L167">line 167</a>
     </li></ul></dd>
     
 
@@ -3237,7 +3356,7 @@ Iteration Count Byte for S2K (String to Key)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L153">line 153</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L162">line 162</a>
     </li></ul></dd>
     
 
@@ -3355,7 +3474,7 @@ Note: the indutny/elliptic curve library is not designed to be constant time.</p
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L190">line 190</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L199">line 199</a>
     </li></ul></dd>
     
 
@@ -3473,7 +3592,7 @@ Note: not all OpenPGP implementations are compatible with this option.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L77">line 77</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L77">line 77</a>
     </li></ul></dd>
     
 
@@ -3585,7 +3704,7 @@ Note: not all OpenPGP implementations are compatible with this option.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.0/src/config/config.js#L163">line 163</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.0.1/src/config/config.js#L172">line 172</a>
     </li></ul></dd>
     
 
