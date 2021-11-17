@@ -107,7 +107,7 @@ export class Message {
    * @async
    */
   async decrypt(decryptionKeys, passwords, sessionKeys, date = new Date(), config = defaultConfig) {
-    const sessionKeyObjs = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config);
+    const sessionKeyObjects = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config);
 
     const symEncryptedPacketlist = this.packets.filterByTag(
       enums.packet.symmetricallyEncryptedData,
@@ -121,7 +121,7 @@ export class Message {
 
     const symEncryptedPacket = symEncryptedPacketlist[0];
     let exception = null;
-    const decryptedPromise = Promise.all(sessionKeyObjs.map(async ({ algorithm: algorithmName, data }) => {
+    const decryptedPromise = Promise.all(sessionKeyObjects.map(async ({ algorithm: algorithmName, data }) => {
       if (!util.isUint8Array(data) || !util.isString(algorithmName)) {
         throw new Error('Invalid session key for decryption.');
       }
@@ -162,36 +162,36 @@ export class Message {
    * @async
    */
   async decryptSessionKeys(decryptionKeys, passwords, date = new Date(), config = defaultConfig) {
-    let keyPackets = [];
+    let decryptedSessionKeyPackets = [];
 
     let exception;
     if (passwords) {
-      const symESKeyPacketlist = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
-      if (symESKeyPacketlist.length === 0) {
+      const skeskPackets = this.packets.filterByTag(enums.packet.symEncryptedSessionKey);
+      if (skeskPackets.length === 0) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
       await Promise.all(passwords.map(async function(password, i) {
         let packets;
         if (i) {
-          packets = await PacketList.fromBinary(symESKeyPacketlist.write(), allowedSymSessionKeyPackets, config);
+          packets = await PacketList.fromBinary(skeskPackets.write(), allowedSymSessionKeyPackets, config);
         } else {
-          packets = symESKeyPacketlist;
+          packets = skeskPackets;
         }
-        await Promise.all(packets.map(async function(keyPacket) {
+        await Promise.all(packets.map(async function(skeskPacket) {
           try {
-            await keyPacket.decrypt(password);
-            keyPackets.push(keyPacket);
+            await skeskPacket.decrypt(password);
+            decryptedSessionKeyPackets.push(skeskPacket);
           } catch (err) {
             util.printDebugError(err);
           }
         }));
       }));
     } else if (decryptionKeys) {
-      const pkESKeyPacketlist = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
-      if (pkESKeyPacketlist.length === 0) {
+      const pkeskPackets = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
+      if (pkeskPackets.length === 0) {
         throw new Error('No public key encrypted session key packet found.');
       }
-      await Promise.all(pkESKeyPacketlist.map(async function(keyPacket) {
+      await Promise.all(pkeskPackets.map(async function(pkeskPacket) {
         await Promise.all(decryptionKeys.map(async function(decryptionKey) {
           let algos = [
             enums.symmetric.aes256, // Old OpenPGP.js default fallback
@@ -207,7 +207,7 @@ export class Message {
           } catch (e) {}
 
           // do not check key expiration to allow decryption of old messages
-          const decryptionKeyPackets = (await decryptionKey.getDecryptionKeys(keyPacket.publicKeyID, null, undefined, config)).map(key => key.keyPacket);
+          const decryptionKeyPackets = (await decryptionKey.getDecryptionKeys(pkeskPacket.publicKeyID, null, undefined, config)).map(key => key.keyPacket);
           await Promise.all(decryptionKeyPackets.map(async function(decryptionKeyPacket) {
             if (!decryptionKeyPacket || decryptionKeyPacket.isDummy()) {
               return;
@@ -215,30 +215,78 @@ export class Message {
             if (!decryptionKeyPacket.isDecrypted()) {
               throw new Error('Decryption key is not decrypted.');
             }
-            try {
-              await keyPacket.decrypt(decryptionKeyPacket);
-              if (!algos.includes(keyPacket.sessionKeyAlgorithm)) {
-                throw new Error('A non-preferred symmetric algorithm was used.');
+
+            // To hinder CCA attacks against RSA PKCS1, we carry out a constant-time decryption flow if the `constantTimePKCS1Decryption` config option is set.
+            const doConstantTimeDecryption = config.constantTimePKCS1Decryption && (
+              pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaEncrypt ||
+              pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaEncryptSign ||
+              pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaSign
+            );
+
+            if (doConstantTimeDecryption) {
+              // The goal is to not reveal whether PKESK decryption failed, hence, we always proceed to decrypt the message, either with the successfully decrypted session key,
+              // or with a randomly generated one of the same type.
+              // Since the SEIP/AEAD's symmetric algorithm and key size are stored in the encrypted portion of the PKESK, and the execution flow cannot depend on
+              // the decrypted payload, we always assume the message to be AES-encrypted, and try to decrypt the message using all possible AES key sizes (i.e. 128, 192, 256):
+              // - If the PKESK decryption succeeds, and the session key cipher is AES, then we try to decrypt the data with the decrypted session key as well as the
+              // randomly generated keys of the two remaining key sizes.
+              // - If the PKESK decryptions fails, or if it succeeds but the cipher is not AES, then we discard the session key and try to decrypt the data using only the randomly
+              // generated session keys.
+              //
+              // NB: if the data is encrypted with a non-AES cipher, decryption will always fail. The code could be extended to support additional non-AES ciphers,
+              // but that would considerably slow down decryption.
+              const sessionKeysOfEachAlgo = await Promise.all(['aes128', 'aes192', 'aes256'].map(async algoName => {
+                const randomPKESK = new PublicKeyEncryptedSessionKeyPacket();
+                randomPKESK.publicKeyAlgorithm = pkeskPacket.publicKeyAlgorithm;
+                randomPKESK.sessionKeyAlgorithm = enums.write(enums.symmetric, algoName);
+                randomPKESK.sessionKey = await crypto.generateSessionKey(algoName);
+                return randomPKESK;
+              }));
+
+              try {
+                // PKESK decryption is not constant time and  it will throw on failure, but the time variability is small enough
+                await pkeskPacket.decrypt(decryptionKeyPacket);
+                if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
+                  throw new Error('A non-preferred symmetric algorithm was used.');
+                }
+                // If the successfully decrypted session key is AES, use it instead of the randomly generated AES key of the same size.
+                // If it is non-AES, discard it and proceed with only the randomly generated session keys.
+
+                // TODO this can be simplified with pkesk.decrypt being aware of constant timeness:
+                // - clone pkesk and have it decrypted with each random key passed as `randomSessionKey`
+                // - use the result as-is, unless errors are thrown, then discard the pkesk (as already done)
+                const algoIndex = sessionKeysOfEachAlgo.findIndex(({ sessionKeyAlgorithm }) => sessionKeyAlgorithm === pkeskPacket.sessionKeyAlgorithm);
+                sessionKeysOfEachAlgo[algoIndex] = (algoIndex >= 0) ? pkeskPacket : sessionKeysOfEachAlgo[algoIndex];
+              } finally {
+                decryptedSessionKeyPackets.push(...sessionKeysOfEachAlgo);
               }
-              keyPackets.push(keyPacket);
-            } catch (err) {
-              util.printDebugError(err);
-              exception = err;
+
+            } else {
+              try {
+                await pkeskPacket.decrypt(decryptionKeyPacket);
+                if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
+                  throw new Error('A non-preferred symmetric algorithm was used.');
+                }
+                decryptedSessionKeyPackets.push(pkeskPacket);
+              } catch (err) {
+                util.printDebugError(err);
+                exception = err;
+              }
             }
           }));
         }));
-        stream.cancel(keyPacket.encrypted); // Don't keep copy of encrypted data in memory.
-        keyPacket.encrypted = null;
+        stream.cancel(pkeskPacket.encrypted); // Don't keep copy of encrypted data in memory.
+        pkeskPacket.encrypted = null;
       }));
     } else {
       throw new Error('No key or password specified.');
     }
 
-    if (keyPackets.length) {
+    if (decryptedSessionKeyPackets.length > 0) {
       // Return only unique session keys
-      if (keyPackets.length > 1) {
+      if (decryptedSessionKeyPackets.length > 1) {
         const seen = new Set();
-        keyPackets = keyPackets.filter(item => {
+        decryptedSessionKeyPackets = decryptedSessionKeyPackets.filter(item => {
           const k = item.sessionKeyAlgorithm + util.uint8ArrayToString(item.sessionKey);
           if (seen.has(k)) {
             return false;
@@ -248,7 +296,7 @@ export class Message {
         });
       }
 
-      return keyPackets.map(packet => ({
+      return decryptedSessionKeyPackets.map(packet => ({
         data: packet.sessionKey,
         algorithm: enums.read(enums.symmetric, packet.sessionKeyAlgorithm)
       }));

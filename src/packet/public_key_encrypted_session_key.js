@@ -116,19 +116,29 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @throws {Error} if decryption failed
    * @async
    */
-  async decrypt(key) {
+  async decrypt(key, randomSessionKey) {
     // check that session key algo matches the secret key algo
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
     }
+
+    // TODO: 
+    // - add algo + checksum to random session key and pass down the data to be used as randomPayload for emeDecode
+    // - if checksum is valid, also check that decoded.algo and decoded.length match random session key data (ie use it as "expected session key type")
+    //    if yes, use decoded data as session key data + algo, otherwise, use random session key data + algo
+    // only throw decryption error if random session key is not passed.
+    // NB: it is safe to throw some errors regardless of random session key presence (eg rsa decryption failure not due to decoding, or unknown pubkey algo etc).
     const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes());
     const checksum = decoded.subarray(decoded.length - 2);
     const sessionKey = decoded.subarray(1, decoded.length - 2);
-    if (!util.equalsUint8Array(checksum, util.writeChecksum(sessionKey))) {
-      throw new Error('Decryption error');
-    } else {
+    const symmetricAlgoByte = decoded[0];
+
+    const isValidPayload = util.equalsUint8Array(checksum, util.writeChecksum(sessionKey)) && enums.symmetric[symmetricAlgoByte] !== undefined && enums.symmetric[symmetricAlgoByte] === randomSessionKey.sessionKeyAlgorithm;
+    if (isValidPayload) {
       this.sessionKey = sessionKey;
-      this.sessionKeyAlgorithm = enums.write(enums.symmetric, decoded[0]);
+      this.sessionKeyAlgorithm = enums.write(enums.symmetric, symmetricAlgoByte);
+    } else {
+      throw new Error('Decryption error');
     }
   }
 }

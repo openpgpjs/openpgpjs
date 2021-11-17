@@ -98,18 +98,31 @@ export async function emeEncode(message, keyLength) {
  * Decode a EME-PKCS1-v1_5 padded message
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.2|RFC 4880 13.1.2}
  * @param {Uint8Array} encoded - Encoded message bytes
- * @returns {Uint8Array} Message.
+ * @param {Uint8Array} randomPayload - Data to return in case of decoding error (needed for constant-time processing)
+ * @returns {Uint8Array} decoded data or `randomPayload` (on error, if given)
+ * @throws {Error} on decoding failure, unless `randomPayload` is provided
  */
-export function emeDecode(encoded) {
-  let i = 2;
-  while (encoded[i] !== 0 && i < encoded.length) {
-    i++;
+export function emeDecode(encoded, randomPayload) {
+  // encoded format: 0x00 0x02 <PS> 0x00 <payload>
+  let offset = 2;
+  let separatorNotFound = 1;
+  for (let j = offset; j < encoded.length; j++) {
+    separatorNotFound &= encoded[j] !== 0;
+    offset += separatorNotFound;
   }
-  const psLen = i - 2;
-  const separator = encoded[i++];
-  if (encoded[0] === 0 && encoded[1] === 2 && psLen >= 8 && separator === 0) {
-    return encoded.subarray(i);
+
+  const psLen = offset - 2;
+  const payload = encoded.subarray(offset + 1); // discar the 0x00 separator
+  const isValidPadding = encoded[0] === 0 & encoded[1] === 2 & psLen >= 8 & !separatorNotFound;
+
+  if (randomPayload) {
+    return isValidPadding ? payload : randomPayload;
   }
+
+  if (isValidPadding) {
+    return payload;
+  }
+
   throw new Error('Decryption error');
 }
 

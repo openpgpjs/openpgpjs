@@ -140,6 +140,9 @@ export default {
    */
   allowInsecureVerificationWithReformattedKeys: false,
 
+  constantTimePKCS1Decryption: false,
+  // TODO add option to specify ciphers to decrypt with (default to AES ones)
+
   /**
    * @memberof module:config
    * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
