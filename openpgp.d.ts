@@ -185,8 +185,8 @@ export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { messa
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binaryMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 
-export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
-export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, type?: DataPacketType }): Promise<Message<T>>;
+export function createMessage<T extends MaybeStream<string>>(options: { text: T, filename?: string, date?: Date, format?: enums.literalFormatNames }): Promise<Message<T>>;
+export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, format?: enums.literalFormatNames }): Promise<Message<T>>;
 
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format?: 'armored' }): Promise<
   T extends WebStream<infer X> ? WebStream<string> :
@@ -438,8 +438,8 @@ export class LiteralDataPacket extends BasePacket {
   static readonly tag: enums.packet.literalData;
   private getText(clone?: boolean): MaybeStream<string>;
   private getBytes(clone?: boolean): MaybeStream<Uint8Array>;
-  private setText(text: MaybeStream<string>, format?: DataPacketType);
-  private setBytes(bytes: MaybeStream<Uint8Array>, format?: DataPacketType);
+  private setText(text: MaybeStream<string>, format?: enums.literal);
+  private setBytes(bytes: MaybeStream<Uint8Array>, format: enums.literal);
   private setFilename(filename: string);
   private getFilename(): string;
   private writeHeader(): Uint8Array;
@@ -533,8 +533,6 @@ export class TrustPacket extends BasePacket {
 export type AnyPacket = BasePacket;
 export type AnySecretKeyPacket = SecretKeyPacket | SecretSubkeyPacket;
 export type AnyKeyPacket = BasePublicKeyPacket;
-
-type DataPacketType = 'utf8' | 'binary' | 'text' | 'mime';
 
 type AllowedPackets = Map<enums.packet, object>; // mapping to Packet classes (i.e. typeof LiteralDataPacket etc.)
 export class PacketList<T extends AnyPacket> extends Array<T> {
@@ -639,7 +637,6 @@ interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   signingKeys?: MaybeArray<PrivateKey>;
   format?: 'armored' | 'binary' | 'object';
-  dataType?: DataPacketType;
   detached?: boolean;
   signingKeyIDs?: MaybeArray<KeyID>;
   date?: Date;
@@ -884,5 +881,13 @@ export namespace enums {
     eax = 1,
     ocb = 2,
     experimentalGCM = 100 // Private algorithm
+  }
+
+  export type literalFormatNames = 'utf8' | 'binary' | 'text' | 'mime'
+  enum literal {
+    binary = 98,
+    text = 116,
+    utf8 = 117,
+    mime = 109
   }
 }

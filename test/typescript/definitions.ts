@@ -68,7 +68,7 @@ import {
 
   // Encrypt text message (armored)
   const text = 'hello';
-  const textMessage = await createMessage({ text: 'hello' });
+  const textMessage = await createMessage({ text: 'hello', format: 'text' });
   const encryptedArmor: string = await encrypt({ encryptionKeys: publicKeys, message: textMessage });
   expect(encryptedArmor).to.include('-----BEGIN PGP MESSAGE-----');
 

@@ -3481,7 +3481,7 @@ aOU=
         }).then(async function (message) {
           const literals = message.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
-          expect(literals[0].format).to.equal('binary');
+          expect(literals[0].format).to.equal(openpgp.enums.literal.binary);
           expect(+literals[0].date).to.equal(+future);
           const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
           expect(await stream.readToEnd(message.getLiteralData())).to.deep.equal(data);
@@ -3510,7 +3510,7 @@ aOU=
         }).then(async function (message) {
           const literals = message.packets.filterByTag(openpgp.enums.packet.literalData);
           expect(literals.length).to.equal(1);
-          expect(literals[0].format).to.equal('mime');
+          expect(literals[0].format).to.equal(openpgp.enums.literal.mime);
           expect(+literals[0].date).to.equal(+future);
           const signatures = await message.verify([publicKey_2038_2045], future, undefined, openpgp.config);
           expect(await stream.readToEnd(message.getLiteralData())).to.deep.equal(data);

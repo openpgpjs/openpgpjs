@@ -862,9 +862,9 @@ export async function createMessage({ text, binary, filename, date = new Date(),
   }
   const literalDataPacket = new LiteralDataPacket(date);
   if (text !== undefined) {
-    literalDataPacket.setText(input, format);
+    literalDataPacket.setText(input, enums.write(enums.literal, format));
   } else {
-    literalDataPacket.setBytes(input, format);
+    literalDataPacket.setBytes(input, enums.write(enums.literal, format));
   }
   if (filename !== undefined) {
     literalDataPacket.setFilename(filename);
