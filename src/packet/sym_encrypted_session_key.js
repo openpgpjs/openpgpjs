@@ -46,9 +46,21 @@ class SymEncryptedSessionKeyPacket {
   constructor(config = defaultConfig) {
     this.version = config.aeadProtect ? 5 : 4;
     this.sessionKey = null;
+    /**
+     * Algorithm to encrypt the session key with
+     * @type {enums.symmetric}
+     */
     this.sessionKeyEncryptionAlgorithm = null;
-    this.sessionKeyAlgorithm = 'aes256';
-    this.aeadAlgorithm = enums.read(enums.aead, config.preferredAEADAlgorithm);
+    /**
+     * Algorithm to encrypt the message with
+     * @type {enums.symmetric}
+     */
+    this.sessionKeyAlgorithm = enums.symmetric.aes256;
+    /**
+     * AEAD mode to encrypt the session key with (if AEAD protection is enabled)
+     * @type {enums.aead}
+     */
+    this.aeadAlgorithm = enums.write(enums.aead, config.preferredAEADAlgorithm);
     this.encrypted = null;
     this.s2k = null;
     this.iv = null;
@@ -69,11 +81,11 @@ class SymEncryptedSessionKeyPacket {
     }
 
     // A one-octet number describing the symmetric algorithm used.
-    const algo = enums.read(enums.symmetric, bytes[offset++]);
+    const algo = bytes[offset++];
 
     if (this.version === 5) {
       // A one-octet AEAD algorithm.
-      this.aeadAlgorithm = enums.read(enums.aead, bytes[offset++]);
+      this.aeadAlgorithm = bytes[offset++];
     }
 
     // A string-to-key (S2K) specifier, length as defined above.
@@ -81,7 +93,7 @@ class SymEncryptedSessionKeyPacket {
     offset += this.s2k.read(bytes.subarray(offset, bytes.length));
 
     if (this.version === 5) {
-      const mode = crypto.mode[this.aeadAlgorithm];
+      const mode = crypto.getAEADMode(this.aeadAlgorithm);
 
       // A starting initialization vector of size specified by the AEAD
       // algorithm.
@@ -111,9 +123,9 @@ class SymEncryptedSessionKeyPacket {
     let bytes;
 
     if (this.version === 5) {
-      bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo), enums.write(enums.aead, this.aeadAlgorithm)]), this.s2k.write(), this.iv, this.encrypted]);
+      bytes = util.concatUint8Array([new Uint8Array([this.version, algo, this.aeadAlgorithm]), this.s2k.write(), this.iv, this.encrypted]);
     } else {
-      bytes = util.concatUint8Array([new Uint8Array([this.version, enums.write(enums.symmetric, algo)]), this.s2k.write()]);
+      bytes = util.concatUint8Array([new Uint8Array([this.version, algo]), this.s2k.write()]);
 
       if (this.encrypted !== null) {
         bytes = util.concatUint8Array([bytes, this.encrypted]);
@@ -124,7 +136,7 @@ class SymEncryptedSessionKeyPacket {
   }
 
   /**
-   * Decrypts the session key
+   * Decrypts the session key with the given passphrase
    * @param {String} passphrase - The passphrase in string form
    * @throws {Error} if decryption was not successful
    * @async
@@ -134,18 +146,18 @@ class SymEncryptedSessionKeyPacket {
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
-    const length = crypto.cipher[algo].keySize;
-    const key = await this.s2k.produceKey(passphrase, length);
+    const { blockSize, keySize } = crypto.getCipher(algo);
+    const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.version === 5) {
-      const mode = crypto.mode[this.aeadAlgorithm];
-      const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
+      const mode = crypto.getAEADMode(this.aeadAlgorithm);
+      const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
       const modeInstance = await mode(algo, key);
       this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
     } else if (this.encrypted !== null) {
-      const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(crypto.cipher[algo].blockSize));
+      const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(blockSize));
 
-      this.sessionKeyAlgorithm = enums.read(enums.symmetric, decrypted[0]);
+      this.sessionKeyAlgorithm = enums.write(enums.symmetric, decrypted[0]);
       this.sessionKey = decrypted.subarray(1, decrypted.length);
     } else {
       this.sessionKey = key;
@@ -153,7 +165,7 @@ class SymEncryptedSessionKeyPacket {
   }
 
   /**
-   * Encrypts the session key
+   * Encrypts the session key with the given passphrase
    * @param {String} passphrase - The passphrase in string form
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if encryption was not successful
@@ -169,23 +181,25 @@ class SymEncryptedSessionKeyPacket {
     this.s2k = new S2K(config);
     this.s2k.salt = await crypto.random.getRandomBytes(8);
 
-    const length = crypto.cipher[algo].keySize;
-    const key = await this.s2k.produceKey(passphrase, length);
+    const { blockSize, keySize } = crypto.getCipher(algo);
+    const encryptionKey = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.sessionKey === null) {
       this.sessionKey = await crypto.generateSessionKey(this.sessionKeyAlgorithm);
     }
 
     if (this.version === 5) {
-      const mode = crypto.mode[this.aeadAlgorithm];
+      const mode = crypto.getAEADMode(this.aeadAlgorithm);
       this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
-      const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, enums.write(enums.symmetric, this.sessionKeyEncryptionAlgorithm), enums.write(enums.aead, this.aeadAlgorithm)]);
-      const modeInstance = await mode(algo, key);
-      this.encrypted = await modeInstance.encrypt(this.sessionKey, this.iv, adata);
+      const associatedData = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
+      const modeInstance = await mode(algo, encryptionKey);
+      this.encrypted = await modeInstance.encrypt(this.sessionKey, this.iv, associatedData);
     } else {
-      const algo_enum = new Uint8Array([enums.write(enums.symmetric, this.sessionKeyAlgorithm)]);
-      const private_key = util.concatUint8Array([algo_enum, this.sessionKey]);
-      this.encrypted = await crypto.mode.cfb.encrypt(algo, key, private_key, new Uint8Array(crypto.cipher[algo].blockSize), config);
+      const toEncrypt = util.concatUint8Array([
+        new Uint8Array([this.sessionKeyAlgorithm]),
+        this.sessionKey
+      ]);
+      this.encrypted = await crypto.mode.cfb.encrypt(algo, encryptionKey, toEncrypt, new Uint8Array(blockSize), config);
     }
   }
 }

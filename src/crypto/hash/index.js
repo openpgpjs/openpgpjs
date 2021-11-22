@@ -16,6 +16,7 @@ import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
 import defaultConfig from '../../config';
+import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -110,26 +111,19 @@ export default {
    */
   digest: function(algo, data) {
     switch (algo) {
-      case 1:
-        // - MD5 [HAC]
+      case enums.hash.md5:
         return this.md5(data);
-      case 2:
-        // - SHA-1 [FIPS180]
+      case enums.hash.sha1:
         return this.sha1(data);
-      case 3:
-        // - RIPE-MD/160 [HAC]
+      case enums.hash.ripemd:
         return this.ripemd(data);
-      case 8:
-        // - SHA256 [FIPS180]
+      case enums.hash.sha256:
         return this.sha256(data);
-      case 9:
-        // - SHA384 [FIPS180]
+      case enums.hash.sha384:
         return this.sha384(data);
-      case 10:
-        // - SHA512 [FIPS180]
+      case enums.hash.sha512:
         return this.sha512(data);
-      case 11:
-        // - SHA224 [FIPS180]
+      case enums.hash.sha224:
         return this.sha224(data);
       default:
         throw new Error('Invalid hash function.');
@@ -143,18 +137,18 @@ export default {
    */
   getHashByteLength: function(algo) {
     switch (algo) {
-      case 1: // - MD5 [HAC]
+      case enums.hash.md5:
         return 16;
-      case 2: // - SHA-1 [FIPS180]
-      case 3: // - RIPE-MD/160 [HAC]
+      case enums.hash.sha1:
+      case enums.hash.ripemd:
         return 20;
-      case 8: // - SHA256 [FIPS180]
+      case enums.hash.sha256:
         return 32;
-      case 9: // - SHA384 [FIPS180]
+      case enums.hash.sha384:
         return 48;
-      case 10: // - SHA512 [FIPS180]
+      case enums.hash.sha512:
         return 64;
-      case 11: // - SHA224 [FIPS180]
+      case enums.hash.sha224:
         return 28;
       default:
         throw new Error('Invalid hash algorithm.');

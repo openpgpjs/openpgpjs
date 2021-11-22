@@ -80,13 +80,16 @@ class SymEncryptedIntegrityProtectedDataPacket {
 
   /**
    * Encrypt the payload in the packet.
-   * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
+   * @param {enums.symmetric} sessionKeyAlgorithm - The symmetric encryption algorithm to use
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>}
+   * @throws {Error} on encryption failure
    * @async
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
+    const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
+
     let bytes = this.packets.write();
     if (stream.isArrayStream(bytes)) bytes = await stream.readToEnd(bytes);
     const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
@@ -96,22 +99,24 @@ class SymEncryptedIntegrityProtectedDataPacket {
     const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
     const plaintext = util.concat([tohash, hash]);
 
-    this.encrypted = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize), config);
+    this.encrypted = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(blockSize), config);
     return true;
   }
 
   /**
    * Decrypts the encrypted data contained in the packet.
-   * @param {String} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used e.g. 'aes128'
+   * @param {enums.symmetric} sessionKeyAlgorithm - The selected symmetric encryption algorithm to be used
    * @param {Uint8Array} key - The key of cipher blocksize length to be used
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Boolean>}
+   * @throws {Error} on decryption failure
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
+    const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
     let encrypted = stream.clone(this.encrypted);
     if (stream.isArrayStream(encrypted)) encrypted = await stream.readToEnd(encrypted);
-    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(crypto.cipher[sessionKeyAlgorithm].blockSize));
+    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(blockSize));
 
     // there must be a modification detection code packet as the
     // last packet and everything gets hashed except the hash itself
@@ -126,7 +131,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
       }
       return new Uint8Array();
     });
-    const bytes = stream.slice(tohash, crypto.cipher[sessionKeyAlgorithm].blockSize + 2); // Remove random prefix
+    const bytes = stream.slice(tohash, blockSize + 2); // Remove random prefix
     let packetbytes = stream.slice(bytes, 0, -2); // Remove MDC packet
     packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
     if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {

@@ -79,7 +79,7 @@ module.exports = () => describe('basic RSA cryptography', function () {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await crypto.generateSessionKey('aes256');
+    const message = await crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
     const encrypted = await crypto.publicKey.rsa.encrypt(message, n, e);
     const decrypted = await crypto.publicKey.rsa.decrypt(encrypted, n, e, d, p, q, u);
     expect(decrypted).to.deep.equal(message);
@@ -92,7 +92,7 @@ module.exports = () => describe('basic RSA cryptography', function () {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await crypto.generateSessionKey('aes256');
+    const message = await crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
     disableNative();
     const encryptedBn = await crypto.publicKey.rsa.encrypt(message, n, e);
     enableNative();

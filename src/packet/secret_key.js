@@ -49,7 +49,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = null;
     /**
      * S2K usage
-     * @type {Integer}
+     * @type {enums.symmetric}
      */
     this.s2kUsage = 0;
     /**
@@ -58,13 +58,13 @@ class SecretKeyPacket extends PublicKeyPacket {
      */
     this.s2k = null;
     /**
-     * Symmetric algorithm
-     * @type {String}
+     * Symmetric algorithm to encrypt the key with
+     * @type {enums.symmetric}
      */
     this.symmetric = null;
     /**
-     * AEAD algorithm
-     * @type {String}
+     * AEAD algorithm to encrypt the key with (if AEAD protection is enabled)
+     * @type {enums.aead}
      */
     this.aead = null;
     /**
@@ -79,7 +79,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   /**
    * Internal parser for private keys as specified in
    * {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-5.5.3|RFC4880bis-04 section 5.5.3}
-   * @param {String} bytes - Input string to read the packet from
+   * @param {Uint8Array} bytes - Input string to read the packet from
    * @async
    */
   async read(bytes) {
@@ -102,13 +102,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     //   one-octet symmetric encryption algorithm.
     if (this.s2kUsage === 255 || this.s2kUsage === 254 || this.s2kUsage === 253) {
       this.symmetric = bytes[i++];
-      this.symmetric = enums.read(enums.symmetric, this.symmetric);
 
       // - [Optional] If string-to-key usage octet was 253, a one-octet
       //   AEAD algorithm.
       if (this.s2kUsage === 253) {
         this.aead = bytes[i++];
-        this.aead = enums.read(enums.aead, this.aead);
       }
 
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
@@ -122,7 +120,6 @@ class SecretKeyPacket extends PublicKeyPacket {
       }
     } else if (this.s2kUsage) {
       this.symmetric = this.s2kUsage;
-      this.symmetric = enums.read(enums.symmetric, this.symmetric);
     }
 
     // - [Optional] If secret data is encrypted (string-to-key usage octet
@@ -131,7 +128,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     if (this.s2kUsage) {
       this.iv = bytes.subarray(
         i,
-        i + crypto.cipher[this.symmetric].blockSize
+        i + crypto.getCipher(this.symmetric).blockSize
       );
 
       i += this.iv.length;
@@ -155,8 +152,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         throw new Error('Key checksum mismatch');
       }
       try {
-        const algo = enums.write(enums.publicKey, this.algorithm);
-        const { privateParams } = crypto.parsePrivateKeyParams(algo, cleartext, this.publicParams);
+        const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
         this.privateParams = privateParams;
       } catch (err) {
         throw new Error('Error reading MPIs');
@@ -177,12 +173,12 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
     //   one- octet symmetric encryption algorithm.
     if (this.s2kUsage === 255 || this.s2kUsage === 254 || this.s2kUsage === 253) {
-      optionalFieldsArr.push(enums.write(enums.symmetric, this.symmetric));
+      optionalFieldsArr.push(this.symmetric);
 
       // - [Optional] If string-to-key usage octet was 253, a one-octet
       //   AEAD algorithm.
       if (this.s2kUsage === 253) {
-        optionalFieldsArr.push(enums.write(enums.aead, this.aead));
+        optionalFieldsArr.push(this.aead);
       }
 
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
@@ -205,8 +201,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     if (!this.isDummy()) {
       if (!this.s2kUsage) {
-        const algo = enums.write(enums.publicKey, this.algorithm);
-        this.keyMaterial = crypto.serializeParams(algo, this.privateParams);
+        this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
       }
 
       if (this.version === 5) {
@@ -258,7 +253,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k.c = 0;
     this.s2k.type = 'gnu-dummy';
     this.s2kUsage = 254;
-    this.symmetric = 'aes256';
+    this.symmetric = enums.symmetric.aes256;
   }
 
   /**
@@ -289,17 +284,17 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     this.s2k = new S2K(config);
     this.s2k.salt = await crypto.random.getRandomBytes(8);
-    const algo = enums.write(enums.publicKey, this.algorithm);
-    const cleartext = crypto.serializeParams(algo, this.privateParams);
-    this.symmetric = 'aes256';
+    const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
+    this.symmetric = enums.symmetric.aes256;
     const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
-    const blockLen = crypto.cipher[this.symmetric].blockSize;
-    this.iv = await crypto.random.getRandomBytes(blockLen);
+
+    const { blockSize } = crypto.getCipher(this.symmetric);
+    this.iv = await crypto.random.getRandomBytes(blockSize);
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
-      this.aead = 'eax';
-      const mode = crypto.mode[this.aead];
+      this.aead = enums.aead.eax;
+      const mode = crypto.getAEADMode(this.aead);
       const modeInstance = await mode(this.symmetric, key);
       this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
     } else {
@@ -340,9 +335,9 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     let cleartext;
     if (this.s2kUsage === 253) {
-      const mode = crypto.mode[this.aead];
+      const mode = crypto.getAEADMode(this.aead);
+      const modeInstance = await mode(this.symmetric, key);
       try {
-        const modeInstance = await mode(this.symmetric, key);
         cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
       } catch (err) {
         if (err.message === 'Authentication tag mismatch') {
@@ -362,8 +357,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     try {
-      const algo = enums.write(enums.publicKey, this.algorithm);
-      const { privateParams } = crypto.parsePrivateKeyParams(algo, cleartext, this.publicParams);
+      const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
       this.privateParams = privateParams;
     } catch (err) {
       throw new Error('Error reading MPIs');
@@ -387,12 +381,10 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('Key is not decrypted');
     }
 
-    const algo = enums.write(enums.publicKey, this.algorithm);
-
     let validParams;
     try {
       // this can throw if some parameters are undefined
-      validParams = await crypto.validateParams(algo, this.publicParams, this.privateParams);
+      validParams = await crypto.validateParams(this.algorithm, this.publicParams, this.privateParams);
     } catch (_) {
       validParams = false;
     }
@@ -402,8 +394,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   async generate(bits, curve) {
-    const algo = enums.write(enums.publicKey, this.algorithm);
-    const { privateParams, publicParams } = await crypto.generateParams(algo, bits, curve);
+    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve);
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;
@@ -428,10 +419,8 @@ class SecretKeyPacket extends PublicKeyPacket {
 }
 
 async function produceEncryptionKey(s2k, passphrase, algorithm) {
-  return s2k.produceKey(
-    passphrase,
-    crypto.cipher[algorithm].keySize
-  );
+  const { keySize } = crypto.getCipher(algorithm);
+  return s2k.produceKey(passphrase, keySize);
 }
 
 export default SecretKeyPacket;

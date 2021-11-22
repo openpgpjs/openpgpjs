@@ -1,6 +1,9 @@
 import { AES_ECB } from '@openpgp/asmcrypto.js/dist_es8/aes/ecb';
 
-// TODO use webCrypto or nodeCrypto when possible.
+/**
+ * Javascript AES implementation.
+ * This is used as fallback if the native Crypto APIs are not available.
+ */
 function aes(length) {
   const C = function(key) {
     const aesECB = new AES_ECB(key);

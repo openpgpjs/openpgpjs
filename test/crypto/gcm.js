@@ -34,16 +34,17 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
   };
 
   function testAESGCM(plaintext, nativeEncrypt, nativeDecrypt) {
-    const aesAlgos = Object.keys(openpgp.enums.symmetric).filter(
-      algo => algo.substr(0,3) === 'aes'
+    const aesAlgoNames = Object.keys(openpgp.enums.symmetric).filter(
+      algoName => algoName.substr(0,3) === 'aes'
     );
-    aesAlgos.forEach(function(algo) {
-      it(algo, async function() {
+    aesAlgoNames.forEach(function(algoName) {
+      it(algoName, async function() {
         const nodeCrypto = util.getNodeCrypto();
         const webCrypto = util.getWebCrypto();
         if (!nodeCrypto && !webCrypto) {
           this.skip(); // eslint-disable-line no-invalid-this
         }
+        const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const key = await crypto.generateSessionKey(algo);
         const iv = await crypto.random.getRandomBytes(crypto.mode.gcm.ivLength);
 
@@ -63,7 +64,7 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
         const decryptedStr = util.uint8ArrayToString(decrypted);
         expect(decryptedStr).to.equal(plaintext);
 
-        if (algo !== 'aes192') { // not implemented by webcrypto
+        if (algo !== openpgp.enums.symmetric.aes192) { // not implemented by webcrypto
           // sanity check: native crypto was indeed on/off
           expect(nativeEncryptSpy.called).to.equal(nativeEncrypt);
           expect(nativeDecryptSpy.called).to.equal(nativeDecrypt);

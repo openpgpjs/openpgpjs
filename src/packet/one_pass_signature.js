@@ -46,16 +46,20 @@ class OnePassSignaturePacket {
      * A one-octet signature type.
      * Signature types are described in
      * {@link https://tools.ietf.org/html/rfc4880#section-5.2.1|RFC4880 Section 5.2.1}.
+     * @type {enums.signature}
+
      */
     this.signatureType = null;
     /**
      * A one-octet number describing the hash algorithm used.
      * @see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC4880 9.4}
+     * @type {enums.hash}
      */
     this.hashAlgorithm = null;
     /**
      * A one-octet number describing the public-key algorithm used.
      * @see {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC4880 9.1}
+     * @type {enums.publicKey}
      */
     this.publicKeyAlgorithm = null;
     /** An eight-octet number holding the Key ID of the signing key. */
@@ -109,9 +113,7 @@ class OnePassSignaturePacket {
    * @returns {Uint8Array} A Uint8Array representation of a one-pass signature packet.
    */
   write() {
-    const start = new Uint8Array([VERSION, enums.write(enums.signature, this.signatureType),
-      enums.write(enums.hash, this.hashAlgorithm),
-      enums.write(enums.publicKey, this.publicKeyAlgorithm)]);
+    const start = new Uint8Array([VERSION, this.signatureType, this.hashAlgorithm, this.publicKeyAlgorithm]);
 
     const end = new Uint8Array([this.flags]);
 

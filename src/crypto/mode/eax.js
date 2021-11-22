@@ -25,6 +25,7 @@
 import { AES_CTR } from '@openpgp/asmcrypto.js/dist_es8/aes/ctr';
 import CMAC from '../cmac';
 import util from '../../util';
+import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -74,11 +75,13 @@ async function CTR(key) {
 
 /**
  * Class to en/decrypt using EAX mode.
- * @param {String} cipher - The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param {enums.symmetric} cipher - The symmetric cipher algorithm to use
  * @param {Uint8Array} key - The encryption key
  */
 async function EAX(cipher, key) {
-  if (cipher.substr(0, 3) !== 'aes') {
+  if (cipher !== enums.symmetric.aes128 &&
+    cipher !== enums.symmetric.aes192 &&
+    cipher !== enums.symmetric.aes256) {
     throw new Error('EAX mode supports only AES cipher');
   }
 

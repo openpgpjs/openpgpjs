@@ -107,7 +107,7 @@ export class Message {
    * @async
    */
   async decrypt(decryptionKeys, passwords, sessionKeys, date = new Date(), config = defaultConfig) {
-    const keyObjs = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config);
+    const sessionKeyObjs = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config);
 
     const symEncryptedPacketlist = this.packets.filterByTag(
       enums.packet.symmetricallyEncryptedData,
@@ -121,13 +121,14 @@ export class Message {
 
     const symEncryptedPacket = symEncryptedPacketlist[0];
     let exception = null;
-    const decryptedPromise = Promise.all(keyObjs.map(async keyObj => {
-      if (!keyObj || !util.isUint8Array(keyObj.data) || !util.isString(keyObj.algorithm)) {
+    const decryptedPromise = Promise.all(sessionKeyObjs.map(async ({ algorithm: algorithmName, data }) => {
+      if (!util.isUint8Array(data) || !util.isString(algorithmName)) {
         throw new Error('Invalid session key for decryption.');
       }
 
       try {
-        await symEncryptedPacket.decrypt(keyObj.algorithm, keyObj.data, config);
+        const algo = enums.write(enums.symmetric, algorithmName);
+        await symEncryptedPacket.decrypt(algo, data, config);
       } catch (e) {
         util.printDebugError(e);
         exception = e;
@@ -216,7 +217,7 @@ export class Message {
             }
             try {
               await keyPacket.decrypt(decryptionKeyPacket);
-              if (!algos.includes(enums.write(enums.symmetric, keyPacket.sessionKeyAlgorithm))) {
+              if (!algos.includes(keyPacket.sessionKeyAlgorithm)) {
                 throw new Error('A non-preferred symmetric algorithm was used.');
               }
               keyPackets.push(keyPacket);
@@ -247,7 +248,10 @@ export class Message {
         });
       }
 
-      return keyPackets.map(packet => ({ data: packet.sessionKey, algorithm: packet.sessionKeyAlgorithm }));
+      return keyPackets.map(packet => ({
+        data: packet.sessionKey,
+        algorithm: enums.read(enums.symmetric, packet.sessionKeyAlgorithm)
+      }));
     }
     throw exception || new Error('Session key decryption failed.');
   }
@@ -295,13 +299,14 @@ export class Message {
    * @async
    */
   static async generateSessionKey(encryptionKeys = [], date = new Date(), userIDs = [], config = defaultConfig) {
-    const algorithm = enums.read(enums.symmetric, await getPreferredAlgo('symmetric', encryptionKeys, date, userIDs, config));
-    const aeadAlgorithm = config.aeadProtect && await isAEADSupported(encryptionKeys, date, userIDs, config) ?
+    const algo = await getPreferredAlgo('symmetric', encryptionKeys, date, userIDs, config);
+    const algorithmName = enums.read(enums.symmetric, algo);
+    const aeadAlgorithmName = config.aeadProtect && await isAEADSupported(encryptionKeys, date, userIDs, config) ?
       enums.read(enums.aead, await getPreferredAlgo('aead', encryptionKeys, date, userIDs, config)) :
       undefined;
 
-    const sessionKeyData = await crypto.generateSessionKey(algorithm);
-    return { data: sessionKeyData, algorithm, aeadAlgorithm };
+    const sessionKeyData = await crypto.generateSessionKey(algo);
+    return { data: sessionKeyData, algorithm: algorithmName, aeadAlgorithm: aeadAlgorithmName };
   }
 
   /**
@@ -330,19 +335,20 @@ export class Message {
       throw new Error('No keys, passwords, or session key provided.');
     }
 
-    const { data: sessionKeyData, algorithm, aeadAlgorithm } = sessionKey;
+    const { data: sessionKeyData, algorithm: algorithmName, aeadAlgorithm: aeadAlgorithmName } = sessionKey;
 
-    const msg = await Message.encryptSessionKey(sessionKeyData, algorithm, aeadAlgorithm, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, userIDs, config);
+    const msg = await Message.encryptSessionKey(sessionKeyData, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, userIDs, config);
 
     let symEncryptedPacket;
-    if (aeadAlgorithm) {
+    if (aeadAlgorithmName) {
       symEncryptedPacket = new AEADEncryptedDataPacket();
-      symEncryptedPacket.aeadAlgorithm = aeadAlgorithm;
+      symEncryptedPacket.aeadAlgorithm = enums.write(enums.aead, aeadAlgorithmName);
     } else {
       symEncryptedPacket = new SymEncryptedIntegrityProtectedDataPacket();
     }
     symEncryptedPacket.packets = this.packets;
 
+    const algorithm = enums.write(enums.symmetric, algorithmName);
     await symEncryptedPacket.encrypt(algorithm, sessionKeyData, config);
 
     msg.packets.push(symEncryptedPacket);
@@ -353,8 +359,8 @@ export class Message {
   /**
    * Encrypt a session key either with public keys, passwords, or both at once.
    * @param {Uint8Array} sessionKey - session key for encryption
-   * @param {String} algorithm - session key algorithm
-   * @param {String} [aeadAlgorithm] - AEAD algorithm, e.g. 'eax' or 'ocb'
+   * @param {String} algorithmName - session key algorithm
+   * @param {String} [aeadAlgorithmName] - AEAD algorithm, e.g. 'eax' or 'ocb'
    * @param {Array<PublicKey>} [encryptionKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - For message encryption
    * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs
@@ -365,8 +371,10 @@ export class Message {
    * @returns {Promise<Message>} New message with encrypted content.
    * @async
    */
-  static async encryptSessionKey(sessionKey, algorithm, aeadAlgorithm, encryptionKeys, passwords, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  static async encryptSessionKey(sessionKey, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const packetlist = new PacketList();
+    const algorithm = enums.write(enums.symmetric, algorithmName);
+    const aeadAlgorithm = aeadAlgorithmName && enums.write(enums.aead, aeadAlgorithmName);
 
     if (encryptionKeys) {
       const results = await Promise.all(encryptionKeys.map(async function(primaryKey, i) {
@@ -499,7 +507,7 @@ export class Message {
     }
 
     const compressed = new CompressedDataPacket(config);
-    compressed.algorithm = enums.read(enums.compression, algo);
+    compressed.algorithm = algo;
     compressed.packets = this.packets;
 
     const packetList = new PacketList();
@@ -866,9 +874,9 @@ export async function createMessage({ text, binary, filename, date = new Date(),
   }
   const literalDataPacket = new LiteralDataPacket(date);
   if (text !== undefined) {
-    literalDataPacket.setText(input, format);
+    literalDataPacket.setText(input, enums.write(enums.literal, format));
   } else {
-    literalDataPacket.setBytes(input, format);
+    literalDataPacket.setBytes(input, enums.write(enums.literal, format));
   }
   if (filename !== undefined) {
     literalDataPacket.setFilename(filename);

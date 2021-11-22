@@ -24,6 +24,7 @@
 
 import { AES_GCM } from '@openpgp/asmcrypto.js/dist_es8/aes/gcm';
 import util from '../../util';
+import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -36,11 +37,13 @@ const ALGO = 'AES-GCM';
 
 /**
  * Class to en/decrypt using GCM mode.
- * @param {String} cipher - The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param {enums.symmetric} cipher - The symmetric cipher algorithm to use
  * @param {Uint8Array} key - The encryption key
  */
 async function GCM(cipher, key) {
-  if (cipher.substr(0, 3) !== 'aes') {
+  if (cipher !== enums.symmetric.aes128 &&
+    cipher !== enums.symmetric.aes192 &&
+    cipher !== enums.symmetric.aes256) {
     throw new Error('GCM mode supports only AES cipher');
   }
 

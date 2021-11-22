@@ -23,7 +23,7 @@
 
 import * as ciphers from '../cipher';
 import util from '../../util';
-
+import enums from '../../enums';
 
 const blockLength = 16;
 const ivLength = 15;
@@ -59,7 +59,7 @@ const one = new Uint8Array([1]);
 
 /**
  * Class to en/decrypt using OCB mode.
- * @param {String} cipher - The symmetric cipher algorithm to use e.g. 'aes128'
+ * @param {enums.symmetric} cipher - The symmetric cipher algorithm to use
  * @param {Uint8Array} key - The encryption key
  */
 async function OCB(cipher, key) {
@@ -72,7 +72,8 @@ async function OCB(cipher, key) {
   constructKeyVariables(cipher, key);
 
   function constructKeyVariables(cipher, key) {
-    const aes = new ciphers[cipher](key);
+    const cipherName = enums.read(enums.symmetric, cipher);
+    const aes = new ciphers[cipherName](key);
     encipher = aes.encrypt.bind(aes);
     decipher = aes.decrypt.bind(aes);
 

@@ -223,7 +223,7 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
       expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.aeadEncryptedData);
       const { packets: [compressed] } = await encrypted2.decrypt(null, passwords, null, encrypted2.fromStream, openpgp.config);
       expect(compressed.constructor.tag).to.equal(openpgp.enums.packet.compressedData);
-      expect(compressed.algorithm).to.equal('zip');
+      expect(compressed.algorithm).to.equal(openpgp.enums.compression.zip);
 
       const userIDs = { name: 'Test User', email: 'text2@example.com' };
       const { privateKey: key } = await openpgp.generateKey({ userIDs, format: 'object' });

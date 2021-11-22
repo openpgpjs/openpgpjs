@@ -27,6 +27,7 @@ import { AES_CFB } from '@openpgp/asmcrypto.js/dist_es8/aes/cfb';
 import * as stream from '@openpgp/web-stream-tools';
 import * as cipher from '../cipher';
 import util from '../../util';
+import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -43,15 +44,25 @@ const nodeAlgos = {
   /* twofish is not implemented in OpenSSL */
 };
 
+/**
+ * CFB encryption
+ * @param {enums.symmetric} algo - block cipher algorithm
+ * @param {Uint8Array} key
+ * @param {MaybeStream<Uint8Array>} plaintext
+ * @param {Uint8Array} iv
+ * @param {Object} config - full configuration, defaults to openpgp.config
+ * @returns MaybeStream<Uint8Array>
+ */
 export async function encrypt(algo, key, plaintext, iv, config) {
-  if (util.getNodeCrypto() && nodeAlgos[algo]) { // Node crypto library.
+  const algoName = enums.read(enums.symmetric, algo);
+  if (util.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
     return nodeEncrypt(algo, key, plaintext, iv);
   }
-  if (algo.substr(0, 3) === 'aes') {
+  if (algoName.substr(0, 3) === 'aes') {
     return aesEncrypt(algo, key, plaintext, iv, config);
   }
 
-  const cipherfn = new cipher[algo](key);
+  const cipherfn = new cipher[algoName](key);
   const block_size = cipherfn.blockSize;
 
   const blockc = iv.slice();
@@ -76,15 +87,24 @@ export async function encrypt(algo, key, plaintext, iv, config) {
   return stream.transform(plaintext, process, process);
 }
 
+/**
+ * CFB decryption
+ * @param {enums.symmetric} algo - block cipher algorithm
+ * @param {Uint8Array} key
+ * @param {MaybeStream<Uint8Array>} ciphertext
+ * @param {Uint8Array} iv
+ * @returns MaybeStream<Uint8Array>
+ */
 export async function decrypt(algo, key, ciphertext, iv) {
-  if (util.getNodeCrypto() && nodeAlgos[algo]) { // Node crypto library.
+  const algoName = enums.read(enums.symmetric, algo);
+  if (util.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
     return nodeDecrypt(algo, key, ciphertext, iv);
   }
-  if (algo.substr(0, 3) === 'aes') {
+  if (algoName.substr(0, 3) === 'aes') {
     return aesDecrypt(algo, key, ciphertext, iv);
   }
 
-  const cipherfn = new cipher[algo](key);
+  const cipherfn = new cipher[algoName](key);
   const block_size = cipherfn.blockSize;
 
   let blockp = iv;
@@ -140,7 +160,7 @@ function xorMut(a, b) {
 async function webEncrypt(algo, key, pt, iv) {
   const ALGO = 'AES-CBC';
   const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
-  const { blockSize } = cipher[algo];
+  const { blockSize } = crypto.getCipher(algo);
   const cbc_pt = util.concatUint8Array([new Uint8Array(blockSize), pt]);
   const ct = new Uint8Array(await webCrypto.encrypt({ name: ALGO, iv }, _key, cbc_pt)).subarray(0, pt.length);
   xorMut(ct, pt);
@@ -148,11 +168,13 @@ async function webEncrypt(algo, key, pt, iv) {
 }
 
 function nodeEncrypt(algo, key, pt, iv) {
-  const cipherObj = new nodeCrypto.createCipheriv(nodeAlgos[algo], key, iv);
+  const algoName = enums.read(enums.symmetric, algo);
+  const cipherObj = new nodeCrypto.createCipheriv(nodeAlgos[algoName], key, iv);
   return stream.transform(pt, value => new Uint8Array(cipherObj.update(value)));
 }
 
 function nodeDecrypt(algo, key, ct, iv) {
-  const decipherObj = new nodeCrypto.createDecipheriv(nodeAlgos[algo], key, iv);
+  const algoName = enums.read(enums.symmetric, algo);
+  const decipherObj = new nodeCrypto.createDecipheriv(nodeAlgos[algoName], key, iv);
   return stream.transform(ct, value => new Uint8Array(decipherObj.update(value)));
 }

@@ -50,8 +50,11 @@ class SignaturePacket {
 
   constructor() {
     this.version = null;
+    /** @type {enums.signature} */
     this.signatureType = null;
+    /** @type {enums.hash} */
     this.hashAlgorithm = null;
+    /** @type {enums.publicKey} */
     this.publicKeyAlgorithm = null;
 
     this.signatureData = null;
@@ -170,16 +173,12 @@ class SignaturePacket {
    * @async
    */
   async sign(key, data, date = new Date(), detached = false) {
-    const signatureType = enums.write(enums.signature, this.signatureType);
-    const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-    const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
-
     if (key.version === 5) {
       this.version = 5;
     } else {
       this.version = 4;
     }
-    const arr = [new Uint8Array([this.version, signatureType, publicKeyAlgorithm, hashAlgorithm])];
+    const arr = [new Uint8Array([this.version, this.signatureType, this.publicKeyAlgorithm, this.hashAlgorithm])];
 
     this.created = util.normalizeDate(date);
     this.issuerKeyVersion = key.version;
@@ -191,12 +190,12 @@ class SignaturePacket {
 
     this.signatureData = util.concat(arr);
 
-    const toHash = this.toHash(signatureType, data, detached);
-    const hash = await this.hash(signatureType, data, toHash, detached);
+    const toHash = this.toHash(this.signatureType, data, detached);
+    const hash = await this.hash(this.signatureType, data, toHash, detached);
 
     this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
     const signed = async () => crypto.signature.sign(
-      publicKeyAlgorithm, hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
+      this.publicKeyAlgorithm, this.hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
     );
     if (util.isStream(hash)) {
       this.params = signed();
@@ -644,9 +643,8 @@ class SignaturePacket {
   }
 
   async hash(signatureType, data, toHash, detached = false) {
-    const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
     if (!toHash) toHash = this.toHash(signatureType, data, detached);
-    return crypto.hash.digest(hashAlgorithm, toHash);
+    return crypto.hash.digest(this.hashAlgorithm, toHash);
   }
 
   /**
@@ -662,12 +660,10 @@ class SignaturePacket {
    * @async
    */
   async verify(key, signatureType, data, date = new Date(), detached = false, config = defaultConfig) {
-    const publicKeyAlgorithm = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-    const hashAlgorithm = enums.write(enums.hash, this.hashAlgorithm);
     if (!this.issuerKeyID.equals(key.getKeyID())) {
       throw new Error('Signature was not issued by the given public key');
     }
-    if (publicKeyAlgorithm !== enums.write(enums.publicKey, key.algorithm)) {
+    if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
     }
 
@@ -693,7 +689,7 @@ class SignaturePacket {
       this.params = await this.params;
 
       this[verified] = await crypto.signature.verify(
-        publicKeyAlgorithm, hashAlgorithm, this.params, key.publicParams,
+        this.publicKeyAlgorithm, this.hashAlgorithm, this.params, key.publicParams,
         toHash, hash
       );
 
@@ -709,12 +705,12 @@ class SignaturePacket {
     if (normDate && normDate >= this.getExpirationTime()) {
       throw new Error('Signature is expired');
     }
-    if (config.rejectHashAlgorithms.has(hashAlgorithm)) {
-      throw new Error('Insecure hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
+    if (config.rejectHashAlgorithms.has(this.hashAlgorithm)) {
+      throw new Error('Insecure hash algorithm: ' + enums.read(enums.hash, this.hashAlgorithm).toUpperCase());
     }
-    if (config.rejectMessageHashAlgorithms.has(hashAlgorithm) &&
+    if (config.rejectMessageHashAlgorithms.has(this.hashAlgorithm) &&
       [enums.signature.binary, enums.signature.text].includes(this.signatureType)) {
-      throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, hashAlgorithm).toUpperCase());
+      throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, this.hashAlgorithm).toUpperCase());
     }
     this.rawNotations.forEach(({ name, critical }) => {
       if (critical && (config.knownNotations.indexOf(name) < 0)) {

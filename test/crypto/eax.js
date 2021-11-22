@@ -1,7 +1,7 @@
 // Modified by ProtonTech AG
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
-
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const EAX = require('../../src/crypto/mode/eax');
 const util = require('../../src/util');
 
@@ -87,7 +87,7 @@ function testAESEAX() {
       }
     ];
 
-    const cipher = 'aes128';
+    const cipher = openpgp.enums.symmetric.aes128;
 
     await Promise.all(vectors.map(async vec => {
       const keyBytes = util.hexToUint8Array(vec.key);

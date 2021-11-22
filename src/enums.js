@@ -448,7 +448,13 @@ export default {
     v5Keys: 4
   },
 
-  /** Asserts validity and converts from string/integer to integer. */
+  /**
+   * Asserts validity of given value and converts from string/integer to integer.
+   * @param {Object} type target enum type
+   * @param {String|Integer} e value to check and/or convert
+   * @returns {Integer} enum value if it exists
+   * @throws {Error} if the value is invalid
+   */
   write: function(type, e) {
     if (typeof e === 'number') {
       e = this.read(type, e);
@@ -461,7 +467,13 @@ export default {
     throw new Error('Invalid enum value.');
   },
 
-  /** Converts from an integer to string. */
+  /**
+   * Converts enum integer value to the corresponding string, if it exists.
+   * @param {Object} type target enum type
+   * @param {Integer} e value to convert
+   * @returns {String} name of enum value if it exists
+   * @throws {Error} if the value is invalid
+   */
   read: function(type, e) {
     if (!type[byValue]) {
       type[byValue] = [];
@@ -476,5 +488,4 @@ export default {
 
     throw new Error('Invalid enum value.');
   }
-
 };
