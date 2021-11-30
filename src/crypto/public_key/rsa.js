@@ -133,14 +133,17 @@ export async function encrypt(data, n, e) {
  * @param {Uint8Array} p - RSA private prime p
  * @param {Uint8Array} q - RSA private prime q
  * @param {Uint8Array} u - RSA private coefficient
+ * @param {Uint8Array} randomPayload - Data to return on decryption error, instead of throwing
+ *                                     (needed for constant-time processing)
  * @returns {Promise<String>} RSA Plaintext.
+ * @throws {Error} on decryption error, unless `randomPayload` is given
  * @async
  */
-export async function decrypt(data, n, e, d, p, q, u) {
+export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
   if (util.getNodeCrypto()) {
-    return nodeDecrypt(data, n, e, d, p, q, u);
+    return nodeDecrypt(data, n, e, d, p, q, u, randomPayload);
   }
-  return bnDecrypt(data, n, e, d, p, q, u);
+  return bnDecrypt(data, n, e, d, p, q, u, randomPayload);
 }
 
 /**
@@ -439,7 +442,7 @@ async function bnEncrypt(data, n, e) {
   return data.modExp(e, n).toUint8Array('be', n.byteLength());
 }
 
-async function nodeDecrypt(data, n, e, d, p, q, u) {
+async function nodeDecrypt(data, n, e, d, p, q, u, randomPayload) {
   const { default: BN } = await import('bn.js');
 
   const pBNum = new BN(p);
@@ -473,11 +476,14 @@ async function nodeDecrypt(data, n, e, d, p, q, u) {
   try {
     return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
   } catch (err) {
+    if (randomPayload) {
+      return randomPayload;
+    }
     throw new Error('Decryption error');
   }
 }
 
-async function bnDecrypt(data, n, e, d, p, q, u) {
+async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
   const BigInteger = await util.getBigInteger();
   data = new BigInteger(data);
   n = new BigInteger(n);
@@ -506,7 +512,7 @@ async function bnDecrypt(data, n, e, d, p, q, u) {
   result = result.mul(unblinder).mod(n);
 
 
-  return emeDecode(result.toUint8Array('be', n.byteLength()));
+  return emeDecode(result.toUint8Array('be', n.byteLength()), randomPayload);
 }
 
 /** Convert Openpgp private key params to jwk key according to

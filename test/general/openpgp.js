@@ -833,6 +833,22 @@ Be4ubVrj5KjhX2PVNEJd3XZRzaXZE2aAMQ==
 =ZeAz
 -----END PGP PUBLIC KEY BLOCK-----`;
 
+const eccPrivateKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEYaYskRYJKwYBBAHaRw8BAQdAlHT6jzgvcng/qDvb+LH+nA4+AWrMLUYf
+aNJIuJRUjXMAAP9llTr5+fNSY78FNnpx53muMtyeDINkeUGGwgqAfxj9lhEV
+zRN0ZXN0IDx0ZXN0QHRlc3QuaXQ+wowEEBYKAB0FAmGmLJEECwkHCAMVCAoE
+FgACAQIZAQIbAwIeAQAhCRBvJAzR+vGyExYhBCaNeWwMzRW97WhAq28kDNH6
+8bITWWkA/0R3zADs94dVo+iSNzrtZaDkbHOMb/yjketYmI0XS8UpAP4hUmKN
+QcohP6007t0gaQUcgdwum7PKUoM6BeBG8GaTAsddBGGmLJESCisGAQQBl1UB
+BQEBB0CibQAv6tvWCWoe6xlkkZGbLpVWvHwgIPzRVdz4e79DdQMBCAcAAP9T
+4SntnkgSUnM39dFoTPIoitrsOcHZbvXPCcvclKgZKBJTwngEGBYIAAkFAmGm
+LJECGwwAIQkQbyQM0frxshMWIQQmjXlsDM0Vve1oQKtvJAzR+vGyE5ORAQD+
+lfFvJjue+tnuIR+ZubxtpKaJpCOWkAcrkx41NtsLwgD/TAkWh1KDWg0IOcUE
+MbVkSnU2Z+vhSmYubDCldNOSVwE=
+=bTUQ
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function withCompression(tests) {
   const compressionTypes = Object.values(openpgp.enums.compression);
 
@@ -1461,6 +1477,81 @@ aOU=
         Object.assign(openpgp.config, { rejectMessageHashAlgorithms });
       }
     });
+
+    it('decrypt with `config.constantTimePKCS1Decryption` option should succeed', async function () {
+      const publicKey = await openpgp.readKey({ armoredKey: pub_key });
+      const publicKey2 = await openpgp.readKey({ armoredKey: eccPrivateKey });
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: plaintext }),
+        signingKeys: privateKey,
+        encryptionKeys: [publicKey, publicKey2]
+      });
+      const { data } = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: encrypted }),
+        decryptionKeys: privateKey,
+        config: { constantTimePKCS1Decryption: true }
+      });
+      expect(data).to.equal(plaintext);
+    });
+
+    it('decrypt with `config.constantTimePKCS1Decryption` option should succeed (with streaming)', async function () {
+      const publicKey = await openpgp.readKey({ armoredKey: pub_key });
+      const publicKey2 = await openpgp.readKey({ armoredKey: eccPrivateKey });
+      const privateKey = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: plaintext }),
+        signingKeys: privateKey,
+        encryptionKeys: [publicKey, publicKey2]
+      });
+      const { data: streamedData } = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: stream.toStream(encrypted) }),
+        decryptionKeys: privateKey,
+        verificationKeys: publicKey,
+        expectSigned: true,
+        config: { constantTimePKCS1Decryption: true }
+      });
+      const data = await stream.readToEnd(streamedData);
+      expect(data).to.equal(plaintext);
+    });
+
+    it('decrypt with `config.constantTimePKCS1Decryption` option should fail if session key algo support is disabled', async function () {
+      const publicKeyRSA = await openpgp.readKey({ armoredKey: pub_key });
+      const privateKeyRSA = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key }),
+        passphrase
+      });
+      const privateKeyECC = await openpgp.readPrivateKey({ armoredKey: eccPrivateKey });
+
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: plaintext }),
+        signingKeys: privateKeyRSA,
+        encryptionKeys: [publicKeyRSA, privateKeyECC]
+      });
+
+      // decryption using RSA key should fail
+      await expect(openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: encrypted }),
+        decryptionKeys: privateKeyRSA,
+        config: { constantTimePKCS1Decryption: true, constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: new Set() }
+      })).to.be.rejectedWith(/Session key decryption failed/);
+      // decryption using ECC key should succeed (PKCS1 is not used, so constant time countermeasures are not applied)
+      const { data } = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: encrypted }),
+        decryptionKeys: privateKeyECC,
+        config: { constantTimePKCS1Decryption: true }
+      });
+      expect(data).to.equal(plaintext);
+    });
+
   });
 
   describe('verify - unit tests', function() {

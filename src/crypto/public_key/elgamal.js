@@ -59,10 +59,13 @@ export async function encrypt(data, p, g, y) {
  * @param {Uint8Array} c2
  * @param {Uint8Array} p
  * @param {Uint8Array} x
+ * @param {Uint8Array} randomPayload - Data to return on unpadding error, instead of throwing
+ *                                     (needed for constant-time processing)
  * @returns {Promise<Uint8Array>} Unpadded message.
+ * @throws {Error} on decryption error, unless `randomPayload` is given
  * @async
  */
-export async function decrypt(c1, c2, p, x) {
+export async function decrypt(c1, c2, p, x, randomPayload) {
   const BigInteger = await util.getBigInteger();
   c1 = new BigInteger(c1);
   c2 = new BigInteger(c2);
@@ -70,7 +73,7 @@ export async function decrypt(c1, c2, p, x) {
   x = new BigInteger(x);
 
   const padded = c1.modExp(x, p).modInv(p).imul(c2).imod(p);
-  return emeDecode(padded.toUint8Array('be', p.byteLength()));
+  return emeDecode(padded.toUint8Array('be', p.byteLength()), randomPayload);
 }
 
 /**

@@ -216,50 +216,42 @@ export class Message {
               throw new Error('Decryption key is not decrypted.');
             }
 
-            // To hinder CCA attacks against RSA PKCS1, we carry out a constant-time decryption flow if the `constantTimePKCS1Decryption` config option is set.
+            // To hinder CCA attacks against PKCS1, we carry out a constant-time decryption flow if the `constantTimePKCS1Decryption` config option is set.
             const doConstantTimeDecryption = config.constantTimePKCS1Decryption && (
               pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaEncrypt ||
               pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaEncryptSign ||
-              pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaSign
+              pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaSign ||
+              pkeskPacket.publicKeyAlgorithm === enums.publicKey.elgamal
             );
 
             if (doConstantTimeDecryption) {
-              // The goal is to not reveal whether PKESK decryption failed, hence, we always proceed to decrypt the message, either with the successfully decrypted session key,
-              // or with a randomly generated one of the same type.
+              // The goal is to not reveal whether PKESK decryption (specifically the PKCS1 decoding step) failed, hence, we always proceed to decrypt the message,
+              // either with the successfully decrypted session key, or with a randomly generated one of the same type.
               // Since the SEIP/AEAD's symmetric algorithm and key size are stored in the encrypted portion of the PKESK, and the execution flow cannot depend on
-              // the decrypted payload, we always assume the message to be AES-encrypted, and try to decrypt the message using all possible AES key sizes (i.e. 128, 192, 256):
-              // - If the PKESK decryption succeeds, and the session key cipher is AES, then we try to decrypt the data with the decrypted session key as well as the
-              // randomly generated keys of the two remaining key sizes.
-              // - If the PKESK decryptions fails, or if it succeeds but the cipher is not AES, then we discard the session key and try to decrypt the data using only the randomly
+              // the decrypted payload, we always assume the message to be encrypted with one of the symmetric algorithms specified in `config.constantTimePKCS1DecryptionSupportedSymmetricAlgorithms`:
+              // - If the PKESK decryption succeeds, and the session key cipher is in the supported set, then we try to decrypt the data with the decrypted session key as well as the
+              // randomly generated keys of the remaining key types.
+              // - If the PKESK decryptions fails, or if it succeeds but support for the cipher is not enabled, then we discard the session key and try to decrypt the data using only the randomly
               // generated session keys.
-              //
-              // NB: if the data is encrypted with a non-AES cipher, decryption will always fail. The code could be extended to support additional non-AES ciphers,
-              // but that would considerably slow down decryption.
-              const sessionKeysOfEachAlgo = await Promise.all(['aes128', 'aes192', 'aes256'].map(async algoName => {
-                const randomPKESK = new PublicKeyEncryptedSessionKeyPacket();
-                randomPKESK.publicKeyAlgorithm = pkeskPacket.publicKeyAlgorithm;
-                randomPKESK.sessionKeyAlgorithm = enums.write(enums.symmetric, algoName);
-                randomPKESK.sessionKey = await crypto.generateSessionKey(algoName);
-                return randomPKESK;
-              }));
+              // NB: as a result, if the data is encrypted with a non-suported cipher, decryption will always fail.
 
-              try {
-                // PKESK decryption is not constant time and  it will throw on failure, but the time variability is small enough
-                await pkeskPacket.decrypt(decryptionKeyPacket);
-                if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
-                  throw new Error('A non-preferred symmetric algorithm was used.');
+              const serialisedPKESK = pkeskPacket.write(); // make copies to be able to decrypt the PKESK packet multiple times
+              await Promise.all(Array.from(config.constantTimePKCS1DecryptionSupportedSymmetricAlgorithms).map(async sessionKeyAlgorithm => {
+                const pkeskPacketCopy = new PublicKeyEncryptedSessionKeyPacket();
+                pkeskPacketCopy.read(serialisedPKESK);
+                const randomSessionKey = {
+                  sessionKeyAlgorithm,
+                  sessionKey: await crypto.generateSessionKey(sessionKeyAlgorithm)
+                };
+                try {
+                  await pkeskPacketCopy.decrypt(decryptionKeyPacket, randomSessionKey);
+                  decryptedSessionKeyPackets.push(pkeskPacketCopy);
+                } catch (err) {
+                  // `decrypt` can still throw some non-security-sensitive errors
+                  util.printDebugError(err);
+                  exception = err;
                 }
-                // If the successfully decrypted session key is AES, use it instead of the randomly generated AES key of the same size.
-                // If it is non-AES, discard it and proceed with only the randomly generated session keys.
-
-                // TODO this can be simplified with pkesk.decrypt being aware of constant timeness:
-                // - clone pkesk and have it decrypted with each random key passed as `randomSessionKey`
-                // - use the result as-is, unless errors are thrown, then discard the pkesk (as already done)
-                const algoIndex = sessionKeysOfEachAlgo.findIndex(({ sessionKeyAlgorithm }) => sessionKeyAlgorithm === pkeskPacket.sessionKeyAlgorithm);
-                sessionKeysOfEachAlgo[algoIndex] = (algoIndex >= 0) ? pkeskPacket : sessionKeysOfEachAlgo[algoIndex];
-              } finally {
-                decryptedSessionKeyPackets.push(...sessionKeysOfEachAlgo);
-              }
+              }));
 
             } else {
               try {

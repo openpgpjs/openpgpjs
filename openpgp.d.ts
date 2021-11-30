@@ -326,6 +326,8 @@ interface Config {
   versionString: string;
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;
+  constantTimePKCS1Decryption: boolean;
+  constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<enums.symmetric>;
   v5Keys: boolean;
   preferredAEADAlgorithm: enums.aead;
   aeadChunkSizeByte: number;
