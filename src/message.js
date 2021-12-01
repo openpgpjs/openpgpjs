@@ -226,10 +226,10 @@ export class Message {
 
             if (doConstantTimeDecryption) {
               // The goal is to not reveal whether PKESK decryption (specifically the PKCS1 decoding step) failed, hence, we always proceed to decrypt the message,
-              // either with the successfully decrypted session key, or with a randomly generated one of the same type.
+              // either with the successfully decrypted session key, or with a randomly generated one.
               // Since the SEIP/AEAD's symmetric algorithm and key size are stored in the encrypted portion of the PKESK, and the execution flow cannot depend on
               // the decrypted payload, we always assume the message to be encrypted with one of the symmetric algorithms specified in `config.constantTimePKCS1DecryptionSupportedSymmetricAlgorithms`:
-              // - If the PKESK decryption succeeds, and the session key cipher is in the supported set, then we try to decrypt the data with the decrypted session key as well as the
+              // - If the PKESK decryption succeeds, and the session key cipher is in the supported set, then we try to decrypt the data with the decrypted session key as well as with the
               // randomly generated keys of the remaining key types.
               // - If the PKESK decryptions fails, or if it succeeds but support for the cipher is not enabled, then we discard the session key and try to decrypt the data using only the randomly
               // generated session keys.
