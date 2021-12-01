@@ -26,6 +26,7 @@
 
 import { getRandomBytes } from './random';
 import hash from './hash';
+import util from '../util';
 
 /**
  * ASN1 object identifiers for hashes
@@ -116,7 +117,7 @@ export function emeDecode(encoded, randomPayload) {
   const isValidPadding = encoded[0] === 0 & encoded[1] === 2 & psLen >= 8 & !separatorNotFound;
 
   if (randomPayload) {
-    return isValidPadding ? payload : randomPayload;
+    return util.selectUint8Array(isValidPadding, payload, randomPayload);
   }
 
   if (isValidPadding) {

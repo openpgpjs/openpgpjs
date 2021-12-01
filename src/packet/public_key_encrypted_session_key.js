@@ -138,8 +138,8 @@ class PublicKeyEncryptedSessionKeyPacket {
       // We must not leak info about the validity of the decrypted checksum or cipher algo.
       // The decrypted session key must be of the same algo and size as the random session key, otherwise we discard it and use the random data.
       const isValidPayload = isValidChecksum & symmetricAlgoByte === randomSessionKey.sessionKeyAlgorithm & sessionKey.length === randomSessionKey.sessionKey.length;
-      this.sessionKey = isValidPayload ? sessionKey : randomSessionKey.sessionKey;
-      this.sessionKeyAlgorithm = isValidPayload ? symmetricAlgoByte : randomSessionKey.sessionKeyAlgorithm;
+      this.sessionKeyAlgorithm = util.selectUint8(isValidPayload, symmetricAlgoByte, randomSessionKey.sessionKeyAlgorithm);
+      this.sessionKey = util.selectUint8Array(isValidPayload, sessionKey, randomSessionKey.sessionKey);
 
     } else {
       const isValidPayload = isValidChecksum && enums.read(enums.symmetric, symmetricAlgoByte);
