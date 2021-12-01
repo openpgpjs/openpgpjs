@@ -1537,17 +1537,21 @@ aOU=
         encryptionKeys: [publicKeyRSA, privateKeyECC]
       });
 
+      const config = {
+        constantTimePKCS1Decryption: true,
+        constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: new Set()
+      };
       // decryption using RSA key should fail
       await expect(openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         decryptionKeys: privateKeyRSA,
-        config: { constantTimePKCS1Decryption: true, constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: new Set() }
+        config
       })).to.be.rejectedWith(/Session key decryption failed/);
       // decryption using ECC key should succeed (PKCS1 is not used, so constant time countermeasures are not applied)
       const { data } = await openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         decryptionKeys: privateKeyECC,
-        config: { constantTimePKCS1Decryption: true }
+        config
       });
       expect(data).to.equal(plaintext);
     });
