@@ -131,9 +131,9 @@ class PublicKeyEncryptedSessionKeyPacket {
     const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload);
     const symmetricAlgoByte = decoded[0];
     const sessionKey = decoded.subarray(1, decoded.length - 2);
-    const expectedChecksum = decoded.subarray(decoded.length - 2);
-    const actualChecksum = util.writeChecksum(sessionKey);
-    const isValidChecksum = actualChecksum[0] === expectedChecksum[0] & actualChecksum[1] === expectedChecksum[1];
+    const checksum = decoded.subarray(decoded.length - 2);
+    const computedChecksum = util.writeChecksum(sessionKey);
+    const isValidChecksum = computedChecksum[0] === checksum[0] & computedChecksum[1] === checksum[1];
 
     if (randomSessionKey) {
       // We must not leak info about the validity of the decrypted checksum or cipher algo.
