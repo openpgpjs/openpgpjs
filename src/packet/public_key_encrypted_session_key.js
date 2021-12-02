@@ -129,10 +129,11 @@ class PublicKeyEncryptedSessionKeyPacket {
       util.writeChecksum(randomSessionKey.sessionKey)
     ]) : null;
     const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload);
-    const checksum = decoded.subarray(decoded.length - 2);
-    const sessionKey = decoded.subarray(1, decoded.length - 2);
     const symmetricAlgoByte = decoded[0];
-    const isValidChecksum = util.equalsUint8Array(checksum, util.writeChecksum(sessionKey));
+    const sessionKey = decoded.subarray(1, decoded.length - 2);
+    const expectedChecksum = decoded.subarray(decoded.length - 2);
+    const actualChecksum = util.writeChecksum(sessionKey);
+    const isValidChecksum = actualChecksum[0] === expectedChecksum[0] & actualChecksum[1] === expectedChecksum[1];
 
     if (randomSessionKey) {
       // We must not leak info about the validity of the decrypted checksum or cipher algo.
