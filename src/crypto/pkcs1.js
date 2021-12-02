@@ -113,7 +113,7 @@ export function emeDecode(encoded, randomPayload) {
   }
 
   const psLen = offset - 2;
-  const payload = encoded.subarray(offset + 1); // discar the 0x00 separator
+  const payload = encoded.subarray(offset + 1); // discard the 0x00 separator
   const isValidPadding = encoded[0] === 0 & encoded[1] === 2 & psLen >= 8 & !separatorNotFound;
 
   if (randomPayload) {
