@@ -12,7 +12,7 @@ module.exports = () => tryTests('Application Worker', tests, {
 function tests() {
 
   it('Should support loading OpenPGP.js from inside a Web Worker', async function() {
-    if (/Edge/.test(navigator.userAgent)) {
+    if (navigator && navigator.userAgent && /Edge/.test(navigator.userAgent)) {
       this.skip(); // Old Edge doesn't support crypto.getRandomValues inside a Worker.
     }
     try {

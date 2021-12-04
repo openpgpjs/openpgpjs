@@ -918,7 +918,9 @@ function tests() {
         if (util.detectNode()) {
           coresStub.restore();
         } else {
-          delete navigator.hardwareConcurrency;
+          if (navigator && navigator.hardwareConcurrency !== void 0) {
+            delete navigator.hardwareConcurrency;
+          }
         }
       }
     });

@@ -56,7 +56,7 @@ async function GCM(cipher, key) {
           !pt.length ||
           // iOS does not support GCM-en/decrypting empty messages
           // Also, synchronous en/decryption might be faster in this case.
-          (!adata.length && navigator.userAgent.indexOf('Edge') !== -1)
+          (!adata.length && navigator.userAgent && navigator.userAgent.indexOf('Edge') !== -1)
           // Edge does not support GCM-en/decrypting without ADATA
         ) {
           return AES_GCM.encrypt(pt, key, iv, adata);
@@ -70,7 +70,7 @@ async function GCM(cipher, key) {
           ct.length === tagLength ||
           // iOS does not support GCM-en/decrypting empty messages
           // Also, synchronous en/decryption might be faster in this case.
-          (!adata.length && navigator.userAgent.indexOf('Edge') !== -1)
+          (!adata.length && navigator.userAgent && navigator.userAgent.indexOf('Edge') !== -1)
           // Edge does not support GCM-en/decrypting without ADATA
         ) {
           return AES_GCM.decrypt(ct, key, iv, adata);

@@ -10,6 +10,7 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
     - [Performance](#performance)
     - [Getting started](#getting-started)
         - [Node.js](#nodejs)
+        - [Deno (experimental)](#deno-experimental)
         - [Browser (webpack)](#browser-webpack)
         - [Browser (plain files)](#browser-plain-files)
     - [Examples](#examples)
@@ -107,6 +108,14 @@ Or as an ES6 module, from an .mjs file:
 
 ```js
 import * as openpgp from 'openpgp';
+```
+
+#### Deno (experimental)
+
+Import as an ES6 module, from an .mjs file on a CDN of your choice.
+
+```js
+import * as openpgp from "https://cdn.jsdelivr.net/npm/openpgp@5/dist/openpgp.mjs";
 ```
 
 #### Browser (webpack)

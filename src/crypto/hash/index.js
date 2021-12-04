@@ -77,7 +77,7 @@ if (nodeCrypto) { // Use Node native crypto for all hash functions
 } else { // Use JS fallbacks
   hashFunctions = {
     md5: md5,
-    sha1: asmcryptoHash(Sha1, navigator.userAgent.indexOf('Edge') === -1 && 'SHA-1'),
+    sha1: asmcryptoHash(Sha1, (!navigator.userAgent || (navigator.userAgent && navigator.userAgent.indexOf('Edge') === -1)) && 'SHA-1'),
     sha224: hashjsHash(sha224),
     sha256: asmcryptoHash(Sha256, 'SHA-256'),
     sha384: hashjsHash(sha384, 'SHA-384'),
