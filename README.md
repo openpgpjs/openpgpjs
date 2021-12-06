@@ -112,10 +112,10 @@ import * as openpgp from 'openpgp';
 
 #### Deno (experimental)
 
-Import as an ES6 module, from an .mjs file on a CDN of your choice.
+Import as an ES6 module, using /dist/openpgp.mjs.
 
 ```js
-import * as openpgp from "https://cdn.jsdelivr.net/npm/openpgp@5/dist/openpgp.mjs";
+import * as openpgp from "./openpgpgjs/dist/openpgp.mjs";
 ```
 
 #### Browser (webpack)

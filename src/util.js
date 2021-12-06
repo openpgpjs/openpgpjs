@@ -429,6 +429,7 @@ const util = {
       const os = require('os');
       return os.cpus().length;
     }
+
     return navigator.hardwareConcurrency || 1;
   },
 
