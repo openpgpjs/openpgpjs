@@ -115,7 +115,7 @@ import * as openpgp from 'openpgp';
 Import as an ES6 module, using /dist/openpgp.mjs.
 
 ```js
-import * as openpgp from "./openpgpgjs/dist/openpgp.mjs";
+import * as openpgp from './openpgpjs/dist/openpgp.mjs';
 ```
 
 #### Browser (webpack)
