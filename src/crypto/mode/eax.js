@@ -51,7 +51,7 @@ async function CTR(key) {
   if (
     util.getWebCrypto() &&
     key.length !== 24 && // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    navigator.userAgent.indexOf('Edge') === -1
+    (!navigator.userAgent || navigator.userAgent.indexOf('Edge') === -1)
   ) {
     key = await webCrypto.importKey('raw', key, { name: 'AES-CTR', length: key.length * 8 }, false, ['encrypt']);
     return async function(pt, iv) {
