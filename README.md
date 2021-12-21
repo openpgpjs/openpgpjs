@@ -642,7 +642,7 @@ Using the private key:
 
 ### Documentation
 
-The full documentation is available at [openpgpjs.org](https://openpgpjs.org/openpgpjs/).
+The full documentation is available at [openpgpjs.org](https://docs.openpgpjs.org/).
 
 ### Security Audit
 
