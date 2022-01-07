@@ -213,6 +213,38 @@ class MemoryBenchamrkSuite {
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
+  suite.add('openpgp.encrypt/decrypt (PGP, text @ 100MB, with streaming)', async () => {
+    await stream.loadStreamsPonyfill();
+
+    const userID = { name: 'test', email: 'a@b.com' };
+    const passphrase = 'super long and hard to guess secret';
+    const { privateKey: rawPrivateKey, publicKey: rawPublicKey } =
+      await openpgp.generateKey({ userIDs: [userID], format: 'armored', passphrase });
+
+    function* largeDataGenerator() {
+      const chunkSize = 1024 * 1024; /*1MB*/
+      const numberOfChunks = 100;
+
+      for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
+        yield 'a'.repeat(chunkSize);
+      }
+    }
+
+    const plaintextMessage = await openpgp.createMessage({ text: require('stream').Readable.from(largeDataGenerator()) });
+    assert(plaintextMessage.fromStream);
+
+    const publicKey = await openpgp.readKey({ armoredKey: rawPublicKey });
+    const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, encryptionKeys: [publicKey] });
+
+    const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
+
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: rawPrivateKey }),
+      passphrase
+    });
+    await openpgp.decrypt({ message: encryptedMessage, decryptionKeys: privateKey });
+  });
+
   const stats = await suite.run();
   // Print JSON stats to stdout
   console.log(JSON.stringify(stats, null, 4));
