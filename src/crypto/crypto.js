@@ -76,23 +76,26 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
  * @param {Object} privateKeyParams - Algorithm-specific private key parameters
  * @param {Object} sessionKeyParams - Encrypted session key parameters
  * @param {Uint8Array} fingerprint - Recipient fingerprint
+ * @param {Uint8Array} [randomPayload] - Data to return on decryption error, instead of throwing
+ *                                    (needed for constant-time processing in RSA and ElGamal)
  * @returns {Promise<Uint8Array>} Decrypted data.
+ * @throws {Error} on sensitive decryption error, unless `randomPayload` is given
  * @async
  */
-export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint) {
+export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload) {
   switch (algo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt: {
       const { c } = sessionKeyParams;
       const { n, e } = publicKeyParams;
       const { d, p, q, u } = privateKeyParams;
-      return publicKey.rsa.decrypt(c, n, e, d, p, q, u);
+      return publicKey.rsa.decrypt(c, n, e, d, p, q, u, randomPayload);
     }
     case enums.publicKey.elgamal: {
       const { c1, c2 } = sessionKeyParams;
       const p = publicKeyParams.p;
       const x = privateKeyParams.x;
-      return publicKey.elgamal.decrypt(c1, c2, p, x);
+      return publicKey.elgamal.decrypt(c1, c2, p, x, randomPayload);
     }
     case enums.publicKey.ecdh: {
       const { oid, Q, kdfParams } = publicKeyParams;

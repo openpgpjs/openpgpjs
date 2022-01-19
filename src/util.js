@@ -588,6 +588,35 @@ const util = {
       }));
       reject(exception);
     });
+  },
+
+  /**
+   * Return either `a` or `b` based on `cond`, in algorithmic constant time.
+   * @param {Boolean} cond
+   * @param {Uint8Array} a
+   * @param {Uint8Array} b
+   * @returns `a` if `cond` is true, `b` otherwise
+   */
+  selectUint8Array: function(cond, a, b) {
+    const length = Math.max(a.length, b.length);
+    const result = new Uint8Array(length);
+    let end = 0;
+    for (let i = 0; i < result.length; i++) {
+      result[i] = (a[i] & (256 - cond)) | (b[i] & (255 + cond));
+      end += (cond & i < a.length) | ((1 - cond) & i < b.length);
+    }
+    return result.subarray(0, end);
+  },
+  /**
+   * Return either `a` or `b` based on `cond`, in algorithmic constant time.
+   * NB: it only supports `a, b` with values between 0-255.
+   * @param {Boolean} cond
+   * @param {Uint8} a
+   * @param {Uint8} b
+   * @returns `a` if `cond` is true, `b` otherwise
+   */
+  selectUint8: function(cond, a, b) {
+    return (a & (256 - cond)) | (b & (255 + cond));
   }
 };
 

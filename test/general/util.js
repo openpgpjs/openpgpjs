@@ -141,6 +141,33 @@ module.exports = () => describe('Util unit tests', function() {
     });
   });
 
+  describe('constant time select', function() {
+    it('selectUint8Array should work for arrays of equal length', function () {
+      const size = 10;
+      const a = new Uint8Array(size).fill(1);
+      const b = new Uint8Array(size).fill(2);
+      expect(util.selectUint8Array(true, a, b)).to.deep.equal(a);
+      expect(util.selectUint8Array(false, a, b)).to.deep.equal(b);
+    });
+
+    it('selectUint8Array should work for arrays of different length', function () {
+      const size = 10;
+      const a = new Uint8Array(size).fill(1);
+      const b = new Uint8Array(2 * size).fill(2);
+      expect(util.selectUint8Array(true, a, b)).to.deep.equal(a);
+      expect(util.selectUint8Array(false, a, b)).to.deep.equal(b);
+      expect(util.selectUint8Array(true, b, a)).to.deep.equal(b);
+      expect(util.selectUint8Array(false, b, a)).to.deep.equal(a);
+    });
+
+    it('selectUint8 should return the expected value based on condition', function () {
+      const a = 1;
+      const b = 2;
+      expect(util.selectUint8(true, a, b)).to.equal(a);
+      expect(util.selectUint8(false, a, b)).to.equal(b);
+    });
+  });
+
   describe('Misc.', function() {
     it('util.readNumber should not overflow until full range of uint32', function () {
       const ints = [2 ** 20, 2 ** 25, 2 ** 30, 2 ** 32 - 1];

@@ -141,6 +141,25 @@ export default {
   allowInsecureVerificationWithReformattedKeys: false,
 
   /**
+   * Enable constant-time decryption of RSA- and ElGamal-encrypted session keys, to hinder Bleichenbacher-like attacks (https://link.springer.com/chapter/10.1007/BFb0055716).
+   * This setting has measurable performance impact and it is only helpful in application scenarios where both of the following conditions apply:
+   * - new/incoming messages are automatically decrypted (without user interaction);
+   * - an attacker can determine how long it takes to decrypt each message (e.g. due to decryption errors being logged remotely).
+   * See also `constantTimePKCS1DecryptionSupportedSymmetricAlgorithms`.
+   * @memberof module:config
+   * @property {Boolean} constantTimePKCS1Decryption
+   */
+  constantTimePKCS1Decryption: false,
+  /**
+   * This setting is only meaningful if `constantTimePKCS1Decryption` is enabled.
+   * Decryption of RSA- and ElGamal-encrypted session keys of symmetric algorithms different from the ones specified here will fail.
+   * However, the more algorithms are added, the slower the decryption procedure becomes.
+   * @memberof module:config
+   * @property {Set<Integer>} constantTimePKCS1DecryptionSupportedSymmetricAlgorithms {@link module:enums.symmetric}
+   */
+  constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: new Set([enums.symmetric.aes128, enums.symmetric.aes192, enums.symmetric.aes256]),
+
+  /**
    * @memberof module:config
    * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
    */

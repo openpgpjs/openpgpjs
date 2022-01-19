@@ -110,25 +110,46 @@ class PublicKeyEncryptedSessionKeyPacket {
   }
 
   /**
-   * Decrypts the session key (only for public key encrypted session key
-   * packets (tag 1)
+   * Decrypts the session key (only for public key encrypted session key packets (tag 1)
    * @param {SecretKeyPacket} key - decrypted private key
-   * @throws {Error} if decryption failed
+   * @param {Object} [randomSessionKey] - Bogus session key to use in case of sensitive decryption error, or if the decrypted session key is of a different type/size.
+   *                                      This is needed for constant-time processing. Expected object of the form: { sessionKey: Uint8Array, sessionKeyAlgorithm: enums.symmetric }
+   * @throws {Error} if decryption failed, unless `randomSessionKey` is given
    * @async
    */
-  async decrypt(key) {
+  async decrypt(key, randomSessionKey) {
     // check that session key algo matches the secret key algo
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
     }
-    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes());
-    const checksum = decoded.subarray(decoded.length - 2);
+
+    const randomPayload = randomSessionKey ? util.concatUint8Array([
+      new Uint8Array([randomSessionKey.sessionKeyAlgorithm]),
+      randomSessionKey.sessionKey,
+      util.writeChecksum(randomSessionKey.sessionKey)
+    ]) : null;
+    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload);
+    const symmetricAlgoByte = decoded[0];
     const sessionKey = decoded.subarray(1, decoded.length - 2);
-    if (!util.equalsUint8Array(checksum, util.writeChecksum(sessionKey))) {
-      throw new Error('Decryption error');
+    const checksum = decoded.subarray(decoded.length - 2);
+    const computedChecksum = util.writeChecksum(sessionKey);
+    const isValidChecksum = computedChecksum[0] === checksum[0] & computedChecksum[1] === checksum[1];
+
+    if (randomSessionKey) {
+      // We must not leak info about the validity of the decrypted checksum or cipher algo.
+      // The decrypted session key must be of the same algo and size as the random session key, otherwise we discard it and use the random data.
+      const isValidPayload = isValidChecksum & symmetricAlgoByte === randomSessionKey.sessionKeyAlgorithm & sessionKey.length === randomSessionKey.sessionKey.length;
+      this.sessionKeyAlgorithm = util.selectUint8(isValidPayload, symmetricAlgoByte, randomSessionKey.sessionKeyAlgorithm);
+      this.sessionKey = util.selectUint8Array(isValidPayload, sessionKey, randomSessionKey.sessionKey);
+
     } else {
-      this.sessionKey = sessionKey;
-      this.sessionKeyAlgorithm = enums.write(enums.symmetric, decoded[0]);
+      const isValidPayload = isValidChecksum && enums.read(enums.symmetric, symmetricAlgoByte);
+      if (isValidPayload) {
+        this.sessionKey = sessionKey;
+        this.sessionKeyAlgorithm = symmetricAlgoByte;
+      } else {
+        throw new Error('Decryption error');
+      }
     }
   }
 }
