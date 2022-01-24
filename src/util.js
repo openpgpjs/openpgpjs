@@ -617,7 +617,20 @@ const util = {
    */
   selectUint8: function(cond, a, b) {
     return (a & (256 - cond)) | (b & (255 + cond));
-  }
+  },
+  /**
+   * @returns true if running on the Edge browser, false otherwise.
+   */
+  isEdge: (function() {
+    // we only need to compute this value once, so cache it first time we look
+    let _isEdge = undefined;
+    return function() {
+      if (_isEdge === undefined) {
+        _isEdge = !!(navigator.userAgent && navigator.userAgent.indexOf('Edge') !== -1)
+      }
+      return _isEdge;
+    }
+  })(),
 };
 
 export default util;
