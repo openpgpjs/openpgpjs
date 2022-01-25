@@ -47,7 +47,7 @@
     "browserstack": "karma start test/karma.conf.js",
     "coverage": "nyc npm test",
     "lint": "eslint .",
-    "docs": "jsdoc --configure .jsdocrc.js --destination docs --recurse README.md src",
+    "docs": "jsdoc --configure .jsdocrc.js --destination docs --recurse README.md src && echo -n 'docs.openpgpjs.org' > docs/CNAME",
     "preversion": "rm -rf dist docs node_modules && npm install && npm test",
     "version": "npm run docs && git add -A docs",
     "postversion": "git push && git push --tags && npm publish"
