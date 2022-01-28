@@ -213,7 +213,7 @@ class MemoryBenchamrkSuite {
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
-  suite.add('openpgp.encrypt/decrypt (PGP, text @ 100MB, with streaming)', async () => {
+  suite.add('openpgp.encrypt/decrypt (PGP, text @ 6000MB, with streaming)', async () => {
     await stream.loadStreamsPonyfill();
 
     const userID = { name: 'test', email: 'a@b.com' };
@@ -223,7 +223,7 @@ class MemoryBenchamrkSuite {
 
     function* largeDataGenerator() {
       const chunkSize = 1024 * 1024; /*1MB*/
-      const numberOfChunks = 100;
+      const numberOfChunks = 6000;
 
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield 'a'.repeat(chunkSize);
@@ -242,7 +242,11 @@ class MemoryBenchamrkSuite {
       privateKey: await openpgp.readKey({ armoredKey: rawPrivateKey }),
       passphrase
     });
-    await openpgp.decrypt({ message: encryptedMessage, decryptionKeys: privateKey });
+    await openpgp.decrypt({
+      message: encryptedMessage,
+      decryptionKeys: privateKey,
+      config: { allowUnauthenticatedStream: true }
+    });
   });
 
   const stats = await suite.run();
