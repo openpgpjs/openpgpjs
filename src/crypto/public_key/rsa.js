@@ -317,7 +317,8 @@ async function webSign(hashName, data, n, e, d, p, q, u) {
    * We swap them in privateToJWK, so it usually works out, but nevertheless,
    * not all OpenPGP keys are compatible with this requirement.
    * OpenPGP.js used to generate RSA keys the wrong way around (p > q), and still
-   * does if the underlying Web Crypto does so (e.g. old MS Edge 50% of the time).
+   * does if the underlying Web Crypto does so (though the tested implementations
+   * don't do so).
    */
   const jwk = await privateToJWK(n, e, d, p, q, u);
   const algo = {
@@ -325,8 +326,7 @@ async function webSign(hashName, data, n, e, d, p, q, u) {
     hash: { name: hashName }
   };
   const key = await webCrypto.importKey('jwk', jwk, algo, false, ['sign']);
-  // add hash field for ms edge support
-  return new Uint8Array(await webCrypto.sign({ 'name': 'RSASSA-PKCS1-v1_5', 'hash': hashName }, key, data));
+  return new Uint8Array(await webCrypto.sign('RSASSA-PKCS1-v1_5', key, data));
 }
 
 async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
@@ -381,8 +381,7 @@ async function webVerify(hashName, data, s, n, e) {
     name: 'RSASSA-PKCS1-v1_5',
     hash: { name:  hashName }
   }, false, ['verify']);
-  // add hash field for ms edge support
-  return webCrypto.verify({ 'name': 'RSASSA-PKCS1-v1_5', 'hash': hashName }, key, s, data);
+  return webCrypto.verify('RSASSA-PKCS1-v1_5', key, s, data);
 }
 
 async function nodeVerify(hashAlgo, data, s, n, e) {
