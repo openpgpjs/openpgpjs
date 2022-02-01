@@ -430,7 +430,8 @@ const util = {
       return os.cpus().length;
     }
 
-    return navigator.hardwareConcurrency || 1;
+    // eslint-disable-next-line no-mixed-operators
+    return typeof navigator !== 'undefined' && navigator.hardwareConcurrency || 1;
   },
 
   isEmailAddress: function(data) {
