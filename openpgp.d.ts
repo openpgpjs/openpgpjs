@@ -1,6 +1,6 @@
 /**
  * Type definitions for OpenPGP.js http://openpgpjs.org/
- * 
+ *
  * Contributors:
  *  - FlowCrypt a. s. <https://flowcrypt.com>
  *  - Guillaume Lacasa <https://blog.lacasa.fr>
@@ -57,7 +57,7 @@ export abstract class Key {
   public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
   public verifyPrimaryUser(publicKeys: PublicKey[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
   public verifyAllUsers(publicKeys: PublicKey[], date?: Date, config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
-  public isRevoked(signature: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
+  public isRevoked(signature?: SignaturePacket, key?: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public getRevocationCertificate(date?: Date, config?: Config): Promise<MaybeStream<string> | undefined>;
   public getEncryptionKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
   public getSigningKey(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<this | Subkey>;
@@ -171,13 +171,13 @@ export class CleartextMessage {
 
 /* ############## v5 MSG #################### */
 export function generateSessionKey(options: { encryptionKeys: MaybeArray<PublicKey>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig }): Promise<SessionKey>;
-export function encryptSessionKey(options: SessionKey & { 
+export function encryptSessionKey(options: SessionKey & {
   encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format?: 'armored', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
 }) : Promise<string>;
-export function encryptSessionKey(options: SessionKey & { 
+export function encryptSessionKey(options: SessionKey & {
   encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format: 'binary', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
 }) : Promise<Uint8Array>;
-export function encryptSessionKey(options: SessionKey & { 
+export function encryptSessionKey(options: SessionKey & {
   encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format: 'object', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
 }) : Promise<Message<Data>>;
 export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { message: Message<T>, decryptionKeys?: MaybeArray<PrivateKey>, passwords?: MaybeArray<string>, date?: Date, config?: PartialConfig }): Promise<SessionKey[]>;
