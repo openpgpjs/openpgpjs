@@ -23,9 +23,6 @@ import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
 
-// Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
-const verified = Symbol('verified');
-
 // GPG puts the Issuer and Signature subpackets in the unhashed area.
 // Tampering with those invalidates the signature, so we still trust them and parse them.
 // All other unhashed subpackets are ignored.
