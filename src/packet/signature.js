@@ -98,7 +98,7 @@ class SignaturePacket {
     this.preferredAEADAlgorithms = null;
 
     this.revoked = null;
-    this[verified] = null;
+    this.verified = null;
   }
 
   /**
@@ -206,7 +206,7 @@ class SignaturePacket {
       // getLatestValidSignature(this.revocationSignatures, key, data)` later.
       // Note that this only holds up if the key and data passed to verify are the
       // same as the ones passed to sign.
-      this[verified] = true;
+      this.verified = true;
     }
   }
 
@@ -670,7 +670,7 @@ class SignaturePacket {
     const isMessageSignature = signatureType === enums.signature.binary || signatureType === enums.signature.text;
     // Cryptographic validity is cached after one successful verification.
     // However, for message signatures, we always re-verify, since the passed `data` can change
-    const skipVerify = this[verified] && !isMessageSignature;
+    const skipVerify = this.verified && !isMessageSignature;
     if (!skipVerify) {
       let toHash;
       let hash;
@@ -688,12 +688,12 @@ class SignaturePacket {
 
       this.params = await this.params;
 
-      this[verified] = await crypto.signature.verify(
+      this.verified = await crypto.signature.verify(
         this.publicKeyAlgorithm, this.hashAlgorithm, this.params, key.publicParams,
         toHash, hash
       );
 
-      if (!this[verified]) {
+      if (!this.verified) {
         throw new Error('Signature verification failed');
       }
     }
