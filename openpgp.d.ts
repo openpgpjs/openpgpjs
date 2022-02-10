@@ -522,7 +522,7 @@ export class SignaturePacket extends BasePacket {
   public preferredAEADAlgorithms: enums.aead[] | null;
   public revoked: null | boolean;
   public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean): Promise<void>;
-  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
+  public verify(key: AnyKeyPacket, signatureType: enums.signature, data: string | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
 }
