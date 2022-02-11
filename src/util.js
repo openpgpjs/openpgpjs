@@ -430,7 +430,7 @@ const util = {
       return os.cpus().length;
     }
 
-    return navigator.hardwareConcurrency || 1;
+    return (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 1;
   },
 
   isEmailAddress: function(data) {
