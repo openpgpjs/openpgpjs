@@ -652,7 +652,7 @@ class SignaturePacket {
    * @param {PublicSubkeyPacket|PublicKeyPacket|
    *         SecretSubkeyPacket|SecretKeyPacket} key - the public key to verify the signature
    * @param {module:enums.signature} signatureType - Expected signature type
-   * @param {String|Object} data - Data which on the signature applies
+   * @param {Uint8Array|Object} data - Data which on the signature applies
    * @param {Date} [date] - Use the given date instead of the current time to check for signature validity and expiration
    * @param {Boolean} [detached] - Whether to verify a detached signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
