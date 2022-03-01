@@ -7,6 +7,8 @@
  *  - Errietta Kostala <https://github.com/errietta>
  */
 
+import type { WebStream as GenericWebStream, NodeStream as GenericNodeStream } from '@openpgp/web-stream-tools';
+
 /* ############## v5 KEY #################### */
 // The Key and PublicKey types can be used interchangably since TS cannot detect the difference, as they have the same class properties.
 // The declared readKey(s) return type is Key instead of a PublicKey since it seems more obvious that a Key can be cast to a PrivateKey.
@@ -171,15 +173,9 @@ export class CleartextMessage {
 
 /* ############## v5 MSG #################### */
 export function generateSessionKey(options: { encryptionKeys: MaybeArray<PublicKey>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig }): Promise<SessionKey>;
-export function encryptSessionKey(options: SessionKey & {
-  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format?: 'armored', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
-}) : Promise<string>;
-export function encryptSessionKey(options: SessionKey & {
-  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format: 'binary', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
-}) : Promise<Uint8Array>;
-export function encryptSessionKey(options: SessionKey & {
-  encryptionKeys?: MaybeArray<PublicKey>, passwords?: MaybeArray<string>, format: 'object', wildcard?: boolean, encryptionKeyIDs?: MaybeArray<KeyID>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig
-}) : Promise<Message<Data>>;
+export function encryptSessionKey(options: EncryptSessionKeyOptions & { format?: 'armored' }): Promise<string>;
+export function encryptSessionKey(options: EncryptSessionKeyOptions & { format: 'binary' }): Promise<Uint8Array>;
+export function encryptSessionKey(options: EncryptSessionKeyOptions & { format: 'object' }): Promise<Message<Data>>;
 export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { message: Message<T>, decryptionKeys?: MaybeArray<PrivateKey>, passwords?: MaybeArray<string>, date?: Date, config?: PartialConfig }): Promise<SessionKey[]>;
 
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
@@ -548,18 +544,10 @@ export class PacketList<T extends AnyPacket> extends Array<T> {
 /* ############## v5 STREAM #################### */
 
 type Data = Uint8Array | string;
-interface BaseStream<T extends Data> extends AsyncIterable<T> { }
-interface WebStream<T extends Data> extends BaseStream<T> { // copied+simplified version of ReadableStream from lib.dom.d.ts
-  readonly locked: boolean; getReader: Function; pipeThrough: Function; pipeTo: Function; tee: Function;
-  cancel(reason?: any): Promise<void>;
-}
-interface NodeStream<T extends Data> extends BaseStream<T> { // copied+simplified version of ReadableStream from @types/node/index.d.ts
-  readable: boolean; pipe: Function; unpipe: Function; wrap: Function;
-  read(size?: number): string | Uint8Array; setEncoding(encoding: string): this; pause(): this; resume(): this;
-  isPaused(): boolean; unshift(chunk: string | Uint8Array): void;
-}
-type Stream<T extends Data> = WebStream<T> | NodeStream<T>;
-type MaybeStream<T extends Data> = T | Stream<T>;
+export interface WebStream<T extends Data> extends GenericWebStream<T> {}
+export interface NodeStream<T extends Data> extends GenericNodeStream<T> {}
+export type Stream<T extends Data> = WebStream<T> | NodeStream<T>;
+export type MaybeStream<T extends Data> = T | Stream<T>;
 
 /* ############## v5 GENERAL #################### */
 type MaybeArray<T> = T | Array<T>;
@@ -627,7 +615,7 @@ interface DecryptOptions {
 
 interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
-  signingKeys?: MaybeArray<PrivateKey>;
+  signingKeys: MaybeArray<PrivateKey>;
   format?: 'armored' | 'binary' | 'object';
   detached?: boolean;
   signingKeyIDs?: MaybeArray<KeyID>;
@@ -652,6 +640,16 @@ interface VerifyOptions {
   config?: PartialConfig;
 }
 
+interface EncryptSessionKeyOptions extends SessionKey {
+  encryptionKeys?: MaybeArray<PublicKey>,
+  passwords?: MaybeArray<string>,
+  format?: 'armored' | 'binary' | 'object',
+  date?: Date,
+  wildcard?: boolean,
+  encryptionKeyIDs?: MaybeArray<KeyID>,
+  encryptionUserIDs?: MaybeArray<UserID>,
+  config?: PartialConfig
+}
 
 interface SerializedKeyPair<T extends string|Uint8Array> {
   privateKey: T;
