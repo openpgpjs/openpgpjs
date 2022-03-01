@@ -267,7 +267,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data that is the body of the message
    */
-  public getLiteralData(): MaybeStream<Uint8Array> | null;
+  public getLiteralData(): (T extends Stream<Data> ? WebStream<Uint8Array> : Uint8Array) | null;
 
   /** Returns the key IDs of the keys that signed the message
    */
@@ -275,7 +275,7 @@ export class Message<T extends MaybeStream<Data>> {
 
   /** Get literal data as text
    */
-  public getText(): MaybeStream<string> | null;
+  public getText(): (T extends Stream<Data> ? WebStream<string> : string) | null;
 
   public getFilename(): string | null;
 
