@@ -82,7 +82,7 @@
     "karma-browserstack-launcher": "^1.6.0",
     "karma-mocha": "^2.0.1",
     "karma-mocha-reporter": "^2.2.5",
-    "mocha": "^9.2.1",
+    "mocha": "^8.4.0",
     "nyc": "^14.1.1",
     "rollup": "^2.38.5",
     "rollup-plugin-terser": "^7.0.2",
