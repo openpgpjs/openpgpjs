@@ -185,6 +185,11 @@ import {
   // const signed = await sign({ privateKeys, message, detached: true, format: 'binary' });
   // console.log(signed); // Uint8Array
 
+  // @ts-expect-error for passing text stream as binary data
+  await createMessage({ binary: new WebReadableStream<string>() });
+  // @ts-expect-error for passing binary stream as text data
+  await createMessage({ text: new WebReadableStream<Uint8Array>() });
+  
   // Streaming - encrypt text message (armored output)
   try {
     const nodeTextStream = createReadStream('non-existent-file', { encoding: 'utf8' });
