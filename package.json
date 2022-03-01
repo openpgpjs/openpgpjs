@@ -78,7 +78,7 @@
     "esm": "^3.2.25",
     "hash.js": "^1.1.3",
     "http-server": "^0.12.3",
-    "karma": "^6.1.0",
+    "karma": "^6.3.17",
     "karma-browserstack-launcher": "^1.6.0",
     "karma-mocha": "^2.0.1",
     "karma-mocha-reporter": "^2.2.5",
