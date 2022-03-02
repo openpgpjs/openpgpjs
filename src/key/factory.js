@@ -203,9 +203,6 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     if (config.aeadProtect) {
       signaturePacket.features[0] |= enums.features.seipdv2;
     }
-    if (config.v5Keys) {
-      signaturePacket.features[0] |= enums.features.v5Keys;
-    }
     if (options.keyExpirationTime > 0) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
