@@ -387,7 +387,8 @@ export default {
     signatureTarget: 31,
     embeddedSignature: 32,
     issuerFingerprint: 33,
-    preferredAEADAlgorithms: 34
+    preferredAEADAlgorithms: 34,
+    preferredCipherSuites: 39
   },
 
   /** Key flags
