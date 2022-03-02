@@ -58,7 +58,7 @@ export default {
    * @memberof module:config
    * @property {Integer} preferredAEADAlgorithm Default AEAD mode {@link module:enums.aead}
    */
-  preferredAEADAlgorithm: enums.aead.eax,
+  preferredAEADAlgorithm: enums.aead.gcm,
   /**
    * Chunk Size Byte for Authenticated Encryption with Additional Data (AEAD) mode
    * Only has an effect when aeadProtect is set to true.
