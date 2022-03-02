@@ -58,8 +58,8 @@ export async function generateKey({ userIDs = [], passphrase, type = 'ecc', rsaB
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  if (userIDs.length === 0) {
-    throw new Error('UserIDs are required for key generation');
+  if (userIDs.length === 0 && !config.v6Keys) {
+    throw new Error('UserIDs are required for V4 keys');
   }
   if (type === 'rsa' && rsaBits < config.minRSABits) {
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
@@ -102,8 +102,8 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExp
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  if (userIDs.length === 0) {
-    throw new Error('UserIDs are required for key reformat');
+  if (userIDs.length === 0 && privateKey.keyPacket.version !== 6) {
+    throw new Error('UserIDs are required for V4 keys');
   }
   const options = { privateKey, userIDs, passphrase, keyExpirationTime, date };
 
