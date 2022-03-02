@@ -60,6 +60,7 @@ class SignaturePacket {
     this.signatureData = null;
     this.unhashedSubpackets = [];
     this.signedHashValue = null;
+    this.salt = null;
 
     this.created = null;
     this.signatureExpirationTime = null;
@@ -140,6 +141,11 @@ class SignaturePacket {
     this.signedHashValue = bytes.subarray(i, i + 2);
     i += 2;
 
+    if (this.version === 5) {
+      this.salt = bytes.subarray(i, i + 16);
+      i += 16;
+    }
+
     this.params = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, bytes.subarray(i, bytes.length));
   }
 
@@ -160,6 +166,9 @@ class SignaturePacket {
     arr.push(this.signatureData);
     arr.push(this.writeUnhashedSubPackets());
     arr.push(this.signedHashValue);
+    if (this.version === 5) {
+      arr.push(this.salt);
+    }
     arr.push(this.writeParams());
     return util.concat(arr);
   }
@@ -196,6 +205,9 @@ class SignaturePacket {
 
     this.signatureData = util.concat(arr);
 
+    if (this.version === 5) {
+      this.salt = await crypto.random.getRandomBytes(16);
+    }
     const toHash = this.toHash(this.signatureType, data, detached);
     const hash = await this.hash(this.signatureType, data, toHash, detached);
 
@@ -658,7 +670,7 @@ class SignaturePacket {
   toHash(signatureType, data, detached = false) {
     const bytes = this.toSign(signatureType, data);
 
-    return util.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
+    return util.concat([this.salt || new Uint8Array(), bytes, this.signatureData, this.calculateTrailer(data, detached)]);
   }
 
   async hash(signatureType, data, toHash, detached = false) {
