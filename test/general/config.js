@@ -146,7 +146,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       const key2 = await openpgp.readKey({ armoredKey: privateKeyArmored2 });
       expect(key2.keyPacket.version).to.equal(6);
       expect(privateKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
-      expect(key2.users[0].selfCertifications[0].preferredHashAlgorithms[0]).to.equal(config.preferredHashAlgorithm);
+      expect(key2.directSignatures[0].preferredHashAlgorithms[0]).to.equal(config.preferredHashAlgorithm);
     } finally {
       openpgp.config.v6Keys = v6KeysVal;
       openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
