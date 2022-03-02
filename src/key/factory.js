@@ -188,18 +188,12 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   const packetlist = new PacketList();
   packetlist.push(secretKeyPacket);
 
-  await Promise.all(options.userIDs.map(async function(userID, index) {
-    function createPreferredAlgos(algos, preferredAlgo) {
-      return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
-    }
+  function createPreferredAlgos(algos, preferredAlgo) {
+    return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
+  }
 
-    const userIDPacket = UserIDPacket.fromObject(userID);
-    const dataToSign = {};
-    dataToSign.userID = userIDPacket;
-    dataToSign.key = secretKeyPacket;
-
+  function getKeySignatureProperties() {
     const signatureProperties = {};
-    signatureProperties.signatureType = enums.signature.certGeneric;
     signatureProperties.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
     signatureProperties.preferredSymmetricAlgorithms = createPreferredAlgos([
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
@@ -223,9 +217,6 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.compression.zip,
       enums.compression.uncompressed
     ], config.preferredCompressionAlgorithm);
-    if (index === 0) {
-      signatureProperties.isPrimaryUserID = true;
-    }
     // integrity protection always enabled
     signatureProperties.features = [0];
     signatureProperties.features[0] |= enums.features.modificationDetection;
@@ -235,6 +226,32 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     if (options.keyExpirationTime > 0) {
       signatureProperties.keyExpirationTime = options.keyExpirationTime;
       signatureProperties.keyNeverExpires = false;
+    }
+    return signatureProperties;
+  }
+
+  if (secretKeyPacket.version === 6) { // add direct key signature with key prefs
+    const dataToSign = {
+      key: secretKeyPacket
+    };
+
+    const signatureProperties = getKeySignatureProperties();
+    signatureProperties.signatureType = enums.signature.key;
+
+    const signaturePacket = await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
+    packetlist.push(signaturePacket);
+  }
+
+  await Promise.all(options.userIDs.map(async function(userID, index) {
+    const userIDPacket = UserIDPacket.fromObject(userID);
+    const dataToSign = {
+      userID: userIDPacket,
+      key: secretKeyPacket
+    };
+    const signatureProperties = secretKeyPacket.version !== 6 ? getKeySignatureProperties() : {};
+    signatureProperties.signatureType = enums.signature.certGeneric;
+    if (index === 0) {
+      signatureProperties.isPrimaryUserID = true;
     }
 
     const signaturePacket = await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
