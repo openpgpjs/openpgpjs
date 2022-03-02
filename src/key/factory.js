@@ -221,7 +221,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signatureProperties.features = [0];
     signatureProperties.features[0] |= enums.features.modificationDetection;
     if (config.aeadProtect) {
-      signatureProperties.features[0] |= enums.features.aead;
+      signatureProperties.features[0] |= enums.features.seipdv2;
     }
     if (options.keyExpirationTime > 0) {
       signatureProperties.keyExpirationTime = options.keyExpirationTime;
