@@ -455,7 +455,8 @@ export default {
     aead: 2,
     /** 0x04 - Version 5 Public-Key Packet format and corresponding new
       *        fingerprint format */
-    v5Keys: 4
+    v5Keys: 4,
+    seipdv2: 8
   },
 
   /**
