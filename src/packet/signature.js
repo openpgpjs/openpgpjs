@@ -332,7 +332,7 @@ class SignaturePacket {
     }
 
     const result = util.concat(arr);
-    const length = util.writeNumber(result.length, 2);
+    const length = util.writeNumber(result.length, this.version === 5 ? 4 : 2);
 
     return util.concat([length, result]);
   }
@@ -349,7 +349,7 @@ class SignaturePacket {
     });
 
     const result = util.concat(arr);
-    const length = util.writeNumber(result.length, 2);
+    const length = util.writeNumber(result.length, this.version === 5 ? 4 : 2);
 
     return util.concat([length, result]);
   }
@@ -542,10 +542,12 @@ class SignaturePacket {
   }
 
   readSubPackets(bytes, trusted = true, config) {
-    // Two-octet scalar octet count for following subpacket data.
-    const subpacketLength = util.readNumber(bytes.subarray(0, 2));
+    const subpacketLengthBytes = this.version === 5 ? 4 : 2;
 
-    let i = 2;
+    // Two-octet scalar octet count for following subpacket data.
+    const subpacketLength = util.readNumber(bytes.subarray(0, subpacketLengthBytes));
+
+    let i = subpacketLengthBytes;
 
     // subpacket data set (zero or more subpackets)
     while (i < 2 + subpacketLength) {
