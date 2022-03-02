@@ -188,19 +188,11 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   const packetlist = new PacketList();
   packetlist.push(secretKeyPacket);
 
-  await Promise.all(options.userIDs.map(async function(userID, index) {
-    function createPreferredAlgos(algos, preferredAlgo) {
-      return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
-    }
+  function createPreferredAlgos(algos, preferredAlgo) {
+    return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
+  }
 
-    const userIDPacket = UserIDPacket.fromObject(userID);
-    const dataToSign = {};
-    dataToSign.userID = userIDPacket;
-    dataToSign.key = secretKeyPacket;
-    const signaturePacket = new SignaturePacket();
-    signaturePacket.signatureType = enums.signature.certGeneric;
-    signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
+  function writeKeyProperties(signaturePacket) {
     signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
     signaturePacket.preferredSymmetricAlgorithms = createPreferredAlgos([
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
@@ -224,9 +216,6 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       enums.compression.zip,
       enums.compression.uncompressed
     ], config.preferredCompressionAlgorithm);
-    if (index === 0) {
-      signaturePacket.isPrimaryUserID = true;
-    }
     // integrity protection always enabled
     signaturePacket.features = [0];
     signaturePacket.features[0] |= enums.features.modificationDetection;
@@ -236,6 +225,35 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     if (options.keyExpirationTime > 0) {
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
+    }
+  }
+
+  if (secretKeyPacket.version === 6) {
+    const dataToSign = {};
+    dataToSign.key = secretKeyPacket;
+    const signaturePacket = new SignaturePacket();
+    signaturePacket.signatureType = enums.signature.key;
+    signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
+    signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
+    writeKeyProperties(signaturePacket);
+    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date);
+    packetlist.push(signaturePacket);
+  }
+
+  await Promise.all(options.userIDs.map(async function(userID, index) {
+    const userIDPacket = UserIDPacket.fromObject(userID);
+    const dataToSign = {};
+    dataToSign.userID = userIDPacket;
+    dataToSign.key = secretKeyPacket;
+    const signaturePacket = new SignaturePacket();
+    signaturePacket.signatureType = enums.signature.certGeneric;
+    signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
+    signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
+    if (index === 0) {
+      signaturePacket.isPrimaryUserID = true;
+    }
+    if (secretKeyPacket.version !== 6) {
+      writeKeyProperties(signaturePacket);
     }
     await signaturePacket.sign(secretKeyPacket, dataToSign, options.date);
 
