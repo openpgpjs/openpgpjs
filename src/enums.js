@@ -197,6 +197,7 @@ export default {
   aead: {
     eax: 1,
     ocb: 2,
+    gcm: 3,
     experimentalGCM: 100 // Private algorithm
   },
 
