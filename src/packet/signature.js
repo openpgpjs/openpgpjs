@@ -97,6 +97,7 @@ class SignaturePacket {
     this.issuerKeyVersion = null;
     this.issuerFingerprint = null;
     this.preferredAEADAlgorithms = null;
+    this.preferredCipherSuites = null;
 
     this.revoked = null;
     this[verified] = null;
@@ -346,6 +347,10 @@ class SignaturePacket {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredAEADAlgorithms));
       arr.push(writeSubPacket(sub.preferredAEADAlgorithms, false, bytes));
     }
+    if (this.preferredCipherSuites !== null) {
+      bytes = new Uint8Array([].concat(...this.preferredCipherSuites));
+      arr.push(writeSubPacket(sub.preferredCipherSuites, false, bytes));
+    }
 
     const result = util.concat(arr);
     const length = util.writeNumber(result.length, this.version === 6 ? 4 : 2);
@@ -550,6 +555,13 @@ class SignaturePacket {
       case enums.signatureSubpacket.preferredAEADAlgorithms:
         // Preferred AEAD Algorithms
         this.preferredAEADAlgorithms = [...bytes.subarray(mypos, bytes.length)];
+        break;
+      case enums.signatureSubpacket.preferredCipherSuites:
+        // Preferred AEAD Cipher Suites
+        this.preferredCipherSuites = [];
+        for (let i = mypos; i < bytes.length; i += 2) {
+          this.preferredCipherSuites.push([bytes[i], bytes[i + 1]]);
+        }
         break;
       default: {
         const err = new Error(`Unknown signature subpacket type ${type}`);
