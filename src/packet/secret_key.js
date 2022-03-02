@@ -135,12 +135,6 @@ class SecretKeyPacket extends PublicKeyPacket {
       i += this.iv.length;
     }
 
-    // - Only for a version 5 packet, a four-octet scalar octet count for
-    //   the following key material.
-    if (this.version === 5) {
-      i += 4;
-    }
-
     // - Plain or encrypted multiprecision integers comprising the secret
     //   key data.  These algorithm-specific fields are as described
     //   below.
@@ -207,9 +201,6 @@ class SecretKeyPacket extends PublicKeyPacket {
         this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
       }
 
-      if (this.version === 5) {
-        arr.push(util.writeNumber(this.keyMaterial.length, 4));
-      }
       arr.push(this.keyMaterial);
 
       if (!this.s2kUsage) {

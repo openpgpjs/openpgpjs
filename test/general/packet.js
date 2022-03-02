@@ -869,22 +869,16 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       packet.s2kUsage = 0;
 
       const written = packet.write();
-      expect(written.length).to.equal(28);
-
-      /* The serialized length of private data */
-      expect(written[17]).to.equal(0);
-      expect(written[18]).to.equal(0);
-      expect(written[19]).to.equal(0);
-      expect(written[20]).to.equal(5);
+      expect(written.length).to.equal(24);
 
       /**
        * The private data
        *
        * The 2 bytes missing here are the length prefix of the MPI
        */
-      expect(written[23]).to.equal(1);
-      expect(written[24]).to.equal(2);
-      expect(written[25]).to.equal(3);
+      expect(written[19]).to.equal(1);
+      expect(written[20]).to.equal(2);
+      expect(written[21]).to.equal(3);
     } finally {
       openpgp.config.v5Keys = originalV5KeysSetting;
     }
