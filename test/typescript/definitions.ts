@@ -5,6 +5,8 @@
  *  - if it fails to build, edit the file to match type definitions
  *  - if it fails to run, edit this file to match the actual library API, then edit the definitions file (openpgp.d.ts) accordingly.
  */
+import { ReadableStream as WebReadableStream } from 'web-streams-polyfill';
+import { createReadStream } from 'fs';
 
 import { expect } from 'chai';
 import {
@@ -12,7 +14,8 @@ import {
   readMessage, createMessage, Message, createCleartextMessage,
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
-  LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage
+  LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
+  WebStream, NodeStream,
 } from '../..';
 
 (async () => {
@@ -100,8 +103,10 @@ import {
   // Get session keys from encrypted message
   const sessionKeys = await decryptSessionKeys({ message: await readMessage({ binaryMessage: encryptedBinary }), decryptionKeys: privateKeys });
   expect(sessionKeys).to.have.length(1);
-  const encryptedSessionKeys: string = await encryptSessionKey({ ...sessionKeys[0], passwords: 'pass', algorithm: 'aes128', aeadAlgorithm: 'eax' });
-  expect(encryptedSessionKeys).to.include('-----BEGIN PGP MESSAGE-----');
+  const armoredEncryptedSessionKeys: string = await encryptSessionKey({ ...sessionKeys[0], passwords: 'pass', algorithm: 'aes128', aeadAlgorithm: 'eax' });
+  expect(armoredEncryptedSessionKeys).to.include('-----BEGIN PGP MESSAGE-----');
+  const encryptedSessionKeys: Message<any> = await encryptSessionKey({ ...sessionKeys[0], passwords: 'pass', algorithm: 'aes128', aeadAlgorithm: 'eax', format: 'object' });
+  expect(encryptedSessionKeys).to.be.instanceOf(Message);
   const newSessionKey = await generateSessionKey({ encryptionKeys: privateKey.toPublic() });
   expect(newSessionKey.data).to.exist;
   expect(newSessionKey.algorithm).to.exist;
@@ -180,19 +185,34 @@ import {
   // const signed = await sign({ privateKeys, message, detached: true, format: 'binary' });
   // console.log(signed); // Uint8Array
 
-  // // Streaming - encrypt text message on Node.js (armored)
-  // const data = fs.createReadStream(filename, { encoding: 'utf8' });
-  // const message = await createMessage({ text: data });
-  // const encrypted = await encrypt({ publicKeys, message });
-  // encrypted.on('data', chunk => {
-  //   console.log(chunk); // String
-  // });
+  // @ts-expect-error for passing text stream as binary data
+  await createMessage({ binary: new WebReadableStream<string>() });
+  // @ts-expect-error for passing binary stream as text data
+  await createMessage({ text: new WebReadableStream<Uint8Array>() });
+  
+  // Streaming - encrypt text message (armored output)
+  try {
+    const nodeTextStream = createReadStream('non-existent-file', { encoding: 'utf8' });
+    const messageFromNodeTextStream = await createMessage({ text: nodeTextStream });
+    (await encrypt({ message: messageFromNodeTextStream, passwords: 'password', format: 'armored' })) as NodeStream<string>;
+  } catch (err) {}
+  const webTextStream = new WebReadableStream<string>();
+  const messageFromWebTextStream = await createMessage({ text: webTextStream });
+  (await encrypt({ message: messageFromWebTextStream, passwords: 'password', format: 'armored' })) as WebStream<string>;
+  messageFromWebTextStream.getText() as WebStream<string>;
+  messageFromWebTextStream.getLiteralData() as WebStream<Uint8Array>;
 
-  // // Streaming - encrypt binary message on Node.js (unarmored)
-  // const data = fs.createReadStream(filename);
-  // const message = await createMessage({ binary: data });
-  // const encrypted = await encrypt({ publicKeys, message, format: 'binary' });
-  // encrypted.pipe(targetStream);
+  // Streaming - encrypt binary message (binary output)
+  try {
+    const nodeBinaryStream = createReadStream('non-existent-file');
+    const messageFromNodeBinaryStream = await createMessage({ binary: nodeBinaryStream });
+    (await encrypt({ message: messageFromNodeBinaryStream, passwords: 'password', format: 'binary' })) as NodeStream<Uint8Array>;
+  } catch (err) {}
+  const webBinaryStream = new WebReadableStream<Uint8Array>();
+  const messageFromWebBinaryStream = await createMessage({ binary: webBinaryStream });
+  (await encrypt({ message: messageFromWebBinaryStream, passwords: 'password', format: 'binary' })) as WebStream<Uint8Array>;
+  messageFromWebBinaryStream.getText() as WebStream<string>;
+  messageFromWebBinaryStream.getLiteralData() as WebStream<Uint8Array>;
 
   console.log('TypeScript definitions are correct');
 })().catch(e => {
