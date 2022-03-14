@@ -21,7 +21,7 @@
  * @private
  */
 
-import nacl from '@openpgp/tweetnacl/nacl-fast-light.js';
+import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';

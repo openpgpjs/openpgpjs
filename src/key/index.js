@@ -14,9 +14,9 @@ import {
   createSignaturePacket
 } from './helper';
 
-import PrivateKey from './private_key.js';
-import PublicKey from './public_key.js';
-import Subkey from './subkey.js';
+import PrivateKey from './private_key';
+import PublicKey from './public_key';
+import Subkey from './subkey';
 
 export {
   readKey,

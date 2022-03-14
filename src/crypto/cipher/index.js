@@ -5,7 +5,7 @@
  */
 
 import aes from './aes';
-import { DES, TripleDES } from './des.js';
+import { DES, TripleDES } from './des';
 import CAST5 from './cast5';
 import TF from './twofish';
 import BF from './blowfish';

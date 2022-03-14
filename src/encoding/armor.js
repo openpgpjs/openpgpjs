@@ -16,8 +16,8 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import * as stream from '@openpgp/web-stream-tools';
-import * as base64 from './base64.js';
-import enums from '../enums.js';
+import * as base64 from './base64';
+import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
 
