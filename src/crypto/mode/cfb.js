@@ -23,8 +23,8 @@
  */
 
 import { AES_CFB } from '@openpgp/asmcrypto.js/dist_es8/aes/cfb';
-
 import * as stream from '@openpgp/web-stream-tools';
+import { getCipher } from '../crypto';
 import * as cipher from '../cipher';
 import util from '../../util';
 import enums from '../../enums';
@@ -160,7 +160,7 @@ function xorMut(a, b) {
 async function webEncrypt(algo, key, pt, iv) {
   const ALGO = 'AES-CBC';
   const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
-  const { blockSize } = crypto.getCipher(algo);
+  const { blockSize } = getCipher(algo);
   const cbc_pt = util.concatUint8Array([new Uint8Array(blockSize), pt]);
   const ct = new Uint8Array(await webCrypto.encrypt({ name: ALGO, iv }, _key, cbc_pt)).subarray(0, pt.length);
   xorMut(ct, pt);
