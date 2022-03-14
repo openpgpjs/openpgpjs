@@ -1,4 +1,5 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const sandbox = require('sinon/lib/sinon/sandbox');
 const crypto = require('../../src/crypto');
 const util = require('../../src/util');
 
@@ -237,13 +238,13 @@ module.exports = () => describe('API functional testing', function() {
       algo => algo !== 'idea' && algo !== 'plaintext'
     );
 
-    async function testCFB(plaintext) {
+    async function testCFB(plaintext, config = openpgp.config) {
       await Promise.all(symmAlgoNames.map(async function(algoName) {
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const { blockSize } = crypto.getCipher(algo);
         const symmKey = await crypto.generateSessionKey(algo);
         const IV = new Uint8Array(blockSize);
-        const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, openpgp.config);
+        const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, config);
         const text = util.uint8ArrayToString(await crypto.mode.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(blockSize)));
         expect(text).to.equal(plaintext);
       }));
@@ -253,6 +254,19 @@ module.exports = () => describe('API functional testing', function() {
       await testCFB('1234567');
       await testCFB('foobarfoobar1234567890');
       await testCFB('12345678901234567890123456789012345678901234567890');
+      // test using webCrypto
+      const sinonSandbox = sandbox.create();
+      const webCrypto = util.getWebCrypto();
+      if (webCrypto) {
+        const webCryptoSpy = sinonSandbox.spy(webCrypto, 'encrypt');
+        try {
+          await testCFB('12345678901234567890123456789012345678901234567890', { ...openpgp.config, minBytesForWebCrypto: 0 });
+        } finally {
+          expect(webCryptoSpy.called).to.be.true;
+          sinonSandbox.restore();
+        }
+      }
+
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', async function () {
