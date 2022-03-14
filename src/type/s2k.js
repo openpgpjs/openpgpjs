@@ -30,8 +30,8 @@
 
 import defaultConfig from '../config';
 import crypto from '../crypto';
-import enums from '../enums.js';
-import util from '../util.js';
+import enums from '../enums';
+import util from '../util';
 
 class S2K {
   /**

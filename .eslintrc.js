@@ -10,7 +10,8 @@ module.exports = {
   },
 
   "plugins": [
-    "chai-friendly"
+    "chai-friendly",
+    "import"
   ],
 
   "globals": { // TODO are all these necessary?
@@ -326,7 +327,8 @@ module.exports = {
     "no-unused-vars": "error",
 
     // eslint-plugin-import rules:
-    "import/extensions": "never",
+    "import/named": "error",
+    "import/extensions": "error",
     "import/no-extraneous-dependencies": ["error", {"devDependencies": true, "optionalDependencies": false, "peerDependencies": false}],
     "import/no-unassigned-import": "error",
 

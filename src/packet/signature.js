@@ -17,7 +17,7 @@
 
 import * as stream from '@openpgp/web-stream-tools';
 import { readSimpleLength, UnsupportedError, writeSimpleLength } from './packet';
-import KeyID from '../type/keyid.js';
+import KeyID from '../type/keyid';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';

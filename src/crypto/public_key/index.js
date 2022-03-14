@@ -4,7 +4,7 @@
  * @private
  */
 
-import nacl from '@openpgp/tweetnacl/nacl-fast-light.js';
+import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import * as rsa from './rsa';
 import * as elgamal from './elgamal';
 import * as elliptic from './elliptic';

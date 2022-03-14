@@ -22,7 +22,7 @@
  */
 
 import sha512 from 'hash.js/lib/hash/sha/512';
-import nacl from '@openpgp/tweetnacl/nacl-fast-light.js';
+import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';

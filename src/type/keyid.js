@@ -20,7 +20,7 @@
  * @private
  */
 
-import util from '../util.js';
+import util from '../util';
 
 /**
  * Implementation of type key id
