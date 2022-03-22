@@ -20,9 +20,9 @@ export function readPrivateKey(options: { armoredKey: string, config?: PartialCo
 export function readPrivateKey(options: { binaryKey: Uint8Array, config?: PartialConfig }): Promise<PrivateKey>;
 export function readPrivateKeys(options: { armoredKeys: string, config?: PartialConfig }): Promise<PrivateKey[]>;
 export function readPrivateKeys(options: { binaryKeys: Uint8Array, config?: PartialConfig }): Promise<PrivateKey[]>;
-export function generateKey(options: KeyOptions & { format?: 'armored' }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
-export function generateKey(options: KeyOptions & { format: 'binary' }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
-export function generateKey(options: KeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
+export function generateKey(options: GenerateKeyOptions & { format?: 'armored' }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
+export function generateKey(options: GenerateKeyOptions & { format: 'binary' }): Promise<SerializedKeyPair<Uint8Array> & { revocationCertificate: string }>;
+export function generateKey(options: GenerateKeyOptions & { format: 'object' }): Promise<KeyPair & { revocationCertificate: string }>;
 export function decryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
 export function encryptKey(options: { privateKey: PrivateKey; passphrase?: MaybeArray<string>; config?: PartialConfig }): Promise<PrivateKey>;
 export function reformatKey(options: { privateKey: PrivateKey; userIDs?: MaybeArray<UserID>; passphrase?: string; keyExpirationTime?: number; date?: Date, format?: 'armored', config?: PartialConfig }): Promise<SerializedKeyPair<string> & { revocationCertificate: string }>;
@@ -662,7 +662,7 @@ interface KeyPair {
 
 export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
-interface KeyOptions {
+interface GenerateKeyOptions {
   userIDs: MaybeArray<UserID>;
   passphrase?: string;
   type?: 'ecc' | 'rsa';
@@ -674,6 +674,7 @@ interface KeyOptions {
   format?: 'armored' | 'object' | 'binary';
   config?: PartialConfig;
 }
+export type KeyOptions = GenerateKeyOptions;
 
 interface SubkeyOptions {
   type?: 'ecc' | 'rsa';

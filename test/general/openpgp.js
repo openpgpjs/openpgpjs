@@ -1192,6 +1192,14 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       expect(unlocked.isDecrypted()).to.be.true;
     });
 
+    it('should throw on empty passphrase', async function() {
+      const { privateKey } = await openpgp.generateKey({ userIDs: [{ name: 'test', email: 'test@test.com' }], format: 'object' });
+      await expect(openpgp.encryptKey({
+        privateKey,
+        passphrase: ''
+      })).to.be.rejectedWith(/passphrase is required for key encryption/);
+    });
+
     it('should support multiple passphrases', async function() {
       const { privateKey } = await openpgp.generateKey({ userIDs: [{ name: 'test', email: 'test@test.com' }], format: 'object' });
       const passphrases = ['123', '456'];
