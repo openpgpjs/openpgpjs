@@ -275,11 +275,8 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('Key packet is already encrypted');
     }
 
-    if (this.isDecrypted() && !passphrase) {
-      this.s2kUsage = 0;
-      return;
-    } else if (!passphrase) {
-      throw new Error('The key must be decrypted before removing passphrase protection.');
+    if (!passphrase) {
+      throw new Error('A non-empty passphrase is required for key encryption.');
     }
 
     this.s2k = new S2K(config);

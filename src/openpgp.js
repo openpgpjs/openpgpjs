@@ -37,7 +37,7 @@ import { checkKeyRequirements } from './key/helper';
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
  * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
- * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted, the key won't be encrypted.
+ * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
  *                                             curve25519 (default), p256, p384, p521, secp256k1,
@@ -53,7 +53,7 @@ import { checkKeyRequirements } from './key/helper';
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
+export async function generateKey({ userIDs = [], passphrase, type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -86,7 +86,7 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
  * @param {Object} options
  * @param {PrivateKey} options.privateKey - Private key to reformat
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the reformatted private key. If omitted, the key won't be encrypted.
+ * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the reformatted private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Date}   [options.date] - Override the creation date of the key signatures. If the key was previously used to sign messages, it is recommended
  *                                  to set the same date as the key creation time to ensure that old message signatures will still be verifiable using the reformatted key.
@@ -97,7 +97,7 @@ export async function generateKey({ userIDs = [], passphrase = '', type = 'ecc',
  * @async
  * @static
  */
-export async function reformatKey({ privateKey, userIDs = [], passphrase = '', keyExpirationTime = 0, date, format = 'armored', config, ...rest }) {
+export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExpirationTime = 0, date, format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
