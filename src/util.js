@@ -382,14 +382,6 @@ const util = {
   },
 
   /**
-   * Detect Node.js runtime.
-   */
-  detectNode: function() {
-    return typeof globalThis.process === 'object' &&
-      typeof globalThis.process.versions === 'object';
-  },
-
-  /**
    * Detect native BigInt support
    */
   detectBigInt: () => typeof BigInt !== 'undefined',
