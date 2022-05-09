@@ -425,12 +425,12 @@ const util = {
   },
 
   getHardwareConcurrency: function() {
-    if (util.detectNode()) {
-      const os = require('os');
-      return os.cpus().length;
+    if (typeof navigator !== 'undefined') {
+      return navigator.hardwareConcurrency || 1;
     }
 
-    return (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 1;
+    const os = require('os'); // if node
+    return os.cpus().length;
   },
 
   isEmailAddress: function(data) {
