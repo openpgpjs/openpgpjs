@@ -421,7 +421,7 @@ const util = {
       return navigator.hardwareConcurrency || 1;
     }
 
-    const os = require('os'); // if node
+    const os = require('os'); // Assume we're on Node.js.
     return os.cpus().length;
   },
 
