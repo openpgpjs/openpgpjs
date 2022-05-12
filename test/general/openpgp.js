@@ -17,6 +17,8 @@ chai.use(require('chai-as-promised'));
 
 const expect = chai.expect;
 
+const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
+
 const pub_key = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -2901,7 +2903,7 @@ aOU=
                     expect(e.message).to.match(/Ascii armor integrity check failed/);
                     expect(stepReached).to.equal(
                       j === 0 ? 0 :
-                        (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || util.detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
+                        (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
                           1
                     );
                     return;

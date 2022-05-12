@@ -382,14 +382,6 @@ const util = {
   },
 
   /**
-   * Detect Node.js runtime.
-   */
-  detectNode: function() {
-    return typeof globalThis.process === 'object' &&
-      typeof globalThis.process.versions === 'object';
-  },
-
-  /**
    * Detect native BigInt support
    */
   detectBigInt: () => typeof BigInt !== 'undefined',
@@ -425,12 +417,12 @@ const util = {
   },
 
   getHardwareConcurrency: function() {
-    if (util.detectNode()) {
-      const os = require('os');
-      return os.cpus().length;
+    if (typeof navigator !== 'undefined') {
+      return navigator.hardwareConcurrency || 1;
     }
 
-    return (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 1;
+    const os = require('os'); // Assume we're on Node.js.
+    return os.cpus().length;
   },
 
   isEmailAddress: function(data) {

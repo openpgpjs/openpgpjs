@@ -16,6 +16,8 @@ const stream = require('@openpgp/web-stream-tools');
 const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
 const NodeReadableStream = useNativeStream ? undefined : require('stream').Readable;
 
+const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
+
 const pub_key = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
   'Version: GnuPG v2.0.19 (GNU/Linux)',
@@ -889,7 +891,7 @@ function tests() {
 
     it("Don't pull entire input stream when we're not pulling decrypted stream (AEAD)", async function() {
       let coresStub;
-      if (util.detectNode()) {
+      if (detectNode()) {
         coresStub = stub(require('os'), 'cpus');
         coresStub.returns(new Array(2));
         // Object.defineProperty(require('os'), 'cpus', { value: () => [,], configurable: true });
@@ -915,7 +917,7 @@ function tests() {
         await new Promise(resolve => setTimeout(resolve, 3000));
         expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 300);
       } finally {
-        if (util.detectNode()) {
+        if (detectNode()) {
           coresStub.restore();
         } else {
           delete navigator.hardwareConcurrency;
@@ -1012,7 +1014,7 @@ module.exports = () => describe('Streaming', function() {
 
   tests();
 
-  if (util.detectNode()) {
+  if (detectNode()) {
     const fs = require('fs');
 
     it('Node: Encrypt and decrypt text message roundtrip', async function() {

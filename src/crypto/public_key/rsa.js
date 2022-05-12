@@ -33,7 +33,7 @@ const nodeCrypto = util.getNodeCrypto();
 const asn1 = nodeCrypto ? require('asn1.js') : undefined;
 
 /* eslint-disable no-invalid-this */
-const RSAPrivateKey = util.detectNode() ? asn1.define('RSAPrivateKey', function () {
+const RSAPrivateKey = nodeCrypto ? asn1.define('RSAPrivateKey', function () {
   this.seq().obj( // used for native NodeJS crypto
     this.key('version').int(), // 0
     this.key('modulus').int(), // n
@@ -47,7 +47,7 @@ const RSAPrivateKey = util.detectNode() ? asn1.define('RSAPrivateKey', function 
   );
 }) : undefined;
 
-const RSAPublicKey = util.detectNode() ? asn1.define('RSAPubliceKey', function () {
+const RSAPublicKey = nodeCrypto ? asn1.define('RSAPubliceKey', function () {
   this.seq().obj( // used for native NodeJS crypto
     this.key('modulus').int(), // n
     this.key('publicExponent').int(), // e
