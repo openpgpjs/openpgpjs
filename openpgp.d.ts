@@ -74,11 +74,11 @@ export abstract class Key {
 
 type AllowedKeyPackets = PublicKeyPacket | PublicSubkeyPacket | SecretKeyPacket | SecretSubkeyPacket | UserIDPacket | UserAttributePacket | SignaturePacket;
 export class PublicKey extends Key {
-  constructor(packetlist: PacketList<AnyKeyPacket>);
+  constructor(packetlist: PacketList<AllowedKeyPackets>);
 }
 
 export class PrivateKey extends PublicKey {
-  constructor(packetlist: PacketList<AnyKeyPacket>);
+  constructor(packetlist: PacketList<AllowedKeyPackets>);
   public revoke(reason?: ReasonForRevocation, date?: Date, config?: Config): Promise<PrivateKey>;
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
