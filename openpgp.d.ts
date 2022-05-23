@@ -74,11 +74,11 @@ export abstract class Key {
 
 type AllowedKeyPackets = PublicKeyPacket | PublicSubkeyPacket | SecretKeyPacket | SecretSubkeyPacket | UserIDPacket | UserAttributePacket | SignaturePacket;
 export class PublicKey extends Key {
-  constructor(packetlist: PacketList<AnyKeyPacket>);
+  constructor(packetlist: PacketList<AnyPacket>);
 }
 
 export class PrivateKey extends PublicKey {
-  constructor(packetlist: PacketList<AnyKeyPacket>);
+  constructor(packetlist: PacketList<AnyPacket>);
   public revoke(reason?: ReasonForRevocation, date?: Date, config?: Config): Promise<PrivateKey>;
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
@@ -527,7 +527,12 @@ export class TrustPacket extends BasePacket {
   static readonly tag: enums.packet.trust;
 }
 
-export type AnyPacket = BasePacket;
+export class UnparsablePacket {
+  tag: enums.packet;
+  write: () => Uint8Array;
+}
+
+export type AnyPacket = BasePacket | UnparsablePacket;
 export type AnySecretKeyPacket = SecretKeyPacket | SecretSubkeyPacket;
 export type AnyKeyPacket = BasePublicKeyPacket;
 
