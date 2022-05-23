@@ -34,6 +34,7 @@ import enums from '../enums';
 import util from '../util';
 import OID from '../type/oid';
 import { Curve } from './public_key/elliptic/curves';
+import { UnsupportedError } from '../packet/packet';
 
 /**
  * Encrypts data using specified algorithm and public key parameters.
@@ -156,7 +157,7 @@ export function parsePublicKeyParams(algo, bytes) {
       return { read: read, publicParams: { oid, Q, kdfParams } };
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new UnsupportedError('Invalid public key encryption algorithm.');
   }
 }
 
@@ -197,7 +198,7 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       return { read, privateParams: { seed } };
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new UnsupportedError('Invalid public key encryption algorithm.');
   }
 }
 

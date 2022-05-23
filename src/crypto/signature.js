@@ -7,6 +7,7 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
+import { UnsupportedError } from '../packet/packet';
 
 /**
  * Parse signature in binary form to get the parameters.
@@ -55,7 +56,7 @@ export function parseSignatureParams(algo, signature) {
       return { r, s };
     }
     default:
-      throw new Error('Invalid signature algorithm.');
+      throw new UnsupportedError('Invalid signature algorithm.');
   }
 }
 

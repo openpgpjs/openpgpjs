@@ -21,6 +21,7 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
+import { UnsupportedError } from './packet';
 
 /**
  * A Secret-Key packet contains all the information that is found in a
@@ -155,6 +156,8 @@ class SecretKeyPacket extends PublicKeyPacket {
         const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
         this.privateParams = privateParams;
       } catch (err) {
+        if (err instanceof UnsupportedError) throw err;
+        // avoid throwing potentially sensitive errors
         throw new Error('Error reading MPIs');
       }
     }

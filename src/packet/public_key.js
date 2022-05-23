@@ -128,6 +128,7 @@ class PublicKeyPacket {
         this.publicParams = publicParams;
         pos += read;
       } catch (err) {
+        if (err instanceof UnsupportedError) throw err;
         throw new Error('Error reading MPIs');
       }
 
