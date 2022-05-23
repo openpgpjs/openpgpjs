@@ -969,7 +969,8 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       packets.push(signaturePacket);
       const bytes = packets.write();
       const parsed = await openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true });
-      expect(parsed.length).to.equal(0);
+      expect(parsed.length).to.equal(1);
+      expect(parsed[0].tag).to.equal(openpgp.enums.packet.signature);
     });
 
     it('Throws on unknown packet version with `config.ignoreUnsupportedPackets` disabled', async function() {
@@ -1011,7 +1012,8 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
         openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, ignoreMalformedPackets: false })
       ).to.be.rejectedWith(/User ID string is too long/);
       const parsed = await openpgp.PacketList.fromBinary(bytes, allAllowedPackets, { ...openpgp.config, maxUserIDLength: 2, ignoreMalformedPackets: true });
-      expect(parsed.length).to.equal(0);
+      expect(parsed.length).to.equal(1);
+      expect(parsed[0].tag).to.equal(openpgp.enums.packet.userID);
     });
   });
 });
