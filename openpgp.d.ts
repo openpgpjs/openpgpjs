@@ -527,12 +527,12 @@ export class TrustPacket extends BasePacket {
   static readonly tag: enums.packet.trust;
 }
 
-export class UnparsablePacket {
+export class UnparseablePacket {
   tag: enums.packet;
   write: () => Uint8Array;
 }
 
-export type AnyPacket = BasePacket | UnparsablePacket;
+export type AnyPacket = BasePacket | UnparseablePacket;
 export type AnySecretKeyPacket = SecretKeyPacket | SecretSubkeyPacket;
 export type AnyKeyPacket = BasePublicKeyPacket;
 

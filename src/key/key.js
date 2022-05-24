@@ -28,7 +28,7 @@ import Subkey from './subkey';
 import * as helper from './helper';
 import PrivateKey from './private_key';
 import PublicKey from './public_key';
-import { UnparsablePacket } from '../packet/packet';
+import { UnparseablePacket } from '../packet/packet';
 
 // A key revocation certificate can contain the following packets
 const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
@@ -61,10 +61,10 @@ class Key {
 
     for (const packet of packetlist) {
 
-      if (packet instanceof UnparsablePacket) {
-        const isUnparsableKeyPacket = keyPacketTags.has(packet.tag);
-        if (isUnparsableKeyPacket && !ignoreUntil){
-          // Since non-key packets apply to the preceding key packet, if a (sub)key is unparsable we must
+      if (packet instanceof UnparseablePacket) {
+        const isUnparseableKeyPacket = keyPacketTags.has(packet.tag);
+        if (isUnparseableKeyPacket && !ignoreUntil){
+          // Since non-key packets apply to the preceding key packet, if a (sub)key is Unparseable we must
           // discard all non-key packets that follow, until another (sub)key packet is found.
           if (mainKeyPacketTags.has(packet.tag)) {
             ignoreUntil = mainKeyPacketTags;

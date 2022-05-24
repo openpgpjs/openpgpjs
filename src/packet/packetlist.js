@@ -3,7 +3,7 @@ import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength,
-  UnparsablePacket,
+  UnparseablePacket,
   UnsupportedError
 } from './packet';
 import util from '../util';
@@ -91,7 +91,7 @@ class PacketList extends Array {
                 // (since we likely cannot process the message without these packets anyway).
                 await writer.abort(e);
               } else {
-                const unparsedPacket = new UnparsablePacket(parsed.tag, parsed.packet);
+                const unparsedPacket = new UnparseablePacket(parsed.tag, parsed.packet);
                 await writer.write(unparsedPacket);
               }
               util.printDebugError(e);
@@ -133,7 +133,7 @@ class PacketList extends Array {
     const arr = [];
 
     for (let i = 0; i < this.length; i++) {
-      const tag = this[i] instanceof UnparsablePacket ? this[i].tag : this[i].constructor.tag;
+      const tag = this[i] instanceof UnparseablePacket ? this[i].tag : this[i].constructor.tag;
       const packetbytes = this[i].write();
       if (util.isStream(packetbytes) && supportsStreaming(this[i].constructor.tag)) {
         let buffer = [];
