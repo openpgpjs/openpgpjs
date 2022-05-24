@@ -10,11 +10,16 @@ module.exports = () => describe('Custom configuration', function() {
 
     const config = { ignoreUnsupportedPackets: true };
     const parsedMessage = await openpgp.readMessage({ armoredMessage: message.armor(), config });
-    expect(parsedMessage.packets.length).to.equal(1);
+    expect(parsedMessage.packets.length).to.equal(2);
+    expect(parsedMessage.packets[0].tag).to.equal(openpgp.enums.packet.symEncryptedSessionKey);
 
     config.ignoreUnsupportedPackets = false;
     await expect(
       openpgp.readMessage({ armoredMessage: message.armor(), config })
+    ).to.be.rejectedWith(/Version 1 of the SKESK packet is unsupported/);
+    // writing of partially parsed message should succeed
+    await expect(
+      openpgp.readMessage({ armoredMessage: parsedMessage.armor(), config })
     ).to.be.rejectedWith(/Version 1 of the SKESK packet is unsupported/);
   });
 
@@ -32,11 +37,16 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
 
     const config = { ignoreUnsupportedPackets: true };
     const parsedSignature = await openpgp.readSignature({ armoredSignature: signature.armor(), config });
-    expect(parsedSignature.packets.length).to.equal(0);
+    expect(parsedSignature.packets.length).to.equal(1);
+    expect(parsedSignature.packets[0].tag).to.equal(openpgp.enums.packet.signature);
 
     config.ignoreUnsupportedPackets = false;
     await expect(
       openpgp.readSignature({ armoredSignature: signature.armor(), config })
+    ).to.be.rejectedWith(/Version 1 of the signature packet is unsupported/);
+    // writing of partially parsed signature should succeed
+    await expect(
+      openpgp.readSignature({ armoredSignature: parsedSignature.armor(), config })
     ).to.be.rejectedWith(/Version 1 of the signature packet is unsupported/);
   });
 
@@ -50,6 +60,60 @@ vAFM3jjrAQDgJPXsv8PqCrLGDuMa/2r6SgzYd03aw/xt1WM6hgUvhQD+J54Z
     ).to.be.rejectedWith(/User ID string is too long/);
   });
 
+  it('openpgp.readKeys', async function() {
+    // Valid v4 key followed by modified key declared as v3 (unsupported) and another valid v4 key.
+    // When ignoring malfored/unsupported packets, we do not want the userID and subkey of the trailing key
+    // to be associated with the leading one
+    const partiallyUnsupportedKeyBlock = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xjMEYotwYxYJKwYBBAHaRw8BAQdAQrm/H1rTYvBLV2mP0+6u+jVa5iOgPIgA
+VkH1H7KipDrNDzx0ZXN0QHRlc3QuY29tPsKMBBAWCgAdBQJii3BjBAsJBwgD
+FQgKBBYAAgECGQECGwMCHgEAIQkQLavVE0KkGtwWIQQv90VxLmdeWJRzEWUt
+q9UTQqQa3L/3APwM4ypA9q/qml+ezCdVFilv9huZVSbPlQ06AN5E0ZclgwD9
+FeCHPwKqDkcKvqSQGdTv3QSefwjrt9oO8DI71vKjWQjOOARii3BjEgorBgEE
+AZdVAQUBAQdALl5wAhaoMgtlk7aV6v1DC3T+7kuNQVDZZPPPbxhaYwMDAQgH
+wngEGBYIAAkFAmKLcGMCGwwAIQkQLavVE0KkGtwWIQQv90VxLmdeWJRzEWUt
+q9UTQqQa3N16APwLtHt26M1o1yUtBfQ2yddFQb/Xi4Kq3PBG5ltUBj38EAD/
+aNfrR+NWb3LWRTe+LDuU7M+8ucdZ00TeAAOHGF11UAXGMwNii3B7FgkrBgEE
+AdpHDwEBB0CF7hJ4IhKdtYMa2hkA1ckjgBcZL5TaK/+A+laliBVh2s0WPGFu
+b3RoZXJ0ZXN0QHRlc3QuY29tPsKMBBAWCgAdBQJii3B7BAsJBwgDFQgKBBYA
+AgECGQECGwMCHgEAIQkQxKiJcMvjhmEWIQQgDYaTtkFIWF89hvXEqIlwy+OG
+YWnWAQDVjVaF4FpjV9rwhqqQ+pLQYWSjFGEQV9u05YPzOZWs0AEA4stxQp1H
+OtXx2S/tfY74d+I/QPTVHgB6TVcADtdKnQjOOARii3B7EgorBgEEAZdVAQUB
+AQdAsAnhg90WUEy1raZ/DrJ1MI9g8f2SBxUtvNfCikBwpWMDAQgHwngEGBYI
+AAkFAmKLcHsCGwwAIQkQxKiJcMvjhmEWIQQgDYaTtkFIWF89hvXEqIlwy+OG
+Ya2ZAQC5fDrNXuyqvjaJiVomAl7YnuFwR4tLlgJTVDDNkTOfvAD+IJo8ptfg
+/lzgTPMPLP8RgpGs8jU5cWhLlH6866UkAwXGMwRii3B/FgkrBgEEAdpHDwEB
+B0AU3y3+X4mAYxFDz54RroBsES1YTufnIndjbljQ4UCpcs0dPGFub3RoZXJh
+bm90aGVydGVzdEB0ZXN0LmNvbT7CjAQQFgoAHQUCYotwfwQLCQcIAxUICgQW
+AAIBAhkBAhsDAh4BACEJEDc5RdIx+aTBFiEE6N7yK4zw3IhhDLIwNzlF0jH5
+pMFQWwEAwUBNM2wHH3PexhLv4QpmteIg8I2wlYmuYk0w0GfAPywBAOuyKqxE
+g4vye4Mfs2Ns3FEUQP0y+YbAkZhxhjVX3gYJzjgEYotwfxIKKwYBBAGXVQEF
+AQEHQK1UDFW1ue61hhm1O57eSv29+A2gId5Zi9TEqP1mopgkAwEIB8J4BBgW
+CAAJBQJii3B/AhsMACEJEDc5RdIx+aTBFiEE6N7yK4zw3IhhDLIwNzlF0jH5
+pMH3oQEA/gjeM/XpBP/DIhqzQxAVtrDFlkKairQMRMVQfoU4vVcBAITA9cqc
+n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
+=O3ZV
+-----END PGP PUBLIC KEY BLOCK-----
+    `;
+    await expect(
+      openpgp.readKeys({ armoredKeys: partiallyUnsupportedKeyBlock, config: { ignoreUnsupportedPackets: false } })
+    ).to.be.rejectedWith(/key packet is unsupported/);
+
+    const parsedKeys = await openpgp.readKeys({ armoredKeys: partiallyUnsupportedKeyBlock, config: { ignoreUnsupportedPackets: true } });
+    expect(parsedKeys.length).to.equal(2);
+    expect(parsedKeys[0].subkeys.length).to.equal(1);
+    expect(parsedKeys[0].subkeys[0].getKeyID().toHex()).to.equal('0861c76681a34407');
+    expect(parsedKeys[0].users.length).to.equal(1);
+    expect(parsedKeys[0].users[0].userID.email).to.equal('test@test.com');
+    expect(await parsedKeys[0].getEncryptionKey().then(key => key.getKeyID().toHex())).to.equal('0861c76681a34407');
+
+    expect(parsedKeys[1].subkeys.length).to.equal(1);
+    expect(parsedKeys[1].subkeys[0].getKeyID().toHex()).to.equal('48050814f28f2263');
+    expect(parsedKeys[1].users.length).to.equal(1);
+    expect(parsedKeys[1].users[0].userID.email).to.equal('anotheranothertest@test.com');
+    expect(await parsedKeys[1].getEncryptionKey().then(key => key.getKeyID().toHex())).to.equal('48050814f28f2263');
+  });
 
   it('openpgp.generateKey', async function() {
     const v5KeysVal = openpgp.config.v5Keys;

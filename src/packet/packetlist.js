@@ -3,6 +3,7 @@ import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength,
+  UnparseablePacket,
   UnsupportedError
 } from './packet';
 import util from '../util';
@@ -89,6 +90,9 @@ class PacketList extends Array {
                 // Those are also the ones we want to be more strict about and throw on parse errors
                 // (since we likely cannot process the message without these packets anyway).
                 await writer.abort(e);
+              } else {
+                const unparsedPacket = new UnparseablePacket(parsed.tag, parsed.packet);
+                await writer.write(unparsedPacket);
               }
               util.printDebugError(e);
             }
@@ -129,12 +133,13 @@ class PacketList extends Array {
     const arr = [];
 
     for (let i = 0; i < this.length; i++) {
+      const tag = this[i] instanceof UnparseablePacket ? this[i].tag : this[i].constructor.tag;
       const packetbytes = this[i].write();
       if (util.isStream(packetbytes) && supportsStreaming(this[i].constructor.tag)) {
         let buffer = [];
         let bufferLength = 0;
         const minLength = 512;
-        arr.push(writeTag(this[i].constructor.tag));
+        arr.push(writeTag(tag));
         arr.push(stream.transform(packetbytes, value => {
           buffer.push(value);
           bufferLength += value.length;
@@ -152,9 +157,9 @@ class PacketList extends Array {
           let length = 0;
           arr.push(stream.transform(stream.clone(packetbytes), value => {
             length += value.length;
-          }, () => writeHeader(this[i].constructor.tag, length)));
+          }, () => writeHeader(tag, length)));
         } else {
-          arr.push(writeHeader(this[i].constructor.tag, packetbytes.length));
+          arr.push(writeHeader(tag, packetbytes.length));
         }
         arr.push(packetbytes);
       }

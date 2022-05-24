@@ -309,3 +309,13 @@ export class UnsupportedError extends Error {
   }
 }
 
+export class UnparseablePacket {
+  constructor(tag, rawContent) {
+    this.tag = tag;
+    this.rawContent = rawContent;
+  }
+
+  write() {
+    return this.rawContent;
+  }
+}

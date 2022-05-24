@@ -28,9 +28,15 @@ import Subkey from './subkey';
 import * as helper from './helper';
 import PrivateKey from './private_key';
 import PublicKey from './public_key';
+import { UnparseablePacket } from '../packet/packet';
 
 // A key revocation certificate can contain the following packets
 const allowedRevocationPackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
+const mainKeyPacketTags = new Set([enums.packet.publicKey, enums.packet.privateKey]);
+const keyPacketTags = new Set([
+  enums.packet.publicKey, enums.packet.privateKey,
+  enums.packet.publicSubkey, enums.packet.privateSubkey
+]);
 
 /**
  * Abstract class that represents an OpenPGP key. Must contain a primary key.
@@ -51,8 +57,29 @@ class Key {
     let user;
     let primaryKeyID;
     let subkey;
+    let ignoreUntil;
+
     for (const packet of packetlist) {
+
+      if (packet instanceof UnparseablePacket) {
+        const isUnparseableKeyPacket = keyPacketTags.has(packet.tag);
+        if (isUnparseableKeyPacket && !ignoreUntil){
+          // Since non-key packets apply to the preceding key packet, if a (sub)key is Unparseable we must
+          // discard all non-key packets that follow, until another (sub)key packet is found.
+          if (mainKeyPacketTags.has(packet.tag)) {
+            ignoreUntil = mainKeyPacketTags;
+          } else {
+            ignoreUntil = keyPacketTags;
+          }
+        }
+        continue;
+      }
+
       const tag = packet.constructor.tag;
+      if (ignoreUntil) {
+        if (!ignoreUntil.has(tag)) continue;
+        ignoreUntil = null;
+      }
       if (disallowedPackets.has(tag)) {
         throw new Error(`Unexpected packet type: ${tag}`);
       }
