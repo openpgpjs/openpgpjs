@@ -213,7 +213,7 @@ class MemoryBenchamrkSuite {
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
-  suite.add('openpgp.encrypt/decrypt (PGP, text @ 6000MB, with streaming)', async () => {
+  suite.add('openpgp.encrypt/decrypt (MDC, text @ 6000MB, with streaming)', async () => {
     await stream.loadStreamsPonyfill();
 
     const userID = { name: 'test', email: 'a@b.com' };
