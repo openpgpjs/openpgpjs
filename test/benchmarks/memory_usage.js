@@ -213,40 +213,77 @@ class MemoryBenchamrkSuite {
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
-  suite.add('openpgp.encrypt/decrypt (MDC, text @ 6000MB, with streaming)', async () => {
+  suite.add('openpgp.encrypt/decrypt (CFB, text @ 100MB, with streaming)', async () => {
     await stream.loadStreamsPonyfill();
 
-    const userID = { name: 'test', email: 'a@b.com' };
-    const passphrase = 'super long and hard to guess secret';
-    const { privateKey: rawPrivateKey, publicKey: rawPublicKey } =
-      await openpgp.generateKey({ userIDs: [userID], format: 'armored', passphrase });
-
-    function* largeDataGenerator() {
-      const chunkSize = 1024 * 1024; /*1MB*/
-      const numberOfChunks = 6000;
+    function* largeTextDataGenerator() {
+      const chunkSize = 1024 * 1024; // 1MB
+      const numberOfChunks = 100;
 
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield 'a'.repeat(chunkSize);
       }
     }
 
-    const plaintextMessage = await openpgp.createMessage({ text: require('stream').Readable.from(largeDataGenerator()) });
+    const passwords = 'password';
+    const config = { aeadProtect: false, preferredCompressionAlgorithm: openpgp.enums.compression.uncompressed };
+    const plaintextMessage = await openpgp.createMessage({ text: require('stream').Readable.from(largeTextDataGenerator()) });
     assert(plaintextMessage.fromStream);
 
-    const publicKey = await openpgp.readKey({ armoredKey: rawPublicKey });
-    const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, encryptionKeys: [publicKey] });
-
+    const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    await openpgp.decrypt({ message: encryptedMessage, passwords, config });
+  });
 
-    const privateKey = await openpgp.decryptKey({
-      privateKey: await openpgp.readKey({ armoredKey: rawPrivateKey }),
-      passphrase
-    });
+  suite.add('openpgp.encrypt/decrypt (CFB, text @ 100MB, with unauthenticated streaming)', async () => {
+    await stream.loadStreamsPonyfill();
+
+    function* largeTextDataGenerator() {
+      const chunkSize = 1024 * 1024; // 1MB
+      const numberOfChunks = 100;
+
+      for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
+        yield 'a'.repeat(chunkSize);
+      }
+    }
+
+    const passwords = 'password';
+    const config = { aeadProtect: false, preferredCompressionAlgorithm: openpgp.enums.compression.uncompressed };
+    const plaintextMessage = await openpgp.createMessage({ text: require('stream').Readable.from(largeTextDataGenerator()) });
+    assert(plaintextMessage.fromStream);
+
+    const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
+    const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
     await openpgp.decrypt({
       message: encryptedMessage,
-      decryptionKeys: privateKey,
-      config: { allowUnauthenticatedStream: true }
+      passwords,
+      config: { ...config, allowUnauthenticatedStream: true }
     });
+  });
+
+  suite.add('openpgp.encrypt/decrypt (AEAD, text @ 100MB, with streaming)', async () => {
+    await stream.loadStreamsPonyfill();
+
+    function* largeTextDataGenerator() {
+      const chunkSize = 1024 * 1024; // 1MB
+      const numberOfChunks = 100;
+
+      for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
+        yield 'a'.repeat(chunkSize);
+      }
+    }
+
+    const passwords = 'password';
+    const config = { aeadProtect: true, preferredCompressionAlgorithm: openpgp.enums.compression.uncompressed };
+    const plaintextMessage = await openpgp.createMessage({ text: require('stream').Readable.from(largeTextDataGenerator()) });
+    assert(plaintextMessage.fromStream);
+
+    const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
+    const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.AEADEncryptedDataPacket);
+    await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
   const stats = await suite.run();
