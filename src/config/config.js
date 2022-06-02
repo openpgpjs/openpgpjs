@@ -92,7 +92,10 @@ export default {
    */
   allowUnauthenticatedMessages: false,
   /**
-   * Allow streaming unauthenticated data before its integrity has been checked.
+   * Allow streaming unauthenticated data before its integrity has been checked. This would allow the application to
+   * process large streams while limiting memory usage by releasing the decrypted chunks as soon as possible
+   * and deferring checking their integrity until the decrypted stream has been read in full.
+   *
    * This setting is **insecure** if the partially decrypted message is processed further or displayed to the user.
    * @memberof module:config
    * @property {Boolean} allowUnauthenticatedStream
