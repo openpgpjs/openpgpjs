@@ -109,7 +109,7 @@ class MemoryBenchamrkSuite {
   suite.add('empty test (baseline)', () => {});
 
   suite.add('openpgp.encrypt/decrypt (CFB, binary)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     const passwords = 'password';
     const config = { aeadProtect: false, preferredCompressionAlgorithm: openpgp.enums.compression.uncompressed };
     const plaintextMessage = await openpgp.createMessage({ binary: new Uint8Array(ONE_MEGABYTE) });
@@ -121,7 +121,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (CFB, text)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     const passwords = 'password';
     const config = { aeadProtect: false, preferredCompressionAlgorithm: openpgp.enums.compression.uncompressed };
     const plaintextMessage = await openpgp.createMessage({ text: 'a'.repeat(ONE_MEGABYTE / 2) }); // two bytes per character
@@ -133,7 +133,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (AEAD, binary)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     const passwords = 'password';
     const config = { aeadProtect: true, preferredCompressionAlgorithm: openpgp.enums.compression.uncompressed };
     const plaintextMessage = await openpgp.createMessage({ binary: new Uint8Array(ONE_MEGABYTE) });
@@ -145,7 +145,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (AEAD, text)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     const passwords = 'password';
     const config = { aeadProtect: true, preferredCompressionAlgorithm: openpgp.enums.compression.uncompressed };
     const plaintextMessage = await openpgp.createMessage({ text: 'a'.repeat(ONE_MEGABYTE / 2) }); // two bytes per character
@@ -158,7 +158,7 @@ class MemoryBenchamrkSuite {
 
   // streaming tests
   suite.add('openpgp.encrypt/decrypt (CFB, binary, with streaming)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     function* largeDataGenerator({ chunk, numberOfChunks }) {
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield chunk;
@@ -183,7 +183,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (CFB, text, with streaming)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     function* largeDataGenerator({ chunk, numberOfChunks }) {
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield chunk;
@@ -208,7 +208,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (AEAD, binary, with streaming)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     function* largeDataGenerator({ chunk, numberOfChunks }) {
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield chunk;
@@ -233,7 +233,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (AEAD, text, with streaming)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     function* largeDataGenerator({ chunk, numberOfChunks }) {
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield chunk;
@@ -258,7 +258,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (CFB, text @ 100MB, with streaming)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     function* largeDataGenerator({ chunk, numberOfChunks }) {
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield chunk;
@@ -283,7 +283,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (CFB, text @ 100MB, with unauthenticated streaming)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     function* largeDataGenerator({ chunk, numberOfChunks }) {
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield chunk;
@@ -312,7 +312,7 @@ class MemoryBenchamrkSuite {
   });
 
   suite.add('openpgp.encrypt/decrypt (AEAD, text @ 100MB, with streaming)', async () => {
-    const ONE_MEGABYTE = 1024 * 1024;
+    const ONE_MEGABYTE = 1000000;
     function* largeDataGenerator({ chunk, numberOfChunks }) {
       for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
         yield chunk;
