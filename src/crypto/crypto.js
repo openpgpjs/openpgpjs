@@ -141,17 +141,20 @@ export function parsePublicKeyParams(algo, bytes) {
     }
     case enums.publicKey.ecdsa: {
       const oid = new OID(); read += oid.read(bytes);
+      checkSupportedCurve(oid);
       const Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       return { read: read, publicParams: { oid, Q } };
     }
     case enums.publicKey.eddsa: {
       const oid = new OID(); read += oid.read(bytes);
+      checkSupportedCurve(oid);
       let Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       Q = util.leftPad(Q, 33);
       return { read: read, publicParams: { oid, Q } };
     }
     case enums.publicKey.ecdh: {
       const oid = new OID(); read += oid.read(bytes);
+      checkSupportedCurve(oid);
       const Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       const kdfParams = new KDFParams(); read += kdfParams.read(bytes.subarray(read));
       return { read: read, publicParams: { oid, Q, kdfParams } };
@@ -193,8 +196,9 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       return { read, privateParams: { d } };
     }
     case enums.publicKey.eddsa: {
+      const curve = new Curve(publicParams.oid);
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
-      seed = util.leftPad(seed, 32);
+      seed = util.leftPad(seed, curve.payloadSize);
       return { read, privateParams: { seed } };
     }
     default:
@@ -391,4 +395,17 @@ export function getAEADMode(algo) {
 export function getCipher(algo) {
   const algoName = enums.read(enums.symmetric, algo);
   return cipher[algoName];
+}
+
+/**
+ * Check whether the given curve OID is supported
+ * @param {module:type/oid} oid - EC object identifier
+ * @throws {UnsupportedError} if curve is not supported
+ */
+function checkSupportedCurve(oid) {
+  try {
+    oid.getName();
+  } catch (e) {
+    throw new UnsupportedError('Unknown curve OID');
+  }
 }
