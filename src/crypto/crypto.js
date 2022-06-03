@@ -106,7 +106,7 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
         oid, kdfParams, V, C.data, Q, d, fingerprint);
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new Error('Unknown public key encryption algorithm.');
   }
 }
 
@@ -157,7 +157,7 @@ export function parsePublicKeyParams(algo, bytes) {
       return { read: read, publicParams: { oid, Q, kdfParams } };
     }
     default:
-      throw new UnsupportedError('Invalid public key encryption algorithm.');
+      throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
 }
 
@@ -198,7 +198,7 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       return { read, privateParams: { seed } };
     }
     default:
-      throw new UnsupportedError('Invalid public key encryption algorithm.');
+      throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
 }
 
@@ -235,7 +235,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
       return { V, C };
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new Error('Unknown public key encryption algorithm.');
   }
 }
 
@@ -294,7 +294,7 @@ export function generateParams(algo, bits, oid) {
     case enums.publicKey.elgamal:
       throw new Error('Unsupported algorithm for key generation.');
     default:
-      throw new Error('Invalid public key algorithm.');
+      throw new Error('Unknown public key algorithm.');
   }
 }
 
@@ -341,7 +341,7 @@ export async function validateParams(algo, publicParams, privateParams) {
       return publicKey.elliptic.eddsa.validateParams(oid, Q, seed);
     }
     default:
-      throw new Error('Invalid public key algorithm.');
+      throw new Error('Unknown public key algorithm.');
   }
 }
 

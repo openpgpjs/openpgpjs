@@ -1006,7 +1006,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 
       await expect(
         openpgp.PacketList.fromBinary(binarySignature, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false })
-      ).to.be.rejectedWith(/Invalid signature algorithm/);
+      ).to.be.rejectedWith(/Unknown signature algorithm/);
     });
 
     it('Ignores unknown key algorithm only with `config.ignoreUnsupportedPackets` enabled', async function() {
@@ -1019,7 +1019,7 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
 
       await expect(
         openpgp.PacketList.fromBinary(binaryKey, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false })
-      ).to.be.rejectedWith(/Invalid public key encryption algorithm/);
+      ).to.be.rejectedWith(/Unknown public key encryption algorithm/);
     });
 
     it('Throws on disallowed packet even with tolerant mode enabled', async function() {

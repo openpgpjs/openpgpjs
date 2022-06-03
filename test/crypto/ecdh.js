@@ -69,7 +69,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
   it('Invalid curve oid', function (done) {
     expect(decrypt_message(
       '', 2, 7, [], [], [], [], []
-    )).to.be.rejectedWith(Error, /Not valid curve/).notify(done);
+    )).to.be.rejectedWith(Error, /Unknown curve/).notify(done);
   });
   it('Invalid ephemeral key', function (done) {
     if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
