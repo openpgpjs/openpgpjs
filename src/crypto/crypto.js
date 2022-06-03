@@ -235,7 +235,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
       return { V, C };
     }
     default:
-      throw new Error('Unknown public key encryption algorithm.');
+      throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
 }
 

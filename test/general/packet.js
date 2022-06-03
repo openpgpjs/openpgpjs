@@ -1022,6 +1022,20 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       ).to.be.rejectedWith(/Unknown public key encryption algorithm/);
     });
 
+    it('Ignores unknown PKESK algorithm only with `config.ignoreUnsupportedPackets` enabled', async function() {
+      const binaryMessage = util.hexToUint8Array('c15e03c6a6737124ef0f5e63010740282956b4db64ea79e1b4b8e5c528241b5e1cf40b2f5df2a619692755d532353d30a8e044e7c96f51741c73e6c5c8f73db08daf66e49240afe90c9b50705d51e71ec2e7630c5bd86b002e1f6dbd638f61e2d23501830d9bb3711c66963363a6e5f8d9294210a0cd194174c3caa3f29865d33c6be4c09b437f906ca8d35e666f3ef53fd22e0d8ceade');
+
+      const parsed = await openpgp.PacketList.fromBinary(binaryMessage, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true });
+      expect(parsed.length).to.equal(2);
+      expect(parsed[0]).instanceOf(openpgp.UnparseablePacket);
+      expect(parsed[0].tag).to.equal(openpgp.enums.packet.publicKeyEncryptedSessionKey);
+
+      await expect(
+        openpgp.PacketList.fromBinary(binaryMessage, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false })
+      ).to.be.rejectedWith(/Unknown public key encryption algorithm/);
+    });
+
+
     it('Throws on disallowed packet even with tolerant mode enabled', async function() {
       const packets = new openpgp.PacketList();
       packets.push(new openpgp.LiteralDataPacket());
