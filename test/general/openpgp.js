@@ -3825,6 +3825,128 @@ amnR6g==
       });
     });
 
+    it('should fail to decrypt a message containing a literal packet (and no session key)', async function() {
+      const message = await openpgp.createMessage({ text: 'plaintext' });
+      await expect(openpgp.decrypt({ message, passwords: 'password' })).to.be.rejectedWith(/Error decrypting message/);
+    });
+
+    it('should fail to decrypt a message containing a literal packet (and a session key)', async function() {
+      const skeskPlusLiteralData = `-----BEGIN PGP MESSAGE-----
+
+wy4ECQMIjvrInhvTxJwAbkqXp+KWFdBcjoPn03jCdyspVi9qXBDbyGaP1lrM
+habAyxd1AGKaNp1wbGFpbnRleHQgbWVzc2FnZQ==
+=XoUx
+-----END PGP MESSAGE-----
+      `;
+
+      const message = await openpgp.readMessage({ armoredMessage: skeskPlusLiteralData });
+      await expect(openpgp.decrypt({ message, passwords: 'password' })).to.be.rejectedWith(/No encrypted data found/);
+    });
+
+    it('should fail to decrypt non-integrity-protected message by default', async function() {
+      const key = await openpgp.readKey({
+        armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEYD9r8xYJKwYBBAHaRw8BAQdApTaQJ6R/uooTqAuscoxYwbLrtoKndnsX
+ydhqMybJqh0AAQCxNwi9Pezy03OQE0XOooBWaHiuhBtKA1eAuqjJFuuLuQ/+
+zQDCjAQQFgoAHQUCYD9r8wQLCQcIAxUICgQWAgEAAhkBAhsDAh4BACEJEIkB
+BTiDwpvwFiEEvRnmOby6fJ/OxUhSiQEFOIPCm/BidgEAq05ZiPseRsMTxNm7
+IFQwQjmIFiWgLeQ0gKIvfl3SjBAA/iSPyTgWxSY98utXNuq+WoxVOzx3dJwG
+2cflR/UFUlEPx10EYD9r8xIKKwYBBAGXVQEFAQEHQCASw+tMPvnXi904WASv
+wRDUQofh0M7CpgQFqoOXvGlLAwEIBwAA/3gEimwdIet0gXb/hRRyBqOlcq32
+lNREh+n+vZKJyXWYEjrCeAQYFggACQUCYD9r8wIbDAAhCRCJAQU4g8Kb8BYh
+BL0Z5jm8unyfzsVIUokBBTiDwpvwHpEBAObHllPrJu0DqYyt4FKPkijgRpXC
+ESqhlK5rrbc62SmfAQDVf5l1B6IDASBCKtC0VPPpYiK6AUcEISpaSXOa+pNI
+Bw==
+=3Fja
+-----END PGP PRIVATE KEY BLOCK-----`
+      });
+      const message = await openpgp.readMessage({
+        armoredMessage: `-----BEGIN PGP MESSAGE-----
+
+wV4D+3VwOibHmagSAQdATlMJlvrkaq46zMkbIuKBOJO5X3ugVwZpEyAterQC
+/RUw0OPWeO+4swh/U7ZurV8cRr/fPnyGUUKI7rI+va3kWUZv4RRpUs7eYE57
+OUr3yoMNyaQEBwu6VXiQrsBN8TyUbXQxb63p7EHFXIgvVDIvOG7bQptrrKlM
+kKcB+fz5hb6mT/tl+cPcYHDOjocQ92pNVm+FilQhiATRxV8ah1DCOIZZ6tgq
+rWwIiEQEBPt+tXOuVF4Peumovp3WgziudrJa5Jxt2Dz+8nicBglbZLXTsZNu
+bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
+=T4iR
+-----END PGP MESSAGE-----`
+      });
+      await expect(
+        openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key })
+      ).to.be.rejectedWith('Error decrypting message: Message is not authenticated.');
+    });
+
+    it('should allow decrypting non-integrity-protected message when enabled', async function() {
+      const key = await openpgp.readKey({
+        armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEYD9r8xYJKwYBBAHaRw8BAQdApTaQJ6R/uooTqAuscoxYwbLrtoKndnsX
+ydhqMybJqh0AAQCxNwi9Pezy03OQE0XOooBWaHiuhBtKA1eAuqjJFuuLuQ/+
+zQDCjAQQFgoAHQUCYD9r8wQLCQcIAxUICgQWAgEAAhkBAhsDAh4BACEJEIkB
+BTiDwpvwFiEEvRnmOby6fJ/OxUhSiQEFOIPCm/BidgEAq05ZiPseRsMTxNm7
+IFQwQjmIFiWgLeQ0gKIvfl3SjBAA/iSPyTgWxSY98utXNuq+WoxVOzx3dJwG
+2cflR/UFUlEPx10EYD9r8xIKKwYBBAGXVQEFAQEHQCASw+tMPvnXi904WASv
+wRDUQofh0M7CpgQFqoOXvGlLAwEIBwAA/3gEimwdIet0gXb/hRRyBqOlcq32
+lNREh+n+vZKJyXWYEjrCeAQYFggACQUCYD9r8wIbDAAhCRCJAQU4g8Kb8BYh
+BL0Z5jm8unyfzsVIUokBBTiDwpvwHpEBAObHllPrJu0DqYyt4FKPkijgRpXC
+ESqhlK5rrbc62SmfAQDVf5l1B6IDASBCKtC0VPPpYiK6AUcEISpaSXOa+pNI
+Bw==
+=3Fja
+-----END PGP PRIVATE KEY BLOCK-----`
+      });
+      const message = await openpgp.readMessage({
+        armoredMessage: `-----BEGIN PGP MESSAGE-----
+
+wV4D+3VwOibHmagSAQdATlMJlvrkaq46zMkbIuKBOJO5X3ugVwZpEyAterQC
+/RUw0OPWeO+4swh/U7ZurV8cRr/fPnyGUUKI7rI+va3kWUZv4RRpUs7eYE57
+OUr3yoMNyaQEBwu6VXiQrsBN8TyUbXQxb63p7EHFXIgvVDIvOG7bQptrrKlM
+kKcB+fz5hb6mT/tl+cPcYHDOjocQ92pNVm+FilQhiATRxV8ah1DCOIZZ6tgq
+rWwIiEQEBPt+tXOuVF4Peumovp3WgziudrJa5Jxt2Dz+8nicBglbZLXTsZNu
+bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
+=T4iR
+-----END PGP MESSAGE-----`
+      });
+      const decrypted = await openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key, config: { allowUnauthenticatedMessages: true } });
+      expect(decrypted.data).to.equal('test');
+    });
+
+    it('should allow stream-decrypting non-integrity-protected message when enabled', async function() {
+      const key = await openpgp.readKey({
+        armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEYD9r8xYJKwYBBAHaRw8BAQdApTaQJ6R/uooTqAuscoxYwbLrtoKndnsX
+ydhqMybJqh0AAQCxNwi9Pezy03OQE0XOooBWaHiuhBtKA1eAuqjJFuuLuQ/+
+zQDCjAQQFgoAHQUCYD9r8wQLCQcIAxUICgQWAgEAAhkBAhsDAh4BACEJEIkB
+BTiDwpvwFiEEvRnmOby6fJ/OxUhSiQEFOIPCm/BidgEAq05ZiPseRsMTxNm7
+IFQwQjmIFiWgLeQ0gKIvfl3SjBAA/iSPyTgWxSY98utXNuq+WoxVOzx3dJwG
+2cflR/UFUlEPx10EYD9r8xIKKwYBBAGXVQEFAQEHQCASw+tMPvnXi904WASv
+wRDUQofh0M7CpgQFqoOXvGlLAwEIBwAA/3gEimwdIet0gXb/hRRyBqOlcq32
+lNREh+n+vZKJyXWYEjrCeAQYFggACQUCYD9r8wIbDAAhCRCJAQU4g8Kb8BYh
+BL0Z5jm8unyfzsVIUokBBTiDwpvwHpEBAObHllPrJu0DqYyt4FKPkijgRpXC
+ESqhlK5rrbc62SmfAQDVf5l1B6IDASBCKtC0VPPpYiK6AUcEISpaSXOa+pNI
+Bw==
+=3Fja
+-----END PGP PRIVATE KEY BLOCK-----`
+      });
+      const message = await openpgp.readMessage({
+        armoredMessage: stream.toStream(`-----BEGIN PGP MESSAGE-----
+
+wV4D+3VwOibHmagSAQdATlMJlvrkaq46zMkbIuKBOJO5X3ugVwZpEyAterQC
+/RUw0OPWeO+4swh/U7ZurV8cRr/fPnyGUUKI7rI+va3kWUZv4RRpUs7eYE57
+OUr3yoMNyaQEBwu6VXiQrsBN8TyUbXQxb63p7EHFXIgvVDIvOG7bQptrrKlM
+kKcB+fz5hb6mT/tl+cPcYHDOjocQ92pNVm+FilQhiATRxV8ah1DCOIZZ6tgq
+rWwIiEQEBPt+tXOuVF4Peumovp3WgziudrJa5Jxt2Dz+8nicBglbZLXTsZNu
+bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
+=T4iR
+-----END PGP MESSAGE-----`)
+      });
+      const decrypted = await openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key, config: { allowUnauthenticatedMessages: true } });
+      const data = await stream.readToEnd(decrypted.data);
+      expect(data).to.equal('test');
+    });
+
     describe('Sign and verify with each curve', function() {
       const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
       curves.forEach(curve => {
@@ -3836,110 +3958,6 @@ amnR6g==
           const verified = await openpgp.verify({ verificationKeys:[key], message: await openpgp.readCleartextMessage({ cleartextMessage: signed }), config });
           expect(await verified.signatures[0].verified).to.be.true;
         });
-      });
-
-      it('should fail to decrypt non-integrity-protected message by default', async function() {
-        const key = await openpgp.readKey({
-          armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xVgEYD9r8xYJKwYBBAHaRw8BAQdApTaQJ6R/uooTqAuscoxYwbLrtoKndnsX
-ydhqMybJqh0AAQCxNwi9Pezy03OQE0XOooBWaHiuhBtKA1eAuqjJFuuLuQ/+
-zQDCjAQQFgoAHQUCYD9r8wQLCQcIAxUICgQWAgEAAhkBAhsDAh4BACEJEIkB
-BTiDwpvwFiEEvRnmOby6fJ/OxUhSiQEFOIPCm/BidgEAq05ZiPseRsMTxNm7
-IFQwQjmIFiWgLeQ0gKIvfl3SjBAA/iSPyTgWxSY98utXNuq+WoxVOzx3dJwG
-2cflR/UFUlEPx10EYD9r8xIKKwYBBAGXVQEFAQEHQCASw+tMPvnXi904WASv
-wRDUQofh0M7CpgQFqoOXvGlLAwEIBwAA/3gEimwdIet0gXb/hRRyBqOlcq32
-lNREh+n+vZKJyXWYEjrCeAQYFggACQUCYD9r8wIbDAAhCRCJAQU4g8Kb8BYh
-BL0Z5jm8unyfzsVIUokBBTiDwpvwHpEBAObHllPrJu0DqYyt4FKPkijgRpXC
-ESqhlK5rrbc62SmfAQDVf5l1B6IDASBCKtC0VPPpYiK6AUcEISpaSXOa+pNI
-Bw==
-=3Fja
------END PGP PRIVATE KEY BLOCK-----`
-        });
-        const message = await openpgp.readMessage({
-          armoredMessage: `-----BEGIN PGP MESSAGE-----
-
-wV4D+3VwOibHmagSAQdATlMJlvrkaq46zMkbIuKBOJO5X3ugVwZpEyAterQC
-/RUw0OPWeO+4swh/U7ZurV8cRr/fPnyGUUKI7rI+va3kWUZv4RRpUs7eYE57
-OUr3yoMNyaQEBwu6VXiQrsBN8TyUbXQxb63p7EHFXIgvVDIvOG7bQptrrKlM
-kKcB+fz5hb6mT/tl+cPcYHDOjocQ92pNVm+FilQhiATRxV8ah1DCOIZZ6tgq
-rWwIiEQEBPt+tXOuVF4Peumovp3WgziudrJa5Jxt2Dz+8nicBglbZLXTsZNu
-bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
-=T4iR
------END PGP MESSAGE-----`
-        });
-        await expect(
-          openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key })
-        ).to.be.rejectedWith('Error decrypting message: Message is not authenticated.');
-      });
-
-      it('should allow decrypting non-integrity-protected message when enabled', async function() {
-        const key = await openpgp.readKey({
-          armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xVgEYD9r8xYJKwYBBAHaRw8BAQdApTaQJ6R/uooTqAuscoxYwbLrtoKndnsX
-ydhqMybJqh0AAQCxNwi9Pezy03OQE0XOooBWaHiuhBtKA1eAuqjJFuuLuQ/+
-zQDCjAQQFgoAHQUCYD9r8wQLCQcIAxUICgQWAgEAAhkBAhsDAh4BACEJEIkB
-BTiDwpvwFiEEvRnmOby6fJ/OxUhSiQEFOIPCm/BidgEAq05ZiPseRsMTxNm7
-IFQwQjmIFiWgLeQ0gKIvfl3SjBAA/iSPyTgWxSY98utXNuq+WoxVOzx3dJwG
-2cflR/UFUlEPx10EYD9r8xIKKwYBBAGXVQEFAQEHQCASw+tMPvnXi904WASv
-wRDUQofh0M7CpgQFqoOXvGlLAwEIBwAA/3gEimwdIet0gXb/hRRyBqOlcq32
-lNREh+n+vZKJyXWYEjrCeAQYFggACQUCYD9r8wIbDAAhCRCJAQU4g8Kb8BYh
-BL0Z5jm8unyfzsVIUokBBTiDwpvwHpEBAObHllPrJu0DqYyt4FKPkijgRpXC
-ESqhlK5rrbc62SmfAQDVf5l1B6IDASBCKtC0VPPpYiK6AUcEISpaSXOa+pNI
-Bw==
-=3Fja
------END PGP PRIVATE KEY BLOCK-----`
-        });
-        const message = await openpgp.readMessage({
-          armoredMessage: `-----BEGIN PGP MESSAGE-----
-
-wV4D+3VwOibHmagSAQdATlMJlvrkaq46zMkbIuKBOJO5X3ugVwZpEyAterQC
-/RUw0OPWeO+4swh/U7ZurV8cRr/fPnyGUUKI7rI+va3kWUZv4RRpUs7eYE57
-OUr3yoMNyaQEBwu6VXiQrsBN8TyUbXQxb63p7EHFXIgvVDIvOG7bQptrrKlM
-kKcB+fz5hb6mT/tl+cPcYHDOjocQ92pNVm+FilQhiATRxV8ah1DCOIZZ6tgq
-rWwIiEQEBPt+tXOuVF4Peumovp3WgziudrJa5Jxt2Dz+8nicBglbZLXTsZNu
-bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
-=T4iR
------END PGP MESSAGE-----`
-        });
-        const decrypted = await openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key, config: { allowUnauthenticatedMessages: true } });
-        expect(decrypted.data).to.equal('test');
-      });
-
-      it('should allow stream-decrypting non-integrity-protected message when enabled', async function() {
-        const key = await openpgp.readKey({
-          armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xVgEYD9r8xYJKwYBBAHaRw8BAQdApTaQJ6R/uooTqAuscoxYwbLrtoKndnsX
-ydhqMybJqh0AAQCxNwi9Pezy03OQE0XOooBWaHiuhBtKA1eAuqjJFuuLuQ/+
-zQDCjAQQFgoAHQUCYD9r8wQLCQcIAxUICgQWAgEAAhkBAhsDAh4BACEJEIkB
-BTiDwpvwFiEEvRnmOby6fJ/OxUhSiQEFOIPCm/BidgEAq05ZiPseRsMTxNm7
-IFQwQjmIFiWgLeQ0gKIvfl3SjBAA/iSPyTgWxSY98utXNuq+WoxVOzx3dJwG
-2cflR/UFUlEPx10EYD9r8xIKKwYBBAGXVQEFAQEHQCASw+tMPvnXi904WASv
-wRDUQofh0M7CpgQFqoOXvGlLAwEIBwAA/3gEimwdIet0gXb/hRRyBqOlcq32
-lNREh+n+vZKJyXWYEjrCeAQYFggACQUCYD9r8wIbDAAhCRCJAQU4g8Kb8BYh
-BL0Z5jm8unyfzsVIUokBBTiDwpvwHpEBAObHllPrJu0DqYyt4FKPkijgRpXC
-ESqhlK5rrbc62SmfAQDVf5l1B6IDASBCKtC0VPPpYiK6AUcEISpaSXOa+pNI
-Bw==
-=3Fja
------END PGP PRIVATE KEY BLOCK-----`
-        });
-        const message = await openpgp.readMessage({
-          armoredMessage: stream.toStream(`-----BEGIN PGP MESSAGE-----
-
-wV4D+3VwOibHmagSAQdATlMJlvrkaq46zMkbIuKBOJO5X3ugVwZpEyAterQC
-/RUw0OPWeO+4swh/U7ZurV8cRr/fPnyGUUKI7rI+va3kWUZv4RRpUs7eYE57
-OUr3yoMNyaQEBwu6VXiQrsBN8TyUbXQxb63p7EHFXIgvVDIvOG7bQptrrKlM
-kKcB+fz5hb6mT/tl+cPcYHDOjocQ92pNVm+FilQhiATRxV8ah1DCOIZZ6tgq
-rWwIiEQEBPt+tXOuVF4Peumovp3WgziudrJa5Jxt2Dz+8nicBglbZLXTsZNu
-bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
-=T4iR
------END PGP MESSAGE-----`)
-        });
-        const decrypted = await openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key, config: { allowUnauthenticatedMessages: true } });
-        const data = await stream.readToEnd(decrypted.data);
-        expect(data).to.equal('test');
       });
     });
 

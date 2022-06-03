@@ -116,7 +116,7 @@ export class Message {
     );
 
     if (symEncryptedPacketlist.length === 0) {
-      return this;
+      throw new Error('No encrypted data found');
     }
 
     const symEncryptedPacket = symEncryptedPacketlist[0];
