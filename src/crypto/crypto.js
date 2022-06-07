@@ -34,6 +34,7 @@ import enums from '../enums';
 import util from '../util';
 import OID from '../type/oid';
 import { Curve } from './public_key/elliptic/curves';
+import { UnsupportedError } from '../packet/packet';
 
 /**
  * Encrypts data using specified algorithm and public key parameters.
@@ -105,7 +106,7 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
         oid, kdfParams, V, C.data, Q, d, fingerprint);
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new Error('Unknown public key encryption algorithm.');
   }
 }
 
@@ -140,23 +141,26 @@ export function parsePublicKeyParams(algo, bytes) {
     }
     case enums.publicKey.ecdsa: {
       const oid = new OID(); read += oid.read(bytes);
+      checkSupportedCurve(oid);
       const Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       return { read: read, publicParams: { oid, Q } };
     }
     case enums.publicKey.eddsa: {
       const oid = new OID(); read += oid.read(bytes);
+      checkSupportedCurve(oid);
       let Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       Q = util.leftPad(Q, 33);
       return { read: read, publicParams: { oid, Q } };
     }
     case enums.publicKey.ecdh: {
       const oid = new OID(); read += oid.read(bytes);
+      checkSupportedCurve(oid);
       const Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       const kdfParams = new KDFParams(); read += kdfParams.read(bytes.subarray(read));
       return { read: read, publicParams: { oid, Q, kdfParams } };
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
 }
 
@@ -192,12 +196,13 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       return { read, privateParams: { d } };
     }
     case enums.publicKey.eddsa: {
+      const curve = new Curve(publicParams.oid);
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
-      seed = util.leftPad(seed, 32);
+      seed = util.leftPad(seed, curve.payloadSize);
       return { read, privateParams: { seed } };
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
 }
 
@@ -234,7 +239,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
       return { V, C };
     }
     default:
-      throw new Error('Invalid public key encryption algorithm.');
+      throw new UnsupportedError('Unknown public key encryption algorithm.');
   }
 }
 
@@ -293,7 +298,7 @@ export function generateParams(algo, bits, oid) {
     case enums.publicKey.elgamal:
       throw new Error('Unsupported algorithm for key generation.');
     default:
-      throw new Error('Invalid public key algorithm.');
+      throw new Error('Unknown public key algorithm.');
   }
 }
 
@@ -340,7 +345,7 @@ export async function validateParams(algo, publicParams, privateParams) {
       return publicKey.elliptic.eddsa.validateParams(oid, Q, seed);
     }
     default:
-      throw new Error('Invalid public key algorithm.');
+      throw new Error('Unknown public key algorithm.');
   }
 }
 
@@ -390,4 +395,17 @@ export function getAEADMode(algo) {
 export function getCipher(algo) {
   const algoName = enums.read(enums.symmetric, algo);
   return cipher[algoName];
+}
+
+/**
+ * Check whether the given curve OID is supported
+ * @param {module:type/oid} oid - EC object identifier
+ * @throws {UnsupportedError} if curve is not supported
+ */
+function checkSupportedCurve(oid) {
+  try {
+    oid.getName();
+  } catch (e) {
+    throw new UnsupportedError('Unknown curve OID');
+  }
 }

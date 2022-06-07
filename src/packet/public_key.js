@@ -123,13 +123,9 @@ class PublicKeyPacket {
       }
 
       // - A series of values comprising the key material.
-      try {
-        const { read, publicParams } = crypto.parsePublicKeyParams(this.algorithm, bytes.subarray(pos));
-        this.publicParams = publicParams;
-        pos += read;
-      } catch (err) {
-        throw new Error('Error reading MPIs');
-      }
+      const { read, publicParams } = crypto.parsePublicKeyParams(this.algorithm, bytes.subarray(pos));
+      this.publicParams = publicParams;
+      pos += read;
 
       // we set the fingerprint and keyID already to make it possible to put together the key packets directly in the Key constructor
       await this.computeFingerprintAndKeyID();

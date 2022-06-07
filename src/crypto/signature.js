@@ -7,6 +7,7 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
+import { UnsupportedError } from '../packet/packet';
 
 /**
  * Parse signature in binary form to get the parameters.
@@ -55,7 +56,7 @@ export function parseSignatureParams(algo, signature) {
       return { r, s };
     }
     default:
-      throw new Error('Invalid signature algorithm.');
+      throw new UnsupportedError('Unknown signature algorithm.');
   }
 }
 
@@ -101,7 +102,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
       return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signature, data, Q, hashed);
     }
     default:
-      throw new Error('Invalid signature algorithm.');
+      throw new Error('Unknown signature algorithm.');
   }
 }
 
@@ -151,6 +152,6 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       return publicKey.elliptic.eddsa.sign(oid, hashAlgo, data, Q, seed, hashed);
     }
     default:
-      throw new Error('Invalid signature algorithm.');
+      throw new Error('Unknown signature algorithm.');
   }
 }

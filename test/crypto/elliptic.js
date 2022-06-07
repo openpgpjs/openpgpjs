@@ -167,10 +167,10 @@ module.exports = () => describe('Elliptic Curve Cryptography @lightweight', func
       return Promise.all([
         expect(verify_signature(
           'invalid oid', 8, [], [], [], []
-        )).to.be.rejectedWith(Error, /Not valid curve/),
+        )).to.be.rejectedWith(Error, /Unknown curve/),
         expect(verify_signature(
           '\x00', 8, [], [], [], []
-        )).to.be.rejectedWith(Error, /Not valid curve/)
+        )).to.be.rejectedWith(Error, /Unknown curve/)
       ]);
     });
     it('Invalid public key', async function () {

@@ -340,7 +340,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       try {
         options.curve = enums.write(enums.curve, options.curve);
       } catch (e) {
-        throw new Error('Invalid curve');
+        throw new Error('Unknown curve');
       }
       if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
         options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;

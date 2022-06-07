@@ -28,6 +28,7 @@ import util from '../../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
+import { UnsupportedError } from '../../../packet/packet';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -145,7 +146,7 @@ class Curve {
       // by curve name or oid string
       this.name = enums.write(enums.curve, oidOrName);
     } catch (err) {
-      throw new Error('Not valid curve');
+      throw new UnsupportedError('Unknown curve');
     }
     params = params || curves[this.name];
 
