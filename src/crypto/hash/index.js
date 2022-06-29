@@ -20,8 +20,12 @@ import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
+const nodeCryptoHashes = nodeCrypto && nodeCrypto.getHashes();
 
 function nodeHash(type) {
+  if (!nodeCrypto || !nodeCryptoHashes.includes(type)) {
+    return;
+  }
   return async function (data) {
     const shasum = nodeCrypto.createHash(type);
     return stream.transform(data, value => {
@@ -63,28 +67,15 @@ function asmcryptoHash(hash, webCryptoHash) {
   };
 }
 
-let hashFunctions;
-if (nodeCrypto) { // Use Node native crypto for all hash functions
-  hashFunctions = {
-    md5: nodeHash('md5'),
-    sha1: nodeHash('sha1'),
-    sha224: nodeHash('sha224'),
-    sha256: nodeHash('sha256'),
-    sha384: nodeHash('sha384'),
-    sha512: nodeHash('sha512'),
-    ripemd: nodeHash('ripemd160')
-  };
-} else { // Use JS fallbacks
-  hashFunctions = {
-    md5: md5,
-    sha1: asmcryptoHash(Sha1, 'SHA-1'),
-    sha224: hashjsHash(sha224),
-    sha256: asmcryptoHash(Sha256, 'SHA-256'),
-    sha384: hashjsHash(sha384, 'SHA-384'),
-    sha512: hashjsHash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
-    ripemd: hashjsHash(ripemd160)
-  };
-}
+const hashFunctions = {
+  md5: nodeHash('md5') || md5,
+  sha1: nodeHash('sha1') || asmcryptoHash(Sha1, 'SHA-1'),
+  sha224: nodeHash('sha224') || hashjsHash(sha224),
+  sha256: nodeHash('sha256') || asmcryptoHash(Sha256, 'SHA-256'),
+  sha384: nodeHash('sha384') || hashjsHash(sha384, 'SHA-384'),
+  sha512: nodeHash('sha512') || hashjsHash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
+  ripemd: nodeHash('ripemd160') || hashjsHash(ripemd160)
+};
 
 export default {
 
