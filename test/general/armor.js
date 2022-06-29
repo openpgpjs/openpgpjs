@@ -119,6 +119,17 @@ module.exports = () => describe('ASCII armor', function() {
     }));
   });
 
+  it('Exception if improperly formatted armor footer', async function () {
+    await expect(openpgp.readCleartextMessage({ cleartextMessage: [
+      '-----BEGIN PGP SIGNED MESSAGE-----',
+      'Hash: SHA256',
+      '',
+      '-----BEGIN PGP SIGNATURE-----',
+      '',
+      '-----OOPS'
+    ].join('\n') })).to.be.rejectedWith(Error, /Misformed armored text/);
+  });
+
   it('Ignore unknown armor header - signature section', async function () {
     const validHeaders = ['Version: BCPG C# v1.7.4114.6375', 'Independent Reserve Pty. Ltd. 2017: 1.0.0.0'];
     expect(await openpgp.readCleartextMessage({ cleartextMessage: getArmor(['Hash: SHA1'], validHeaders) })).to.be.an.instanceof(openpgp.CleartextMessage);
