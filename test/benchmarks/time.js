@@ -1,6 +1,6 @@
 import Benchmark from 'benchmark';
 import { readToEnd } from '@openpgp/web-stream-tools';
-import * as openpgp from 'openpgp';
+import * as openpgp from '@protontech/openpgp';
 
 const wrapAsync = func => ({
   fn: async deferred => {

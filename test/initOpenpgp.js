@@ -3,7 +3,7 @@
  * at the top of the test bundle, and that the config is initialised before the tests code runs (incl. that outside of `describe`).
  */
 
-import * as openpgp from 'openpgp';
+import * as openpgp from '@protontech/openpgp';
 
 if (typeof window !== 'undefined') {
   window.openpgp = openpgp;

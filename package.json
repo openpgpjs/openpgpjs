@@ -1,5 +1,5 @@
 {
-  "name": "openpgp",
+  "name": "@protontech/openpgp",
   "description": "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
   "version": "6.1.0",
   "license": "LGPL-3.0+",
@@ -114,6 +114,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/openpgpjs/openpgpjs"
+    "url": "https://github.com/ProtonMail/openpgpjs"
   }
 }

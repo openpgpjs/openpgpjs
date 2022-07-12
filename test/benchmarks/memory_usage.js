@@ -4,7 +4,7 @@ import path from 'path';
 import { writeFileSync, unlinkSync } from 'fs';
 import { fork } from 'child_process';
 import { fileURLToPath } from 'url';
-import * as openpgp from 'openpgp';
+import * as openpgp from '@protontech/openpgp';
 
 /**
  * Benchmark max memory usage recorded during execution of the given function.
@@ -18,7 +18,7 @@ const benchmark = async function(fn) {
   // the code to execute must be written to a file
   writeFileSync(tmpFileName, `
 const assert = require('assert');
-const openpgp = require('openpgp');
+const openpgp = require('@protontech/openpgp');
 let maxMemoryComsumption;
 let activeSampling = false;
 
