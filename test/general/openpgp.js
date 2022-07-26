@@ -2015,6 +2015,13 @@ aOU=
       const [decryptedSessionKey] = await openpgp.decryptSessionKeys({ message: objectMessage, passwords });
       expect(decryptedSessionKey).to.deep.equal(sessionKey);
     });
+
+    it('passing no encryption keys or passwords leads to exception', async function() {
+      await expect(openpgp.encryptSessionKey({
+        algorithm: 'aes256',
+        data: util.hexToUint8Array('3e99c1bb485e70a1fcef09a7ad8d38d171015243bbdd853e1a2b0e334d122ff3')
+      })).to.be.rejectedWith(/No encryption keys or passwords provided/);
+    });
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
