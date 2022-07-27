@@ -555,7 +555,7 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
   if (rest.publicKeys) throw new Error('The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead');
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  if ((!encryptionKeys || !encryptionKeys.length === 0) && (!passwords || passwords.length === 0)) {
+  if ((!encryptionKeys || encryptionKeys.length === 0) && (!passwords || passwords.length === 0)) {
     throw new Error('No encryption keys or passwords provided.');
   }
 
