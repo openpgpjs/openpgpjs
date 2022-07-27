@@ -240,7 +240,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
 
 
 /**
- * Encrypts a message using public keys, passwords or both at once. At least one of `encryptionKeys` or `passwords`
+ * Encrypts a message using public keys, passwords or both at once. At least one of `encryptionKeys`, `passwords` or `sessionKeys`
  *   must be specified. If signing keys are specified, those will be used to sign the message.
  * @param {Object} options
  * @param {Message} options.message - Message to be encrypted as created by {@link createMessage}
@@ -554,6 +554,10 @@ export async function encryptSessionKey({ data, algorithm, aeadAlgorithm, encryp
   encryptionKeys = toArray(encryptionKeys); passwords = toArray(passwords); encryptionKeyIDs = toArray(encryptionKeyIDs); encryptionUserIDs = toArray(encryptionUserIDs);
   if (rest.publicKeys) throw new Error('The `publicKeys` option has been removed from openpgp.encryptSessionKey, pass `encryptionKeys` instead');
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
+
+  if ((!encryptionKeys || encryptionKeys.length === 0) && (!passwords || passwords.length === 0)) {
+    throw new Error('No encryption keys or passwords provided.');
+  }
 
   try {
     const message = await Message.encryptSessionKey(data, algorithm, aeadAlgorithm, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
