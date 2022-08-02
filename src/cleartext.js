@@ -36,7 +36,7 @@ export class CleartextMessage {
    * @param {Signature} signature - The detached signature or an empty signature for unsigned messages
    */
   constructor(text, signature) {
-    // normalize EOL to canonical form <CR><LF>
+    // remove trailing whitespace and normalize EOL to canonical form <CR><LF>
     this.text = util.removeTrailingSpaces(text).replace(/\r?\n/g, '\r\n');
     if (signature && !(signature instanceof Signature)) {
       throw new Error('Invalid signature input');

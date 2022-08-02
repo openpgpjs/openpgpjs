@@ -1255,6 +1255,77 @@ zmuVOdNuWQqxT9Sqa84=
     expect((await signatures[0].signature).packets.length).to.equal(1);
   });
 
+  it('Verify cleartext signed message with trailing spaces incorrectly normalised (from OpenPGP.js v3.0.9-v5.3.1)', async function() {
+    // We used to not strip trailing whitespace with \r\n line endings when signing cleartext messages
+    const armoredSignature = `-----BEGIN PGP SIGNATURE-----
+Version: OpenPGP.js v5.3.1
+
+wrMEAQEIAAYFAmLjqsQAIQkQ4IT3RGwgLJcWIQTX0bHexsqUZwA0RcXghPdE
+bCAsl2TvBADLOHYXevDSc3LtLRYR1HteijL/MssCCoZIfuGihd5AzJpD2h2j
+L8UuxlfERJn15RlFsDzlkMNMefJp5ltC8kKcf+HTuBUi+xf2t2nvlf8CrdjY
+vcEqswjkODDxxZ842h0sC0ZtbzWuMXIvODEdzZxBjhlmZmv9VKQ5uyb0oD/5
+WQ==
+=o2gq
+-----END PGP SIGNATURE-----`;
+    const cleartextMessage = `
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+this text    
+used to be incorrectly normalised
+${armoredSignature}
+`;
+
+    const signedText = 'this text    \r\nused to be incorrectly normalised';
+    const message = await openpgp.readCleartextMessage({ cleartextMessage });
+    const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
+
+    // Direct verification won't work since the signed data was not stripped of the trailing whitespaces,
+    // as required for cleartext messages. Verification would always fail also in the affected OpenPGP.js versions.
+    await expect(openpgp.verify({
+      verificationKeys:[pubKey],
+      message,
+      config: { minRSABits: 1024 },
+      expectSigned: true
+    })).to.be.rejectedWith(/Signed digest did not match/);
+
+    // The signature should be verifiable over non-normalised text
+    const { signatures, data } = await openpgp.verify({
+      verificationKeys:[pubKey],
+      message: await openpgp.createMessage({ text: signedText }),
+      signature: await openpgp.readSignature({ armoredSignature }),
+      config: { minRSABits: 1024 },
+      expectSigned: true
+    });
+    expect(data).to.equal(signedText);
+    expect(signatures).to.have.length(1);
+    expect(await signatures[0].verified).to.be.true;
+  });
+
+  it('Sign and verify cleartext signed message with trailing spaces correctly normalised', async function() {
+    const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
+    const privKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
+      passphrase: 'hello world'
+    });
+    const config = { minRSABits: 1024 };
+
+    const message = await openpgp.createCleartextMessage({
+      text: 'this text    \r\nused to be incorrectly normalised'
+    });
+    const expectedText = 'this text\nused to be incorrectly normalised';
+    expect(message.getText()).to.equal(expectedText);
+    const cleartextMessage = await openpgp.sign({ message, signingKeys: privKey, config, format: 'armored' });
+    const { signatures, data } = await openpgp.verify({
+      message: await openpgp.readCleartextMessage({ cleartextMessage }),
+      verificationKeys:[pubKey],
+      config
+    });
+    expect(data).to.equal(expectedText);
+    expect(signatures).to.have.length(1);
+    expect(await signatures[0].verified).to.be.true;
+  });
+
   function tests() {
     it('Verify signed message with trailing spaces from GPG', async function() {
       const armoredMessage =
