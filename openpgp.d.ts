@@ -322,6 +322,7 @@ interface Config {
   versionString: string;
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;
+  allowInsecureVerificationWithReformattedKeys: boolean;
   constantTimePKCS1Decryption: boolean;
   constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<enums.symmetric>;
   v5Keys: boolean;
