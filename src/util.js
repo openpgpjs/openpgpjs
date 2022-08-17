@@ -289,7 +289,7 @@ const util = {
    */
   printDebug: function (str) {
     if (debugMode) {
-      console.log(str);
+      console.log('[OpenPGP.js debug]', str);
     }
   },
 
@@ -300,7 +300,7 @@ const util = {
    */
   printDebugError: function (error) {
     if (debugMode) {
-      console.error(error);
+      console.error('[OpenPGP.js debug]', error);
     }
   },
 
