@@ -182,15 +182,17 @@ function createcrc24(input) {
 }
 
 /**
- * Verify armored headers. RFC4880, section 6.3: "OpenPGP should consider improperly formatted
- * Armor Headers to be corruption of the ASCII Armor."
+ * Verify armored headers. crypto-refresh-06, section 6.2:
+ * "An OpenPGP implementation may consider improperly formatted Armor
+ * Headers to be corruption of the ASCII Armor, but SHOULD make an
+ * effort to recover."
  * @private
  * @param {Array<String>} headers - Armor headers
  */
 function verifyHeaders(headers) {
   for (let i = 0; i < headers.length; i++) {
     if (!/^([^\s:]|[^\s:][^:]*[^\s:]): .+$/.test(headers[i])) {
-      throw new Error('Improperly formatted armor header: ' + headers[i]);
+      util.printDebugError(new Error('Improperly formatted armor header: ' + headers[i]));
     }
     if (!/^(Version|Comment|MessageID|Hash|Charset): .+$/.test(headers[i])) {
       util.printDebugError(new Error('Unknown header: ' + headers[i]));
