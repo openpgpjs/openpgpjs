@@ -101,21 +101,14 @@ module.exports = () => describe('ASCII armor', function() {
     expect(msg).to.be.an.instanceof(openpgp.CleartextMessage);
   });
 
-  it('Exception if improperly formatted armor header - plaintext section', async function () {
-    let msg = getArmor(['Hash:SHA256']);
-    msg = openpgp.readCleartextMessage({ cleartextMessage: msg });
-    await expect(msg).to.be.rejectedWith(Error, /Improperly formatted armor header/);
-    msg = getArmor(['Ha sh: SHA256']);
-    msg = openpgp.readCleartextMessage({ cleartextMessage: msg });
+  it('Exception if header is not Hash in cleartext signed message', async function () {
+    const msg = openpgp.readCleartextMessage({ cleartextMessage: getArmor(['Ha sh: SHA256']) });
     await expect(msg).to.be.rejectedWith(Error, /Only "Hash" header allowed in cleartext signed message/);
-    msg = getArmor(['Hash SHA256']);
-    msg = openpgp.readCleartextMessage({ cleartextMessage: msg });
-    await expect(msg).to.be.rejectedWith(Error, /Improperly formatted armor header/);
   });
 
-  it('Exception if improperly formatted armor header - signature section', async function () {
+  it('Ignore improperly formatted armor header', async function () {
     await Promise.all(['Space : trailing', 'Space :switched', ': empty', 'none', 'Space:missing'].map(async function (invalidHeader) {
-      await expect(openpgp.readCleartextMessage({ cleartextMessage: getArmor(['Hash: SHA1'], [invalidHeader]) })).to.be.rejectedWith(Error, /Improperly formatted armor header/);
+      expect(await openpgp.readCleartextMessage({ cleartextMessage: getArmor(['Hash: SHA1'], [invalidHeader]) })).to.be.an.instanceof(openpgp.CleartextMessage);
     }));
   });
 
