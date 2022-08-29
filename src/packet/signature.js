@@ -58,7 +58,6 @@ class SignaturePacket {
     this.publicKeyAlgorithm = null;
 
     this.signatureData = null;
-    this.allowedUnhashedSubpackets = [];
     this.unhashedSubpackets = [];
     this.signedHashValue = null;
 
@@ -190,7 +189,7 @@ class SignaturePacket {
     arr.push(this.writeHashedSubPackets());
 
     // Reserialize allowed unhashed subpackets
-    this.allowedUnhashedSubpackets = this.createUnhashedSubPackets();
+    this.unhashedSubpackets = this.createUnhashedSubPackets();
 
     this.signatureData = util.concat(arr);
 
@@ -349,11 +348,6 @@ class SignaturePacket {
    */
   writeUnhashedSubPackets() {
     const arr = [];
-    this.allowedUnhashedSubpackets.forEach(data => {
-      arr.push(writeSimpleLength(data.length));
-      arr.push(data);
-    });
-
     this.unhashedSubpackets.forEach(data => {
       arr.push(writeSimpleLength(data.length));
       arr.push(data);
@@ -374,11 +368,10 @@ class SignaturePacket {
     const type = bytes[mypos] & 0x7F;
 
     if (!hashed) {
+      this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
       if (!allowedUnhashedSubpackets.has(type)) {
-        this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
         return;
       }
-      this.allowedUnhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
     }
 
     mypos++;
