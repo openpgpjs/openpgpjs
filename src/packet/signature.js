@@ -188,7 +188,7 @@ class SignaturePacket {
     // Add hashed subpackets
     arr.push(this.writeHashedSubPackets());
 
-    // Reserialize allowed unhashed subpackets
+    // Set unhashed subpackets for serialization
     this.unhashedSubpackets = this.createUnhashedSubPackets();
 
     this.signatureData = util.concat(arr);
@@ -318,7 +318,7 @@ class SignaturePacket {
   }
 
   /**
-   * Pushes the Issuer and Embedded Signature subpackets to the unhashedSubpackets
+   * Returns the Issuer, Issuer Fingperprint, and Embedded Signature subpacket bodies
    * @returns {Array<Uint8Array>} Subpackets.
    */
   createUnhashedSubPackets() {
@@ -343,7 +343,7 @@ class SignaturePacket {
   }
 
   /**
-   * Writes an Uint8Array of bytes of allowedUnhashedSubpackets and unhashedSubpackets
+   * Creates an Uint8Array containing the unhashed subpackets
    * @returns {Uint8Array} Subpacket data.
    */
   writeUnhashedSubPackets() {
