@@ -386,7 +386,7 @@ export function armor(messageType, body, partIndex, partTotal, customComment, co
       result.push('-----END PGP MESSAGE, PART ' + partIndex + '-----\n');
       break;
     case enums.armor.signed:
-      result.push('\n-----BEGIN PGP SIGNED MESSAGE-----\n');
+      result.push('-----BEGIN PGP SIGNED MESSAGE-----\n');
       result.push('Hash: ' + hash + '\n\n');
       result.push(text.replace(/^-/mg, '- -'));
       result.push('\n-----BEGIN PGP SIGNATURE-----\n');
