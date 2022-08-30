@@ -188,8 +188,10 @@ class SignaturePacket {
     // Add hashed subpackets
     arr.push(this.writeHashedSubPackets());
 
-    // Set unhashed subpackets for serialization
-    this.unhashedSubpackets = this.createUnhashedSubPackets();
+    // Remove unhashed subpackets, in case some allowed unhashed
+    // subpackets existed, in order not to duplicate them (in both
+    // the hashed and unhashed subpackets) when re-signing.
+    this.unhashedSubpackets = [];
 
     this.signatureData = util.concat(arr);
 
@@ -253,6 +255,11 @@ class SignaturePacket {
       bytes = util.concat([bytes, this.revocationKeyFingerprint]);
       arr.push(writeSubPacket(sub.revocationKey, bytes));
     }
+    if (!this.issuerKeyID.isNull() && this.issuerKeyVersion !== 5) {
+      // If the version of [the] key is greater than 4, this subpacket
+      // MUST NOT be included in the signature.
+      arr.push(writeSubPacket(sub.issuer, this.issuerKeyID.write()));
+    }
     this.rawNotations.forEach(([{ name, value, humanReadable }]) => {
       bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
       // 2 octets of name length
@@ -306,6 +313,14 @@ class SignaturePacket {
       bytes = util.concat(bytes);
       arr.push(writeSubPacket(sub.signatureTarget, bytes));
     }
+    if (this.embeddedSignature !== null) {
+      arr.push(writeSubPacket(sub.embeddedSignature, this.embeddedSignature.write()));
+    }
+    if (this.issuerFingerprint !== null) {
+      bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
+      bytes = util.concat(bytes);
+      arr.push(writeSubPacket(sub.issuerFingerprint, bytes));
+    }
     if (this.preferredAEADAlgorithms !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredAEADAlgorithms));
       arr.push(writeSubPacket(sub.preferredAEADAlgorithms, bytes));
@@ -315,31 +330,6 @@ class SignaturePacket {
     const length = util.writeNumber(result.length, 2);
 
     return util.concat([length, result]);
-  }
-
-  /**
-   * Returns the Issuer, Issuer Fingperprint, and Embedded Signature subpacket bodies
-   * @returns {Array<Uint8Array>} Subpackets.
-   */
-  createUnhashedSubPackets() {
-    const sub = enums.signatureSubpacket;
-    const arr = [];
-    let bytes;
-    if (!this.issuerKeyID.isNull() && this.issuerKeyVersion !== 5) {
-      // If the version of [the] key is greater than 4, this subpacket
-      // MUST NOT be included in the signature.
-      arr.push(writeSubPacketBody(sub.issuer, this.issuerKeyID.write()));
-    }
-    if (this.embeddedSignature !== null) {
-      arr.push(writeSubPacketBody(sub.embeddedSignature, this.embeddedSignature.write()));
-    }
-    if (this.issuerFingerprint !== null) {
-      bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
-      bytes = util.concat(bytes);
-      arr.push(writeSubPacketBody(sub.issuerFingerprint, bytes));
-    }
-
-    return arr;
   }
 
   /**
@@ -773,22 +763,6 @@ export default SignaturePacket;
 function writeSubPacket(type, data) {
   const arr = [];
   arr.push(writeSimpleLength(data.length + 1));
-  arr.push(new Uint8Array([type]));
-  arr.push(data);
-  return util.concat(arr);
-}
-
-/**
- * Creates a string representation of the body of a sub-packet (without length)
- * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC4880 5.2.3.1}
- * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 5.2.3.2}
- * @param {Integer} type - Subpacket signature type.
- * @param {String} data - Data to be included
- * @returns {Uint8Array} A string-representation of a sub signature packet.
- * @private
- */
-function writeSubPacketBody(type, data) {
-  const arr = [];
   arr.push(new Uint8Array([type]));
   arr.push(data);
   return util.concat(arr);
