@@ -153,7 +153,7 @@ export async function readPackets(input, callback) {
         writer = stream.getWriter(arrayStream);
         packet = arrayStream;
       } else {
-        const transform = new stream.TransformStream();
+        const transform = new TransformStream();
         writer = stream.getWriter(transform.writable);
         packet = transform.readable;
       }

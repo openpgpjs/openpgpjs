@@ -26,6 +26,10 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
   }
 };
 
+(typeof window !== 'undefined' ? window : global).loadStreamsPolyfill = function() {
+  require('web-streams-polyfill/es2018'); // eslint-disable-line import/no-unassigned-import
+};
+
 describe('Unit Tests', function () {
 
   openpgp.config.s2kIterationCountByte = 0;

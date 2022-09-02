@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-/* globals tryTests: true */
+/* globals tryTests: true, loadStreamsPolyfill */
 const spy = require('sinon/lib/sinon/spy');
 const stream = require('@openpgp/web-stream-tools');
 const { use: chaiUse, expect } = require('chai');
@@ -2869,20 +2869,20 @@ aOU=
             throw new Error('Was not able to successfully modify checksum');
           }
           const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
-          await stream.loadStreamsPonyfill();
+          loadStreamsPolyfill();
           try {
             for (const allowStreaming of [true, false]) {
               openpgp.config.allowUnauthenticatedStream = allowStreaming;
               await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
                 await Promise.all([
                   encrypted,
-                  new stream.ReadableStream({
+                  new ReadableStream({
                     start(controller) {
                       controller.enqueue(encrypted);
                       controller.close();
                     }
                   }),
-                  new stream.ReadableStream({
+                  new ReadableStream({
                     start() {
                       this.remaining = encrypted.split('\n');
                     },
@@ -3134,7 +3134,7 @@ aOU=
             const plaintext = [];
             let i = 0;
             const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
-            await stream.loadStreamsPonyfill();
+            loadStreamsPolyfill();
             const ReadableStream = useNativeStream ? global.ReadableStream : stream.ReadableStream;
             const data = new ReadableStream({
               pull(controller) {
@@ -3491,7 +3491,7 @@ aOU=
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
           verifyOpt.message = await openpgp.readMessage({
             binaryMessage: stream[
-              global.ReadableStream ? (global.ReadableStream === stream.ReadableStream ? 'toStream' : 'toNativeReadable') : 'webToNode'
+              global.ReadableStream ? 'toStream' : 'webToNode'
             ](packets.write())
           });
           return openpgp.verify(verifyOpt);
