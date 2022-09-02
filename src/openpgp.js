@@ -663,7 +663,7 @@ function toArray(param) {
 /**
  * Convert data to or from Stream
  * @param {Object} data - the data to convert
- * @param {'web'|'ponyfill'|'node'|false} streaming - Whether to return a ReadableStream, and of what type
+ * @param {'web'|'node'|false} streaming - Whether to return a ReadableStream, and of what type
  * @param {'utf8'|'binary'} [encoding] - How to return data in Node Readable streams
  * @returns {Promise<Object>} The data in the respective format.
  * @async
@@ -678,9 +678,6 @@ async function convertStream(data, streaming, encoding = 'utf8') {
     data = stream.webToNode(data);
     if (encoding !== 'binary') data.setEncoding(encoding);
     return data;
-  }
-  if (streaming === 'web' && streamType === 'ponyfill') {
-    return stream.toNativeReadable(data);
   }
   return data;
 }

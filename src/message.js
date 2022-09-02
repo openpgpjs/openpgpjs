@@ -877,10 +877,6 @@ export async function readMessage({ armoredMessage, binaryMessage, config, ...re
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   const streamType = util.isStream(input);
-  if (streamType) {
-    await stream.loadStreamsPonyfill();
-    input = stream.toStream(input);
-  }
   if (armoredMessage) {
     const { type, data } = await unarmor(input, config);
     if (type !== enums.armor.message) {
@@ -907,7 +903,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config, ...re
  * @static
  */
 export async function createMessage({ text, binary, filename, date = new Date(), format = text !== undefined ? 'utf8' : 'binary', ...rest }) {
-  let input = text !== undefined ? text : binary;
+  const input = text !== undefined ? text : binary;
   if (input === undefined) {
     throw new Error('createMessage: must pass options object containing `text` or `binary`');
   }
@@ -920,10 +916,6 @@ export async function createMessage({ text, binary, filename, date = new Date(),
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   const streamType = util.isStream(input);
-  if (streamType) {
-    await stream.loadStreamsPonyfill();
-    input = stream.toStream(input);
-  }
   const literalDataPacket = new LiteralDataPacket(date);
   if (text !== undefined) {
     literalDataPacket.setText(input, enums.write(enums.literal, format));
