@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-/* globals tryTests: true */
+/* globals tryTests */
 const { use: chaiUse, expect } = require('chai');
 chaiUse(require('chai-as-promised'));
 

@@ -1,4 +1,4 @@
-/* globals tryTests: true */
+/* globals tryTests */
 
 const { expect } = require('chai');
 
