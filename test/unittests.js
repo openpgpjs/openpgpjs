@@ -2,15 +2,15 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
 
 (typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
 
-(typeof window !== 'undefined' ? window : global).resolves = function(val) {
+globalThis.resolves = function(val) {
   return new Promise(function(res) { res(val); });
 };
 
-(typeof window !== 'undefined' ? window : global).rejects = function(val) {
+globalThis.rejects = function(val) {
   return new Promise(function(res, rej) { rej(val); });
 };
 
-(typeof window !== 'undefined' ? window : global).tryTests = function(name, tests, options) {
+globalThis.tryTests = function(name, tests, options) {
   if (options.if) {
     describe(name, function() {
       if (options.before) { before(options.before); }
@@ -26,7 +26,7 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
   }
 };
 
-(typeof window !== 'undefined' ? window : global).loadStreamsPolyfill = function() {
+globalThis.loadStreamsPolyfill = function() {
   require('web-streams-polyfill/es2018'); // eslint-disable-line import/no-unassigned-import
 };
 
