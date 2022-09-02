@@ -152,7 +152,7 @@ class AEADEncryptedDataPacket {
     const iv = this.iv;
     return stream.transformPair(data, async (readable, writable) => {
       if (util.isStream(readable) !== 'array') {
-        const buffer = new stream.TransformStream({}, {
+        const buffer = new TransformStream({}, {
           highWaterMark: util.getHardwareConcurrency() * 2 ** (this.chunkSizeByte + 6),
           size: array => array.length
         });
