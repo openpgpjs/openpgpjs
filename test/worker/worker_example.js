@@ -1,4 +1,4 @@
-/* globals openpgp: true */
+/* globals openpgp */
 
 importScripts('../../dist/openpgp.js');
 

@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-/* globals tryTests: true, loadStreamsPolyfill */
+/* globals tryTests, loadStreamsPolyfill */
 const stream = require('@openpgp/web-stream-tools');
 const { use: chaiUse, expect } = require('chai');
 chaiUse(require('chai-as-promised'));
