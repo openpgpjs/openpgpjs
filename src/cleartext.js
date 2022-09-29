@@ -65,13 +65,15 @@ export class CleartextMessage {
    * @param {Date} [date] - The creation time of the signature that should be created
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
+   * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
    * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
    * @async
    */
-  async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig, plugin = null) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
-    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, config));
+    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, true, config, plugin));
     return new CleartextMessage(this.text, newSignature);
   }
 

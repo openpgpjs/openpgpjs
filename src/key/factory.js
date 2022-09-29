@@ -62,15 +62,18 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @static
  * @private
  */
-export async function generate(options, config) {
+export async function generate(options, config, plugin) {
   options.sign = true; // primary key is always a signing key
   options = helper.sanitizeKeyOptions(options);
   options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));
-  let promises = [helper.generateSecretKey(options, config)];
-  promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config)));
-  const packets = await Promise.all(promises);
 
-  const key = await wrapKeyObject(packets[0], packets.slice(1), options, config);
+  // let promises = [helper.generateSecretKey(options, config, plugin)];
+  // run key generation in sequence (needed for proper key order while importing through plugin)
+  const main_packet = await helper.generateSecretKey(options, config, plugin);
+  const promises = [].concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config, plugin)));
+  const packets = [main_packet].concat(await Promise.all(promises));
+
+  const key = await wrapKeyObject(packets[0], packets.slice(1), options, config, plugin);
   const revocationCertificate = await key.getRevocationCertificate(options.date, config);
   key.revocationSignatures = [];
   return { key, revocationCertificate };
@@ -151,9 +154,11 @@ export async function reformat(options, config) {
  * @param {SecretSubkeyPacket} secretSubkeyPackets
  * @param {Object} options
  * @param {Object} config - Full configuration
+ * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
+ * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  * @returns {PrivateKey}
  */
-async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config) {
+async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config, plugin = null) {
   // set passphrase protection
   if (options.passphrase) {
     await secretKeyPacket.encrypt(options.passphrase, config);
@@ -181,6 +186,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     const signaturePacket = new SignaturePacket();
     signaturePacket.signatureType = enums.signature.certGeneric;
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
+
     signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
     signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
     signaturePacket.preferredSymmetricAlgorithms = createPreferredAlgos([
@@ -221,7 +227,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date);
+    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date, false, plugin);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {
@@ -233,7 +239,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];
-    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config);
+    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config, plugin);
     return { secretSubkeyPacket, subkeySignaturePacket };
   })).then(packets => {
     packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
@@ -244,12 +250,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   // Add revocation signature packet for creating a revocation certificate.
   // This packet should be removed before returning the key.
+
+
   const dataToSign = { key: secretKeyPacket };
   packetlist.push(await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, {
     signatureType: enums.signature.keyRevocation,
     reasonForRevocationFlag: enums.reasonForRevocation.noReason,
     reasonForRevocationString: ''
-  }, options.date, undefined, undefined, config));
+  }, options.date, undefined, undefined, config, plugin));
 
   if (options.passphrase) {
     secretKeyPacket.clearPrivateParams();

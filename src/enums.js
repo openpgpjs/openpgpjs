@@ -12,6 +12,7 @@ export default {
    * @readonly
    */
   curve: {
+    'webcrypt_p256':                'webcrypt_p256',
     /** NIST P-256 Curve */
     'p256':                'p256',
     'P-256':               'p256',

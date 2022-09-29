@@ -25,9 +25,9 @@ import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
-import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
+import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
 import OID from '../../../type/oid';
-import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
+import { getIndutnyCurve, keyFromPrivate, keyFromPublic } from './indutnyKey';
 import { UnsupportedError } from '../../../packet/packet';
 
 const webCrypto = util.getWebCrypto();
@@ -53,6 +53,16 @@ const nodeCurves = nodeCrypto ? {
 
 const curves = {
   p256: {
+    oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
+    keyType: enums.publicKey.ecdsa,
+    hash: enums.hash.sha256,
+    cipher: enums.symmetric.aes128,
+    node: nodeCurves.p256,
+    web: webCurves.p256,
+    payloadSize: 32,
+    sharedSize: 256
+  },
+  webcrypt_p256: {
     oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
@@ -169,8 +179,16 @@ class Curve {
     }
   }
 
-  async genKeyPair() {
+  async genKeyPair(plugin) {
     let keyPair;
+    if (this.name === 'webcrypt_p256'){
+      try {
+        return plugin.generateKeyPair(this);
+      } catch (err) {
+        util.printDebugError('Nitrokey WebCrypt failed generating ec key ' + err.message);
+        throw err;
+      }
+    }
     switch (this.type) {
       case 'web':
         try {
@@ -205,13 +223,20 @@ class Curve {
   }
 }
 
-async function generate(curve) {
+async function generate(curve, plugin) {
   const BigInteger = await util.getBigInteger();
 
   curve = new Curve(curve);
-  const keyPair = await curve.genKeyPair();
-  const Q = new BigInteger(keyPair.publicKey).toUint8Array();
-  const secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
+  const keyPair = await curve.genKeyPair(plugin);
+  let Q;
+  let secret;
+  if (curve.name === 'webcrypt_p256') { //web
+    Q = keyPair.publicKey;
+    secret = keyPair.privateKey;
+  } else {
+    Q = new BigInteger(keyPair.publicKey).toUint8Array();
+    secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
+  }
   return {
     oid: curve.oid,
     Q,

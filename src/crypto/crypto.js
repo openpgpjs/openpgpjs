@@ -79,11 +79,23 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
  * @param {Uint8Array} fingerprint - Recipient fingerprint
  * @param {Uint8Array} [randomPayload] - Data to return on decryption error, instead of throwing
  *                                    (needed for constant-time processing in RSA and ElGamal)
+ * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
+ * @param {function} plugin.decrypt - Async function for decrypting data (only for RSA)
+ * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
  * @returns {Promise<Uint8Array>} Decrypted data.
  * @throws {Error} on sensitive decryption error, unless `randomPayload` is given
  * @async
  */
-export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload) {
+export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload, plugin = null) {
+  // if (plugin !== null) {
+  //   // FIXME take ecdh params for now, but work on the Params groups later
+  //   const { oid, Q, kdfParams } = publicKeyParams;
+  //   const { d } = privateKeyParams;
+  //   const { V, C } = sessionKeyParams;
+  //   return plugin.decrypt(
+  //     oid, kdfParams, V, C.data, Q, d, fingerprint);
+  // }
+
   switch (algo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt: {
@@ -103,7 +115,7 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       const { d } = privateKeyParams;
       const { V, C } = sessionKeyParams;
       return publicKey.elliptic.ecdh.decrypt(
-        oid, kdfParams, V, C.data, Q, d, fingerprint);
+        oid, kdfParams, V, C.data, Q, d, fingerprint, plugin);
     }
     default:
       throw new Error('Unknown public key encryption algorithm.');
@@ -265,7 +277,7 @@ export function serializeParams(algo, params) {
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
-export function generateParams(algo, bits, oid) {
+export function generateParams(algo, bits, oid, plugin) {
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
@@ -276,17 +288,17 @@ export function generateParams(algo, bits, oid) {
       }));
     }
     case enums.publicKey.ecdsa:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+      return publicKey.elliptic.generate(oid, plugin).then(({ oid, Q, secret }) => ({
         privateParams: { d: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.eddsa:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+      return publicKey.elliptic.generate(oid, plugin).then(({ oid, Q, secret }) => ({
         privateParams: { seed: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.ecdh:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret, hash, cipher }) => ({
+      return publicKey.elliptic.generate(oid, plugin).then(({ oid, Q, secret, hash, cipher }) => ({
         privateParams: { d: secret },
         publicParams: {
           oid: new OID(oid),

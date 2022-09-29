@@ -4,32 +4,34 @@
  * @private
  */
 
-import {
-  PublicKeyPacket,
-  PublicSubkeyPacket,
-  SecretKeyPacket,
-  SecretSubkeyPacket,
-  SignaturePacket
-} from '../packet';
+import { PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, SignaturePacket } from '../packet';
 import enums from '../enums';
 import crypto from '../crypto';
 import util from '../util';
 import defaultConfig from '../config';
 
-export async function generateSecretSubkey(options, config) {
+export async function generateSecretSubkey(options, config, plugin = null) {
+  if (plugin !== null) {
+    plugin.type = 'sub';
+    plugin.dataSubkey = { options, config };
+  }
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, plugin);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
 }
 
-export async function generateSecretKey(options, config) {
+export async function generateSecretKey(options, config, plugin = null) {
+  if (plugin !== null) {
+    plugin.type = 'main';
+    plugin.dataMain = { options, config };
+  }
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, plugin);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }
@@ -83,8 +85,10 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
  * @param {SecretKeyPacket} primaryKey - Primary key packet
  * @param {Object} options
  * @param {Object} config - Full configuration
+ * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
+ * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  */
-export async function createBindingSignature(subkey, primaryKey, options, config) {
+export async function createBindingSignature(subkey, primaryKey, options, config, plugin = null) {
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
@@ -104,7 +108,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
     subkeySignaturePacket.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date);
+  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date, false, plugin);
   return subkeySignaturePacket;
 }
 
@@ -194,9 +198,11 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  * @param {Object} [userID] - User ID
  * @param {Object} [detached] - Whether to create a detached signature packet
  * @param {Object} config - full configuration
+ * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
+ * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  * @returns {Promise<SignaturePacket>} Signature packet.
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, config) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, config, plugin = null) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
@@ -207,7 +213,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
-  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached, plugin);
   return signaturePacket;
 }
 
