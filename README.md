@@ -640,6 +640,204 @@ Using the private key:
 })();
 ```
 
+#### Nitrokey WebCrypt Support
+
+A plugin interface for the private keys' operations is available, which allows to increase the security by storing the
+private key on another medium than browser or PC, thus providing much greater, if not complete protection from the 
+secret material leaks. Additionally, this can increase usage control by introducing user confirmation 
+(e.g. through a touch button) for the private key operations.
+
+The plugin interface is realized by a plugin object containing callbacks to the defined private key operations: sign, decrypt,
+agree, generateKeyPair. The detailed description of each is provided in the below example. The plugin object is then passed
+to all related main OpenPGPjs operations. If that's omitted, the standard OpenPGPjs behavior will be executed.
+
+In the following implementation the host of the private key operations will be a Nitrokey WebCrypt device 
+(e.g. Nitrokey 3). Nitrokey WebCrypt uses Webauthn standard to create a communication channel with the security key
+handling it, which by design should allow to run it on any modern browser and platform.
+At the moment it is tested only in the Chrome-based browsers. Support for the Node.js requires additional implementation.
+More details at:
+- https://github.com/Nitrokey/nitrokey-webcrypt
+- https://github.com/Nitrokey/nitrokey-webcrypt-js
+
+```javascript
+(async () => {
+  const openpgp = require('openpgp');
+  const {
+    hexStringToByte,
+    WEBCRYPT_LOGIN,
+    WEBCRYPT_OPENPGP_DECRYPT,
+    WEBCRYPT_OPENPGP_SIGN,
+    WEBCRYPT_OPENPGP_INFO,
+    WEBCRYPT_OPENPGP_IMPORT
+  } = webcrypt;
+
+  const statusCallback = s => (console.log(s));
+
+  const webcrypt_plugin = {
+    /**
+     * A callback to derive an ephemereal key for the ECDH. 
+     * It takes all available parameters at the call site for the future use.
+     * Used at @link module:publicKey.elliptic.ecdh.genPrivateEphemeralKey
+     * @param {Curve} curve - Elliptic curve object
+     * @param {Uint8Array} V - Public part of ephemeral key
+     * @param {Uint8Array} Q - Recipient public key
+     * @param {Uint8Array} d - Recipient private key
+     * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
+     * @async
+     */
+    agree: async function (curve, V, Q, d) {
+      const agreed_secret = await WEBCRYPT_OPENPGP_DECRYPT(statusCallback, V);
+      return { secretKey: d, sharedKey: agreed_secret };
+    },
+
+    /**
+     * A callback to run data decryption using the private key stored on the Nitrokey WebCrypt
+     * Unused currently. Reserved for the future use.
+     * Used at @link module:crypto/crypto.publicKeyDecrypt
+     * @param {module:type/oid} oid - Elliptic curve object identifier
+     * @param {module:type/kdf_params} kdfParams - KDF params including cipher and algorithm to use
+     * @param {Uint8Array} Cdata - Ciphertext
+     * @param {Uint8Array} V - Public part of ephemeral key
+     * @param {Uint8Array} Q - Recipient public key
+     * @param {Uint8Array} d - Recipient private key
+     * @param {Uint8Array} fingerprint - Recipient fingerprint
+     * @returns {Promise<Uint8Array>} Decrypted data.
+     * @async
+     */
+    decrypt: async function (oid, kdfParams, V, Cdata, Q, d, fingerprint) {
+    },
+    
+    /**
+     * A callback to execute signing operation using the private key stored on the Nitrokey Webcrypt
+     * Used at @link module:crypto.signature.sign
+     * @param {module:type/oid} oid - Elliptic curve object identifier
+     * @param {Uint8Array} Q - Recipient public key
+     * @param {Uint8Array} d - Recipient private key
+     * @param {module:enums.publicKey} algo - Public key algorithm
+     * @param {module:enums.hash} hashAlgo - Hash algorithm
+     * @param {Uint8Array} data - Data to be signed
+     * @param {Uint8Array} hashed - The hashed data
+     * @returns {Promise<Object>} Signature - Object containing named signature parameters.
+     * @async
+     */
+    sign: async function (oid, hashAlgo, data, Q, d, hashed) {
+      const res = await WEBCRYPT_OPENPGP_SIGN(statusCallback, data);
+      const resb = hexStringToByte(res);
+      return { r: resb.slice(0, 32), s: resb.slice(32, 64) };
+    },
+    
+    /**
+     * A key generation callback, used to wrap raw public key material into OpenPGPjs key data structures. 
+     * Returns dummy data for the private key (reserved for the future use).
+     * Used at @link module:crypto.public_key.elliptic.curves.genKeyPair
+     * @param keyType - Curve name and parameters
+     * @returns {Promise<{privateKey: Uint8Array, publicKey: Uint8Array}>}
+     * @async
+     */
+    generateKeyPair: async function (keyType) {
+      // This callback implementation uses the cached public keys information from the parent object, thus
+      // requires calling init() before using.
+      const selected_pk = this.type === 'main' ? this.public_sign : this.public_encr;
+      return { publicKey: selected_pk, privateKey: new Uint8Array(32).fill(42) };
+    },
+
+    // This is the end of the obligatory callbacks definition. Below are helper properties and functions.
+    
+    // This property is for the internal use. To be removed in the future.
+    type: 'none',
+
+    // This is a helper function, which returns default date in case the OpenPGP structure on the Nitrokey WebCrypt 
+    // device was not initialized before. The "2019.01.01" date is the default WebCrypt date for the created keys. 
+    // Specific to the current callbacks implementation.
+    date: function () {
+      return this.webcrypt_date ? new Date(this.webcrypt_date) : new Date(2019, 1, 1);
+    },
+
+    // This is a helper function to initialize plugin's properties. Specific to the current callbacks implementation. 
+    init: async function () {
+      if (this.public_sign === undefined) {
+        const PIN = '12345678';
+        await WEBCRYPT_LOGIN(statusCallback, { PIN });
+        const openpgp_info = await WEBCRYPT_OPENPGP_INFO(statusCallback);
+        this.public_encr = openpgp_info.encr_pubkey;
+        this.public_sign = openpgp_info.sign_pubkey;
+        this.webcrypt_date = openpgp_info.date;
+      }
+    }
+  };
+
+
+  // Get the public keys data from the Nitrokey WebCrypt device and cache it for the further use.
+  // Call specific only for these callbacks implementation.
+  await webcrypt_plugin.init();
+
+  // Key import from the Nitrokey Webcrypt to OpenPGPjs structures.
+  // This imported keypair uses P256, and can be used with other OpenPGPjs functions as usual, 
+  // provided that the plugin is passed in the following calls' parameters.
+  const { privateKey: webcrypt_privateKey, publicKey: webcrypt_publicKey } = await openpgp.generateKey({
+    curve: 'webcrypt_p256',
+    userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }],
+    format: 'object',
+    date: webcrypt_plugin.date(),
+    plugin: webcrypt_plugin
+  });
+  console.log({ webcrypt_privateKey, webcrypt_publicKey });
+  
+  // Encryption/Decryption using the imported Nitrokey Webcrypt keys.
+  // The only difference with the regular usage is the need to provide `plugin` callbacks object.
+  const plaintext = 'Hello, World!';
+  const encrypted = await openpgp.encrypt({
+    message: await openpgp.createMessage({ text: plaintext }),
+    encryptionKeys: webcrypt_publicKey,
+    format: 'binary'
+  });
+  const { data: decrypted, signatures } = await openpgp.decrypt({
+    message: await openpgp.readMessage({
+      binaryMessage: encrypted
+    }),
+    decryptionKeys: webcrypt_privateKey,
+    plugin: webcrypt_plugin
+  });
+
+  // Detached signature and verification using the imported Nitrokey Webcrypt keys.
+  const message_to_sign = await openpgp.createMessage({ text: plaintext });
+  const detachedSignature = await openpgp.sign({
+    message: message_to_sign,
+    signingKeys: webcrypt_privateKey,
+    plugin: webcrypt_plugin,
+    detached: true
+  });
+  const verificationResult = await openpgp.verify({
+    message_to_sign,
+    signature: await openpgp.readSignature({
+      armoredSignature: detachedSignature
+    }),
+    verificationKeys: webcrypt_publicKey
+  });
+  const { verified, keyID } = verificationResult.signatures[0];
+  await verified; // throws on invalid signature
+
+  // OpenPGPjs-created key import to Nitrokey WebCrypt storage, for the later import and usage.
+  const { privateKey, publicKey } = await openpgp.generateKey({
+    curve: 'p256',
+    userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }],
+    format: 'object'
+  });
+  await WEBCRYPT_OPENPGP_IMPORT(statusCallback, {
+    sign_privkey: privateKey.keyPacket.privateParams.d,
+    encr_privkey: privateKey.subkeys[0].keyPacket.privateParams.d,
+    date: privateKey.getCreationTime()
+  });
+  const webcrypt_openpgp_keys_current = await WEBCRYPT_OPENPGP_INFO(statusCallback);
+
+
+})();
+
+
+```
+
+See`./test/general/webcrypt.js` for the complete usage example.
+
 ### Documentation
 
 The full documentation is available at [openpgpjs.org](https://docs.openpgpjs.org/).
