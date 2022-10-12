@@ -3629,28 +3629,33 @@ VYGdb3eNlV8CfoEC
       expect(newKey.subkeys[total].getAlgorithmInfo().bits).to.equal(Math.max(key.getAlgorithmInfo().bits, openpgp.config.minRSABits));
     });
 
-    it('should throw when trying to add a new default subkey to an ecc key that uses a blacklisted curve (brainpool)', async function() {
-      const armoredBrainpoolKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+    it('should throw when trying to add a new default subkey to an ecc key that uses a blacklisted curve (secp256k1)', async function() {
+      const armoredSecp256k1Key = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
-xXgEYW7c5RMJKyQDAwIIAQEHAgMEhb5YqML5gwfkorwV49zIfNJYqNiog+IL
-RDSKaIbGMzNnzLeNgwxKe1/kKJMFxy0crCRegNbV9ZC0uF7UO3t/0gAA/3MH
-gGJRuuMIHv5S5brj0AankEMSsY8w8T134O/NGm+eEXvNDnRlc3QgPGFAYi5j
-b20+wowEEBMIAB0FAmFu3OUECwkHCAMVCAoEFgACAQIZAQIbAwIeAQAhCRCh
-WWHcIlm4OxYhBCHAUhC7Zo79nXseR6FZYdwiWbg7KMoA/iMNJ+NX0fkc3ohL
-4ZTxg5syNJwV2lleynzFOLpJ0a9RAP9b1Nt/eObuezUT/uic62ap8c8nycpN
-OJbyn4p7uIjc1w==
-=64W/
+xXQEYxdOmhMFK4EEAAoCAwQ6I+bX7cpqyNxutHPNc8V6vTOPhjLfgjkGDkM4
+/KcZeV4s/GFBzdBLMtIysvhvdRMxGVPVMM7G3FEpwC9E1WvuAAEAxvej4FiH
+9nYJVM31f+rVPEprGJsfTmVRLtXe1PcwOzYQ/c0IVGVzdCBLZXnCjAQQEwgA
+PgUCYxdOmgQLCQcICRCoxLkn4DOwYgMVCAoEFgACAQIZAQIbAwIeARYhBN37
+7DwnrLsb5TBV2ajEuSfgM7BiAAAv0QD/YUjjQ9GK5F5UQRnN9C+5iqg+FVlv
+Eei69w0jZHn97/gBAL7d1WmeOFqWEX06caukSHGrF3n86iVCyMqtw7Cq8Xv8
+x3gEYxdOmhIFK4EEAAoCAwR361TPbl1Wzediq7fSAtTknv27qH2C47KcfAtt
++ngpp0DWfOaH507VcRpFA63wtRS1zLzJ6hY3yN/yuPm1AhbiAwEIBwAA/At9
+ZrGc1PptXDDTUvL7scEZMlEDwXS8E4E27YIlsXkeELjCeAQYEwgAKgUCYxdO
+mgkQqMS5J+AzsGICGwwWIQTd++w8J6y7G+UwVdmoxLkn4DOwYgAA2IoBAL9o
+iBR1+Lfy6CES1sdCQC/Fy4p9SwHJ4D8a2t2J4Lr2AQCVjv7SWh70i3IAHddJ
+XvmoLueOOShu01X/kaylMqaT8w==
+=Dq/g
 -----END PGP PRIVATE KEY BLOCK-----`;
-      const key = await openpgp.readKey({ armoredKey: armoredBrainpoolKey });
-      expect(key.subkeys).to.have.length(0);
-      await expect(key.addSubkey()).to.be.rejectedWith(/Support for ecdh keys using curve brainpoolP256r1 is disabled/);
-      expect(key.subkeys).to.have.length(0);
+      const key = await openpgp.readKey({ armoredKey: armoredSecp256k1Key });
+      expect(key.subkeys).to.have.length(1);
+      await expect(key.addSubkey()).to.be.rejectedWith(/Support for ecdh keys using curve secp256k1 is disabled/);
+      expect(key.subkeys).to.have.length(1);
 
-      // explicitly allow brainpool curve
+      // explicitly allow secp256k1 curve
       const config = { rejectCurves: new Set() };
       const newKey = await key.addSubkey({ config });
       expect(newKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
-      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('brainpoolP256r1');
+      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('secp256k1');
     });
 
     it('should throw when trying to encrypt a subkey separately from key', async function() {
