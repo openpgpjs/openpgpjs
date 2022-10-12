@@ -143,9 +143,11 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
     });
 
     it('Check cache', async function () {
-      console.log({ webcrypt_privateKey, webcrypt_publicKey });
+      console.log('Check cache', { webcrypt_privateKey, webcrypt_publicKey });
       expect(webcrypt_privateKey).to.be.ok;
       expect(webcrypt_publicKey).to.be.ok;
+      expect(webcrypt_privateKey.keyPacket.isStoredInHardware()).to.be.true;
+      expect(await webcrypt_privateKey.validate()).to.not.throw;
     });
 
 
