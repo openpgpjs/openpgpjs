@@ -238,6 +238,14 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
+   * Check whether this is a gnu-stub key
+   * @returns {Boolean}
+   */
+  isStoredInHardware() {
+    return !!(this.s2k && this.s2k.type === 'gnu-divert-to-card');
+  }
+
+  /**
    * Remove private key material, converting the key to a dummy one.
    * The resulting key cannot be used for signing/decrypting but can still verify signatures.
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -255,6 +263,28 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k.algorithm = 0;
     this.s2k.c = 0;
     this.s2k.type = 'gnu-dummy';
+    this.s2kUsage = 254;
+    this.symmetric = enums.symmetric.aes256;
+  }
+
+  /**
+   * Remove private key material, converting the key to a gnu-divert-to-card one.
+   * The resulting key refers to hardware for the private key operations.
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   */
+  makeStub(config = defaultConfig) {
+    if (this.isStoredInHardware()) {
+      return;
+    }
+    // if (this.isDecrypted()) {
+    //   this.clearPrivateParams();
+    // }
+    this.isEncrypted = null;
+    this.keyMaterial = null;
+    this.s2k = new S2K(config);
+    this.s2k.algorithm = 0;
+    this.s2k.c = 0;
+    this.s2k.type = 'gnu-divert-to-card';
     this.s2kUsage = 254;
     this.symmetric = enums.symmetric.aes256;
   }
