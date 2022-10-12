@@ -276,9 +276,6 @@ class SecretKeyPacket extends PublicKeyPacket {
     if (this.isStoredInHardware()) {
       return;
     }
-    // if (this.isDecrypted()) {
-    //   this.clearPrivateParams();
-    // }
     this.isEncrypted = null;
     this.keyMaterial = null;
     this.s2k = new S2K(config);
@@ -428,6 +425,9 @@ class SecretKeyPacket extends PublicKeyPacket {
    */
   async generate(bits, curve, plugin_with_data) {
     const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, plugin_with_data);
+    if (plugin_with_data) {
+      this.makeStub();
+    }
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;
