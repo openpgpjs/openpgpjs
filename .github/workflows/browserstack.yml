@@ -13,14 +13,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: softprops/turnstyle@v1
       with:
         poll-interval-seconds: 30
         abort-after-seconds: 900
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - uses: actions/setup-node@v1
+    - uses: actions/setup-node@v2
     - run: npm ci
     - run: npm run build-test
     - run: npm run browserstack
@@ -33,14 +33,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: softprops/turnstyle@v1
       with:
         poll-interval-seconds: 30
         abort-after-seconds: 900
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - uses: actions/setup-node@v1
+    - uses: actions/setup-node@v2
     - run: npm ci
     - run: npm run build-test --lightweight
     - run: npm run browserstack
