@@ -66,12 +66,9 @@ export async function generate(options, config, plugin) {
   options.sign = true; // primary key is always a signing key
   options = helper.sanitizeKeyOptions(options);
   options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));
-
-  // let promises = [helper.generateSecretKey(options, config, plugin)];
-  // run key generation in sequence (needed for proper key order while importing through plugin)
-  const main_packet = await helper.generateSecretKey(options, config, plugin);
-  const promises = [].concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config, plugin)));
-  const packets = [main_packet].concat(await Promise.all(promises));
+  let promises = [helper.generateSecretKey(options, config, plugin)];
+  promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config, plugin)));
+  const packets = await Promise.all(promises);
 
   const key = await wrapKeyObject(packets[0], packets.slice(1), options, config, plugin);
   const revocationCertificate = await key.getRevocationCertificate(options.date, config);

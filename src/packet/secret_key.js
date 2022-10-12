@@ -393,8 +393,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
   }
 
-  async generate(bits, curve, plugin) {
-    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, plugin);
+  /**
+   * @param {{plugin: {generate: function({ algorithmName, curveName, rsaBits }):Uint8Array}, algo: number}} [plugin_with_data]
+   */
+  async generate(bits, curve, plugin_with_data) {
+    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, plugin_with_data);
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;

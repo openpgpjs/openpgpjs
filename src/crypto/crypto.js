@@ -274,10 +274,14 @@ export function serializeParams(algo, params) {
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Integer} bits - Bit length for RSA keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
+ * @param {{plugin: {generate: CallableFunction}, algo: number}} [plugin_with_data]
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
-export function generateParams(algo, bits, oid, plugin) {
+export function generateParams(algo, bits, oid, plugin_with_data = null) {
+  if (plugin_with_data) {
+    plugin_with_data.algo = algo;
+  }
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
@@ -288,17 +292,17 @@ export function generateParams(algo, bits, oid, plugin) {
       }));
     }
     case enums.publicKey.ecdsa:
-      return publicKey.elliptic.generate(oid, plugin).then(({ oid, Q, secret }) => ({
+      return publicKey.elliptic.generate(oid, plugin_with_data).then(({ oid, Q, secret }) => ({
         privateParams: { d: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.eddsa:
-      return publicKey.elliptic.generate(oid, plugin).then(({ oid, Q, secret }) => ({
+      return publicKey.elliptic.generate(oid, plugin_with_data).then(({ oid, Q, secret }) => ({
         privateParams: { seed: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.ecdh:
-      return publicKey.elliptic.generate(oid, plugin).then(({ oid, Q, secret, hash, cipher }) => ({
+      return publicKey.elliptic.generate(oid, plugin_with_data).then(({ oid, Q, secret, hash, cipher }) => ({
         privateParams: { d: secret },
         publicParams: {
           oid: new OID(oid),

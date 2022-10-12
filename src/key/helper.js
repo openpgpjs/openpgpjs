@@ -11,27 +11,31 @@ import util from '../util';
 import defaultConfig from '../config';
 
 export async function generateSecretSubkey(options, config, plugin = null) {
-  if (plugin !== null) {
-    plugin.type = 'sub';
-    plugin.dataSubkey = { options, config };
+  let plugin_with_data;
+  if (plugin) {
+    plugin_with_data = {
+      plugin: plugin
+    };
   }
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve, plugin);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, plugin_with_data);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
 }
 
 export async function generateSecretKey(options, config, plugin = null) {
-  if (plugin !== null) {
-    plugin.type = 'main';
-    plugin.dataMain = { options, config };
+  let plugin_with_data;
+  if (plugin) {
+    plugin_with_data = {
+      plugin: plugin
+    };
   }
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, plugin);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, plugin_with_data);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }

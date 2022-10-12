@@ -19,9 +19,16 @@ const {
   WEBCRYPT_OPENPGP_DECRYPT,
   WEBCRYPT_OPENPGP_SIGN,
   WEBCRYPT_OPENPGP_INFO,
-  WEBCRYPT_OPENPGP_IMPORT
+  WEBCRYPT_OPENPGP_IMPORT,
+  CommandLoginParams,
+  Webcrypt_Login,
+  WEBCRYPT_LOGIN, Webcrypt_SetPin, CommandSetPinParams
 } = webcrypt;
+const { enums } = openpgp;
 const { expect } = chai;
+
+const WEBCRYPT_DEFAULT_PIN = '12345678';
+
 
 module.exports = () => describe('OpenPGP.js webcrypt public api tests', function () {
 
@@ -32,13 +39,13 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
     const statusCallback = s => (console.log(s));
 
     const plugin = {
-      type: 'none',
       date: function () {
         return this.webcrypt_date ? new Date(this.webcrypt_date) : new Date(2019, 1, 1);
       }, // the default WebCrypt date for the created keys
 
       init: async function () {
         if (this.public_sign === undefined) {
+          await WEBCRYPT_LOGIN(WEBCRYPT_DEFAULT_PIN, statusCallback);
           const res = await WEBCRYPT_OPENPGP_INFO(statusCallback);
           this.public_encr = res.encr_pubkey;
           this.public_sign = res.sign_pubkey;
@@ -51,18 +58,18 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
           }, 'info call results');
         }
       },
-      agree: async function (curve, V, Q, d) {
+      agree: async function ({ curve, V, Q, d }) {
         console.log({ curve, V, Q, d });
         // @returns {Promise<{secretKey, sharedKey}>}
         const agreed_secret = await WEBCRYPT_OPENPGP_DECRYPT(statusCallback, V);
         return { secretKey: d, sharedKey: agreed_secret };
       },
-      decrypt: async function (oid, kdfParams, V, Cdata, Q, d, fingerprint) {
+      decrypt: async function ({ oid, kdfParams, V, Cdata, Q, d, fingerprint }) {
         // unused
         // @returns {Promise<Uint8Array>} Decrypted data.
         console.log({ oid, kdfParams, V, Cdata, Q, d, fingerprint, name: 'decrypt plugin' });
       },
-      sign: async function (oid, hashAlgo, data, Q, d, hashed) {
+      sign: async function ({ oid, hashAlgo, data, Q, d, hashed }) {
         console.log('sign', { oid, hashAlgo, data, Q, d, hashed, plugin: this, name: 'sign' });
         // TODO investigate, why data/message is used for signing and verification, and not the hash
         // TODO investigate, why signatures during key generation and use are not verified
@@ -76,14 +83,25 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         console.log(`Using key for signing: ${Q}`);
         return reso;
       },
-      generateKeyPair: async function (keyType) {
-        console.log({ keyType, name: 'genkey', plugin: this });
+      /**
+       * Function to wrap the hardware keys into a new key
+       *
+       * @param {Object} obj - An object argument for destructuring
+       * @param {enums.publicKey} obj.algorithmName - Type of the algorithm
+       * @param {string} obj.curveName - Curve name
+       * @param {number} obj.rsaBits - RSA key length in bits
+       */
+      generate: async function ({ algorithmName, curveName, rsaBits }) {
+        console.log({ keyType:curveName, name: 'genkey', plugin: this }, { algorithmName, curveName, rsaBits });
         let selected_pk = this.public_sign;
-        if (this.type === 'sub') {
+        if (algorithmName === openpgp.enums.publicKey.ecdh) {
           selected_pk = this.public_encr;
-          console.log(`Selecting subkey: ${selected_pk} for encryption`);
+          console.warn(`Selecting subkey: ${selected_pk} for encryption`);
+        } else if (algorithmName === openpgp.enums.publicKey.ecdsa) {
+          console.warn(`Selecting main: ${selected_pk} for signing`);
         } else {
-          console.log(`Selecting main: ${selected_pk} for signing`);
+          console.error(`Not supported algorithm: ${algorithmName}`);
+          throw new Error(`Not supported algorithm: ${algorithmName}`);
         }
         return { publicKey: selected_pk, privateKey: new Uint8Array(32).fill(42) };
       }
@@ -95,6 +113,8 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       await Webcrypt_FactoryReset(statusCallback);
       const res = await WEBCRYPT_STATUS(statusCallback);
       expect(res.UNLOCKED).to.be.false;
+      await Webcrypt_SetPin(statusCallback, new CommandSetPinParams(WEBCRYPT_DEFAULT_PIN));
+      await Webcrypt_Login(statusCallback, new CommandLoginParams(WEBCRYPT_DEFAULT_PIN));
       expect(res).to.have.any.keys('UNLOCKED', 'VERSION', 'ATTEMPTS');
       console.log('Webcrypt status output, including version', {
         res,
@@ -109,7 +129,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       await plugin.init();
       console.log('test plugin based key generation');
       const { privateKey: lwebcrypt_privateKey, publicKey: lwebcrypt_publicKey } = await openpgp.generateKey({
-        curve: 'webcrypt_p256',
+        curve: 'p256',
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }],
         format: 'object',
         date: plugin.date(),
@@ -206,8 +226,8 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
     });
 
 
-    it('Signing big message webcrypt non-detached', async function () {
-      const clearText = 'Hello, World!'.padEnd(980, '='); // 980, 900, 500 works, 1100 does not
+    it('Signing big message webcrypt non-detached 900', async function () {
+      const clearText = 'Hello, World!'.padEnd(900, '='); // 900, 500 works; 980,1100 does not,
       const unsignedMessage = await openpgp.createCleartextMessage({ text: clearText });
       const cleartextMessage = await openpgp.sign({
         message: unsignedMessage,
@@ -251,7 +271,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       await plugin.init();
 
       const { privateKey: lwebcrypt_privateKey, publicKey: lwebcrypt_publicKey } = await openpgp.generateKey({
-        curve: 'webcrypt_p256',
+        curve: 'p256',
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }],
         format: 'object',
         date: plugin.date(),

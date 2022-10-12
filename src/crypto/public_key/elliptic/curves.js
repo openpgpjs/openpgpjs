@@ -62,16 +62,6 @@ const curves = {
     payloadSize: 32,
     sharedSize: 256
   },
-  webcrypt_p256: {
-    oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
-    keyType: enums.publicKey.ecdsa,
-    hash: enums.hash.sha256,
-    cipher: enums.symmetric.aes128,
-    node: nodeCurves.p256,
-    web: webCurves.p256,
-    payloadSize: 32,
-    sharedSize: 256
-  },
   p384: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
     keyType: enums.publicKey.ecdsa,
@@ -179,15 +169,13 @@ class Curve {
     }
   }
 
-  async genKeyPair(plugin) {
+  /**
+   * @param {{plugin: {generate: CallableFunction}, algo: enums.publicKey}} [plugin_with_data]
+   */
+  async genKeyPair(plugin_with_data = null) {
     let keyPair;
-    if (this.name === 'webcrypt_p256'){
-      try {
-        return plugin.generateKeyPair(this);
-      } catch (err) {
-        util.printDebugError('Nitrokey WebCrypt failed generating ec key ' + err.message);
-        throw err;
-      }
+    if (plugin_with_data){
+      return plugin_with_data.plugin.generate({ algorithmName: plugin_with_data.algo, curveName: this.name, rsaBits: null });
     }
     switch (this.type) {
       case 'web':
@@ -223,20 +211,16 @@ class Curve {
   }
 }
 
-async function generate(curve, plugin) {
+/**
+ * @param {{plugin: {generate: CallableFunction}, algo: number}} [plugin_with_data]
+ */
+async function generate(curve, plugin_with_data = null) {
   const BigInteger = await util.getBigInteger();
 
   curve = new Curve(curve);
-  const keyPair = await curve.genKeyPair(plugin);
-  let Q;
-  let secret;
-  if (curve.name === 'webcrypt_p256') { //web
-    Q = keyPair.publicKey;
-    secret = keyPair.privateKey;
-  } else {
-    Q = new BigInteger(keyPair.publicKey).toUint8Array();
-    secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
-  }
+  const keyPair = await curve.genKeyPair(plugin_with_data);
+  const Q = new BigInteger(keyPair.publicKey).toUint8Array();
+  const secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
   return {
     oid: curve.oid,
     Q,
