@@ -311,9 +311,6 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
  * @param {Signature} [options.signature] - Detached signature for verification
  * @param {Date} [options.date=current date] - Use the given date for verification instead of the current time
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function} plugin.decrypt - Async function for decrypting data (only for RSA)
- * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
  * @returns {Promise<Object>} Object containing decrypted and verified message in the form:
  *
  *     {
@@ -391,8 +388,6 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {Date} [options.date=current date] - Override the creation date of the signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function} plugin.sign - Async function for signing data
  * @returns {Promise<MaybeStream<String|Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
