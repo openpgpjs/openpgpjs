@@ -12,7 +12,7 @@ import defaultConfig from '../config';
 
 export async function generateSecretSubkey(options, config) {
   let plugin_with_data = null;
-  if (config.hardwareKeys) {
+  if (config && config.hardwareKeys) {
     plugin_with_data = {
       plugin: config.hardwareKeys
     };
@@ -27,7 +27,7 @@ export async function generateSecretSubkey(options, config) {
 
 export async function generateSecretKey(options, config) {
   let plugin_with_data = null;
-  if (config.hardwareKeys) {
+  if (config && config.hardwareKeys) {
     plugin_with_data = {
       plugin: config.hardwareKeys
     };
@@ -89,8 +89,6 @@ export function isDataExpired(keyPacket, signature, date = new Date()) {
  * @param {SecretKeyPacket} primaryKey - Primary key packet
  * @param {Object} options
  * @param {Object} config - Full configuration
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  */
 export async function createBindingSignature(subkey, primaryKey, options, config) {
   const dataToSign = {};
@@ -202,13 +200,14 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  * @param {Object} [userID] - User ID
  * @param {Object} [detached] - Whether to create a detached signature packet
  * @param {Object} config - full configuration
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  * @returns {Promise<SignaturePacket>} Signature packet.
  */
 export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, config) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
+  }
+  if (signingKeyPacket.isStoredInHardware() && !config.hardwareKeys) {
+    throw new Error('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
   }
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Signing key is not decrypted.');

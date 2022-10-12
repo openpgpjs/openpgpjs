@@ -103,9 +103,6 @@ export class Message {
    * @param {Array<Object>} [sessionKeys] - Session keys in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
    * @param {Date} [date] - Use the given date for key verification instead of the current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
-   * @param {function} plugin.decrypt - Async function for decrypting data (only for RSA)
-   * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
    * @returns {Promise<Message>} New message with decrypted content.
    * @async
    */
@@ -158,9 +155,6 @@ export class Message {
    * @param {Array<String>} [passwords] - Passwords used to decrypt
    * @param {Date} [date] - Use the given date for key verification, instead of current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
-   * @param {function} plugin.decrypt - Async function for decrypting data (only for RSA)
-   * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
    * @returns {Promise<Array<{
    *   data: Uint8Array,
    *   algorithm: String
@@ -571,8 +565,6 @@ export class Message {
    * @param {Date} [date] - Override the creation time of the signature
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
-   * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
    * @returns {Promise<Signature>} New detached signature of message content.
    * @async
    */
@@ -716,8 +708,6 @@ export class Message {
  * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param {Boolean} [detached] - Whether to create detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  * @returns {Promise<PacketList>} List of signature packets.
  * @async
  * @private

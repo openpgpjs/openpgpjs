@@ -65,8 +65,6 @@ export class CleartextMessage {
    * @param {Date} [date] - The creation time of the signature that should be created
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
-   * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
    * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
    * @async
    */

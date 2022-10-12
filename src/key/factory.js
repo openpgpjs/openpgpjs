@@ -102,6 +102,9 @@ export async function reformat(options, config) {
   if (privateKey.keyPacket.isDummy()) {
     throw new Error('Cannot reformat a gnu-dummy primary key');
   }
+  if (privateKey.keyPacket.isStoredInHardware()) {
+    throw new Error('Cannot reformat a gnu-divert-to-card primary key');
+  }
 
   const isDecrypted = privateKey.getKeys().every(({ keyPacket }) => keyPacket.isDecrypted());
   if (!isDecrypted) {
@@ -151,8 +154,6 @@ export async function reformat(options, config) {
  * @param {SecretSubkeyPacket} secretSubkeyPackets
  * @param {Object} options
  * @param {Object} config - Full configuration
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  * @returns {PrivateKey}
  */
 async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config) {
@@ -236,7 +237,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];
-    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config, config.hardwareKeys);
+    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config);
     return { secretSubkeyPacket, subkeySignaturePacket };
   })).then(packets => {
     packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
@@ -254,7 +255,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signatureType: enums.signature.keyRevocation,
     reasonForRevocationFlag: enums.reasonForRevocation.noReason,
     reasonForRevocationString: ''
-  }, options.date, undefined, undefined, config, config.hardwareKeys));
+  }, options.date, undefined, undefined, config));
 
   if (options.passphrase) {
     secretKeyPacket.clearPrivateParams();

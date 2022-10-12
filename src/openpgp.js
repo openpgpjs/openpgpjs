@@ -338,7 +338,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   try {
-    const decrypted = await message.decrypt(decryptionKeys, passwords, sessionKeys, date, config, config.hardwareKeys);
+    const decrypted = await message.decrypt(decryptionKeys, passwords, sessionKeys, date, config);
     if (!verificationKeys) {
       verificationKeys = [];
     }
@@ -411,9 +411,9 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
   try {
     let signature;
     if (detached) {
-      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config, config.hardwareKeys);
+      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config);
     } else {
-      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config, config.hardwareKeys);
+      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config);
     }
     if (format === 'object') return signature;
 

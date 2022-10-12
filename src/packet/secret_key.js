@@ -297,7 +297,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @async
    */
   async encrypt(passphrase, config = defaultConfig) {
-    if (this.isDummy()) {
+    if (this.isDummy() || this.isStoredInHardware()) {
       return;
     }
 
@@ -343,7 +343,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @async
    */
   async decrypt(passphrase) {
-    if (this.isDummy()) {
+    if (this.isDummy() || this.isStoredInHardware()) {
       return false;
     }
 
@@ -404,6 +404,11 @@ class SecretKeyPacket extends PublicKeyPacket {
       return;
     }
 
+    if (this.isStoredInHardware()) {
+      // do not validate private parts of the gnu-divert-to-card stub
+      return;
+    }
+
     if (!this.isDecrypted()) {
       throw new Error('Key is not decrypted');
     }
@@ -437,7 +442,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Clear private key parameters
    */
   clearPrivateParams() {
-    if (this.isDummy()) {
+    if (this.isDummy() || this.isStoredInHardware()) {
       return;
     }
 
