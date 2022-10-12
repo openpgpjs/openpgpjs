@@ -48,14 +48,12 @@ import { checkKeyRequirements } from './key/helper';
  *                                             default to main key options, except for `sign` parameter that defaults to false, and indicates whether the subkey should sign rather than encrypt
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - format of the output keys
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function} plugin.generate - Async function for returning private key data
  * @returns {Promise<Object>} The generated key object in the form:
  *                                     { privateKey:PrivateKey|Uint8Array|String, publicKey:PublicKey|Uint8Array|String, revocationCertificate:String }
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase, type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, plugin = null, ...rest }) {
+export async function generateKey({ userIDs = [], passphrase, type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
@@ -70,7 +68,7 @@ export async function generateKey({ userIDs = [], passphrase, type = 'ecc', rsaB
   const options = { userIDs, passphrase, type, rsaBits, curve, keyExpirationTime, date, subkeys };
 
   try {
-    const { key, revocationCertificate } = await generate(options, config, plugin);
+    const { key, revocationCertificate } = await generate(options, config);
     key.getKeys().forEach(({ keyPacket }) => checkKeyRequirements(keyPacket, config));
 
     return {
@@ -335,7 +333,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
  * @async
  * @static
  */
-export async function decrypt({ message, decryptionKeys, passwords, sessionKeys, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, plugin = null, ...rest }) {
+export async function decrypt({ message, decryptionKeys, passwords, sessionKeys, verificationKeys, expectSigned = false, format = 'utf8', signature = null, date = new Date(), config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkMessage(message); verificationKeys = toArray(verificationKeys); decryptionKeys = toArray(decryptionKeys); passwords = toArray(passwords); sessionKeys = toArray(sessionKeys);
   if (rest.privateKeys) throw new Error('The `privateKeys` option has been removed from openpgp.decrypt, pass `decryptionKeys` instead');
@@ -343,7 +341,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   try {
-    const decrypted = await message.decrypt(decryptionKeys, passwords, sessionKeys, date, config, plugin);
+    const decrypted = await message.decrypt(decryptionKeys, passwords, sessionKeys, date, config, config.hardwareKeys);
     if (!verificationKeys) {
       verificationKeys = [];
     }
@@ -399,7 +397,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @async
  * @static
  */
-export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, plugin = null, ...rest }) {
+export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkCleartextOrMessage(message); checkOutputMessageFormat(format);
   signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs);
@@ -418,9 +416,9 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
   try {
     let signature;
     if (detached) {
-      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config, plugin);
+      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config, config.hardwareKeys);
     } else {
-      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config, plugin);
+      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config, config.hardwareKeys);
     }
     if (format === 'object') return signature;
 

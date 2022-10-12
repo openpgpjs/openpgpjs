@@ -109,8 +109,8 @@ export class Message {
    * @returns {Promise<Message>} New message with decrypted content.
    * @async
    */
-  async decrypt(decryptionKeys, passwords, sessionKeys, date = new Date(), config = defaultConfig, plugin = null) {
-    const sessionKeyObjects = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config, plugin);
+  async decrypt(decryptionKeys, passwords, sessionKeys, date = new Date(), config = defaultConfig) {
+    const sessionKeyObjects = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config);
 
     const symEncryptedPacketlist = this.packets.filterByTag(
       enums.packet.symmetricallyEncryptedData,
@@ -167,7 +167,7 @@ export class Message {
    * }>>} array of object with potential sessionKey, algorithm pairs
    * @async
    */
-  async decryptSessionKeys(decryptionKeys, passwords, date = new Date(), config = defaultConfig, plugin = null) {
+  async decryptSessionKeys(decryptionKeys, passwords, date = new Date(), config = defaultConfig) {
     let decryptedSessionKeyPackets = [];
 
     let exception;
@@ -262,7 +262,7 @@ export class Message {
 
             } else {
               try {
-                await pkeskPacket.decrypt(decryptionKeyPacket, null, plugin);
+                await pkeskPacket.decrypt(decryptionKeyPacket, null, config.hardwareKeys);
                 if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
                   throw new Error('A non-preferred symmetric algorithm was used.');
                 }
@@ -576,12 +576,12 @@ export class Message {
    * @returns {Promise<Signature>} New detached signature of message content.
    * @async
    */
-  async signDetached(signingKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig, plugin = null) {
+  async signDetached(signingKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
     if (!literalDataPacket) {
       throw new Error('No literal data packet to sign.');
     }
-    return new Signature(await createSignaturePackets(literalDataPacket, signingKeys, signature, signingKeyIDs, date, userIDs, true, config, plugin));
+    return new Signature(await createSignaturePackets(literalDataPacket, signingKeys, signature, signingKeyIDs, date, userIDs, true, config));
   }
 
   /**
@@ -722,7 +722,7 @@ export class Message {
  * @async
  * @private
  */
-export async function createSignaturePackets(literalDataPacket, signingKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], detached = false, config = defaultConfig, plugin = null) {
+export async function createSignaturePackets(literalDataPacket, signingKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], detached = false, config = defaultConfig) {
   const packetlist = new PacketList();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -735,7 +735,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
       throw new Error('Need private key for signing');
     }
     const signingKey = await primaryKey.getSigningKey(signingKeyIDs[i], date, userID, config);
-    return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, date, userID, detached, config, plugin);
+    return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, date, userID, detached, config);
   })).then(signatureList => {
     packetlist.push(...signatureList);
   });

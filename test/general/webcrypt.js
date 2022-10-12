@@ -133,7 +133,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }],
         format: 'object',
         date: plugin.date(),
-        plugin: plugin
+        config: { hardwareKeys: plugin }
       });
       console.log({ lwebcrypt_privateKey, lwebcrypt_publicKey });
       webcrypt_privateKey = lwebcrypt_privateKey;
@@ -168,7 +168,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       const { data: decrypted, signatures } = await openpgp.decrypt({
         message,
         decryptionKeys: webcrypt_privateKey,
-        plugin: plugin
+        config: { hardwareKeys: plugin }
       });
       expect(decrypted).to.be.equal(plaintext);
       return true;
@@ -179,7 +179,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       const detachedSignature = await openpgp.sign({
         message,
         signingKeys: webcrypt_privateKey,
-        plugin: plugin,
+        config: { hardwareKeys: plugin },
         detached: true
       });
       console.log({ detachedSignature });
@@ -207,7 +207,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       const cleartextMessage = await openpgp.sign({
         message: unsignedMessage, // CleartextMessage or Message object
         signingKeys: webcrypt_privateKey,
-        plugin: plugin
+        config: { hardwareKeys: plugin }
       });
       // console.log('after signing', { cleartextMessage }); // '-----BEGIN PGP SIGNED MESSAGE ... END PGP SIGNATURE-----'
       expect(cleartextMessage).to.be.ok;
@@ -232,7 +232,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       const cleartextMessage = await openpgp.sign({
         message: unsignedMessage,
         signingKeys: webcrypt_privateKey,
-        plugin: plugin
+        config: { hardwareKeys: plugin }
       });
 
       const signedMessage = await openpgp.readCleartextMessage({
@@ -275,7 +275,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }],
         format: 'object',
         date: plugin.date(),
-        plugin: plugin
+        config: { hardwareKeys: plugin }
       });
       console.log({ lwebcrypt_privateKey, lwebcrypt_publicKey });
       webcrypt_privateKey = lwebcrypt_privateKey;

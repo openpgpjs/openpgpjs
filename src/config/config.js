@@ -242,5 +242,7 @@ export default {
    * @memberof module:config
    * @property {Set<String>} rejectCurves {@link module:enums.curve}
    */
-  rejectCurves: new Set([enums.curve.brainpoolP256r1, enums.curve.brainpoolP384r1, enums.curve.brainpoolP512r1, enums.curve.secp256k1])
+  rejectCurves: new Set([enums.curve.brainpoolP256r1, enums.curve.brainpoolP384r1, enums.curve.brainpoolP512r1, enums.curve.secp256k1]),
+
+  hardwareKeys: null
 };

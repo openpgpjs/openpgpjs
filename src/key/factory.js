@@ -62,15 +62,15 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @static
  * @private
  */
-export async function generate(options, config, plugin) {
+export async function generate(options, config) {
   options.sign = true; // primary key is always a signing key
   options = helper.sanitizeKeyOptions(options);
   options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));
-  let promises = [helper.generateSecretKey(options, config, plugin)];
-  promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config, plugin)));
+  let promises = [helper.generateSecretKey(options, config)];
+  promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config)));
   const packets = await Promise.all(promises);
 
-  const key = await wrapKeyObject(packets[0], packets.slice(1), options, config, plugin);
+  const key = await wrapKeyObject(packets[0], packets.slice(1), options, config);
   const revocationCertificate = await key.getRevocationCertificate(options.date, config);
   key.revocationSignatures = [];
   return { key, revocationCertificate };
@@ -155,7 +155,7 @@ export async function reformat(options, config) {
  * @param {function(Uint8Array):Uint8Array} plugin.sign - Async function for signing data
  * @returns {PrivateKey}
  */
-async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config, plugin = null) {
+async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, config) {
   // set passphrase protection
   if (options.passphrase) {
     await secretKeyPacket.encrypt(options.passphrase, config);
@@ -224,7 +224,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date, false, plugin);
+    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date, false, config.hardwareKeys);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {
@@ -236,7 +236,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
     const subkeyOptions = options.subkeys[index];
-    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config, plugin);
+    const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config, config.hardwareKeys);
     return { secretSubkeyPacket, subkeySignaturePacket };
   })).then(packets => {
     packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
@@ -254,7 +254,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signatureType: enums.signature.keyRevocation,
     reasonForRevocationFlag: enums.reasonForRevocation.noReason,
     reasonForRevocationString: ''
-  }, options.date, undefined, undefined, config, plugin));
+  }, options.date, undefined, undefined, config, config.hardwareKeys));
 
   if (options.passphrase) {
     secretKeyPacket.clearPrivateParams();
