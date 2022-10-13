@@ -9,6 +9,7 @@
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const webcrypt = require('nitrokey_webcrypt/dist/webcrypt.min');
 const chai = require('chai');
+chai.use(require('chai-as-promised'));
 
 const {
   hexStringToByte,
@@ -146,8 +147,20 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       console.log('Check cache', { webcrypt_privateKey, webcrypt_publicKey });
       expect(webcrypt_privateKey).to.be.ok;
       expect(webcrypt_publicKey).to.be.ok;
+    });
+
+    it('Check stub properties', async function () {
       expect(webcrypt_privateKey.keyPacket.isStoredInHardware()).to.be.true;
-      expect(await webcrypt_privateKey.validate()).to.not.throw;
+      await webcrypt_privateKey.validate(); // throws on failed validation
+    });
+
+    it('Do not operate on stub keys with unset plugin - signing', async function () {
+      const sign_promise = openpgp.sign({
+        message: await openpgp.createMessage({ text: 'Hello, World!' }),
+        signingKeys: webcrypt_privateKey,
+        detached: true
+      });
+      expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     });
 
 
