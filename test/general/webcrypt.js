@@ -160,7 +160,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         privateKey: webcrypt_privateKey,
         userIDs: userIDs
       });
-      expect(refkey_promise).to.eventually.be.rejectedWith('Cannot reformat a gnu-divert-to-card primary key');
+      await expect(refkey_promise).to.eventually.be.rejectedWith('Cannot reformat a gnu-divert-to-card primary key');
     });
 
     it('Do not operate on stub keys with unset plugin - signing', async function () {
@@ -169,7 +169,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         signingKeys: webcrypt_privateKey,
         detached: true
       });
-      expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
+      await expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     });
 
     it('Do not operate on stub keys with unset plugin - revoke', async function () {
@@ -190,7 +190,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         }),
         decryptionKeys: webcrypt_privateKey
       });
-      expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
+      await expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     });
 
 
