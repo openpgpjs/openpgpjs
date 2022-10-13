@@ -193,7 +193,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - [Optional] If secret data is encrypted (string-to-key usage octet
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
-    if (this.s2kUsage && this.s2k.type !== 'gnu-dummy') {
+    if (this.s2kUsage && this.s2k.type !== 'gnu-dummy' && this.s2k.type !== 'gnu-divert-to-card') {
       optionalFieldsArr.push(...this.iv);
     }
 

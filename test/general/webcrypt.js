@@ -172,6 +172,11 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     });
 
+    it('Do not operate on stub keys with unset plugin - revoke', async function () {
+      const revoke_promise = openpgp.revokeKey({ key: webcrypt_privateKey });
+      await expect(revoke_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
+    });
+
     it('Do not operate on stub keys with unset plugin - decryption', async function () {
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: 'Hello, World!' }),
@@ -239,6 +244,14 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       await verified; // throws on invalid signature
       console.log('webcrypt detached signature, signed by key id ' + keyID.toHex());
       expect(keyID.toHex()).to.be.equal(webcrypt_publicKey.keyPacket.keyID.toHex());
+    });
+
+    it('Revoke key', async function () {
+      const revoke_promise = openpgp.revokeKey({
+        key: webcrypt_privateKey,
+        config: { hardwareKeys: plugin }
+      });
+      await expect(revoke_promise).to.eventually.not.throw;
     });
 
 
