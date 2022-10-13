@@ -125,6 +125,9 @@ class PublicKeyEncryptedSessionKeyPacket {
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
     }
+    if (key.isStoredInHardware() && !plugin){
+      throw new Error('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
+    }
 
     const randomPayload = randomSessionKey ? util.concatUint8Array([
       new Uint8Array([randomSessionKey.sessionKeyAlgorithm]),

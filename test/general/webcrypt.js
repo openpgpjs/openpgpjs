@@ -154,11 +154,36 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       await webcrypt_privateKey.validate(); // throws on failed validation
     });
 
+    it('Do not operate on stub keys - reformat', async function () {
+      const userIDs = { name: 'Test User', email: 'text2@example.com' };
+      const refkey_promise = openpgp.reformatKey({
+        privateKey: webcrypt_privateKey,
+        userIDs: userIDs
+      });
+      expect(refkey_promise).to.eventually.be.rejectedWith('Cannot reformat a gnu-divert-to-card primary key');
+    });
+
     it('Do not operate on stub keys with unset plugin - signing', async function () {
       const sign_promise = openpgp.sign({
         message: await openpgp.createMessage({ text: 'Hello, World!' }),
         signingKeys: webcrypt_privateKey,
         detached: true
+      });
+      expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
+    });
+
+    it('Do not operate on stub keys with unset plugin - decryption', async function () {
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'Hello, World!' }),
+        encryptionKeys: webcrypt_publicKey,
+        format: 'binary'
+      });
+      expect(encrypted).to.be.a('Uint8Array');
+      const sign_promise = openpgp.decrypt({
+        message: await openpgp.readMessage({
+          binaryMessage: encrypted
+        }),
+        decryptionKeys: webcrypt_privateKey
       });
       expect(sign_promise).to.eventually.be.rejectedWith('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     });
