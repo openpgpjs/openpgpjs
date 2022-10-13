@@ -203,7 +203,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     arr.push(new Uint8Array(optionalFieldsArr));
 
     if (!this.isDummy()) {
-      if (!this.s2kUsage) {
+      if (!this.s2kUsage || this.isStoredInHardware()) {
         this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
       }
 
@@ -212,7 +212,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       }
       arr.push(this.keyMaterial);
 
-      if (!this.s2kUsage) {
+      if (!this.s2kUsage || this.isStoredInHardware()) {
         arr.push(util.writeChecksum(this.keyMaterial));
       }
     }

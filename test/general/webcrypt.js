@@ -154,6 +154,21 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       await webcrypt_privateKey.validate(); // throws on failed validation
     });
 
+    it('Test stub key armoring', async function () {
+      const serialized_key = webcrypt_privateKey.armor();
+      expect(serialized_key).to.be.ok;
+
+      const deserialized_key = await openpgp.readKey({
+        armoredKey: serialized_key
+      });
+      console.log('WebCrypt key after de/serialization', { serialized_key, deserialized_key, webcrypt_privateKey });
+
+      expect(deserialized_key).to.be.ok;
+      expect(deserialized_key.keyPacket.isStoredInHardware(), 'check isStoredInHardware property').to.be.true;
+      expect(deserialized_key.keyPacket.privateParams.d, 'check private key params equality').to
+        .be.deep.equal(webcrypt_privateKey.keyPacket.privateParams.d);
+    });
+
     it('Do not operate on stub keys - reformat', async function () {
       const userIDs = { name: 'Test User', email: 'text2@example.com' };
       const refkey_promise = openpgp.reformatKey({
