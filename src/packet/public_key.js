@@ -178,6 +178,14 @@ class PublicKeyPacket {
   }
 
   /**
+   * Public keys are never stored in hardware
+   * @returns {Boolean}
+   */
+  isStoredInHardware() {
+    return false;
+  }
+
+  /**
    * Returns the creation time of the key
    * @returns {Date}
    */
