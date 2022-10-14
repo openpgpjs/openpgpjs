@@ -165,6 +165,9 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       await webcrypt_privateKey.validate(); // throws on failed validation
     });
 
+    it('Deny stub key encryption');
+    it('Deny stub key decryption');
+
     it('Test stub key armoring', async function () {
       const serialized_key = webcrypt_privateKey.armor();
       expect(serialized_key).to.be.ok;
