@@ -11,6 +11,8 @@ const webcrypt = require('nitrokey_webcrypt/dist/webcrypt.min');
 const chai = require('chai');
 chai.use(require('chai-as-promised'));
 
+chai.config.truncateThreshold = 100;
+
 const {
   hexStringToByte,
   WEBCRYPT_STATUS,
