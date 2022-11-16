@@ -721,7 +721,7 @@ interface VerifyMessageResult {
 /**
  * Armor an OpenPGP binary packet block
  */
-export function armor(messagetype: enums.armor, body: object, partindex: number, parttotal: number, config?: Config): string;
+export function armor(messagetype: enums.armor, body: object, partindex?: number, parttotal?: number, config?: Config): string;
 
 /**
  * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes
