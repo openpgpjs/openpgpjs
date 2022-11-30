@@ -93,9 +93,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     //   other value is a symmetric-key encryption algorithm identifier.
     this.s2kUsage = bytes[i++];
 
-    // - Only for a version 5 packet, a one-octet scalar octet count of
-    //   the next 4 optional fields.
-    if (this.version === 5) {
+    // - Only for a version 5 packet where the secret key material is
+    //   encrypted (that is, where the previous octet is not zero), a one-
+    //   octet scalar octet count of the cumulative length of all the
+    //   following optional string-to-key parameter fields.
+    if (this.version === 5 && this.s2kUsage) {
       i++;
     }
 
@@ -191,7 +193,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       optionalFieldsArr.push(...this.iv);
     }
 
-    if (this.version === 5) {
+    if (this.version === 5 && this.s2kUsage) {
       arr.push(new Uint8Array([optionalFieldsArr.length]));
     }
     arr.push(new Uint8Array(optionalFieldsArr));
