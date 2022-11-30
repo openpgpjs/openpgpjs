@@ -379,7 +379,6 @@ VWx8AtKEInT8YvN19cS2Jpr81jCN819IqgDr+YQezYMwZMzWISmA3w5Z3UCU
 lO771jlg4fHlWOZ2nJqselFlNc3X/VoZ8swmMkI6KVDV+rKaeyTWe61Up0Jj
 NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
 
-=trqv
 -----END PGP PUBLIC KEY BLOCK-----
 `;
 
@@ -390,7 +389,7 @@ NJCB6+LWtabSoVIjNVgKwyKqyTLaESNwC2ogZwkdE8qPGiDFEHo4Gg9zuRof
         .replace(/^(Version|Comment): .*$\n/mg, '')
     ).to.equal(
       pubKey
-        .replace('\n=', '=')
+        .replace('\n-', '-')
         .replace(/\n\r/g, '\n')
     );
   });
