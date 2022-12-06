@@ -288,9 +288,9 @@ class Key {
     }
 
     try {
-      const primaryUser = await this.getPrimaryUser(date, userID, config);
+      const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
-          helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
+          helper.isValidSigningKeyPacket(primaryKey, selfCertification, config)) {
         helper.checkKeyRequirements(primaryKey, config);
         return this;
       }
@@ -334,9 +334,9 @@ class Key {
 
     try {
       // if no valid subkey for encryption, evaluate primary key
-      const primaryUser = await this.getPrimaryUser(date, userID, config);
+      const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
-          helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+          helper.isValidEncryptionKeyPacket(primaryKey, selfCertification)) {
         helper.checkKeyRequirements(primaryKey, config);
         return this;
       }
@@ -380,18 +380,20 @@ class Key {
       throw new Error('Primary key is revoked');
     }
     // check for valid, unrevoked, unexpired self signature
-    const { selfCertification } = await this.getPrimaryUser(date, userID, config);
+    const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
     // check for expiration time in binding signatures
     if (helper.isDataExpired(primaryKey, selfCertification, date)) {
       throw new Error('Primary key is expired');
     }
-    // check for expiration time in direct signatures
-    const directSignature = await helper.getLatestValidSignature(
-      this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
-    ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
+    if (primaryKey.version !== 6) {
+      // check for expiration time in direct signatures (for V6 keys, the above already did so)
+      const directSignature = await helper.getLatestValidSignature(
+        this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
+      ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
 
-    if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
-      throw new Error('Primary key is expired');
+      if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
+        throw new Error('Primary key is expired');
+      }
     }
   }
 
@@ -406,12 +408,13 @@ class Key {
   async getExpirationTime(userID, config = defaultConfig) {
     let primaryKeyExpiry;
     try {
-      const { selfCertification } = await this.getPrimaryUser(null, userID, config);
+      const selfCertification = await this.getPrimarySelfSignature(null, userID, config);
       const selfSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCertification);
       const selfSigExpiry = selfCertification.getExpirationTime();
-      const directSignature = await helper.getLatestValidSignature(
-        this.directSignatures, this.keyPacket, enums.signature.key, { key: this.keyPacket }, null, config
-      ).catch(() => {});
+      const directSignature = this.keyPacket.version !== 6 && // For V6 keys, the above already returns the direct-key signature.
+        await helper.getLatestValidSignature(
+          this.directSignatures, this.keyPacket, enums.signature.key, { key: this.keyPacket }, null, config
+        ).catch(() => {});
       if (directSignature) {
         const directSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, directSignature);
         // We do not support the edge case where the direct signature expires, since it would invalidate the corresponding key expiration,
@@ -427,6 +430,28 @@ class Key {
     return util.normalizeDate(primaryKeyExpiry);
   }
 
+
+  /**
+   * For V4 keys, returns the self-signature of the primary user.
+   * For V5 keys, returns the latest valid direct-key self-signature.
+   * This self-signature is to be used to check the key expiration,
+   * algorithm preferences, and so on.
+   * @param {Date} [date] - Use the given date for verification instead of the current time
+   * @param {Object} [userID] - User ID to get instead of the primary user for V4 keys, if it exists
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<SignaturePacket>} The primary self-signature
+   * @async
+   */
+  async getPrimarySelfSignature(date = new Date(), userID = {}, config = defaultConfig) {
+    const primaryKey = this.keyPacket;
+    if (primaryKey.version === 6) {
+      return helper.getLatestValidSignature(
+        this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
+      );
+    }
+    const { selfCertification } = await this.getPrimaryUser(date, userID, config);
+    return selfCertification;
+  }
 
   /**
    * Returns primary user and most significant (latest valid) self signature

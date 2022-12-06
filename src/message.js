@@ -204,9 +204,9 @@ export class Message {
             enums.symmetric.cast5 // Golang OpenPGP fallback
           ];
           try {
-            const primaryUser = await decryptionKey.getPrimaryUser(date, undefined, config); // TODO: Pass userID from somewhere.
-            if (primaryUser.selfCertification.preferredSymmetricAlgorithms) {
-              algos = algos.concat(primaryUser.selfCertification.preferredSymmetricAlgorithms);
+            const selfCertification = await decryptionKey.getPrimarySelfSignature(date, undefined, config); // TODO: Pass userID from somewhere.
+            if (selfCertification.preferredSymmetricAlgorithms) {
+              algos = algos.concat(selfCertification.preferredSymmetricAlgorithms);
             }
           } catch (e) {}
 

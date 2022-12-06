@@ -93,9 +93,9 @@ class PrivateKey extends PublicKey {
     }
 
     // evaluate primary key
-    const primaryUser = await this.getPrimaryUser(date, userID, config);
+    const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
     if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) &&
-        helper.isValidDecryptionKeyPacket(primaryUser.selfCertification, config)) {
+        helper.isValidDecryptionKeyPacket(selfCertification, config)) {
       keys.push(this);
     }
 
