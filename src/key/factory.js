@@ -195,10 +195,9 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   function writeKeyProperties(signaturePacket) {
     signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
     const symmetricAlgorithms = createPreferredAlgos([
-      // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
+      // prefer aes256, aes128, no aes192 (no Web Crypto support in Chrome: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       enums.symmetric.aes256,
-      enums.symmetric.aes128,
-      enums.symmetric.aes192
+      enums.symmetric.aes128
     ], config.preferredSymmetricAlgorithm);
     signaturePacket.preferredSymmetricAlgorithms = symmetricAlgorithms;
     if (config.aeadProtect) {
