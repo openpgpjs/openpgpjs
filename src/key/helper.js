@@ -121,9 +121,9 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
   let hashAlgo = config.preferredHashAlgorithm;
   let prefAlgo = hashAlgo;
   if (key) {
-    const primaryUser = await key.getPrimaryUser(date, userID, config);
-    if (primaryUser.selfCertification.preferredHashAlgorithms) {
-      [prefAlgo] = primaryUser.selfCertification.preferredHashAlgorithms;
+    const selfCertification = await key.getPrimarySelfSignature(date, userID, config);
+    if (selfCertification.preferredHashAlgorithms) {
+      [prefAlgo] = selfCertification.preferredHashAlgorithms;
       hashAlgo = crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
         prefAlgo : hashAlgo;
     }
@@ -175,8 +175,8 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
   const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
-    const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
+    const selfCertification = await key.getPrimarySelfSignature(date, userIDs[i], config);
+    const recipientPrefs = selfCertification[prefPropertyName];
     return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
   return senderAlgoSupport.every(Boolean) ? preferredSenderAlgo : defaultAlgo;
@@ -317,9 +317,9 @@ export async function isAEADSupported(keys, date = new Date(), userIDs = [], con
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
   await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
-    if (!primaryUser.selfCertification.features ||
-        !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
+    const selfCertification = await key.getPrimarySelfSignature(date, userIDs[i], config);
+    if (!selfCertification.features ||
+        !(selfCertification.features[0] & enums.features.aead)) {
       supported = false;
     }
   }));
