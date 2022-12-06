@@ -156,9 +156,9 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @async
  */
 export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
-  const defaultAlgo = { // these are all must-implement in rfc4880bis
+  const defaultAlgo = { // these are all must-implement in the crypto refresh
     'symmetric': enums.symmetric.aes128,
-    'aead': enums.aead.eax,
+    'aead': enums.aead.ocb,
     'compression': enums.compression.uncompressed
   }[type];
   const preferredSenderAlgo = {
