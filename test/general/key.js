@@ -2240,32 +2240,36 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
+      const selfSignature = openpgp.config.v6Keys ? key.directSignatures[0] : key.users[0].selfCertifications[0];
       // key flags
       const keyFlags = openpgp.enums.keyFlags;
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
+      expect(selfSignature.keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
+      expect(selfSignature.keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptCommunication).to.equal(keyFlags.encryptCommunication);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
-      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192]);
+      expect(selfSignature.preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128]);
       if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
-        expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.eax, aead.ocb]);
+        expect(selfSignature.preferredCipherSuites).to.eql([
+          [sym.aes256, aead.gcm],
+          [sym.aes128, aead.gcm],
+          [sym.aes256, aead.eax],
+          [sym.aes128, aead.eax],
+          [sym.aes256, aead.ocb],
+          [sym.aes128, aead.ocb]
+        ]);
       }
       const hash = openpgp.enums.hash;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512]);
+      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512]);
       const compr = openpgp.enums.compression;
-      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.uncompressed, compr.zlib, compr.zip]);
+      expect(selfSignature.preferredCompressionAlgorithms).to.eql([compr.uncompressed]);
 
-      let expectedFeatures;
-      if (openpgp.config.v6Keys) {
-        expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.aeadProtect) {
-        expectedFeatures = [3]; // aead + mdc
-      } else {
-        expectedFeatures = [1]; // mdc
+      let expectedFeatures = 0x01; // SEIPDv1
+      if (openpgp.config.aeadProtect) {
+        expectedFeatures |= 0x08; // SEIPDv2
       }
-      expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
+      expect(selfSignature.features).to.eql([expectedFeatures]);
     };
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: 'hello', format: 'object' };
     return openpgp.generateKey(opt).then(async function({ privateKey, publicKey }) {
@@ -2281,36 +2285,46 @@ function versionSpecificTests() {
     const preferredAEADAlgorithmVal = openpgp.config.preferredAEADAlgorithm;
     openpgp.config.preferredSymmetricAlgorithm = openpgp.enums.symmetric.aes192;
     openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
-    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zip;
+    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib;
     openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM;
 
     const testPref = function(key) {
+      const selfSignature = openpgp.config.v6Keys ? key.directSignatures[0] : key.users[0].selfCertifications[0];
       // key flags
       const keyFlags = openpgp.enums.keyFlags;
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
+      expect(selfSignature.keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
+      expect(selfSignature.keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptCommunication).to.equal(keyFlags.encryptCommunication);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
-      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128]);
+      expect(selfSignature.preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128]);
       if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
-        expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.experimentalGCM, aead.eax, aead.ocb]);
+        expect(selfSignature.preferredCipherSuites).to.eql([
+          [sym.aes192, aead.experimentalGCM],
+          [sym.aes256, aead.experimentalGCM],
+          [sym.aes128, aead.experimentalGCM],
+          [sym.aes192, aead.gcm],
+          [sym.aes256, aead.gcm],
+          [sym.aes128, aead.gcm],
+          [sym.aes192, aead.eax],
+          [sym.aes256, aead.eax],
+          [sym.aes128, aead.eax],
+          [sym.aes192, aead.ocb],
+          [sym.aes256, aead.ocb],
+          [sym.aes128, aead.ocb]
+        ]);
       }
       const hash = openpgp.enums.hash;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
+      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
       const compr = openpgp.enums.compression;
-      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zip, compr.zlib, compr.uncompressed]);
+      expect(selfSignature.preferredCompressionAlgorithms).to.eql([compr.zlib, compr.uncompressed]);
 
-      let expectedFeatures;
-      if (openpgp.config.v6Keys) {
-        expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.aeadProtect) {
-        expectedFeatures = [3]; // aead + mdc
-      } else {
-        expectedFeatures = [1]; // mdc
+      let expectedFeatures = 0x01; // SEIPDv1
+      if (openpgp.config.aeadProtect) {
+        expectedFeatures |= 0x08; // SEIPDv2
       }
-      expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
+      expect(selfSignature.features).to.eql([expectedFeatures]);
     };
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: 'hello', format: 'object' };
     try {
