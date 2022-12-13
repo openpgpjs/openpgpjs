@@ -319,7 +319,7 @@ export async function isAEADSupported(keys, date = new Date(), userIDs = [], con
   await Promise.all(keys.map(async function(key, i) {
     const selfCertification = await key.getPrimarySelfSignature(date, userIDs[i], config);
     if (!selfCertification.features ||
-        !(selfCertification.features[0] & enums.features.aead)) {
+        !(selfCertification.features[0] & enums.features.seipdv2)) {
       supported = false;
     }
   }));
