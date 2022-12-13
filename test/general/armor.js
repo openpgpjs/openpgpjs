@@ -173,15 +173,7 @@ module.exports = () => describe('ASCII armor', function() {
       '-----END PGP PRIVATE KEY BLOCK-----'
     ].join('\n');
 
-    // try with default config
-    await expect(openpgp.readKey({ armoredKey: privKey })).to.be.rejectedWith(/Ascii armor integrity check failed/);
-
-    // try opposite config
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
-    await expect(openpgp.readKey({ armoredKey: privKey })).to.be.rejectedWith(/Ascii armor integrity check failed/);
-
-    // back to default
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
+    await openpgp.readKey({ armoredKey: privKey });
   });
 
   it('Armor checksum validation - valid', async function () {
@@ -205,15 +197,7 @@ module.exports = () => describe('ASCII armor', function() {
         '=wJNM',
         '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-    // try with default config
     await openpgp.readKey({ armoredKey: privKey });
-
-    // try opposite config
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
-    await openpgp.readKey({ armoredKey: privKey });
-
-    // back to default
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
   });
 
   it('Armor checksum validation - missing', async function () {
@@ -236,23 +220,7 @@ module.exports = () => describe('ASCII armor', function() {
         '71vlXMJNXvoCeuejiRw=',
         '-----END PGP PRIVATE KEY BLOCK-----'].join('\n');
 
-    // try with default config
-    if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSum })).to.be.rejectedWith(/Ascii armor integrity check failed/);
-    } else {
-      await openpgp.readKey({ armoredKey: privKeyNoCheckSum });
-    }
-
-    // try opposite config
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
-    if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSum })).to.be.rejectedWith(/Ascii armor integrity check failed/);
-    } else {
-      await openpgp.readKey({ armoredKey: privKeyNoCheckSum });
-    }
-
-    // back to default
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
+    await openpgp.readKey({ armoredKey: privKeyNoCheckSum });
   });
 
   it('Armor checksum validation - missing - trailing newline', async function () {
@@ -276,23 +244,7 @@ module.exports = () => describe('ASCII armor', function() {
         '-----END PGP PRIVATE KEY BLOCK-----',
         ''].join('\n');
 
-    // try with default config
-    if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline })).to.be.rejectedWith(/Ascii armor integrity check failed/);
-    } else {
-      await openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline });
-    }
-
-    // try opposite config
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
-    if (openpgp.config.checksumRequired) {
-      await expect(openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline })).to.be.rejectedWith(/Ascii armor integrity check failed/);
-    } else {
-      await openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline });
-    }
-
-    // back to default
-    openpgp.config.checksumRequired = !openpgp.config.checksumRequired;
+    await openpgp.readKey({ armoredKey: privKeyNoCheckSumWithTrailingNewline });
   });
 
   it('Accept header with trailing whitespace', async function () {

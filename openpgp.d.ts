@@ -313,7 +313,6 @@ interface Config {
   aeadProtect: boolean;
   allowUnauthenticatedMessages: boolean;
   allowUnauthenticatedStream: boolean;
-  checksumRequired: boolean;
   minRSABits: number;
   passwordCollisionCheck: boolean;
   revocationsExpire: boolean;
