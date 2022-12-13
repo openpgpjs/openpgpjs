@@ -119,6 +119,7 @@ class MemoryBenchamrkSuite {
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
     assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 1);
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
@@ -131,6 +132,7 @@ class MemoryBenchamrkSuite {
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
     assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 1);
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
@@ -142,7 +144,8 @@ class MemoryBenchamrkSuite {
 
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
-    assert.ok(encryptedMessage.packets[1] instanceof openpgp.AEADEncryptedDataPacket);
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 2);
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
@@ -154,7 +157,8 @@ class MemoryBenchamrkSuite {
 
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
-    assert.ok(encryptedMessage.packets[1] instanceof openpgp.AEADEncryptedDataPacket);
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 2);
     await openpgp.decrypt({ message: encryptedMessage, passwords, config });
   });
 
@@ -176,6 +180,7 @@ class MemoryBenchamrkSuite {
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
     assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 1);
     const { data: decryptedData } = await openpgp.decrypt({ message: encryptedMessage, passwords, config });
     // read out output stream to trigger decryption
     await new Promise(resolve => {
@@ -201,6 +206,7 @@ class MemoryBenchamrkSuite {
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
     assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 1);
     const { data: decryptedData } = await openpgp.decrypt({ message: encryptedMessage, passwords, config });
     // read out output stream to trigger decryption
     await new Promise(resolve => {
@@ -225,7 +231,8 @@ class MemoryBenchamrkSuite {
 
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
-    assert.ok(encryptedMessage.packets[1] instanceof openpgp.AEADEncryptedDataPacket);
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 2);
     const { data: decryptedData } = await openpgp.decrypt({ message: encryptedMessage, passwords, config });
     // read out output stream to trigger decryption
     await new Promise(resolve => {
@@ -250,7 +257,8 @@ class MemoryBenchamrkSuite {
 
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
-    assert.ok(encryptedMessage.packets[1] instanceof openpgp.AEADEncryptedDataPacket);
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 2);
     const { data: decryptedData } = await openpgp.decrypt({ message: encryptedMessage, passwords, config });
     // read out output stream to trigger decryption
     await new Promise(resolve => {
@@ -276,6 +284,7 @@ class MemoryBenchamrkSuite {
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
     assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 1);
     const { data: decryptedData } = await openpgp.decrypt({ message: encryptedMessage, passwords, config });
     // read out output stream to trigger decryption
     await new Promise(resolve => {
@@ -301,6 +310,7 @@ class MemoryBenchamrkSuite {
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
     assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 1);
     const { data: decryptedData } = await openpgp.decrypt({
       message: encryptedMessage,
       passwords,
@@ -329,7 +339,8 @@ class MemoryBenchamrkSuite {
 
     const armoredEncryptedMessage = await openpgp.encrypt({ message: plaintextMessage, passwords, config });
     const encryptedMessage = await openpgp.readMessage({ armoredMessage: armoredEncryptedMessage });
-    assert.ok(encryptedMessage.packets[1] instanceof openpgp.AEADEncryptedDataPacket);
+    assert.ok(encryptedMessage.packets[1] instanceof openpgp.SymEncryptedIntegrityProtectedDataPacket);
+    assert.ok(encryptedMessage.packets[1].version === 2);
     const { data: decryptedData } = await openpgp.decrypt({ message: encryptedMessage, passwords, config });
     // read out output stream to trigger decryption
     await new Promise(resolve => {
