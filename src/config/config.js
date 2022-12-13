@@ -131,11 +131,6 @@ export default {
    */
   allowUnauthenticatedStream: false,
   /**
-   * @memberof module:config
-   * @property {Boolean} checksumRequired Do not throw error when armor is missing a checksum
-   */
-  checksumRequired: false,
-  /**
    * Minimum RSA key size allowed for key generation and message signing, verification and encryption.
    * The default is 2047 since due to a bug, previous versions of OpenPGP.js could generate 2047-bit keys instead of 2048-bit ones.
    * @memberof module:config
