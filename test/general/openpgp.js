@@ -2300,10 +2300,10 @@ XfA3pqV4mTzF
         openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM;
         openpgp.config.v6Keys = true;
 
-        // Monkey-patch AEAD feature flag
-        publicKey.users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.users[0].selfCertifications[0].features = [7];
+        // Monkey-patch SEIPD V2 feature flag
+        publicKey.users[0].selfCertifications[0].features = [9];
+        publicKey_2000_2008.users[0].selfCertifications[0].features = [9];
+        publicKey_2038_2045.users[0].selfCertifications[0].features = [9];
       }
     });
 
@@ -2313,10 +2313,10 @@ XfA3pqV4mTzF
         openpgp.config.aeadProtect = true;
         openpgp.config.aeadChunkSizeByte = 0;
 
-        // Monkey-patch AEAD feature flag
-        publicKey.users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.users[0].selfCertifications[0].features = [7];
+        // Monkey-patch SEIPD V2 feature flag
+        publicKey.users[0].selfCertifications[0].features = [9];
+        publicKey_2000_2008.users[0].selfCertifications[0].features = [9];
+        publicKey_2038_2045.users[0].selfCertifications[0].features = [9];
       }
     });
 
@@ -2326,10 +2326,10 @@ XfA3pqV4mTzF
         openpgp.config.aeadProtect = true;
         openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb;
 
-        // Monkey-patch AEAD feature flag
-        publicKey.users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.users[0].selfCertifications[0].features = [7];
+        // Monkey-patch SEIPD V2 feature flag
+        publicKey.users[0].selfCertifications[0].features = [9];
+        publicKey_2000_2008.users[0].selfCertifications[0].features = [9];
+        publicKey_2038_2045.users[0].selfCertifications[0].features = [9];
       }
     });
 
@@ -2626,7 +2626,7 @@ XfA3pqV4mTzF
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             expect(encrypted).to.match(/^-----BEGIN PGP MESSAGE/);
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(false);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2649,7 +2649,7 @@ XfA3pqV4mTzF
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             expect(encrypted).to.match(/^-----BEGIN PGP MESSAGE/);
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(false);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2668,7 +2668,7 @@ XfA3pqV4mTzF
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2692,7 +2692,7 @@ XfA3pqV4mTzF
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2715,7 +2715,7 @@ XfA3pqV4mTzF
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(false);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2746,7 +2746,7 @@ XfA3pqV4mTzF
             };
             return openpgp.encrypt(encOpt).then(async function (encrypted) {
               decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+              expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
               return openpgp.decrypt(decOpt);
             }).then(async function (decrypted) {
               expect(decrypted.data).to.equal(plaintext);
@@ -2775,7 +2775,7 @@ XfA3pqV4mTzF
             detached: true
           });
           const message = await openpgp.readMessage({ armoredMessage: encrypted });
-          expect(!!message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+          expect(message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
           const decrypted = await openpgp.decrypt({
             message,
             signature: await openpgp.readSignature({ armoredSignature: signed }),

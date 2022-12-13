@@ -152,7 +152,7 @@ export default () => describe('Packet', function() {
     expect(await stringify(msg2[0].packets[0].data)).to.equal(stringify(literal.data));
   });
 
-  it('Sym. encrypted AEAD protected packet', function() {
+  it('Sym. encrypted AEAD protected packet (AEADP)', function() {
     const aeadProtectVal = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = false;
 
@@ -201,7 +201,7 @@ export default () => describe('Packet', function() {
     return cryptStub;
   }
 
-  it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEAD, GCM)', async function() {
+  it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEADP, GCM)', async function() {
     const webCrypto = util.getWebCrypto();
     if (!webCrypto || util.getNodeCrypto()) return;
     const encryptStub = cryptStub(webCrypto, 'encrypt');
@@ -236,7 +236,7 @@ export default () => describe('Packet', function() {
     }
   });
 
-  it('Sym. encrypted AEAD protected packet test vector (AEAD)', async function() {
+  it('AEAD Encrypted Data packet test vector (AEADP)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/commit/00b20923e6233fb6ff1666ecd5acfefceb32907d
 
     const nodeCrypto = util.getNodeCrypto();
@@ -516,7 +516,7 @@ export default () => describe('Packet', function() {
     }
   });
 
-  it('Sym. encrypted session key reading/writing test vector (EAX, AEAD)', async function() {
+  it('Sym. encrypted session key reading/writing test vector (AEAD, EAX)', async function() {
     // From https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b20923/back.mkd#sample-aead-eax-encryption-and-decryption
 
     const nodeCrypto = util.getNodeCrypto();
