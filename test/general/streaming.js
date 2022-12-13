@@ -403,7 +403,7 @@ function tests() {
     }
   });
 
-  it('Detect MDC modifications (allowUnauthenticatedStream=true)', async function() {
+  it('Detect modification (allowUnauthenticatedStream=true)', async function() {
     const aeadProtectValue = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = false;
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
@@ -418,7 +418,6 @@ function tests() {
       const message = await openpgp.readMessage({
         armoredMessage: stream[expectedType === 'node' ? 'webToNode' : 'toStream'](stream.transform(encrypted, value => {
           value += '';
-          if (value === '=' || value.length === 5) return; // Remove checksum
           const newlineIndex = value.indexOf('\n', 500);
           if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
           return value;
@@ -441,44 +440,7 @@ function tests() {
     }
   });
 
-  it('Detect armor checksum error (allowUnauthenticatedStream=true)', async function() {
-    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
-    openpgp.config.allowUnauthenticatedStream = true;
-    try {
-      const encrypted = await openpgp.encrypt({
-        message: await openpgp.createMessage({ binary: data }),
-        encryptionKeys: pubKey,
-        signingKeys: privKey,
-        config: { minRSABits: 1024 }
-      });
-      expect(stream.isStream(encrypted)).to.equal(expectedType);
-
-      const message = await openpgp.readMessage({
-        armoredMessage: stream[expectedType === 'node' ? 'webToNode' : 'toStream'](stream.transform(encrypted, value => {
-          value += '';
-          const newlineIndex = value.indexOf('\n', 500);
-          if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-          return value;
-        }), { encoding: 'utf8' })
-      });
-      const decrypted = await openpgp.decrypt({
-        verificationKeys: pubKey,
-        decryptionKeys: privKey,
-        message,
-        format: 'binary'
-      });
-      expect(stream.isStream(decrypted.data)).to.equal(expectedType);
-      const reader = stream.getReader(decrypted.data);
-      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-      dataArrived();
-      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
-      expect(decrypted.signatures).to.exist.and.have.length(1);
-    } finally {
-      openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStreamValue;
-    }
-  });
-
-  it('Detect armor checksum error when not passing public keys (allowUnauthenticatedStream=true)', async function() {
+  it('Detect modification when not passing public keys (allowUnauthenticatedStream=true)', async function() {
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
@@ -507,7 +469,7 @@ function tests() {
       const reader = stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       dataArrived();
-      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
+      await expect(reader.readToEnd()).to.be.rejectedWith('Modification detected.');
       expect(decrypted.signatures).to.exist.and.have.length(1);
       await expect(decrypted.signatures[0].verified).to.be.eventually.rejectedWith(/Could not find signing key/);
     } finally {
@@ -515,7 +477,7 @@ function tests() {
     }
   });
 
-  it('Sign/verify: Detect armor checksum error', async function() {
+  it('Sign/verify: Detect modification', async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
       signingKeys: privKey,
@@ -541,8 +503,9 @@ function tests() {
     const reader = stream.getReader(verified.data);
     expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
     dataArrived();
-    await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
     expect(verified.signatures).to.exist.and.have.length(1);
+    await reader.readToEnd();
+    await expect(verified.signatures[0].verified).to.be.rejectedWith('Signed digest did not match');
   });
 
   it('stream.transformPair()', async function() {

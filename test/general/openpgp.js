@@ -3057,60 +3057,51 @@ XfA3pqV4mTzF
           expect(await isAEADSupported([key])).to.equal(openpgp.config.aeadProtect);
 
           const data = await openpgp.encrypt({ message: await openpgp.createMessage({ binary: new Uint8Array(500) }), encryptionKeys: [key.toPublic()] });
-          let badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=aaaa');
-          if (badSumEncrypted === data) { // checksum was already =aaaa
-            badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=bbbb');
-          }
-          if (badSumEncrypted === data) {
-            throw new Error('Was not able to successfully modify checksum');
-          }
-          const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
+          const encrypted = data.substr(0, 500) + (data[500] === 'a' ? 'b' : 'a') + data.substr(501);
           await loadStreamsPolyfill();
           try {
             for (const allowStreaming of [true, false]) {
               openpgp.config.allowUnauthenticatedStream = allowStreaming;
-              await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
-                await Promise.all([
-                  encrypted,
-                  new ReadableStream({
-                    start(controller) {
-                      controller.enqueue(encrypted);
+              for (const [i, encryptedData] of [
+                encrypted,
+                new ReadableStream({
+                  start(controller) {
+                    controller.enqueue(encrypted);
+                    controller.close();
+                  }
+                }),
+                new ReadableStream({
+                  start() {
+                    this.remaining = encrypted.split('\n');
+                  },
+                  async pull(controller) {
+                    if (this.remaining.length) {
+                      await new Promise(res => setTimeout(res));
+                      controller.enqueue(this.remaining.shift() + '\n');
+                    } else {
                       controller.close();
                     }
-                  }),
-                  new ReadableStream({
-                    start() {
-                      this.remaining = encrypted.split('\n');
-                    },
-                    async pull(controller) {
-                      if (this.remaining.length) {
-                        await new Promise(res => { setTimeout(res); });
-                        controller.enqueue(this.remaining.shift() + '\n');
-                      } else {
-                        controller.close();
-                      }
-                    }
-                  })
-                ].map(async (encrypted, j) => {
-                  let stepReached = 0;
-                  try {
-                    const message = await openpgp.readMessage({ armoredMessage: encrypted });
-                    stepReached = 1;
-                    const { data: decrypted } = await openpgp.decrypt({ message: message, decryptionKeys: [key] });
-                    stepReached = 2;
-                    await stream.readToEnd(decrypted);
-                  } catch (e) {
-                    expect(e.message).to.match(/Ascii armor integrity check failed/);
-                    expect(stepReached).to.equal(
-                      j === 0 ? 0 :
-                        (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
-                          1
-                    );
-                    return;
                   }
-                  throw new Error(`Expected "Ascii armor integrity check failed" error in subtest ${i}.${j}`);
-                }));
-              }));
+                })
+              ].entries()) {
+                let stepReached = 0;
+                try {
+                  const message = await openpgp.readMessage({ armoredMessage: encryptedData });
+                  stepReached = 1;
+                  const { data: decrypted } = await openpgp.decrypt({ message: message, decryptionKeys: [key] });
+                  stepReached = 2;
+                  await stream.readToEnd(decrypted);
+                } catch (e) {
+                  expect(e.message).to.match(/Modification detected|Authentication tag mismatch|Unsupported state or unable to authenticate data/);
+                  expect(stepReached).to.equal(
+                    i === 0 ? 1 :
+                      (openpgp.config.aeadChunkSizeByte === 0 && (i === 2 || detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
+                        1
+                  );
+                  continue;
+                }
+                throw new Error(`Expected "Modification detected" error in subtest ${i}`);
+              }
             }
           } finally {
             openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStream;
