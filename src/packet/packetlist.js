@@ -74,10 +74,11 @@ class PacketList extends Array {
           await writer.ready;
           const done = await readPackets(readable, async parsed => {
             try {
-              if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust) {
+              if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust || parsed.tag === enums.packet.padding) {
                 // According to the spec, these packet types should be ignored and not cause parsing errors, even if not esplicitly allowed:
                 // - Marker packets MUST be ignored when received: https://github.com/openpgpjs/openpgpjs/issues/1145
                 // - Trust packets SHOULD be ignored outside of keyrings (unsupported): https://datatracker.ietf.org/doc/html/rfc4880#section-5.10
+                // - [Padding Packets] MUST be ignored when received: https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#name-padding-packet-tag-21
                 return;
               }
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
