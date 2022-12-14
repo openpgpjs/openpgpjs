@@ -652,6 +652,45 @@ export default () => describe('Packet', function() {
       const literal = new openpgp.LiteralDataPacket();
       literal.setText(testText);
       const skesk = new openpgp.SymEncryptedSessionKeyPacket();
+      skesk.version = 5;
+      const aeadEnc = new openpgp.AEADEncryptedDataPacket();
+      aeadEnc.packets = new openpgp.PacketList();
+      aeadEnc.packets.push(literal);
+      const msg = new openpgp.PacketList();
+      msg.push(skesk);
+      msg.push(aeadEnc);
+
+      skesk.sessionKeyAlgorithm = algo;
+      await skesk.encrypt(passphrase, openpgp.config);
+
+      const key = skesk.sessionKey;
+      await aeadEnc.encrypt(algo, key, undefined, openpgp.config);
+
+      const msg2 = new openpgp.PacketList();
+      await msg2.read(msg.write(), allAllowedPackets);
+
+      await msg2[0].decrypt(passphrase);
+      const key2 = msg2[0].sessionKey;
+      await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+
+      expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
+    } finally {
+      openpgp.config.aeadProtect = aeadProtectVal;
+    }
+  });
+
+  it('Sym. encrypted session key reading/writing (SEIPDv2)', async function() {
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    openpgp.config.aeadProtect = true;
+
+    try {
+      const passphrase = 'hello';
+      const algo = openpgp.enums.symmetric.aes256;
+      const testText = input.createSomeMessage();
+
+      const literal = new openpgp.LiteralDataPacket();
+      literal.setText(testText);
+      const skesk = new openpgp.SymEncryptedSessionKeyPacket();
       const aeadEnc = new openpgp.AEADEncryptedDataPacket();
       aeadEnc.packets = new openpgp.PacketList();
       aeadEnc.packets.push(literal);
@@ -723,10 +762,12 @@ export default () => describe('Packet', function() {
       literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
       literal.filename = '';
       const skesk = new openpgp.SymEncryptedSessionKeyPacket();
+      skesk.version = 5;
       skesk.sessionKeyAlgorithm = algo;
       const encData = new openpgp.AEADEncryptedDataPacket();
       encData.packets = new openpgp.PacketList();
       encData.packets.push(literal);
+      encData.aeadAlgorithm = skesk.aeadAlgorithm = openpgp.enums.aead.eax;
       const msg = new openpgp.PacketList();
       msg.push(skesk);
       msg.push(encData);
@@ -800,11 +841,252 @@ export default () => describe('Packet', function() {
       literal.setBytes(util.stringToUint8Array('Hello, world!\n'), openpgp.enums.literal.binary);
       literal.filename = '';
       const skesk = new openpgp.SymEncryptedSessionKeyPacket();
+      skesk.version = 5;
       skesk.sessionKeyAlgorithm = algo;
       const enc = new openpgp.AEADEncryptedDataPacket();
       enc.packets = new openpgp.PacketList();
       enc.packets.push(literal);
       enc.aeadAlgorithm = skesk.aeadAlgorithm = openpgp.enums.aead.ocb;
+      const msg = new openpgp.PacketList();
+      msg.push(skesk);
+      msg.push(enc);
+
+      await skesk.encrypt(passphrase, openpgp.config);
+
+      const key = skesk.sessionKey;
+      await enc.encrypt(algo, key, undefined, openpgp.config);
+
+      const data = msg.write();
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
+
+      const msg2 = new openpgp.PacketList();
+      await msg2.read(data, allAllowedPackets);
+
+      await msg2[0].decrypt(passphrase);
+      const key2 = msg2[0].sessionKey;
+      await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+
+      expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
+    } finally {
+      openpgp.config.aeadProtect = aeadProtectVal;
+      openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
+      openpgp.config.s2kIterationCountByte = s2kIterationCountByteVal;
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Sym. encrypted session key reading/writing test vector (SEIPDv2, EAX)', async function() {
+    // From https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#appendix-A.5
+
+    const nodeCrypto = util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+    const s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
+    openpgp.config.aeadProtect = true;
+    openpgp.config.aeadChunkSizeByte = 6;
+    openpgp.config.s2kIterationCountByte = 255;
+
+    const padding = util.hexToUint8Array('ae 5b f0 cd 67 05 50 03 55 81 6c b0 c8 ff'.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('a5 ae 57 9d 1f c5 d8 2b'.replace(/\s+/g, ''));
+    const sessionKey = util.hexToUint8Array('38 81 ba fe 98 54 12 45 9b 86 c3 6f 98 cb 9a 5e'.replace(/\s+/g, ''));
+    const sessionIV = util.hexToUint8Array('69 22 4f 91 99 93 b3 50 6f a3 b5 9a 6a 73 cf f8'.replace(/\s+/g, ''));
+    const dataSalt = util.hexToUint8Array('9f f9 0e 3b 32 19 64 f3 a4 29 13 c8 dc c6 61 93 25 01 52 27 ef b7 ea ea a4 9f 04 c2 e6 74 17 5d'.replace(/\s+/g, ''));
+
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.onCall(0).returns(padding);
+    randomBytesStub.onCall(1).returns(salt);
+    randomBytesStub.onCall(2).returns(sessionKey);
+    randomBytesStub.onCall(3).returns(sessionIV);
+    randomBytesStub.onCall(4).returns(dataSalt);
+
+    const { data: packetBytes } = await openpgp.unarmor(`-----BEGIN PGP MESSAGE-----
+
+w0AGHgcBCwMIpa5XnR/F2Cv/aSJPkZmTs1Bvo7WaanPP+MXvxfQcV/tU4cImgV14
+KPX5LEVOtl6+AKtZhsaObnxV0mkCBwEGn/kOOzIZZPOkKRPI3MZhkyUBUifvt+rq
+pJ8EwuZ0F11KPSJu1q/LnKmsEiwUcOEcY9TAqyQcapOK1Iv5mlqZuQu6gyXeYQR1
+QCWKt5Wala0FHdqW6xVDHf719eIlXKeCYVRuM5o=
+-----END PGP MESSAGE-----
+`);
+
+    try {
+      const passphrase = 'password';
+      const algo = openpgp.enums.symmetric.aes128;
+
+      const skesk = new openpgp.SymEncryptedSessionKeyPacket();
+      skesk.sessionKeyAlgorithm = algo;
+      const literal = new openpgp.LiteralDataPacket(0);
+      literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literal.binary);
+      literal.filename = '';
+      const pad = new openpgp.PaddingPacket();
+      await pad.createPadding(14);
+      const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+      enc.version = 2;
+      enc.aeadAlgorithm = skesk.aeadAlgorithm = openpgp.enums.aead.eax;
+      enc.packets = new openpgp.PacketList();
+      enc.packets.push(literal);
+      enc.packets.push(pad);
+      const msg = new openpgp.PacketList();
+      msg.push(skesk);
+      msg.push(enc);
+
+      await skesk.encrypt(passphrase, openpgp.config);
+
+      const key = skesk.sessionKey;
+      await enc.encrypt(algo, key, undefined, openpgp.config);
+
+      const data = msg.write();
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
+
+      const msg2 = new openpgp.PacketList();
+      await msg2.read(data, allAllowedPackets);
+
+      await msg2[0].decrypt(passphrase);
+      const key2 = msg2[0].sessionKey;
+      await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+
+      expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
+    } finally {
+      openpgp.config.aeadProtect = aeadProtectVal;
+      openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
+      openpgp.config.s2kIterationCountByte = s2kIterationCountByteVal;
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Sym. encrypted session key reading/writing test vector (SEIPDv2, OCB)', async function() {
+    // From https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#appendix-A.6
+
+    const nodeCrypto = util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+    const s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
+    openpgp.config.aeadProtect = true;
+    openpgp.config.aeadChunkSizeByte = 6;
+    openpgp.config.s2kIterationCountByte = 255;
+
+    const padding = util.hexToUint8Array('ae 6a a1 64 9b 56 aa 83 5b 26 13 90 2b d2'.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('56 a2 98 d2 f5 e3 64 53'.replace(/\s+/g, ''));
+    const sessionKey = util.hexToUint8Array('28 e7 9a b8 23 97 d3 c6 3d e2 4a c2 17 d7 b7 91'.replace(/\s+/g, ''));
+    const sessionIV = util.hexToUint8Array('cf cc 5c 11 66 4e db 9d b4 25 90 d7 dc 46 b0'.replace(/\s+/g, ''));
+    const dataSalt = util.hexToUint8Array('20 a6 61 f7 31 fc 9a 30 32 b5 62 33 26 02 7e 3a 5d 8d b5 74 8e be ff 0b 0c 59 10 d0 9e cd d6 41'.replace(/\s+/g, ''));
+
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.onCall(0).returns(padding);
+    randomBytesStub.onCall(1).returns(salt);
+    randomBytesStub.onCall(2).returns(sessionKey);
+    randomBytesStub.onCall(3).returns(sessionIV);
+    randomBytesStub.onCall(4).returns(dataSalt);
+
+    const { data: packetBytes } = await openpgp.unarmor(`-----BEGIN PGP MESSAGE-----
+
+wz8GHQcCCwMIVqKY0vXjZFP/z8xcEWZO2520JZDX3EawckG2EsOBLP/76gDyNHsl
+ZBEj+IeuYNT9YU4IN9gZ02zSaQIHAgYgpmH3MfyaMDK1YjMmAn46XY21dI6+/wsM
+WRDQns3WQf+f04VidYA1vEl1TOG/P/+n2tCjuBBPUTPPQqQQCoPu9MobSAGohGv0
+K82nyM6dZeIS8wHLzZj9yt5pSod61CRzI/boVw==
+-----END PGP MESSAGE-----
+`);
+
+    try {
+      const passphrase = 'password';
+      const algo = openpgp.enums.symmetric.aes128;
+
+      const skesk = new openpgp.SymEncryptedSessionKeyPacket();
+      skesk.sessionKeyAlgorithm = algo;
+      const literal = new openpgp.LiteralDataPacket(0);
+      literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literal.binary);
+      literal.filename = '';
+      const pad = new openpgp.PaddingPacket();
+      await pad.createPadding(14);
+      const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+      enc.version = 2;
+      enc.aeadAlgorithm = skesk.aeadAlgorithm = openpgp.enums.aead.ocb;
+      enc.packets = new openpgp.PacketList();
+      enc.packets.push(literal);
+      enc.packets.push(pad);
+      const msg = new openpgp.PacketList();
+      msg.push(skesk);
+      msg.push(enc);
+
+      await skesk.encrypt(passphrase, openpgp.config);
+
+      const key = skesk.sessionKey;
+      await enc.encrypt(algo, key, undefined, openpgp.config);
+
+      const data = msg.write();
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
+
+      const msg2 = new openpgp.PacketList();
+      await msg2.read(data, allAllowedPackets);
+
+      await msg2[0].decrypt(passphrase);
+      const key2 = msg2[0].sessionKey;
+      await msg2[1].decrypt(msg2[0].sessionKeyAlgorithm, key2);
+
+      expect(await stringify(msg2[1].packets[0].data)).to.equal(stringify(literal.data));
+    } finally {
+      openpgp.config.aeadProtect = aeadProtectVal;
+      openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
+      openpgp.config.s2kIterationCountByte = s2kIterationCountByteVal;
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Sym. encrypted session key reading/writing test vector (SEIPDv2, GCM)', async function() {
+    // From https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#appendix-A.7
+
+    const nodeCrypto = util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
+    const aeadProtectVal = openpgp.config.aeadProtect;
+    const aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
+    const s2kIterationCountByteVal = openpgp.config.s2kIterationCountByte;
+    openpgp.config.aeadProtect = true;
+    openpgp.config.aeadChunkSizeByte = 6;
+    openpgp.config.s2kIterationCountByte = 255;
+
+    const padding = util.hexToUint8Array('1c e2 26 9a 9e dd ef 81 03 21 72 b7 ed 7c'.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('e9 d3 97 85 b2 07 00 08'.replace(/\s+/g, ''));
+    const sessionKey = util.hexToUint8Array('19 36 fc 85 68 98 02 74 bb 90 0d 83 19 36 0c 77'.replace(/\s+/g, ''));
+    const sessionIV = util.hexToUint8Array('b4 2e 7c 48 3e f4 88 44 57 cb 37 26'.replace(/\s+/g, ''));
+    const dataSalt = util.hexToUint8Array('fc b9 44 90 bc b9 8b bd c9 d1 06 c6 09 02 66 94 0f 72 e8 9e dc 21 b5 59 6b 15 76 b1 01 ed 0f 9f'.replace(/\s+/g, ''));
+
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.onCall(0).returns(padding);
+    randomBytesStub.onCall(1).returns(salt);
+    randomBytesStub.onCall(2).returns(sessionKey);
+    randomBytesStub.onCall(3).returns(sessionIV);
+    randomBytesStub.onCall(4).returns(dataSalt);
+
+    const { data: packetBytes } = await openpgp.unarmor(`-----BEGIN PGP MESSAGE-----
+
+wzwGGgcDCwMI6dOXhbIHAAj/tC58SD70iERXyzcmubPbn/d25fTZpAlS4kRymIUa
+v/91Jt8t1VRBdXmneZ/SaQIHAwb8uUSQvLmLvcnRBsYJAmaUD3LontwhtVlrFXax
+Ae0Pn/xvxtZbv9JNzQeQlm5tHoWjAFN4TLHYtqBpnvEhVaeyrWJYUxtXZR/Xd3kS
++pXjXZtAIW9ppMJI2yj/QzHxYykHOZ5v+Q==
+-----END PGP MESSAGE-----
+`);
+
+    try {
+      const passphrase = 'password';
+      const algo = openpgp.enums.symmetric.aes128;
+
+      const skesk = new openpgp.SymEncryptedSessionKeyPacket();
+      skesk.sessionKeyAlgorithm = algo;
+      const literal = new openpgp.LiteralDataPacket(0);
+      literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literal.binary);
+      literal.filename = '';
+      const pad = new openpgp.PaddingPacket();
+      await pad.createPadding(14);
+      const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+      enc.version = 2;
+      enc.aeadAlgorithm = skesk.aeadAlgorithm = openpgp.enums.aead.gcm;
+      enc.packets = new openpgp.PacketList();
+      enc.packets.push(literal);
+      enc.packets.push(pad);
       const msg = new openpgp.PacketList();
       msg.push(skesk);
       msg.push(enc);
