@@ -18,6 +18,7 @@
 import S2K from '../type/s2k';
 import defaultConfig from '../config';
 import crypto from '../crypto';
+import HKDF from '../crypto/hkdf';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
@@ -74,10 +75,15 @@ class SymEncryptedSessionKeyPacket {
   read(bytes) {
     let offset = 0;
 
-    // A one-octet version number. The only currently defined version is 4.
+    // A one-octet version number with value 4 or 5.
     this.version = bytes[offset++];
     if (this.version !== 4 && this.version !== 5) {
       throw new UnsupportedError(`Version ${this.version} of the SKESK packet is unsupported.`);
+    }
+
+    if (this.version === 5) {
+      // A one-octet scalar octet count of the following 5 fields.
+      offset++;
     }
 
     // A one-octet number describing the symmetric algorithm used.
@@ -86,6 +92,9 @@ class SymEncryptedSessionKeyPacket {
     if (this.version === 5) {
       // A one-octet AEAD algorithm.
       this.aeadAlgorithm = bytes[offset++];
+
+      // A one-octet scalar octet count of the following field.
+      offset++;
     }
 
     // A string-to-key (S2K) specifier, length as defined above.
@@ -122,10 +131,13 @@ class SymEncryptedSessionKeyPacket {
 
     let bytes;
 
+    const s2k = this.s2k.write();
     if (this.version === 5) {
-      bytes = util.concatUint8Array([new Uint8Array([this.version, algo, this.aeadAlgorithm]), this.s2k.write(), this.iv, this.encrypted]);
+      const s2kLen = s2k.length;
+      const fieldsLen = 3 + s2kLen + this.iv.length;
+      bytes = util.concatUint8Array([new Uint8Array([this.version, fieldsLen, algo, this.aeadAlgorithm, s2kLen]), s2k, this.iv, this.encrypted]);
     } else {
-      bytes = util.concatUint8Array([new Uint8Array([this.version, algo]), this.s2k.write()]);
+      bytes = util.concatUint8Array([new Uint8Array([this.version, algo]), s2k]);
 
       if (this.encrypted !== null) {
         bytes = util.concatUint8Array([bytes, this.encrypted]);
@@ -152,7 +164,8 @@ class SymEncryptedSessionKeyPacket {
     if (this.version === 5) {
       const mode = crypto.getAEADMode(this.aeadAlgorithm);
       const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
-      const modeInstance = await mode(algo, key);
+      const encryptionKey = await HKDF(key, new Uint8Array(), adata, keySize);
+      const modeInstance = await mode(algo, encryptionKey);
       this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
     } else if (this.encrypted !== null) {
       const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(blockSize));
@@ -182,7 +195,7 @@ class SymEncryptedSessionKeyPacket {
     this.s2k.salt = await crypto.random.getRandomBytes(8);
 
     const { blockSize, keySize } = crypto.getCipher(algo);
-    const encryptionKey = await this.s2k.produceKey(passphrase, keySize);
+    const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.sessionKey === null) {
       this.sessionKey = await crypto.generateSessionKey(this.sessionKeyAlgorithm);
@@ -192,6 +205,7 @@ class SymEncryptedSessionKeyPacket {
       const mode = crypto.getAEADMode(this.aeadAlgorithm);
       this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
       const associatedData = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
+      const encryptionKey = await HKDF(key, new Uint8Array(), associatedData, keySize);
       const modeInstance = await mode(algo, encryptionKey);
       this.encrypted = await modeInstance.encrypt(this.sessionKey, this.iv, associatedData);
     } else {
@@ -199,7 +213,7 @@ class SymEncryptedSessionKeyPacket {
         new Uint8Array([this.sessionKeyAlgorithm]),
         this.sessionKey
       ]);
-      this.encrypted = await crypto.mode.cfb.encrypt(algo, encryptionKey, toEncrypt, new Uint8Array(blockSize), config);
+      this.encrypted = await crypto.mode.cfb.encrypt(algo, key, toEncrypt, new Uint8Array(blockSize), config);
     }
   }
 }
