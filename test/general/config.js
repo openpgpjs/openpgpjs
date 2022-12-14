@@ -284,7 +284,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       const armored2 = await openpgp.encrypt({ message, passwords, config });
       const encrypted2 = await openpgp.readMessage({ armoredMessage: armored2 });
       const { packets: [skesk2, encData2] } = encrypted2;
-      expect(skesk2.version).to.equal(5);
+      expect(skesk2.version).to.equal(6);
       expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.symEncryptedIntegrityProtectedData);
       expect(encData2.version).to.equal(2);
       const { packets: [compressed] } = await encrypted2.decrypt(null, passwords, null, encrypted2.fromStream, openpgp.config);
