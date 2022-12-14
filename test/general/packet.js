@@ -280,6 +280,168 @@ export default () => describe('Packet', function() {
     }
   });
 
+  it('Sym. encrypted AEAD protected packet test vector (SEIPDv2 - EAX)', async function() {
+    // From https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#appendix-A-5
+
+    const nodeCrypto = util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
+    const packetBytes = util.hexToUint8Array(`
+      d2 69 02 07 01 06
+      9f f9 0e 3b 32 19 64 f3 a4 29 13 c8 dc c6 61 93
+      25 01 52 27 ef b7 ea ea a4 9f 04 c2 e6 74 17 5d
+      4a 3d 22 6e d6 af cb 9c a9 ac 12 2c 14 70 e1 1c
+      63 d4 c0 ab 24 1c 6a 93 8a d4 8b f9 9a 5a 99 b9
+      0b ba 83 25 de
+      61 04 75 40 25 8a b7 95 9a 95 ad 05 1d da 96 eb
+      15 43 1d fe f5 f5 e2 25 5c a7 82 61 54 6e 33 9a
+    `.replace(/\s+/g, ''));
+
+    const padding = util.hexToUint8Array('ae 5b f0 cd 67 05 50 03 55 81 6c b0 c8 ff'.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('9f f9 0e 3b 32 19 64 f3 a4 29 13 c8 dc c6 61 93 25 01 52 27 ef b7 ea ea a4 9f 04 c2 e6 74 17 5d'.replace(/\s+/g, ''));
+    const key = util.hexToUint8Array('38 81 ba fe 98 54 12 45 9b 86 c3 6f 98 cb 9a 5e'.replace(/\s+/g, ''));
+    const algo = openpgp.enums.symmetric.aes128;
+
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.withArgs(14).returns(padding);
+    randomBytesStub.withArgs(32).returns(salt);
+
+    const literal = new openpgp.LiteralDataPacket(0);
+    literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literal.binary);
+    literal.filename = '';
+    const pad = new openpgp.PaddingPacket();
+    await pad.createPadding(14);
+    const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+    enc.version = 2;
+    enc.aeadAlgorithm = openpgp.enums.aead.eax;
+    enc.packets = new openpgp.PacketList();
+    enc.packets.push(literal);
+    enc.packets.push(pad);
+    const msg = new openpgp.PacketList();
+    msg.push(enc);
+
+    const msg2 = new openpgp.PacketList();
+
+    try {
+      await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 6 });
+      const data = msg.write();
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
+      await msg2.read(data, allAllowedPackets);
+      await msg2[0].decrypt(algo, key);
+      expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+    } finally {
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Sym. encrypted AEAD protected packet test vector (SEIPDv2 - OCB)', async function() {
+    // From https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#appendix-A-5
+
+    const nodeCrypto = util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
+    const packetBytes = util.hexToUint8Array(`
+      d2 69 02 07 02 06
+      20 a6 61 f7 31 fc 9a 30 32 b5 62 33 26 02 7e 3a
+      5d 8d b5 74 8e be ff 0b 0c 59 10 d0 9e cd d6 41
+      ff 9f d3 85 62 75 80 35 bc 49 75 4c e1 bf 3f ff
+      a7 da d0 a3 b8 10 4f 51 33 cf 42 a4 10 0a 83 ee
+      f4 ca 1b 48 01
+      a8 84 6b f4 2b cd a7 c8 ce 9d 65 e2 12 f3 01 cb
+      cd 98 fd ca de 69 4a 87 7a d4 24 73 23 f6 e8 57
+    `.replace(/\s+/g, ''));
+
+    const padding = util.hexToUint8Array('ae 6a a1 64 9b 56 aa 83 5b 26 13 90 2b d2'.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('20 a6 61 f7 31 fc 9a 30 32 b5 62 33 26 02 7e 3a 5d 8d b5 74 8e be ff 0b 0c 59 10 d0 9e cd d6 41'.replace(/\s+/g, ''));
+    const key = util.hexToUint8Array('28 e7 9a b8 23 97 d3 c6 3d e2 4a c2 17 d7 b7 91'.replace(/\s+/g, ''));
+    const algo = openpgp.enums.symmetric.aes128;
+
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.withArgs(14).returns(padding);
+    randomBytesStub.withArgs(32).returns(salt);
+
+    const literal = new openpgp.LiteralDataPacket(0);
+    literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literal.binary);
+    literal.filename = '';
+    const pad = new openpgp.PaddingPacket();
+    await pad.createPadding(14);
+    const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+    enc.version = 2;
+    enc.aeadAlgorithm = openpgp.enums.aead.ocb;
+    enc.packets = new openpgp.PacketList();
+    enc.packets.push(literal);
+    enc.packets.push(pad);
+    const msg = new openpgp.PacketList();
+    msg.push(enc);
+
+    const msg2 = new openpgp.PacketList();
+
+    try {
+      await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 6 });
+      const data = msg.write();
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
+      await msg2.read(data, allAllowedPackets);
+      await msg2[0].decrypt(algo, key);
+      expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+    } finally {
+      randomBytesStub.restore();
+    }
+  });
+
+  it('Sym. encrypted AEAD protected packet test vector (SEIPDv2 - GCM)', async function() {
+    // From https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#appendix-A-5
+
+    const nodeCrypto = util.getNodeCrypto();
+    if (!nodeCrypto) return;
+
+    const packetBytes = util.hexToUint8Array(`
+      d2 69 02 07 03 06
+      fc b9 44 90 bc b9 8b bd c9 d1 06 c6 09 02 66 94
+      0f 72 e8 9e dc 21 b5 59 6b 15 76 b1 01 ed 0f 9f
+      fc 6f c6 d6 5b bf d2 4d cd 07 90 96 6e 6d 1e 85
+      a3 00 53 78 4c b1 d8 b6 a0 69 9e f1 21 55 a7 b2
+      ad 62 58 53 1b
+      57 65 1f d7 77 79 12 fa 95 e3 5d 9b 40 21 6f 69
+      a4 c2 48 db 28 ff 43 31 f1 63 29 07 39 9e 6f f9
+    `.replace(/\s+/g, ''));
+
+    const padding = util.hexToUint8Array('1c e2 26 9a 9e dd ef 81 03 21 72 b7 ed 7c'.replace(/\s+/g, ''));
+    const salt = util.hexToUint8Array('fc b9 44 90 bc b9 8b bd c9 d1 06 c6 09 02 66 94 0f 72 e8 9e dc 21 b5 59 6b 15 76 b1 01 ed 0f 9f'.replace(/\s+/g, ''));
+    const key = util.hexToUint8Array('19 36 fc 85 68 98 02 74 bb 90 0d 83 19 36 0c 77'.replace(/\s+/g, ''));
+    const algo = openpgp.enums.symmetric.aes128;
+
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
+    randomBytesStub.withArgs(14).returns(padding);
+    randomBytesStub.withArgs(32).returns(salt);
+
+    const literal = new openpgp.LiteralDataPacket(0);
+    literal.setBytes(util.stringToUint8Array('Hello, world!'), openpgp.enums.literal.binary);
+    literal.filename = '';
+    const pad = new openpgp.PaddingPacket();
+    await pad.createPadding(14);
+    const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+    enc.version = 2;
+    enc.aeadAlgorithm = openpgp.enums.aead.gcm;
+    enc.packets = new openpgp.PacketList();
+    enc.packets.push(literal);
+    enc.packets.push(pad);
+    const msg = new openpgp.PacketList();
+    msg.push(enc);
+
+    const msg2 = new openpgp.PacketList();
+
+    try {
+      await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 6 });
+      const data = msg.write();
+      expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
+      await msg2.read(data, allAllowedPackets);
+      await msg2[0].decrypt(algo, key);
+      expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
+    } finally {
+      randomBytesStub.restore();
+    }
+  });
+
   it('Sym. encrypted session key with a compressed packet', async function() {
     const msg =
         '-----BEGIN PGP MESSAGE-----\n' +
