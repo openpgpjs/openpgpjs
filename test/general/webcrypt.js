@@ -173,8 +173,15 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
 
     // TODO exclude this test suite from node.js CLI tests
 
-    it('Deny stub key encryption');
-    it('Deny stub key decryption');
+    it('Deny stub key encryption', async function () {
+      await expect(openpgp.encryptKey({ privateKey: webcrypt_privateKey, passphrase: 'pass' }))
+        .to.eventually.be.rejectedWith('Cannot encrypt a hardware stored key');
+    });
+
+    it('Deny stub key decryption', async function () {
+      await expect(openpgp.decryptKey({ privateKey: webcrypt_privateKey, passphrase: 'pass' }))
+        .to.eventually.be.rejectedWith('Cannot decrypt a hardware stored key');
+    });
 
     it('Test stub key armoring', async function () {
       const serialized_key = webcrypt_privateKey.armor();
