@@ -73,6 +73,12 @@ class SecretKeyPacket extends PublicKeyPacket {
      * @type {Object}
      */
     this.privateParams = null;
+
+    /**
+     * The IV
+     * @type {Uint8Array}
+     */
+    this.iv = null;
   }
 
   // 5.5.3.  Secret-Key Packet Formats
@@ -193,7 +199,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - [Optional] If secret data is encrypted (string-to-key usage octet
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
-    if (this.s2kUsage && this.s2k.type !== 'gnu-dummy' && this.s2k.type !== 'gnu-divert-to-card') {
+    if (this.s2kUsage && this.s2k.type !== 'gnu-dummy') {
       optionalFieldsArr.push(...this.iv);
     }
 
@@ -203,7 +209,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     arr.push(new Uint8Array(optionalFieldsArr));
 
     if (!this.isDummy()) {
-      if (!this.s2kUsage || this.isStoredInHardware()) {
+      if (!this.s2kUsage) {
         this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
       }
 
@@ -212,7 +218,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       }
       arr.push(this.keyMaterial);
 
-      if (!this.s2kUsage || this.isStoredInHardware()) {
+      if (!this.s2kUsage) {
         arr.push(util.writeChecksum(this.keyMaterial));
       }
     }
@@ -270,9 +276,10 @@ class SecretKeyPacket extends PublicKeyPacket {
   /**
    * Remove private key material, converting the key to a gnu-divert-to-card one.
    * The resulting key refers to hardware for the private key operations.
+   * @param {Uint8Array} [serial_number] - Serial number of the hardware device, keeping the secret key
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  makeStub(config = defaultConfig) {
+  makeStub(serial_number, config = defaultConfig) {
     if (this.isStoredInHardware()) {
       return;
     }
@@ -284,6 +291,30 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k.type = 'gnu-divert-to-card';
     this.s2kUsage = 254;
     this.symmetric = enums.symmetric.aes256;
+    this.setSerialNumber(serial_number);
+  }
+
+  /**
+   * Set serial number of the device, which stores the secret key
+   * @param {Uint8Array} [serial_number] - Serial number, not longer than 16 bytes
+   */
+  setSerialNumber(serial_number){
+    if (!this.isStoredInHardware() || !serial_number || serial_number.length >= 16) {
+      throw new Error('Not a stub key or invalid serial number set on the IV field');
+    }
+    this.iv = serial_number;
+  }
+
+  /**
+   * Return the serial number of the hardware device keeping the secret value
+   * @returns {Uint8Array} Serial number of the device keeping the private key
+   */
+  getSerialNUmber() {
+    if (!this.isStoredInHardware() || !this.iv || this.iv.length >= 16) {
+      throw new Error('Not a stub key or invalid serial number set on the IV field');
+    }
+
+    return this.iv;
   }
 
   /**
@@ -431,7 +462,9 @@ class SecretKeyPacket extends PublicKeyPacket {
   async generate(bits, curve, plugin_with_data) {
     const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, plugin_with_data);
     if (plugin_with_data) {
-      this.makeStub();
+      // TODO replace that with the correct serial number from config (callback or value taken from the device)
+      const serialNumber = new Uint8Array(16).fill('B'.charCodeAt(0));
+      this.makeStub(serialNumber);
     }
     this.privateParams = privateParams;
     this.publicParams = publicParams;
