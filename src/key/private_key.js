@@ -110,6 +110,10 @@ class PrivateKey extends PublicKey {
     return this.getKeys().some(({ keyPacket }) => keyPacket.isDecrypted());
   }
 
+  isAnyStoredInHardware (){
+    return this.getKeys().some(({ keyPacket }) => keyPacket.isStoredInHardware());
+  }
+
   /**
    * Check whether the private and public primary key parameters correspond
    * Together with verification of binding signatures, this guarantees key integrity

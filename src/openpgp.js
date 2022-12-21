@@ -207,6 +207,9 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
+  if (privateKey.isAnyStoredInHardware()) {
+    throw new Error('Cannot encrypt a hardware stored key');
+  }
   if (!privateKey.isPrivate()) {
     throw new Error('Cannot encrypt a public key');
   }
