@@ -20,6 +20,7 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
+import SecretKeyPacket from './secret_key';
 
 const VERSION = 3;
 
@@ -125,7 +126,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
     }
-    if (key.isStoredInHardware() && !plugin){
+    if (key instanceof SecretKeyPacket && key.isStoredInHardware() && !plugin){
       throw new Error('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     }
 
