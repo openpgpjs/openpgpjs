@@ -462,13 +462,12 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
-   * @param {{plugin: {generate: function({ algorithmName, curveName, rsaBits }):Uint8Array}, algo: number}} [plugin_with_data]
+   * @param {{plugin: {generate: function({ algorithmName, curveName, rsaBits }):Uint8Array, serial_number: function():Uint8Array}, algo: number}} [plugin_with_data]
    */
   async generate(bits, curve, plugin_with_data) {
     const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, plugin_with_data);
     if (plugin_with_data) {
-      // TODO replace that with the correct serial number from config (callback or value taken from the device)
-      const serialNumber = new Uint8Array(16).fill('B'.charCodeAt(0));
+      const serialNumber = await plugin_with_data.plugin.serial_number();
       this.makeStub(serialNumber);
     }
     this.privateParams = privateParams;

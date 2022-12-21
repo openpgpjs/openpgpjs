@@ -51,6 +51,10 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
     const statusCallback = s => (console.log(s));
 
     const plugin = {
+      serial_number: async function () {
+        return new Uint8Array(16).fill('A'.charCodeAt(0));
+      },
+
       date: function () {
         return this.webcrypt_date ? new Date(this.webcrypt_date) : new Date(2019, 1, 1);
       }, // the default WebCrypt date for the created keys
@@ -115,6 +119,8 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
           console.error(`Not supported algorithm: ${algorithmName}`);
           throw new Error(`Not supported algorithm: ${algorithmName}`);
         }
+        // TODO remove the fill for the privateKey field
+        // currently this is needed, as its serialization is required throughout the code
         return { publicKey: selected_pk, privateKey: new Uint8Array(32).fill(42) };
       }
     };
