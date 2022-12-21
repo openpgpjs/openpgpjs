@@ -186,7 +186,8 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       console.log('WebCrypt key after de/serialization', { serialized_key, deserialized_key, webcrypt_privateKey });
 
       expect(deserialized_key).to.be.ok;
-      expect(deserialized_key.keyPacket.isStoredInHardware(), 'check isStoredInHardware property').to.be.true;
+      expect(deserialized_key.keyPacket.isStoredInHardware(), 'check isStoredInHardware keypacket property').to.be.true;
+      expect(deserialized_key.isAnyStoredInHardware(), 'check isStoredInHardware property').to.be.true;
 
       // TODO make sure the null is in both source and target
       // expect(deserialized_key.keyPacket.privateParams, 'check private key params equality').to
