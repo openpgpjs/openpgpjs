@@ -75,7 +75,8 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.privateParams = null;
 
     /**
-     * The IV
+     * The IV used for S2K operations.
+     * Dubbed as a 16B serial number container for the stub keys for external access (as in GnuPG C implementation).
      * @type {Uint8Array}
      */
     this.iv = null;
@@ -132,7 +133,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - [Optional] If secret data is encrypted (string-to-key usage octet
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
-    if (this.s2kUsage) {
+    if (this.s2kUsage && this.isStoredInHardware()) {
+      const ivlen = bytes[i++];
+      this.iv = bytes.subarray(i, i + ivlen);
+      i += this.iv.length;
+    } else if (this.s2kUsage) {
       this.iv = bytes.subarray(
         i,
         i + crypto.getCipher(this.symmetric).blockSize
@@ -208,7 +213,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
     arr.push(new Uint8Array(optionalFieldsArr));
 
-    if (!this.isDummy()) {
+    if (!this.isDummy() && !this.isStoredInHardware()) {
       if (!this.s2kUsage) {
         this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
       }
@@ -299,7 +304,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @param {Uint8Array} [serial_number] - Serial number, not longer than 16 bytes
    */
   setSerialNumber(serial_number){
-    if (!this.isStoredInHardware() || !serial_number || serial_number.length >= 16) {
+    if (!this.isStoredInHardware() || !serial_number || serial_number.length > 16) {
       throw new Error('Not a stub key or invalid serial number set on the IV field');
     }
     this.iv = serial_number;
@@ -309,8 +314,8 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Return the serial number of the hardware device keeping the secret value
    * @returns {Uint8Array} Serial number of the device keeping the private key
    */
-  getSerialNUmber() {
-    if (!this.isStoredInHardware() || !this.iv || this.iv.length >= 16) {
+  getSerialNumber() {
+    if (!this.isStoredInHardware() || !this.iv || this.iv.length > 16) {
       throw new Error('Not a stub key or invalid serial number set on the IV field');
     }
 
