@@ -123,9 +123,7 @@ class S2K {
     if (this.type === 'gnu-dummy') {
       return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 1]);
     } else if (this.type === 'gnu-divert-to-card') {
-      // Inserting length of the serial number here - 0x10 / 16 octets, as per spec
-      // TODO DESIGN Do it somewhere else?
-      return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 2, 0x10]);
+      return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 2]);
     }
     const arr = [new Uint8Array([enums.write(enums.s2k, this.type), this.algorithm])];
 

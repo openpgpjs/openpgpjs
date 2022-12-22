@@ -205,6 +205,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
     if (this.s2kUsage && this.s2k.type !== 'gnu-dummy') {
+      if (this.isStoredInHardware()){
+        // Inserting length of the serial number here as per spec (kept in the IV field, as in GnuPG C implementation)
+        // Details: GnuPG's DETAILS file, GNU extensions to the S2K algorithm
+        optionalFieldsArr.push(util.writeNumber(this.iv.length, 1));
+      }
       optionalFieldsArr.push(...this.iv);
     }
 
