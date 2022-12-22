@@ -145,7 +145,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
     it('plugin based key generation', async function () {
 
       await plugin.init();
-      console.log('test plugin based key generation');
+      console.log('Test plugin based key generation');
       const { privateKey: lwebcrypt_privateKey, publicKey: lwebcrypt_publicKey } = await openpgp.generateKey({
         curve: 'p256',
         userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }],
@@ -168,10 +168,9 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
 
     it('Check stub properties', async function () {
       expect(webcrypt_privateKey.keyPacket.isStoredInHardware()).to.be.true;
+      expect(webcrypt_privateKey.keyPacket.getSerialNumber()).to.be.deep.equal(await plugin.serial_number());
       await webcrypt_privateKey.validate(); // throws on failed validation
     });
-
-    // TODO exclude this test suite from node.js CLI tests
 
     it('Deny stub key encryption', async function () {
       await expect(openpgp.encryptKey({ privateKey: webcrypt_privateKey, passphrase: 'pass' }))
@@ -209,6 +208,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       expect(deserialized_key.keyPacket.getSerialNumber(), 'check private key params equality - device SN').to.be.deep.equal(webcrypt_privateKey.keyPacket.getSerialNumber());
       expect(deserialized_key.keyPacket.iv, 'check private key params equality - iv').to.be.deep.equal(webcrypt_privateKey.keyPacket.iv);
       expect(deserialized_key.keyPacket.version, 'check private key params equality - version').to.be.equal(webcrypt_privateKey.keyPacket.version);
+      // TODO accept null as being equal to empty array
       // expect(deserialized_key.keyPacket.keyMaterial, 'check private key params equality - keymat').to.be.equal(webcrypt_privateKey.keyPacket.keyMaterial);
     });
 
