@@ -110,7 +110,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
     subkeySignaturePacket.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date, false, config.hardwareKeys);
+  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date, false, config);
   return subkeySignaturePacket;
 }
 
@@ -216,7 +216,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
-  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached, config.hardwareKeys);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached, config);
   return signaturePacket;
 }
 

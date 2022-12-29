@@ -225,7 +225,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date, false, config.hardwareKeys);
+    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date, false, config);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {
