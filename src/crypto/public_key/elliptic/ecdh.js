@@ -145,14 +145,13 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
  * @param {Uint8Array} V - Public part of ephemeral key
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
+ * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
-async function genPrivateEphemeralKey(curve, V, Q, d, plugin = null) {
-  if (plugin) {
-    return plugin.agree({ curve, V, Q, d });
+async function genPrivateEphemeralKey(curve, V, Q, d, config = null) {
+  if (config && config.hardwareKeys) {
+    return config.hardwareKeys.agree({ curve, V, Q, d });
   }
   if (d.length !== curve.payloadSize) {
     const privateKey = new Uint8Array(curve.payloadSize);
@@ -190,14 +189,13 @@ async function genPrivateEphemeralKey(curve, V, Q, d, plugin = null) {
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
  * @param {Uint8Array} fingerprint - Recipient fingerprint
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
+ * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Uint8Array>} Value derived from session key.
  * @async
  */
-export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint, plugin = null) {
+export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint, config = null) {
   const curve = new Curve(oid);
-  const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d, plugin);
+  const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d, config);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
   const { keySize } = getCipher(kdfParams.cipher);
   let err;

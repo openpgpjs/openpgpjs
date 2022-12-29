@@ -133,7 +133,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       randomSessionKey.sessionKey,
       util.writeChecksum(randomSessionKey.sessionKey)
     ]) : null;
-    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload, config ? config.hardwareKeys : null);
+    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload, config);
     const symmetricAlgoByte = decoded[0];
     const sessionKey = decoded.subarray(1, decoded.length - 2);
     const checksum = decoded.subarray(decoded.length - 2);
