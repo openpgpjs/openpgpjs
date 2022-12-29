@@ -37,6 +37,11 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
 
   describe('WebCrypt general - unit tests', function () {
 
+    let webcrypt_privateKey,
+      webcrypt_publicKey;
+    const statusCallback = s => (console.log(s));
+
+
     before(function() {
       const webauthn_available = typeof window !== 'undefined' && window.PublicKeyCredential !== undefined;
       if (!webauthn_available) {
@@ -45,10 +50,13 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       }
     });
 
-
-    let webcrypt_privateKey,
-      webcrypt_publicKey;
-    const statusCallback = s => (console.log(s));
+    beforeEach(function (){
+      // eslint-disable-next-line no-invalid-this
+      if (this.currentTest.fullTitle().indexOf('INIT') === -1){
+        expect(webcrypt_privateKey, 'Plugin-generated private key is present').to.be.ok;
+        expect(webcrypt_publicKey, 'Plugin-generated public key is present').to.be.ok;
+      }
+    });
 
     class WebCryptHardwareKeysPlugin extends openpgp.HardwareKeys {
       async serial_number() {
@@ -119,7 +127,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
 
     const plugin = new WebCryptHardwareKeysPlugin();
 
-    it('Status test', async function () {
+    it('Status test INIT', async function () {
       await Webcrypt_Logout(statusCallback);
       await Webcrypt_FactoryReset(statusCallback);
       const res = await WEBCRYPT_STATUS(statusCallback);
@@ -135,8 +143,8 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
     });
 
 
-    it('plugin based key generation', async function () {
-
+    it('Plugin-based key generation INIT', async function () {
+      await Webcrypt_Login(statusCallback, new CommandLoginParams(WEBCRYPT_DEFAULT_PIN));
       await plugin.init();
       console.log('Test plugin based key generation');
       const { privateKey: lwebcrypt_privateKey, publicKey: lwebcrypt_publicKey } = await openpgp.generateKey({
@@ -155,8 +163,8 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
 
     it('Check cache', async function () {
       console.log('Check cache', { webcrypt_privateKey, webcrypt_publicKey });
-      expect(webcrypt_privateKey).to.be.ok;
-      expect(webcrypt_publicKey).to.be.ok;
+      expect(webcrypt_privateKey, 'Plugin-generated private key is present').to.be.ok;
+      expect(webcrypt_publicKey, 'Plugin-generated public key is present').to.be.ok;
     });
 
     it('Check stub properties', async function () {
