@@ -244,5 +244,10 @@ export default {
    */
   rejectCurves: new Set([enums.curve.secp256k1]),
 
+  /**
+   * Callbacks object to process keys with hardware assistance
+   * @memberof module:config
+   * @property {HardwareKeys} hardwareKeys {@link module:hardwareKeys}
+   */
   hardwareKeys: null
 };

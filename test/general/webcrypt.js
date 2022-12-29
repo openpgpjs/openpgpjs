@@ -50,16 +50,16 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       webcrypt_publicKey;
     const statusCallback = s => (console.log(s));
 
-    const plugin = {
-      serial_number: async function () {
+    class WebCryptHardwareKeysPlugin extends openpgp.HardwareKeys {
+      async serial_number() {
         return new Uint8Array(16).fill('A'.charCodeAt(0));
-      },
+      }
 
-      date: function () {
+      date() {
         return this.webcrypt_date ? new Date(this.webcrypt_date) : new Date(2019, 1, 1);
-      }, // the default WebCrypt date for the created keys
+      } // the default WebCrypt date for the created keys
 
-      init: async function () {
+      async init() {
         if (this.public_sign === undefined) {
           await WEBCRYPT_LOGIN(WEBCRYPT_DEFAULT_PIN, statusCallback);
           const res = await WEBCRYPT_OPENPGP_INFO(statusCallback);
@@ -67,25 +67,24 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
           this.public_sign = res.sign_pubkey;
           this.webcrypt_date = res.date;
           console.log({
-            sign: this.public_sign,
-            enc: this.public_encr,
-            date: this.webcrypt_date,
-            date_comp: this.date()
+            sign: this.public_sign, enc: this.public_encr, date: this.webcrypt_date, date_comp: this.date()
           }, 'info call results');
         }
-      },
-      agree: async function ({ curve, V, Q, d }) {
+      }
+
+      async agree({ curve, V, Q, d }) {
         console.log({ curve, V, Q, d });
-        // @returns {Promise<{secretKey, sharedKey}>}
         const agreed_secret = await WEBCRYPT_OPENPGP_DECRYPT(statusCallback, V);
         return { secretKey: d, sharedKey: agreed_secret };
-      },
-      decrypt: async function ({ oid, kdfParams, V, Cdata, Q, d, fingerprint }) {
+      }
+
+      async decrypt({ oid, kdfParams, V, Cdata, Q, d, fingerprint }) {
         // unused
         // @returns {Promise<Uint8Array>} Decrypted data.
         console.log({ oid, kdfParams, V, Cdata, Q, d, fingerprint, name: 'decrypt plugin' });
-      },
-      sign: async function ({ oid, hashAlgo, data, Q, d, hashed }) {
+      }
+
+      async sign({ oid, hashAlgo, data, Q, d, hashed }) {
         console.log('sign', { oid, hashAlgo, data, Q, d, hashed, plugin: this, name: 'sign' });
         // TODO investigate, why data/message is used for signing and verification, and not the hash
         // TODO investigate, why signatures during key generation and use are not verified
@@ -98,17 +97,10 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         console.log('sign results', { resb, reso, oid, hashAlgo, data, Q, d, hashed, plugin: this, name: 'sign res' });
         console.log(`Using key for signing: ${Q}`);
         return reso;
-      },
-      /**
-       * Function to wrap the hardware keys into a new key
-       *
-       * @param {Object} obj - An object argument for destructuring
-       * @param {enums.publicKey} obj.algorithmName - Type of the algorithm
-       * @param {string} obj.curveName - Curve name
-       * @param {number} obj.rsaBits - RSA key length in bits
-       */
-      generate: async function ({ algorithmName, curveName, rsaBits }) {
-        console.log({ keyType:curveName, name: 'genkey', plugin: this }, { algorithmName, curveName, rsaBits });
+      }
+
+      async generate({ algorithmName, curveName, rsaBits }) {
+        console.log({ keyType: curveName, name: 'genkey', plugin: this }, { algorithmName, curveName, rsaBits });
         let selected_pk = this.public_sign;
         if (algorithmName === openpgp.enums.publicKey.ecdh) {
           selected_pk = this.public_encr;
@@ -123,8 +115,9 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         // currently this is needed, as its serialization is required throughout the code
         return { publicKey: selected_pk, privateKey: new Uint8Array(32).fill(42) };
       }
-    };
+    }
 
+    const plugin = new WebCryptHardwareKeysPlugin();
 
     it('Status test', async function () {
       await Webcrypt_Logout(statusCallback);
