@@ -263,7 +263,7 @@ export function serializeParams(algo, params) {
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Integer} bits - Bit length for RSA keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
- * @param {{plugin: {generate: CallableFunction}, algo: number}} [plugin_with_data]
+ * @param {{plugin: HardwareKeys, algo: number}} [plugin_with_data]
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */

@@ -467,7 +467,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
-   * @param {{plugin: {generate: function({ algorithmName, curveName, rsaBits }):Uint8Array, serial_number: function():Uint8Array}, algo: number}} [plugin_with_data]
+   * @param {{plugin: HardwareKeys, algo: number}} [plugin_with_data]
    */
   async generate(bits, curve, plugin_with_data) {
     const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, plugin_with_data);

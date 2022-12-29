@@ -170,7 +170,7 @@ class Curve {
   }
 
   /**
-   * @param {{plugin: {generate: CallableFunction}, algo: enums.publicKey}} [plugin_with_data]
+   * @param {{plugin: HardwareKeys, algo: enums.publicKey}} [plugin_with_data]
    */
   async genKeyPair(plugin_with_data = null) {
     let keyPair;
@@ -212,7 +212,8 @@ class Curve {
 }
 
 /**
- * @param {{plugin: {generate: CallableFunction}, algo: number}} [plugin_with_data]
+ * @param {string} curve - Curve name
+ * @param {{plugin: HardwareKeys, algo: number}} [plugin_with_data]
  */
 async function generate(curve, plugin_with_data = null) {
   const BigInteger = await util.getBigInteger();
