@@ -86,12 +86,6 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
         return { secretKey: d, sharedKey: agreed_secret };
       }
 
-      async decrypt({ oid, kdfParams, V, Cdata, Q, d, fingerprint }) {
-        // unused
-        // @returns {Promise<Uint8Array>} Decrypted data.
-        console.log({ oid, kdfParams, V, Cdata, Q, d, fingerprint, name: 'decrypt plugin' });
-      }
-
       async sign({ oid, hashAlgo, data, Q, d, hashed }) {
         console.log('sign', { oid, hashAlgo, data, Q, d, hashed, plugin: this, name: 'sign' });
         // TODO investigate, why data/message is used for signing and verification, and not the hash

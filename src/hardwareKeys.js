@@ -57,25 +57,6 @@ export class HardwareKeys {
     throw new Error('Method must be implemented.');
   }
 
-
-  /**
-   * TODO: unused
-   *
-   * @param {Object} obj - An object argument for destructuring
-   * @param {module:type/oid} obj.oid - Elliptic curve object identifier
-   * @param {module:type/kdf_params} obj.kdfParams - KDF params including cipher and algorithm to use
-   * @param {Uint8Array} obj.V - Public part of ephemeral key
-   * @param {Uint8Array} obj.Cdata - Encrypted and wrapped value
-   * @param {Uint8Array} obj.Q - Recipient public key
-   * @param {Uint8Array} obj.d - Recipient private key
-   * @param {Uint8Array} obj.fingerprint - Recipient fingerprint
-   * @returns {Promise<void>}
-   * @async
-   */
-  async decrypt({ oid, kdfParams, V, Cdata, Q, d, fingerprint }) {
-    throw new Error('Method must be implemented.');
-  }
-
   /**
    * Sign a message using the provided key
    *
