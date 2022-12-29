@@ -7,6 +7,7 @@ import enums from '../enums';
 import util from '../util';
 import { PacketList } from '../packet';
 import { mergeSignatures, isDataRevoked, createSignaturePacket } from './helper';
+import defaultConfig from '../config';
 
 /**
  * Class that represents an user ID or attribute packet and the relevant signatures.
@@ -94,7 +95,7 @@ class User {
    * @returns {Promise<Boolean>} True if the certificate is revoked.
    * @async
    */
-  async isRevoked(certificate, keyPacket, date = new Date(), config) {
+  async isRevoked(certificate, keyPacket, date = new Date(), config = defaultConfig) {
     const primaryKey = this.mainKey.keyPacket;
     return isDataRevoked(primaryKey, enums.signature.certRevocation, {
       key: primaryKey,
@@ -232,6 +233,41 @@ class User {
     await mergeSignatures(sourceUser, this, 'revocationSignatures', date, function(srcRevSig) {
       return isDataRevoked(primaryKey, enums.signature.certRevocation, dataToVerify, [srcRevSig], undefined, undefined, date, config);
     });
+  }
+
+  /**
+   * Revokes the user
+   * @param {SecretKeyPacket} primaryKey - decrypted private primary key for revocation
+   * @param {Object} reasonForRevocation - optional, object indicating the reason for revocation
+   * @param  {module:enums.reasonForRevocation} reasonForRevocation.flag optional, flag indicating the reason for revocation
+   * @param  {String} reasonForRevocation.string optional, string explaining the reason for revocation
+   * @param {Date} date - optional, override the creationtime of the revocation signature
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<User>} New user with revocation signature.
+   * @async
+   */
+  async revoke(
+    primaryKey,
+    {
+      flag: reasonForRevocationFlag = enums.reasonForRevocation.noReason,
+      string: reasonForRevocationString = ''
+    } = {},
+    date = new Date(),
+    config = defaultConfig
+  ) {
+    const dataToSign = {
+      userID: this.userID,
+      userAttribute: this.userAttribute,
+      key: primaryKey
+    };
+    const user = new User(dataToSign.userID || dataToSign.userAttribute, this.mainKey);
+    user.revocationSignatures.push(await createSignaturePacket(dataToSign, null, primaryKey, {
+      signatureType: enums.signature.certRevocation,
+      reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
+      reasonForRevocationString
+    }, date, undefined, false, config));
+    await user.update(this);
+    return user;
   }
 }
 
