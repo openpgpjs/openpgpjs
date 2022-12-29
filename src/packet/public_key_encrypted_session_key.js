@@ -115,18 +115,16 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @param {SecretKeyPacket} key - decrypted private key
    * @param {Object} [randomSessionKey] - Bogus session key to use in case of sensitive decryption error, or if the decrypted session key is of a different type/size.
    *                                      This is needed for constant-time processing. Expected object of the form: { sessionKey: Uint8Array, sessionKeyAlgorithm: enums.symmetric }
-   * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
-   * @param {function} plugin.decrypt - Async function for decrypting data (only for RSA)
-   * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
+   * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
    * @throws {Error} if decryption failed, unless `randomSessionKey` is given
    * @async
    */
-  async decrypt(key, randomSessionKey, plugin = null) {
+  async decrypt(key, randomSessionKey, config = null) {
     // check that session key algo matches the secret key algo
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
     }
-    if (key instanceof SecretKeyPacket && key.isStoredInHardware() && !plugin){
+    if (key instanceof SecretKeyPacket && key.isStoredInHardware() && !(config && config.hardwareKeys)){
       throw new Error('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     }
 
@@ -135,7 +133,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       randomSessionKey.sessionKey,
       util.writeChecksum(randomSessionKey.sessionKey)
     ]) : null;
-    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload, plugin);
+    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload, config ? config.hardwareKeys : null);
     const symmetricAlgoByte = decoded[0];
     const sessionKey = decoded.subarray(1, decoded.length - 2);
     const checksum = decoded.subarray(decoded.length - 2);

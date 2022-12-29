@@ -79,14 +79,12 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
  * @param {Uint8Array} fingerprint - Recipient fingerprint
  * @param {Uint8Array} [randomPayload] - Data to return on decryption error, instead of throwing
  *                                    (needed for constant-time processing in RSA and ElGamal)
- * @param {Object} [plugin] - Object with callbacks for overwriting the standard behavior with the private key
- * @param {function} plugin.decrypt - Async function for decrypting data (only for RSA)
- * @param {function} plugin.agree - Async function for calculation of the shared secret (only for ECC)
+ * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Uint8Array>} Decrypted data.
  * @throws {Error} on sensitive decryption error, unless `randomPayload` is given
  * @async
  */
-export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload, plugin = null) {
+export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload, config = null) {
   // if (plugin !== null) {
   //   // FIXME take ecdh params for now, but work on the Params groups later
   //   const { oid, Q, kdfParams } = publicKeyParams;
@@ -115,7 +113,7 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       const { d } = privateKeyParams;
       const { V, C } = sessionKeyParams;
       return publicKey.elliptic.ecdh.decrypt(
-        oid, kdfParams, V, C.data, Q, d, fingerprint, plugin);
+        oid, kdfParams, V, C.data, Q, d, fingerprint, config);
     }
     default:
       throw new Error('Unknown public key encryption algorithm.');

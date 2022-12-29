@@ -256,7 +256,7 @@ export class Message {
 
             } else {
               try {
-                await pkeskPacket.decrypt(decryptionKeyPacket, null, config.hardwareKeys);
+                await pkeskPacket.decrypt(decryptionKeyPacket, null, config);
                 if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
                   throw new Error('A non-preferred symmetric algorithm was used.');
                 }
