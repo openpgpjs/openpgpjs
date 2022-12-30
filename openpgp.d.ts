@@ -521,7 +521,6 @@ export class SignaturePacket extends BasePacket {
   public issuerFingerprint: null | Uint8Array;
   public preferredAEADAlgorithms: enums.aead[] | null;
   public revoked: null | boolean;
-
   public rawNotations: RawNotation[];
   public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean, config?: Config): Promise<void>;
   public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
