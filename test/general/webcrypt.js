@@ -112,9 +112,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
           console.error(`Not supported algorithm: ${algorithmName}`);
           throw new Error(`Not supported algorithm: ${algorithmName}`);
         }
-        // TODO remove the fill for the privateKey field
-        // currently this is needed, as its serialization is required throughout the code
-        return { publicKey: selected_pk, privateKey: new Uint8Array(32).fill(42) };
+        return { publicKey: selected_pk, privateKey: null };
       }
     }
 
