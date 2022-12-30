@@ -184,7 +184,6 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     const signaturePacket = new SignaturePacket();
     signaturePacket.signatureType = enums.signature.certGeneric;
     signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-
     signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
     signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
     signaturePacket.preferredSymmetricAlgorithms = createPreferredAlgos([
@@ -248,8 +247,6 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
 
   // Add revocation signature packet for creating a revocation certificate.
   // This packet should be removed before returning the key.
-
-
   const dataToSign = { key: secretKeyPacket };
   packetlist.push(await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, {
     signatureType: enums.signature.keyRevocation,
