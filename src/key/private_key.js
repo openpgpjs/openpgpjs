@@ -110,6 +110,9 @@ class PrivateKey extends PublicKey {
     return this.getKeys().some(({ keyPacket }) => keyPacket.isDecrypted());
   }
 
+  /**
+   * Returns true if any of the keys is a gnu-stub key.
+   */
   isAnyStoredInHardware (){
     return this.getKeys().some(({ keyPacket }) => keyPacket.isStoredInHardware());
   }

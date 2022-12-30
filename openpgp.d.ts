@@ -392,7 +392,9 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
   public decrypt(passphrase: string): Promise<void>; // throws on error
   public validate(): Promise<void>; // throws on error
   public isDummy(): boolean;
+  public isStoredInHardware(): boolean;
   public makeDummy(config?: Config): void;
+  public makeStub(serial_number: Uint8Array, config?: Config): void;
 }
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
@@ -424,7 +426,7 @@ export class AEADEncryptedDataPacket extends BasePacket {
 
 export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
   static readonly tag: enums.packet.publicKeyEncryptedSessionKey;
-  private decrypt(keyPacket: SecretKeyPacket): void; // throws on error
+  private decrypt(keyPacket: SecretKeyPacket, config?: Config): void; // throws on error
   private encrypt(keyPacket: PublicKeyPacket): void; // throws on error
 }
 
@@ -519,7 +521,7 @@ export class SignaturePacket extends BasePacket {
   public issuerFingerprint: null | Uint8Array;
   public preferredAEADAlgorithms: enums.aead[] | null;
   public revoked: null | boolean;
-  public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean): Promise<void>;
+  public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean, config?: Config): Promise<void>;
   public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
@@ -618,7 +620,6 @@ interface DecryptOptions {
   /** (optional) use the given date for verification instead of the current time */
   date?: Date;
   config?: PartialConfig;
-  plugin?: any;
 }
 
 interface SignOptions {
@@ -630,7 +631,6 @@ interface SignOptions {
   date?: Date;
   signingUserIDs?: MaybeArray<UserID>;
   config?: PartialConfig;
-  plugin?: any;
 }
 
 interface VerifyOptions {

@@ -18,7 +18,7 @@ export class HardwareKeys {
 
   /**
    * Return serial number of the device containing the private keys. Only the first 16 bytes will be used.
-   * @returns {Promise<Uint8Array>}
+   * @returns {Promise<Uint8Array>} The serial number, 16 bytes
    * @async
    */
   async serial_number() {
@@ -27,6 +27,7 @@ export class HardwareKeys {
 
   /**
    * Return the creation date of the keys
+   * @returns {Date} The keys creation date
    */
   date() {
     throw new Error('Method must be implemented.');

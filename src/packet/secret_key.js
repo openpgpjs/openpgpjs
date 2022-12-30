@@ -286,7 +286,8 @@ class SecretKeyPacket extends PublicKeyPacket {
   /**
    * Remove private key material, converting the key to a gnu-divert-to-card one.
    * The resulting key refers to hardware for the private key operations.
-   * @param {Uint8Array} [serial_number] - Serial number of the hardware device, keeping the secret key
+   * Does nothing if the key is marked as stub already.
+   * @param {Uint8Array} [serial_number] - Serial number of the hardware device, keeping the secret key. Must be no longer than 16 bytes.
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   makeStub(serial_number, config = defaultConfig) {
