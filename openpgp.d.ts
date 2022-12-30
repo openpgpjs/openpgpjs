@@ -521,10 +521,18 @@ export class SignaturePacket extends BasePacket {
   public issuerFingerprint: null | Uint8Array;
   public preferredAEADAlgorithms: enums.aead[] | null;
   public revoked: null | boolean;
+
+  public rawNotations: RawNotation[];
   public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean, config?: Config): Promise<void>;
   public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
+}
+
+export interface RawNotation {
+  name: string;
+  value: Uint8Array;
+  humanReadable: boolean;
 }
 
 export class TrustPacket extends BasePacket {
@@ -717,7 +725,7 @@ interface VerifyMessageResult {
 /**
  * Armor an OpenPGP binary packet block
  */
-export function armor(messagetype: enums.armor, body: object, partindex: number, parttotal: number, config?: Config): string;
+export function armor(messagetype: enums.armor, body: object, partindex?: number, parttotal?: number, config?: Config): string;
 
 /**
  * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes

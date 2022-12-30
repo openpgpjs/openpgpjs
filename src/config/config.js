@@ -243,7 +243,6 @@ export default {
    * @property {Set<String>} rejectCurves {@link module:enums.curve}
    */
   rejectCurves: new Set([enums.curve.secp256k1]),
-
   /**
    * Callbacks object to process keys with hardware assistance
    * @memberof module:config
