@@ -338,7 +338,7 @@ interface Config {
   rejectMessageHashAlgorithms: Set<enums.hash>;
   rejectPublicKeyAlgorithms: Set<enums.publicKey>;
   rejectCurves: Set<enums.curve>;
-  hardwareKeys: HardwareKeys;
+  hardwareKeys?: HardwareKeys;
 }
 export var config: Config;
 
