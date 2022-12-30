@@ -27,7 +27,6 @@ const {
   Webcrypt_Login,
   WEBCRYPT_LOGIN, Webcrypt_SetPin, CommandSetPinParams
 } = webcrypt;
-const { enums } = openpgp;
 const { expect } = chai;
 
 const WEBCRYPT_DEFAULT_PIN = '12345678';
@@ -263,7 +262,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
       const message = await openpgp.readMessage({
         binaryMessage: encrypted
       });
-      const { data: decrypted, signatures } = await openpgp.decrypt({
+      const { data: decrypted } = await openpgp.decrypt({
         message,
         decryptionKeys: webcrypt_privateKey,
         config: { hardwareKeys: plugin }
