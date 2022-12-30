@@ -468,12 +468,12 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
-   * @param {{plugin: HardwareKeys, algo: number}} [plugin_with_data]
+   * @param {{hardwareKeys: HardwareKeys, algo: number}} [hardwareKeys_with_data]
    */
-  async generate(bits, curve, plugin_with_data) {
-    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, plugin_with_data);
-    if (plugin_with_data) {
-      const serialNumber = await plugin_with_data.plugin.serial_number();
+  async generate(bits, curve, hardwareKeys_with_data) {
+    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, hardwareKeys_with_data);
+    if (hardwareKeys_with_data) {
+      const serialNumber = await hardwareKeys_with_data.hardwareKeys.serial_number();
       this.makeStub(serialNumber);
     }
     this.privateParams = privateParams;

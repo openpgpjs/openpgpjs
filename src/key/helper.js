@@ -11,31 +11,31 @@ import util from '../util';
 import defaultConfig from '../config';
 
 export async function generateSecretSubkey(options, config) {
-  let plugin_with_data = null;
+  let hardwareKeys_with_data = null;
   if (config && config.hardwareKeys) {
-    plugin_with_data = {
-      plugin: config.hardwareKeys
+    hardwareKeys_with_data = {
+      hardwareKeys: config.hardwareKeys
     };
   }
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve, plugin_with_data);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, hardwareKeys_with_data);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
 }
 
 export async function generateSecretKey(options, config) {
-  let plugin_with_data = null;
+  let hardwareKeys_with_data = null;
   if (config && config.hardwareKeys) {
-    plugin_with_data = {
-      plugin: config.hardwareKeys
+    hardwareKeys_with_data = {
+      hardwareKeys: config.hardwareKeys
     };
   }
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, plugin_with_data);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, hardwareKeys_with_data);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }
