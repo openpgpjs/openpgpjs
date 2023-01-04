@@ -427,7 +427,7 @@ export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
   private encrypt(keyPacket: PublicKeyPacket): void; // throws on error
 }
 
-export class SymEncryptedSessionKey extends BasePacket {
+export class SymEncryptedSessionKeyPacket extends BasePacket {
   static readonly tag: enums.packet.symEncryptedSessionKey;
   private decrypt(passphrase: string): Promise<void>;
   private encrypt(passphrase: string, config?: Config): Promise<void>;
