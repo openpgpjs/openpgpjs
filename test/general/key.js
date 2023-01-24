@@ -3277,6 +3277,28 @@ module.exports = () => describe('Key', function() {
     });
   });
 
+  it('revoke() - user', async function() {
+    const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });
+    const privKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
+      passphrase: 'hello world'
+    });
+
+    const user = pubKey.users[0];
+    await user.revoke(privKey.keyPacket, {
+      flag: openpgp.enums.reasonForRevocation.userIDInvalid
+    }).then(async revUser => {
+      expect(user.userID.equals(revUser.userID)).to.be.true;
+      expect(revUser.revocationSignatures).to.exist.and.have.length(1);
+      expect(revUser.revocationSignatures[0].signatureType).to.equal(openpgp.enums.signature.certRevocation);
+      expect(revUser.revocationSignatures[0].reasonForRevocationFlag).to.equal(openpgp.enums.reasonForRevocation.userIDInvalid);
+      expect(revUser.revocationSignatures[0].reasonForRevocationString).to.equal('');
+
+      await user.verify();
+      await expect(revUser.verify()).to.be.rejectedWith('Self-certification is revoked');
+    });
+  });
+
   it('applyRevocationCertificate() should produce the same revoked key as GnuPG', async function() {
     const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm4 });
 
