@@ -172,6 +172,17 @@ import * as openpgp from './openpgp.min.mjs';
 
 To offload cryptographic operations off the main thread, you can implement a Web Worker in your application and load OpenPGP.js from there. For an example Worker implementation, see `test/worker/worker_example.js`.
 
+#### TypeScript
+
+For typescript support you have to add `@openpgp/web-stream-tools` to your dependencies as well.
+
+```sh
+npm install --save openpgp
+npm install --save-dev @openpgp/web-stream-tools
+```
+
+We are relying on types from the `web-stream-tools` package but do not want to put TypeScript only dependencies into our dependencies.
+
 ### Examples
 
 Here are some examples of how to use OpenPGP.js v5. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js). If you're upgrading from v4 it might help to check out the [changelog](https://github.com/openpgpjs/openpgpjs/wiki/V5-Changelog) and [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
