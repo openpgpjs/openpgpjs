@@ -180,7 +180,7 @@ Since TS is not fully integrated in the library, TS-only dependencies are curren
 npm install --save-dev @openpgp/web-stream-tools
 ```
 
-We are relying on types from the `web-stream-tools` package but do not want to put TypeScript only dependencies into our dependencies.
+If you notice missing or incorrect type definitions, feel free to open a PR.
 
 ### Examples
 
