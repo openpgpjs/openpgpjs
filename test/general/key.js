@@ -3236,6 +3236,26 @@ module.exports = () => describe('Key', function() {
     });
   });
 
+  it('clone() - removing users or their signatures does not affect the original key', async function() {
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const keyClone = key.clone();
+    expect(key.users[0].selfCertifications.length > 0).to.be.true;
+    expect(keyClone.users[0].selfCertifications.length > 0).to.be.true;
+    keyClone.users[0].selfCertifications = [];
+    expect(key.users[0].selfCertifications.length > 0).to.be.true;
+    expect(keyClone.users[0].selfCertifications.length > 0).to.be.false;
+  });
+
+  it('clone() - removing subkeys or their signatures does not affect the original key', async function() {
+    const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
+    const keyClone = key.clone(true);
+    expect(key.subkeys[0].bindingSignatures.length > 0).to.be.true;
+    expect(keyClone.subkeys[0].bindingSignatures.length > 0).to.be.true;
+    keyClone.subkeys[0].bindingSignatures = [];
+    expect(key.subkeys[0].bindingSignatures.length > 0).to.be.true;
+    expect(keyClone.subkeys[0].bindingSignatures.length > 0).to.be.false;
+  });
+
   it('revoke() - primary key', async function() {
     const privKey = await openpgp.decryptKey({
       privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
