@@ -290,7 +290,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @param {Uint8Array} [serialNumber] - Serial number of the hardware device, keeping the secret key. Must be no longer than 16 bytes.
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  makeStub(serialNumber, config = defaultConfig) {
+  setStoredInHardware(serialNumber, config = defaultConfig) {
     if (this.isStoredInHardware()) {
       return;
     }
@@ -474,7 +474,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, hardwareKeys_with_data);
     if (hardwareKeys_with_data) {
       const serialNumber = await hardwareKeys_with_data.hardwareKeys.serialNumber();
-      this.makeStub(serialNumber);
+      this.setStoredInHardware(serialNumber);
     }
     this.privateParams = privateParams;
     this.publicParams = publicParams;
