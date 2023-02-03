@@ -38,14 +38,17 @@ export class HardwareKeys {
    * Generate ECDHE secret from private key and public part of ephemeral key
    *
    * @param {Object} obj - An object argument for destructuring
-   * @param {Curve} obj.curve - Elliptic curve object
-   * @param {Uint8Array} obj.V - Public part of ephemeral key
-   * @param {Uint8Array} obj.Q - Recipient public key
-   * @param {Uint8Array} obj.d - Recipient private key
-   * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
+   // * @param {string} obj.curveName - Elliptic curve name
+   * @param {EllipticCurveName} obj.curveName - Elliptic curve name -
+   *    any of 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' |
+   *    'brainpoolP384r1' | 'brainpoolP512r1'
+   * @param {Uint8Array} obj.publicEphemeral - Public part of ephemeral key
+   * @param {Uint8Array} obj.publicKey - Recipient public key
+   * @param {Uint8Array} obj.privateKey - Recipient private key
+   * @returns {Promise<Uint8Array>} the shared key
    * @async
    */
-  async agree({ curve, V, Q, d }) {
+  async deriveKey({ curveName, publicEphemeral, publicKey, privateKey }) {
     throw new Error('Method must be implemented.');
   }
 
