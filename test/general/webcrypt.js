@@ -58,7 +58,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
     });
 
     class WebCryptHardwareKeysPlugin extends openpgp.HardwareKeys {
-      async serial_number() {
+      async serialNumber() {
         return new Uint8Array(16).fill('A'.charCodeAt(0));
       }
 
@@ -160,7 +160,7 @@ module.exports = () => describe('OpenPGP.js webcrypt public api tests', function
 
     it('Check stub properties', async function () {
       expect(webcrypt_privateKey.keyPacket.isStoredInHardware()).to.be.true;
-      expect(webcrypt_privateKey.keyPacket.getSerialNumber()).to.be.deep.equal(await plugin.serial_number());
+      expect(webcrypt_privateKey.keyPacket.getSerialNumber()).to.be.deep.equal(await plugin.serialNumber());
       await webcrypt_privateKey.validate(); // throws on failed validation
     });
 

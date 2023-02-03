@@ -21,7 +21,7 @@ export class HardwareKeys {
    * @returns {Promise<Uint8Array>} The serial number, 16 bytes
    * @async
    */
-  async serial_number() {
+  async serialNumber() {
     throw new Error('Method must be implemented.');
   }
 

@@ -287,10 +287,10 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Remove private key material, converting the key to a gnu-divert-to-card one.
    * The resulting key refers to hardware for the private key operations.
    * Does nothing if the key is marked as stub already.
-   * @param {Uint8Array} [serial_number] - Serial number of the hardware device, keeping the secret key. Must be no longer than 16 bytes.
+   * @param {Uint8Array} [serialNumber] - Serial number of the hardware device, keeping the secret key. Must be no longer than 16 bytes.
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  makeStub(serial_number, config = defaultConfig) {
+  makeStub(serialNumber, config = defaultConfig) {
     if (this.isStoredInHardware()) {
       return;
     }
@@ -302,18 +302,18 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k.type = 'gnu-divert-to-card';
     this.s2kUsage = 254;
     this.symmetric = enums.symmetric.aes256;
-    this.setSerialNumber(serial_number);
+    this.setSerialNumber(serialNumber);
   }
 
   /**
    * Set serial number of the device, which stores the secret key
-   * @param {Uint8Array} [serial_number] - Serial number, not longer than 16 bytes
+   * @param {Uint8Array} [serialNumber] - Serial number, not longer than 16 bytes
    */
-  setSerialNumber(serial_number){
-    if (!this.isStoredInHardware() || !serial_number || serial_number.length > 16) {
+  setSerialNumber(serialNumber){
+    if (!this.isStoredInHardware() || !serialNumber || serialNumber.length > 16) {
       throw new Error('Not a stub key or invalid serial number set on the IV field');
     }
-    this.iv = serial_number;
+    this.iv = serialNumber;
   }
 
   /**
@@ -473,7 +473,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   async generate(bits, curve, hardwareKeys_with_data) {
     const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, hardwareKeys_with_data);
     if (hardwareKeys_with_data) {
-      const serialNumber = await hardwareKeys_with_data.hardwareKeys.serial_number();
+      const serialNumber = await hardwareKeys_with_data.hardwareKeys.serialNumber();
       this.makeStub(serialNumber);
     }
     this.privateParams = privateParams;
