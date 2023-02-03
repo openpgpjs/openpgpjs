@@ -33,15 +33,6 @@ export class HardwareKeys {
     throw new Error('Method must be implemented.');
   }
 
-  /**
-   * Implement here all the required steps to initialize the plugin. This method should be called first
-   * before the actual use.
-   * @returns {Promise<void>}
-   * @async
-   */
-  async init() {
-    throw new Error('Method must be implemented.');
-  }
 
   /**
    * Generate ECDHE secret from private key and public part of ephemeral key
