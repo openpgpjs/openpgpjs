@@ -4,7 +4,13 @@
  * @private
  */
 
-import { PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, SignaturePacket } from '../packet';
+import {
+  PublicKeyPacket,
+  PublicSubkeyPacket,
+  SecretKeyPacket,
+  SecretSubkeyPacket,
+  SignaturePacket
+} from '../packet';
 import enums from '../enums';
 import crypto from '../crypto';
 import util from '../util';

@@ -25,9 +25,9 @@ import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
-import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
+import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
-import { getIndutnyCurve, keyFromPrivate, keyFromPublic } from './indutnyKey';
+import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 import { UnsupportedError } from '../../../packet/packet';
 
 const webCrypto = util.getWebCrypto();
