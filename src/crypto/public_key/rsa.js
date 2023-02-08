@@ -433,7 +433,7 @@ async function nodeEncrypt(data, n, e) {
 async function bnEncrypt(data, n, e) {
   const BigInteger = await util.getBigInteger();
   n = new BigInteger(n);
-  data = new BigInteger(await emeEncode(data, n.byteLength()));
+  data = new BigInteger(emeEncode(data, n.byteLength()));
   e = new BigInteger(e);
   if (data.gte(n)) {
     throw new Error('Message size cannot exceed modulus size');

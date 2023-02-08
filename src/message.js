@@ -241,7 +241,7 @@ export class Message {
                 pkeskPacketCopy.read(serialisedPKESK);
                 const randomSessionKey = {
                   sessionKeyAlgorithm,
-                  sessionKey: await crypto.generateSessionKey(sessionKeyAlgorithm)
+                  sessionKey: crypto.generateSessionKey(sessionKeyAlgorithm)
                 };
                 try {
                   await pkeskPacketCopy.decrypt(decryptionKeyPacket, randomSessionKey);
@@ -345,7 +345,7 @@ export class Message {
       enums.read(enums.aead, await getPreferredAlgo('aead', encryptionKeys, date, userIDs, config)) :
       undefined;
 
-    const sessionKeyData = await crypto.generateSessionKey(algo);
+    const sessionKeyData = crypto.generateSessionKey(algo);
     return { data: sessionKeyData, algorithm: algorithmName, aeadAlgorithm: aeadAlgorithmName };
   }
 

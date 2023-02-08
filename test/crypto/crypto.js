@@ -242,7 +242,7 @@ module.exports = () => describe('API functional testing', function() {
       await Promise.all(symmAlgoNames.map(async function(algoName) {
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const { blockSize } = crypto.getCipher(algo);
-        const symmKey = await crypto.generateSessionKey(algo);
+        const symmKey = crypto.generateSessionKey(algo);
         const IV = new Uint8Array(blockSize);
         const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, config);
         const text = util.uint8ArrayToString(await crypto.mode.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(blockSize)));
@@ -269,8 +269,8 @@ module.exports = () => describe('API functional testing', function() {
 
     });
 
-    it('Asymmetric using RSA with eme_pkcs1 padding', async function () {
-      const symmKey = await crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
+    it('Asymmetric using RSA with eme_pkcs1 padding', function () {
+      const symmKey = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
       return crypto.publicKeyEncrypt(algoRSA, RSAPublicParams, symmKey).then(RSAEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoRSA, RSAPublicParams, RSAPrivateParams, RSAEncryptedData
@@ -280,8 +280,8 @@ module.exports = () => describe('API functional testing', function() {
       });
     });
 
-    it('Asymmetric using Elgamal with eme_pkcs1 padding', async function () {
-      const symmKey = await crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
+    it('Asymmetric using Elgamal with eme_pkcs1 padding', function () {
+      const symmKey = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
       return crypto.publicKeyEncrypt(algoElGamal, elGamalPublicParams, symmKey).then(ElgamalEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoElGamal, elGamalPublicParams, elGamalPrivateParams, ElgamalEncryptedData

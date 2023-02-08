@@ -136,7 +136,7 @@ export async function validateParams(oid, Q, d) {
   switch (curve.type) {
     case 'web':
     case 'node': {
-      const message = await getRandomBytes(8);
+      const message = getRandomBytes(8);
       const hashAlgo = enums.hash.sha256;
       const hashed = await hash.digest(hashAlgo, message);
       try {

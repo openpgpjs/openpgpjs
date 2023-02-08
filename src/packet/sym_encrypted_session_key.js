@@ -179,18 +179,18 @@ class SymEncryptedSessionKeyPacket {
     this.sessionKeyEncryptionAlgorithm = algo;
 
     this.s2k = new S2K(config);
-    this.s2k.salt = await crypto.random.getRandomBytes(8);
+    this.s2k.salt = crypto.random.getRandomBytes(8);
 
     const { blockSize, keySize } = crypto.getCipher(algo);
     const encryptionKey = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.sessionKey === null) {
-      this.sessionKey = await crypto.generateSessionKey(this.sessionKeyAlgorithm);
+      this.sessionKey = crypto.generateSessionKey(this.sessionKeyAlgorithm);
     }
 
     if (this.version === 5) {
       const mode = crypto.getAEADMode(this.aeadAlgorithm);
-      this.iv = await crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
+      this.iv = crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
       const associatedData = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
       const modeInstance = await mode(algo, encryptionKey);
       this.encrypted = await modeInstance.encrypt(this.sessionKey, this.iv, associatedData);

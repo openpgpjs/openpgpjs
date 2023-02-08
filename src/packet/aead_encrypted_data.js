@@ -119,7 +119,7 @@ class AEADEncryptedDataPacket {
     this.cipherAlgorithm = sessionKeyAlgorithm;
 
     const { ivLength } = crypto.getAEADMode(this.aeadAlgorithm);
-    this.iv = await crypto.random.getRandomBytes(ivLength); // generate new random IV
+    this.iv = crypto.random.getRandomBytes(ivLength); // generate new random IV
     this.chunkSizeByte = config.aeadChunkSizeByte;
     const data = this.packets.write();
     this.encrypted = await this.crypt('encrypt', key, data);

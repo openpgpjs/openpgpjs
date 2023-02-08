@@ -53,11 +53,11 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
  * @returns {Promise<Uint8Array>} Random padding.
  * @async
  */
-async function getPKCS1Padding(length) {
+function getPKCS1Padding(length) {
   const result = new Uint8Array(length);
   let count = 0;
   while (count < length) {
-    const randomBytes = await getRandomBytes(length - count);
+    const randomBytes = getRandomBytes(length - count);
     for (let i = 0; i < randomBytes.length; i++) {
       if (randomBytes[i] !== 0) {
         result[count++] = randomBytes[i];
@@ -75,7 +75,7 @@ async function getPKCS1Padding(length) {
  * @returns {Promise<Uint8Array>} EME-PKCS1 padded message.
  * @async
  */
-export async function emeEncode(message, keyLength) {
+export function emeEncode(message, keyLength) {
   const mLength = message.length;
   // length checking
   if (mLength > keyLength - 11) {
@@ -83,7 +83,7 @@ export async function emeEncode(message, keyLength) {
   }
   // Generate an octet string PS of length k - mLen - 3 consisting of
   // pseudo-randomly generated nonzero octets
-  const PS = await getPKCS1Padding(keyLength - mLength - 3);
+  const PS = getPKCS1Padding(keyLength - mLength - 3);
   // Concatenate PS, the message M, and other padding to form an
   // encoded message EM of length k octets as EM = 0x00 || 0x02 || PS || 0x00 || M.
   const encoded = new Uint8Array(keyLength);
