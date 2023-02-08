@@ -50,8 +50,7 @@ hash_headers[11] = [0x30, 0x2d, 0x30, 0x0d, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 
  * Create padding with secure random data
  * @private
  * @param {Integer} length - Length of the padding in bytes
- * @returns {Promise<Uint8Array>} Random padding.
- * @async
+ * @returns {Uint8Array} Random padding.
  */
 function getPKCS1Padding(length) {
   const result = new Uint8Array(length);
@@ -72,8 +71,7 @@ function getPKCS1Padding(length) {
  * @see {@link https://tools.ietf.org/html/rfc4880#section-13.1.1|RFC 4880 13.1.1}
  * @param {Uint8Array} message - Message to be encoded
  * @param {Integer} keyLength - The length in octets of the key modulus
- * @returns {Promise<Uint8Array>} EME-PKCS1 padded message.
- * @async
+ * @returns {Uint8Array} EME-PKCS1 padded message.
  */
 export function emeEncode(message, keyLength) {
   const mLength = message.length;

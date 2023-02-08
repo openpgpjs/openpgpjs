@@ -367,8 +367,7 @@ export async function getPrefixRandom(algo) {
  * Generating a session key for the specified symmetric algorithm
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
  * @param {module:enums.symmetric} algo - Symmetric encryption algorithm
- * @returns {Promise<Uint8Array>} Random bytes as a string to be used as a key.
- * @async
+ * @returns {Uint8Array} Random bytes as a string to be used as a key.
  */
 export function generateSessionKey(algo) {
   const { keySize } = getCipher(algo);

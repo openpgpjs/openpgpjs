@@ -30,7 +30,6 @@ const nodeCrypto = util.getNodeCrypto();
  * Retrieve secure random byte array of the specified length
  * @param {Integer} length - Length in bytes to generate
  * @returns {Uint8Array} Random byte array.
- * @async
  */
 export function getRandomBytes(length) {
   const buf = new Uint8Array(length);
