@@ -27,87 +27,18 @@ import util from '../util';
 const nodeCrypto = util.getNodeCrypto();
 
 /**
- * Buffer for secure random numbers
- */
-class RandomBuffer {
-  constructor() {
-    this.buffer = null;
-    this.size = null;
-    this.callback = null;
-  }
-
-  /**
-   * Initialize buffer
-   * @param {Integer} size - size of buffer
-   */
-  init(size, callback) {
-    this.buffer = new Uint8Array(size);
-    this.size = 0;
-    this.callback = callback;
-  }
-
-  /**
-   * Concat array of secure random numbers to buffer
-   * @param {Uint8Array} buf
-   */
-  set(buf) {
-    if (!this.buffer) {
-      throw new Error('RandomBuffer is not initialized');
-    }
-    if (!(buf instanceof Uint8Array)) {
-      throw new Error('Invalid type: buf not an Uint8Array');
-    }
-    const freeSpace = this.buffer.length - this.size;
-    if (buf.length > freeSpace) {
-      buf = buf.subarray(0, freeSpace);
-    }
-    // set buf with offset old size of buffer
-    this.buffer.set(buf, this.size);
-    this.size += buf.length;
-  }
-
-  /**
-   * Take numbers out of buffer and copy to array
-   * @param {Uint8Array} buf - The destination array
-   */
-  async get(buf) {
-    if (!this.buffer) {
-      throw new Error('RandomBuffer is not initialized');
-    }
-    if (!(buf instanceof Uint8Array)) {
-      throw new Error('Invalid type: buf not an Uint8Array');
-    }
-    if (this.size < buf.length) {
-      if (!this.callback) {
-        throw new Error('Random number buffer depleted');
-      }
-      // Wait for random bytes from main context, then try again
-      await this.callback();
-      return this.get(buf);
-    }
-    for (let i = 0; i < buf.length; i++) {
-      buf[i] = this.buffer[--this.size];
-      // clear buffer value
-      this.buffer[this.size] = 0;
-    }
-  }
-}
-
-/**
  * Retrieve secure random byte array of the specified length
  * @param {Integer} length - Length in bytes to generate
- * @returns {Promise<Uint8Array>} Random byte array.
+ * @returns {Uint8Array} Random byte array.
  * @async
  */
-export async function getRandomBytes(length) {
+export function getRandomBytes(length) {
   const buf = new Uint8Array(length);
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     crypto.getRandomValues(buf);
   } else if (nodeCrypto) {
     const bytes = nodeCrypto.randomBytes(buf.length);
     buf.set(bytes);
-  } else if (randomBuffer.buffer) {
-    await randomBuffer.get(buf);
   } else {
     throw new Error('No secure random number generator available.');
   }
@@ -137,5 +68,3 @@ export async function getRandomBigInteger(min, max) {
   const r = new BigInteger(await getRandomBytes(bytes + 8));
   return r.mod(modulus).add(min);
 }
-
-export const randomBuffer = new RandomBuffer();
