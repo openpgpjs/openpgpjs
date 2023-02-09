@@ -170,13 +170,13 @@ class Key {
   }
 
   /**
-   * Clones the key object
-   * @param {Boolean} [deep=false] Whether to return a deep clone
+   * Clones the key object. The copy is shallow, as it references the same packet objects as the original. However, if the top-level API is used, the two key instances are effectively independent.
+   * @param {Boolean} [clonePrivateParams=false] Only relevant for private keys: whether the secret key paramenters should be deeply copied. This is needed if e.g. `encrypt()` is to be called either on the clone or the original key.
    * @returns {Promise<Key>} Clone of the key.
    */
-  clone(deep = false) {
+  clone(clonePrivateParams = false) {
     const key = new this.constructor(this.toPacketList());
-    if (deep) {
+    if (clonePrivateParams) {
       key.getKeys().forEach(k => {
         // shallow clone the key packets
         k.keyPacket = Object.create(
