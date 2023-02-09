@@ -111,6 +111,7 @@ export interface User {
 export interface PrimaryUser {
   index: number;
   user: User;
+  selfCertification: SignaturePacket;
 }
 
 type AlgorithmInfo = {
