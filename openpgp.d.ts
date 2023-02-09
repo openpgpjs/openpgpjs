@@ -98,6 +98,9 @@ export class Subkey {
   public getCreationTime(): Date;
   public getAlgorithmInfo(): AlgorithmInfo;
   public getKeyID(): KeyID;
+  public getExpirationTime(date?: Date, config?: Config): Promise<Date | typeof Infinity | null>
+  public isRevoked(signature: SignaturePacket, key: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
+  public update(subKey: Subkey, date?: Date, config?: Config): Promise<void>
 }
 
 export interface User {
