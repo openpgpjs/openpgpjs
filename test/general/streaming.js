@@ -977,7 +977,7 @@ module.exports = () => describe('Streaming', function() {
         if (test === currentTest && i < (expectedType === 'web' ? 100 : 500)) {
           i++;
           if (i === 4) await dataArrivedPromise;
-          const randomBytes = await random.getRandomBytes(1024);
+          const randomBytes = random.getRandomBytes(1024);
           controller.enqueue(randomBytes);
           plaintext.push(randomBytes);
         } else {
@@ -997,7 +997,7 @@ module.exports = () => describe('Streaming', function() {
           if (test === currentTest && i < (expectedType === 'web' ? 100 : 500)) {
             i++;
             if (i === 4) await dataArrivedPromise;
-            const randomBytes = await random.getRandomBytes(1024);
+            const randomBytes = random.getRandomBytes(1024);
             plaintext.push(randomBytes);
             if (!this.push(randomBytes)) break;
           } else {

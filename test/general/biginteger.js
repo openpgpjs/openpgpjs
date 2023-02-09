@@ -15,7 +15,7 @@ async function getRandomBN(min, max) {
 
   const modulus = max.sub(min);
   const bytes = modulus.byteLength();
-  const r = new BN(await random.getRandomBytes(bytes + 8));
+  const r = new BN(random.getRandomBytes(bytes + 8));
   return r.mod(modulus).add(min);
 }
 

@@ -45,8 +45,8 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
           this.skip(); // eslint-disable-line no-invalid-this
         }
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
-        const key = await crypto.generateSessionKey(algo);
-        const iv = await crypto.random.getRandomBytes(crypto.mode.gcm.ivLength);
+        const key = crypto.generateSessionKey(algo);
+        const iv = crypto.random.getRandomBytes(crypto.mode.gcm.ivLength);
 
         const nativeEncryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'encrypt') : sinonSandbox.spy(nodeCrypto, 'createCipheriv');
         const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'decrypt') : sinonSandbox.spy(nodeCrypto, 'createDecipheriv');

@@ -41,7 +41,7 @@ export async function encrypt(data, p, g, y) {
   g = new BigInteger(g);
   y = new BigInteger(y);
 
-  const padded = await emeEncode(data, p.byteLength());
+  const padded = emeEncode(data, p.byteLength());
   const m = new BigInteger(padded);
 
   // OpenPGP uses a "special" version of ElGamal where g is generator of the full group Z/pZ*

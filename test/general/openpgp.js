@@ -2419,7 +2419,7 @@ aOU=
 
         it('should encrypt using custom session key and decrypt using session key', async function () {
           const sessionKey = {
-            data: await crypto.generateSessionKey(openpgp.enums.symmetric.aes256),
+            data: crypto.generateSessionKey(openpgp.enums.symmetric.aes256),
             algorithm: 'aes256'
           };
           const encOpt = {
@@ -2442,7 +2442,7 @@ aOU=
 
         it('should encrypt using custom session key and decrypt using private key', async function () {
           const sessionKey = {
-            data: await crypto.generateSessionKey(openpgp.enums.symmetric.aes128),
+            data: crypto.generateSessionKey(openpgp.enums.symmetric.aes128),
             algorithm: 'aes128'
           };
           const encOpt = {
@@ -3140,9 +3140,9 @@ aOU=
             await stream.loadStreamsPonyfill();
             const ReadableStream = useNativeStream ? global.ReadableStream : stream.ReadableStream;
             const data = new ReadableStream({
-              async pull(controller) {
+              pull(controller) {
                 if (i++ < 4) {
-                  const randomBytes = await random.getRandomBytes(10);
+                  const randomBytes = random.getRandomBytes(10);
                   controller.enqueue(randomBytes);
                   plaintext.push(randomBytes.slice());
                 } else {

@@ -65,7 +65,7 @@ module.exports = () => describe('basic RSA cryptography', function () {
   it('sign and verify using generated key params', async function() {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
-    const message = await random.getRandomBytes(64);
+    const message = random.getRandomBytes(64);
     const hashAlgo = openpgp.enums.write(openpgp.enums.hash, 'sha256');
     const hashed = await crypto.hash.digest(hashAlgo, message);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -79,7 +79,7 @@ module.exports = () => describe('basic RSA cryptography', function () {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
+    const message = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
     const encrypted = await crypto.publicKey.rsa.encrypt(message, n, e);
     const decrypted = await crypto.publicKey.rsa.decrypt(encrypted, n, e, d, p, q, u);
     expect(decrypted).to.deep.equal(message);
@@ -92,7 +92,7 @@ module.exports = () => describe('basic RSA cryptography', function () {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
+    const message = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
     disableNative();
     const encryptedBn = await crypto.publicKey.rsa.encrypt(message, n, e);
     enableNative();
@@ -108,7 +108,7 @@ module.exports = () => describe('basic RSA cryptography', function () {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await random.getRandomBytes(64);
+    const message = random.getRandomBytes(64);
     const hashName = 'sha256';
     const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await crypto.hash.digest(hashAlgo, message);
@@ -123,7 +123,7 @@ module.exports = () => describe('basic RSA cryptography', function () {
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
-    const message = await random.getRandomBytes(64);
+    const message = random.getRandomBytes(64);
     const hashName = 'sha256';
     const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
     const hashed = await crypto.hash.digest(hashAlgo, message);

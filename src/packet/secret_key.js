@@ -283,13 +283,13 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     this.s2k = new S2K(config);
-    this.s2k.salt = await crypto.random.getRandomBytes(8);
+    this.s2k.salt = crypto.random.getRandomBytes(8);
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;
     const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
 
     const { blockSize } = crypto.getCipher(this.symmetric);
-    this.iv = await crypto.random.getRandomBytes(blockSize);
+    this.iv = crypto.random.getRandomBytes(blockSize);
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
