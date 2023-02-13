@@ -505,9 +505,9 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
 ///////////////////////////////////////////////
 
 /**
- * Generate a new session key object, taking the algorithm preferences of the passed public keys into account.
+ * Generate a new session key object, taking the algorithm preferences of the passed public keys into account, if any.
  * @param {Object} options
- * @param {PublicKey|PublicKey[]} options.encryptionKeys - Array of public keys or single key used to select algorithm preferences for
+ * @param {PublicKey|PublicKey[]} [options.encryptionKeys] - Array of public keys or single key used to select algorithm preferences for. If no keys are given, the algorithm will be [config.preferredSymmetricAlgorithm]{@link module:config.preferredSymmetricAlgorithm}
  * @param {Date} [options.date=current date] - Date to select algorithm preferences at
  * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - User IDs to select algorithm preferences for
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
