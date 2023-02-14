@@ -77,11 +77,11 @@ export default {
   v5Keys: false,
   /**
    * S2K (String to Key) type, used for key derivation in the context of secret key encryption
-   * and password-encrypted data.
+   * and password-encrypted data. Weaker s2k options are not allowed.
    * Note: Argon2 is the strongest option but not all OpenPGP implementations are compatible with it
    * (pending standardisation).
    * @memberof module:config
-   * @property {Integer} s2kType {@link module:enums.s2k}
+   * @property {enums.s2k.argon2|enums.s2k.iterated} s2kType {@link module:enums.s2k}
    */
   s2kType: enums.s2k.iterated,
   /**

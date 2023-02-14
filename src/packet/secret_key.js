@@ -283,7 +283,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('A non-empty passphrase is required for key encryption.');
     }
 
-    this.s2k = newS2KFromType(config.s2kType, config);
+    this.s2k = newS2KFromType(undefined, config);
     this.s2k.generateSalt();
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;

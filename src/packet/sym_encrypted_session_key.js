@@ -179,7 +179,7 @@ class SymEncryptedSessionKeyPacket {
 
     this.sessionKeyEncryptionAlgorithm = algo;
 
-    this.s2k = newS2KFromType(config.s2kType, config);
+    this.s2k = newS2KFromType(undefined, config);
     this.s2k.generateSalt();
 
     const { blockSize, keySize } = crypto.getCipher(algo);
