@@ -332,7 +332,9 @@ interface Config {
   v5Keys: boolean;
   preferredAEADAlgorithm: enums.aead;
   aeadChunkSizeByte: number;
+  s2kType: enums.s2k.iterated | enums.s2k.argon2;
   s2kIterationCountByte: number;
+  s2kArgon2Params: { passes: number, parallelism: number; memoryExponent: number; };
   minBytesForWebCrypto: number;
   maxUserIDLength: number;
   knownNotations: string[];
@@ -901,5 +903,13 @@ export namespace enums {
     text = 116,
     utf8 = 117,
     mime = 109
+  }
+
+  enum s2k {
+    simple = 0,
+    salted = 1,
+    iterated = 3,
+    argon2 = 4,
+    gnu = 101
   }
 }
