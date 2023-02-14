@@ -6,6 +6,8 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 import { terser } from 'rollup-plugin-terser';
+import { wasm } from '@rollup/plugin-wasm';
+
 
 import pkg from './package.json';
 
@@ -50,7 +52,8 @@ export default Object.assign([
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
         'require(': 'void(',
         delimiters: ['', '']
-      })
+      }),
+      wasm({ targetEnv: 'auto' })
     ]
   },
   {
@@ -68,7 +71,8 @@ export default Object.assign([
       commonjs(),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`
-      })
+      }),
+      wasm({ targetEnv: 'auto' })
     ]
   },
   {
@@ -89,7 +93,8 @@ export default Object.assign([
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
         'require(': 'void(',
         delimiters: ['', '']
-      })
+      }),
+      wasm({ targetEnv: 'auto-inline' })
     ]
   },
   {
@@ -110,7 +115,8 @@ export default Object.assign([
         "import openpgpjs from '../../..';": `import * as openpgpjs from '/dist/${process.env.npm_config_lightweight ? 'lightweight/' : ''}openpgp.mjs'; window.openpgp = openpgpjs;`,
         'require(': 'void(',
         delimiters: ['', '']
-      })
+      }),
+      wasm({ targetEnv: 'auto' })
     ]
   }
 ].filter(config => {

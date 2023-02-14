@@ -87,6 +87,7 @@ export default {
     simple: 0,
     salted: 1,
     iterated: 3,
+    argon2: 4,
     gnu: 101
   },
 

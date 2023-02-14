@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PublicKeyPacket from './public_key';
-import S2K from '../type/s2k';
+import { newS2KFromType } from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -113,7 +113,8 @@ class SecretKeyPacket extends PublicKeyPacket {
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
       //   string-to-key specifier.  The length of the string-to-key
       //   specifier is implied by its type, as described above.
-      this.s2k = new S2K();
+      const s2kType = bytes[i++];
+      this.s2k = newS2KFromType(s2kType);
       i += this.s2k.read(bytes.subarray(i, bytes.length));
 
       if (this.s2k.type === 'gnu-dummy') {
@@ -251,7 +252,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
     this.isEncrypted = null;
     this.keyMaterial = null;
-    this.s2k = new S2K(config);
+    this.s2k = newS2KFromType(enums.s2k.gnu, config);
     this.s2k.algorithm = 0;
     this.s2k.c = 0;
     this.s2k.type = 'gnu-dummy';
@@ -282,8 +283,8 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('A non-empty passphrase is required for key encryption.');
     }
 
-    this.s2k = new S2K(config);
-    this.s2k.salt = crypto.random.getRandomBytes(8);
+    this.s2k = newS2KFromType(config.s2kType, config);
+    this.s2k.generateSalt();
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;
     const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);

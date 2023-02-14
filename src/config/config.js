@@ -76,12 +76,41 @@ export default {
    */
   v5Keys: false,
   /**
-   * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
-   * Iteration Count Byte for S2K (String to Key)
+   * S2K (String to Key) type, used for key derivation in the context of secret key encryption
+   * and password-encrypted data.
+   * Note: Argon2 is the strongest option but not all OpenPGP implementations are compatible with it
+   * (pending standardisation).
+   * @memberof module:config
+   * @property {Integer} s2kType {@link module:enums.s2k}
+   */
+  s2kType: enums.s2k.iterated,
+  /**
+   * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3| RFC4880 3.7.1.3}:
+   * Iteration Count Byte for Iterated and Salted S2K (String to Key).
+   * Only relevant if `config.s2kType` is set to `enums.s2k.iterated`.
+   * Note: this is the exponent value, not the final number of iterations (refer to specs for more details).
    * @memberof module:config
    * @property {Integer} s2kIterationCountByte
    */
   s2kIterationCountByte: 224,
+  /**
+   * {@link https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-07.html#section-3.7.1.4| draft-crypto-refresh 3.7.1.4}:
+   * Argon2 parameters for S2K (String to Key).
+   * Only relevant if `config.s2kType` is set to `enums.s2k.argon2`.
+   * Default settings correspond to the second recommendation from RFC9106 ("uniformly safe option"),
+   * to ensure compatibility with memory-constrained environments.
+   * For more details on the choice of parameters, see https://tools.ietf.org/html/rfc9106#section-4.
+   * @memberof module:config
+   * @property {Object} params
+   * @property {Integer} params.passes - number of iterations t
+   * @property {Integer} params.parallelism - degree of parallelism p
+   * @property {Integer} params.memoryExponent - one-octet exponent indicating the memory size, which will be: 2**memoryExponent kibibytes.
+   */
+  s2kArgon2Params: {
+    passes: 3,
+    parallelism: 4, // lanes
+    memoryExponent: 16 // 64 MiB of RAM
+  },
   /**
    * Allow decryption of messages without integrity protection.
    * This is an **insecure** setting:
