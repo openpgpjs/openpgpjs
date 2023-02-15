@@ -62,7 +62,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @static
  * @private
  */
-export async function generate(options, config) {
+export async function generate(options, config = defaultConfig) {
   options.sign = true; // primary key is always a signing key
   options = helper.sanitizeKeyOptions(options);
   options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));
@@ -101,6 +101,9 @@ export async function reformat(options, config) {
 
   if (privateKey.keyPacket.isDummy()) {
     throw new Error('Cannot reformat a gnu-dummy primary key');
+  }
+  if (privateKey.keyPacket.isStoredInHardware()) {
+    throw new Error('Cannot reformat a gnu-divert-to-card primary key');
   }
 
   const isDecrypted = privateKey.getKeys().every(({ keyPacket }) => keyPacket.isDecrypted());
@@ -221,7 +224,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signaturePacket.keyExpirationTime = options.keyExpirationTime;
       signaturePacket.keyNeverExpires = false;
     }
-    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date);
+    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date, false, config);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {

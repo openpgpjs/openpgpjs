@@ -32,6 +32,7 @@ import { b64ToUint8Array } from '../../../encoding/base64';
 import * as pkcs5 from '../../pkcs5';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 import { getCipher } from '../../crypto';
+import defaultConfig from '../../../config';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -67,11 +68,15 @@ async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTraili
   let i;
   if (stripLeading) {
     // Work around old go crypto bug
+    // Note: loop below has empty body on purpose
+    // noinspection StatementWithEmptyBodyJS
     for (i = 0; i < X.length && X[i] === 0; i++);
     X = X.subarray(i);
   }
   if (stripTrailing) {
     // Work around old OpenPGP.js bug
+    // Note: loop below has empty body on purpose
+    // noinspection StatementWithEmptyBodyJS
     for (i = X.length - 1; i >= 0 && X[i] === 0; i--);
     X = X.subarray(0, i + 1);
   }
@@ -145,10 +150,14 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
  * @param {Uint8Array} V - Public part of ephemeral key
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
+ * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
-async function genPrivateEphemeralKey(curve, V, Q, d) {
+async function genPrivateEphemeralKey(curve, V, Q, d, config = defaultConfig) {
+  if (config.hardwareKeys) {
+    return config.hardwareKeys.agree({ curve, V, Q, d });
+  }
   if (d.length !== curve.payloadSize) {
     const privateKey = new Uint8Array(curve.payloadSize);
     privateKey.set(d, curve.payloadSize - d.length);
@@ -185,12 +194,13 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
  * @param {Uint8Array} fingerprint - Recipient fingerprint
+ * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Uint8Array>} Value derived from session key.
  * @async
  */
-export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
+export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint, config = defaultConfig) {
   const curve = new Curve(oid);
-  const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
+  const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d, config);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
   const { keySize } = getCipher(kdfParams.cipher);
   let err;

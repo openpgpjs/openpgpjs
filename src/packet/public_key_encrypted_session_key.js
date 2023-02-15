@@ -20,6 +20,8 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
+import defaultConfig from '../config';
+import SecretKeyPacket from './secret_key';
 
 const VERSION = 3;
 
@@ -114,13 +116,17 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @param {SecretKeyPacket} key - decrypted private key
    * @param {Object} [randomSessionKey] - Bogus session key to use in case of sensitive decryption error, or if the decrypted session key is of a different type/size.
    *                                      This is needed for constant-time processing. Expected object of the form: { sessionKey: Uint8Array, sessionKeyAlgorithm: enums.symmetric }
+   * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
    * @throws {Error} if decryption failed, unless `randomSessionKey` is given
    * @async
    */
-  async decrypt(key, randomSessionKey) {
+  async decrypt(key, randomSessionKey, config = defaultConfig) {
     // check that session key algo matches the secret key algo
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
+    }
+    if (key instanceof SecretKeyPacket && key.isStoredInHardware() && !(config.hardwareKeys)){
+      throw new Error('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     }
 
     const randomPayload = randomSessionKey ? util.concatUint8Array([
@@ -128,7 +134,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       randomSessionKey.sessionKey,
       util.writeChecksum(randomSessionKey.sessionKey)
     ]) : null;
-    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload);
+    const decoded = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload, config);
     const symmetricAlgoByte = decoded[0];
     const sessionKey = decoded.subarray(1, decoded.length - 2);
     const checksum = decoded.subarray(decoded.length - 2);

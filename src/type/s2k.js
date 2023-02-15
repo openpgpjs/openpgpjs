@@ -44,7 +44,7 @@ class S2K {
      */
     this.algorithm = enums.hash.sha256;
     /**
-     * enums.s2k identifier or 'gnu-dummy'
+     * enums.s2k identifier or 'gnu-dummy' | 'gnu-divert-to-card'
      * @type {String}
      */
     this.type = 'iterated';
@@ -97,6 +97,9 @@ class S2K {
           if (gnuExtType === 1001) {
             this.type = 'gnu-dummy';
             // GnuPG extension mode 1001 -- don't write secret key at all
+          } else if (gnuExtType === 1002) {
+            this.type = 'gnu-divert-to-card';
+            // GnuPG extension mode 1002 -- a stub to access external keys (e.g. smart card)
           } else {
             throw new Error('Unknown s2k gnu protection mode.');
           }
@@ -119,6 +122,8 @@ class S2K {
   write() {
     if (this.type === 'gnu-dummy') {
       return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 1]);
+    } else if (this.type === 'gnu-divert-to-card') {
+      return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 2]);
     }
     const arr = [new Uint8Array([enums.write(enums.s2k, this.type), this.algorithm])];
 

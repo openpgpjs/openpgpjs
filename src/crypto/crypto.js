@@ -35,6 +35,8 @@ import util from '../util';
 import OID from '../type/oid';
 import { Curve } from './public_key/elliptic/curves';
 import { UnsupportedError } from '../packet/packet';
+import defaultConfig from '../config';
+
 
 /**
  * Encrypts data using specified algorithm and public key parameters.
@@ -79,11 +81,12 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
  * @param {Uint8Array} fingerprint - Recipient fingerprint
  * @param {Uint8Array} [randomPayload] - Data to return on decryption error, instead of throwing
  *                                    (needed for constant-time processing in RSA and ElGamal)
+ * @param {Object} [config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<Uint8Array>} Decrypted data.
  * @throws {Error} on sensitive decryption error, unless `randomPayload` is given
  * @async
  */
-export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload) {
+export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload, config = defaultConfig) {
   switch (algo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt: {
@@ -103,7 +106,7 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       const { d } = privateKeyParams;
       const { V, C } = sessionKeyParams;
       return publicKey.elliptic.ecdh.decrypt(
-        oid, kdfParams, V, C.data, Q, d, fingerprint);
+        oid, kdfParams, V, C.data, Q, d, fingerprint, config);
     }
     default:
       throw new Error('Unknown public key encryption algorithm.');
@@ -262,10 +265,14 @@ export function serializeParams(algo, params) {
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Integer} bits - Bit length for RSA keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
+ * @param {{hardwareKeys: HardwareKeys, algo: number}} [hardwareKeys_with_data]
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
-export function generateParams(algo, bits, oid) {
+export function generateParams(algo, bits, oid, hardwareKeys_with_data = null) {
+  if (hardwareKeys_with_data) {
+    hardwareKeys_with_data.algo = algo;
+  }
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
@@ -276,17 +283,17 @@ export function generateParams(algo, bits, oid) {
       }));
     }
     case enums.publicKey.ecdsa:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+      return publicKey.elliptic.generate(oid, hardwareKeys_with_data).then(({ oid, Q, secret }) => ({
         privateParams: { d: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.eddsa:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+      return publicKey.elliptic.generate(oid, hardwareKeys_with_data).then(({ oid, Q, secret }) => ({
         privateParams: { seed: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.ecdh:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret, hash, cipher }) => ({
+      return publicKey.elliptic.generate(oid, hardwareKeys_with_data).then(({ oid, Q, secret, hash, cipher }) => ({
         privateParams: { d: secret },
         publicParams: {
           oid: new OID(oid),

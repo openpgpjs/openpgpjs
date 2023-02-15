@@ -73,6 +73,13 @@ class SecretKeyPacket extends PublicKeyPacket {
      * @type {Object}
      */
     this.privateParams = null;
+
+    /**
+     * The IV used for S2K operations.
+     * Dubbed as a 16B serial number container for the stub keys for external access (as in GnuPG C implementation).
+     * @type {Uint8Array}
+     */
+    this.iv = null;
   }
 
   // 5.5.3.  Secret-Key Packet Formats
@@ -126,7 +133,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - [Optional] If secret data is encrypted (string-to-key usage octet
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
-    if (this.s2kUsage) {
+    if (this.s2kUsage && this.isStoredInHardware()) {
+      const ivlen = bytes[i++];
+      this.iv = bytes.subarray(i, i + ivlen);
+      i += this.iv.length;
+    } else if (this.s2kUsage) {
       this.iv = bytes.subarray(
         i,
         i + crypto.getCipher(this.symmetric).blockSize
@@ -194,6 +205,11 @@ class SecretKeyPacket extends PublicKeyPacket {
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
     if (this.s2kUsage && this.s2k.type !== 'gnu-dummy') {
+      if (this.isStoredInHardware()){
+        // Inserting length of the serial number here as per spec (kept in the IV field, as in GnuPG C implementation)
+        // Details: GnuPG's DETAILS file, GNU extensions to the S2K algorithm
+        optionalFieldsArr.push(util.writeNumber(this.iv.length, 1));
+      }
       optionalFieldsArr.push(...this.iv);
     }
 
@@ -202,7 +218,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
     arr.push(new Uint8Array(optionalFieldsArr));
 
-    if (!this.isDummy()) {
+    if (!this.isDummy() && !this.isStoredInHardware()) {
       if (!this.s2kUsage) {
         this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
       }
@@ -238,6 +254,14 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
+   * Check whether this is a gnu-stub key
+   * @returns {Boolean}
+   */
+  isStoredInHardware() {
+    return !!(this.s2k && this.s2k.type === 'gnu-divert-to-card');
+  }
+
+  /**
    * Remove private key material, converting the key to a dummy one.
    * The resulting key cannot be used for signing/decrypting but can still verify signatures.
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -260,6 +284,51 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
+   * Remove private key material, converting the key to a gnu-divert-to-card one.
+   * The resulting key refers to hardware for the private key operations.
+   * Does nothing if the key is marked as stub already.
+   * @param {Uint8Array} [serialNumber] - Serial number of the hardware device, keeping the secret key. Must be no longer than 16 bytes.
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   */
+  setStoredInHardware(serialNumber, config = defaultConfig) {
+    if (this.isStoredInHardware()) {
+      return;
+    }
+    this.isEncrypted = null;
+    this.keyMaterial = null;
+    this.s2k = new S2K(config);
+    this.s2k.algorithm = 0;
+    this.s2k.c = 0;
+    this.s2k.type = 'gnu-divert-to-card';
+    this.s2kUsage = 254;
+    this.symmetric = enums.symmetric.aes256;
+    this.setSerialNumber(serialNumber);
+  }
+
+  /**
+   * Set serial number of the device, which stores the secret key
+   * @param {Uint8Array} [serialNumber] - Serial number, not longer than 16 bytes
+   */
+  setSerialNumber(serialNumber){
+    if (!this.isStoredInHardware() || !serialNumber || serialNumber.length > 16) {
+      throw new Error('Not a stub key or invalid serial number set on the IV field');
+    }
+    this.iv = serialNumber;
+  }
+
+  /**
+   * Return the serial number of the hardware device keeping the secret value
+   * @returns {Uint8Array} Serial number of the device keeping the private key
+   */
+  getSerialNumber() {
+    if (!this.isStoredInHardware() || !this.iv || this.iv.length > 16) {
+      throw new Error('Not a stub key or invalid serial number set on the IV field');
+    }
+
+    return this.iv;
+  }
+
+  /**
    * Encrypt the payload. By default, we use aes256 and iterated, salted string
    * to key specifier. If the key is in a decrypted state (isEncrypted === false)
    * and the passphrase is empty or undefined, the key will be set as not encrypted.
@@ -270,7 +339,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @async
    */
   async encrypt(passphrase, config = defaultConfig) {
-    if (this.isDummy()) {
+    if (this.isDummy() || this.isStoredInHardware()) {
       return;
     }
 
@@ -316,7 +385,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @async
    */
   async decrypt(passphrase) {
-    if (this.isDummy()) {
+    if (this.isDummy() || this.isStoredInHardware()) {
       return false;
     }
 
@@ -377,6 +446,11 @@ class SecretKeyPacket extends PublicKeyPacket {
       return;
     }
 
+    if (this.isStoredInHardware()) {
+      // do not validate private parts of the gnu-divert-to-card stub
+      return;
+    }
+
     if (!this.isDecrypted()) {
       throw new Error('Key is not decrypted');
     }
@@ -393,8 +467,15 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
   }
 
-  async generate(bits, curve) {
-    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve);
+  /**
+   * @param {{hardwareKeys: HardwareKeys, algo: number}} [hardwareKeys_with_data]
+   */
+  async generate(bits, curve, hardwareKeys_with_data) {
+    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve, hardwareKeys_with_data);
+    if (hardwareKeys_with_data) {
+      const serialNumber = await hardwareKeys_with_data.hardwareKeys.serialNumber();
+      this.setStoredInHardware(serialNumber);
+    }
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;
@@ -404,7 +485,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Clear private key parameters
    */
   clearPrivateParams() {
-    if (this.isDummy()) {
+    if (this.isDummy() || this.isStoredInHardware()) {
       return;
     }
 

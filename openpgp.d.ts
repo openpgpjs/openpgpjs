@@ -84,6 +84,7 @@ export class PrivateKey extends PublicKey {
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
   public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
+  public isAnyStoredInHardware(): boolean;
 }
 
 export class Subkey {
@@ -340,6 +341,7 @@ interface Config {
   rejectMessageHashAlgorithms: Set<enums.hash>;
   rejectPublicKeyAlgorithms: Set<enums.publicKey>;
   rejectCurves: Set<enums.curve>;
+  hardwareKeys: HardwareKeys | null;
 }
 export var config: Config;
 
@@ -347,6 +349,12 @@ export var config: Config;
 // This interface is relevant for top-level functions, which accept a subset of configuration options
 interface PartialConfig extends Partial<Config> {}
 
+interface HardwareKeys {
+  serialNumber(): Promise<Uint8Array>;
+  agree(options: { curve: EllipticCurveName, V: Uint8Array, Q: Uint8Array, d: Uint8Array }): Promise<{ secretKey: Uint8Array, sharedKey: Uint8Array }>;
+  sign(options: { oid: EllipticCurveName, hashAlgo: enums.hash, data: Uint8Array, Q: Uint8Array, d: Uint8Array, hashed: Uint8Array }): Promise<{ r: Uint8Array, s: Uint8Array }>;
+  generate(options: { algorithmName: enums.publicKeyNames, curveName: EllipticCurveName, rsaBits: number }): Promise<{ publicKey: Uint8Array, privateKey: Uint8Array }>;
+}
 /* ############## v5 PACKET #################### */
 
 declare abstract class BasePacket {
@@ -394,7 +402,9 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
   public decrypt(passphrase: string): Promise<void>; // throws on error
   public validate(): Promise<void>; // throws on error
   public isDummy(): boolean;
+  public isStoredInHardware(): boolean;
   public makeDummy(config?: Config): void;
+  public makeStub(serialNumber: Uint8Array, config?: Config): void;
 }
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
@@ -426,7 +436,7 @@ export class AEADEncryptedDataPacket extends BasePacket {
 
 export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
   static readonly tag: enums.packet.publicKeyEncryptedSessionKey;
-  private decrypt(keyPacket: SecretKeyPacket): void; // throws on error
+  private decrypt(keyPacket: SecretKeyPacket, config?: Config): void; // throws on error
   private encrypt(keyPacket: PublicKeyPacket): void; // throws on error
 }
 
@@ -522,7 +532,7 @@ export class SignaturePacket extends BasePacket {
   public preferredAEADAlgorithms: enums.aead[] | null;
   public revoked: null | boolean;
   public rawNotations: RawNotation[];
-  public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean): Promise<void>;
+  public sign(key: AnySecretKeyPacket, data: Uint8Array, date?: Date, detached?: boolean, config?: Config): Promise<void>;
   public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;

@@ -169,8 +169,14 @@ class Curve {
     }
   }
 
-  async genKeyPair() {
+  /**
+   * @param {{hardwareKeys: HardwareKeys, algo: enums.publicKey}} [hardwareKeys_with_data]
+   */
+  async genKeyPair(hardwareKeys_with_data = null) {
     let keyPair;
+    if (hardwareKeys_with_data){
+      return hardwareKeys_with_data.hardwareKeys.generate({ algorithmName: hardwareKeys_with_data.algo, curveName: this.name, rsaBits: 0 });
+    }
     switch (this.type) {
       case 'web':
         try {
@@ -205,13 +211,17 @@ class Curve {
   }
 }
 
-async function generate(curve) {
+/**
+ * @param {string} curve - Curve name
+ * @param {{hardwareKeys: HardwareKeys, algo: number}} [hardwareKeys_with_data]
+ */
+async function generate(curve, hardwareKeys_with_data = null) {
   const BigInteger = await util.getBigInteger();
 
   curve = new Curve(curve);
-  const keyPair = await curve.genKeyPair();
+  const keyPair = await curve.genKeyPair(hardwareKeys_with_data);
   const Q = new BigInteger(keyPair.publicKey).toUint8Array();
-  const secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
+  const secret = keyPair.privateKey ? new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize) : null;
   return {
     oid: curve.oid,
     Q,

@@ -16,20 +16,32 @@ import crypto from '../crypto';
 import util from '../util';
 import defaultConfig from '../config';
 
-export async function generateSecretSubkey(options, config) {
+export async function generateSecretSubkey(options, config = defaultConfig) {
+  let hardwareKeys_with_data = null;
+  if (config.hardwareKeys) {
+    hardwareKeys_with_data = {
+      hardwareKeys: config.hardwareKeys
+    };
+  }
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, hardwareKeys_with_data);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
 }
 
 export async function generateSecretKey(options, config) {
+  let hardwareKeys_with_data = null;
+  if (config.hardwareKeys) {
+    hardwareKeys_with_data = {
+      hardwareKeys: config.hardwareKeys
+    };
+  }
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, hardwareKeys_with_data);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }
@@ -104,7 +116,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
     subkeySignaturePacket.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date);
+  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date, false, config);
   return subkeySignaturePacket;
 }
 
@@ -200,6 +212,9 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
+  if (signingKeyPacket.isStoredInHardware() && !config.hardwareKeys) {
+    throw new Error('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
+  }
   if (!signingKeyPacket.isDecrypted()) {
     throw new Error('Signing key is not decrypted.');
   }
@@ -207,7 +222,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
-  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached, config);
   return signaturePacket;
 }
 
