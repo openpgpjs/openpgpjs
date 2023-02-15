@@ -346,11 +346,11 @@ export var config: Config;
 // This interface is relevant for top-level functions, which accept a subset of configuration options
 interface PartialConfig extends Partial<Config> {}
 
-declare abstract class HardwareKeys {
-  public serial_number(): Promise<Uint8Array>;
-  public agree(options: { curve: EllipticCurveName, V: Uint8Array, Q: Uint8Array, d: Uint8Array }): Promise<{ secretKey: Uint8Array, sharedKey: Uint8Array }>;
-  public sign(options: { oid: EllipticCurveName, hashAlgo: enums.hash, data: Uint8Array, Q: Uint8Array, d: Uint8Array, hashed: Uint8Array }): Promise<{ r: Uint8Array, s: Uint8Array }>;
-  public generate(options: { algorithmName: enums.publicKeyNames, curveName: EllipticCurveName, rsaBits: number }): Promise<{ publicKey: Uint8Array, privateKey: Uint8Array }>;
+interface HardwareKeys {
+  serialNumber(): Promise<Uint8Array>;
+  agree(options: { curve: EllipticCurveName, V: Uint8Array, Q: Uint8Array, d: Uint8Array }): Promise<{ secretKey: Uint8Array, sharedKey: Uint8Array }>;
+  sign(options: { oid: EllipticCurveName, hashAlgo: enums.hash, data: Uint8Array, Q: Uint8Array, d: Uint8Array, hashed: Uint8Array }): Promise<{ r: Uint8Array, s: Uint8Array }>;
+  generate(options: { algorithmName: enums.publicKeyNames, curveName: EllipticCurveName, rsaBits: number }): Promise<{ publicKey: Uint8Array, privateKey: Uint8Array }>;
 }
 /* ############## v5 PACKET #################### */
 
