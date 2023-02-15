@@ -354,7 +354,7 @@ class SignaturePacket {
     let mypos = 0;
 
     // The leftmost bit denotes a "critical" packet
-    const critical = bytes[mypos] & 0x80;
+    const critical = !!(bytes[mypos] & 0x80);
     const type = bytes[mypos] & 0x7F;
 
     if (!hashed) {
