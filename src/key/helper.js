@@ -16,9 +16,9 @@ import crypto from '../crypto';
 import util from '../util';
 import defaultConfig from '../config';
 
-export async function generateSecretSubkey(options, config) {
+export async function generateSecretSubkey(options, config = defaultConfig) {
   let hardwareKeys_with_data = null;
-  if (config && config.hardwareKeys) {
+  if (config.hardwareKeys) {
     hardwareKeys_with_data = {
       hardwareKeys: config.hardwareKeys
     };
@@ -33,7 +33,7 @@ export async function generateSecretSubkey(options, config) {
 
 export async function generateSecretKey(options, config) {
   let hardwareKeys_with_data = null;
-  if (config && config.hardwareKeys) {
+  if (config.hardwareKeys) {
     hardwareKeys_with_data = {
       hardwareKeys: config.hardwareKeys
     };

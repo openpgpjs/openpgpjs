@@ -8,6 +8,8 @@ import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from '../packet/packet';
+import defaultConfig from '../config';
+
 
 /**
  * Parse signature in binary form to get the parameters.
@@ -121,12 +123,12 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
  * @returns {Promise<Object>} Signature                      Object containing named signature parameters.
  * @async
  */
-export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, data, hashed, config = null) {
+export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, data, hashed, config = defaultConfig) {
   if (!publicKeyParams || !privateKeyParams) {
     throw new Error('Missing key parameters');
   }
 
-  if (config && config.hardwareKeys) {
+  if (config.hardwareKeys) {
     const { oid, Q } = publicKeyParams;
     const { d } = privateKeyParams;
     return config.hardwareKeys.sign({ oid, hashAlgo, data, Q, d, hashed });

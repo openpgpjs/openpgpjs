@@ -62,7 +62,7 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
  * @static
  * @private
  */
-export async function generate(options, config) {
+export async function generate(options, config = defaultConfig) {
   options.sign = true; // primary key is always a signing key
   options = helper.sanitizeKeyOptions(options);
   options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));

@@ -20,6 +20,7 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
+import defaultConfig from '../config';
 import SecretKeyPacket from './secret_key';
 
 const VERSION = 3;
@@ -119,12 +120,12 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @throws {Error} if decryption failed, unless `randomSessionKey` is given
    * @async
    */
-  async decrypt(key, randomSessionKey, config = null) {
+  async decrypt(key, randomSessionKey, config = defaultConfig) {
     // check that session key algo matches the secret key algo
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Decryption error');
     }
-    if (key instanceof SecretKeyPacket && key.isStoredInHardware() && !(config && config.hardwareKeys)){
+    if (key instanceof SecretKeyPacket && key.isStoredInHardware() && !(config.hardwareKeys)){
       throw new Error('Cannot use gnu-divert-to-card key without config.hardwareKeys set.');
     }
 

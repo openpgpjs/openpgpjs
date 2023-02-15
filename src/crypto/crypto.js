@@ -35,6 +35,8 @@ import util from '../util';
 import OID from '../type/oid';
 import { Curve } from './public_key/elliptic/curves';
 import { UnsupportedError } from '../packet/packet';
+import defaultConfig from '../config';
+
 
 /**
  * Encrypts data using specified algorithm and public key parameters.
@@ -84,7 +86,7 @@ export async function publicKeyEncrypt(algo, publicParams, data, fingerprint) {
  * @throws {Error} on sensitive decryption error, unless `randomPayload` is given
  * @async
  */
-export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload, config = null) {
+export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, sessionKeyParams, fingerprint, randomPayload, config = defaultConfig) {
   switch (algo) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt: {

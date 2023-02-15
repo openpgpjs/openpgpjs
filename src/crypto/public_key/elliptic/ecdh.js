@@ -32,6 +32,7 @@ import { b64ToUint8Array } from '../../../encoding/base64';
 import * as pkcs5 from '../../pkcs5';
 import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 import { getCipher } from '../../crypto';
+import defaultConfig from '../../../config';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -149,8 +150,8 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
  * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
  * @async
  */
-async function genPrivateEphemeralKey(curve, V, Q, d, config = null) {
-  if (config && config.hardwareKeys) {
+async function genPrivateEphemeralKey(curve, V, Q, d, config = defaultConfig) {
+  if (config.hardwareKeys) {
     return config.hardwareKeys.agree({ curve, V, Q, d });
   }
   if (d.length !== curve.payloadSize) {
@@ -193,7 +194,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d, config = null) {
  * @returns {Promise<Uint8Array>} Value derived from session key.
  * @async
  */
-export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint, config = null) {
+export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint, config = defaultConfig) {
   const curve = new Curve(oid);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d, config);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);

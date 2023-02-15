@@ -173,7 +173,7 @@ class SignaturePacket {
    * @throws {Error} if signing failed
    * @async
    */
-  async sign(key, data, date = new Date(), detached = false, config = null) {
+  async sign(key, data, date = new Date(), detached = false, config = defaultConfig) {
     if (key.version === 5) {
       this.version = 5;
     } else {
