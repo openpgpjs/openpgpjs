@@ -260,7 +260,7 @@ class SignaturePacket {
       // MUST NOT be included in the signature.
       arr.push(writeSubPacket(sub.issuer, this.issuerKeyID.write()));
     }
-    this.rawNotations.forEach(([{ name, value, humanReadable }]) => {
+    this.rawNotations.forEach(({ name, value, humanReadable }) => {
       bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
       // 2 octets of name length
       bytes.push(util.writeNumber(name.length, 2));
