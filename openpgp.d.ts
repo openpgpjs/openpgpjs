@@ -401,7 +401,7 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
   public isDummy(): boolean;
   public isStoredInHardware(): boolean;
   public makeDummy(config?: Config): void;
-  public makeStub(serial_number: Uint8Array, config?: Config): void;
+  public makeStub(serialNumber: Uint8Array, config?: Config): void;
 }
 
 export class SecretKeyPacket extends BaseSecretKeyPacket {
