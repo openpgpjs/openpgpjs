@@ -1138,6 +1138,39 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
     expect(await sig.verified).to.be.true;
   });
 
+  it('Can create notations', async function() {
+    const privKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
+      passphrase: 'hello world'
+    });
+
+    const config = { minRSABits: 1024 };
+    const message_with_notation = await openpgp.encrypt({
+      message: await openpgp.createMessage({ text: 'test' }),
+      encryptionKeys: privKey,
+      signingKeys: privKey,
+      signatureNotations: [
+        {
+          name: 'test@example.com',
+          value: new TextEncoder().encode('test'),
+          humanReadable: true
+        }
+      ],
+      config
+    });
+    const { signatures: [sig] } = await openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage: message_with_notation }),
+      decryptionKeys: privKey,
+      verificationKeys: privKey
+    });
+    const { packets: [{ rawNotations: notations }] } = await sig.signature;
+    expect(notations).to.have.length(1);
+    expect(notations[0].name).to.equal('test@example.com');
+    expect(notations[0].value).to.deep.equal(new Uint8Array([116, 101, 115, 116]));
+    expect(notations[0].humanReadable).to.be.true;
+    expect(notations[0].critical).to.be.false;
+  });
+
   it('Verify cleartext signed message with two signatures with openpgp.verify', async function() {
     const cleartextMessage =
       ['-----BEGIN PGP SIGNED MESSAGE-----',

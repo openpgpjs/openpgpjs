@@ -190,7 +190,7 @@ class Subkey {
       signatureType: enums.signature.subkeyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
-    }, date, undefined, false, config));
+    }, date, undefined, undefined, false, config));
     await subkey.update(this);
     return subkey;
   }
