@@ -68,11 +68,15 @@ async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTraili
   let i;
   if (stripLeading) {
     // Work around old go crypto bug
+    // Note: loop below has empty body on purpose
+    // noinspection StatementWithEmptyBodyJS
     for (i = 0; i < X.length && X[i] === 0; i++);
     X = X.subarray(i);
   }
   if (stripTrailing) {
     // Work around old OpenPGP.js bug
+    // Note: loop below has empty body on purpose
+    // noinspection StatementWithEmptyBodyJS
     for (i = X.length - 1; i >= 0 && X[i] === 0; i--);
     X = X.subarray(0, i + 1);
   }
