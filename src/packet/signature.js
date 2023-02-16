@@ -262,11 +262,12 @@ class SignaturePacket {
     }
     this.rawNotations.forEach(({ name, value, humanReadable }) => {
       bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
+      const encodedName = util.encodeUTF8(name);
       // 2 octets of name length
-      bytes.push(util.writeNumber(name.length, 2));
+      bytes.push(util.writeNumber(encodedName.length, 2));
       // 2 octets of value length
       bytes.push(util.writeNumber(value.length, 2));
-      bytes.push(util.stringToUint8Array(name));
+      bytes.push(encodedName);
       bytes.push(value);
       bytes = util.concat(bytes);
       arr.push(writeSubPacket(sub.notationData, bytes));
@@ -284,20 +285,20 @@ class SignaturePacket {
       arr.push(writeSubPacket(sub.keyServerPreferences, bytes));
     }
     if (this.preferredKeyServer !== null) {
-      arr.push(writeSubPacket(sub.preferredKeyServer, util.stringToUint8Array(this.preferredKeyServer)));
+      arr.push(writeSubPacket(sub.preferredKeyServer, util.encodeUTF8(this.preferredKeyServer)));
     }
     if (this.isPrimaryUserID !== null) {
       arr.push(writeSubPacket(sub.primaryUserID, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
     }
     if (this.policyURI !== null) {
-      arr.push(writeSubPacket(sub.policyURI, util.stringToUint8Array(this.policyURI)));
+      arr.push(writeSubPacket(sub.policyURI, util.encodeUTF8(this.policyURI)));
     }
     if (this.keyFlags !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.keyFlags));
       arr.push(writeSubPacket(sub.keyFlags, bytes));
     }
     if (this.signersUserID !== null) {
-      arr.push(writeSubPacket(sub.signersUserID, util.stringToUint8Array(this.signersUserID)));
+      arr.push(writeSubPacket(sub.signersUserID, util.encodeUTF8(this.signersUserID)));
     }
     if (this.reasonForRevocationFlag !== null) {
       bytes = util.stringToUint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
@@ -437,13 +438,13 @@ class SignaturePacket {
         const n = util.readNumber(bytes.subarray(mypos, mypos + 2));
         mypos += 2;
 
-        const name = util.uint8ArrayToString(bytes.subarray(mypos, mypos + m));
+        const name = util.decodeUTF8(bytes.subarray(mypos, mypos + m));
         const value = bytes.subarray(mypos + m, mypos + m + n);
 
         this.rawNotations.push({ name, humanReadable, value, critical });
 
         if (humanReadable) {
-          this.notations[name] = util.uint8ArrayToString(value);
+          this.notations[name] = util.decodeUTF8(value);
         }
         break;
       }
@@ -461,7 +462,7 @@ class SignaturePacket {
         break;
       case enums.signatureSubpacket.preferredKeyServer:
         // Preferred Key Server
-        this.preferredKeyServer = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
+        this.preferredKeyServer = util.decodeUTF8(bytes.subarray(mypos, bytes.length));
         break;
       case enums.signatureSubpacket.primaryUserID:
         // Primary User ID
@@ -469,7 +470,7 @@ class SignaturePacket {
         break;
       case enums.signatureSubpacket.policyURI:
         // Policy URI
-        this.policyURI = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
+        this.policyURI = util.decodeUTF8(bytes.subarray(mypos, bytes.length));
         break;
       case enums.signatureSubpacket.keyFlags:
         // Key Flags
@@ -477,12 +478,12 @@ class SignaturePacket {
         break;
       case enums.signatureSubpacket.signersUserID:
         // Signer's User ID
-        this.signersUserID = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
+        this.signersUserID = util.decodeUTF8(bytes.subarray(mypos, bytes.length));
         break;
       case enums.signatureSubpacket.reasonForRevocation:
         // Reason for Revocation
         this.reasonForRevocationFlag = bytes[mypos++];
-        this.reasonForRevocationString = util.uint8ArrayToString(bytes.subarray(mypos, bytes.length));
+        this.reasonForRevocationString = util.decodeUTF8(bytes.subarray(mypos, bytes.length));
         break;
       case enums.signatureSubpacket.features:
         // Features
