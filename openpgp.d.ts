@@ -166,7 +166,7 @@ export class CleartextMessage {
    *
    *  @param privateKeys private keys with decrypted secret key data for signing
    */
-  sign(privateKeys: PrivateKey[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): void;
+  sign(privateKeys: PrivateKey[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], notations?: RawNotation[], config?: Config): void;
 
   /** Verify signatures of cleartext signed message
    *  @param keys array of keys to verify signatures
@@ -285,7 +285,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Sign the message (the literal data packet of the message)
       @param signingKeys private keys with decrypted secret key data for signing
   */
-  public sign(signingKeys: PrivateKey[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<T>>;
+  public sign(signingKeys: PrivateKey[], signature?: Signature, signingKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], notations?: RawNotation[], config?: Config): Promise<Message<T>>;
 
   /** Unwrap compressed message
    */
@@ -604,6 +604,8 @@ interface EncryptOptions {
   signingUserIDs?: MaybeArray<UserID>;
   /** (optional) array of user IDs to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
   encryptionUserIDs?: MaybeArray<UserID>;
+  /** (optional) array of notations to add to the signatures, e.g. { name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true } */
+  signatureNotations?: MaybeArray<RawNotation>;
   config?: PartialConfig;
 }
 
@@ -637,6 +639,7 @@ interface SignOptions {
   signingKeyIDs?: MaybeArray<KeyID>;
   date?: Date;
   signingUserIDs?: MaybeArray<UserID>;
+  signatureNotations?: MaybeArray<RawNotation>;
   config?: PartialConfig;
 }
 

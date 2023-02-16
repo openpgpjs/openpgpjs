@@ -96,7 +96,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
     subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
       signatureType: enums.signature.keyBinding
-    }, options.date, undefined, undefined, config);
+    }, options.date, undefined, undefined, undefined, config);
   } else {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
   }
@@ -192,11 +192,12 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing
  * @param {Date} [date] - Override the creationtime of the signature
  * @param {Object} [userID] - User ID
+ * @param {Array} [notations] - Notation Data to add to the signature, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]
  * @param {Object} [detached] - Whether to create a detached signature packet
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} Signature packet.
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, detached = false, config) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, notations = [], detached = false, config) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
@@ -207,6 +208,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
+  signaturePacket.rawNotations = notations;
   await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
   return signaturePacket;
 }

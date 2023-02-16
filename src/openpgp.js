@@ -256,16 +256,17 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @param {Date} [options.date=current date] - Override the creation date of the message signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `encryptionKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
+ * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String>|MaybeStream<Uint8Array>>} Encrypted message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
-export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], config, ...rest }) {
+export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkMessage(message); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords);
-  signingKeyIDs = toArray(signingKeyIDs); encryptionKeyIDs = toArray(encryptionKeyIDs); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs);
+  signingKeyIDs = toArray(signingKeyIDs); encryptionKeyIDs = toArray(encryptionKeyIDs); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs); signatureNotations = toArray(signatureNotations);
   if (rest.detached) {
     throw new Error("The `detached` option has been removed from openpgp.encrypt, separately call openpgp.sign instead. Don't forget to remove the `privateKeys` option as well.");
   }
@@ -280,7 +281,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
   const streaming = message.fromStream;
   try {
     if (signingKeys.length || signature) { // sign the message only if signing keys or signature is specified
-      message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, config);
+      message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
     }
     message = message.compress(
       await getPreferredAlgo('compression', encryptionKeys, date, encryptionUserIDs, config),
@@ -387,15 +388,16 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
+ * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String|Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
-export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], config, ...rest }) {
+export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkCleartextOrMessage(message); checkOutputMessageFormat(format);
-  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs);
+  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs); signatureNotations = toArray(signatureNotations);
 
   if (rest.privateKeys) throw new Error('The `privateKeys` option has been removed from openpgp.sign, pass `signingKeys` instead');
   if (rest.armor !== undefined) throw new Error('The `armor` option has been removed from openpgp.sign, pass `format` instead.');
@@ -411,9 +413,9 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
   try {
     let signature;
     if (detached) {
-      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config);
+      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
     } else {
-      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, config);
+      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
     }
     if (format === 'object') return signature;
 

@@ -77,7 +77,7 @@ class User {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
-      }, date, undefined, undefined, config);
+      }, date, undefined, undefined, undefined, config);
     }));
     await user.update(this, date, config);
     return user;
@@ -265,7 +265,7 @@ class User {
       signatureType: enums.signature.certRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
-    }, date, undefined, false, config));
+    }, date, undefined, undefined, false, config));
     await user.update(this);
     return user;
   }

@@ -134,6 +134,14 @@ import {
   const textSignedObject: Message<string> = await sign({ signingKeys: privateKeys, message: textMessage, format: 'object' });
   expect(textSignedObject).to.be.instanceOf(Message);
 
+  // Sign text message (armored)
+  const textSignedWithNotations: string = await sign({ signingKeys: privateKeys, message: textMessage, signatureNotations: [{
+    name: 'test@example.org',
+    value: new TextEncoder().encode('test'),
+    humanReadable: true
+  }] });
+  expect(textSignedWithNotations).to.include('-----BEGIN PGP MESSAGE-----');
+
   // Verify signed text message (armored)
   const signedMessage = await readMessage({ armoredMessage: textSignedArmor });
   const verifiedText = await verify({ verificationKeys: publicKeys, message: signedMessage });
