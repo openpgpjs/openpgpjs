@@ -1,0 +1,186 @@
+name: Code Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build: # cache both dist and tests (non-lightweight only), based on commit hash
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+      - name: Check for cached folders
+        id: cache-full
+        uses: actions/cache@v3
+        with:
+          path: |
+            dist
+            test/lib
+          key: cache-${{ github.sha }}
+      - name: Build dist and tests
+        if: steps.cache-full.outputs.cache-hit != 'true'
+        run: |
+          npm ci
+          npm run build-test
+
+  node:
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    name: Node ${{ matrix.node-version }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm ci --ignore-scripts # for mocha
+    - name: Retrieve cached folders
+      uses: actions/cache/restore@v3
+      id: cache-full
+      with:
+        # test/lib is not needed, but the path must be specified fully for a cache-hit
+        path: |
+          dist
+          test/lib
+        key: cache-${{ github.sha }}
+        # ignore cache miss, since it was taken care of the `build` step and it should never occur here
+    - run: npm test
+
+  test-browsers-latest:
+    name: Browsers (latest)
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+
+      - name: Retrieve cached built folders
+        uses: actions/cache/restore@v3
+        id: cache-full
+        with:
+          path: |
+            dist
+            test/lib
+          key: cache-${{ github.sha }}
+
+      - name: Install dependencies
+        # cannot use `--ignore-scripts` since playwright seems to use it to set ENV vars
+        run: |
+          npm pkg delete scripts.prepare
+          npm ci
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          PLAYWRIGHT_VERSION=$(npm ls playwright | grep playwright | sed 's/.*@//')
+          echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
+      - name: Check for cached browsers
+        id: cache-playwright-browsers
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ steps.playwright-version.outputs.version }}
+      - name: Install browsers
+        if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
+        run: |
+          npx playwright install-deps chrome
+          npx playwright install-deps firefox
+
+      - name: Install WebKit # caching not possible, external shared libraries required
+        run: npx playwright install-deps webkit
+
+      - name: Run browser tests
+        run: npm run test-browser
+
+      - name: Run browser tests (lightweight) # overwrite test/lib
+        run: |
+          npm run build-test --lightweight
+          npm run test-browser
+
+  test-browsers-compatibility:
+    name: Browsers (older, on Browserstack)
+    runs-on: ubuntu-latest
+    needs: test-browsers-latest
+    env: # credentials need hardcoding for now since Github secrets aren't accessible on pull requests from forks
+      BROWSERSTACK_USERNAME: openpgpjs_PlY4Uq885CQ
+      BROWSERSTACK_ACCESS_KEY: VjgBVRMxNVBj7SjJFiau
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Retrieve cached dist folder
+        uses: actions/cache/restore@v3
+        id: cache-full
+        with:
+          path: |
+            dist
+            test/lib
+          key: cache-${{ github.sha }}
+
+      - name: Wait for other Browserstack tests to finish
+        uses: softprops/turnstyle@v1
+        with:
+          poll-interval-seconds: 30
+          abort-after-seconds: 900
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run browserstack tests
+        run: npm run test-browserstack
+
+      - name: Run browserstack tests (lightweight) # overwrite test/lib
+        run: |
+          npm run build-test --lightweight
+          npm run test-browserstack
+        env:
+          LIGHTWEIGHT: true
+
+  types:
+    name: Type definitions
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+    - run: npm ci --ignore-scripts # TS
+    - name: Retrieve cached folders
+      uses: actions/cache/restore@v3
+      id: cache-full
+      with:
+        path: |
+          dist
+          test/lib
+        key: cache-${{ github.sha }}
+    - run: npm run test-type-definitions
+
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+    - run: npm ci --ignore-scripts # linter
+    - name: Retrieve cached folders
+      uses: actions/cache/restore@v3
+      id: cache-full
+      with:
+        path: |
+          dist
+          test/lib
+        key: cache-${{ github.sha }}
+    - run: npm run lint
