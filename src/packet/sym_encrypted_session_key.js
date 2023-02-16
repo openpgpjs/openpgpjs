@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { newS2KFromType } from '../type/s2k';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
 import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -179,7 +179,7 @@ class SymEncryptedSessionKeyPacket {
 
     this.sessionKeyEncryptionAlgorithm = algo;
 
-    this.s2k = newS2KFromType(undefined, config);
+    this.s2k = newS2KFromConfig(config);
     this.s2k.generateSalt();
 
     const { blockSize, keySize } = crypto.getCipher(algo);

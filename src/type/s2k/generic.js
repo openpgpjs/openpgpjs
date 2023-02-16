@@ -33,7 +33,7 @@ import crypto from '../../crypto';
 import enums from '../../enums';
 import util from '../../util';
 
-class S2K {
+class GenericS2K {
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
@@ -197,4 +197,4 @@ class S2K {
   }
 }
 
-export default S2K;
+export default GenericS2K;

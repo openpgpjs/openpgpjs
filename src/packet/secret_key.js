@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PublicKeyPacket from './public_key';
-import { newS2KFromType } from '../type/s2k';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -283,7 +283,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('A non-empty passphrase is required for key encryption.');
     }
 
-    this.s2k = newS2KFromType(undefined, config);
+    this.s2k = newS2KFromConfig(config);
     this.s2k.generateSalt();
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;

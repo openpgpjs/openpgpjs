@@ -89,9 +89,6 @@ class Argon2S2K {
   */
   async produceKey(passphrase, keySize) {
     const decodedM = 2 << (this.encodedM - 1);
-    if (decodedM < 8 * this.p || this.encodedM > 31) {
-      throw new Error('Memory size and parallelism settings are incompatible.');
-    }
 
     try {
       if (!argon2Promise) { // first load

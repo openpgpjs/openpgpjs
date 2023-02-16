@@ -1219,6 +1219,25 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       expect(unlocked.isDecrypted()).to.be.true;
     });
 
+    it('should support encrypting with argon2 s2k', async function() {
+      const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
+      const locked = await openpgp.encryptKey({
+        privateKey: key,
+        passphrase: passphrase,
+        config: { s2kType: openpgp.enums.s2k.argon2 }
+      });
+      expect(key.isDecrypted()).to.be.true;
+      expect(locked.isDecrypted()).to.be.false;
+      expect(locked.keyPacket.isDummy()).to.be.true;
+      const unlocked = await openpgp.decryptKey({
+        privateKey: locked,
+        passphrase: passphrase
+      });
+      expect(key.isDecrypted()).to.be.true;
+      expect(unlocked.isDecrypted()).to.be.true;
+      expect(unlocked.keyPacket.isDummy()).to.be.true;
+    });
+
     it('should encrypt gnu-dummy key', async function() {
       const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
       const locked = await openpgp.encryptKey({
