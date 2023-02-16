@@ -1154,6 +1154,11 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
           name: 'test@example.com',
           value: new TextEncoder().encode('test'),
           humanReadable: true
+        },
+        {
+          name: 'séparation-de-domaine@proton.ch',
+          value: new Uint8Array([0, 1, 2, 3]),
+          humanReadable: false
         }
       ],
       config
@@ -1164,11 +1169,15 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       verificationKeys: privKey
     });
     const { packets: [{ rawNotations: notations }] } = await sig.signature;
-    expect(notations).to.have.length(1);
+    expect(notations).to.have.length(2);
     expect(notations[0].name).to.equal('test@example.com');
     expect(notations[0].value).to.deep.equal(new Uint8Array([116, 101, 115, 116]));
     expect(notations[0].humanReadable).to.be.true;
     expect(notations[0].critical).to.be.false;
+    expect(notations[1].name).to.equal('séparation-de-domaine@proton.ch');
+    expect(notations[1].value).to.deep.equal(new Uint8Array([0, 1, 2, 3]));
+    expect(notations[1].humanReadable).to.be.false;
+    expect(notations[1].critical).to.be.false;
   });
 
   it('Verify cleartext signed message with two signatures with openpgp.verify', async function() {
