@@ -192,7 +192,7 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing
  * @param {Date} [date] - Override the creationtime of the signature
  * @param {Object} [userID] - User ID
- * @param {Array} [notations] - Notation Data to add to the signature, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]
+ * @param {Array} [notations] - Notation Data to add to the signature, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
  * @param {Object} [detached] - Whether to create a detached signature packet
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} Signature packet.
