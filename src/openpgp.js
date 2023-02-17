@@ -256,7 +256,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @param {Date} [options.date=current date] - Override the creation date of the message signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
  * @param {Object|Object[]} [options.encryptionUserIDs=primary user IDs] - Array of user IDs to encrypt for, one per key in `encryptionKeys`, e.g. `[{ name: 'Robert Receiver', email: 'robert@openpgp.org' }]`
- * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]`
+ * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String>|MaybeStream<Uint8Array>>} Encrypted message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
@@ -388,7 +388,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
- * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]`
+ * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String|Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async

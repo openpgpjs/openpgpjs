@@ -532,6 +532,7 @@ export interface RawNotation {
   name: string;
   value: Uint8Array;
   humanReadable: boolean;
+  critical: boolean;
 }
 
 export class TrustPacket extends BasePacket {
@@ -604,7 +605,7 @@ interface EncryptOptions {
   signingUserIDs?: MaybeArray<UserID>;
   /** (optional) array of user IDs to encrypt for, e.g. { name:'Robert Receiver', email:'robert@openpgp.org' } */
   encryptionUserIDs?: MaybeArray<UserID>;
-  /** (optional) array of notations to add to the signatures, e.g. { name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true } */
+  /** (optional) array of notations to add to the signatures, e.g. { name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false } */
   signatureNotations?: MaybeArray<RawNotation>;
   config?: PartialConfig;
 }

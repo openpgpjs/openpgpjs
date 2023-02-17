@@ -1153,27 +1153,41 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
         {
           name: 'test@example.com',
           value: new TextEncoder().encode('test'),
-          humanReadable: true
+          humanReadable: true,
+          critical: true
         },
         {
           name: 'séparation-de-domaine@proton.ch',
           value: new Uint8Array([0, 1, 2, 3]),
-          humanReadable: false
+          humanReadable: false,
+          critical: false
         }
       ],
       config
     });
+    expect(openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage: message_with_notation }),
+      decryptionKeys: privKey,
+      verificationKeys: privKey,
+      expectSigned: true,
+      config
+    })).to.be.rejectedWith('Unknown critical notation: test@example.com');
     const { signatures: [sig] } = await openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage: message_with_notation }),
       decryptionKeys: privKey,
-      verificationKeys: privKey
+      verificationKeys: privKey,
+      config: {
+        knownNotations: ['test@example.com'],
+        ...config
+      }
     });
+    expect(await sig.verified).to.be.true;
     const { packets: [{ rawNotations: notations }] } = await sig.signature;
     expect(notations).to.have.length(2);
     expect(notations[0].name).to.equal('test@example.com');
     expect(notations[0].value).to.deep.equal(new Uint8Array([116, 101, 115, 116]));
     expect(notations[0].humanReadable).to.be.true;
-    expect(notations[0].critical).to.be.false;
+    expect(notations[0].critical).to.be.true;
     expect(notations[1].name).to.equal('séparation-de-domaine@proton.ch');
     expect(notations[1].value).to.deep.equal(new Uint8Array([0, 1, 2, 3]));
     expect(notations[1].humanReadable).to.be.false;

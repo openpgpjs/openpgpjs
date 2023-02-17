@@ -64,7 +64,7 @@ export class CleartextMessage {
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
    * @param {Date} [date] - The creation time of the signature that should be created
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]
+   * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
    * @async

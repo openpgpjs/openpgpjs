@@ -476,7 +476,7 @@ export class Message {
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
    * @param {Date} [date] - Override the creation time of the signature
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]
+   * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Message>} New message with signed content.
    * @async
@@ -564,7 +564,7 @@ export class Message {
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
    * @param {Date} [date] - Override the creation time of the signature
    * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
-   * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]
+   * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Signature>} New detached signature of message content.
    * @async
@@ -707,7 +707,7 @@ export class Message {
  * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [date] - Override the creationtime of the signature
  * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
- * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true }]
+ * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
  * @param {Boolean} [detached] - Whether to create detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {Promise<PacketList>} List of signature packets.

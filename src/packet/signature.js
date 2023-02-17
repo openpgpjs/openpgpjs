@@ -226,41 +226,41 @@ class SignaturePacket {
     if (this.created === null) {
       throw new Error('Missing signature creation time');
     }
-    arr.push(writeSubPacket(sub.signatureCreationTime, util.writeDate(this.created)));
+    arr.push(writeSubPacket(sub.signatureCreationTime, true, util.writeDate(this.created)));
     if (this.signatureExpirationTime !== null) {
-      arr.push(writeSubPacket(sub.signatureExpirationTime, util.writeNumber(this.signatureExpirationTime, 4)));
+      arr.push(writeSubPacket(sub.signatureExpirationTime, true, util.writeNumber(this.signatureExpirationTime, 4)));
     }
     if (this.exportable !== null) {
-      arr.push(writeSubPacket(sub.exportableCertification, new Uint8Array([this.exportable ? 1 : 0])));
+      arr.push(writeSubPacket(sub.exportableCertification, true, new Uint8Array([this.exportable ? 1 : 0])));
     }
     if (this.trustLevel !== null) {
       bytes = new Uint8Array([this.trustLevel, this.trustAmount]);
-      arr.push(writeSubPacket(sub.trustSignature, bytes));
+      arr.push(writeSubPacket(sub.trustSignature, true, bytes));
     }
     if (this.regularExpression !== null) {
-      arr.push(writeSubPacket(sub.regularExpression, this.regularExpression));
+      arr.push(writeSubPacket(sub.regularExpression, true, this.regularExpression));
     }
     if (this.revocable !== null) {
-      arr.push(writeSubPacket(sub.revocable, new Uint8Array([this.revocable ? 1 : 0])));
+      arr.push(writeSubPacket(sub.revocable, true, new Uint8Array([this.revocable ? 1 : 0])));
     }
     if (this.keyExpirationTime !== null) {
-      arr.push(writeSubPacket(sub.keyExpirationTime, util.writeNumber(this.keyExpirationTime, 4)));
+      arr.push(writeSubPacket(sub.keyExpirationTime, true, util.writeNumber(this.keyExpirationTime, 4)));
     }
     if (this.preferredSymmetricAlgorithms !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredSymmetricAlgorithms));
-      arr.push(writeSubPacket(sub.preferredSymmetricAlgorithms, bytes));
+      arr.push(writeSubPacket(sub.preferredSymmetricAlgorithms, false, bytes));
     }
     if (this.revocationKeyClass !== null) {
       bytes = new Uint8Array([this.revocationKeyClass, this.revocationKeyAlgorithm]);
       bytes = util.concat([bytes, this.revocationKeyFingerprint]);
-      arr.push(writeSubPacket(sub.revocationKey, bytes));
+      arr.push(writeSubPacket(sub.revocationKey, false, bytes));
     }
     if (!this.issuerKeyID.isNull() && this.issuerKeyVersion !== 5) {
       // If the version of [the] key is greater than 4, this subpacket
       // MUST NOT be included in the signature.
-      arr.push(writeSubPacket(sub.issuer, this.issuerKeyID.write()));
+      arr.push(writeSubPacket(sub.issuer, true, this.issuerKeyID.write()));
     }
-    this.rawNotations.forEach(({ name, value, humanReadable }) => {
+    this.rawNotations.forEach(({ name, value, humanReadable, critical }) => {
       bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
       const encodedName = util.encodeUTF8(name);
       // 2 octets of name length
@@ -270,61 +270,61 @@ class SignaturePacket {
       bytes.push(encodedName);
       bytes.push(value);
       bytes = util.concat(bytes);
-      arr.push(writeSubPacket(sub.notationData, bytes));
+      arr.push(writeSubPacket(sub.notationData, critical, bytes));
     });
     if (this.preferredHashAlgorithms !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredHashAlgorithms));
-      arr.push(writeSubPacket(sub.preferredHashAlgorithms, bytes));
+      arr.push(writeSubPacket(sub.preferredHashAlgorithms, false, bytes));
     }
     if (this.preferredCompressionAlgorithms !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredCompressionAlgorithms));
-      arr.push(writeSubPacket(sub.preferredCompressionAlgorithms, bytes));
+      arr.push(writeSubPacket(sub.preferredCompressionAlgorithms, false, bytes));
     }
     if (this.keyServerPreferences !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.keyServerPreferences));
-      arr.push(writeSubPacket(sub.keyServerPreferences, bytes));
+      arr.push(writeSubPacket(sub.keyServerPreferences, false, bytes));
     }
     if (this.preferredKeyServer !== null) {
-      arr.push(writeSubPacket(sub.preferredKeyServer, util.encodeUTF8(this.preferredKeyServer)));
+      arr.push(writeSubPacket(sub.preferredKeyServer, false, util.encodeUTF8(this.preferredKeyServer)));
     }
     if (this.isPrimaryUserID !== null) {
-      arr.push(writeSubPacket(sub.primaryUserID, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
+      arr.push(writeSubPacket(sub.primaryUserID, false, new Uint8Array([this.isPrimaryUserID ? 1 : 0])));
     }
     if (this.policyURI !== null) {
-      arr.push(writeSubPacket(sub.policyURI, util.encodeUTF8(this.policyURI)));
+      arr.push(writeSubPacket(sub.policyURI, false, util.encodeUTF8(this.policyURI)));
     }
     if (this.keyFlags !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.keyFlags));
-      arr.push(writeSubPacket(sub.keyFlags, bytes));
+      arr.push(writeSubPacket(sub.keyFlags, true, bytes));
     }
     if (this.signersUserID !== null) {
-      arr.push(writeSubPacket(sub.signersUserID, util.encodeUTF8(this.signersUserID)));
+      arr.push(writeSubPacket(sub.signersUserID, false, util.encodeUTF8(this.signersUserID)));
     }
     if (this.reasonForRevocationFlag !== null) {
       bytes = util.stringToUint8Array(String.fromCharCode(this.reasonForRevocationFlag) + this.reasonForRevocationString);
-      arr.push(writeSubPacket(sub.reasonForRevocation, bytes));
+      arr.push(writeSubPacket(sub.reasonForRevocation, true, bytes));
     }
     if (this.features !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.features));
-      arr.push(writeSubPacket(sub.features, bytes));
+      arr.push(writeSubPacket(sub.features, false, bytes));
     }
     if (this.signatureTargetPublicKeyAlgorithm !== null) {
       bytes = [new Uint8Array([this.signatureTargetPublicKeyAlgorithm, this.signatureTargetHashAlgorithm])];
       bytes.push(util.stringToUint8Array(this.signatureTargetHash));
       bytes = util.concat(bytes);
-      arr.push(writeSubPacket(sub.signatureTarget, bytes));
+      arr.push(writeSubPacket(sub.signatureTarget, true, bytes));
     }
     if (this.embeddedSignature !== null) {
-      arr.push(writeSubPacket(sub.embeddedSignature, this.embeddedSignature.write()));
+      arr.push(writeSubPacket(sub.embeddedSignature, true, this.embeddedSignature.write()));
     }
     if (this.issuerFingerprint !== null) {
       bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
       bytes = util.concat(bytes);
-      arr.push(writeSubPacket(sub.issuerFingerprint, bytes));
+      arr.push(writeSubPacket(sub.issuerFingerprint, this.version === 5, bytes));
     }
     if (this.preferredAEADAlgorithms !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredAEADAlgorithms));
-      arr.push(writeSubPacket(sub.preferredAEADAlgorithms, bytes));
+      arr.push(writeSubPacket(sub.preferredAEADAlgorithms, false, bytes));
     }
 
     const result = util.concat(arr);
@@ -753,18 +753,19 @@ class SignaturePacket {
 export default SignaturePacket;
 
 /**
- * Creates a string representation of a sub signature packet
+ * Creates a Uint8Array representation of a sub signature packet
  * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.1|RFC4880 5.2.3.1}
  * @see {@link https://tools.ietf.org/html/rfc4880#section-5.2.3.2|RFC4880 5.2.3.2}
  * @param {Integer} type - Subpacket signature type.
+ * @param {Boolean} critical - Whether the subpacket should be critical.
  * @param {String} data - Data to be included
- * @returns {String} A string-representation of a sub signature packet.
+ * @returns {Uint8Array} The signature subpacket.
  * @private
  */
-function writeSubPacket(type, data) {
+function writeSubPacket(type, critical, data) {
   const arr = [];
   arr.push(writeSimpleLength(data.length + 1));
-  arr.push(new Uint8Array([type]));
+  arr.push(new Uint8Array([(critical ? 0x80 : 0) | type]));
   arr.push(data);
   return util.concat(arr);
 }

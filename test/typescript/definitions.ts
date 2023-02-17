@@ -138,7 +138,8 @@ import {
   const textSignedWithNotations: string = await sign({ signingKeys: privateKeys, message: textMessage, signatureNotations: [{
     name: 'test@example.org',
     value: new TextEncoder().encode('test'),
-    humanReadable: true
+    humanReadable: true,
+    critical: false
   }] });
   expect(textSignedWithNotations).to.include('-----BEGIN PGP MESSAGE-----');
 
