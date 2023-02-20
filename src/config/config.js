@@ -210,7 +210,7 @@ export default {
    * @memberof module:config
    * @property {Array} knownNotations
    */
-  knownNotations: ['preferred-email-encoding@pgp.com', 'pka-address@gnupg.org'],
+  knownNotations: [],
   /**
    * Whether to use the indutny/elliptic library for curves (other than Curve25519) that are not supported by the available native crypto API.
    * When false, certain standard curves will not be supported (depending on the platform).
