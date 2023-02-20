@@ -95,12 +95,12 @@ module.exports = function(config) {
 
     // define browsers
     customLaunchers: {
-      bs_safari_15: { // Webkit and Safari can differ in behavior
+      bs_safari_latest: { // Webkit and Safari can differ in behavior
         base: 'BrowserStack',
         browser: 'Safari',
-        browser_version: '15',
+        browser_version: 'latest',
         os: 'OS X',
-        os_version: 'Big Sur'
+        os_version: 'Ventura'
       },
       bs_safari_13_1: { // no BigInt support
         base: 'BrowserStack',
