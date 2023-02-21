@@ -1,9 +1,7 @@
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-
-const expect = chai.expect;
 
 const password = 'I am a password';
 

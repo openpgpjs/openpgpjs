@@ -1,5 +1,9 @@
 /* eslint-disable max-lines */
 /* globals tryTests: true */
+const spy = require('sinon/lib/sinon/spy');
+const stream = require('@openpgp/web-stream-tools');
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const crypto = require('../../src/crypto');
@@ -8,14 +12,7 @@ const util = require('../../src/util');
 const keyIDType = require('../../src/type/keyid');
 const { isAEADSupported } = require('../../src/key');
 
-const stream = require('@openpgp/web-stream-tools');
-
-const spy = require('sinon/lib/sinon/spy');
-const input = require('./testInputs.js');
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-
-const expect = chai.expect;
+const input = require('./testInputs');
 
 const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
 
@@ -2891,7 +2888,7 @@ aOU=
                     },
                     async pull(controller) {
                       if (this.remaining.length) {
-                        await new Promise(res => setTimeout(res));
+                        await new Promise(res => { setTimeout(res); });
                         controller.enqueue(this.remaining.shift() + '\n');
                       } else {
                         controller.close();

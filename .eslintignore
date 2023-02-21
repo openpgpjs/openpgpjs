@@ -1,4 +1,4 @@
 dist
 test/lib/
-test/typescript/definitions.js
+test/typescript/
 docs

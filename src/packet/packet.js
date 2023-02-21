@@ -15,8 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/* eslint-disable callback-return */
-
 /**
  * @fileoverview Functions for reading and writing packets
  * @module packet/packet
@@ -159,6 +157,7 @@ export async function readPackets(input, callback) {
         writer = stream.getWriter(transform.writable);
         packet = transform.readable;
       }
+      // eslint-disable-next-line callback-return
       callbackReturned = callback({ tag, packet });
     } else {
       packet = [];
@@ -279,6 +278,7 @@ export async function readPackets(input, callback) {
       await writer.close();
     } else {
       packet = util.concatUint8Array(packet);
+      // eslint-disable-next-line callback-return
       await callback({ tag, packet });
     }
     return !nextPacket || !nextPacket.length;

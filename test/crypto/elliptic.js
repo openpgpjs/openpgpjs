@@ -1,17 +1,15 @@
+const sandbox = require('sinon/lib/sinon/sandbox');
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const elliptic_curves = require('../../src/crypto/public_key/elliptic');
 const hashMod = require('../../src/crypto/hash');
 const config = require('../../src/config');
 const util = require('../../src/util');
 
-const sandbox = require('sinon/lib/sinon/sandbox');
-const chai = require('chai');
-
 const elliptic_data = require('./elliptic_data');
 
-chai.use(require('chai-as-promised'));
-
-const expect = chai.expect;
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
 module.exports = () => describe('Elliptic Curve Cryptography @lightweight', function () {

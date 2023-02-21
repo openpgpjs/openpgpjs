@@ -1,13 +1,12 @@
 /* globals tryTests: true */
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-const input = require('./testInputs.js');
+const input = require('./testInputs');
 
-const expect = chai.expect;
 
 module.exports = () => (openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
   let rejectCurvesVal;

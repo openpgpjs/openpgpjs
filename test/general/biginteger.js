@@ -1,11 +1,10 @@
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
+
+const BN = require('bn.js');
 const random = require('../../src/crypto/random');
 const util = require('../../src/util');
 
-const BN = require('bn.js');
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-
-const expect = chai.expect;
 let BigInteger;
 
 async function getRandomBN(min, max) {

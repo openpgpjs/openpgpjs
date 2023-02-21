@@ -1,5 +1,5 @@
 const Benchmark = require('benchmark');
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../../');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const wrapAsync = func => ({
   fn: async deferred => {

@@ -1,8 +1,7 @@
+const { expect } = require('chai');
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => describe('ASCII armor', function() {
 

@@ -1,9 +1,7 @@
+const { expect } = require('chai');
+
 const { ripemd: rmdString } = require('../../../src/crypto/hash');
 const util = require('../../../src/util');
-
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => it('RIPE-MD 160 bits with test vectors from https://homes.esat.kuleuven.be/~bosselae/ripemd160.html', async function() {
   expect(util.uint8ArrayToHex(await rmdString(util.stringToUint8Array('')), 'RMDstring("") = 9c1185a5c5e9fc54612808977ee8f548b2258d31')).to.equal('9c1185a5c5e9fc54612808977ee8f548b2258d31');

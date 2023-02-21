@@ -1,9 +1,7 @@
+const { expect } = require('chai');
+
 const hash = require('../../../src/crypto/hash');
 const util = require('../../../src/util');
-
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => it('SHA* with test vectors from NIST FIPS 180-2', async function() {
   expect(util.uint8ArrayToHex(await hash.sha1(util.stringToUint8Array('abc')), 'hash.sha1("abc") = a9993e364706816aba3e25717850c26c9cd0d89d')).to.equal('a9993e364706816aba3e25717850c26c9cd0d89d');

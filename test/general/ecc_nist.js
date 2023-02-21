@@ -1,11 +1,11 @@
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-const input = require('./testInputs.js');
 const util = require('../../src/util');
 
-const expect = chai.expect;
+const input = require('./testInputs');
 
 module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightweight', function () {
   function omnibus() {

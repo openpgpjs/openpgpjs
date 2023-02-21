@@ -1,9 +1,7 @@
+const { expect } = require('chai');
+
 const { DES, TripleDES } = require('../../../src/crypto/cipher/des');
 const util = require('../../../src/util');
-
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', function() {
   // see https://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf

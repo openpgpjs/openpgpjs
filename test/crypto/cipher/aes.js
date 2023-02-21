@@ -1,8 +1,6 @@
+const { expect } = require('chai');
+
 const { aes128: AES128 } = require('../../../src/crypto/cipher');
-
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => describe('AES Rijndael cipher test with test vectors from ecb_tbl.txt', function() {
   function test_aes(input, key, output) {

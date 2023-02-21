@@ -4,4 +4,6 @@
  * @module config
  */
 
-export { default } from './config.js';
+import config from './config';
+
+export default config;
