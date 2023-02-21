@@ -63,7 +63,7 @@ class Key {
 
       if (packet instanceof UnparseablePacket) {
         const isUnparseableKeyPacket = keyPacketTags.has(packet.tag);
-        if (isUnparseableKeyPacket && !ignoreUntil){
+        if (isUnparseableKeyPacket && !ignoreUntil) {
           // Since non-key packets apply to the preceding key packet, if a (sub)key is Unparseable we must
           // discard all non-key packets that follow, until another (sub)key packet is found.
           if (mainKeyPacketTags.has(packet.tag)) {

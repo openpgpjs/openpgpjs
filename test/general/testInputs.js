@@ -1,7 +1,7 @@
 /**
  * Generates a 64 character long javascript string out of the whole utf-8 range.
  */
-function createSomeMessage(){
+function createSomeMessage() {
   const arr = [];
   for (let i = 0; i < 30; i++) {
     arr.push(Math.floor(Math.random() * 10174) + 1);

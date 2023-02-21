@@ -1130,7 +1130,7 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         passphrase: 'incorrect'
       }).then(function() {
         throw new Error('Should not decrypt with incorrect passphrase');
-      }).catch(function(error){
+      }).catch(function(error) {
         expect(error.message).to.match(/Incorrect key passphrase/);
         // original key should be unchanged
         expect(privateKey.isDecrypted()).to.be.false;

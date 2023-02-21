@@ -35,11 +35,11 @@ const debugMode = (() => {
 
 const util = {
   isString: function(data) {
-    return typeof data === 'string' || String.prototype.isPrototypeOf(data);
+    return typeof data === 'string' || data instanceof String;
   },
 
   isArray: function(data) {
-    return Array.prototype.isPrototypeOf(data);
+    return data instanceof Array;
   },
 
   isUint8Array: stream.isUint8Array,

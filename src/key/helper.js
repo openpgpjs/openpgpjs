@@ -62,8 +62,8 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
     throw util.wrapError(
       `Could not find valid ${enums.read(enums.signature, signatureType)} signature in key ${publicKey.getKeyID().toHex()}`
         .replace('certGeneric ', 'self-')
-        .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase())
-      , exception);
+        .replace(/([a-z])([A-Z])/g, (_, $1, $2) => $1 + ' ' + $2.toLowerCase()),
+      exception);
   }
   return latestValid;
 }
