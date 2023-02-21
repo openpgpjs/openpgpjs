@@ -1,0 +1,34 @@
+{
+    "drivers": [
+      {
+        "id": "sop-openpgpjs-branch",
+        "path": "__SOP_OPENPGPJS__",
+        "env": {
+          "OPENPGPJS_PATH": "__OPENPGPJS_BRANCH__"
+        }
+      },
+      {
+        "id": "sop-openpgpjs-main",
+        "path": "__SOP_OPENPGPJS__",
+        "env": {
+          "OPENPGPJS_PATH": "__OPENPGPJS_MAIN__"
+        }
+      },
+      {
+        "path": "__SQOP__"
+      },
+      {
+        "path": "__GPGME_SOP__"
+      },
+      {
+        "path": "__GOSOP__"
+      },
+      {
+        "path": "__RNP_SOP__"
+      }
+    ],
+    "rlimits": {
+      "DATA": 1073741824
+    }
+}
+  
