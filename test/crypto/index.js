@@ -1,14 +1,14 @@
 module.exports = () => describe('Crypto', function () {
   require('./cipher')();
   require('./hash')();
-  require('./crypto.js')();
-  require('./elliptic.js')();
-  require('./ecdh.js')();
-  require('./pkcs5.js')();
-  require('./aes_kw.js')();
-  require('./gcm.js')();
-  require('./eax.js')();
-  require('./ocb.js')();
-  require('./rsa.js')();
-  require('./validate.js')();
+  require('./crypto')();
+  require('./elliptic')();
+  require('./ecdh')();
+  require('./pkcs5')();
+  require('./aes_kw')();
+  require('./gcm')();
+  require('./eax')();
+  require('./ocb')();
+  require('./rsa')();
+  require('./validate')();
 });

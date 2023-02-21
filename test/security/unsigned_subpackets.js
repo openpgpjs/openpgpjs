@@ -1,11 +1,9 @@
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 
 const { readKey, PrivateKey, createMessage, enums, PacketList, SignaturePacket } = openpgp;
-
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-
-const expect = chai.expect;
 
 /*
 * This key is long expired and cannot be used for encryption.

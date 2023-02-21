@@ -1,7 +1,7 @@
 module.exports = () => describe('Cipher', function () {
-  require('./aes.js')();
-  require('./blowfish.js')();
-  require('./cast5.js')();
-  require('./des.js')();
-  require('./twofish.js')();
+  require('./aes')();
+  require('./blowfish')();
+  require('./cast5')();
+  require('./des')();
+  require('./twofish')();
 });

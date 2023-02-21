@@ -25,9 +25,9 @@
  */
 
 import publicKey from './public_key';
-import * as cipher from './cipher';
 import mode from './mode';
 import { getRandomBytes } from './random';
+import getCipher from './cipher/getCipher';
 import ECDHSymkey from '../type/ecdh_symkey';
 import KDFParams from '../type/kdf_params';
 import enums from '../enums';
@@ -385,16 +385,7 @@ export function getAEADMode(algo) {
   return mode[algoName];
 }
 
-/**
- * Get implementation of the given cipher
- * @param {enums.symmetric} algo
- * @returns {Object}
- * @throws {Error} on invalid algo
- */
-export function getCipher(algo) {
-  const algoName = enums.read(enums.symmetric, algo);
-  return cipher[algoName];
-}
+export { getCipher };
 
 /**
  * Check whether the given curve OID is supported

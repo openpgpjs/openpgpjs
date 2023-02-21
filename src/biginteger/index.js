@@ -1,8 +1,9 @@
-import util from '../util';
 import BigInteger from './native.interface';
 
+const detectBigInt = () => typeof BigInt !== 'undefined';
+
 async function getBigInteger() {
-  if (util.detectBigInt()) {
+  if (detectBigInt()) {
     return BigInteger;
   } else {
     const { default: BigInteger } = await import('./bn.interface');
@@ -10,5 +11,4 @@ async function getBigInteger() {
   }
 }
 
-// eslint-disable-next-line import/prefer-default-export
 export { getBigInteger };

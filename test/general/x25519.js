@@ -1,15 +1,14 @@
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
+
+const nacl = require('@openpgp/tweetnacl');
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const elliptic = require('../../src/crypto/public_key/elliptic');
 const signature = require('../../src/crypto/signature');
 const OID = require('../../src/type/oid');
 const util = require('../../src/util');
 
-const nacl = require('@openpgp/tweetnacl');
-
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-
-const { expect } = chai;
 const input = require('./testInputs');
 
 module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography', function () {

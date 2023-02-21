@@ -1,8 +1,6 @@
+const { expect } = require('chai');
 const util = require('../../src/util');
 
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => describe('Util unit tests', function() {
 

@@ -1,9 +1,7 @@
+const { expect } = require('chai');
+
 const BF = require('../../../src/crypto/cipher/blowfish');
 const util = require('../../../src/util');
-
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
   function test_bf(input, key, output) {

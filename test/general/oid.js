@@ -1,7 +1,7 @@
+const { expect } = require('chai');
+
 const OID = require('../../src/type/oid');
 const util = require('../../src/util');
-
-const expect = require('chai').expect;
 
 module.exports = () => describe('Oid tests', function() {
   const p256_oid = new Uint8Array([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]);

@@ -1,16 +1,14 @@
+const sandbox = require('sinon/lib/sinon/sandbox');
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
+
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const OID = require('../../src/type/oid');
 const KDFParams = require('../../src/type/kdf_params');
 const elliptic_curves = require('../../src/crypto/public_key/elliptic');
 const util = require('../../src/util');
-
-const sandbox = require('sinon/lib/sinon/sandbox');
-const chai = require('chai');
 const elliptic_data = require('./elliptic_data');
 
-chai.use(require('chai-as-promised'));
-
-const expect = chai.expect;
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
 module.exports = () => describe('ECDH key exchange @lightweight', function () {

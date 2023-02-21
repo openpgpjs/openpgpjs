@@ -1,17 +1,14 @@
 /* eslint-disable max-lines */
+const stream = require('@openpgp/web-stream-tools');
+const stub = require('sinon/lib/sinon/stub');
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const crypto = require('../../src/crypto');
 const util = require('../../src/util');
 
-const stream = require('@openpgp/web-stream-tools');
-
-const stub = require('sinon/lib/sinon/stub');
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-
-const { expect } = chai;
-const input = require('./testInputs.js');
+const input = require('./testInputs');
 
 function stringify(array) {
   if (stream.isStream(array)) {

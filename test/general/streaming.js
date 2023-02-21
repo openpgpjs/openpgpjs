@@ -1,17 +1,14 @@
 /* eslint-disable max-lines */
+const stream = require('@openpgp/web-stream-tools');
+const stub = require('sinon/lib/sinon/stub');
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const random = require('../../src/crypto/random');
 const util = require('../../src/util');
 
-const stub = require('sinon/lib/sinon/stub');
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-const input = require('./testInputs.js');
-
-const { expect } = chai;
-
-const stream = require('@openpgp/web-stream-tools');
+const input = require('./testInputs');
 
 const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
 const NodeReadableStream = useNativeStream ? undefined : require('stream').Readable;
@@ -574,9 +571,9 @@ function tests() {
         await writer.abort(e);
       }
     });
-    await new Promise(resolve => setTimeout(resolve));
+    await new Promise(resolve => { setTimeout(resolve); });
     await stream.cancel(transformed);
-    await new Promise(resolve => setTimeout(resolve));
+    await new Promise(resolve => { setTimeout(resolve); });
     expect(canceled).to.be.true;
   });
 
@@ -616,7 +613,7 @@ function tests() {
     const reader = stream.getReader(encrypted);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\n/);
     dataArrived();
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => { setTimeout(resolve, 3000); });
     expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
   });
 
@@ -631,7 +628,7 @@ function tests() {
     const reader = stream.getReader(signed);
     expect(await reader.readBytes(1024)).to.match(/^-----BEGIN PGP MESSAGE-----\n/);
     dataArrived();
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => { setTimeout(resolve, 3000); });
     expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 100);
   });
 
@@ -652,7 +649,7 @@ function tests() {
     const reader = stream.getReader(verified.data);
     expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
     dataArrived();
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => { setTimeout(resolve, 3000); });
     expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 250);
   });
 
@@ -783,7 +780,7 @@ function tests() {
     const reader = stream.getReader(signed);
     expect((await reader.readBytes(30)).toString('utf8')).to.equal('-----BEGIN PGP SIGNATURE-----\n');
     dataArrived();
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => { setTimeout(resolve, 3000); });
     expect(i).to.equal(expectedType === 'web' ? 100 : 500);
   });
 
@@ -846,7 +843,7 @@ function tests() {
       let i = 0;
       const data = global.ReadableStream ? new global.ReadableStream({
         async pull(controller) {
-          await new Promise(resolve => setTimeout(resolve, 10));
+          await new Promise(resolve => { setTimeout(resolve, 10); });
           if (i++ < 10) {
             const randomData = input.createSomeMessage();
             controller.enqueue(randomData);
@@ -859,7 +856,7 @@ function tests() {
         encoding: 'utf8',
         async read() {
           while (true) {
-            await new Promise(resolve => setTimeout(resolve, 10));
+            await new Promise(resolve => { setTimeout(resolve, 10); });
             if (i++ < 10) {
               const randomData = input.createSomeMessage();
               plaintext.push(randomData);
@@ -914,7 +911,7 @@ function tests() {
         const reader = stream.getReader(decrypted.data);
         expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
         dataArrived();
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => { setTimeout(resolve, 3000); });
         expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 300);
       } finally {
         if (detectNode()) {

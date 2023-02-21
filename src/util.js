@@ -35,11 +35,11 @@ const debugMode = (() => {
 
 const util = {
   isString: function(data) {
-    return typeof data === 'string' || String.prototype.isPrototypeOf(data);
+    return typeof data === 'string' || data instanceof String;
   },
 
   isArray: function(data) {
-    return Array.prototype.isPrototypeOf(data);
+    return data instanceof Array;
   },
 
   isUint8Array: stream.isUint8Array,
@@ -382,11 +382,6 @@ const util = {
   },
 
   /**
-   * Detect native BigInt support
-   */
-  detectBigInt: () => typeof BigInt !== 'undefined',
-
-  /**
    * Get BigInteger class
    * It wraps the native BigInt type if it's available
    * Otherwise it relies on bn.js
@@ -569,6 +564,7 @@ const util = {
    *                          or rejected with the Error of the last resolved Promise (if all promises are rejected)
    */
   anyPromise: function(promises) {
+    // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       let exception;
       await Promise.all(promises.map(async promise => {

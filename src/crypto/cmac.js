@@ -51,7 +51,7 @@ function pad(data, padding, padding2) {
     return rightXORMut(data, padding);
   }
   // else return (M || 10^(n−1−(|M| mod n))) xor→ P
-  const padded = new Uint8Array(data.length + (blockLength - data.length % blockLength));
+  const padded = new Uint8Array(data.length + (blockLength - (data.length % blockLength)));
   padded.set(data);
   padded[data.length] = 0b10000000;
   return rightXORMut(padded, padding2);

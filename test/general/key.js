@@ -1,15 +1,13 @@
 /* eslint-disable max-lines */
 /* globals tryTests: true */
+const { use: chaiUse, expect } = require('chai');
+chaiUse(require('chai-as-promised'));
 
 const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
 const util = require('../../src/util');
 const { isAEADSupported, getPreferredAlgo } = require('../../src/key');
 const KeyID = require('../../src/type/keyid');
 
-const chai = require('chai');
-chai.use(require('chai-as-promised'));
-
-const { expect } = chai;
 
 const priv_key_arm2 =
   ['-----BEGIN PGP PRIVATE KEY BLOCK-----',

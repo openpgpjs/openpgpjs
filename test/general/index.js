@@ -1,18 +1,18 @@
 module.exports = () => describe('General', function () {
-  require('./util.js')();
-  require('./biginteger.js')();
-  require('./armor.js')();
-  require('./packet.js')();
-  require('./signature.js')();
-  require('./key.js')();
-  require('./openpgp.js')();
-  require('./config.js')();
-  require('./oid.js')();
-  require('./ecc_nist.js')();
-  require('./ecc_secp256k1.js')();
-  require('./x25519.js')();
-  require('./brainpool.js')();
-  require('./decompression.js')();
-  require('./streaming.js')();
+  require('./util')();
+  require('./biginteger')();
+  require('./armor')();
+  require('./packet')();
+  require('./signature')();
+  require('./key')();
+  require('./openpgp')();
+  require('./config')();
+  require('./oid')();
+  require('./ecc_nist')();
+  require('./ecc_secp256k1')();
+  require('./x25519')();
+  require('./brainpool')();
+  require('./decompression')();
+  require('./streaming')();
 });
 

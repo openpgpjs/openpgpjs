@@ -1,8 +1,6 @@
 /* globals tryTests: true */
 
-const chai = require('chai');
-
-const { expect } = chai;
+const { expect } = require('chai');
 
 /* eslint-disable no-invalid-this */
 module.exports = () => tryTests('Application Worker', tests, {
@@ -12,12 +10,6 @@ module.exports = () => tryTests('Application Worker', tests, {
 function tests() {
 
   it('Should support loading OpenPGP.js from inside a Web Worker', async function() {
-    try {
-      globalThis.eval('(async function() {})');
-    } catch (e) {
-      console.error(e); // eslint-disable-line no-console
-      this.skip();
-    }
     const worker = new Worker('./worker/worker_example.js');
     async function delegate(action, message) {
       return new Promise((resolve, reject) => {

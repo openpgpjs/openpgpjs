@@ -1,6 +1,6 @@
-const pkcs5 = require('../../src/crypto/pkcs5');
+const { expect } = require('chai');
 
-const expect = require('chai').expect;
+const pkcs5 = require('../../src/crypto/pkcs5');
 
 module.exports = () => describe('PKCS5 padding', function() {
   it('Add and remove padding', function () {

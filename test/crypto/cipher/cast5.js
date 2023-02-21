@@ -1,9 +1,7 @@
+const { expect } = require('chai');
+
 const CAST5 = require('../../../src/crypto/cipher/cast5');
 const util = require('../../../src/util');
-
-const chai = require('chai');
-
-const { expect } = chai;
 
 module.exports = () => it('CAST-128 cipher test with test vectors from RFC2144', function (done) {
   function test_cast(input, key, output) {

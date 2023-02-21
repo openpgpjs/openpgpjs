@@ -231,6 +231,7 @@ function splitChecksum(text) {
  * @static
  */
 export function unarmor(input, config = defaultConfig) {
+  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     try {
       const reSplit = /^-----[^-]+-----$/m;

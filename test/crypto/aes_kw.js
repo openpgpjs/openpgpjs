@@ -1,7 +1,7 @@
+const { expect } = require('chai');
+
 const aesKW = require('../../src/crypto/aes_kw');
 const util = require('../../src/util');
-
-const expect = require('chai').expect;
 
 module.exports = () => describe('AES Key Wrap and Unwrap', function () {
   const test_vectors = [
