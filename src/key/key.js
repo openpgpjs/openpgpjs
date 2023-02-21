@@ -26,8 +26,6 @@ import util from '../util';
 import User from './user';
 import Subkey from './subkey';
 import * as helper from './helper';
-import PrivateKey from './private_key';
-import PublicKey from './public_key';
 import { UnparseablePacket } from '../packet/packet';
 
 // A key revocation certificate can contain the following packets
@@ -710,21 +708,3 @@ class Key {
 });
 
 export default Key;
-
-/**
- * Creates a PublicKey or PrivateKey depending on the packetlist in input
- * @param {PacketList} - packets to parse
- * @return {Key} parsed key
- * @throws if no key packet was found
- */
-export function createKey(packetlist) {
-  for (const packet of packetlist) {
-    switch (packet.constructor.tag) {
-      case enums.packet.secretKey:
-        return new PrivateKey(packetlist);
-      case enums.packet.publicKey:
-        return new PublicKey(packetlist);
-    }
-  }
-  throw new Error('No key packet found');
-}

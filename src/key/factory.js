@@ -26,7 +26,7 @@ import {
   UserAttributePacket
 } from '../packet';
 import PrivateKey from './private_key';
-import { createKey } from './key';
+import PublicKey from './public_key';
 import * as helper from './helper';
 import enums from '../enums';
 import util from '../util';
@@ -43,6 +43,25 @@ const allowedKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
   UserAttributePacket,
   SignaturePacket
 ]);
+
+/**
+ * Creates a PublicKey or PrivateKey depending on the packetlist in input
+ * @param {PacketList} - packets to parse
+ * @return {Key} parsed key
+ * @throws if no key packet was found
+ */
+function createKey(packetlist) {
+  for (const packet of packetlist) {
+    switch (packet.constructor.tag) {
+      case enums.packet.secretKey:
+        return new PrivateKey(packetlist);
+      case enums.packet.publicKey:
+        return new PublicKey(packetlist);
+    }
+  }
+  throw new Error('No key packet found');
+}
+
 
 /**
  * Generates a new OpenPGP key. Supports RSA and ECC keys.
