@@ -19,7 +19,7 @@ jobs:
         with:
           ref: main
           path: main
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
 
       - name: Run pull request time benchmark
         run: cd pr && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt

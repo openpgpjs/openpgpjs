@@ -1,4 +1,9 @@
 /* eslint-disable no-process-env */
+const { chromium, firefox, webkit } = require('playwright');
+
+process.env.CHROME_BIN = chromium.executablePath();
+process.env.FIREFOX_BIN = firefox.executablePath();
+process.env.WEBKIT_HEADLESS_BIN = webkit.executablePath();
 
 module.exports = function(config) {
   config.set({
@@ -14,12 +19,17 @@ module.exports = function(config) {
     frameworks: ['mocha'],
 
     // plugins
-    plugins: ['karma-mocha', 'karma-mocha-reporter', 'karma-browserstack-launcher'],
+    plugins: [
+      'karma-mocha',
+      'karma-chrome-launcher',
+      'karma-firefox-launcher',
+      'karma-webkit-launcher',
+      'karma-mocha-reporter',
+      'karma-browserstack-launcher'
+    ],
 
     client: {
       mocha: {
-        reporter: 'html',
-        ui: 'bdd',
         timeout: 30000,
         grep: process.env.LIGHTWEIGHT ? '@lightweight' : undefined
       }
@@ -76,7 +86,7 @@ module.exports = function(config) {
 
     browserStack: {
       username: process.env.BROWSERSTACK_USERNAME,
-      accessKey: process.env.BROWSERSTACK_KEY,
+      accessKey: process.env.BROWSERSTACK_ACCESS_KEY,
       build: process.env.GITHUB_SHA,
       name: process.env.GITHUB_WORKFLOW,
       project: `openpgpjs/${process.env.GITHUB_EVENT_NAME || 'push'}${process.env.LIGHTWEIGHT ? '/lightweight' : ''}`,
@@ -85,26 +95,12 @@ module.exports = function(config) {
 
     // define browsers
     customLaunchers: {
-      bs_firefox_85: {
-        base: 'BrowserStack',
-        browser: 'Firefox',
-        browser_version: '85.0',
-        os: 'OS X',
-        os_version: 'Big Sur'
-      },
-      bs_chrome_88: {
-        base: 'BrowserStack',
-        browser: 'Chrome',
-        browser_version: '88.0',
-        os: 'OS X',
-        os_version: 'Big Sur'
-      },
-      bs_safari_14: {
+      bs_safari_latest: { // Webkit and Safari can differ in behavior
         base: 'BrowserStack',
         browser: 'Safari',
-        browser_version: '14.0',
+        browser_version: 'latest',
         os: 'OS X',
-        os_version: 'Big Sur'
+        os_version: 'Ventura'
       },
       bs_safari_13_1: { // no BigInt support
         base: 'BrowserStack',
@@ -113,12 +109,12 @@ module.exports = function(config) {
         os: 'OS X',
         os_version: 'Catalina'
       },
-      bs_ios_14: {
+      bs_ios_15: {
         base: 'BrowserStack',
-        device: 'iPhone 12',
+        device: 'iPhone 13',
         real_mobile: true,
         os: 'ios',
-        os_version: '14'
+        os_version: '15'
       }
     },
 
@@ -130,13 +126,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: [
-      'bs_firefox_85',
-      'bs_chrome_88',
-      'bs_safari_13_1',
-      'bs_safari_14',
-      'bs_ios_14'
-    ],
+    browsers: ['ChromeHeadless', 'FirefoxHeadless', 'WebkitHeadless'],
 
     // Continuous Integration mode
     // if true, Karma captures browsers, runs the tests and exits

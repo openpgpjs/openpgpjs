@@ -25,6 +25,8 @@ module.exports = () => describe('basic RSA cryptography', function () {
     sinonSandbox.restore();
   });
 
+  const detectNative = () => !!(util.getWebCrypto() || util.getNodeCrypto());
+
   const disableNative = () => {
     enableNative();
     // stubbed functions return undefined
@@ -105,6 +107,8 @@ module.exports = () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnSign', async function() {
+    if (!detectNative()) { this.skip(); }
+
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
@@ -120,6 +124,8 @@ module.exports = () => describe('basic RSA cryptography', function () {
   });
 
   it('compare native crypto and bnVerify', async function() {
+    if (!detectNative()) { this.skip(); }
+
     const bits = 1024;
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };

@@ -31,9 +31,9 @@ describe('Unit Tests', function () {
   openpgp.config.s2kIterationCountByte = 0;
 
   if (typeof window !== 'undefined') {
-    // Safari 14.1.* seem to have issues handling rejections when their native TransformStream implementation is involved,
+    // Safari 14.1.*, 15.* and 16.* seem to have issues handling rejections when their native TransformStream implementation is involved,
     // so for now we ignore unhandled rejections for those browser versions.
-    if (!window.navigator.userAgent.match(/Version\/14\.1(\.\d)* Safari/)) {
+    if (!window.navigator.userAgent.match(/Version\/1(4|5|6)\.\d(\.\d)* Safari/)) {
       window.addEventListener('unhandledrejection', function (event) {
         throw event.reason;
       });
