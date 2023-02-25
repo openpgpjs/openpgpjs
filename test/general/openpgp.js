@@ -3525,6 +3525,26 @@ aOU=
         });
       });
 
+      it('should encrypt and decrypt data with a date in the future with config option set', async function () {
+        const future = new Date(2040, 5, 5, 5, 5, 5, 0);
+        const encryptOpt = {
+          message: await openpgp.createMessage({ text: plaintext, date: future }),
+          encryptionKeys: publicKey_2038_2045,
+          format: 'binary',
+          config: { allowInsecureVerificationWithFutureSignatures: true }
+        };
+
+        return openpgp.encrypt(encryptOpt).then(async function (encrypted) {
+          const message = await openpgp.readMessage({ binaryMessage: encrypted });
+          return message.decrypt([privateKey_2038_2045], undefined, undefined, undefined, openpgp.config);
+        }).then(async function (packets) {
+          const literals = packets.packets.filterByTag(openpgp.enums.packet.literalData);
+          expect(literals.length).to.equal(1);
+          expect(+literals[0].date).to.equal(+future);
+          expect(await stream.readToEnd(packets.getText())).to.equal(plaintext);
+        });
+      });
+
       it('should encrypt and decrypt binary data with a date in the past', async function () {
         const past = new Date(2005, 5, 5, 5, 5, 5, 0);
         const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);

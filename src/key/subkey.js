@@ -93,7 +93,7 @@ class Subkey {
       throw new Error('Subkey is revoked');
     }
     // check for expiration time
-    if (helper.isDataExpired(this.keyPacket, bindingSignature, date)) {
+    if (helper.isDataExpired(this.keyPacket, bindingSignature, date, config)) {
       throw new Error('Subkey is expired');
     }
     return bindingSignature;

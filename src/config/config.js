@@ -142,7 +142,14 @@ export default {
    * @property {Boolean} allowInsecureDecryptionWithSigningKeys
    */
   allowInsecureVerificationWithReformattedKeys: false,
-
+  /**
+   * Allow verification of keys whose self-signature creation time is invalid such as in the future.
+   * This setting is potentially insecure, but it is needed to deal with keys that were created in the future due to clock drift
+   * and have self-signature's creation date that exists in the future compared to the current time.
+   * @memberof module:config
+   * @property {Boolean} allowInsecureVerificationWithFutureSignatures
+   */
+  allowInsecureVerificationWithFutureSignatures: false,
   /**
    * Enable constant-time decryption of RSA- and ElGamal-encrypted session keys, to hinder Bleichenbacher-like attacks (https://link.springer.com/chapter/10.1007/BFb0055716).
    * This setting has measurable performance impact and it is only helpful in application scenarios where both of the following conditions apply:

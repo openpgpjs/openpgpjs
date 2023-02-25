@@ -68,9 +68,9 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
   return latestValid;
 }
 
-export function isDataExpired(keyPacket, signature, date = new Date()) {
+export function isDataExpired(keyPacket, signature, date = new Date(), config) {
   const normDate = util.normalizeDate(date);
-  if (normDate !== null) {
+  if (normDate !== null && !config.allowInsecureVerificationWithFutureSignatures) {
     const expirationTime = getKeyExpirationTime(keyPacket, signature);
     return !(keyPacket.created <= normDate && normDate < expirationTime);
   }

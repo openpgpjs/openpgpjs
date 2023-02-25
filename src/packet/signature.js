@@ -705,7 +705,7 @@ class SignaturePacket {
     }
 
     const normDate = util.normalizeDate(date);
-    if (normDate && this.created > normDate) {
+    if (normDate && !config.allowInsecureVerificationWithFutureSignatures && this.created > normDate) {
       throw new Error('Signature creation time is in the future');
     }
     if (normDate && normDate >= this.getExpirationTime()) {
