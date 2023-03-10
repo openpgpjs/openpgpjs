@@ -122,15 +122,12 @@ class SymEncryptedIntegrityProtectedDataPacket {
     // last packet and everything gets hashed except the hash itself
     const realHash = stream.slice(stream.passiveClone(decrypted), -20);
     const tohash = stream.slice(decrypted, 0, -20);
-    const verifyHash = Promise.all([
-      stream.readToEnd(await crypto.hash.sha1(stream.passiveClone(tohash))),
-      stream.readToEnd(realHash)
-    ]).then(([hash, mdc]) => {
-      if (!util.equalsUint8Array(hash, mdc)) {
-        throw new Error('Modification detected.');
-      }
-      return new Uint8Array();
-    });
+    const hash = await stream.readToEnd(await crypto.hash.sha1(stream.passiveClone(tohash)));
+    const mdc = await stream.readToEnd(realHash);
+    if (!util.equalsUint8Array(hash, mdc)) {
+      throw new Error('Modification detected.');
+    }
+    const verifyHash = new Uint8Array();
     const bytes = stream.slice(tohash, blockSize + 2); // Remove random prefix
     let packetbytes = stream.slice(bytes, 0, -2); // Remove MDC packet
     packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);

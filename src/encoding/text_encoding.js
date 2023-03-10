@@ -4,7 +4,7 @@ var utf8Encodings = [
     'unicode-1-1-utf-8'
 ];
 
-export function TextEncoder(encoding) {
+function SimpleTextEncoder(encoding) {
     if (utf8Encodings.indexOf(encoding) < 0 && typeof encoding !== 'undefined' && encoding != null) {
         throw new RangeError('Invalid encoding type. Only utf-8 is supported');
     } else {
@@ -24,7 +24,7 @@ export function TextEncoder(encoding) {
     }
 }
 
-export function TextDecoder(encoding) {
+function SimpleTextDecoder(encoding) {
     if (utf8Encodings.indexOf(encoding) < 0 && typeof encoding !== 'undefined' && encoding != null) {
         throw new RangeError('Invalid encoding type. Only utf-8 is supported');
     }
@@ -53,3 +53,11 @@ export function TextDecoder(encoding) {
         }
     }
 }
+
+export function getTextEncoder() {
+    return (typeof TextEncoder !== 'undefined') ? TextEncoder : SimpleTextEncoder
+};
+
+export function getTextDecoder() {
+    return (typeof TextDecoder !== 'undefined') ? TextDecoder : SimpleTextDecoder
+};

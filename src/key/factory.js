@@ -87,7 +87,10 @@ export async function generate(options, config) {
   options.subkeys = options.subkeys.map((subkey, index) => helper.sanitizeKeyOptions(options.subkeys[index], options));
   let promises = [helper.generateSecretKey(options, config)];
   promises = promises.concat(options.subkeys.map(options => helper.generateSecretSubkey(options, config)));
-  const packets = await Promise.all(promises);
+  const packets = [];
+  for (let promise of promises) {
+    packets.push(await promise);
+  }
 
   const key = await wrapKeyObject(packets[0], packets.slice(1), options, config);
   const revocationCertificate = await key.getRevocationCertificate(options.date, config);
@@ -130,16 +133,18 @@ export async function reformat(options, config) {
   const secretKeyPacket = privateKey.keyPacket;
 
   if (!options.subkeys) {
-    options.subkeys = await Promise.all(privateKey.subkeys.map(async subkey => {
+    let subkeys = [];
+    for (let subkey of privateKey.subkeys) {
       const secretSubkeyPacket = subkey.keyPacket;
       const dataToVerify = { key: secretKeyPacket, bind: secretSubkeyPacket };
       const bindingSignature = await (
         helper.getLatestValidSignature(subkey.bindingSignatures, secretKeyPacket, enums.signature.subkeyBinding, dataToVerify, null, config)
       ).catch(() => ({}));
-      return {
+      subkeys.push( {
         sign: bindingSignature.keyFlags && (bindingSignature.keyFlags[0] & enums.keyFlags.signData)
-      };
-    }));
+      });
+    };
+    options.subkeys = subkeys;
   }
 
   const secretSubkeyPackets = privateKey.subkeys.map(subkey => subkey.keyPacket);
@@ -178,17 +183,21 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     await secretKeyPacket.encrypt(options.passphrase, config);
   }
 
-  await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
+  let index = 0;
+  for (let secretSubkeyPacket of secretSubkeyPackets) {
     const subkeyPassphrase = options.subkeys[index].passphrase;
     if (subkeyPassphrase) {
       await secretSubkeyPacket.encrypt(subkeyPassphrase, config);
     }
-  }));
+    index++;
+  };
 
   const packetlist = new PacketList();
   packetlist.push(secretKeyPacket);
 
-  await Promise.all(options.userIDs.map(async function(userID, index) {
+  index = 0;
+  let list = [];
+  for (let userID of options.userIDs) {
     function createPreferredAlgos(algos, preferredAlgo) {
       return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
     }
@@ -242,23 +251,25 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     }
     await signaturePacket.sign(secretKeyPacket, dataToSign, options.date);
 
-    return { userIDPacket, signaturePacket };
-  })).then(list => {
-    list.forEach(({ userIDPacket, signaturePacket }) => {
-      packetlist.push(userIDPacket);
-      packetlist.push(signaturePacket);
-    });
+    list.push({ userIDPacket, signaturePacket });
+    index++;
+  };
+  list.forEach(({ userIDPacket, signaturePacket }) => {
+    packetlist.push(userIDPacket);
+    packetlist.push(signaturePacket);
   });
 
-  await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
+  index = 0;
+  let packets = [];
+  for (let secretSubkeyPacket of secretSubkeyPackets) {
     const subkeyOptions = options.subkeys[index];
     const subkeySignaturePacket = await helper.createBindingSignature(secretSubkeyPacket, secretKeyPacket, subkeyOptions, config);
-    return { secretSubkeyPacket, subkeySignaturePacket };
-  })).then(packets => {
-    packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
-      packetlist.push(secretSubkeyPacket);
-      packetlist.push(subkeySignaturePacket);
-    });
+    packets.push({ secretSubkeyPacket, subkeySignaturePacket });
+    index++;
+  };
+  packets.forEach(({ secretSubkeyPacket, subkeySignaturePacket }) => {
+    packetlist.push(secretSubkeyPacket);
+    packetlist.push(subkeySignaturePacket);
   });
 
   // Add revocation signature packet for creating a revocation certificate.
@@ -274,12 +285,14 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     secretKeyPacket.clearPrivateParams();
   }
 
-  await Promise.all(secretSubkeyPackets.map(async function(secretSubkeyPacket, index) {
+  index = 0;
+  for (let secretSubkeyPacket of secretSubkeyPackets) {
     const subkeyPassphrase = options.subkeys[index].passphrase;
     if (subkeyPassphrase) {
       secretSubkeyPacket.clearPrivateParams();
     }
-  }));
+    index++;
+  };
 
   return new PrivateKey(packetlist);
 }

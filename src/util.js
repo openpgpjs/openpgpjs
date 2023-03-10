@@ -25,6 +25,7 @@
 
 import * as stream from '@openpgp/web-stream-tools';
 import { getBigInteger } from './biginteger';
+import { getTextEncoder, getTextDecoder } from './encoding/text_encoding';
 
 const debugMode = (() => {
   try {
@@ -208,7 +209,8 @@ const util = {
    * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes.
    */
   encodeUTF8: function (str) {
-    const encoder = new TextEncoder('utf-8');
+    const UseTextEncoder = getTextEncoder();
+    const encoder = new UseTextEncoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
       return encoder.encode(value, { stream: !lastChunk });
@@ -222,7 +224,8 @@ const util = {
    * @returns {String|ReadableStream} A native javascript string.
    */
   decodeUTF8: function (utf8) {
-    const decoder = new TextDecoder('utf-8');
+    const UseTextDecoder = getTextDecoder();
+    const decoder = new UseTextDecoder('utf-8');
     // eslint-disable-next-line no-inner-declarations
     function process(value, lastChunk = false) {
       return decoder.decode(value, { stream: !lastChunk });
@@ -567,13 +570,13 @@ const util = {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       let exception;
-      await Promise.all(promises.map(async promise => {
+      for (let promise of promises) {
         try {
           resolve(await promise);
         } catch (e) {
           exception = e;
         }
-      }));
+      };
       reject(exception);
     });
   },

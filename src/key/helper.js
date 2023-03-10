@@ -175,11 +175,14 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
   // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
-  const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
+  const senderAlgoSupport = [];
+  let i = 0;
+  for (let key of keys) {
     const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
     const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
-    return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
-  }));
+    senderAlgoSupport.push(!!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0);
+    i++;
+  }
   return senderAlgoSupport.every(Boolean) ? preferredSenderAlgo : defaultAlgo;
 }
 
@@ -227,14 +230,14 @@ export async function mergeSignatures(source, dest, attr, date = new Date(), che
     if (!dest[attr].length) {
       dest[attr] = source;
     } else {
-      await Promise.all(source.map(async function(sourceSig) {
+      for (let sourceSig of source) {
         if (!sourceSig.isExpired(date) && (!checkFn || await checkFn(sourceSig)) &&
             !dest[attr].some(function(destSig) {
               return util.equalsUint8Array(destSig.writeParams(), sourceSig.writeParams());
             })) {
           dest[attr].push(sourceSig);
         }
-      }));
+      };
     }
   }
 }
@@ -258,7 +261,7 @@ export async function mergeSignatures(source, dest, attr, date = new Date(), che
 export async function isDataRevoked(primaryKey, signatureType, dataToVerify, revocations, signature, key, date = new Date(), config) {
   key = key || primaryKey;
   const revocationKeyIDs = [];
-  await Promise.all(revocations.map(async function(revocationSignature) {
+  for (let revocationSignature of revocations) {
     try {
       if (
         // Note: a third-party revocation signature could legitimately revoke a
@@ -279,7 +282,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         revocationKeyIDs.push(revocationSignature.issuerKeyID);
       }
     } catch (e) {}
-  }));
+  };
   // TODO further verify that this is the signature that should be revoked
   if (signature) {
     signature.revoked = revocationKeyIDs.some(keyID => keyID.equals(signature.issuerKeyID)) ? true :
@@ -317,13 +320,15 @@ export function getKeyExpirationTime(keyPacket, signature) {
 export async function isAEADSupported(keys, date = new Date(), userIDs = [], config = defaultConfig) {
   let supported = true;
   // TODO replace when Promise.some or Promise.any are implemented
-  await Promise.all(keys.map(async function(key, i) {
+  let i = 0;
+  for (let key of keys) {
     const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
     if (!primaryUser.selfCertification.features ||
         !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
       supported = false;
     }
-  }));
+    i++;
+  };
   return supported;
 }
 

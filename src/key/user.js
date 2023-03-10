@@ -65,7 +65,8 @@ class User {
       key: primaryKey
     };
     const user = new User(dataToSign.userID || dataToSign.userAttribute, this.mainKey);
-    user.otherCertifications = await Promise.all(signingKeys.map(async function(privateKey) {
+    const otherCertifications = [];
+    for (let privateKey of signingKeys) {
       if (!privateKey.isPrivate()) {
         throw new Error('Need private key for signing');
       }
@@ -73,12 +74,13 @@ class User {
         throw new Error("The user's own key can only be used for self-certifications");
       }
       const signingKey = await privateKey.getSigningKey(undefined, date, undefined, config);
-      return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
+      otherCertifications.push(await createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
-      }, date, undefined, undefined, undefined, config);
-    }));
+      }, date, undefined, undefined, undefined, config));
+    }
+    user.otherCertifications = otherCertifications;
     await user.update(this, date, config);
     return user;
   }
@@ -127,7 +129,7 @@ class User {
     if (issuerKeys.length === 0) {
       return null;
     }
-    await Promise.all(issuerKeys.map(async key => {
+    for (let key of issuerKeys) {
       const signingKey = await key.getSigningKey(issuerKeyID, certificate.created, undefined, config);
       if (certificate.revoked || await that.isRevoked(certificate, signingKey.keyPacket, date, config)) {
         throw new Error('User certificate is revoked');
@@ -137,7 +139,7 @@ class User {
       } catch (e) {
         throw util.wrapError('User certificate is invalid', e);
       }
-    }));
+    };
     return true;
   }
 
@@ -156,10 +158,14 @@ class User {
   async verifyAllCertifications(verificationKeys, date = new Date(), config) {
     const that = this;
     const certifications = this.selfCertifications.concat(this.otherCertifications);
-    return Promise.all(certifications.map(async certification => ({
-      keyID: certification.issuerKeyID,
-      valid: await that.verifyCertificate(certification, verificationKeys, date, config).catch(() => false)
-    })));
+    const results = [];
+    for (let certification of certifications) {
+      results.push({
+        keyID: certification.issuerKeyID,
+        valid: await that.verifyCertificate(certification, verificationKeys, date, config).catch(() => false)
+      });
+    }
+    return results;
   }
 
   /**

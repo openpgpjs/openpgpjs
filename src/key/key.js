@@ -468,9 +468,11 @@ class Key {
     if (!users.length) {
       throw exception || new Error('Could not find primary user');
     }
-    await Promise.all(users.map(async function (a) {
-      return a.user.revoked || a.user.isRevoked(a.selfCertification, null, date, config);
-    }));
+    for (let a of users) {
+      if (a.user.revoked) {
+        await a.user.isRevoked(a.selfCertification, null, date, config);
+      }
+    };
     // sort by primary user flag and signature creation time
     const primaryUser = users.sort(function(a, b) {
       const A = a.selfCertification;
@@ -527,7 +529,7 @@ class Key {
     // direct signatures
     await helper.mergeSignatures(sourceKey, updatedKey, 'directSignatures', date);
     // update users
-    await Promise.all(sourceKey.users.map(async srcUser => {
+    for (let srcUser of sourceKey.users) {
       // multiple users with the same ID/attribute are not explicitly disallowed by the spec
       // hence we support them, just in case
       const usersToUpdate = updatedKey.users.filter(dstUser => (
@@ -535,31 +537,31 @@ class Key {
         (srcUser.userAttribute && srcUser.userAttribute.equals(dstUser.userAttribute))
       ));
       if (usersToUpdate.length > 0) {
-        await Promise.all(
-          usersToUpdate.map(userToUpdate => userToUpdate.update(srcUser, date, config))
-        );
+        for (let userToUpdate of usersToUpdate) {
+          await userToUpdate.update(srcUser, date, config);
+        };
       } else {
         const newUser = srcUser.clone();
         newUser.mainKey = updatedKey;
         updatedKey.users.push(newUser);
       }
-    }));
+    };
     // update subkeys
-    await Promise.all(sourceKey.subkeys.map(async srcSubkey => {
+    for (let srcSubkey of sourceKey.subkeys) {
       // multiple subkeys with same fingerprint might be preset
       const subkeysToUpdate = updatedKey.subkeys.filter(dstSubkey => (
         dstSubkey.hasSameFingerprintAs(srcSubkey)
       ));
       if (subkeysToUpdate.length > 0) {
-        await Promise.all(
-          subkeysToUpdate.map(subkeyToUpdate => subkeyToUpdate.update(srcSubkey, date, config))
-        );
+        for (let subkeyToUpdate of subkeysToUpdate) {
+          await subkeyToUpdate.update(srcSubkey, date, config);
+        };
       } else {
         const newSubkey = srcSubkey.clone();
         newSubkey.mainKey = updatedKey;
         updatedKey.subkeys.push(newSubkey);
       }
-    }));
+    };
 
     return updatedKey;
   }
@@ -637,9 +639,11 @@ class Key {
    */
   async signAllUsers(privateKeys, date = new Date(), config = defaultConfig) {
     const key = this.clone();
-    key.users = await Promise.all(this.users.map(function(user) {
-      return user.certify(privateKeys, date, config);
-    }));
+    const results = [];
+    for (let user of this.users) {
+      results.push(await user.certify(privateKeys, date, config));
+    };
+    key.users = results;
     return key;
   }
 
@@ -685,7 +689,7 @@ class Key {
   async verifyAllUsers(verificationKeys, date = new Date(), config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const results = [];
-    await Promise.all(this.users.map(async user => {
+    for (let user of this.users) {
       const signatures = verificationKeys ?
         await user.verifyAllCertifications(verificationKeys, date, config) :
         [{ keyID: primaryKey.getKeyID(), valid: await user.verify(date, config).catch(() => false) }];
@@ -697,7 +701,7 @@ class Key {
           valid: signature.valid
         }))
       );
-    }));
+    };
     return results;
   }
 }
