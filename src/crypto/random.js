@@ -39,7 +39,8 @@ export function getRandomBytes(length) {
     const bytes = nodeCrypto.randomBytes(buf.length);
     buf.set(bytes);
   } else {
-    throw new Error('No secure random number generator available.');
+    util.getRandomValues(buf);
+    //throw new Error('No secure random number generator available.');
   }
   return buf;
 }

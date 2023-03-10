@@ -605,6 +605,14 @@ const util = {
    */
   selectUint8: function(cond, a, b) {
     return (a & (256 - cond)) | (b & (255 + cond));
+  },
+
+  getRandomValues: function(buf) {
+    var l = buf.length
+    while (l--) {
+      buf[l] = Math.floor(Math.random() * 256);
+    }
+    return buf
   }
 };
 

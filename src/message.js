@@ -121,7 +121,9 @@ export class Message {
 
     const symEncryptedPacket = symEncryptedPacketlist[0];
     let exception = null;
-    const decryptedPromise = Promise.all(sessionKeyObjects.map(async ({ algorithm: algorithmName, data }) => {
+    for (let sessionKeyObject of sessionKeyObjects) {
+      let algorithmName = sessionKeyObject.algorithm;
+      let data = sessionKeyObject.data;
       if (!util.isUint8Array(data) || !util.isString(algorithmName)) {
         throw new Error('Invalid session key for decryption.');
       }
@@ -133,11 +135,10 @@ export class Message {
         util.printDebugError(e);
         exception = e;
       }
-    }));
+    };
     // We don't await stream.cancel here because it only returns when the other copy is canceled too.
     stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
     symEncryptedPacket.encrypted = null;
-    await decryptedPromise;
 
     if (!symEncryptedPacket.packets || !symEncryptedPacket.packets.length) {
       throw exception || new Error('Decryption failed.');
@@ -170,29 +171,31 @@ export class Message {
       if (skeskPackets.length === 0) {
         throw new Error('No symmetrically encrypted session key packet found.');
       }
-      await Promise.all(passwords.map(async function(password, i) {
+      let i = 0;
+      for (let password of passwords) {
         let packets;
         if (i) {
           packets = await PacketList.fromBinary(skeskPackets.write(), allowedSymSessionKeyPackets, config);
         } else {
           packets = skeskPackets;
         }
-        await Promise.all(packets.map(async function(skeskPacket) {
+        for (let skeskPacket of packets) {
           try {
             await skeskPacket.decrypt(password);
             decryptedSessionKeyPackets.push(skeskPacket);
           } catch (err) {
             util.printDebugError(err);
           }
-        }));
-      }));
+        };
+        i++;
+      };
     } else if (decryptionKeys) {
       const pkeskPackets = this.packets.filterByTag(enums.packet.publicKeyEncryptedSessionKey);
       if (pkeskPackets.length === 0) {
         throw new Error('No public key encrypted session key packet found.');
       }
-      await Promise.all(pkeskPackets.map(async function(pkeskPacket) {
-        await Promise.all(decryptionKeys.map(async function(decryptionKey) {
+      for (let pkeskPacket of pkeskPackets) {
+        for (let decryptionKey of decryptionKeys) {
           let algos = [
             enums.symmetric.aes256, // Old OpenPGP.js default fallback
             enums.symmetric.aes128, // RFC4880bis fallback
@@ -208,7 +211,7 @@ export class Message {
 
           // do not check key expiration to allow decryption of old messages
           const decryptionKeyPackets = (await decryptionKey.getDecryptionKeys(pkeskPacket.publicKeyID, null, undefined, config)).map(key => key.keyPacket);
-          await Promise.all(decryptionKeyPackets.map(async function(decryptionKeyPacket) {
+          for (let decryptionKeyPacket of decryptionKeyPackets) {
             if (!decryptionKeyPacket || decryptionKeyPacket.isDummy()) {
               return;
             }
@@ -236,7 +239,7 @@ export class Message {
               // NB: as a result, if the data is encrypted with a non-suported cipher, decryption will always fail.
 
               const serialisedPKESK = pkeskPacket.write(); // make copies to be able to decrypt the PKESK packet multiple times
-              await Promise.all(Array.from(config.constantTimePKCS1DecryptionSupportedSymmetricAlgorithms).map(async sessionKeyAlgorithm => {
+              for (let sessionKeyAlgorithm of Array.from(config.constantTimePKCS1DecryptionSupportedSymmetricAlgorithms)) {
                 const pkeskPacketCopy = new PublicKeyEncryptedSessionKeyPacket();
                 pkeskPacketCopy.read(serialisedPKESK);
                 const randomSessionKey = {
@@ -251,7 +254,7 @@ export class Message {
                   util.printDebugError(err);
                   exception = err;
                 }
-              }));
+              };
 
             } else {
               try {
@@ -265,11 +268,11 @@ export class Message {
                 exception = err;
               }
             }
-          }));
-        }));
+          };
+        };
         stream.cancel(pkeskPacket.encrypted); // Don't keep copy of encrypted data in memory.
         pkeskPacket.encrypted = null;
-      }));
+      };
     } else {
       throw new Error('No key or password specified.');
     }
@@ -417,7 +420,8 @@ export class Message {
     const aeadAlgorithm = aeadAlgorithmName && enums.write(enums.aead, aeadAlgorithmName);
 
     if (encryptionKeys) {
-      const results = await Promise.all(encryptionKeys.map(async function(primaryKey, i) {
+      let i = 0;
+      for (let primaryKey of encryptionKeys) {
         const encryptionKey = await primaryKey.getEncryptionKey(encryptionKeyIDs[i], date, userIDs, config);
         const pkESKeyPacket = new PublicKeyEncryptedSessionKeyPacket();
         pkESKeyPacket.publicKeyID = wildcard ? KeyID.wildcard() : encryptionKey.getKeyID();
@@ -426,9 +430,9 @@ export class Message {
         pkESKeyPacket.sessionKeyAlgorithm = algorithm;
         await pkESKeyPacket.encrypt(encryptionKey.keyPacket);
         delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
-        return pkESKeyPacket;
-      }));
-      packetlist.push(...results);
+        packetlist.push(pkESKeyPacket);
+        i++;
+      }
     }
     if (passwords) {
       const testDecrypt = async function(keyPacket, password) {
@@ -452,7 +456,11 @@ export class Message {
         await symEncryptedSessionKeyPacket.encrypt(password, config);
 
         if (config.passwordCollisionCheck) {
-          const results = await Promise.all(passwords.map(pwd => testDecrypt(symEncryptedSessionKeyPacket, pwd)));
+          const results = [];
+          for (let pwd of passwords) {
+            let result = await testDecrypt(symEncryptedSessionKeyPacket, pwd);
+            results.push(result);
+          }
           if (results.reduce(sum) !== 1) {
             return encryptPassword(sessionKey, algorithm, password);
           }
@@ -462,8 +470,10 @@ export class Message {
         return symEncryptedSessionKeyPacket;
       };
 
-      const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, algorithm, aeadAlgorithm, pwd)));
-      packetlist.push(...results);
+      for (let pwd of passwords) {
+        let result = await encryptPassword(sessionKey, algorithm, aeadAlgorithm, pwd);
+        packetlist.push(result);
+      }
     }
 
     return new Message(packetlist);
@@ -511,24 +521,27 @@ export class Message {
       }
     }
 
-    await Promise.all(Array.from(signingKeys).reverse().map(async function (primaryKey, i) {
+    let j = 0;
+    let onePassSignatureList = [];
+    for (let primaryKey of Array.from(signingKeys).reverse()) {
       if (!primaryKey.isPrivate()) {
         throw new Error('Need private key for signing');
       }
-      const signingKeyID = signingKeyIDs[signingKeys.length - 1 - i];
+      const signingKeyID = signingKeyIDs[signingKeys.length - 1 - j];
       const signingKey = await primaryKey.getSigningKey(signingKeyID, date, userIDs, config);
       const onePassSig = new OnePassSignaturePacket();
       onePassSig.signatureType = signatureType;
       onePassSig.hashAlgorithm = await getPreferredHashAlgo(primaryKey, signingKey.keyPacket, date, userIDs, config);
       onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
       onePassSig.issuerKeyID = signingKey.getKeyID();
-      if (i === signingKeys.length - 1) {
+      if (j === signingKeys.length - 1) {
         onePassSig.flags = 1;
       }
-      return onePassSig;
-    })).then(onePassSignatureList => {
-      onePassSignatureList.forEach(onePassSig => packetlist.push(onePassSig));
-    });
+      onePassSignatureList.push(onePassSig);
+      j++;
+    };
+
+    onePassSignatureList.forEach(onePassSig => packetlist.push(onePassSig));
 
     packetlist.push(literalDataPacket);
     packetlist.push(...(await createSignaturePackets(literalDataPacket, signingKeys, signature, signingKeyIDs, date, userIDs, notations, false, config)));
@@ -601,7 +614,7 @@ export class Message {
     const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
     const signatureList = msg.packets.filterByTag(enums.packet.signature);
     if (onePassSigList.length && !signatureList.length && util.isStream(msg.packets.stream) && !stream.isArrayStream(msg.packets.stream)) {
-      await Promise.all(onePassSigList.map(async onePassSig => {
+      for (let onePassSig of onePassSigList) {
         onePassSig.correspondingSig = new Promise((resolve, reject) => {
           onePassSig.correspondingSigResolve = resolve;
           onePassSig.correspondingSigReject = reject;
@@ -609,7 +622,7 @@ export class Message {
         onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
         onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false));
         onePassSig.hashed.catch(() => {});
-      }));
+      };
       msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
         const reader = stream.getReader(readable);
         const writer = stream.getWriter(writable);
@@ -721,16 +734,19 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
   const signatureType = literalDataPacket.text === null ?
     enums.signature.binary : enums.signature.text;
 
-  await Promise.all(signingKeys.map(async (primaryKey, i) => {
+  let i = 0;
+  let signatureList = [];
+  for (let primaryKey of signingKeys) {
     const userID = userIDs[i];
     if (!primaryKey.isPrivate()) {
       throw new Error('Need private key for signing');
     }
     const signingKey = await primaryKey.getSigningKey(signingKeyIDs[i], date, userID, config);
-    return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, date, userID, notations, detached, config);
-  })).then(signatureList => {
-    packetlist.push(...signatureList);
-  });
+    let result = await createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, date, userID, notations, detached, config);
+    signatureList.push(result);
+    i++;
+  };
+  packetlist.push(...signatureList);
 
   if (signature) {
     const existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
@@ -836,11 +852,11 @@ async function createVerificationObject(signature, literalDataList, verification
  * @private
  */
 export async function createVerificationObjects(signatureList, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
-  return Promise.all(signatureList.filter(function(signature) {
+  return signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
     return createVerificationObject(signature, literalDataList, verificationKeys, date, detached, config);
-  }));
+  });
 }
 
 /**
