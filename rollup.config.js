@@ -12,6 +12,10 @@ import { wasm } from '@rollup/plugin-wasm';
 import pkg from './package.json';
 
 const nodeDependencies = Object.keys(pkg.dependencies);
+const wasmOptions = {
+  node: { targetEnv: 'node' },
+  browser: { targetEnv: 'browser', maxFileSize: Number.MAX_SAFE_INTEGER } // always inlline (our wasm files are small)
+};
 
 const banner =
   `/*! OpenPGP.js v${pkg.version} - ` +
@@ -53,7 +57,7 @@ export default Object.assign([
         'require(': 'void(',
         delimiters: ['', '']
       }),
-      wasm({ targetEnv: 'auto' })
+      wasm(wasmOptions.browser)
     ]
   },
   {
@@ -72,7 +76,7 @@ export default Object.assign([
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`
       }),
-      wasm({ targetEnv: 'auto' })
+      wasm(wasmOptions.node)
     ]
   },
   {
@@ -94,7 +98,7 @@ export default Object.assign([
         'require(': 'void(',
         delimiters: ['', '']
       }),
-      wasm({ targetEnv: 'auto-inline' })
+      wasm(wasmOptions.browser)
     ]
   },
   {
@@ -116,7 +120,7 @@ export default Object.assign([
         'require(': 'void(',
         delimiters: ['', '']
       }),
-      wasm({ targetEnv: 'auto' })
+      wasm(wasmOptions.browser)
     ]
   }
 ].filter(config => {
