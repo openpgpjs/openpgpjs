@@ -852,11 +852,14 @@ async function createVerificationObject(signature, literalDataList, verification
  * @private
  */
 export async function createVerificationObjects(signatureList, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
-  return signatureList.filter(function(signature) {
+  const filterSignatures = signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
-  }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, verificationKeys, date, detached, config);
   });
+  const results = [];
+  for (let signature of filterSignatures) {
+    results.push(await createVerificationObject(signature, literalDataList, verificationKeys, date, detached, config));
+  }
+  return results;
 }
 
 /**
