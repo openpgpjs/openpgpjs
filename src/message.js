@@ -195,9 +195,7 @@ export class Message {
         throw new Error('No public key encrypted session key packet found.');
       }
       for (let pkeskPacket of pkeskPackets) {
-        console.log(pkeskPacket);
         for (let decryptionKey of decryptionKeys) {
-          console.log(decryptionKey);
           let algos = [
             enums.symmetric.aes256, // Old OpenPGP.js default fallback
             enums.symmetric.aes128, // RFC4880bis fallback
@@ -213,7 +211,6 @@ export class Message {
 
           // do not check key expiration to allow decryption of old messages
           const decryptionKeyPackets = (await decryptionKey.getDecryptionKeys(pkeskPacket.publicKeyID, null, undefined, config)).map(key => key.keyPacket);
-          console.log(decryptionKeyPackets);
           for (let decryptionKeyPacket of decryptionKeyPackets) {
             if (!decryptionKeyPacket || decryptionKeyPacket.isDummy()) {
               return;
@@ -229,8 +226,6 @@ export class Message {
               pkeskPacket.publicKeyAlgorithm === enums.publicKey.rsaSign ||
               pkeskPacket.publicKeyAlgorithm === enums.publicKey.elgamal
             );
-
-            console.log('doConstantTimeDecryption: ' + doConstantTimeDecryption);
 
             if (doConstantTimeDecryption) {
               // The goal is to not reveal whether PKESK decryption (specifically the PKCS1 decoding step) failed, hence, we always proceed to decrypt the message,
