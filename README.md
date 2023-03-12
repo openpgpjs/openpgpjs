@@ -30,7 +30,7 @@ eval(pm.globals.get("openpgp"));
 
 ### Examples
 
-Here are some examples of how to use OpenPGP.js v5. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js). If you're upgrading from v4 it might help to check out the [changelog](https://github.com/openpgpjs/openpgpjs/wiki/V5-Changelog) and [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
+Here are some examples of how to use it inside Postman.
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
