@@ -10,7 +10,7 @@ Forked of [OpenPGP.js](https://openpgpjs.org/) a JavaScript implementation of th
 To install on postman, create GET request with URL:
 
 ```js
-https://raw.githubusercontent.com/maasdi/openpgpjs/postman/lib/openpgp.min.js
+https://maasdi.github.io/openpgpjs-for-postman/dist/openpgp.min.js
 ```
 
 and then add to Test script
@@ -31,6 +31,9 @@ eval(pm.globals.get("openpgp"));
 ### Examples
 
 Here are some examples of how to use it inside Postman.
+
+#### Postman Collection
+ Download [Sample Postman Collection](https://maasdi.github.io/openpgpjs-for-postman/collection/OpenPGP_Postman_Sample.postman_collection.json)
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
