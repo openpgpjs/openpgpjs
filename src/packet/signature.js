@@ -60,6 +60,7 @@ class SignaturePacket {
     this.signatureData = null;
     this.unhashedSubpackets = [];
     this.signedHashValue = null;
+    this.salt = null;
 
     this.created = null;
     this.signatureExpirationTime = null;
@@ -110,7 +111,7 @@ class SignaturePacket {
     let i = 0;
     this.version = bytes[i++];
 
-    if (this.version !== 4 && this.version !== 5) {
+    if (this.version !== 4 && this.version !== 5 && this.version !== 6) {
       throw new UnsupportedError(`Version ${this.version} of the signature packet is unsupported.`);
     }
 
@@ -139,6 +140,20 @@ class SignaturePacket {
     this.signedHashValue = bytes.subarray(i, i + 2);
     i += 2;
 
+    // Only for v6 signatures, a variable-length field containing:
+    if (this.version === 6) {
+      // A one-octet salt size. The value MUST match the value defined
+      // for the hash algorithm as specified in Table 23 (Hash algorithm registry).
+      const saltLength = bytes[i++];
+      if (saltLength !== saltLengthForHash(this.hashAlgorithm)) {
+        throw new Error('Unexpected salt size for the hash algorithm');
+      }
+
+      // The salt; a random value value of the specified size.
+      this.salt = bytes.subarray(i, i + saltLength);
+      i += saltLength;
+    }
+
     this.params = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, bytes.subarray(i, bytes.length));
   }
 
@@ -159,6 +174,10 @@ class SignaturePacket {
     arr.push(this.signatureData);
     arr.push(this.writeUnhashedSubPackets());
     arr.push(this.signedHashValue);
+    if (this.version === 6) {
+      arr.push(new Uint8Array([this.salt.length]));
+      arr.push(this.salt);
+    }
     arr.push(this.writeParams());
     return util.concat(arr);
   }
@@ -173,17 +192,14 @@ class SignaturePacket {
    * @async
    */
   async sign(key, data, date = new Date(), detached = false) {
-    if (key.version === 5) {
-      this.version = 5;
-    } else {
-      this.version = 4;
-    }
-    const arr = [new Uint8Array([this.version, this.signatureType, this.publicKeyAlgorithm, this.hashAlgorithm])];
+    this.version = key.version;
 
     this.created = util.normalizeDate(date);
     this.issuerKeyVersion = key.version;
     this.issuerFingerprint = key.getFingerprintBytes();
     this.issuerKeyID = key.getKeyID();
+
+    const arr = [new Uint8Array([this.version, this.signatureType, this.publicKeyAlgorithm, this.hashAlgorithm])];
 
     // Add hashed subpackets
     arr.push(this.writeHashedSubPackets());
@@ -195,6 +211,10 @@ class SignaturePacket {
 
     this.signatureData = util.concat(arr);
 
+    if (this.version === 6) {
+      const saltLength = saltLengthForHash(this.hashAlgorithm);
+      this.salt = await crypto.random.getRandomBytes(saltLength);
+    }
     const toHash = this.toHash(this.signatureType, data, detached);
     const hash = await this.hash(this.signatureType, data, toHash, detached);
 
@@ -255,7 +275,7 @@ class SignaturePacket {
       bytes = util.concat([bytes, this.revocationKeyFingerprint]);
       arr.push(writeSubPacket(sub.revocationKey, false, bytes));
     }
-    if (!this.issuerKeyID.isNull() && this.issuerKeyVersion !== 5) {
+    if (!this.issuerKeyID.isNull() && this.issuerKeyVersion < 5) {
       // If the version of [the] key is greater than 4, this subpacket
       // MUST NOT be included in the signature.
       arr.push(writeSubPacket(sub.issuer, true, this.issuerKeyID.write()));
@@ -320,7 +340,7 @@ class SignaturePacket {
     if (this.issuerFingerprint !== null) {
       bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
       bytes = util.concat(bytes);
-      arr.push(writeSubPacket(sub.issuerFingerprint, this.version === 5, bytes));
+      arr.push(writeSubPacket(sub.issuerFingerprint, this.version >= 5, bytes));
     }
     if (this.preferredAEADAlgorithms !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredAEADAlgorithms));
@@ -328,7 +348,7 @@ class SignaturePacket {
     }
 
     const result = util.concat(arr);
-    const length = util.writeNumber(result.length, 2);
+    const length = util.writeNumber(result.length, this.version === 6 ? 4 : 2);
 
     return util.concat([length, result]);
   }
@@ -345,7 +365,7 @@ class SignaturePacket {
     });
 
     const result = util.concat(arr);
-    const length = util.writeNumber(result.length, 2);
+    const length = util.writeNumber(result.length, this.version === 6 ? 4 : 2);
 
     return util.concat([length, result]);
   }
@@ -509,7 +529,7 @@ class SignaturePacket {
         // Issuer Fingerprint
         this.issuerKeyVersion = bytes[mypos++];
         this.issuerFingerprint = bytes.subarray(mypos, bytes.length);
-        if (this.issuerKeyVersion === 5) {
+        if (this.issuerKeyVersion >= 5) {
           this.issuerKeyID.read(this.issuerFingerprint);
         } else {
           this.issuerKeyID.read(this.issuerFingerprint.subarray(-8));
@@ -531,10 +551,12 @@ class SignaturePacket {
   }
 
   readSubPackets(bytes, trusted = true, config) {
-    // Two-octet scalar octet count for following subpacket data.
-    const subpacketLength = util.readNumber(bytes.subarray(0, 2));
+    const subpacketLengthBytes = this.version === 6 ? 4 : 2;
 
-    let i = 2;
+    // Two-octet scalar octet count for following subpacket data.
+    const subpacketLength = util.readNumber(bytes.subarray(0, subpacketLengthBytes));
+
+    let i = subpacketLengthBytes;
 
     // subpacket data set (zero or more subpackets)
     while (i < 2 + subpacketLength) {
@@ -645,7 +667,7 @@ class SignaturePacket {
   toHash(signatureType, data, detached = false) {
     const bytes = this.toSign(signatureType, data);
 
-    return util.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
+    return util.concat([this.salt || new Uint8Array(), bytes, this.signatureData, this.calculateTrailer(data, detached)]);
   }
 
   async hash(signatureType, data, toHash, detached = false) {
@@ -768,4 +790,21 @@ function writeSubPacket(type, critical, data) {
   arr.push(new Uint8Array([(critical ? 0x80 : 0) | type]));
   arr.push(data);
   return util.concat(arr);
+}
+
+/**
+ * Select the required salt length for the given hash algorithm, as per Table 23 (Hash algorithm registry) of the crypto refresh.
+ * @see {@link https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#section-9.5|Crypto Refresh Section 9.5}
+ * @param {enums.hash} hashAlgorithm - Hash algorithm.
+ * @returns {Integer} Salt length.
+ * @private
+ */
+function saltLengthForHash(hashAlgorithm) {
+  switch (hashAlgorithm) {
+    case enums.hash.sha256: return 16;
+    case enums.hash.sha384: return 24;
+    case enums.hash.sha512: return 32;
+    case enums.hash.sha224: return 16;
+    default: throw new Error('Unsupported hash function for V6 signatures');
+  }
 }
