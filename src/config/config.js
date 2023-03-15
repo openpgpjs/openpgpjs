@@ -68,13 +68,13 @@ export default {
    */
   aeadChunkSizeByte: 12,
   /**
-   * Use V5 keys.
+   * Use v6 keys.
    * Note: not all OpenPGP implementations are compatible with this option.
    * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
    * @memberof module:config
-   * @property {Boolean} v5Keys
+   * @property {Boolean} v6Keys
    */
-  v5Keys: false,
+  v6Keys: false,
   /**
    * S2K (String to Key) type, used for key derivation in the context of secret key encryption
    * and password-encrypted data. Weaker s2k options are not allowed.

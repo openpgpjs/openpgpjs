@@ -2258,7 +2258,7 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.uncompressed, compr.zlib, compr.zip]);
 
       let expectedFeatures;
-      if (openpgp.config.v5Keys) {
+      if (openpgp.config.v6Keys) {
         expectedFeatures = [7]; // v5 + aead + mdc
       } else if (openpgp.config.aeadProtect) {
         expectedFeatures = [3]; // aead + mdc
@@ -2303,7 +2303,7 @@ function versionSpecificTests() {
       expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zip, compr.zlib, compr.uncompressed]);
 
       let expectedFeatures;
-      if (openpgp.config.v5Keys) {
+      if (openpgp.config.v6Keys) {
         expectedFeatures = [7]; // v5 + aead + mdc
       } else if (openpgp.config.aeadProtect) {
         expectedFeatures = [3]; // aead + mdc
@@ -2894,30 +2894,30 @@ function versionSpecificTests() {
 }
 
 export default () => describe('Key', function() {
-  let v5KeysVal;
+  let v6KeysVal;
   let aeadProtectVal;
 
   tryTests('V4', versionSpecificTests, {
     if: !openpgp.config.ci,
     beforeEach: function() {
-      v5KeysVal = openpgp.config.v5Keys;
-      openpgp.config.v5Keys = false;
+      v6KeysVal = openpgp.config.v6Keys;
+      openpgp.config.v6Keys = false;
     },
     afterEach: function() {
-      openpgp.config.v5Keys = v5KeysVal;
+      openpgp.config.v6Keys = v6KeysVal;
     }
   });
 
-  tryTests('V5', versionSpecificTests, {
+  tryTests('V6', versionSpecificTests, {
     if: !openpgp.config.ci,
     beforeEach: function() {
-      v5KeysVal = openpgp.config.v5Keys;
+      v6KeysVal = openpgp.config.v6Keys;
       aeadProtectVal = openpgp.config.aeadProtect;
-      openpgp.config.v5Keys = true;
+      openpgp.config.v6Keys = true;
       openpgp.config.aeadProtect = true;
     },
     afterEach: function() {
-      openpgp.config.v5Keys = v5KeysVal;
+      openpgp.config.v6Keys = v6KeysVal;
       openpgp.config.aeadProtect = aeadProtectVal;
     }
   });

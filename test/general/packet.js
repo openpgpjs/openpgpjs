@@ -854,8 +854,36 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
   });
 
   it('Writing of unencrypted v5 secret key packet', async function() {
-    const originalV5KeysSetting = openpgp.config.v5Keys;
-    openpgp.config.v5Keys = true;
+    const packet = new openpgp.SecretKeyPacket();
+    packet.version = 5;
+    packet.privateParams = { key: new Uint8Array([1, 2, 3]) };
+    packet.publicParams = { pubKey: new Uint8Array([4, 5, 6]) };
+    packet.algorithm = openpgp.enums.publicKey.rsaSign;
+    packet.isEncrypted = false;
+    packet.s2kUsage = 0;
+
+    const written = packet.write();
+    expect(written.length).to.equal(28);
+
+    /* The serialized length of private data */
+    expect(written[17]).to.equal(0);
+    expect(written[18]).to.equal(0);
+    expect(written[19]).to.equal(0);
+    expect(written[20]).to.equal(5);
+
+    /**
+     * The private data
+     *
+     * The 2 bytes missing here are the length prefix of the MPI
+     */
+    expect(written[23]).to.equal(1);
+    expect(written[24]).to.equal(2);
+    expect(written[25]).to.equal(3);
+  });
+
+  it('Writing of unencrypted v6 secret key packet', async function() {
+    const originalv6KeysSetting = openpgp.config.v6Keys;
+    openpgp.config.v6Keys = true;
 
     try {
       const packet = new openpgp.SecretKeyPacket();
@@ -867,24 +895,18 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       packet.s2kUsage = 0;
 
       const written = packet.write();
-      expect(written.length).to.equal(28);
-
-      /* The serialized length of private data */
-      expect(written[17]).to.equal(0);
-      expect(written[18]).to.equal(0);
-      expect(written[19]).to.equal(0);
-      expect(written[20]).to.equal(5);
+      expect(written.length).to.equal(21);
 
       /**
        * The private data
        *
        * The 2 bytes missing here are the length prefix of the MPI
        */
-      expect(written[23]).to.equal(1);
-      expect(written[24]).to.equal(2);
-      expect(written[25]).to.equal(3);
+      expect(written[18]).to.equal(1);
+      expect(written[19]).to.equal(2);
+      expect(written[20]).to.equal(3);
     } finally {
-      openpgp.config.v5Keys = originalV5KeysSetting;
+      openpgp.config.v6Keys = originalv6KeysSetting;
     }
   });
 

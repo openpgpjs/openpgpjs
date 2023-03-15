@@ -329,7 +329,7 @@ interface Config {
   allowInsecureVerificationWithReformattedKeys: boolean;
   constantTimePKCS1Decryption: boolean;
   constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<enums.symmetric>;
-  v5Keys: boolean;
+  v6Keys: boolean;
   preferredAEADAlgorithm: enums.aead;
   aeadChunkSizeByte: number;
   s2kType: enums.s2k.iterated | enums.s2k.argon2;

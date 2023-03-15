@@ -2231,7 +2231,7 @@ XfA3pqV4mTzF
     let aeadProtectVal;
     let preferredAEADAlgorithmVal;
     let aeadChunkSizeByteVal;
-    let v5KeysVal;
+    let v6KeysVal;
     let minRSABitsVal;
 
     beforeEach(async function() {
@@ -2248,7 +2248,7 @@ XfA3pqV4mTzF
       aeadProtectVal = openpgp.config.aeadProtect;
       preferredAEADAlgorithmVal = openpgp.config.preferredAEADAlgorithm;
       aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
-      v5KeysVal = openpgp.config.v5Keys;
+      v6KeysVal = openpgp.config.v6Keys;
       minRSABitsVal = openpgp.config.minRSABits;
 
       openpgp.config.minRSABits = 512;
@@ -2258,7 +2258,7 @@ XfA3pqV4mTzF
       openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredAEADAlgorithm = preferredAEADAlgorithmVal;
       openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
-      openpgp.config.v5Keys = v5KeysVal;
+      openpgp.config.v6Keys = v6KeysVal;
       openpgp.config.minRSABits = minRSABitsVal;
     });
 
@@ -2293,12 +2293,12 @@ XfA3pqV4mTzF
       }
     });
 
-    tryTests('GCM mode (V5 keys)', tests, {
+    tryTests('GCM mode (V6 keys)', tests, {
       if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
         openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM;
-        openpgp.config.v5Keys = true;
+        openpgp.config.v6Keys = true;
 
         // Monkey-patch AEAD feature flag
         publicKey.users[0].selfCertifications[0].features = [7];
