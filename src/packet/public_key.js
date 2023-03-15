@@ -106,10 +106,10 @@ class PublicKeyPacket {
    */
   async read(bytes) {
     let pos = 0;
-    // A one-octet version number (3, 4 or 5).
+    // A one-octet version number (4, 5 or 6).
     this.version = bytes[pos++];
 
-    if (this.version === 4 || this.version === 5) {
+    if (this.version === 4 || this.version === 5 || this.version === 6) {
       // - A four-octet number denoting the time that the key was created.
       this.created = util.readDate(bytes.subarray(pos, pos + 4));
       pos += 4;
@@ -117,7 +117,7 @@ class PublicKeyPacket {
       // - A one-octet number denoting the public-key algorithm of this key.
       this.algorithm = bytes[pos++];
 
-      if (this.version === 5) {
+      if (this.version >= 5) {
         // - A four-octet scalar octet count for the following key material.
         pos += 4;
       }
@@ -147,7 +147,7 @@ class PublicKeyPacket {
     arr.push(new Uint8Array([this.algorithm]));
 
     const params = crypto.serializeParams(this.algorithm, this.publicParams);
-    if (this.version === 5) {
+    if (this.version >= 5) {
       // A four-octet scalar octet count for the following key material
       arr.push(util.writeNumber(params.length, 4));
     }
@@ -163,10 +163,9 @@ class PublicKeyPacket {
   writeForHash(version) {
     const bytes = this.writePublicKey();
 
-    if (version === 5) {
-      return util.concatUint8Array([new Uint8Array([0x9A]), util.writeNumber(bytes.length, 4), bytes]);
-    }
-    return util.concatUint8Array([new Uint8Array([0x99]), util.writeNumber(bytes.length, 2), bytes]);
+    const versionOctet = 0x95 + version;
+    const lengthOctets = version >= 5 ? 4 : 2;
+    return util.concatUint8Array([new Uint8Array([versionOctet]), util.writeNumber(bytes.length, lengthOctets), bytes]);
   }
 
   /**
@@ -201,7 +200,7 @@ class PublicKeyPacket {
     await this.computeFingerprint();
     this.keyID = new KeyID();
 
-    if (this.version === 5) {
+    if (this.version >= 5) {
       this.keyID.read(this.fingerprint.subarray(0, 8));
     } else if (this.version === 4) {
       this.keyID.read(this.fingerprint.subarray(12, 20));
@@ -216,7 +215,7 @@ class PublicKeyPacket {
   async computeFingerprint() {
     const toHash = this.writeForHash(this.version);
 
-    if (this.version === 5) {
+    if (this.version >= 5) {
       this.fingerprint = await crypto.hash.sha256(toHash);
     } else if (this.version === 4) {
       this.fingerprint = await crypto.hash.sha1(toHash);

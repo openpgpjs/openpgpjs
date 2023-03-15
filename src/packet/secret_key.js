@@ -100,6 +100,14 @@ class SecretKeyPacket extends PublicKeyPacket {
       i++;
     }
 
+    // - Only for a version 6 packet where the secret key material is
+    //   encrypted (that is, where the previous octet is not zero), a one-
+    //   octet scalar octet count of the cumulative length of all the
+    //   following optional string-to-key parameter fields.
+    if (this.version === 6 && this.s2kUsage) {
+      i++;
+    }
+
     try {
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
       //   one-octet symmetric encryption algorithm.
@@ -110,6 +118,12 @@ class SecretKeyPacket extends PublicKeyPacket {
         //   AEAD algorithm.
         if (this.s2kUsage === 253) {
           this.aead = bytes[i++];
+        }
+
+        // - [Optional] Only for a version 6 packet, and if string-to-key usage
+        //   octet was 255, 254, or 253, an one-octet count of the following field.
+        if (this.version === 6) {
+          i++;
         }
 
         // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
@@ -157,9 +171,14 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = !!this.s2kUsage;
 
     if (!this.isEncrypted) {
-      const cleartext = this.keyMaterial.subarray(0, -2);
-      if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
-        throw new Error('Key checksum mismatch');
+      let cleartext;
+      if (this.version === 6) {
+        cleartext = this.keyMaterial;
+      } else {
+        cleartext = this.keyMaterial.subarray(0, -2);
+        if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
+          throw new Error('Key checksum mismatch');
+        }
       }
       try {
         const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
@@ -200,10 +219,18 @@ class SecretKeyPacket extends PublicKeyPacket {
         optionalFieldsArr.push(this.aead);
       }
 
+      const s2k = this.s2k.write();
+
+      // - [Optional] Only for a version 6 packet, and if string-to-key usage
+      //   octet was 255, 254, or 253, an one-octet count of the following field.
+      if (this.version === 6) {
+        optionalFieldsArr.push(s2k.length);
+      }
+
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
       //   string-to-key specifier.  The length of the string-to-key
       //   specifier is implied by its type, as described above.
-      optionalFieldsArr.push(...this.s2k.write());
+      optionalFieldsArr.push(...s2k);
     }
 
     // - [Optional] If secret data is encrypted (string-to-key usage octet
@@ -213,7 +240,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       optionalFieldsArr.push(...this.iv);
     }
 
-    if (this.version === 5) {
+    if (this.version === 5 || (this.version === 6 && this.s2kUsage)) {
       arr.push(new Uint8Array([optionalFieldsArr.length]));
     }
     arr.push(new Uint8Array(optionalFieldsArr));
@@ -228,7 +255,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       }
       arr.push(this.keyMaterial);
 
-      if (!this.s2kUsage) {
+      if (!this.s2kUsage && this.version !== 6) {
         arr.push(util.writeChecksum(this.keyMaterial));
       }
     }
