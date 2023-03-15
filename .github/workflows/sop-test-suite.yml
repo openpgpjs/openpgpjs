@@ -1,0 +1,87 @@
+name: SOP interoperability test suite
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+
+  test-suite:
+    name: Run interoperability test suite
+    runs-on: ubuntu-latest
+    container: 
+      image: ghcr.io/protonmail/openpgp-interop-test-docker:pmfork
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+    steps:
+      # check out repo for scripts
+      - uses: actions/checkout@v3
+      # check out pull request branch
+      - name: Checkout openpgpjs-branch
+        uses: actions/checkout@v3
+        with:
+          path: openpgpjs-branch
+      - name: Install openpgpjs-branch
+        run: cd openpgpjs-branch && npm install
+      - name: Print openpgpjs-branch version
+        run: $SOP_OPENPGPJS version --extended
+        env: 
+          OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-branch
+      # check out main branch
+      - name: Checkout openpgpjs-main
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          path: openpgpjs-main
+      - name: Install openpgpjs-main
+        run: cd openpgpjs-main && npm install
+      - name: Print openpgpjs-main version
+        run: $SOP_OPENPGPJS version --extended
+        env: 
+          OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-main
+      # Run test suite
+      - name: Prepare test configuration
+        run: ./.github/test-suite/prepare_config.sh $CONFIG_TEMPLATE $CONFIG_OUTPUT $GITHUB_WORKSPACE/openpgpjs-branch $GITHUB_WORKSPACE/openpgpjs-main
+        env:
+         CONFIG_TEMPLATE: .github/test-suite/config.json.template
+         CONFIG_OUTPUT: .github/test-suite/config.json
+      - name: Display configuration
+        run: cat .github/test-suite/config.json
+      - name: Run interoperability test suite
+        run: cd $TEST_SUITE_DIR && $TEST_SUITE --config $GITHUB_WORKSPACE/$CONFIG --json-out $GITHUB_WORKSPACE/$RESULTS_JSON --html-out $GITHUB_WORKSPACE/$RESULTS_HTML
+        env:
+         CONFIG: .github/test-suite/config.json
+         RESULTS_JSON: .github/test-suite/test-suite-results.json
+         RESULTS_HTML: .github/test-suite/test-suite-results.html
+      # Upload results
+      - name: Upload test results json artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-suite-results.json
+          path: .github/test-suite/test-suite-results.json
+      - name: Upload test results html artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-suite-results.html
+          path: .github/test-suite/test-suite-results.html
+
+  compare-with-main:
+    name: Compare with main
+    runs-on: ubuntu-latest
+    needs: test-suite
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Download test results json artifact
+        id: download-test-results
+        uses: actions/download-artifact@v3
+        with:
+          name: test-suite-results.json
+      - name: Compare with baseline
+        uses: ProtonMail/openpgp-interop-test-analyzer@v1
+        with: 
+          results: ${{ steps.download-test-results.outputs.download-path }}/test-suite-results.json
+          output: baseline-comparison.json
+          baseline: sop-openpgpjs-main
+          target: sop-openpgpjs-main
