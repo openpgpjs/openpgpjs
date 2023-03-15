@@ -14,7 +14,16 @@ import pkg from './package.json';
 const nodeDependencies = Object.keys(pkg.dependencies);
 const wasmOptions = {
   node: { targetEnv: 'node' },
-  browser: { targetEnv: 'browser', maxFileSize: Number.MAX_SAFE_INTEGER } // always inlline (our wasm files are small)
+  browser: { targetEnv: 'browser', maxFileSize: undefined } // always inlline (our wasm files are small)
+};
+
+const getChunkFileName = (chunkInfo, extension) => {
+  // index files result in chunks named simply 'index', so we rename them to include the package name
+  if (chunkInfo.name === 'index') {
+    const packageName = chunkInfo.facadeModuleId.split('/').at(-2); // assume index file is under the root folder
+    return `${packageName}.index.${extension}`;
+  }
+  return `[name].${extension}`;
 };
 
 const banner =
@@ -82,8 +91,8 @@ export default Object.assign([
   {
     input: 'src/index.js',
     output: [
-      { dir: 'dist/lightweight', entryFileNames: 'openpgp.mjs', chunkFileNames: '[name].mjs', format: 'es', banner, intro },
-      { dir: 'dist/lightweight', entryFileNames: 'openpgp.min.mjs', chunkFileNames: '[name].min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
+      { dir: 'dist/lightweight', entryFileNames: 'openpgp.mjs', chunkFileNames: chunkInfo => getChunkFileName(chunkInfo, 'mjs'), format: 'es', banner, intro },
+      { dir: 'dist/lightweight', entryFileNames: 'openpgp.min.mjs', chunkFileNames: chunkInfo => getChunkFileName(chunkInfo, 'min.mjs'), format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
     ],
     preserveEntrySignatures: 'allow-extension',
     plugins: [
