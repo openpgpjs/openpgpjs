@@ -47,7 +47,7 @@ class PublicKeyPacket {
      * Packet version
      * @type {Integer}
      */
-    this.version = config.v5Keys ? 5 : 4;
+    this.version = config.v6Keys ? 6 : 4;
     /**
      * Key creation date.
      * @type {Date}
