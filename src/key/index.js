@@ -8,9 +8,9 @@ import {
 } from './factory';
 
 import {
-  getPreferredAlgo,
-  isAEADSupported,
   getPreferredHashAlgo,
+  getPreferredCompressionAlgo,
+  getPreferredCipherSuite,
   createSignaturePacket
 } from './helper';
 
@@ -25,9 +25,9 @@ export {
   readPrivateKeys,
   generate,
   reformat,
-  getPreferredAlgo,
-  isAEADSupported,
   getPreferredHashAlgo,
+  getPreferredCompressionAlgo,
+  getPreferredCipherSuite,
   createSignaturePacket,
   PrivateKey,
   PublicKey,
