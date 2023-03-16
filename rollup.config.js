@@ -21,7 +21,7 @@ const getChunkFileName = (chunkInfo, extension) => {
   // index files result in chunks named simply 'index', so we rename them to include the package name
   if (chunkInfo.name === 'index') {
     const packageName = chunkInfo.facadeModuleId.split('/').at(-2); // assume index file is under the root folder
-    return `${packageName}.index.${extension}`;
+    return `${packageName}.${extension}`;
   }
   return `[name].${extension}`;
 };
