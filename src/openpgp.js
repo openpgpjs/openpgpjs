@@ -18,7 +18,7 @@
 import * as stream from '@openpgp/web-stream-tools';
 import { Message } from './message';
 import { CleartextMessage } from './cleartext';
-import { generate, reformat, getPreferredAlgo } from './key';
+import { generate, reformat, getPreferredCompressionAlgo } from './key';
 import defaultConfig from './config';
 import util from './util';
 import { checkKeyRequirements } from './key/helper';
@@ -284,7 +284,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
       message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
     }
     message = message.compress(
-      await getPreferredAlgo('compression', encryptionKeys, date, encryptionUserIDs, config),
+      await getPreferredCompressionAlgo(encryptionKeys, date, encryptionUserIDs, config),
       config
     );
     message = await message.encrypt(encryptionKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);

@@ -24,7 +24,7 @@ import crypto from './crypto';
 import enums from './enums';
 import util from './util';
 import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredAlgo, isAEADSupported, createSignaturePacket } from './key';
+import { getPreferredHashAlgo, getPreferredCipherSuite, createSignaturePacket } from './key';
 import {
   PacketList,
   LiteralDataPacket,
@@ -343,23 +343,21 @@ export class Message {
    * @async
    */
   static async generateSessionKey(encryptionKeys = [], date = new Date(), userIDs = [], config = defaultConfig) {
-    const algo = await getPreferredAlgo('symmetric', encryptionKeys, date, userIDs, config);
-    const algorithmName = enums.read(enums.symmetric, algo);
-    const aeadAlgorithmName = config.aeadProtect && await isAEADSupported(encryptionKeys, date, userIDs, config) ?
-      enums.read(enums.aead, await getPreferredAlgo('aead', encryptionKeys, date, userIDs, config)) :
-      undefined;
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite(encryptionKeys, date, userIDs, config);
+    const symmetricAlgoName = enums.read(enums.symmetric, symmetricAlgo);
+    const aeadAlgoName = aeadAlgo ? enums.read(enums.aead, aeadAlgo) : undefined;
 
     await Promise.all(encryptionKeys.map(key => key.getEncryptionKey()
       .catch(() => null) // ignore key strength requirements
       .then(maybeKey => {
-        if (maybeKey && (maybeKey.keyPacket.algorithm === enums.publicKey.x25519) && !util.isAES(algo)) {
+        if (maybeKey && (maybeKey.keyPacket.algorithm === enums.publicKey.x25519) && !util.isAES(symmetricAlgo)) {
           throw new Error('Could not generate a session key compatible with the given `encryptionKeys`: X22519 keys can only be used to encrypt AES session keys; change `config.preferredSymmetricAlgorithm` accordingly.');
         }
       })
     ));
 
-    const sessionKeyData = crypto.generateSessionKey(algo);
-    return { data: sessionKeyData, algorithm: algorithmName, aeadAlgorithm: aeadAlgorithmName };
+    const sessionKeyData = crypto.generateSessionKey(symmetricAlgo);
+    return { data: sessionKeyData, algorithm: symmetricAlgoName, aeadAlgorithm: aeadAlgoName };
   }
 
   /**

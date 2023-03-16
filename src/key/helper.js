@@ -145,41 +145,57 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
 }
 
 /**
- * Returns the preferred symmetric/aead/compression algorithm for a set of keys
- * @param {'symmetric'|'aead'|'compression'} type - Type of preference to return
+ * Returns the preferred compression algorithm for a set of keys
  * @param {Array<Key>} [keys] - Set of keys
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Array} [userIDs] - User IDs
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {Promise<module:enums.symmetric|aead|compression>} Preferred algorithm
+ * @returns {Promise<module:enums.compression>} Preferred compression algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
-  const defaultAlgo = { // these are all must-implement in the crypto refresh
-    'symmetric': enums.symmetric.aes128,
-    'aead': enums.aead.ocb,
-    'compression': enums.compression.uncompressed
-  }[type];
-  const preferredSenderAlgo = {
-    'symmetric': config.preferredSymmetricAlgorithm,
-    'aead': config.preferredAEADAlgorithm,
-    'compression': config.preferredCompressionAlgorithm
-  }[type];
-  const prefPropertyName = {
-    'symmetric': 'preferredSymmetricAlgorithms',
-    'aead': 'preferredAEADAlgorithms',
-    'compression': 'preferredCompressionAlgorithms'
-  }[type];
+export async function getPreferredCompressionAlgo(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  const defaultAlgo = enums.compression.uncompressed;
+  const preferredSenderAlgo = config.preferredCompressionAlgorithm;
 
   // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
   const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
     const selfCertification = await key.getPrimarySelfSignature(date, userIDs[i], config);
-    const recipientPrefs = selfCertification[prefPropertyName];
+    const recipientPrefs = selfCertification.preferredCompressionAlgorithms;
     return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
   return senderAlgoSupport.every(Boolean) ? preferredSenderAlgo : defaultAlgo;
+}
+
+/**
+ * Returns the preferred symmetric and AEAD algorithm (if any) for a set of keys
+ * @param {Array<Key>} [keys] - Set of keys
+ * @param {Date} [date] - Use the given date for verification instead of the current time
+ * @param {Array} [userIDs] - User IDs
+ * @param {Object} [config] - Full configuration, defaults to openpgp.config
+ * @returns {Promise<{ symmetricAlgo: module:enums.symmetric, aeadAlgo: module:enums.aead | undefined }>} Object containing the preferred symmetric algorithm, and the preferred AEAD algorithm, or undefined if CFB is preferred
+ * @async
+ */
+export async function getPreferredCipherSuite(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  const selfSigs = await Promise.all(keys.map((key, i) => key.getPrimarySelfSignature(date, userIDs[i], config)));
+  if (config.aeadProtect && selfSigs.every(selfSig => selfSig.features[0] & enums.features.seipdv2)) {
+    const defaultCipherSuite = { symmetricAlgo: enums.symmetric.aes128, aeadAlgo: enums.aead.ocb };
+    const desiredCipherSuite = { symmetricAlgo: config.preferredSymmetricAlgorithm, aeadAlgo: config.preferredAEADAlgorithm };
+    return selfSigs.every(selfSig => selfSig.preferredCipherSuites && selfSig.preferredCipherSuites.some(
+      cipherSuite => cipherSuite[0] === desiredCipherSuite.symmetricAlgo && cipherSuite[1] === desiredCipherSuite.aeadAlgo
+    )) ?
+      desiredCipherSuite :
+      defaultCipherSuite;
+  }
+  const defaultSymAlgo = enums.symmetric.aes128;
+  const desiredSymAlgo = config.preferredSymmetricAlgorithm;
+  return {
+    symmetricAlgo: selfSigs.every(selfSig => selfSig.preferredSymmetricAlgorithms && selfSig.preferredSymmetricAlgorithms.includes(desiredSymAlgo)) ?
+      desiredSymAlgo :
+      defaultSymAlgo,
+    aeadAlgo: undefined
+  };
 }
 
 /**
@@ -302,28 +318,6 @@ export function getKeyExpirationTime(keyPacket, signature) {
     expirationTime = keyPacket.created.getTime() + signature.keyExpirationTime * 1000;
   }
   return expirationTime ? new Date(expirationTime) : Infinity;
-}
-
-/**
- * Returns whether aead is supported by all keys in the set
- * @param {Array<Key>} keys - Set of keys
- * @param {Date} [date] - Use the given date for verification instead of the current time
- * @param {Array} [userIDs] - User IDs
- * @param {Object} config - full configuration
- * @returns {Promise<Boolean>}
- * @async
- */
-export async function isAEADSupported(keys, date = new Date(), userIDs = [], config = defaultConfig) {
-  let supported = true;
-  // TODO replace when Promise.some or Promise.any are implemented
-  await Promise.all(keys.map(async function(key, i) {
-    const selfCertification = await key.getPrimarySelfSignature(date, userIDs[i], config);
-    if (!selfCertification.features ||
-        !(selfCertification.features[0] & enums.features.seipdv2)) {
-      supported = false;
-    }
-  }));
-  return supported;
 }
 
 export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
