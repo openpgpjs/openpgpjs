@@ -11,7 +11,7 @@ import crypto from '../../src/crypto';
 import * as random from '../../src/crypto/random.js';
 import util from '../../src/util.js';
 import keyIDType from '../../src/type/keyid.js';
-import { isAEADSupported } from '../../src/key';
+import { getPreferredCipherSuite } from '../../src/key';
 
 import * as input from './testInputs.js';
 
@@ -3054,7 +3054,8 @@ XfA3pqV4mTzF
         it('should fail to decrypt modified message', async function() {
           const allowUnauthenticatedStream = openpgp.config.allowUnauthenticatedStream;
           const { privateKey: key } = await openpgp.generateKey({ userIDs: [{ email: 'test@email.com' }], format: 'object' });
-          expect(await isAEADSupported([key])).to.equal(openpgp.config.aeadProtect);
+          const { aeadAlgo } = await getPreferredCipherSuite([key], undefined, undefined, openpgp.config);
+          expect(!!aeadAlgo).to.equal(openpgp.config.aeadProtect);
 
           const data = await openpgp.encrypt({ message: await openpgp.createMessage({ binary: new Uint8Array(500) }), encryptionKeys: [key.toPublic()] });
           const encrypted = data.substr(0, 500) + (data[500] === 'a' ? 'b' : 'a') + data.substr(501);
