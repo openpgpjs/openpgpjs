@@ -108,8 +108,6 @@ export class Message {
    * @async
    */
   async decrypt(decryptionKeys, passwords, sessionKeys, date = new Date(), config = defaultConfig) {
-    const sessionKeyObjects = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, date, config);
-
     const symEncryptedPacketlist = this.packets.filterByTag(
       enums.packet.symmetricallyEncryptedData,
       enums.packet.symEncryptedIntegrityProtectedData,
@@ -121,14 +119,18 @@ export class Message {
     }
 
     const symEncryptedPacket = symEncryptedPacketlist[0];
+    const expectedSymmetricAlgorithm = symEncryptedPacket.cipherAlgorithm;
+
+    const sessionKeyObjects = sessionKeys || await this.decryptSessionKeys(decryptionKeys, passwords, expectedSymmetricAlgorithm, date, config);
+
     let exception = null;
     const decryptedPromise = Promise.all(sessionKeyObjects.map(async ({ algorithm: algorithmName, data }) => {
-      if (!util.isUint8Array(data) || !util.isString(algorithmName)) {
+      if (!util.isUint8Array(data) || (!symEncryptedPacket.cipherAlgorithm && !util.isString(algorithmName))) {
         throw new Error('Invalid session key for decryption.');
       }
 
       try {
-        const algo = enums.write(enums.symmetric, algorithmName);
+        const algo = symEncryptedPacket.cipherAlgorithm || enums.write(enums.symmetric, algorithmName);
         await symEncryptedPacket.decrypt(algo, data, config);
       } catch (e) {
         util.printDebugError(e);
@@ -154,6 +156,7 @@ export class Message {
    * Decrypt encrypted session keys either with private keys or passwords.
    * @param {Array<PrivateKey>} [decryptionKeys] - Private keys with decrypted secret data
    * @param {Array<String>} [passwords] - Passwords used to decrypt
+   * @param {enums.symmetric} [expectedSymmetricAlgorithm] - The symmetric algorithm the SEIPDv2 / AEAD packet is encrypted with (if applicable)
    * @param {Date} [date] - Use the given date for key verification, instead of current time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -162,7 +165,7 @@ export class Message {
    * }>>} array of object with potential sessionKey, algorithm pairs
    * @async
    */
-  async decryptSessionKeys(decryptionKeys, passwords, date = new Date(), config = defaultConfig) {
+  async decryptSessionKeys(decryptionKeys, passwords, expectedSymmetricAlgorithm, date = new Date(), config = defaultConfig) {
     let decryptedSessionKeyPackets = [];
 
     let exception;
@@ -260,7 +263,8 @@ export class Message {
             } else {
               try {
                 await pkeskPacket.decrypt(decryptionKeyPacket);
-                if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
+                const symmetricAlgorithm = expectedSymmetricAlgorithm || pkeskPacket.sessionKeyAlgorithm;
+                if (symmetricAlgorithm && !algos.includes(enums.write(enums.symmetric, symmetricAlgorithm))) {
                   throw new Error('A non-preferred symmetric algorithm was used.');
                 }
                 decryptedSessionKeyPackets.push(pkeskPacket);
@@ -294,7 +298,7 @@ export class Message {
 
       return decryptedSessionKeyPackets.map(packet => ({
         data: packet.sessionKey,
-        algorithm: enums.read(enums.symmetric, packet.sessionKeyAlgorithm)
+        algorithm: packet.sessionKeyAlgorithm && enums.read(enums.symmetric, packet.sessionKeyAlgorithm)
       }));
     }
     throw exception || new Error('Session key decryption failed.');
@@ -350,7 +354,7 @@ export class Message {
     await Promise.all(encryptionKeys.map(key => key.getEncryptionKey()
       .catch(() => null) // ignore key strength requirements
       .then(maybeKey => {
-        if (maybeKey && (maybeKey.keyPacket.algorithm === enums.publicKey.x25519) && !util.isAES(symmetricAlgo)) {
+        if (maybeKey && (maybeKey.keyPacket.algorithm === enums.publicKey.x25519) && !aeadAlgoName && !util.isAES(symmetricAlgo)) { // if AEAD is defined, then PKESK v6 are used, and the algo info is encrypted
           throw new Error('Could not generate a session key compatible with the given `encryptionKeys`: X22519 keys can only be used to encrypt AES session keys; change `config.preferredSymmetricAlgorithm` accordingly.');
         }
       })
@@ -430,7 +434,14 @@ export class Message {
       const results = await Promise.all(encryptionKeys.map(async function(primaryKey, i) {
         const encryptionKey = await primaryKey.getEncryptionKey(encryptionKeyIDs[i], date, userIDs, config);
         const pkESKeyPacket = new PublicKeyEncryptedSessionKeyPacket();
-        pkESKeyPacket.publicKeyID = wildcard ? KeyID.wildcard() : encryptionKey.getKeyID();
+        if (aeadAlgorithm) {
+          pkESKeyPacket.version = 6;
+          pkESKeyPacket.publicKeyVersion = wildcard ? 0 : encryptionKey.keyPacket.version;
+          pkESKeyPacket.publicKeyFingerprint = wildcard ? null : encryptionKey.keyPacket.getFingerprintBytes();
+        } else {
+          pkESKeyPacket.version = 3;
+          pkESKeyPacket.publicKeyID = wildcard ? KeyID.wildcard() : encryptionKey.getKeyID();
+        }
         pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         pkESKeyPacket.sessionKeyAlgorithm = algorithm;

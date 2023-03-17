@@ -121,7 +121,7 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       const { A } = publicKeyParams;
       const { k } = privateKeyParams;
       const { ephemeralPublicKey, C } = sessionKeyParams;
-      if (!util.isAES(C.algorithm)) {
+      if (C.algorithm !== null && !util.isAES(C.algorithm)) {
         throw new Error('AES session key expected');
       }
       return publicKey.elliptic.ecdhX.decrypt(
