@@ -591,7 +591,7 @@ export async function decryptSessionKeys({ message, decryptionKeys, passwords, d
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   try {
-    const sessionKeys = await message.decryptSessionKeys(decryptionKeys, passwords, date, config);
+    const sessionKeys = await message.decryptSessionKeys(decryptionKeys, passwords, undefined, date, config);
     return sessionKeys;
   } catch (err) {
     throw util.wrapError('Error decrypting session keys', err);
