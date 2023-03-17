@@ -21,8 +21,6 @@ import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
 
-const VERSION = 3;
-
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)
  *
@@ -45,9 +43,16 @@ class PublicKeyEncryptedSessionKeyPacket {
   }
 
   constructor() {
-    this.version = 3;
+    this.version = null;
 
+    // For version 3:
     this.publicKeyID = new KeyID();
+
+    // For version 6:
+    this.publicKeyVersion = null;
+    this.publicKeyFingerprint = null;
+
+    // For all versions:
     this.publicKeyAlgorithm = null;
 
     this.sessionKey = null;
@@ -67,15 +72,39 @@ class PublicKeyEncryptedSessionKeyPacket {
    * @param {Uint8Array} bytes - Payload of a tag 1 packet
    */
   read(bytes) {
-    let i = 0;
-    this.version = bytes[i++];
-    if (this.version !== VERSION) {
+    let offset = 0;
+    this.version = bytes[offset++];
+    if (this.version !== 3 && this.version !== 6) {
       throw new UnsupportedError(`Version ${this.version} of the PKESK packet is unsupported.`);
     }
-    i += this.publicKeyID.read(bytes.subarray(i));
-    this.publicKeyAlgorithm = bytes[i++];
-    this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(i), this.version);
-    if (this.publicKeyAlgorithm === enums.publicKey.x25519) {
+    if (this.version === 6) {
+      // A one-octet size of the following two fields:
+      // - A one octet key version number.
+      // - The fingerprint of the public key or subkey to which the session key is encrypted.
+      // The size may also be zero.
+      const versionAndFingerprintLength = bytes[offset++];
+      if (versionAndFingerprintLength) {
+        this.publicKeyVersion = bytes[offset++];
+        const fingerprintLength = versionAndFingerprintLength - 1;
+        this.publicKeyFingerprint = bytes.subarray(offset, offset + fingerprintLength); offset += fingerprintLength;
+        if (this.publicKeyVersion >= 5) {
+          // For v5/6 the Key ID is the high-order 64 bits of the fingerprint.
+          this.publicKeyID.read(this.publicKeyFingerprint);
+        } else {
+          // For v4 The Key ID is the low-order 64 bits of the fingerprint.
+          this.publicKeyID.read(this.publicKeyFingerprint.subarray(-8));
+        }
+      } else {
+        // The size may also be zero, and the key version and
+        // fingerprint omitted for an "anonymous recipient"
+        this.publicKeyID = KeyID.wildcard();
+      }
+    } else {
+      offset += this.publicKeyID.read(bytes.subarray(offset, offset + 8));
+    }
+    this.publicKeyAlgorithm = bytes[offset++];
+    this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(offset));
+    if (this.version === 3 && this.publicKeyAlgorithm === enums.publicKey.x25519) {
       this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
     }
   }
@@ -87,11 +116,27 @@ class PublicKeyEncryptedSessionKeyPacket {
    */
   write() {
     const arr = [
-      new Uint8Array([this.version]),
-      this.publicKeyID.write(),
+      new Uint8Array([this.version])
+    ];
+
+    if (this.version === 6) {
+      if (this.publicKeyFingerprint !== null) {
+        arr.push(new Uint8Array([
+          this.publicKeyFingerprint.length + 1,
+          this.publicKeyVersion]
+        ));
+        arr.push(this.publicKeyFingerprint);
+      } else {
+        arr.push(new Uint8Array([0]));
+      }
+    } else {
+      arr.push(this.publicKeyID.write());
+    }
+
+    arr.push(
       new Uint8Array([this.publicKeyAlgorithm]),
       crypto.serializeParams(this.publicKeyAlgorithm, this.encrypted)
-    ];
+    );
 
     return util.concatUint8Array(arr);
   }
@@ -131,7 +176,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     const { sessionKey, sessionKeyAlgorithm } = decodeSessionKey(this.version, this.publicKeyAlgorithm, decryptedData, randomSessionKey);
 
     // v3 Montgomery curves have cleartext cipher algo
-    if (this.publicKeyAlgorithm !== enums.publicKey.x25519) {
+    if (this.version === 3 && this.publicKeyAlgorithm !== enums.publicKey.x25519) {
       this.sessionKeyAlgorithm = sessionKeyAlgorithm;
     }
     this.sessionKey = sessionKey;
@@ -149,7 +194,7 @@ function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
     case enums.publicKey.ecdh: {
       // add checksum
       return util.concatUint8Array([
-        new Uint8Array([cipherAlgo]),
+        new Uint8Array(version === 6 ? [] : [cipherAlgo]),
         sessionKeyData,
         util.writeChecksum(sessionKeyData.subarray(sessionKeyData.length % 8))
       ]);
@@ -173,7 +218,9 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
       const checksum = decryptedData.subarray(decryptedData.length - 2);
       const computedChecksum = util.writeChecksum(result.subarray(result.length % 8));
       const isValidChecksum = computedChecksum[0] === checksum[0] & computedChecksum[1] === checksum[1];
-      const decryptedSessionKey = { sessionKeyAlgorithm: result[0], sessionKey: result.subarray(1) };
+      const decryptedSessionKey = version === 6 ?
+        { sessionKeyAlgorithm: null, sessionKey: result } :
+        { sessionKeyAlgorithm: result[0], sessionKey: result.subarray(1) };
       if (randomSessionKey) {
         // We must not leak info about the validity of the decrypted checksum or cipher algo.
         // The decrypted session key must be of the same algo and size as the random session key, otherwise we discard it and use the random data.
@@ -182,14 +229,15 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
           decryptedSessionKey.sessionKey.length === randomSessionKey.sessionKey.length;
         return {
           sessionKey: util.selectUint8Array(isValidPayload, decryptedSessionKey.sessionKey, randomSessionKey.sessionKey),
-          sessionKeyAlgorithm: util.selectUint8(
+          sessionKeyAlgorithm: version === 6 ? null : util.selectUint8(
             isValidPayload,
             decryptedSessionKey.sessionKeyAlgorithm,
             randomSessionKey.sessionKeyAlgorithm
           )
         };
       } else {
-        const isValidPayload = isValidChecksum && enums.read(enums.symmetric, decryptedSessionKey.sessionKeyAlgorithm);
+        const isValidPayload = isValidChecksum && (
+          version === 6 || enums.read(enums.symmetric, decryptedSessionKey.sessionKeyAlgorithm));
         if (isValidPayload) {
           return decryptedSessionKey;
         } else {
