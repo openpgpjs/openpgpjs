@@ -43,10 +43,11 @@ export function parseSignatureParams(algo, signature) {
       const s = util.readMPI(signature.subarray(read));
       return { r, s };
     }
-    // Algorithm-Specific Fields for EdDSA signatures:
+    // Algorithm-Specific Fields for legacy EdDSA signatures:
     // -  MPI of an EC point r.
     // -  EdDSA value s, in MPI, in the little endian representation
-    case enums.publicKey.eddsa: {
+    case enums.publicKey.eddsa:
+    case enums.publicKey.ed25519Legacy: {
       // When parsing little-endian MPI data, we always need to left-pad it, as done with big-endian values:
       // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
       let r = util.readMPI(signature.subarray(read)); read += r.length + 2;
@@ -54,6 +55,12 @@ export function parseSignatureParams(algo, signature) {
       let s = util.readMPI(signature.subarray(read));
       s = util.leftPad(s, 32);
       return { r, s };
+    }
+    // Algorithm-Specific Fields for Ed25519 signatures:
+    // - 64 octets of the native signature
+    case enums.publicKey.ed25519: {
+      const RS = signature.subarray(read, read + 64); read += RS.length;
+      return { RS };
     }
     default:
       throw new UnsupportedError('Unknown signature algorithm.');
@@ -96,10 +103,15 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
       const s = util.leftPad(signature.s, curveSize);
       return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
     }
-    case enums.publicKey.eddsa: {
+    case enums.publicKey.eddsa:
+    case enums.publicKey.ed25519Legacy: {
       const { oid, Q } = publicParams;
       // signature already padded on parsing
-      return publicKey.elliptic.eddsa.verify(oid, hashAlgo, signature, data, Q, hashed);
+      return publicKey.elliptic.eddsaLegacy.verify(oid, hashAlgo, signature, data, Q, hashed);
+    }
+    case enums.publicKey.ed25519: {
+      const { A } = publicParams;
+      return publicKey.elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
     }
     default:
       throw new Error('Unknown signature algorithm.');
@@ -146,10 +158,16 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { d } = privateKeyParams;
       return publicKey.elliptic.ecdsa.sign(oid, hashAlgo, data, Q, d, hashed);
     }
-    case enums.publicKey.eddsa: {
+    case enums.publicKey.eddsa:
+    case enums.publicKey.ed25519Legacy: {
       const { oid, Q } = publicKeyParams;
       const { seed } = privateKeyParams;
-      return publicKey.elliptic.eddsa.sign(oid, hashAlgo, data, Q, seed, hashed);
+      return publicKey.elliptic.eddsaLegacy.sign(oid, hashAlgo, data, Q, seed, hashed);
+    }
+    case enums.publicKey.ed25519: {
+      const { A } = publicKeyParams;
+      const { seed } = privateKeyParams;
+      return publicKey.elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);
     }
     default:
       throw new Error('Unknown signature algorithm.');

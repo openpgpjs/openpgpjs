@@ -730,7 +730,7 @@ function tests() {
     expect(await verified.signatures[0].verified).to.be.true;
   });
 
-  it('Detached sign small message using x25519 curve keys', async function() {
+  it('Detached sign small message using curve25519 keys (legacy format)', async function() {
     dataArrived(); // Do not wait until data arrived.
     const data = global.ReadableStream ? new global.ReadableStream({
       async start(controller) {

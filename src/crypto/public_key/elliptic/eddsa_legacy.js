@@ -16,8 +16,9 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
- * @module crypto/public_key/elliptic/eddsa
+ * @fileoverview Implementation of legacy EdDSA following RFC4880bis-03 for OpenPGP.
+ * This key type has been deprecated by the crypto-refresh RFC.
+ * @module crypto/public_key/elliptic/eddsa_legacy
  * @private
  */
 
@@ -26,30 +27,12 @@ import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
-import { getRandomBytes } from '../../random';
 
 nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 
 /**
- * Generate (non-legacy) EdDSA key
- * @param {module:enums.publicKey} algo - Algorithm identifier
- * @returns Promise<{ A, seed }>
- */
-export async function generate(algo) {
-  switch (algo) {
-    case enums.publicKey.ed25519: {
-      const seed = getRandomBytes(32);
-      const { publicKey: A } = nacl.sign.keyPair.fromSeed(seed);
-      return { A, seed };
-    }
-    default:
-      throw new Error('Unsupported EdDSA algorithm');
-  }
-}
-
-/**
- * Sign a message using the provided key
- * @param {module:enums.publicKey} algo - Algorithm identifier
+ * Sign a message using the provided legacy EdDSA key
+ * @param {module:type/oid} oid - Elliptic curve object identifier
  * @param {module:enums.hash} hashAlgo - Hash algorithm used to sign (must be sha256 or stronger)
  * @param {Uint8Array} message - Message to sign
  * @param {Uint8Array} publicKey - Public key
@@ -61,67 +44,56 @@ export async function generate(algo) {
  * }>} Signature of the message
  * @async
  */
-export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashed) {
+export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
     throw new Error('Hash algorithm too weak: sha256 or stronger is required for EdDSA.');
   }
-  switch (algo) {
-    case enums.publicKey.ed25519: {
-      const secretKey = util.concatUint8Array([privateKey, publicKey]);
-      const signature = nacl.sign.detached(hashed, secretKey);
-      return { RS: signature };
-    }
-    case enums.publicKey.ed448:
-    default:
-      throw new Error('Unsupported EdDSA algorithm');
-  }
-
+  const secretKey = util.concatUint8Array([privateKey, publicKey.subarray(1)]);
+  const signature = nacl.sign.detached(hashed, secretKey);
+  // EdDSA signature params are returned in little-endian format
+  return {
+    r: signature.subarray(0, 32),
+    s: signature.subarray(32)
+  };
 }
 
 /**
- * Verifies if a signature is valid for a message
- * @param {module:enums.publicKey} algo - Algorithm identifier
+ * Verifies if a legacy EdDSA signature is valid for a message
+ * @param {module:type/oid} oid - Elliptic curve object identifier
  * @param {module:enums.hash} hashAlgo - Hash algorithm used in the signature
- * @param  {{ RS: Uint8Array }} signature Signature to verify the message
+ * @param  {{r: Uint8Array,
+             s: Uint8Array}}   signature Signature to verify the message
  * @param {Uint8Array} m - Message to verify
  * @param {Uint8Array} publicKey - Public key used to verify the message
  * @param {Uint8Array} hashed - The hashed message
  * @returns {Boolean}
  * @async
  */
-export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
-  switch (algo) {
-    case enums.publicKey.ed25519: {
-      return nacl.sign.detached.verify(hashed, RS, publicKey);
-    }
-    case enums.publicKey.ed448:
-    default:
-      throw new Error('Unsupported EdDSA algorithm');
-  }
+export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
+  const signature = util.concatUint8Array([r, s]);
+  return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
 }
 /**
- * Validate (non-legacy) EdDSA parameters
- * @param {module:enums.publicKey} algo - Algorithm identifier
- * @param {Uint8Array} A - EdDSA public point
+ * Validate legacy EdDSA parameters
+ * @param {module:type/oid} oid - Elliptic curve object identifier
+ * @param {Uint8Array} Q - EdDSA public point
  * @param {Uint8Array} k - EdDSA secret seed
- * @param {Uint8Array} oid - (legacy only) EdDSA OID
  * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
-export async function validateParams(algo, A, k) {
-  switch (algo) {
-    case enums.publicKey.ed25519: {
-      /**
-       * Derive public point A' from private key
-       * and expect A == A'
-       */
-      const { publicKey } = nacl.sign.keyPair.fromSeed(k);
-      return util.equalsUint8Array(A, publicKey);
-    }
-
-    case enums.publicKey.ed448: // unsupported
-    default:
-      return false;
+export async function validateParams(oid, Q, k) {
+  // Check whether the given curve is supported
+  if (oid.getName() !== 'ed25519') {
+    return false;
   }
+
+  /**
+   * Derive public point Q' = dG from private key
+   * and expect Q == Q'
+   */
+  const { publicKey } = nacl.sign.keyPair.fromSeed(k);
+  const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
+  return util.equalsUint8Array(Q, dG);
+
 }

@@ -3012,6 +3012,22 @@ zWBsBR8VnoOVfEE+VQk6YAi7cTSjcMjfsIez9FYtAQDKo9aCMhUohYyqvhZjn8aS
     })).to.be.rejectedWith(/Cannot read KDFParams/);
   });
 
+  it('Parsing V4 key using new curve25519 format', async function() {
+    const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZBw5PBscroGar9fsilA0q9AX979pBhTNkGQ69vQGGW7kxRxNuABB+eAw
+JrQ9A3o1gUJg28ORTQd72+kFo87184qR97a6rRGFzQR0ZXN0wogEEBsIAD4F
+gmQcOTwECwkHCAmQT/m+Rl22Ps8DFQgKBBYAAgECGQECmwMCHgEWIQSUlOfm
+G7MWJd2909ZP+b5GXbY+zwAAVs/4pWH4l7pWcTATBavVqSATMKi4A+usp89G
+J/qaHc+qmcEpIMmPNvLQ7n4F4kEXk8Zwz+OXovVWLQ+Njl5gzooF
+=wYg1
+-----END PGP PRIVATE KEY BLOCK-----` });
+    // sanity checks
+    await expect(privateKey.validate()).to.be.fulfilled;
+    const signingKey = await privateKey.getSigningKey();
+    expect(signingKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.ed25519);
+  });
+
   it('Testing key ID and fingerprint for V4 keys', async function() {
     const pubKeysV4 = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKeysV4).to.exist;
@@ -4077,7 +4093,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
       await subkey.verify();
     });
 
-    it('sign/verify data with the new subkey correctly using curve25519', async function() {
+    it('sign/verify data with the new subkey correctly using curve25519 (legacy format)', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
       const opt = { curve: 'curve25519', userIDs: [userID], format: 'object', subkeys:[] };
       const { privateKey } = await openpgp.generateKey(opt);

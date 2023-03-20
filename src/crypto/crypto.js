@@ -145,7 +145,8 @@ export function parsePublicKeyParams(algo, bytes) {
       const Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       return { read: read, publicParams: { oid, Q } };
     }
-    case enums.publicKey.eddsa: {
+    case enums.publicKey.eddsa:
+    case enums.publicKey.ed25519Legacy: {
       const oid = new OID(); read += oid.read(bytes);
       checkSupportedCurve(oid);
       let Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
@@ -158,6 +159,10 @@ export function parsePublicKeyParams(algo, bytes) {
       const Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       const kdfParams = new KDFParams(); read += kdfParams.read(bytes.subarray(read));
       return { read: read, publicParams: { oid, Q, kdfParams } };
+    }
+    case enums.publicKey.ed25519: {
+      const A = bytes.subarray(read, read + 32); read += A.length;
+      return { read, publicParams: { A } };
     }
     default:
       throw new UnsupportedError('Unknown public key encryption algorithm.');
@@ -195,10 +200,15 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       d = util.leftPad(d, curve.payloadSize);
       return { read, privateParams: { d } };
     }
-    case enums.publicKey.eddsa: {
+    case enums.publicKey.eddsa:
+    case enums.publicKey.ed25519Legacy: {
       const curve = new Curve(publicParams.oid);
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
       seed = util.leftPad(seed, curve.payloadSize);
+      return { read, privateParams: { seed } };
+    }
+    case enums.publicKey.ed25519: {
+      const seed = bytes.subarray(read, read + 32); read += seed.length;
       return { read, privateParams: { seed } };
     }
     default:
@@ -250,9 +260,12 @@ export function parseEncSessionKeyParams(algo, bytes) {
  * @returns {Uint8Array} The array containing the MPIs.
  */
 export function serializeParams(algo, params) {
+  // Some algorithms do not rely on MPIs to store the binary params
+  const algosWithNativeRepresentation = new Set([enums.publicKey.ed25519]);
   const orderedParams = Object.keys(params).map(name => {
     const param = params[name];
-    return util.isUint8Array(param) ? util.uint8ArrayToMPI(param) : param.write();
+    if (!util.isUint8Array(param)) return param.write();
+    return algosWithNativeRepresentation.has(algo) ? param : util.uint8ArrayToMPI(param);
   });
   return util.concatUint8Array(orderedParams);
 }
@@ -281,6 +294,7 @@ export function generateParams(algo, bits, oid) {
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.eddsa:
+    case enums.publicKey.ed25519Legacy:
       return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
         privateParams: { seed: secret },
         publicParams: { oid: new OID(oid), Q }
@@ -293,6 +307,11 @@ export function generateParams(algo, bits, oid) {
           Q,
           kdfParams: new KDFParams({ hash, cipher })
         }
+      }));
+    case enums.publicKey.ed25519:
+      return publicKey.elliptic.eddsa.generate(algo).then(({ A, seed }) => ({
+        privateParams: { seed },
+        publicParams: { A }
       }));
     case enums.publicKey.dsa:
     case enums.publicKey.elgamal:
@@ -339,10 +358,16 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { d } = privateParams;
       return algoModule.validateParams(oid, Q, d);
     }
-    case enums.publicKey.eddsa: {
-      const { oid, Q } = publicParams;
+    case enums.publicKey.eddsa:
+    case enums.publicKey.ed25519Legacy: {
+      const { Q, oid } = publicParams;
       const { seed } = privateParams;
-      return publicKey.elliptic.eddsa.validateParams(oid, Q, seed);
+      return publicKey.elliptic.eddsaLegacy.validateParams(oid, Q, seed);
+    }
+    case enums.publicKey.ed25519: {
+      const { A } = publicParams;
+      const { seed } = privateParams;
+      return publicKey.elliptic.eddsa.validateParams(algo, A, seed);
     }
     default:
       throw new Error('Unknown public key algorithm.');

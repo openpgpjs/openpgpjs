@@ -27,9 +27,10 @@
 
 import { Curve, generate, getPreferredHashAlgo } from './curves';
 import * as ecdsa from './ecdsa';
+import * as eddsaLegacy from './eddsa_legacy';
 import * as eddsa from './eddsa';
 import * as ecdh from './ecdh';
 
 export {
-  Curve, ecdh, ecdsa, eddsa, generate, getPreferredHashAlgo
+  Curve, ecdh, ecdsa, eddsaLegacy, eddsa, generate, getPreferredHashAlgo
 };
