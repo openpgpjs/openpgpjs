@@ -64,6 +64,9 @@ class PacketList extends Array {
    * @async
    */
   async read(bytes, allowedPackets, config = defaultConfig) {
+    if (config.additionalAllowedPackets.length) {
+      allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
+    }
     this.stream = stream.transformPair(bytes, async (readable, writable) => {
       const writer = stream.getWriter(writable);
       try {

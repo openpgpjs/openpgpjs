@@ -1052,5 +1052,20 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       expect(parsed.length).to.equal(1);
       expect(parsed[0].tag).to.equal(openpgp.enums.packet.userID);
     });
+
+    it('Allow parsing of additional packets provided in `config.additionalAllowedPackets`', async function () {
+      const packets = new openpgp.PacketList();
+      packets.push(new openpgp.LiteralDataPacket());
+      packets.push(openpgp.UserIDPacket.fromObject({ name:'test', email:'test@a.it' }));
+      const bytes = packets.write();
+      const allowedPackets = { [openpgp.enums.packet.literalData]: openpgp.LiteralDataPacket };
+      await expect(openpgp.PacketList.fromBinary(bytes, allowedPackets)).to.be.rejectedWith(/Packet not allowed in this context: userID/);
+      const parsed = await openpgp.PacketList.fromBinary(bytes, allowedPackets, { ...openpgp.config, additionalAllowedPackets: [openpgp.UserIDPacket] });
+      expect(parsed.length).to.equal(1);
+      expect(parsed[0].constructor.tag).to.equal(openpgp.enums.packet.literalData);
+      const otherPackets = await stream.readToEnd(parsed.stream, _ => _);
+      expect(otherPackets.length).to.equal(1);
+      expect(otherPackets[0].constructor.tag).to.equal(openpgp.enums.packet.userID);
+    });
   });
 });
