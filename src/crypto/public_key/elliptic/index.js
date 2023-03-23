@@ -30,7 +30,8 @@ import * as ecdsa from './ecdsa';
 import * as eddsaLegacy from './eddsa_legacy';
 import * as eddsa from './eddsa';
 import * as ecdh from './ecdh';
+import * as ecdhX from './ecdh_x';
 
 export {
-  Curve, ecdh, ecdsa, eddsaLegacy, eddsa, generate, getPreferredHashAlgo
+  Curve, ecdh, ecdhX, ecdsa, eddsaLegacy, eddsa, generate, getPreferredHashAlgo
 };

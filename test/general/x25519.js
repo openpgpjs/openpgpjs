@@ -11,7 +11,7 @@ const util = require('../../src/util');
 
 const input = require('./testInputs');
 
-module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography', function () {
+module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography (legacy format)', function () {
   const data = {
     light: {
       id: '1ecdf026c0245830',

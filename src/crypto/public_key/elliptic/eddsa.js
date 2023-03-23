@@ -104,19 +104,19 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
  * Validate (non-legacy) EdDSA parameters
  * @param {module:enums.publicKey} algo - Algorithm identifier
  * @param {Uint8Array} A - EdDSA public point
- * @param {Uint8Array} k - EdDSA secret seed
+ * @param {Uint8Array} seed - EdDSA secret seed
  * @param {Uint8Array} oid - (legacy only) EdDSA OID
  * @returns {Promise<Boolean>} Whether params are valid.
  * @async
  */
-export async function validateParams(algo, A, k) {
+export async function validateParams(algo, A, seed) {
   switch (algo) {
     case enums.publicKey.ed25519: {
       /**
        * Derive public point A' from private key
        * and expect A == A'
        */
-      const { publicKey } = nacl.sign.keyPair.fromSeed(k);
+      const { publicKey } = nacl.sign.keyPair.fromSeed(seed);
       return util.equalsUint8Array(A, publicKey);
     }
 

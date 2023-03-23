@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /**
- * Encoded symmetric key for ECDH
+ * Encoded symmetric key for ECDH (incl. legacy x25519)
  *
  * @module type/ecdh_symkey
  * @private
@@ -26,26 +26,23 @@ import util from '../util';
 
 class ECDHSymmetricKey {
   constructor(data) {
-    if (typeof data === 'undefined') {
-      data = new Uint8Array([]);
-    } else if (util.isString(data)) {
-      data = util.stringToUint8Array(data);
-    } else {
-      data = new Uint8Array(data);
+    if (data) {
+      this.data = data;
     }
-    this.data = data;
   }
 
   /**
-   * Read an ECDHSymmetricKey from an Uint8Array
-   * @param {Uint8Array} input - Where to read the encoded symmetric key from
+   * Read an ECDHSymmetricKey from an Uint8Array:
+   * - 1 octect for the length `l`
+   * - `l` octects of encoded session key data
+   * @param {Uint8Array} bytes
    * @returns {Number} Number of read bytes.
    */
-  read(input) {
-    if (input.length >= 1) {
-      const length = input[0];
-      if (input.length >= 1 + length) {
-        this.data = input.subarray(1, 1 + length);
+  read(bytes) {
+    if (bytes.length >= 1) {
+      const length = bytes[0];
+      if (bytes.length >= 1 + length) {
+        this.data = bytes.subarray(1, 1 + length);
         return 1 + this.data.length;
       }
     }
@@ -54,7 +51,7 @@ class ECDHSymmetricKey {
 
   /**
    * Write an ECDHSymmetricKey as an Uint8Array
-   * @returns  {Uint8Array}  An array containing the value
+   * @returns  {Uint8Array} Serialised data
    */
   write() {
     return util.concatUint8Array([new Uint8Array([this.data.length]), this.data]);

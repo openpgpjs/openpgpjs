@@ -42,6 +42,7 @@ class KeyID {
    */
   read(bytes) {
     this.bytes = util.uint8ArrayToString(bytes.subarray(0, 8));
+    return this.bytes.length;
   }
 
   /**

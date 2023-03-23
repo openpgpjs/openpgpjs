@@ -117,14 +117,14 @@ export default {
     aedh: 23,
     /** Reserved for AEDSA */
     aedsa: 24,
-    /** ECDH 25519 (encrypt only) */
+    /** X25519 (Encrypt only) */
     x25519: 25,
-    /** ECDH 448 (encrypt only) */
+    /** X448 (Encrypt only) */
     x448: 26,
-    /** EdDSA 25519 (sign only) */
+    /** Ed25519 (Sign only) */
     ed25519: 27,
-    /** EdDSA 448 (sign only) */
-    eddsa448: 28
+    /** Ed448 (Sign only) */
+    ed448: 28
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}

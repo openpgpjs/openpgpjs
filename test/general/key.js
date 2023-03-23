@@ -3015,17 +3015,27 @@ zWBsBR8VnoOVfEE+VQk6YAi7cTSjcMjfsIez9FYtAQDKo9aCMhUohYyqvhZjn8aS
   it('Parsing V4 key using new curve25519 format', async function() {
     const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
-xUkEZBw5PBscroGar9fsilA0q9AX979pBhTNkGQ69vQGGW7kxRxNuABB+eAw
-JrQ9A3o1gUJg28ORTQd72+kFo87184qR97a6rRGFzQR0ZXN0wogEEBsIAD4F
-gmQcOTwECwkHCAmQT/m+Rl22Ps8DFQgKBBYAAgECGQECmwMCHgEWIQSUlOfm
-G7MWJd2909ZP+b5GXbY+zwAAVs/4pWH4l7pWcTATBavVqSATMKi4A+usp89G
-J/qaHc+qmcEpIMmPNvLQ7n4F4kEXk8Zwz+OXovVWLQ+Njl5gzooF
-=wYg1
+xUkEZB3qzRto01j2k2pwN5ux9w70stPinAdXULLr20CRW7U7h2GSeACch0M+
+qzQg8yjFQ8VBvu3uwgKH9senoHmj72lLSCLTmhFKzQR0ZXN0wogEEBsIAD4F
+gmQd6s0ECwkHCAmQIf45+TuC+xMDFQgKBBYAAgECGQECmwMCHgEWIQSWEzMi
+jJUHvyIbVKIh/jn5O4L7EwAAUhaHNlgudvxARdPPETUzVgjuWi+YIz8w1xIb
+lHQMvIrbe2sGCQIethpWofd0x7DHuv/ciHg+EoxJ/Td6h4pWtIoKx0kEZB3q
+zRm4CyA7quliq7yx08AoOqHTuuCgvpkSdEhpp3pEyejQOgBo0p6ywIiLPllY
+0t+jpNspHpAGfXID6oqjpYuJw3AfVRBlwnQEGBsIACoFgmQd6s0JkCH+Ofk7
+gvsTApsMFiEElhMzIoyVB78iG1SiIf45+TuC+xMAAGgQuN9G73446ykvJ/mL
+sCZ7zGFId2gBd1EnG0FTC4npfOKpck0X8dngByrCxU8LDSfvjsEp/xDAiKsQ
+aU71tdtNBQ==
+=e7jT
 -----END PGP PRIVATE KEY BLOCK-----` });
     // sanity checks
     await expect(privateKey.validate()).to.be.fulfilled;
     const signingKey = await privateKey.getSigningKey();
     expect(signingKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.ed25519);
+    expect(signingKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'ed25519' });
+
+    const encryptionKey = await privateKey.getEncryptionKey();
+    expect(encryptionKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.x25519);
+    expect(encryptionKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'x25519' });
   });
 
   it('Testing key ID and fingerprint for V4 keys', async function() {
@@ -4120,7 +4130,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
       expect(await signatures[0].verified).to.be.true;
     });
 
-    it('encrypt/decrypt data with the new subkey correctly using curve25519', async function() {
+    it('encrypt/decrypt data with the new subkey correctly using curve25519 (legacy format)', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
       const vData = 'the data to encrypted!';
       const opt = { curve: 'curve25519', userIDs: [userID], format: 'object', subkeys:[] };
