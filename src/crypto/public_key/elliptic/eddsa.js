@@ -33,7 +33,7 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 /**
  * Generate (non-legacy) EdDSA key
  * @param {module:enums.publicKey} algo - Algorithm identifier
- * @returns Promise<{ A, seed }>
+ * @returns {Promise<{ A: Uint8Array, seed: Uint8Array }>}
  */
 export async function generate(algo) {
   switch (algo) {
@@ -56,8 +56,7 @@ export async function generate(algo) {
  * @param {Uint8Array} privateKey - Private key used to sign the message
  * @param {Uint8Array} hashed - The hashed message
  * @returns {Promise<{
- *   r: Uint8Array,
- *   s: Uint8Array
+ *   RS: Uint8Array
  * }>} Signature of the message
  * @async
  */

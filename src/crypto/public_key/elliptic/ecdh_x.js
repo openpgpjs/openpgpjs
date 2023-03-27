@@ -20,7 +20,7 @@ const HKDF_INFO = {
 /**
  * Generate ECDH key for Montgomery curves
  * @param {module:enums.publicKey} algo - Algorithm identifier
- * @returns Promise<{ A, k }>
+ * @returns {Promise<{ A: Uint8Array, k: Uint8Array }>}
  */
 export async function generate(algo) {
   switch (algo) {
