@@ -127,8 +127,10 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
     case enums.publicKey.ecdsa:
     case enums.publicKey.eddsaLegacy:
     case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
       prefAlgo = crypto.getPreferredCurveHashAlgo(keyPacket.algorithm, keyPacket.publicParams.oid);
   }
+
   return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
     prefAlgo : hashAlgo;
 }
@@ -365,6 +367,7 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
     keyAlgo !== enums.publicKey.ecdsa &&
     keyAlgo !== enums.publicKey.eddsaLegacy &&
     keyAlgo !== enums.publicKey.ed25519 &&
+    keyAlgo !== enums.publicKey.ed448 &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
       (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0);
