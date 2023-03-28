@@ -4423,6 +4423,62 @@ J/qaHc+qmcEpIMmPNvLQ7n4F4kEXk8Zwz+OXovVWLQ+Njl5gzooF
         expect(signatures).to.have.length(1);
         expect(await signatures[0].verified).to.be.true;
       });
+
+      it('sign/verify with Ed448', async function () {
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA5U/IaIOge/FoLzCetXKx029bdJHCz2hMFBRMuzq4msjaT
++hLeV6puyC/PeSEfaanqTuo31vvsti2AAIttr4GDGXF4vfPzbzkWV9dT4VVs
+IU7QqLv1hzwZ+k7pHroRyXnUiYxRYHuzlg7Vw4CrAtN/8T65OMLAHgYfHAoA
+AAA9BQJlGotiIqEGAxidsHRHDsyFTw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUC
+GwMCHgkCCwcDFQoIAhYAAycHAgAAAAA2KiC+Y+fhQ/48CkT9WrXTX9SCn3vH
+z43Wb++AkmpWL1HQmrJE3S4gGltezZK2E9ovagzxKxVrL14uC6hs6kJ0JIiW
+QSeMeexCTy+Gdr6j0wb4FhFNnoIu3yu2ABmZpFX/5/191YeWUryKFDAoUZmK
+gQTSOzJEvyO0ACR5L4vV3ADceOAdG8/sqhE89rTSevFXng4JAM0XVXNlckEg
+PFVzZXJBQHRlc3QudGVzdD7CwA0GExwKAAAALAUCZRqLYiKhBgMYnbB0Rw7M
+hU8NUOzqBhABJ0Z8bYSjMFQaoSC9qPh1AhkBAAAAAFw/IH72M1iyzMWhbgtw
+v0SR/XxvOIW/ZrT4Ix9236lvoOE4taL/D46CbZOjm7VAeOSfSdxt1xSKnoAL
+RsCNQ8tVPjPXclzqr6R8MbPIgBWxKcMS2eStYpBbG5qAmc+K5jdA2xcl9iW5
+bWleZ1LTah4lF6qCiD73IffADXtzw8iAMTX+0wM5N1tJUEGvgqe00ohRKiQA
+-----END PGP PRIVATE KEY BLOCK-----` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.sign({
+          message: await openpgp.createMessage({ text: plaintext }),
+          signingKeys: privateKey
+        });
+
+        const { signatures, data } = await openpgp.verify({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          verificationKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
+
+      it('should enforce using 512-bit signature digest', async function () {
+        // X448 key using sha256 for self signatures
+        const privateKeySHA256 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZCWHXBwwtqciq6ZFU13s+dyhkWR5tOEmF1oX8OiP1B5ypfqyGVM8DkQh
+5eTIMwB1oqJCROANoyA0q2dSigAAbDA5xr74DeClPPXC4ZXJ9uzuJWKvQvE8
+x3EflhgoQCGBM7JfvH5zwdrJvPt8RKDvm0QkZzhPvnFoHnzNBHRlc3TCugQQ
+HAgAPgWCZCWHXAQLCQcICZDsN6h/ys3ppwMVCAoEFgACAQIZAQKbAwIeARYh
+BOJyE9P2eIcU2N2Ne+w3qH/KzemnAAAh1hTFCcEU77bU3YelrJTCNIOQnvt7
+Hs6yZz2053CQTOC+wHkUQLaYYBEXSNyLZxoyv+NuGTiwbuYtAOlbE2erM7Cx
+8B2Qz7M29UkFLMBUfb+yi+gTYYUWCXVQ7Um7MGjjgUG8+9p452i6f28mhRD8
+tTgNAMd5BGQlh1wavTIFgILtbzrqQCiwDGx0YcFNzu9+FZ8vK5Mmm7UEZj0a
+y7FWQtZw8tTaU6mY+RrSa52RjzkGLtQAQO++tgYqc+BnCFdCZ3ZYPRvD3mof
+ffoo3l4xmto+iyvJZbQ4wQPXttg7VjCpEfOsL9TW9Xs09aIbysKmBBgcCAAq
+BYJkJYdcCZDsN6h/ys3ppwKbDBYhBOJyE9P2eIcU2N2Ne+w3qH/KzemnAAC0
+6/eZhh/Oj2gRdab2JeFGWACGIRDKxPXsWRCXR4YrSxcvCKK6rOvsyxQsgIsJ
+JyPYkRPfmbKcseUDAEkSBLAfeizDGh7ea0GOdIMhwE/CW4f/H8ULbwi36y13
+x3oMNVaYsI9dZ588Gpi8XYy2jOtqIPQ1AA==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        await expect(privateKeySHA256.getSigningKey()).to.be.rejectedWith(/Hash algorithm too weak for EdDSA/);
+      });
     });
 
     describe('Errors', function() {

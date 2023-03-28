@@ -3220,6 +3220,34 @@ aU71tdtNBQ==
     expect(encryptionKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'x25519' });
   });
 
+  it('Parsing V4 key using curve448 format', async function() {
+    const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA5U/IaIOge/FoLzCetXKx029bdJHCz2hMFBRMuzq4msjaT
++hLeV6puyC/PeSEfaanqTuo31vvsti2AAIttr4GDGXF4vfPzbzkWV9dT4VVs
+IU7QqLv1hzwZ+k7pHroRyXnUiYxRYHuzlg7Vw4CrAtN/8T65OMLAHgYfHAoA
+AAA9BQJlGotiIqEGAxidsHRHDsyFTw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUC
+GwMCHgkCCwcDFQoIAhYAAycHAgAAAAA2KiC+Y+fhQ/48CkT9WrXTX9SCn3vH
+z43Wb++AkmpWL1HQmrJE3S4gGltezZK2E9ovagzxKxVrL14uC6hs6kJ0JIiW
+QSeMeexCTy+Gdr6j0wb4FhFNnoIu3yu2ABmZpFX/5/191YeWUryKFDAoUZmK
+gQTSOzJEvyO0ACR5L4vV3ADceOAdG8/sqhE89rTSevFXng4JAM0XVXNlckEg
+PFVzZXJBQHRlc3QudGVzdD7CwA0GExwKAAAALAUCZRqLYiKhBgMYnbB0Rw7M
+hU8NUOzqBhABJ0Z8bYSjMFQaoSC9qPh1AhkBAAAAAFw/IH72M1iyzMWhbgtw
+v0SR/XxvOIW/ZrT4Ix9236lvoOE4taL/D46CbZOjm7VAeOSfSdxt1xSKnoAL
+RsCNQ8tVPjPXclzqr6R8MbPIgBWxKcMS2eStYpBbG5qAmc+K5jdA2xcl9iW5
+bWleZ1LTah4lF6qCiD73IffADXtzw8iAMTX+0wM5N1tJUEGvgqe00ohRKiQA
+-----END PGP PRIVATE KEY BLOCK-----` });
+    // sanity checks
+    await expect(privateKey.validate()).to.be.fulfilled;
+    const signingKey = await privateKey.getSigningKey();
+    expect(signingKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.ed448);
+    expect(signingKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'ed448' });
+
+    // const encryptionKey = await privateKey.getEncryptionKey();
+    // expect(encryptionKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.x25519);
+    // expect(encryptionKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'x25519' });
+  });
+
   it('Testing key ID and fingerprint for V4 keys', async function() {
     const pubKeysV4 = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKeysV4).to.exist;

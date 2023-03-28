@@ -56,10 +56,15 @@ export function parseSignatureParams(algo, signature) {
     }
     // Algorithm-Specific Fields for Ed25519 signatures:
     // - 64 octets of the native signature
-    case enums.publicKey.ed25519: {
-      const RS = signature.subarray(read, read + 64); read += RS.length;
+    // Algorithm-Specific Fields for Ed448 signatures:
+    // - 114 octets of the native signature
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
+      const rsSize = 2 * publicKey.elliptic.eddsa.getPayloadSize(algo);
+      const RS = signature.subarray(read, read + rsSize); read += RS.length;
       return { RS };
     }
+
     default:
       throw new UnsupportedError('Unknown signature algorithm.');
   }
@@ -106,7 +111,8 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
       // signature already padded on parsing
       return publicKey.elliptic.eddsaLegacy.verify(oid, hashAlgo, signature, data, Q, hashed);
     }
-    case enums.publicKey.ed25519: {
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
       const { A } = publicParams;
       return publicKey.elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
     }
@@ -160,7 +166,8 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { seed } = privateKeyParams;
       return publicKey.elliptic.eddsaLegacy.sign(oid, hashAlgo, data, Q, seed, hashed);
     }
-    case enums.publicKey.ed25519: {
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
       const { A } = publicKeyParams;
       const { seed } = privateKeyParams;
       return publicKey.elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);

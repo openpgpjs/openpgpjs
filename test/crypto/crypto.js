@@ -229,6 +229,21 @@ export default () => describe('API functional testing', function() {
 
       return expect(success).to.be.true;
     });
+
+    it('Ed448', async function () {
+      // key data from https://www.rfc-editor.org/rfc/rfc8032#section-7.4
+      const seed = util.hexToUint8Array('d65df341ad13e008567688baedda8e9dcdc17dc024974ea5b4227b6530e339bff21f99e68ca6968f3cca6dfe0fb9f4fab4fa135d5542ea3f01');
+      const A = util.hexToUint8Array('df9705f58edbab802c7f8363cfe5560ab1c6132c20a9f1dd163483a26f8ac53a39d6808bf4a1dfbd261b099bb03b3fb50906cb28bd8a081f00');
+      const toSign = await crypto.hash.digest(openpgp.enums.hash.sha512, data);
+      const signedData = await crypto.signature.sign(
+        openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, { A }, { seed }, data, toSign
+      );
+      const success = await crypto.signature.verify(
+        openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, signedData, { A }, data, toSign
+      );
+
+      return expect(success).to.be.true;
+    });
   });
 
   describe('Encrypt and decrypt', function () {
