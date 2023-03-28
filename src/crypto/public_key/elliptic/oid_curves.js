@@ -131,7 +131,7 @@ const curves = {
   }
 };
 
-class Curve {
+class CurveWithOID {
   constructor(oidOrName, params) {
     try {
       if (util.isArray(oidOrName) ||
@@ -208,7 +208,7 @@ class Curve {
 async function generate(curve) {
   const BigInteger = await util.getBigInteger();
 
-  curve = new Curve(curve);
+  curve = new CurveWithOID(curve);
   const keyPair = await curve.genKeyPair();
   const Q = new BigInteger(keyPair.publicKey).toUint8Array();
   const secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
@@ -293,7 +293,7 @@ async function validateStandardParams(algo, oid, Q, d) {
 }
 
 export {
-  Curve, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams
+  CurveWithOID, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams
 };
 
 //////////////////////////

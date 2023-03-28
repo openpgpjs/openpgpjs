@@ -33,7 +33,7 @@ import KDFParams from '../type/kdf_params';
 import enums from '../enums';
 import util from '../util';
 import OID from '../type/oid';
-import { Curve } from './public_key/elliptic/curves';
+import { CurveWithOID } from './public_key/elliptic/oid_curves';
 import { UnsupportedError } from '../packet/packet';
 import ECDHXSymmetricKey from '../type/ecdh_x_symkey';
 
@@ -219,14 +219,14 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
     }
     case enums.publicKey.ecdsa:
     case enums.publicKey.ecdh: {
-      const curve = new Curve(publicParams.oid);
+      const curve = new CurveWithOID(publicParams.oid);
       let d = util.readMPI(bytes.subarray(read)); read += d.length + 2;
       d = util.leftPad(d, curve.payloadSize);
       return { read, privateParams: { d } };
     }
     case enums.publicKey.eddsa:
     case enums.publicKey.ed25519Legacy: {
-      const curve = new Curve(publicParams.oid);
+      const curve = new CurveWithOID(publicParams.oid);
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
       seed = util.leftPad(seed, curve.payloadSize);
       return { read, privateParams: { seed } };

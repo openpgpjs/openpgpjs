@@ -25,7 +25,7 @@
  * @private
  */
 
-import { Curve, generate, getPreferredHashAlgo } from './curves';
+import { CurveWithOID, generate, getPreferredHashAlgo } from './oid_curves';
 import * as ecdsa from './ecdsa';
 import * as eddsaLegacy from './eddsa_legacy';
 import * as eddsa from './eddsa';
@@ -33,5 +33,5 @@ import * as ecdh from './ecdh';
 import * as ecdhX from './ecdh_x';
 
 export {
-  Curve, ecdh, ecdhX, ecdsa, eddsaLegacy, eddsa, generate, getPreferredHashAlgo
+  CurveWithOID, ecdh, ecdhX, ecdsa, eddsaLegacy, eddsa, generate, getPreferredHashAlgo
 };

@@ -97,7 +97,7 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     }
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicParams;
-      const curveSize = new publicKey.elliptic.Curve(oid).payloadSize;
+      const curveSize = new publicKey.elliptic.CurveWithOID(oid).payloadSize;
       // padding needed for webcrypto
       const r = util.leftPad(signature.r, curveSize);
       const s = util.leftPad(signature.s, curveSize);

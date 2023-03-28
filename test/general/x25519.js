@@ -218,7 +218,7 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
   describe('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
     function testVector(vector) {
-      const curve = new elliptic.Curve('ed25519');
+      const curve = new elliptic.CurveWithOID('ed25519');
       const { publicKey } = nacl.sign.keyPair.fromSeed(util.hexToUint8Array(vector.SECRET_KEY));
       expect(publicKey).to.deep.equal(util.hexToUint8Array(vector.PUBLIC_KEY));
       const data = vector.MESSAGE;

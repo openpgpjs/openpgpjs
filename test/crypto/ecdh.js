@@ -20,7 +20,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       data = new Uint8Array(data);
     }
     return Promise.resolve().then(() => {
-      const curve = new elliptic_curves.Curve(oid);
+      const curve = new elliptic_curves.CurveWithOID(oid);
       return elliptic_curves.ecdh.decrypt(
         new OID(curve.oid),
         new KDFParams({ cipher, hash }),
@@ -138,7 +138,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
     if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
       this.skip();
     }
-    const curve = new elliptic_curves.Curve('secp256k1');
+    const curve = new elliptic_curves.CurveWithOID('secp256k1');
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');
@@ -148,7 +148,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
   });
 
   it('Different keys', async function () {
-    const curve = new elliptic_curves.Curve('curve25519');
+    const curve = new elliptic_curves.CurveWithOID('curve25519');
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');
@@ -159,7 +159,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
   });
 
   it('Invalid fingerprint', async function () {
-    const curve = new elliptic_curves.Curve('curve25519');
+    const curve = new elliptic_curves.CurveWithOID('curve25519');
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');
@@ -170,7 +170,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
   });
 
   it('Successful exchange x25519 (legacy)', async function () {
-    const curve = new elliptic_curves.Curve('curve25519');
+    const curve = new elliptic_curves.CurveWithOID('curve25519');
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');
@@ -190,7 +190,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
 
   ['p256', 'p384', 'p521'].forEach(curveName => {
     it(`NIST ${curveName} - Successful exchange`, async function () {
-      const curve = new elliptic_curves.Curve(curveName);
+      const curve = new elliptic_curves.CurveWithOID(curveName);
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
       const data = util.stringToUint8Array('test');
@@ -233,7 +233,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
           this.skip();
         }
 
-        const curve = new elliptic_curves.Curve(curveName);
+        const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
         const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
         const data = util.stringToUint8Array('test');
