@@ -120,3 +120,16 @@ export async function decrypt(algo, ephemeralPublicKey, wrappedKey, A, k) {
       throw new Error('Unsupported ECDH algorithm');
   }
 }
+
+export function getPayloadSize(algo) {
+  switch (algo) {
+    case enums.publicKey.x25519:
+      return 32;
+
+    case enums.publicKey.x448:
+      return 56;
+
+    default:
+      throw new Error('Unsupported ECDH algorithm');
+  }
+}

@@ -32,7 +32,6 @@ import KDFParams from '../type/kdf_params';
 import enums from '../enums';
 import util from '../util';
 import OID from '../type/oid';
-import { CurveWithOID } from './public_key/elliptic/oid_curves';
 import { UnsupportedError } from '../packet/packet';
 import ECDHXSymmetricKey from '../type/ecdh_x_symkey';
 
@@ -182,8 +181,9 @@ export function parsePublicKeyParams(algo, bytes) {
       return { read: read, publicParams: { oid, Q, kdfParams } };
     }
     case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
     case enums.publicKey.x25519: {
-      const A = bytes.subarray(read, read + 32); read += A.length;
+      const A = bytes.subarray(read, read + getCurvePayloadSize(algo)); read += A.length;
       return { read, publicParams: { A } };
     }
     default:
@@ -217,19 +217,21 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
     }
     case enums.publicKey.ecdsa:
     case enums.publicKey.ecdh: {
-      const curve = new CurveWithOID(publicParams.oid);
+      const payloadSize = getCurvePayloadSize(algo, publicParams.oid);
       let d = util.readMPI(bytes.subarray(read)); read += d.length + 2;
-      d = util.leftPad(d, curve.payloadSize);
+      d = util.leftPad(d, payloadSize);
       return { read, privateParams: { d } };
     }
     case enums.publicKey.eddsaLegacy: {
-      const curve = new CurveWithOID(publicParams.oid);
+      const payloadSize = getCurvePayloadSize(algo, publicParams.oid);
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
-      seed = util.leftPad(seed, curve.payloadSize);
+      seed = util.leftPad(seed, payloadSize);
       return { read, privateParams: { seed } };
     }
-    case enums.publicKey.ed25519: {
-      const seed = bytes.subarray(read, read + 32); read += seed.length;
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
+      const payloadSize = getCurvePayloadSize(algo);
+      const seed = bytes.subarray(read, read + payloadSize); read += seed.length;
       return { read, privateParams: { seed } };
     }
     case enums.publicKey.x25519: {
@@ -296,7 +298,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
  */
 export function serializeParams(algo, params) {
   // Some algorithms do not rely on MPIs to store the binary params
-  const algosWithNativeRepresentation = new Set([enums.publicKey.ed25519, enums.publicKey.x25519]);
+  const algosWithNativeRepresentation = new Set([enums.publicKey.ed25519, enums.publicKey.x25519, enums.publicKey.ed448]);
   const orderedParams = Object.keys(params).map(name => {
     const param = params[name];
     if (!util.isUint8Array(param)) return param.write();
@@ -343,6 +345,7 @@ export function generateParams(algo, bits, oid) {
         }
       }));
     case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
       return publicKey.elliptic.eddsa.generate(algo).then(({ A, seed }) => ({
         privateParams: { seed },
         publicParams: { A }
@@ -402,7 +405,8 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { seed } = privateParams;
       return publicKey.elliptic.eddsaLegacy.validateParams(oid, Q, seed);
     }
-    case enums.publicKey.ed25519: {
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
       const { A } = publicParams;
       const { seed } = privateParams;
       return publicKey.elliptic.eddsa.validateParams(algo, A, seed);
@@ -469,7 +473,29 @@ function checkSupportedCurve(oid) {
 }
 
 /**
- * Get preferred hash algo for a given elliptic algo
+ * Get encoded secret size for a given elliptic algo
+ * @param {module:enums.publicKey} algo - alrogithm identifier
+ * @param {module:type/oid} [oid] - curve OID if needed by algo
+ */
+export function getCurvePayloadSize(algo, oid) {
+  switch (algo) {
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.ecdh:
+    case enums.publicKey.eddsaLegacy:
+      return new publicKey.elliptic.CurveWithOID(oid).payloadSize;
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
+      return publicKey.elliptic.eddsa.getPayloadSize(algo);
+    case enums.publicKey.x25519:
+    case enums.publicKey.x448:
+      return publicKey.elliptic.ecdhX.getPayloadSize(algo);
+    default:
+      throw new Error('Unknown elliptic algo');
+  }
+}
+
+/**
+ * Get preferred signing hash algo for a given elliptic algo
  * @param {module:enums.publicKey} algo - alrogithm identifier
  * @param {module:type/oid} [oid] - curve OID if needed by algo
  */
@@ -479,6 +505,7 @@ export function getPreferredCurveHashAlgo(algo, oid) {
     case enums.publicKey.eddsaLegacy:
       return publicKey.elliptic.getPreferredHashAlgo(oid);
     case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
       return publicKey.elliptic.eddsa.getPreferredHashAlgo(algo);
     default:
       throw new Error('Unknown elliptic signing algo');
