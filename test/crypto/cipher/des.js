@@ -80,7 +80,7 @@ export default () => describe('TripleDES (EDE) cipher test with test vectors fro
       expect(encr, 'vector with block ' + util.uint8ArrayToHex(testvectors[i][0]) +
                    ' and key ' + util.uint8ArrayToHex(key) +
                    ' should be ' + util.uint8ArrayToHex(testvectors[i][1]) +
-                   ' != ' + util.uint8ArrayToHex(encr)).to.be.equal(util.uint8ArrayToString(testvectors[i][1]));
+                   ' != ' + encr).to.be.equal(util.uint8ArrayToString(testvectors[i][1]));
     }
     done();
   });
