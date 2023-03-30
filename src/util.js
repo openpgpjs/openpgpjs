@@ -154,18 +154,10 @@ const util = {
    * @returns {String} Hexadecimal representation of the array.
    */
   uint8ArrayToHex: function (bytes) {
-    const r = [];
-    const e = bytes.length;
-    let c = 0;
-    let h;
-    while (c < e) {
-      h = bytes[c++].toString(16);
-      while (h.length < 2) {
-        h = '0' + h;
-      }
-      r.push('' + h);
-    }
-    return r.join('');
+    const hexAlphabet = '0123456789abcdef';
+    let s = '';
+    bytes.forEach(v => { s += hexAlphabet[v >> 4] + hexAlphabet[v & 15]; });
+    return s;
   },
 
   /**
