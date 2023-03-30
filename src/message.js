@@ -357,8 +357,9 @@ export class Message {
     await Promise.all(encryptionKeys.map(key => key.getEncryptionKey()
       .catch(() => null) // ignore key strength requirements
       .then(maybeKey => {
-        if (maybeKey && (maybeKey.keyPacket.algorithm === enums.publicKey.x25519) && !aeadAlgoName && !util.isAES(symmetricAlgo)) { // if AEAD is defined, then PKESK v6 are used, and the algo info is encrypted
-          throw new Error('Could not generate a session key compatible with the given `encryptionKeys`: X22519 keys can only be used to encrypt AES session keys; change `config.preferredSymmetricAlgorithm` accordingly.');
+        if (maybeKey && (maybeKey.keyPacket.algorithm === enums.publicKey.x25519 || maybeKey.keyPacket.algorithm === enums.publicKey.x448) &&
+          !aeadAlgoName && !util.isAES(symmetricAlgo)) { // if AEAD is defined, then PKESK v6 are used, and the algo info is encrypted
+          throw new Error('Could not generate a session key compatible with the given `encryptionKeys`: X22519 and X448 keys can only be used to encrypt AES session keys; change `config.preferredSymmetricAlgorithm` accordingly.');
         }
       })
     ));

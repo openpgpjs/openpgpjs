@@ -189,6 +189,16 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     expect(await ecdhX.decrypt(openpgp.enums.publicKey.x25519, ephemeralPublicKey, wrappedKey, K_B, b)).to.deep.equal(data);
   });
 
+  it('Successful exchange x448', async function () {
+    const { ecdhX } = elliptic_curves;
+    const data = random.getRandomBytes();
+    // Bob's keys from https://www.rfc-editor.org/rfc/rfc7748#section-6.2
+    const b = util.hexToUint8Array('1c306a7ac2a0e2e0990b294470cba339e6453772b075811d8fad0d1d6927c120bb5ee8972b0d3e21374c9c921b09d1b0366f10b65173992d');
+    const K_B = util.hexToUint8Array('3eb7a829b0cd20f5bcfc0b599b6feccf6da4627107bdb0d4f345b43027d8b972fc3e34fb4232a13ca706dcb57aec3dae07bdc1c67bf33609');
+    const { ephemeralPublicKey, wrappedKey } = await ecdhX.encrypt(openpgp.enums.publicKey.x448, data, K_B);
+    expect(await ecdhX.decrypt(openpgp.enums.publicKey.x448, ephemeralPublicKey, wrappedKey, K_B, b)).to.deep.equal(data);
+  });
+
   ['p256', 'p384', 'p521'].forEach(curveName => {
     it(`NIST ${curveName} - Successful exchange`, async function () {
       const curve = new elliptic_curves.CurveWithOID(curveName);
