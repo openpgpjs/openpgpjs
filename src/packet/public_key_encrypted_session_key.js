@@ -128,7 +128,8 @@ class PublicKeyEncryptedSessionKeyPacket {
     }
     this.publicKeyAlgorithm = bytes[offset++];
     this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(offset));
-    if (this.version === 3 && this.publicKeyAlgorithm === enums.publicKey.x25519) {
+    if (this.version === 3 && (
+      this.publicKeyAlgorithm === enums.publicKey.x25519 || this.publicKeyAlgorithm === enums.publicKey.x448)) {
       this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
     }
   }
@@ -200,7 +201,9 @@ class PublicKeyEncryptedSessionKeyPacket {
     const { sessionKey, sessionKeyAlgorithm } = decodeSessionKey(this.version, this.publicKeyAlgorithm, decryptedData, randomSessionKey);
 
     // v3 Montgomery curves have cleartext cipher algo
-    if (this.version === 3 && this.publicKeyAlgorithm !== enums.publicKey.x25519) {
+    if (this.version === 3 && (
+      this.publicKeyAlgorithm !== enums.publicKey.x25519 && this.publicKeyAlgorithm !== enums.publicKey.x448)
+    ) {
       this.sessionKeyAlgorithm = sessionKeyAlgorithm;
     }
     this.sessionKey = sessionKey;
@@ -224,6 +227,7 @@ function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
       ]);
     }
     case enums.publicKey.x25519:
+    case enums.publicKey.x448:
       return sessionKeyData;
     default:
       throw new Error('Unsupported public key algorithm');
@@ -270,6 +274,7 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
       }
     }
     case enums.publicKey.x25519:
+    case enums.publicKey.x448:
       return {
         sessionKey: decryptedData
       };
