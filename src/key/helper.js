@@ -356,6 +356,7 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
     keyAlgo !== enums.publicKey.elgamal &&
     keyAlgo !== enums.publicKey.ecdh &&
     keyAlgo !== enums.publicKey.x25519 &&
+    keyAlgo !== enums.publicKey.x448 &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.signData) !== 0);
 }

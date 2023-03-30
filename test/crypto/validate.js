@@ -247,6 +247,61 @@ export default () => {
     });
   });
 
+  describe('Ed448/X448 parameter validation', function() {
+    let eddsaKey;
+    let ecdhXKey;
+    before(async () => {
+      eddsaKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZCWHXBwwtqciq6ZFU13s+dyhkWR5tOEmF1oX8OiP1B5ypfqyGVM8DkQh
+5eTIMwB1oqJCROANoyA0q2dSigAAbDA5xr74DeClPPXC4ZXJ9uzuJWKvQvE8
+x3EflhgoQCGBM7JfvH5zwdrJvPt8RKDvm0QkZzhPvnFoHnzNBHRlc3TCugQQ
+HAgAPgWCZCWHXAQLCQcICZDsN6h/ys3ppwMVCAoEFgACAQIZAQKbAwIeARYh
+BOJyE9P2eIcU2N2Ne+w3qH/KzemnAAAh1hTFCcEU77bU3YelrJTCNIOQnvt7
+Hs6yZz2053CQTOC+wHkUQLaYYBEXSNyLZxoyv+NuGTiwbuYtAOlbE2erM7Cx
+8B2Qz7M29UkFLMBUfb+yi+gTYYUWCXVQ7Um7MGjjgUG8+9p452i6f28mhRD8
+tTgNAMd5BGQlh1wavTIFgILtbzrqQCiwDGx0YcFNzu9+FZ8vK5Mmm7UEZj0a
+y7FWQtZw8tTaU6mY+RrSa52RjzkGLtQAQO++tgYqc+BnCFdCZ3ZYPRvD3mof
+ffoo3l4xmto+iyvJZbQ4wQPXttg7VjCpEfOsL9TW9Xs09aIbysKmBBgcCAAq
+BYJkJYdcCZDsN6h/ys3ppwKbDBYhBOJyE9P2eIcU2N2Ne+w3qH/KzemnAAC0
+6/eZhh/Oj2gRdab2JeFGWACGIRDKxPXsWRCXR4YrSxcvCKK6rOvsyxQsgIsJ
+JyPYkRPfmbKcseUDAEkSBLAfeizDGh7ea0GOdIMhwE/CW4f/H8ULbwi36y13
+x3oMNVaYsI9dZ588Gpi8XYy2jOtqIPQ1AA==
+-----END PGP PRIVATE KEY BLOCK-----` });
+      ecdhXKey = eddsaKey.subkeys[0];
+    });
+
+    it('Ed448 params should be valid', async function() {
+      await expect(eddsaKey.keyPacket.validate()).to.not.be.rejected;
+    });
+
+    it('detect invalid Ed448 public point', async function() {
+      const eddsaKeyPacket = await cloneKeyPacket(eddsaKey);
+      const A = eddsaKeyPacket.publicParams.A;
+      A[0]++;
+      await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
+
+      const infA = new Uint8Array(A.length);
+      eddsaKeyPacket.publicParams.A = infA;
+      await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
+    });
+
+    it('X448 params should be valid', async function() {
+      await expect(ecdhXKey.keyPacket.validate()).to.not.be.rejected;
+    });
+
+    it('detect invalid x448 public point', async function() {
+      const ecdhXKeyPacket = await cloneKeyPacket(ecdhXKey);
+      const A = ecdhXKeyPacket.publicParams.A;
+      A[0]++;
+      await expect(ecdhXKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
+
+      const infA = new Uint8Array(A.length);
+      ecdhXKeyPacket.publicParams.A = infA;
+      await expect(ecdhXKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
+    });
+  });
+
   describe('RSA parameter validation', function() {
     let rsaKey;
     before(async () => {
