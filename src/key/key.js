@@ -469,7 +469,7 @@ class Key {
       throw exception || new Error('Could not find primary user');
     }
     await Promise.all(users.map(async function (a) {
-      return a.user.revoked || a.user.isRevoked(a.selfCertification, null, date, config);
+      return a.selfCertification.revoked || a.user.isRevoked(a.selfCertification, null, date, config);
     }));
     // sort by primary user flag and signature creation time
     const primaryUser = users.sort(function(a, b) {
