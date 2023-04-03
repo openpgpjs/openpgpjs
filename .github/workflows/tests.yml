@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, v6]
 
 jobs:
   build: # cache both dist and tests (non-lightweight only), based on commit hash
