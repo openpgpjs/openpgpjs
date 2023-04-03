@@ -10,7 +10,7 @@ jobs:
     name: Run interoperability test suite
     runs-on: ubuntu-latest
     container: 
-      image: ghcr.io/protonmail/openpgp-interop-test-docker:pmfork
+      image: ghcr.io/protonmail/openpgp-interop-test-docker:v1.1.1
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
