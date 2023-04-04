@@ -15,6 +15,7 @@ const { isAEADSupported } = require('../../src/key');
 const input = require('./testInputs');
 
 const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
+const detectBrowser = () => typeof navigator === 'object';
 
 const pub_key = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -1218,6 +1219,25 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       expect(unlocked.isDecrypted()).to.be.true;
     });
 
+    it('should support encrypting with argon2 s2k', async function() {
+      const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
+      const locked = await openpgp.encryptKey({
+        privateKey: key,
+        passphrase: passphrase,
+        config: { s2kType: openpgp.enums.s2k.argon2 }
+      });
+      expect(key.isDecrypted()).to.be.true;
+      expect(locked.isDecrypted()).to.be.false;
+      expect(locked.keyPacket.isDummy()).to.be.true;
+      const unlocked = await openpgp.decryptKey({
+        privateKey: locked,
+        passphrase: passphrase
+      });
+      expect(key.isDecrypted()).to.be.true;
+      expect(unlocked.isDecrypted()).to.be.true;
+      expect(unlocked.keyPacket.isDummy()).to.be.true;
+    });
+
     it('should encrypt gnu-dummy key', async function() {
       const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
       const locked = await openpgp.encryptKey({
@@ -2018,6 +2038,50 @@ aOU=
         algorithm: 'aes256',
         data: util.hexToUint8Array('3e99c1bb485e70a1fcef09a7ad8d38d171015243bbdd853e1a2b0e334d122ff3')
       })).to.be.rejectedWith(/No encryption keys or passwords provided/);
+    });
+
+    it('supports decrypting with argon2 s2k (memory-heavy params)', async function() {
+      const passwords = 'password';
+      // Test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#appendix-A.8.1
+      const armoredMessage = `-----BEGIN PGP MESSAGE-----
+Comment: Encrypted using AES with 128-bit key
+Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F
+
+wycEBwScUvg8J/leUNU1RA7N/zE2AQQVnlL8rSLPP5VlQsunlO+ECxHSPgGYGKY+
+YJz4u6F+DDlDBOr5NRQXt/KJIf4m4mOlKyC/uqLbpnLJZMnTq3o79GxBTdIdOzhH
+XfA3pqV4mTzF
+-----END PGP MESSAGE-----`;
+      const expectedSessionKey = util.hexToUint8Array('01FE16BBACFD1E7B78EF3B865187374F');
+
+      try {
+        const [decryptedSessionKey] = await openpgp.decryptSessionKeys({
+          message: await openpgp.readMessage({ armoredMessage }),
+          passwords
+        });
+        expect(decryptedSessionKey.data).to.deep.equal(expectedSessionKey);
+        expect(decryptedSessionKey.algorithm).to.equal('aes128');
+      } catch (err) {
+        if (detectBrowser()) { // Expected to fail in the CI, especially in Browserstack
+          expect(err.message).to.match(/Could not allocate required memory/);
+        }
+      }
+
+    });
+
+    // keep this after the 'memory-heavy' test to confirm that the Wasm module was successfully reloaded
+    it('supports encrypting with argon2 s2k', async function() {
+      const config = { s2kType: openpgp.enums.s2k.argon2 };
+      const passwords = 'password';
+      const sessionKey = {
+        algorithm: 'aes128',
+        data: util.hexToUint8Array('01FE16BBACFD1E7B78EF3B865187374F')
+      };
+      const encrypted = await openpgp.encryptSessionKey({ ...sessionKey, passwords, config, format: 'object' });
+      expect(encrypted.packets).to.have.length(1);
+      const skesk = encrypted.packets[0];
+      expect(skesk.s2k.type).to.equal('argon2');
+      const [decryptedSessionKey] = await openpgp.decryptSessionKeys({ message: encrypted, passwords });
+      expect(decryptedSessionKey).to.deep.equal(sessionKey);
     });
   });
 

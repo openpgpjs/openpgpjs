@@ -18,6 +18,7 @@
 import * as stream from '@openpgp/web-stream-tools';
 import { armor, unarmor } from './encoding/armor';
 import KeyID from './type/keyid';
+import { Argon2OutOfMemoryError } from './type/s2k';
 import defaultConfig from './config';
 import crypto from './crypto';
 import enums from './enums';
@@ -183,6 +184,9 @@ export class Message {
             decryptedSessionKeyPackets.push(skeskPacket);
           } catch (err) {
             util.printDebugError(err);
+            if (err instanceof Argon2OutOfMemoryError) {
+              exception = err;
+            }
           }
         }));
       }));
