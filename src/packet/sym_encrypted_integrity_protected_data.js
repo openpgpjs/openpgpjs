@@ -260,6 +260,7 @@ export async function runAEAD(packet, fn, key, data) {
         if (!chunkIndex || chunk.length) {
           reader.unshift(finalChunk);
           cryptedPromise = modeInstance[fn](chunk, nonce, adataArray);
+          cryptedPromise.catch(() => {});
           queuedBytes += chunk.length - tagLengthIfDecrypting + tagLengthIfEncrypting;
         } else {
           // After the last chunk, we either encrypt a final, empty
@@ -267,6 +268,7 @@ export async function runAEAD(packet, fn, key, data) {
           // validate that final authentication tag.
           adataView.setInt32(5 + chunkIndexSizeIfAEADEP + 4, cryptedBytes); // Should be setInt64(5 + chunkIndexSizeIfAEADEP, ...)
           cryptedPromise = modeInstance[fn](finalChunk, nonce, adataTagArray);
+          cryptedPromise.catch(() => {});
           queuedBytes += tagLengthIfEncrypting;
           done = true;
         }
