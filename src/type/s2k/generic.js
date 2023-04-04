@@ -28,17 +28,17 @@
  * @private
  */
 
-import defaultConfig from '../config';
-import crypto from '../crypto';
-import enums from '../enums';
-import { UnsupportedError } from '../packet/packet';
-import util from '../util';
+import defaultConfig from '../../config';
+import crypto from '../../crypto';
+import enums from '../../enums';
+import { UnsupportedError } from '../../packet/packet';
+import util from '../../util';
 
-class S2K {
+class GenericS2K {
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  constructor(config = defaultConfig) {
+  constructor(s2kType, config = defaultConfig) {
     /**
      * Hash function identifier, or 0 for gnu-dummy keys
      * @type {module:enums.hash | 0}
@@ -48,13 +48,21 @@ class S2K {
      * enums.s2k identifier or 'gnu-dummy'
      * @type {String}
      */
-    this.type = 'iterated';
+    this.type = enums.read(enums.s2k, s2kType);
     /** @type {Integer} */
     this.c = config.s2kIterationCountByte;
     /** Eight bytes of salt in a binary string.
      * @type {Uint8Array}
      */
     this.salt = null;
+  }
+
+  generateSalt() {
+    switch (this.type) {
+      case 'salted':
+      case 'iterated':
+        this.salt = crypto.random.getRandomBytes(8);
+    }
   }
 
   getCount() {
@@ -71,11 +79,6 @@ class S2K {
    */
   read(bytes) {
     let i = 0;
-    try {
-      this.type = enums.read(enums.s2k, bytes[i++]);
-    } catch (err) {
-      throw new UnsupportedError('Unknown S2K type.');
-    }
     this.algorithm = bytes[i++];
 
     switch (this.type) {
@@ -196,4 +199,4 @@ class S2K {
   }
 }
 
-export default S2K;
+export default GenericS2K;

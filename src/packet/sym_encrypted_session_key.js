@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import S2K from '../type/s2k';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
 import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
@@ -89,7 +89,8 @@ class SymEncryptedSessionKeyPacket {
     }
 
     // A string-to-key (S2K) specifier, length as defined above.
-    this.s2k = new S2K();
+    const s2kType = bytes[offset++];
+    this.s2k = newS2KFromType(s2kType);
     offset += this.s2k.read(bytes.subarray(offset, bytes.length));
 
     if (this.version === 5) {
@@ -178,8 +179,8 @@ class SymEncryptedSessionKeyPacket {
 
     this.sessionKeyEncryptionAlgorithm = algo;
 
-    this.s2k = new S2K(config);
-    this.s2k.salt = crypto.random.getRandomBytes(8);
+    this.s2k = newS2KFromConfig(config);
+    this.s2k.generateSalt();
 
     const { blockSize, keySize } = crypto.getCipher(algo);
     const encryptionKey = await this.s2k.produceKey(passphrase, keySize);
