@@ -84,8 +84,14 @@ async function GCM(cipher, key) {
           if (webcryptoEmptyMessagesUnsupported && ct.length === tagLength) {
             return AES_GCM.decrypt(ct, key, iv, adata);
           }
-          const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, ct);
-          return new Uint8Array(pt);
+          try {
+            const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, ct);
+            return new Uint8Array(pt);
+          } catch (e) {
+            if (e.name === 'OperationError') {
+              throw new Error('Authentication tag mismatch');
+            }
+          }
         }
       };
     } catch (err) {
