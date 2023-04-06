@@ -72,7 +72,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
       this.version = await reader.readByte();
       // - A one-octet version number with value 1 or 2.
       if (this.version !== 1 && this.version !== 2) {
-        throw new UnsupportedError(`Version ${version} of the SEIP packet is unsupported.`);
+        throw new UnsupportedError(`Version ${this.version} of the SEIP packet is unsupported.`);
       }
 
       if (this.version === 2) {
