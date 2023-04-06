@@ -21,7 +21,8 @@ import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
-import { UnsupportedError } from './packet';
+import { UnsupportedError, writeTag } from './packet';
+import computeHKDF from '../crypto/hkdf';
 
 /**
  * A Secret-Key packet contains all the information that is found in a
@@ -140,14 +141,27 @@ class SecretKeyPacket extends PublicKeyPacket {
         this.symmetric = this.s2kUsage;
       }
 
-      // - [Optional] If secret data is encrypted (string-to-key usage octet
-      //   not zero), an Initial Vector (IV) of the same length as the
-      //   cipher's block size.
+
       if (this.s2kUsage) {
-        this.iv = bytes.subarray(
-          i,
-          i + crypto.getCipher(this.symmetric).blockSize
-        );
+        // - crypto-refresh: If string-to-key usage octet was 255, 254 [..], an initialization vector (IV)
+        // of the same length as the cipher's block size.
+        // - RFC4880bis (v5 keys, regardless of AEAD): an Initial Vector (IV) of the same length as the
+        //   cipher's block size. If string-to-key usage octet was 253 the IV is used as the nonce for the AEAD algorithm.
+        // If the AEAD algorithm requires a shorter nonce, the high-order bits of the IV are used and the remaining bits MUST be zero
+        if (this.s2kUsage !== 253 || this.version === 5) {
+          this.iv = bytes.subarray(
+            i,
+            i + crypto.getCipher(this.symmetric).blockSize
+          );
+        } else {
+          // crypto-refresh: If string-to-key usage octet was 253 (that is, the secret data is AEAD-encrypted),
+          // an initialization vector (IV) of size specified by the AEAD algorithm (see Section 5.13.2), which
+          // is used as the nonce for the AEAD algorithm.
+          this.iv = bytes.subarray(
+            i,
+            i + crypto.getAEADMode(this.aead).ivLength
+          );
+        }
 
         i += this.iv.length;
       }
@@ -342,19 +356,28 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k.generateSalt();
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;
-    const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
 
     const { blockSize } = crypto.getCipher(this.symmetric);
-    this.iv = crypto.random.getRandomBytes(blockSize);
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
       this.aead = enums.aead.eax;
       const mode = crypto.getAEADMode(this.aead);
+
+      const serializedPacketTag = writeTag(this.constructor.tag);
+      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag);
+
       const modeInstance = await mode(this.symmetric, key);
-      this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
+      this.iv = (this.version === 5) ? crypto.random.getRandomBytes(blockSize) : crypto.random.getRandomBytes(mode.ivLength);
+      const associateData = this.version === 5 ?
+        new Uint8Array() :
+        util.concatUint8Array([serializedPacketTag, this.writePublicKey()]);
+
+      this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), associateData);
     } else {
       this.s2kUsage = 254;
+      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric);
+      this.iv = crypto.random.getRandomBytes(blockSize);
       this.keyMaterial = await crypto.mode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
         cleartext,
         await crypto.hash.sha1(cleartext, config)
@@ -385,8 +408,10 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     let key;
+    const serializedPacketTag = writeTag(this.constructor.tag); // relevant for AEAD only
     if (this.s2kUsage === 254 || this.s2kUsage === 253) {
-      key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
+      key = await produceEncryptionKey(
+        this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag);
     } else if (this.s2kUsage === 255) {
       throw new Error('Encrypted private key is authenticated using an insecure two-byte hash');
     } else {
@@ -398,7 +423,10 @@ class SecretKeyPacket extends PublicKeyPacket {
       const mode = crypto.getAEADMode(this.aead);
       const modeInstance = await mode(this.symmetric, key);
       try {
-        cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
+        const associateData = this.version === 5 ?
+          new Uint8Array() :
+          util.concatUint8Array([serializedPacketTag, this.writePublicKey()]);
+        cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), associateData);
       } catch (err) {
         if (err.message === 'Authentication tag mismatch') {
           throw new Error('Incorrect key passphrase: ' + err.message);
@@ -425,6 +453,8 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = false;
     this.keyMaterial = null;
     this.s2kUsage = 0;
+    this.aead = null;
+    this.symmetric = null;
   }
 
   /**
@@ -478,9 +508,27 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 }
 
-async function produceEncryptionKey(s2k, passphrase, algorithm) {
-  const { keySize } = crypto.getCipher(algorithm);
-  return s2k.produceKey(passphrase, keySize);
+/**
+ * Derive encryption key
+ * @param {Number} keyVersion - key derivation differs for v5 keys
+ * @param {module:type/s2k} s2k
+ * @param {String} passphrase
+ * @param {module:enums.symmetric} cipherAlgo
+ * @param {module:enums.aead} [aeadMode] - for AEAD-encrypted keys only (excluding v5)
+ * @param {Uint8Array} serializedPacketTag - for AEAD-encrypted keys only (excluding v5)
+ * @returns encryption key
+ */
+async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag) {
+  const { keySize } = crypto.getCipher(cipherAlgo);
+  const derivedKey = await s2k.produceKey(passphrase, keySize);
+  if (!aeadMode || keyVersion === 5) {
+    return derivedKey;
+  }
+  const info = util.concatUint8Array([
+    serializedPacketTag,
+    new Uint8Array([keyVersion, cipherAlgo, aeadMode])
+  ]);
+  return computeHKDF(enums.hash.sha256, derivedKey, new Uint8Array(), info, keySize);
 }
 
 export default SecretKeyPacket;
