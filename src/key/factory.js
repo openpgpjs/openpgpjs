@@ -209,7 +209,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signaturePacket.preferredCipherSuites = aeadAlgorithms.flatMap(aeadAlgorithm => {
         return symmetricAlgorithms.map(symmetricAlgorithm => {
           return [symmetricAlgorithm, aeadAlgorithm];
-        })
+        });
       });
     }
     signaturePacket.preferredHashAlgorithms = createPreferredAlgos([

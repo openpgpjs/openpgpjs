@@ -37,7 +37,7 @@ class PaddingPacket {
    * Read a padding packet
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
    */
-  read(bytes) {
+  read(bytes) { // eslint-disable-line no-unused-vars
     // Padding packets are ignored, so this function is never called.
   }
 

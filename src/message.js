@@ -245,8 +245,8 @@ export class Message {
               const serialisedPKESK = pkeskPacket.write(); // make copies to be able to decrypt the PKESK packet multiple times
               await Promise.all((
                 expectedSymmetricAlgorithm ?
-                [expectedSymmetricAlgorithm] :
-                Array.from(config.constantTimePKCS1DecryptionSupportedSymmetricAlgorithms)
+                  [expectedSymmetricAlgorithm] :
+                  Array.from(config.constantTimePKCS1DecryptionSupportedSymmetricAlgorithms)
               ).map(async sessionKeyAlgorithm => {
                 const pkeskPacketCopy = new PublicKeyEncryptedSessionKeyPacket();
                 pkeskPacketCopy.read(serialisedPKESK);
