@@ -128,24 +128,21 @@ function verifyHeaders(headers) {
 }
 
 /**
- * Splits a message into two parts, the body and the checksum. This is an internal function
- * @param {String} text - OpenPGP armored message part
- * @returns {Object} An object with attribute "body" containing the body.
- * and an attribute "checksum" containing the checksum.
+ * Remove the (optional) checksum from an armored message.
+ * @param {String} text - OpenPGP armored message
+ * @returns {String} The body of the armored message.
  * @private
  */
-function splitChecksum(text) {
+function removeChecksum(text) {
   let body = text;
-  let checksum = '';
 
   const lastEquals = text.lastIndexOf('=');
 
   if (lastEquals >= 0 && lastEquals !== text.length - 1) { // '=' as the last char means no checksum
     body = text.slice(0, lastEquals);
-    checksum = text.slice(lastEquals + 1).substr(0, 4);
   }
 
-  return { body: body, checksum: checksum };
+  return body;
 }
 
 /**
@@ -157,7 +154,7 @@ function splitChecksum(text) {
  * @async
  * @static
  */
-export function unarmor(input, config = defaultConfig) {
+export function unarmor(input) {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     try {
@@ -170,8 +167,7 @@ export function unarmor(input, config = defaultConfig) {
       let headersDone;
       let text = [];
       let textDone;
-      let checksum;
-      let data = base64.decode(stream.transformPair(input, async (readable, writable) => {
+      const data = base64.decode(stream.transformPair(input, async (readable, writable) => {
         const reader = stream.getReader(readable);
         try {
           while (true) {
@@ -236,9 +232,8 @@ export function unarmor(input, config = defaultConfig) {
               if (parts.length === 1) {
                 throw new Error('Misformed armored text');
               }
-              const split = splitChecksum(parts[0].slice(0, -1));
-              checksum = split.checksum;
-              await writer.write(split.body);
+              const body = removeChecksum(parts[0].slice(0, -1));
+              await writer.write(body);
               break;
             }
           }
