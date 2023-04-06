@@ -4,6 +4,7 @@ import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
 
+import sinon from 'sinon';
 import openpgp from '../initOpenpgp.js';
 import util from '../../src/util.js';
 import { getPreferredCipherSuite } from '../../src/key';
@@ -2912,7 +2913,7 @@ export default () => describe('Key', function() {
   let aeadProtectVal;
 
   tryTests('V4', versionSpecificTests, {
-    if: !openpgp.config.ci,
+    if: true,
     beforeEach: function() {
       v6KeysVal = openpgp.config.v6Keys;
       openpgp.config.v6Keys = false;
@@ -2923,7 +2924,7 @@ export default () => describe('Key', function() {
   });
 
   tryTests('V6', versionSpecificTests, {
-    if: !openpgp.config.ci,
+    if: true,
     beforeEach: function() {
       v6KeysVal = openpgp.config.v6Keys;
       aeadProtectVal = openpgp.config.aeadProtect;
@@ -2985,6 +2986,172 @@ export default () => describe('Key', function() {
     const packetlist = await openpgp.PacketList.fromBinary(packetBytes, util.constructAllowedPackets([openpgp.PublicKeyPacket]), openpgp.config);
     const key = packetlist[0];
     expect(key).to.exist;
+  });
+
+  it('Parsing, decrypting, encrypting and serializing V5 key (AEAD-encrypted)', async function() {
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYwFZC7tvxYAAAAtCSsGAQQB2kcPAQEHQP/d1oBAqCKZYxb6k8foyX2Aa/VK
+dHFymZPGvHRk1ncs/R0JAQMIrDnS3Bany9EAF6dwQSfPSdObc4ROYIMAnwAA
+ADKV1OhGzwANnapimvODI6fK5F7/V0GxETY9WmnipnBzr4Fe9GZw4QD4Q4hd
+IJMawjUBrs0MdjVAYWVhZC50ZXN0wpIFEBYKAEQFgmQu7b8ECwkHCAMVCAoE
+FgACAQIZAQKbAwIeByKhBQ/Y89PNwfdXUdI/td5Q9rNrYP9mb7Dg6k/3nxTg
+ugQ5AyIBAgAAf0kBAJv0OQvd4u8R0f3HAsmQeqMnwNA4or75BOn/ieApNZUt
+AP9kQVmYEk4+MV57Us15l2kQEslLDr3qiH5+VCICdEprB8eRBWQu7b8SAAAA
+MgorBgEEAZdVAQUBAQdA4IgEkfze3eNKRz6DgzGSJxw/CV/5Rp5u4Imn47h7
+pyADAQgH/R0JAQMIwayD3R4E0ugAyszSmOIpaLJ40YGBp5uU7wAAADKmSv4W
+tio7GfZCVl8eJ7xX3J1b0iMvEm876tUeHANQlYYCWz+2ahmPVe79zzZA9OhN
+FcJ6BRgWCAAsBYJkLu2/ApsMIqEFD9jz083B91dR0j+13lD2s2tg/2ZvsODq
+T/efFOC6BDkAAHcjAPwIPNHnR9bKmkVop6cE05dCIpZ/W8zXDGnjKYrrC4Hb
+4gEAmISD1GRkNOmCV8aHwN5svO6HuwXR4cR3o3l7HlYeag8=
+=wpkQ
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const passphrase = 'password';
+    const encryptedKey = await openpgp.readKey({ armoredKey });
+    const decryptedKey = await openpgp.decryptKey({
+      privateKey: encryptedKey,
+      passphrase
+    });
+    const reecryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey,
+      passphrase,
+      config: { aeadProtect: true }
+    });
+    expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+    const redecryptedKey = await openpgp.decryptKey({
+      privateKey: reecryptedKey,
+      passphrase
+    });
+    expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+  });
+
+  it('Parsing, decrypting, encrypting and serializing V4 key (AEAD-encrypted)', async function() {
+    // key from gopenpgp
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+oZIvKIVq9Vqf8XJVjMDbRMNTmh3a5A==
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const passphrase = 'password';
+    const encryptedKey = await openpgp.readKey({ armoredKey });
+    const decryptedKey = await openpgp.decryptKey({
+      privateKey: encryptedKey,
+      passphrase
+    });
+    const reecryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey,
+      passphrase,
+      config: { aeadProtect: true }
+    });
+    expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+    const redecryptedKey = await openpgp.decryptKey({
+      privateKey: reecryptedKey,
+      passphrase
+    });
+    expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+  });
+
+  it('Parsing, decrypting, encrypting and serializing V6 key (AEAD-encrypted)', async function() {
+    // official test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.5
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYIGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laP9JgkC
+FARdb9ccngltHraRe25uHuyuAQQVtKipJ0+r5jL4dacGWSAheCWPpITYiyfyIOPS
+3gIDyg8f7strd1OB4+LZsUhcIjOMpVHgmiY/IutJkulneoBYwrEGHxsKAAAAQgWC
+Y4d/4wMLCQcFFQoOCAwCFgACmwMCHgkiIQbLGGxPBgmml+TVLfpscisMHx4nwYpW
+cI9lJewnutmsyQUnCQIHAgAAAACtKCAQPi19In7A5tfORHHbNr/JcIMlNpAnFJin
+7wV2wH+q4UWFs7kDsBJ+xP2i8CMEWi7Ha8tPlXGpZR4UruETeh1mhELIj5UeM8T/
+0z+5oX1RHu11j8bZzFDLX9eTsgOdWATHggZjh3/jGQAAACCGkySDZ/nlAV25Ivj0
+gJXdp4SYfy1ZhbEvutFsr15ENf0mCQIUBA5hhGgp2oaavg6mFUXcFMwBBBUuE8qf
+9Ock+xwusd+GAglBr5LVyr/lup3xxQvHXFSjjA2haXfoN6xUGRdDEHI6+uevKjVR
+v5oAxgu7eJpaXNjCmwYYGwoAAAAsBYJjh3/jApsMIiEGyxhsTwYJppfk1S36bHIr
+DB8eJ8GKVnCPZSXsJ7rZrMkAAAAABAEgpukYbZ1ZNfyP5WMUzbUnSGpaUSD5t2Ki
+Nacp8DkBClZRa2c3AMQzSDXa9jGhYzxjzVb5scHDzTkjyRZWRdTq8U6L4da+/+Kt
+ruh8m7Xo2ehSSFyWRSuTSZe5tm/KXgYG
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const passphrase = 'correct horse battery staple';
+    const encryptedKey = await openpgp.readKey({ armoredKey });
+
+    // avoid argon2's expensive computation
+    const stubArgon2PrimaryKey = sinon.stub(encryptedKey.keyPacket.s2k, 'produceKey').returns(
+      util.hexToUint8Array('832bd2662a5c2b251ee3fc82aec349a766ca539015880133002e5a21960b3bcf'));
+    const stubArgon2Subkey = sinon.stub(encryptedKey.subkeys[0].keyPacket.s2k, 'produceKey').returns(
+      util.hexToUint8Array('f74a6ce873a089ef13a3da9ac059777bb22340d15eaa6c9dc0f8ef09035c67cd'));
+
+    try {
+      const decryptedKey = await openpgp.decryptKey({
+        privateKey: encryptedKey,
+        passphrase
+      });
+
+      const reecryptedKey = await openpgp.encryptKey({
+        privateKey: decryptedKey,
+        passphrase,
+        config: { aeadProtect: true }
+      });
+      expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+      const redecryptedKey = await openpgp.decryptKey({
+        privateKey: reecryptedKey,
+        passphrase
+      });
+      expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+    } finally {
+      stubArgon2PrimaryKey.restore();
+      stubArgon2Subkey.restore();
+    }
   });
 
   it('Parsing ECDH key with unknown kdf param version', async function() {
