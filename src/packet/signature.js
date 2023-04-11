@@ -326,6 +326,13 @@ class SignaturePacket {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredAEADAlgorithms));
       arr.push(writeSubPacket(sub.preferredAEADAlgorithms, false, bytes));
     }
+    if (this.intendedRecipientFingerprints !== null) {
+      const critical = this.version === 6;
+      const packets = this.intendedRecipientFingerprints.map(
+        fingerprint => writeSubPacket(sub.intendedRecipientFingerprint, critical, util.uint8ArrayToString(fingerprint))
+      );
+      arr.push(util.concatUint8Array(packets));
+    }
 
     const result = util.concat(arr);
     const length = util.writeNumber(result.length, 2);
@@ -519,6 +526,16 @@ class SignaturePacket {
         // Preferred AEAD Algorithms
         this.preferredAEADAlgorithms = [...bytes.subarray(mypos, bytes.length)];
         break;
+      case enums.signatureSubpacket.intendedRecipientFingerprint: {
+        const fingerprint = Array.from(bytes.subarray(mypos, bytes.length));
+        if (!this.intendedRecipientFingerprints) {
+          this.intendedRecipientFingerprints = [fingerprint];
+        } else {
+          this.intendedRecipientFingerprints.push(fingerprint);
+        }
+        break;
+      }
+
       default: {
         const err = new Error(`Unknown signature subpacket type ${type}`);
         if (critical) {
@@ -659,13 +676,14 @@ class SignaturePacket {
    *         SecretSubkeyPacket|SecretKeyPacket} key - the public key to verify the signature
    * @param {module:enums.signature} signatureType - Expected signature type
    * @param {Uint8Array|Object} data - Data which on the signature applies
+   * @param {String|undefined|null} recipientFingerprint - fingerprint to check against intended recipients (only relevant for encrypted context)
    * @param {Date} [date] - Use the given date instead of the current time to check for signature validity and expiration
    * @param {Boolean} [detached] - Whether to verify a detached signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @throws {Error} if signature validation failed
    * @async
    */
-  async verify(key, signatureType, data, date = new Date(), detached = false, config = defaultConfig) {
+  async verify(key, signatureType, data, recipientFingerprint, date = new Date(), detached = false, config = defaultConfig) {
     if (!this.issuerKeyID.equals(key.getKeyID())) {
       throw new Error('Signature was not issued by the given public key');
     }
@@ -710,6 +728,9 @@ class SignaturePacket {
     }
     if (normDate && normDate >= this.getExpirationTime()) {
       throw new Error('Signature is expired');
+    }
+    if (this.intendedRecipientFingerprints && !this.intendedRecipientFingerprints.includes(recipientFingerprint)) {
+      throw new Error('Signature intended recipient does not match the indicated recipient key');
     }
     if (config.rejectHashAlgorithms.has(this.hashAlgorithm)) {
       throw new Error('Insecure hash algorithm: ' + enums.read(enums.hash, this.hashAlgorithm).toUpperCase());

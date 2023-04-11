@@ -55,6 +55,9 @@ const allowedSymSessionKeyPackets = /*#__PURE__*/ util.constructAllowedPackets([
 // A detached signature can contain the following packets
 const allowedDetachedSignaturePackets = /*#__PURE__*/ util.constructAllowedPackets([SignaturePacket]);
 
+// For verifying the intended recipient, keep track of decryption key fingerprint (for verification of encrypted & signed messages)
+const decryptionKeyFingerprint = Symbol('decryptionKeyFingerprint');
+
 /**
  * Class that represents an OpenPGP message.
  * Can be an encrypted message, signed message, compressed message or literal message
@@ -122,7 +125,7 @@ export class Message {
 
     const symEncryptedPacket = symEncryptedPacketlist[0];
     let exception = null;
-    const decryptedPromise = Promise.all(sessionKeyObjects.map(async ({ algorithm: algorithmName, data }) => {
+    const decryptedPromise = Promise.all(sessionKeyObjects.map(async ({ algorithm: algorithmName, data, decryptionKeyFingerprint }) => {
       if (!util.isUint8Array(data) || !util.isString(algorithmName)) {
         throw new Error('Invalid session key for decryption.');
       }
@@ -130,6 +133,8 @@ export class Message {
       try {
         const algo = enums.write(enums.symmetric, algorithmName);
         await symEncryptedPacket.decrypt(algo, data, config);
+        // keep track of decryption key fingerprint to verify intended recipient (relevant for signed messages only)
+        symEncryptedPacket[decryptionKeyFingerprint] = decryptionKeyFingerprint;
       } catch (e) {
         util.printDebugError(e);
         exception = e;
@@ -145,6 +150,7 @@ export class Message {
     }
 
     const resultMsg = new Message(symEncryptedPacket.packets);
+    resultMsg[decryptionKeyFingerprint] = symEncryptedPacket[decryptionKeyFingerprint];
     symEncryptedPacket.packets = new PacketList(); // remove packets after decryption
 
     return resultMsg;
@@ -249,6 +255,7 @@ export class Message {
                 };
                 try {
                   await pkeskPacketCopy.decrypt(decryptionKeyPacket, randomSessionKey);
+                  pkeskPacketCopy[decryptionKeyFingerprint] = decryptionKeyPacket.getFingerprint();
                   decryptedSessionKeyPackets.push(pkeskPacketCopy);
                 } catch (err) {
                   // `decrypt` can still throw some non-security-sensitive errors
@@ -263,6 +270,7 @@ export class Message {
                 if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
                   throw new Error('A non-preferred symmetric algorithm was used.');
                 }
+                pkeskPacket[decryptionKeyFingerprint] = decryptionKeyPacket.getFingerprint();
                 decryptedSessionKeyPackets.push(pkeskPacket);
               } catch (err) {
                 util.printDebugError(err);
@@ -294,7 +302,8 @@ export class Message {
 
       return decryptedSessionKeyPackets.map(packet => ({
         data: packet.sessionKey,
-        algorithm: enums.read(enums.symmetric, packet.sessionKeyAlgorithm)
+        algorithm: enums.read(enums.symmetric, packet.sessionKeyAlgorithm),
+        decryptionKeyFingerprint: packet[decryptionKeyFingerprint] // PKESK only
       }));
     }
     throw exception || new Error('Session key decryption failed.');
@@ -584,6 +593,8 @@ export class Message {
   /**
    * Verify message signatures
    * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
+   * @param {Boolean} isHiddenRecipient - If true, the signature intended recipient will not be checked, as the recipient was not
+   *                                      expected to be included (relevant for encrypted & signed messages only)
    * @param {Date} [date] - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -593,7 +604,7 @@ export class Message {
    * }>>} List of signer's keyID and validity of signatures.
    * @async
    */
-  async verify(verificationKeys, date = new Date(), config = defaultConfig) {
+  async verify(verificationKeys, isHiddenRecipient, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
@@ -602,6 +613,7 @@ export class Message {
     if (stream.isArrayStream(msg.packets.stream)) {
       msg.packets.push(...await stream.readToEnd(msg.packets.stream, _ => _ || []));
     }
+    const recipientFingerprint = isHiddenRecipient ? null : this[decryptionKeyFingerprint];
     const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
     const signatureList = msg.packets.filterByTag(enums.packet.signature);
     if (onePassSigList.length && !signatureList.length && util.isStream(msg.packets.stream) && !stream.isArrayStream(msg.packets.stream)) {
@@ -632,15 +644,17 @@ export class Message {
           await writer.abort(e);
         }
       });
-      return createVerificationObjects(onePassSigList, literalDataList, verificationKeys, date, false, config);
+      return createVerificationObjects(onePassSigList, literalDataList, verificationKeys, recipientFingerprint, date, false, config);
     }
-    return createVerificationObjects(signatureList, literalDataList, verificationKeys, date, false, config);
+    return createVerificationObjects(signatureList, literalDataList, verificationKeys, recipientFingerprint, date, false, config);
   }
 
   /**
    * Verify detached message signature
-   * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
    * @param {Signature} signature
+   * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
+   * @param {Boolean} isHiddenRecipient - If true, the signature intended recipient will not be checked, as the recipient was not
+   *                                      expected to be included (relevant for encrypted & signed messages only)
    * @param {Date} date - Verify the signature against the given date, i.e. check signature creation time < date < expiration time
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<{
@@ -650,14 +664,15 @@ export class Message {
    * }>>} List of signer's keyID and validity of signature.
    * @async
    */
-  verifyDetached(signature, verificationKeys, date = new Date(), config = defaultConfig) {
+  verifyDetached(signature, verificationKeys, isHiddenRecipient, date = new Date(), config = defaultConfig) {
     const msg = this.unwrapCompressed();
     const literalDataList = msg.packets.filterByTag(enums.packet.literalData);
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
     const signatureList = signature.packets;
-    return createVerificationObjects(signatureList, literalDataList, verificationKeys, date, true, config);
+    const recipientFingerprint = isHiddenRecipient ? null : this[decryptionKeyFingerprint];
+    return createVerificationObjects(signatureList, literalDataList, verificationKeys, recipientFingerprint, date, true, config);
   }
 
   /**
@@ -748,6 +763,8 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
  * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
+ * @param {String|null|undefined} recipientFingerprint - decryption key fingerprint to check signature's intended recipient,
+ *                                                  or `null` outside of encrypted context or if the recipient was hidden
  * @param {Date} [date] - Check signature validity with respect to the given date
  * @param {Boolean} [detached] - Whether to verify detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -759,7 +776,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @async
  * @private
  */
-async function createVerificationObject(signature, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
+async function createVerificationObject(signature, literalDataList, verificationKeys, recipientFingerprint, date = new Date(), detached = false, config = defaultConfig) {
   let primaryKey;
   let unverifiedSigningKey;
 
@@ -782,7 +799,7 @@ async function createVerificationObject(signature, literalDataList, verification
         throw new Error(`Could not find signing key with key ID ${signature.issuerKeyID.toHex()}`);
       }
 
-      await signature.verify(unverifiedSigningKey.keyPacket, signature.signatureType, literalDataList[0], date, detached, config);
+      await signature.verify(unverifiedSigningKey.keyPacket, signature.signatureType, literalDataList[0], recipientFingerprint, date, detached, config);
       const signaturePacket = await signaturePacketPromise;
       if (unverifiedSigningKey.getCreationTime() > signaturePacket.created) {
         throw new Error('Key is newer than the signature');
@@ -827,6 +844,8 @@ async function createVerificationObject(signature, literalDataList, verification
  * @param {Array<SignaturePacket>} signatureList - Array of signature packets
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
  * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
+ * @param {String|null|undefined} recipientFingerprint - decryption key fingerprint to check signature's intended recipient,
+ *                                                  or `null` outside of encrypted context or if the recipient was hidden
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time
  * @param {Boolean} [detached] - Whether to verify detached signature packets
@@ -839,11 +858,11 @@ async function createVerificationObject(signature, literalDataList, verification
  * @async
  * @private
  */
-export async function createVerificationObjects(signatureList, literalDataList, verificationKeys, date = new Date(), detached = false, config = defaultConfig) {
+export async function createVerificationObjects(signatureList, literalDataList, verificationKeys, recipientFingerprint, date = new Date(), detached = false, config = defaultConfig) {
   return Promise.all(signatureList.filter(function(signature) {
     return ['text', 'binary'].includes(enums.read(enums.signature, signature.signatureType));
   }).map(async function(signature) {
-    return createVerificationObject(signature, literalDataList, verificationKeys, date, detached, config);
+    return createVerificationObject(signature, literalDataList, verificationKeys, recipientFingerprint, date, detached, config);
   }));
 }
 
