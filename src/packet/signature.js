@@ -96,6 +96,7 @@ class SignaturePacket {
     this.issuerKeyVersion = null;
     this.issuerFingerprint = null;
     this.preferredAEADAlgorithms = null;
+    this.intendedRecipientFingerprints = null;
 
     this.revoked = null;
     this[verified] = null;
@@ -676,7 +677,7 @@ class SignaturePacket {
    *         SecretSubkeyPacket|SecretKeyPacket} key - the public key to verify the signature
    * @param {module:enums.signature} signatureType - Expected signature type
    * @param {Uint8Array|Object} data - Data which on the signature applies
-   * @param {String|undefined|null} recipientFingerprint - fingerprint to check against intended recipients (only relevant for encrypted context)
+   * @param {String|null} recipientFingerprint - fingerprint to check against intended recipients (only relevant for encrypted context)
    * @param {Date} [date] - Use the given date instead of the current time to check for signature validity and expiration
    * @param {Boolean} [detached] - Whether to verify a detached signature
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
@@ -729,7 +730,7 @@ class SignaturePacket {
     if (normDate && normDate >= this.getExpirationTime()) {
       throw new Error('Signature is expired');
     }
-    if (this.intendedRecipientFingerprints && !this.intendedRecipientFingerprints.includes(recipientFingerprint)) {
+    if (this.intendedRecipientFingerprints && this.intendedRecipientFingerprints.length && !this.intendedRecipientFingerprints.includes(recipientFingerprint)) {
       throw new Error('Signature intended recipient does not match the indicated recipient key');
     }
     if (config.rejectHashAlgorithms.has(this.hashAlgorithm)) {

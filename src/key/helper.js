@@ -51,7 +51,7 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
       if (
         (!latestValid || signatures[i].created >= latestValid.created)
       ) {
-        await signatures[i].verify(publicKey, signatureType, dataToVerify, date, undefined, config);
+        await signatures[i].verify(publicKey, signatureType, dataToVerify, null, date, undefined, config);
         latestValid = signatures[i];
       }
     } catch (e) {
@@ -272,7 +272,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
         await revocationSignature.verify(
-          key, signatureType, dataToVerify, config.revocationsExpire ? date : null, false, config
+          key, signatureType, dataToVerify, null, config.revocationsExpire ? date : null, false, config
         );
 
         // TODO get an identifier of the revoked object instead

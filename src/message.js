@@ -69,6 +69,7 @@ export class Message {
    */
   constructor(packetlist) {
     this.packets = packetlist || new PacketList();
+    this[decryptionKeyFingerprint] = null;
   }
 
   /**
@@ -255,7 +256,7 @@ export class Message {
                 };
                 try {
                   await pkeskPacketCopy.decrypt(decryptionKeyPacket, randomSessionKey);
-                  pkeskPacketCopy[decryptionKeyFingerprint] = decryptionKeyPacket.getFingerprint();
+                  pkeskPacketCopy[decryptionKeyFingerprint] = decryptionKey.getFingerprint();
                   decryptedSessionKeyPackets.push(pkeskPacketCopy);
                 } catch (err) {
                   // `decrypt` can still throw some non-security-sensitive errors
@@ -270,7 +271,7 @@ export class Message {
                 if (!algos.includes(enums.write(enums.symmetric, pkeskPacket.sessionKeyAlgorithm))) {
                   throw new Error('A non-preferred symmetric algorithm was used.');
                 }
-                pkeskPacket[decryptionKeyFingerprint] = decryptionKeyPacket.getFingerprint();
+                pkeskPacket[decryptionKeyFingerprint] = decryptionKey.getFingerprint();
                 decryptedSessionKeyPackets.push(pkeskPacket);
               } catch (err) {
                 util.printDebugError(err);
@@ -763,7 +764,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
  * @param {SignaturePacket} signature - Signature packet
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
  * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
- * @param {String|null|undefined} recipientFingerprint - decryption key fingerprint to check signature's intended recipient,
+ * @param {String|null} recipientFingerprint - decryption key fingerprint to check signature's intended recipient,
  *                                                  or `null` outside of encrypted context or if the recipient was hidden
  * @param {Date} [date] - Check signature validity with respect to the given date
  * @param {Boolean} [detached] - Whether to verify detached signature packets
@@ -844,7 +845,7 @@ async function createVerificationObject(signature, literalDataList, verification
  * @param {Array<SignaturePacket>} signatureList - Array of signature packets
  * @param {Array<LiteralDataPacket>} literalDataList - Array of literal data packets
  * @param {Array<PublicKey>} verificationKeys - Array of public keys to verify signatures
- * @param {String|null|undefined} recipientFingerprint - decryption key fingerprint to check signature's intended recipient,
+ * @param {String|null} recipientFingerprint - decryption key fingerprint to check signature's intended recipient,
  *                                                  or `null` outside of encrypted context or if the recipient was hidden
  * @param {Date} date - Verify the signature against the given date,
  *                    i.e. check signature creation time < date < expiration time

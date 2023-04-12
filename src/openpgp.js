@@ -475,9 +475,9 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
   try {
     const result = {};
     if (signature) {
-      result.signatures = await message.verifyDetached(signature, verificationKeys, date, config);
+      result.signatures = await message.verifyDetached(signature, verificationKeys, null, date, config);
     } else {
-      result.signatures = await message.verify(verificationKeys, date, config);
+      result.signatures = await message.verify(verificationKeys, null, date, config);
     }
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
     if (message.fromStream) linkStreams(result, message);
