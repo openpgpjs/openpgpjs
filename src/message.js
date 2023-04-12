@@ -748,7 +748,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
       throw new Error('Need private key for signing');
     }
     const signingKey = await primaryKey.getSigningKey(signingKeyIDs[i], date, userID, config);
-    return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, intendedRecipientFingerprints, date, userID, notations, detached, config);
+    return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType, intendedRecipientFingerprints }, date, userID, notations, detached, config);
   })).then(signatureList => {
     packetlist.push(...signatureList);
   });

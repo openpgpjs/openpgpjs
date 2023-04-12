@@ -269,7 +269,7 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @async
  * @static
  */
-export async function encrypt({ message, encryptionKeys, hiddenEncryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = {}, encryptionKeyIDs = {}, date = new Date(), signingUserIDs = {}, encryptionUserIDs = {}, signatureNotations = [], config, ...rest }) {
+export async function encrypt({ message, encryptionKeys, hiddenEncryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = {}, encryptionKeyOptions = {}, date = new Date(), signingUserIDs = {}, signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkMessage(message); checkOutputMessageFormat(format);
   encryptionKeys = toArray(encryptionKeys); hiddenEncryptionKeys = toArray(hiddenEncryptionKeys); signingKeys = toArray(signingKeys);
