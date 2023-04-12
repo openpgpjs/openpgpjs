@@ -96,7 +96,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
     subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
       signatureType: enums.signature.keyBinding
-    }, options.date, undefined, undefined, undefined, config);
+    }, [], options.date, undefined, undefined, undefined, config);
   } else {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
   }
@@ -155,7 +155,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @returns {Promise<module:enums.symmetric|aead|compression>} Preferred algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = {}, config = defaultConfig) {
   const defaultAlgo = { // these are all must-implement in rfc4880bis
     'symmetric': enums.symmetric.aes128,
     'aead': enums.aead.eax,
@@ -175,8 +175,8 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
   // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
-  const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
+  const senderAlgoSupport = await Promise.all(keys.map(async function(key) {
+    const primaryUser = await key.getPrimaryUser(date, userIDs[key], config);
     const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
     return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
@@ -197,7 +197,7 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} Signature packet.
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, notations = [], detached = false, config) {
+export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, intendedRecipientFingerprints, date, userID, notations = [], detached = false, config) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
@@ -208,6 +208,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
+  signaturePacket.intendedRecipientFingerprints = intendedRecipientFingerprints;
   signaturePacket.rawNotations = notations;
   await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
   return signaturePacket;

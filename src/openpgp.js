@@ -245,12 +245,19 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @param {Object} options
  * @param {Message} options.message - Message to be encrypted as created by {@link createMessage}
  * @param {PublicKey|PublicKey[]} [options.encryptionKeys] - Array of keys or single key, used to encrypt the message
+ * @param {PublicKey|PublicKey[]} [options.hiddenEncryptionKeys] - Key(s) used to encrypt the message, whose fingerprint should not be included as signature intended recipient
+ *                                 (if `signingKeys` are given), and whose Key IDs should not be visible (see `options.wildcard`).
+ *                                 This option may be useful when encrypting to e.g. Bcc recipients or in privacy-sensitive contexts, but it allows the recipient to
+ *                                 surreptitiously forward the signature.
+ *                                 A more secure way to keep the recipient fingerprint private is to separately encrypt & sign the message to each of `hiddenEncryptionKeys`.
  * @param {PrivateKey|PrivateKey[]} [options.signingKeys] - Private keys for signing. If omitted message will not be signed
  * @param {String|String[]} [options.passwords] - Array of passwords or a single password to encrypt the message
  * @param {Object} [options.sessionKey] - Session key in the form: `{ data:Uint8Array, algorithm:String }`
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - Format of the returned message
  * @param {Signature} [options.signature] - A detached signature to add to the encrypted message
- * @param {Boolean} [options.wildcard=false] - Use a key ID of 0 instead of the public key IDs
+ * @param {Boolean} [options.wildcard=false] - Only relevant if `encryptionKeys` are given: if false, the `encryptionKeys` key IDs will be visible (unencrypted) in the message.
+ *                                             If true, the key IDs are set to 0 and remain hidden: this may slow down message decryption.
+ *                                             NB: `hiddenEncryptionKeys` key IDs are always hidden.
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each `signingKeyIDs[i]` corresponds to `signingKeys[i]`
  * @param {KeyID|KeyID[]} [options.encryptionKeyIDs=latest-created valid encryption (sub)keys] - Array of key IDs to use for encryption. Each `encryptionKeyIDs[i]` corresponds to `encryptionKeys[i]`
  * @param {Date} [options.date=current date] - Override the creation date of the message signature
@@ -262,11 +269,11 @@ export async function encryptKey({ privateKey, passphrase, config, ...rest }) {
  * @async
  * @static
  */
-export async function encrypt({ message, encryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = [], encryptionKeyIDs = [], date = new Date(), signingUserIDs = [], encryptionUserIDs = [], signatureNotations = [], config, ...rest }) {
+export async function encrypt({ message, encryptionKeys, hiddenEncryptionKeys, signingKeys, passwords, sessionKey, format = 'armored', signature = null, wildcard = false, signingKeyIDs = {}, encryptionKeyIDs = {}, date = new Date(), signingUserIDs = {}, encryptionUserIDs = {}, signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkMessage(message); checkOutputMessageFormat(format);
-  encryptionKeys = toArray(encryptionKeys); signingKeys = toArray(signingKeys); passwords = toArray(passwords);
-  signingKeyIDs = toArray(signingKeyIDs); encryptionKeyIDs = toArray(encryptionKeyIDs); signingUserIDs = toArray(signingUserIDs); encryptionUserIDs = toArray(encryptionUserIDs); signatureNotations = toArray(signatureNotations);
+  encryptionKeys = toArray(encryptionKeys); hiddenEncryptionKeys = toArray(hiddenEncryptionKeys); signingKeys = toArray(signingKeys);
+  passwords = toArray(passwords);
   if (rest.detached) {
     throw new Error("The `detached` option has been removed from openpgp.encrypt, separately call openpgp.sign instead. Don't forget to remove the `privateKeys` option as well.");
   }
@@ -281,13 +288,16 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
   const streaming = message.fromStream;
   try {
     if (signingKeys.length || signature) { // sign the message only if signing keys or signature is specified
-      message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      if (signingKeys.length && !hiddenEncryptionKeys) throw new Error('The `hiddenEncryptionKeys` option is required when signing an encrypted message');
+      const intendedRecipientFingerprints = signingKeys.length ? encryptionKeys.map(key => key.getFingerprint()) : [];
+      message = await message.sign(signingKeys, signature, intendedRecipientFingerprints, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
     }
     message = message.compress(
-      await getPreferredAlgo('compression', encryptionKeys, date, encryptionUserIDs, config),
+      await getPreferredAlgo('compression', encryptionKeys.concat(hiddenEncryptionKeys), date, encryptionUserIDs, config),
       config
     );
-    message = await message.encrypt(encryptionKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
+    const keysWithWildcard = wildcard ? encryptionKeys.concat(hiddenEncryptionKeys) : hiddenEncryptionKeys;
+    message = await message.encrypt(encryptionKeys, passwords, sessionKey, keysWithWildcard.map(key => key.getFingerprint()), encryptionKeyIDs, date, encryptionUserIDs, config);
     if (format === 'object') return message;
     // serialize data
     const armor = format === 'armored';

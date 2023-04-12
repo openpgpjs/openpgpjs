@@ -368,7 +368,7 @@ export class Message {
    * @param {Array<PublicKey>} [encryptionKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - Password(s) for message encryption
    * @param {Object} [sessionKey] - Session key in the form: { data:Uint8Array, algorithm:String, [aeadAlgorithm:String] }
-   * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs
+   * @param {Array<String>} [hiddenPrimaryKeyFingerprints] - relevant with `encryptionKeys` only: keys for which a KeyID of 0 should be used, instead of the public key ID
    * @param {Array<module:type/keyid~KeyID>} [encryptionKeyIDs] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to keys[i]
    * @param {Date} [date] - Override the creation date of the literal package
    * @param {Array<Object>} [userIDs] - User IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
@@ -376,7 +376,7 @@ export class Message {
    * @returns {Promise<Message>} New message with encrypted content.
    * @async
    */
-  async encrypt(encryptionKeys, passwords, sessionKey, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  async encrypt(encryptionKeys, passwords, sessionKey, hiddenPrimaryKeyFingerprints = [], encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     if (sessionKey) {
       if (!util.isUint8Array(sessionKey.data) || !util.isString(sessionKey.algorithm)) {
         throw new Error('Invalid session key for encryption.');
@@ -391,7 +391,7 @@ export class Message {
 
     const { data: sessionKeyData, algorithm: algorithmName, aeadAlgorithm: aeadAlgorithmName } = sessionKey;
 
-    const msg = await Message.encryptSessionKey(sessionKeyData, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, userIDs, config);
+    const msg = await Message.encryptSessionKey(sessionKeyData, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, hiddenPrimaryKeyFingerprints, encryptionKeyIDs, date, userIDs, config);
 
     let symEncryptedPacket;
     if (aeadAlgorithmName) {
@@ -417,7 +417,7 @@ export class Message {
    * @param {String} [aeadAlgorithmName] - AEAD algorithm, e.g. 'eax' or 'ocb'
    * @param {Array<PublicKey>} [encryptionKeys] - Public key(s) for message encryption
    * @param {Array<String>} [passwords] - For message encryption
-   * @param {Boolean} [wildcard] - Use a key ID of 0 instead of the public key IDs
+   * @param {Array<String>} [hiddenPrimaryKeyFingerprints] - relevant with `encryptionKeys` only: keys for which a KeyID of 0 should be used, instead of the public key ID
    * @param {Array<module:type/keyid~KeyID>} [encryptionKeyIDs] - Array of key IDs to use for encryption. Each encryptionKeyIDs[i] corresponds to encryptionKeys[i]
    * @param {Date} [date] - Override the date
    * @param {Array} [userIDs] - User IDs to encrypt for, e.g. [{ name:'Robert Receiver', email:'robert@openpgp.org' }]
@@ -425,16 +425,16 @@ export class Message {
    * @returns {Promise<Message>} New message with encrypted content.
    * @async
    */
-  static async encryptSessionKey(sessionKey, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  static async encryptSessionKey(sessionKey, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, hiddenPrimaryKeyFingerprints, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const packetlist = new PacketList();
     const algorithm = enums.write(enums.symmetric, algorithmName);
     const aeadAlgorithm = aeadAlgorithmName && enums.write(enums.aead, aeadAlgorithmName);
 
     if (encryptionKeys) {
-      const results = await Promise.all(encryptionKeys.map(async function(primaryKey, i) {
-        const encryptionKey = await primaryKey.getEncryptionKey(encryptionKeyIDs[i], date, userIDs, config);
+      const results = await Promise.all(encryptionKeys.map(async function(primaryKey) {
+        const encryptionKey = await primaryKey.getEncryptionKey(encryptionKeyIDs[primaryKey], date, userIDs[primaryKey], config);
         const pkESKeyPacket = new PublicKeyEncryptedSessionKeyPacket();
-        pkESKeyPacket.publicKeyID = wildcard ? KeyID.wildcard() : encryptionKey.getKeyID();
+        pkESKeyPacket.publicKeyID = hiddenPrimaryKeyFingerprints.includes(primaryKey.getFingerprint()) ? KeyID.wildcard() : encryptionKey.getKeyID();
         pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
         pkESKeyPacket.sessionKey = sessionKey;
         pkESKeyPacket.sessionKeyAlgorithm = algorithm;
@@ -495,7 +495,7 @@ export class Message {
    * @returns {Promise<Message>} New message with signed content.
    * @async
    */
-  async sign(signingKeys = [], signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], notations = [], config = defaultConfig) {
+  async sign(signingKeys = [], signature = null, intendedRecipientFingerprints, signingKeyIDs = [], date = new Date(), userIDs = [], notations = [], config = defaultConfig) {
     const packetlist = new PacketList();
 
     const literalDataPacket = this.packets.findPacket(enums.packet.literalData);
@@ -545,7 +545,7 @@ export class Message {
     });
 
     packetlist.push(literalDataPacket);
-    packetlist.push(...(await createSignaturePackets(literalDataPacket, signingKeys, signature, signingKeyIDs, date, userIDs, notations, false, config)));
+    packetlist.push(...(await createSignaturePackets(literalDataPacket, signingKeys, signature, intendedRecipientFingerprints, signingKeyIDs, date, userIDs, notations, false, config)));
 
     return new Message(packetlist);
   }
@@ -724,6 +724,7 @@ export class Message {
  * @param {LiteralDataPacket} literalDataPacket - the literal data packet to sign
  * @param {Array<PrivateKey>} [signingKeys] - private keys with decrypted secret key data for signing
  * @param {Signature} [signature] - Any existing detached signature to append
+ * @param {Array<String>} [intendedRecipientFingerprints] - relevant with `signingKeys` only: intended recipients
  * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [date] - Override the creationtime of the signature
  * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
@@ -734,7 +735,7 @@ export class Message {
  * @async
  * @private
  */
-export async function createSignaturePackets(literalDataPacket, signingKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], notations = [], detached = false, config = defaultConfig) {
+export async function createSignaturePackets(literalDataPacket, signingKeys, signature = null, intendedRecipientFingerprints, signingKeyIDs = [], date = new Date(), userIDs = [], notations = [], detached = false, config = defaultConfig) {
   const packetlist = new PacketList();
 
   // If data packet was created from Uint8Array, use binary, otherwise use text
@@ -747,7 +748,7 @@ export async function createSignaturePackets(literalDataPacket, signingKeys, sig
       throw new Error('Need private key for signing');
     }
     const signingKey = await primaryKey.getSigningKey(signingKeyIDs[i], date, userID, config);
-    return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, date, userID, notations, detached, config);
+    return createSignaturePacket(literalDataPacket, primaryKey, signingKey.keyPacket, { signatureType }, intendedRecipientFingerprints, date, userID, notations, detached, config);
   })).then(signatureList => {
     packetlist.push(...signatureList);
   });
