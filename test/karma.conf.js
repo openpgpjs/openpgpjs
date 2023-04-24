@@ -109,12 +109,12 @@ module.exports = function(config) {
         os: 'OS X',
         os_version: 'Catalina'
       },
-      bs_ios_15: {
+      bs_ios_14: {
         base: 'BrowserStack',
-        device: 'iPhone 13',
+        device: 'iPhone 12',
         real_mobile: true,
         os: 'ios',
-        os_version: '15'
+        os_version: '14'
       }
     },
 
