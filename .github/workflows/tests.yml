@@ -30,7 +30,7 @@ jobs:
   node:
     strategy:
       matrix:
-        node-version: [16.x, 18.x, '20-v8-canary']
+        node-version: [16.x, 18.x, '20']
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     name: Node ${{ matrix.node-version }}
