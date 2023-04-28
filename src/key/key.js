@@ -690,12 +690,11 @@ class Key {
         await user.verifyAllCertifications(verificationKeys, date, config) :
         [{ keyID: primaryKey.getKeyID(), valid: await user.verify(date, config).catch(() => false) }];
 
-      results.push(
-        ...signatures.map((signature) => ({
+      results.push(...signatures.map((signature) => ({
           userID: user.userID ? user.userID.userID : null,
           userAttribute: user.userAttribute,
           keyID: signature.keyID,
-          valid: signature.valid,
+          valid: signature.valid
         }))
       );
     }));
