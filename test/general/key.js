@@ -2647,6 +2647,79 @@ function versionSpecificTests() {
     }
   });
 
+  it('Sign and verify a key with user attribute - all users', async function () {
+    let publicKey = await openpgp.readKey({ armoredKey: keyWithImageData });
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+      passphrase: 'hello world',
+    });
+
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
+    try {
+      publicKey = await publicKey.signAllUsers([privateKey]);
+      const signatures = await publicKey.verifyAllUsers([privateKey]);
+      const publicSigningKey = await publicKey.getSigningKey();
+      const privateSigningKey = await privateKey.getSigningKey();
+      expect(signatures.length).to.equal(4);
+      expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[0].userAttribute).to.be.null;
+      expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[0].valid).to.be.null;
+      expect(signatures[1].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[1].userAttribute).to.be.null;
+      expect(signatures[1].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[1].valid).to.be.true;
+      expect(signatures[2].userID).to.be.null;
+      expect(signatures[2].userAttribute.attributes[0]).to.be.not.empty;
+      expect(signatures[2].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[2].valid).to.be.null;
+      expect(signatures[3].userID).to.be.null;
+      expect(signatures[3].userAttribute.attributes[0]).to.be.not.empty;
+      expect(signatures[3].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[3].valid).to.be.true;
+    } finally {
+      openpgp.config.minRSABits = minRSABits;
+    }
+  });
+
+  it('Sign and verify a key with user attribute using wrong key - all users', async function () {
+    let publicKey = await openpgp.readKey({ armoredKey: keyWithImageData });
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+      passphrase: 'hello world',
+    });
+    const wrongKey = await openpgp.readKey({ armoredKey: wrong_key });
+
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
+    try {
+      publicKey = await publicKey.signAllUsers([privateKey]);
+      const signatures = await publicKey.verifyAllUsers([wrongKey]);
+      const publicSigningKey = await publicKey.getSigningKey();
+      const privateSigningKey = await privateKey.getSigningKey();
+      expect(signatures.length).to.equal(4);
+      expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[0].userAttribute).to.be.null;
+      expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[0].valid).to.be.null;
+      expect(signatures[1].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[1].userAttribute).to.be.null;
+      expect(signatures[1].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[1].valid).to.be.null;
+      expect(signatures[2].userID).to.be.null;
+      expect(signatures[2].userAttribute.attributes[0]).to.be.not.empty;
+      expect(signatures[2].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[2].valid).to.be.null;
+      expect(signatures[3].userID).to.be.null;
+      expect(signatures[3].userAttribute.attributes[0]).to.be.not.empty;
+      expect(signatures[3].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[3].valid).to.be.null;
+    } finally {
+      openpgp.config.minRSABits = minRSABits;
+    }
+  });
+
   it('Reformat and encrypt key with no subkey', async function() {
     const userID = { name: 'test', email: 'a@b.com' };
     const key = await openpgp.readKey({ armoredKey: key_without_subkey });
@@ -4027,49 +4100,5 @@ XvmoLueOOShu01X/kaylMqaT8w==
     const signingKeySignature = await signingKey.getSubkeys()[0].verify();
     expect(signingKeySignature instanceof openpgp.SignaturePacket).to.be.true;
     expect(signingKeySignature.keyFlags[0] & openpgp.enums.keyFlags.signData).to.be.equals(openpgp.enums.keyFlags.signData);
-  });
-
-  it("Sign and verify key - key with user attribute", async function () {
-    let publicKey = await openpgp.readKey({ armoredKey: keyWithImageData });
-    const privateKey = await openpgp.decryptKey({
-      privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
-      passphrase: "hello world",
-    });
-
-    const { minRSABits } = openpgp.config;
-    openpgp.config.minRSABits = 1024;
-    try {
-      publicKey = await publicKey.signAllUsers([privateKey]);
-      const signatures = await publicKey.verifyAllUsers([privateKey]);
-      const publicSigningKey = await publicKey.getSigningKey();
-      const privateSigningKey = await privateKey.getSigningKey();
-      expect(signatures.length).to.equal(4);
-      expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
-      expect(signatures[0].userAttribute).to.be.null;
-      expect(signatures[0].keyID.toHex()).to.equal(
-        publicSigningKey.getKeyID().toHex()
-      );
-      expect(signatures[0].valid).to.be.null;
-      expect(signatures[1].userID).to.equal(publicKey.users[0].userID.userID);
-      expect(signatures[1].userAttribute).to.be.null;
-      expect(signatures[1].keyID.toHex()).to.equal(
-        privateSigningKey.getKeyID().toHex()
-      );
-      expect(signatures[1].valid).to.be.true;
-      expect(signatures[2].userID).to.be.null;
-      expect(signatures[2].userAttribute.attributes[0]).to.be.not.empty;
-      expect(signatures[2].keyID.toHex()).to.equal(
-        publicSigningKey.getKeyID().toHex()
-      );
-      expect(signatures[2].valid).to.be.null;
-      expect(signatures[3].userID).to.be.null;
-      expect(signatures[3].userAttribute.attributes[0]).to.be.not.empty;
-      expect(signatures[3].keyID.toHex()).to.equal(
-        privateSigningKey.getKeyID().toHex()
-      );
-      expect(signatures[3].valid).to.be.true;
-    } finally {
-      openpgp.config.minRSABits = minRSABits;
-    }
   });
 });
