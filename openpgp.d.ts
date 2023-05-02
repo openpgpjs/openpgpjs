@@ -101,6 +101,7 @@ export class Subkey {
   public getExpirationTime(date?: Date, config?: Config): Promise<Date | typeof Infinity | null>
   public isRevoked(signature: SignaturePacket, key: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
   public update(subKey: Subkey, date?: Date, config?: Config): Promise<void>
+  public revoke(primaryKey: SecretKeyPacket, reasonForRevocation?: ReasonForRevocation, date?: Date, config?: Config): Promise<Subkey>;
 }
 
 export interface User {
