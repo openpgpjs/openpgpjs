@@ -2651,7 +2651,7 @@ function versionSpecificTests() {
     let publicKey = await openpgp.readKey({ armoredKey: keyWithImageData });
     const privateKey = await openpgp.decryptKey({
       privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
-      passphrase: 'hello world',
+      passphrase: 'hello world'
     });
 
     const { minRSABits } = openpgp.config;
@@ -2687,7 +2687,7 @@ function versionSpecificTests() {
     let publicKey = await openpgp.readKey({ armoredKey: keyWithImageData });
     const privateKey = await openpgp.decryptKey({
       privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
-      passphrase: 'hello world',
+      passphrase: 'hello world'
     });
     const wrongKey = await openpgp.readKey({ armoredKey: wrong_key });
 
