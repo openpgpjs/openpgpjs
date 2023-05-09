@@ -1,5 +1,5 @@
-const Benchmark = require('benchmark');
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+import Benchmark from 'benchmark';
+import * as openpgp from 'openpgp';
 
 const wrapAsync = func => ({
   fn: async deferred => {

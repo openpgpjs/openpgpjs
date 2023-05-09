@@ -1,14 +1,15 @@
-const sandbox = require('sinon/lib/sinon/sandbox');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import sandbox from 'sinon/lib/sinon/sandbox';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const crypto = require('../../src/crypto');
-const random = require('../../src/crypto/random');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import crypto from '../../src/crypto';
+import * as random from '../../src/crypto/random.js';
+import util from '../../src/util.js';
 
 /* eslint-disable no-invalid-this */
-module.exports = () => describe('basic RSA cryptography', function () {
+export default () => describe('basic RSA cryptography', function () {
   let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;

@@ -1,4 +1,6 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('..');
+import * as openpgp from 'openpgp';
+if (typeof window !== 'undefined' && !window.openpgp) { window.openpgp = openpgp }
+
 
 (typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
 
@@ -27,8 +29,13 @@ globalThis.tryTests = function(name, tests, options) {
 };
 
 globalThis.loadStreamsPolyfill = function() {
-  require('web-streams-polyfill/es2018'); // eslint-disable-line import/no-unassigned-import
+  return import('web-streams-polyfill');
 };
+
+import runWorkerTests from './worker';
+import runCryptoTests from './crypto';
+import runGeneralTests from './general';
+import runSecurityTests from './security';
 
 describe('Unit Tests', function () {
 
@@ -59,8 +66,8 @@ describe('Unit Tests', function () {
     });
   }
 
-  require('./worker')();
-  require('./crypto')();
-  require('./general')();
-  require('./security')();
+  runWorkerTests();
+  runCryptoTests();
+  runGeneralTests();
+  runSecurityTests();
 });

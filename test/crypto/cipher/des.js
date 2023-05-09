@@ -1,9 +1,9 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const { DES, TripleDES } = require('../../../src/crypto/cipher/des');
-const util = require('../../../src/util');
+import { DES, TripleDES } from '../../../src/crypto/cipher/des.js';
+import util from '../../../src/util.js';
 
-module.exports = () => describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', function() {
+export default () => describe('TripleDES (EDE) cipher test with test vectors from NIST SP 800-20', function() {
   // see https://csrc.nist.gov/publications/nistpubs/800-20/800-20.pdf
   const key = new Uint8Array([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]);
   const testvectors = [[[0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00],[0x95,0xF8,0xA5,0xE5,0xDD,0x31,0xD9,0x00]],

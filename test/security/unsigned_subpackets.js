@@ -1,7 +1,9 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+chaiUse(chaiAsPromised);
+
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
 const { readKey, PrivateKey, createMessage, enums, PacketList, SignaturePacket } = openpgp;
 
@@ -89,4 +91,4 @@ async function makeKeyValid() {
   expect(await encryptFails(modifiedkey)).to.be.true;
 }
 
-module.exports = () => it('Does not accept unsigned subpackets', makeKeyValid);
+export default () => it('Does not accept unsigned subpackets', makeKeyValid);

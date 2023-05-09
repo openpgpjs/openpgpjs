@@ -1,14 +1,15 @@
 /* eslint-disable max-lines */
-const stream = require('@openpgp/web-stream-tools');
-const stub = require('sinon/lib/sinon/stub');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import * as stream from '@openpgp/web-stream-tools';
+import stub from 'sinon/lib/sinon/stub';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const crypto = require('../../src/crypto');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import crypto from '../../src/crypto';
+import util from '../../src/util.js';
 
-const input = require('./testInputs');
+import * as input from './testInputs.js';
 
 function stringify(array) {
   if (stream.isStream(array)) {
@@ -26,7 +27,7 @@ function stringify(array) {
   return result.join('');
 }
 
-module.exports = () => describe('Packet', function() {
+export default () => describe('Packet', function() {
   const allAllowedPackets = util.constructAllowedPackets([...Object.values(openpgp).filter(packetClass => !!packetClass.tag)]);
 
   const armored_key =

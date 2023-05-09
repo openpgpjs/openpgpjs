@@ -1,17 +1,19 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const nacl = require('@openpgp/tweetnacl');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const elliptic = require('../../src/crypto/public_key/elliptic');
-const signature = require('../../src/crypto/signature');
-const OID = require('../../src/type/oid');
-const util = require('../../src/util');
+import nacl from '@openpgp/tweetnacl';
 
-const input = require('./testInputs');
+import * as elliptic from '../../src/crypto/public_key/elliptic';
+import * as signature from '../../src/crypto/signature';
+import OID from '../../src/type/oid';
+import util from '../../src/util';
 
-module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography (legacy format)', function () {
+import * as input from './testInputs';
+
+export default () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography (legacy format)', function () {
   const data = {
     light: {
       id: '1ecdf026c0245830',
