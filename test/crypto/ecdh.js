@@ -1,17 +1,18 @@
-const sandbox = require('sinon/lib/sinon/sandbox');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import sandbox from 'sinon/lib/sinon/sandbox';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const OID = require('../../src/type/oid');
-const KDFParams = require('../../src/type/kdf_params');
-const elliptic_curves = require('../../src/crypto/public_key/elliptic');
-const util = require('../../src/util');
-const elliptic_data = require('./elliptic_data');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import OID from '../../src/type/oid.js';
+import KDFParams from '../../src/type/kdf_params.js';
+import * as elliptic_curves from '../../src/crypto/public_key/elliptic';
+import util from '../../src/util.js';
+import elliptic_data from './elliptic_data.js';
 
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
-module.exports = () => describe('ECDH key exchange @lightweight', function () {
+export default () => describe('ECDH key exchange @lightweight', function () {
   const decrypt_message = function (oid, hash, cipher, priv, pub, ephemeral, data, fingerprint) {
     if (util.isString(data)) {
       data = util.stringToUint8Array(data);

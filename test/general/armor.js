@@ -1,9 +1,8 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
-
-module.exports = () => describe('ASCII armor', function() {
+export default () => describe('ASCII armor', function() {
 
   function getArmor(headers, signatureHeaders) {
     return ['-----BEGIN PGP SIGNED MESSAGE-----']

@@ -12,6 +12,6 @@ function createSomeMessage() {
   return '  \t' + String.fromCodePoint(...arr).replace(/[\r\u2028\u2029]/g, '\n') + '  \t\n한국어/조선말';
 }
 
-module.exports = {
-  createSomeMessage: createSomeMessage
+export {
+  createSomeMessage
 };

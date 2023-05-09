@@ -1,18 +1,19 @@
 /* eslint-disable max-lines */
 /* globals tryTests, loadStreamsPolyfill */
-const spy = require('sinon/lib/sinon/spy');
-const stream = require('@openpgp/web-stream-tools');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import spy from 'sinon/lib/sinon/spy';
+import * as stream from '@openpgp/web-stream-tools';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const crypto = require('../../src/crypto');
-const random = require('../../src/crypto/random');
-const util = require('../../src/util');
-const keyIDType = require('../../src/type/keyid');
-const { isAEADSupported } = require('../../src/key');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import crypto from '../../src/crypto';
+import * as random from '../../src/crypto/random.js';
+import util from '../../src/util.js';
+import keyIDType from '../../src/type/keyid.js';
+import { isAEADSupported } from '../../src/key';
 
-const input = require('./testInputs');
+import * as input from './testInputs.js';
 
 const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
 const detectBrowser = () => typeof navigator === 'object';
@@ -895,7 +896,7 @@ function withCompression(tests) {
   });
 }
 
-module.exports = () => describe('OpenPGP.js public api tests', function() {
+export default () => describe('OpenPGP.js public api tests', function() {
   describe('readKey(s) and readPrivateKey(s) - unit tests', function() {
     it('readKey and readPrivateKey should create equal private keys', async function() {
       const key = await openpgp.readKey({ armoredKey: priv_key });
@@ -2933,7 +2934,7 @@ XfA3pqV4mTzF
             throw new Error('Was not able to successfully modify checksum');
           }
           const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
-          loadStreamsPolyfill();
+          await loadStreamsPolyfill();
           try {
             for (const allowStreaming of [true, false]) {
               openpgp.config.allowUnauthenticatedStream = allowStreaming;
@@ -3198,9 +3199,9 @@ XfA3pqV4mTzF
             const plaintext = [];
             let i = 0;
             const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
-            loadStreamsPolyfill();
-            const ReadableStream = useNativeStream ? global.ReadableStream : stream.ReadableStream;
-            const data = new ReadableStream({
+            await loadStreamsPolyfill();
+            const GenericReadableStream = useNativeStream ? global.ReadableStream : ReadableStream;
+            const data = new GenericReadableStream({
               pull(controller) {
                 if (i++ < 4) {
                   const randomBytes = random.getRandomBytes(10);

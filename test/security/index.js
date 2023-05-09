@@ -1,6 +1,11 @@
-module.exports = () => describe('Security', function () {
-  require('./message_signature_bypass')();
-  require('./unsigned_subpackets')();
-  require('./subkey_trust')();
-  require('./preferred_algo_mismatch')();
+import testMessageSignatureBypess from './message_signature_bypass';
+import testUnsignedSubpackets from './unsigned_subpackets';
+import testSubkeyTrust from './subkey_trust';
+import testPreferredAlgoMismatch from './preferred_algo_mismatch';
+
+export default () => describe('Security', function () {
+  testMessageSignatureBypess();
+  testUnsignedSubpackets();
+  testSubkeyTrust();
+  testPreferredAlgoMismatch();
 });

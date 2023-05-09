@@ -2,16 +2,18 @@
 
 import { builtinModules } from 'module';
 
+import alias from '@rollup/plugin-alias';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import { wasm } from '@rollup/plugin-wasm';
-
 
 import pkg from './package.json';
 
 const nodeDependencies = Object.keys(pkg.dependencies);
+const nodeBuiltinModules = builtinModules.concat(['module']);
+
 const wasmOptions = {
   node: { targetEnv: 'node' },
   browser: { targetEnv: 'browser', maxFileSize: undefined } // always inlline (our wasm files are small)
@@ -47,6 +49,7 @@ const terserOptions = {
 export default Object.assign([
   {
     input: 'src/index.js',
+    external: nodeBuiltinModules.concat(nodeDependencies),
     output: [
       { file: 'dist/openpgp.js', format: 'iife', name: pkg.name, banner, intro },
       { file: 'dist/openpgp.min.js', format: 'iife', name: pkg.name, banner, intro, plugins: [terser(terserOptions)], sourcemap: true },
@@ -59,11 +62,11 @@ export default Object.assign([
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies)
+        ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
-        'require(': 'void(',
+        "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
         delimiters: ['', '']
       }),
       wasm(wasmOptions.browser)
@@ -72,10 +75,10 @@ export default Object.assign([
   {
     input: 'src/index.js',
     inlineDynamicImports: true,
-    external: builtinModules.concat(nodeDependencies),
+    external: nodeBuiltinModules.concat(nodeDependencies),
     output: [
-      { file: 'dist/node/openpgp.js', format: 'cjs', name: pkg.name, banner, intro },
-      { file: 'dist/node/openpgp.min.js', format: 'cjs', name: pkg.name, banner, intro, plugins: [terser(terserOptions)], sourcemap: true },
+      { file: 'dist/node/openpgp.cjs', format: 'cjs', name: pkg.name, banner, intro },
+      { file: 'dist/node/openpgp.min.cjs', format: 'cjs', name: pkg.name, banner, intro, plugins: [terser(terserOptions)], sourcemap: true },
       { file: 'dist/node/openpgp.mjs', format: 'es', banner, intro },
       { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
     ],
@@ -90,6 +93,7 @@ export default Object.assign([
   },
   {
     input: 'src/index.js',
+    external: nodeBuiltinModules.concat(nodeDependencies),
     output: [
       { dir: 'dist/lightweight', entryFileNames: 'openpgp.mjs', chunkFileNames: chunkInfo => getChunkFileName(chunkInfo, 'mjs'), format: 'es', banner, intro },
       { dir: 'dist/lightweight', entryFileNames: 'openpgp.min.mjs', chunkFileNames: chunkInfo => getChunkFileName(chunkInfo, 'min.mjs'), format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
@@ -100,11 +104,11 @@ export default Object.assign([
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies)
+        ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
-        'require(': 'void(',
+        "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
         delimiters: ['', '']
       }),
       wasm(wasmOptions.browser)
@@ -116,17 +120,22 @@ export default Object.assign([
       { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true }
     ],
     inlineDynamicImports: true,
-    external: ['../..', '../../..'],
+    external: nodeBuiltinModules.concat(nodeDependencies),
     plugins: [
+      alias({
+        entries: {
+          openpgp: `./dist/${process.env.npm_config_lightweight ? 'lightweight/' : ''}openpgp.mjs`
+        }
+      }),
       resolve({
         browser: true
       }),
       commonjs({
-        ignore: builtinModules.concat(nodeDependencies)
+        ignore: nodeBuiltinModules.concat(nodeDependencies),
+        requireReturnsDefault: 'preferred'
       }),
       replace({
-        "import openpgpjs from '../../..';": `import * as openpgpjs from '/dist/${process.env.npm_config_lightweight ? 'lightweight/' : ''}openpgp.mjs'; window.openpgp = openpgpjs;`,
-        'require(': 'void(',
+        "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
         delimiters: ['', '']
       }),
       wasm(wasmOptions.browser)

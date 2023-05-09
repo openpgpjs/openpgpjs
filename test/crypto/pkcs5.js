@@ -1,8 +1,8 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const pkcs5 = require('../../src/crypto/pkcs5');
+import * as pkcs5 from '../../src/crypto/pkcs5.js';
 
-module.exports = () => describe('PKCS5 padding', function() {
+export default () => describe('PKCS5 padding', function() {
   it('Add and remove padding', function () {
     const m = new Uint8Array([0,1,2,3,4,5,6,7,8]);
     const padded = pkcs5.encode(m);

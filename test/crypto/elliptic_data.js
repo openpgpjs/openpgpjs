@@ -99,4 +99,4 @@ const elliptic_data = {
   }
 };
 
-module.exports = elliptic_data;
+export default elliptic_data;

@@ -1,15 +1,16 @@
 /* eslint-disable max-lines */
 /* globals loadStreamsPolyfill */
-const stream = require('@openpgp/web-stream-tools');
-const stub = require('sinon/lib/sinon/stub');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import * as stream from '@openpgp/web-stream-tools';
+import stub from 'sinon/lib/sinon/stub';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const random = require('../../src/crypto/random');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import * as random from '../../src/crypto/random.js';
+import util from '../../src/util.js';
 
-const input = require('./testInputs');
+import * as input from './testInputs.js';
 
 const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
 const NodeReadableStream = useNativeStream ? undefined : require('stream').Readable;
@@ -890,7 +891,7 @@ function tests() {
     it("Don't pull entire input stream when we're not pulling decrypted stream (AEAD)", async function() {
       let coresStub;
       if (detectNode()) {
-        coresStub = stub(require('os'), 'cpus');
+        coresStub = stub(util.nodeRequire('os'), 'cpus');
         coresStub.returns(new Array(2));
         // Object.defineProperty(require('os'), 'cpus', { value: () => [,], configurable: true });
       } else {
@@ -947,7 +948,7 @@ function tests() {
   });
 }
 
-module.exports = () => describe('Streaming', function() {
+export default () => describe('Streaming', function() {
   let currentTest = 0;
 
   before(async function() {
@@ -957,7 +958,7 @@ module.exports = () => describe('Streaming', function() {
       passphrase: 'hello world'
     });
 
-    loadStreamsPolyfill();
+    await loadStreamsPolyfill();
   });
 
   beforeEach(function() {
@@ -1013,7 +1014,9 @@ module.exports = () => describe('Streaming', function() {
   tests();
 
   if (detectNode()) {
-    const fs = require('fs');
+    const fs = util.nodeRequire('fs');
+    const { fileURLToPath } = util.nodeRequire('url');
+    const __filename = fileURLToPath(import.meta.url);
 
     it('Node: Encrypt and decrypt text message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.

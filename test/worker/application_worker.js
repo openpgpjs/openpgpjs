@@ -1,9 +1,8 @@
 /* globals tryTests */
 
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-/* eslint-disable no-invalid-this */
-module.exports = () => tryTests('Application Worker', tests, {
+export default () => tryTests('Application Worker', tests, {
   if: typeof window !== 'undefined' && window.Worker && window.MessageChannel
 });
 

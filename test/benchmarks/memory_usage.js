@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
-const assert = require('assert');
-const path = require('path');
-const { writeFileSync, unlinkSync } = require('fs');
-const { fork } = require('child_process');
-const openpgp = require('../..');
+import assert from 'assert';
+import path from 'path';
+import { writeFileSync, unlinkSync } from 'fs';
+import { fork } from 'child_process';
+import { fileURLToPath } from 'url';
+import * as openpgp from 'openpgp';
 
 /**
  * Benchmark max memory usage recorded during execution of the given function.
@@ -12,11 +13,12 @@ const openpgp = require('../..');
  * @returns {NodeJS.MemoryUsage} memory usage snapshot with max RSS (sizes in bytes)
  */
 const benchmark = async function(fn) {
-  const tmpFileName = path.join(__dirname, 'tmp.js');
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const tmpFileName = path.join(__dirname, 'tmp.cjs');
   // the code to execute must be written to a file
   writeFileSync(tmpFileName, `
 const assert = require('assert');
-const openpgp = require('../..');
+const openpgp = require('openpgp');
 let maxMemoryComsumption;
 let activeSampling = false;
 

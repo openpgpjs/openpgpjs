@@ -1,7 +1,9 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+chaiUse(chaiAsPromised);
+
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
 const { readKey, PublicKey, readCleartextMessage, createCleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
 
@@ -33,7 +35,7 @@ async function generateTestData() {
   };
 }
 
-module.exports = () => it('Does not trust subkeys without Primary Key Binding Signature', async function() {
+export default () => it('Does not trust subkeys without Primary Key Binding Signature', async function() {
   // attacker only has his own private key,
   // the victim's public key and a signed message
   const { victimPubKey, attackerPrivKey, signed } = await generateTestData();

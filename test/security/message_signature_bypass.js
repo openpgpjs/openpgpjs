@@ -1,8 +1,9 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import util from '../../src/util.js';
 
 const { readKey, readCleartextMessage, SignaturePacket } = openpgp;
 
@@ -101,4 +102,4 @@ async function fakeSignature() {
   expect(signatures).to.have.length(0);
 }
 
-module.exports = () => it('Does not accept non-binary/text signatures', fakeSignature);
+export default () => it('Does not accept non-binary/text signatures', fakeSignature);

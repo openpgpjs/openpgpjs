@@ -1,7 +1,6 @@
 /**
  * @fileoverview Cipher modes
  * @module crypto/mode
- * @private
  */
 
 import * as cfb from './cfb';

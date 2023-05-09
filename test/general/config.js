@@ -1,8 +1,8 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
-module.exports = () => describe('Custom configuration', function() {
+export default () => describe('Custom configuration', function() {
   it('openpgp.readMessage', async function() {
     const armoredMessage = await openpgp.encrypt({ message: await openpgp.createMessage({ text:'hello world' }), passwords: 'password' });
     const message = await openpgp.readMessage({ armoredMessage });
