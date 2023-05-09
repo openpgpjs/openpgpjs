@@ -16,7 +16,7 @@ import {
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
   WebStream, NodeStream,
-} from '../..';
+} from 'openpgp';
 
 (async () => {
 

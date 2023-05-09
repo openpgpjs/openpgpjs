@@ -1,12 +1,13 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const sandbox = require('sinon/lib/sinon/sandbox');
-const crypto = require('../../src/crypto');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import sandbox from 'sinon/lib/sinon/sandbox';
+import crypto from '../../src/crypto';
+import util from '../../src/util.js';
 
-module.exports = () => describe('API functional testing', function() {
+export default () => describe('API functional testing', function() {
   const RSAPublicKeyMaterial = util.concatUint8Array([
     new Uint8Array([0x08,0x00,0xac,0x15,0xb3,0xd6,0xd2,0x0f,0xf0,0x7a,0xdd,0x21,0xb7,
       0xbf,0x61,0xfa,0xca,0x93,0x86,0xc8,0x55,0x5a,0x4b,0xa6,0xa4,0x1a,

@@ -1,18 +1,19 @@
-const sandbox = require('sinon/lib/sinon/sandbox');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import sandbox from 'sinon/lib/sinon/sandbox';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const elliptic_curves = require('../../src/crypto/public_key/elliptic');
-const hashMod = require('../../src/crypto/hash');
-const config = require('../../src/config');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import * as elliptic_curves from '../../src/crypto/public_key/elliptic';
+import hashMod from '../../src/crypto/hash';
+import config from '../../src/config';
+import util from '../../src/util.js';
 
-const elliptic_data = require('./elliptic_data');
+import elliptic_data from './elliptic_data';
 
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
-module.exports = () => describe('Elliptic Curve Cryptography @lightweight', function () {
+export default () => describe('Elliptic Curve Cryptography @lightweight', function () {
   const signature_data = {
     priv: new Uint8Array([
       0x14, 0x2B, 0xE2, 0xB7, 0x4D, 0xBD, 0x1B, 0x22,

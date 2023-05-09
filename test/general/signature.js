@@ -1,14 +1,15 @@
 /* eslint-disable max-lines */
 /* globals tryTests, loadStreamsPolyfill */
-const stream = require('@openpgp/web-stream-tools');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import * as stream from '@openpgp/web-stream-tools';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
-const util = require('../../src/util');
+import util from '../../src/util.js';
 
-module.exports = () => describe('Signature', function() {
+export default () => describe('Signature', function() {
   const priv_key_arm1 =
     ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
       'Version: GnuPG v1.4.11 (GNU/Linux)',
@@ -900,7 +901,7 @@ AkLaG/AkATpuH+DMkYDmKbDLGgD+N4yuxXBJmBfC2IBe4J1S2Gg=
       date: key.keyPacket.created,
       format: 'object'
     });
-    loadStreamsPolyfill();
+    await loadStreamsPolyfill();
     const { signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
@@ -931,7 +932,7 @@ aMsUdQBgnPAcSGVsbG8gV29ybGQgOik=
       date: key.keyPacket.created,
       format: 'object'
     });
-    loadStreamsPolyfill();
+    await loadStreamsPolyfill();
     const { signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
@@ -961,7 +962,7 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       date: key.keyPacket.created,
       format: 'object'
     });
-    loadStreamsPolyfill();
+    await loadStreamsPolyfill();
     const { signatures: [sigInfo] } = await openpgp.verify({
       verificationKeys: expiredKey,
       message: await openpgp.readMessage({ armoredMessage: stream.toStream(armoredMessage) }),
@@ -1454,7 +1455,7 @@ yYDnCgA=
 -----END PGP MESSAGE-----`.split('');
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      loadStreamsPolyfill();
+      await loadStreamsPolyfill();
       const message = await openpgp.readMessage({
         armoredMessage: new ReadableStream({
           async pull(controller) {
@@ -1520,7 +1521,7 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
 -----END PGP MESSAGE-----`.split('');
 
       const plaintext = 'space: \nspace and tab: \t\nno trailing space\n  \ntab:\t\ntab and space:\t ';
-      loadStreamsPolyfill();
+      await loadStreamsPolyfill();
       const message = await openpgp.readMessage({
         armoredMessage: new ReadableStream({
           async pull(controller) {

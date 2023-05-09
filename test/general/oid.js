@@ -1,9 +1,9 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const OID = require('../../src/type/oid');
-const util = require('../../src/util');
+import OID from '../../src/type/oid.js';
+import util from '../../src/util.js';
 
-module.exports = () => describe('Oid tests', function() {
+export default () => describe('Oid tests', function() {
   const p256_oid = new Uint8Array([0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07]);
   const p384_oid = new Uint8Array([0x2B, 0x81, 0x04, 0x00, 0x22]);
   const p521_oid = new Uint8Array([0x2B, 0x81, 0x04, 0x00, 0x23]);

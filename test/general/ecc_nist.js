@@ -1,13 +1,14 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
-const util = require('../../src/util');
+import util from '../../src/util.js';
 
-const input = require('./testInputs');
+import * as input from './testInputs.js';
 
-module.exports = () => describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightweight', function () {
+export default () => describe('Elliptic Curve Cryptography for NIST P-256,P-384,P-521 curves @lightweight', function () {
   function omnibus() {
     it('Omnibus NIST P-256 Test', async function () {
       const testData = input.createSomeMessage();

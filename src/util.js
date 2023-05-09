@@ -24,6 +24,7 @@
  */
 
 import * as stream from '@openpgp/web-stream-tools';
+import { createRequire } from 'module'; // Must be stripped in browser built
 import { getBigInteger } from './biginteger';
 import enums from './enums';
 
@@ -38,6 +39,8 @@ const util = {
   isString: function(data) {
     return typeof data === 'string' || data instanceof String;
   },
+
+  nodeRequire: createRequire(import.meta.url),
 
   isArray: function(data) {
     return data instanceof Array;
@@ -396,11 +399,11 @@ const util = {
    * @returns {Object} The crypto module or 'undefined'.
    */
   getNodeCrypto: function() {
-    return require('crypto');
+    return this.nodeRequire('crypto');
   },
 
   getNodeZlib: function() {
-    return require('zlib');
+    return this.nodeRequire('zlib');
   },
 
   /**
@@ -409,7 +412,7 @@ const util = {
    * @returns {Function} The Buffer constructor or 'undefined'.
    */
   getNodeBuffer: function() {
-    return (require('buffer') || {}).Buffer;
+    return (this.nodeRequire('buffer') || {}).Buffer;
   },
 
   getHardwareConcurrency: function() {
@@ -417,7 +420,7 @@ const util = {
       return navigator.hardwareConcurrency || 1;
     }
 
-    const os = require('os'); // Assume we're on Node.js.
+    const os = this.nodeRequire('os'); // Assume we're on Node.js.
     return os.cpus().length;
   },
 
