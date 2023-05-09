@@ -1,9 +1,10 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const BN = require('bn.js');
-const random = require('../../src/crypto/random');
-const util = require('../../src/util');
+import BN from 'bn.js';
+import * as random from '../../src/crypto/random.js';
+import util from '../../src/util.js';
 
 let BigInteger;
 
@@ -18,7 +19,7 @@ async function getRandomBN(min, max) {
   return r.mod(modulus).add(min);
 }
 
-module.exports = () => describe('BigInteger interface', function() {
+export default () => describe('BigInteger interface', function() {
   before(async () => {
     BigInteger = await util.getBigInteger();
   });

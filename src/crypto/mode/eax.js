@@ -19,7 +19,6 @@
  * @fileoverview This module implements AES-EAX en/decryption on top of
  * native AES-CTR using either the WebCrypto API or Node.js' crypto API.
  * @module crypto/mode/eax
- * @private
  */
 
 import { AES_CTR } from '@openpgp/asmcrypto.js/dist_es8/aes/ctr';

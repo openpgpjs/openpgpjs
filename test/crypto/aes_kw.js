@@ -1,9 +1,9 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const aesKW = require('../../src/crypto/aes_kw');
-const util = require('../../src/util');
+import * as aesKW from '../../src/crypto/aes_kw.js';
+import util from '../../src/util.js';
 
-module.exports = () => describe('AES Key Wrap and Unwrap', function () {
+export default () => describe('AES Key Wrap and Unwrap', function () {
   const test_vectors = [
     [
       '128 bits of Key Data with a 128-bit KEK',

@@ -280,7 +280,7 @@ async function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
 
 /* eslint-disable no-invalid-this */
 
-const asn1 = nodeCrypto ? require('asn1.js') : undefined;
+const asn1 = nodeCrypto ? util.nodeRequire('asn1.js') : undefined;
 
 const ECDSASignature = nodeCrypto ?
   asn1.define('ECDSASignature', function() {

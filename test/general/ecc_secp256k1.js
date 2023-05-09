@@ -1,10 +1,11 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import util from '../../src/util.js';
 
-module.exports = () => describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', function () {
+export default () => describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', function () {
   if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
     before(function() {
       this.skip(); // eslint-disable-line no-invalid-this
