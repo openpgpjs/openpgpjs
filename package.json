@@ -13,13 +13,26 @@
     "gpg",
     "openpgp"
   ],
-  "main": "dist/node/openpgp.min.js",
+  "main": "dist/node/openpgp.min.cjs",
   "module": "dist/node/openpgp.min.mjs",
   "browser": {
     "./dist/node/openpgp.min.js": "./dist/openpgp.min.js",
     "./dist/node/openpgp.min.mjs": "./dist/openpgp.min.mjs"
   },
+  "exports": {
+    ".": {
+      "types": "./openpgp.d.ts",
+      "import": "./dist/node/openpgp.mjs",
+      "require": "./dist/node/openpgp.min.cjs",
+      "browser": "./dist/openpgp.min.mjs"
+    },
+    "./lightweight": {
+      "types": "../openpgp.d.ts",
+      "browser": "./dist/lightweight/openpgp.min.mjs"
+    }
+  },
   "types": "openpgp.d.ts",
+  "type": "module",
   "directories": {
     "lib": "src"
   },
@@ -28,27 +41,22 @@
     "lightweight/",
     "openpgp.d.ts"
   ],
-  "esm": {
-    "cjs": {
-      "dedefault": true
-    }
-  },
   "scripts": {
     "build": "rollup --config",
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
-    "test": "mocha --require esm --timeout 120000 test/unittests.js",
-    "test-type-definitions": "tsc test/typescript/definitions.ts && node test/typescript/definitions.js",
+    "test": "mocha --timeout 120000 test/unittests.js",
+    "test-type-definitions": "ts-node --esm test/typescript/definitions.ts",
     "benchmark-time": "node test/benchmarks/time.js",
-    "benchmark-memory-usage": "node --require esm test/benchmarks/memory_usage.js",
+    "benchmark-memory-usage": "node test/benchmarks/memory_usage.js",
     "start": "http-server",
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
-    "test-browser": "karma start test/karma.conf.js",
-    "test-browserstack": "karma start test/karma.conf.js --browsers bs_safari_latest,bs_ios_15,bs_safari_13_1",
+    "test-browser": "karma start test/karma.conf.cjs",
+    "test-browserstack": "karma start test/karma.conf.cjs --browsers bs_safari_latest,bs_ios_15,bs_safari_13_1",
     "coverage": "nyc npm test",
     "lint": "eslint .",
-    "docs": "jsdoc --configure .jsdocrc.js --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
+    "docs": "jsdoc --configure .jsdocrc.cjs --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
     "preversion": "rm -rf dist docs node_modules && npm ci && npm test",
     "version": "npm run docs && git add -A docs",
     "postversion": "git push && git push --tags && npm publish"
@@ -56,20 +64,22 @@
   "devDependencies": {
     "@openpgp/asmcrypto.js": "^2.3.2",
     "@openpgp/elliptic": "^6.5.1",
-    "@openpgp/jsdoc": "^3.6.4",
+    "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/pako": "^1.0.12",
     "@openpgp/seek-bzip": "^1.0.5-git",
     "@openpgp/tweetnacl": "^1.0.3",
-    "@openpgp/web-stream-tools": "^0.0.13",
-    "@rollup/plugin-commonjs": "^11.1.0",
-    "@rollup/plugin-node-resolve": "^7.1.3",
-    "@rollup/plugin-replace": "^2.3.2",
+    "@openpgp/web-stream-tools": "^0.0.14",
+    "@rollup/plugin-alias": "^5.0.0",
+    "@rollup/plugin-commonjs": "^24.0.1",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-replace": "^5.0.2",
+    "@rollup/plugin-terser": "^0.4.0",
     "@rollup/plugin-wasm": "^6.1.2",
     "@types/chai": "^4.2.14",
     "argon2id": "^1.0.0",
     "benchmark": "^2.1.4",
     "bn.js": "^4.11.8",
-    "chai": "^4.3.6",
+    "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "email-addresses": "3.1.0",
     "eslint": "^8.34.0",
@@ -77,7 +87,6 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-chai-friendly": "^0.7.2",
     "eslint-plugin-import": "^2.27.5",
-    "esm": "^3.2.25",
     "hash.js": "^1.1.3",
     "http-server": "^14.1.1",
     "karma": "^6.4.0",
@@ -87,12 +96,12 @@
     "karma-mocha": "^2.0.1",
     "karma-mocha-reporter": "^2.2.5",
     "karma-webkit-launcher": "^2.1.0",
-    "mocha": "^8.4.0",
+    "mocha": "^10.2.0",
     "nyc": "^14.1.1",
     "playwright": "^1.30.0",
-    "rollup": "^2.38.5",
-    "rollup-plugin-terser": "^7.0.2",
+    "rollup": "^2.79.1",
     "sinon": "^4.3.0",
+    "ts-node": "^10.9.1",
     "typescript": "^4.1.2",
     "web-streams-polyfill": "^3.2.0"
   },

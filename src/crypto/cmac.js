@@ -2,7 +2,6 @@
  * @fileoverview This module implements AES-CMAC on top of
  * native AES-CBC using either the WebCrypto API or Node.js' crypto API.
  * @module crypto/cmac
- * @private
  */
 
 import { AES_CBC } from '@openpgp/asmcrypto.js/dist_es8/aes/cbc';

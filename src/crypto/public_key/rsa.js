@@ -30,7 +30,7 @@ import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-const asn1 = nodeCrypto ? require('asn1.js') : undefined;
+const asn1 = nodeCrypto ? util.nodeRequire('asn1.js') : undefined;
 
 /* eslint-disable no-invalid-this */
 const RSAPrivateKey = nodeCrypto ? asn1.define('RSAPrivateKey', function () {

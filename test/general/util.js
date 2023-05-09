@@ -1,8 +1,7 @@
-const { expect } = require('chai');
-const util = require('../../src/util');
+import { expect } from 'chai';
+import util from '../../src/util';
 
-
-module.exports = () => describe('Util unit tests', function() {
+export default () => describe('Util unit tests', function() {
 
   describe('isString', function() {
     it('should return true for type "string"', function() {

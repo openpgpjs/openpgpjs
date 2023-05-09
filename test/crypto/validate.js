@@ -1,8 +1,9 @@
-const BN = require('bn.js');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import BN from 'bn.js';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
 
 const armoredDSAKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -86,7 +87,7 @@ async function generatePrivateKeyObject(options) {
 }
 
 /* eslint-disable no-invalid-this */
-module.exports = () => {
+export default () => {
   describe('EdDSA parameter validation', function() {
     let eddsaKey;
     before(async () => {

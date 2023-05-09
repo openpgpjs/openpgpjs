@@ -1,9 +1,9 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const hash = require('../../../src/crypto/hash');
-const util = require('../../../src/util');
+import hash from '../../../src/crypto/hash';
+import util from '../../../src/util.js';
 
-module.exports = () => it('SHA* with test vectors from NIST FIPS 180-2', async function() {
+export default () => it('SHA* with test vectors from NIST FIPS 180-2', async function() {
   expect(util.uint8ArrayToHex(await hash.sha1(util.stringToUint8Array('abc')), 'hash.sha1("abc") = a9993e364706816aba3e25717850c26c9cd0d89d')).to.equal('a9993e364706816aba3e25717850c26c9cd0d89d');
   expect(util.uint8ArrayToHex(await hash.sha1(util.stringToUint8Array('abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq')), 'hash.sha1("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq") = 84983e441c3bd26ebaae4aa1f95129e5e54670f1')).to.equal('84983e441c3bd26ebaae4aa1f95129e5e54670f1');
   expect(util.uint8ArrayToHex(await hash.sha224(util.stringToUint8Array('abc')), 'hash.sha224("abc") = 23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7')).to.equal('23097d223405d8228642a477bda255b32aadbce4bda0b3f7e36c9da7');

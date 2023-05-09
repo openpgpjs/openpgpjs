@@ -1,13 +1,14 @@
-const sandbox = require('sinon/lib/sinon/sandbox');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import sandbox from 'sinon/lib/sinon/sandbox';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const crypto = require('../../src/crypto');
-const util = require('../../src/util');
+const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import crypto from '../../src/crypto';
+import util from '../../src/util.js';
 
 
-module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
+export default () => describe('Symmetric AES-GCM (experimental)', function() {
   let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;
