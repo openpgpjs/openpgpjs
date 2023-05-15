@@ -2367,6 +2367,19 @@ function versionSpecificTests() {
     });
   });
 
+  it('Generate key - single userID (special email format)', async function() {
+    const userID = { name: 'test', email: 'test1@com.com09', comment: '' };
+    const opt = { userIDs: userID };
+    const { privateKey: armoredKey } = await openpgp.generateKey(opt);
+    // test also serialisation and parsing
+    const key = await openpgp.readKey({ armoredKey });
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <test1@com.com09>');
+    expect(key.users[0].userID.name).to.equal(userID.name);
+    expect(key.users[0].userID.email).to.equal(userID.email);
+    expect(key.users[0].userID.comment).to.equal(userID.comment);
+  });
+
   it('Generate key - setting date to the past', function() {
     const past = new Date(0);
     const opt = {
