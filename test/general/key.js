@@ -2123,6 +2123,100 @@ Be4ubVrj5KjhX2PVNEJd3XZRzaXZE2aAMQ==
 =ZeAz
 -----END PGP PUBLIC KEY BLOCK-----`;
 
+const keyWithImageData = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+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
+=kUWS
+-----END PGP PUBLIC KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2546,6 +2640,79 @@ function versionSpecificTests() {
       expect(signatures[2].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
       expect(signatures[2].valid).to.be.null;
       expect(signatures[3].userID).to.equal(publicKey.users[1].userID.userID);
+      expect(signatures[3].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[3].valid).to.be.null;
+    } finally {
+      openpgp.config.minRSABits = minRSABits;
+    }
+  });
+
+  it('Sign and verify a key with user attribute - all users', async function () {
+    let publicKey = await openpgp.readKey({ armoredKey: keyWithImageData });
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+      passphrase: 'hello world'
+    });
+
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
+    try {
+      publicKey = await publicKey.signAllUsers([privateKey]);
+      const signatures = await publicKey.verifyAllUsers([privateKey]);
+      const publicSigningKey = await publicKey.getSigningKey();
+      const privateSigningKey = await privateKey.getSigningKey();
+      expect(signatures.length).to.equal(4);
+      expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[0].userAttribute).to.be.null;
+      expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[0].valid).to.be.null;
+      expect(signatures[1].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[1].userAttribute).to.be.null;
+      expect(signatures[1].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[1].valid).to.be.true;
+      expect(signatures[2].userID).to.be.null;
+      expect(signatures[2].userAttribute.attributes[0]).to.be.not.empty;
+      expect(signatures[2].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[2].valid).to.be.null;
+      expect(signatures[3].userID).to.be.null;
+      expect(signatures[3].userAttribute.attributes[0]).to.be.not.empty;
+      expect(signatures[3].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[3].valid).to.be.true;
+    } finally {
+      openpgp.config.minRSABits = minRSABits;
+    }
+  });
+
+  it('Sign and verify a key with user attribute using wrong key - all users', async function () {
+    let publicKey = await openpgp.readKey({ armoredKey: keyWithImageData });
+    const privateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+      passphrase: 'hello world'
+    });
+    const wrongKey = await openpgp.readKey({ armoredKey: wrong_key });
+
+    const { minRSABits } = openpgp.config;
+    openpgp.config.minRSABits = 1024;
+    try {
+      publicKey = await publicKey.signAllUsers([privateKey]);
+      const signatures = await publicKey.verifyAllUsers([wrongKey]);
+      const publicSigningKey = await publicKey.getSigningKey();
+      const privateSigningKey = await privateKey.getSigningKey();
+      expect(signatures.length).to.equal(4);
+      expect(signatures[0].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[0].userAttribute).to.be.null;
+      expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[0].valid).to.be.null;
+      expect(signatures[1].userID).to.equal(publicKey.users[0].userID.userID);
+      expect(signatures[1].userAttribute).to.be.null;
+      expect(signatures[1].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
+      expect(signatures[1].valid).to.be.null;
+      expect(signatures[2].userID).to.be.null;
+      expect(signatures[2].userAttribute.attributes[0]).to.be.not.empty;
+      expect(signatures[2].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
+      expect(signatures[2].valid).to.be.null;
+      expect(signatures[3].userID).to.be.null;
+      expect(signatures[3].userAttribute.attributes[0]).to.be.not.empty;
       expect(signatures[3].keyID.toHex()).to.equal(privateSigningKey.getKeyID().toHex());
       expect(signatures[3].valid).to.be.null;
     } finally {

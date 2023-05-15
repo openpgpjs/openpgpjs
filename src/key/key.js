@@ -692,7 +692,8 @@ class Key {
 
       results.push(...signatures.map(
         signature => ({
-          userID: user.userID.userID,
+          userID: user.userID ? user.userID.userID : null,
+          userAttribute: user.userAttribute,
           keyID: signature.keyID,
           valid: signature.valid
         }))
