@@ -228,18 +228,17 @@ export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & {
   string
 }>;
 
-export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult & {
-  data:
+export function verify(options: VerifyOptions & { message: CleartextMessage, format?: 'utf8' }): Promise<VerifyMessageResult<string>>;
+export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
   T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
   Uint8Array
-}>;
-export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T> }): Promise<VerifyMessageResult & {
-  data:
+>>;
+export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T> }): Promise<VerifyMessageResult<
   T extends WebStream<infer X> ? WebStream<string> :
   T extends NodeStream<infer X> ? NodeStream<string> :
   string
-}>;
+>>;
 
 /** Class that represents an OpenPGP message.  Can be an encrypted message, signed message, compressed message or literal message
  */
@@ -721,8 +720,8 @@ interface DecryptMessageResult {
   filename: string;
 }
 
-interface VerifyMessageResult {
-  data: MaybeStream<Data>;
+interface VerifyMessageResult<T extends MaybeStream<Data> = MaybeStream<Data>> {
+  data: T;
   signatures: VerificationResult[];
 }
 
