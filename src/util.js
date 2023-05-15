@@ -457,11 +457,16 @@ const util = {
     return os.cpus().length;
   },
 
+  /**
+   * Test email format based on W3C HTML5 specification.
+   * This check is not exaustive, and includes a willful violation of RFC5322
+   * (see https://html.spec.whatwg.org/multipage/input.html#email-state-(type=email))
+   */
   isEmailAddress: function(data) {
     if (!util.isString(data)) {
       return false;
     }
-    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}[0-9]*|xn--[a-zA-Z\-0-9]+)))$/;
+    const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
     return re.test(data);
   },
 

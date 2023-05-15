@@ -958,17 +958,9 @@ export default () => describe('OpenPGP.js public api tests', function() {
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
     });
 
-    it('should fail for invalid user email address', async function() {
+    it('should fail for invalid user email address (missing @)', async function() {
       const opt = {
         userIDs: [{ name: 'Test User', email: 'textexample.com' }]
-      };
-      const test = openpgp.generateKey(opt);
-      await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
-    });
-
-    it('should fail for invalid user email address', async function() {
-      const opt = {
-        userIDs: [{ name: 'Test User', email: 'text@examplecom' }]
       };
       const test = openpgp.generateKey(opt);
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
