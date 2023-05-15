@@ -398,6 +398,8 @@ export default {
     splitPrivateKey: 16,
     /** 0x20 - This key may be used for authentication. */
     authentication: 32,
+    /** This key may be used for forwarded communications */
+    forwardedCommunication: 64,
     /** 0x80 - The private component of this key may be in the
      *        possession of more than one person. */
     sharedPrivateKey: 128

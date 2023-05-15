@@ -891,6 +891,7 @@ export namespace enums {
     encryptStorage = 8,
     splitPrivateKey = 16,
     authentication = 32,
+    forwardedCommunication = 64,
     sharedPrivateKey = 128
   }
 
@@ -936,4 +937,16 @@ export namespace enums {
     argon2 = 4,
     gnu = 101
   }
+}
+
+interface KDFParamsData {
+  version: number;
+  hash: enums.hash;
+  cipher: enums.symmetric;
+  replacementFingerprint?: Uint8Array;
+}
+
+export class KDFParams {
+  constructor(data: KDFParamsData);
+  write(forReplacementParams?: boolean): Uint8Array;
 }

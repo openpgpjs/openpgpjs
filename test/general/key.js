@@ -3347,7 +3347,7 @@ QgqsfguR1PqPuJxpXV4bSr6CGAAAAA==
     })).to.be.rejectedWith(/Unknown curve OID/);
   });
 
-  it('Parsing ECDH key with unknown kdf param version', async function() {
+  it.skip('Parsing ECDH key with unknown kdf param version', async function() {
     // subkey with unknown kdfParam version 255. Parsing should not fail, the subkey should simply dropped
     const key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 

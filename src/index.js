@@ -21,6 +21,8 @@ export { CleartextMessage, readCleartextMessage, createCleartextMessage } from '
 
 export * from './packet';
 
+export { default as KDFParams } from './type/kdf_params';
+
 export * from './encoding/armor';
 
 export { default as enums } from './enums';
