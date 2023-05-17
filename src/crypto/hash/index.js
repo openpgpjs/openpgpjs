@@ -3,7 +3,6 @@
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://github.com/indutny/hash.js|hash.js}
  * @module crypto/hash
- * @private
  */
 
 import { Sha1 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha1/sha1';

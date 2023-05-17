@@ -18,7 +18,6 @@
 /**
  * @fileoverview ElGamal implementation
  * @module crypto/public_key/elgamal
- * @private
  */
 
 import util from '../../util';

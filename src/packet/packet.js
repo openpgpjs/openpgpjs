@@ -18,7 +18,6 @@
 /**
  * @fileoverview Functions for reading and writing packets
  * @module packet/packet
- * @private
  */
 
 import * as stream from '@openpgp/web-stream-tools';

@@ -1,7 +1,6 @@
 /**
  * @fileoverview Symmetric cryptography functions
  * @module crypto/cipher
- * @private
  */
 
 import aes from './aes';

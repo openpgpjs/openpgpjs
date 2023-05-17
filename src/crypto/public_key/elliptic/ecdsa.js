@@ -18,7 +18,6 @@
 /**
  * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
  * @module crypto/public_key/elliptic/ecdsa
- * @private
  */
 
 import enums from '../../../enums';

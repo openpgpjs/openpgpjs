@@ -20,7 +20,6 @@
 /**
  * This object contains utility functions
  * @module util
- * @private
  */
 
 import * as stream from '@openpgp/web-stream-tools';

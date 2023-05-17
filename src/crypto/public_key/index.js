@@ -1,7 +1,6 @@
 /**
  * @fileoverview Asymmetric cryptography functions
  * @module crypto/public_key
- * @private
  */
 
 import nacl from '@openpgp/tweetnacl/nacl-fast-light';
