@@ -18,7 +18,6 @@
 /**
  * @fileoverview This module implements AES-OCB en/decryption.
  * @module crypto/mode/ocb
- * @private
  */
 
 import * as ciphers from '../cipher';

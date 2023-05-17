@@ -7,7 +7,6 @@
  * @see module:crypto/random
  * @see module:crypto/hash
  * @module crypto
- * @private
  */
 
 import * as cipher from './cipher';

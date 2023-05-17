@@ -18,7 +18,6 @@
 /**
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @module crypto/public_key/elliptic/curve
- * @private
  */
 
 import nacl from '@openpgp/tweetnacl/nacl-fast-light';

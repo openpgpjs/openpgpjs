@@ -20,7 +20,6 @@
 /**
  * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @module crypto/random
- * @private
  */
 import util from '../util';
 

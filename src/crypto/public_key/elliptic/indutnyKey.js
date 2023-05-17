@@ -18,7 +18,6 @@
 /**
  * @fileoverview Wrapper for a KeyPair of an curve from indutny/elliptic library
  * @module crypto/public_key/elliptic/indutnyKey
- * @private
  */
 
 import config from '../../../config';

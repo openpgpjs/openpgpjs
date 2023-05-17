@@ -1,7 +1,6 @@
 /**
  * @fileoverview Provides functions for asymmetric signing and signature verification
  * @module crypto/signature
- * @private
  */
 
 import publicKey from './public_key';

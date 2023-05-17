@@ -1,7 +1,6 @@
 /**
  * @fileoverview Provides helpers methods for key module
  * @module key/helper
- * @private
  */
 
 import {
