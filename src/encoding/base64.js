@@ -13,7 +13,6 @@
 
 /**
  * @module encoding/base64
- * @private
  */
 
 import * as stream from '@openpgp/web-stream-tools';
