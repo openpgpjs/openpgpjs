@@ -657,7 +657,7 @@ interface VerifyOptions {
   /** (optional) detached signature for verification */
   signature?: Signature;
   /** (optional) use the given date for verification instead of the current time */
-  date?: Date;
+  date?: Date | null;
   config?: PartialConfig;
 }
 
