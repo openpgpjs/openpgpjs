@@ -3329,10 +3329,8 @@ XfA3pqV4mTzF
           it('Streaming encrypt and decrypt small message roundtrip', async function() {
             const plaintext = [];
             let i = 0;
-            const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
             await loadStreamsPolyfill();
-            const GenericReadableStream = useNativeStream ? global.ReadableStream : ReadableStream;
-            const data = new GenericReadableStream({
+            const data = new globalThis.ReadableStream({
               pull(controller) {
                 if (i++ < 4) {
                   const randomBytes = random.getRandomBytes(10);
@@ -3347,7 +3345,7 @@ XfA3pqV4mTzF
               message: await openpgp.createMessage({ binary: data }),
               passwords: ['test']
             }));
-            expect(stream.isStream(encrypted)).to.equal(useNativeStream ? 'web' : 'web-like');
+            expect(stream.isStream(encrypted)).to.equal('web');
 
             const message = await openpgp.readMessage({ armoredMessage: encrypted });
             const decrypted = await openpgp.decrypt({
@@ -3355,7 +3353,7 @@ XfA3pqV4mTzF
               message,
               format: 'binary'
             });
-            expect(stream.isStream(decrypted.data)).to.equal(useNativeStream ? 'web' : 'web-like');
+            expect(stream.isStream(decrypted.data)).to.equal('web');
             expect(await stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
           });
         });
@@ -3658,17 +3656,13 @@ XfA3pqV4mTzF
 
       it('should streaming sign and verify binary data without one-pass signature', async function () {
         const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
-        const dataStream = global.ReadableStream ? new global.ReadableStream({
+        const dataStream = new globalThis.ReadableStream({
           start(controller) {
             controller.enqueue(data);
             controller.close();
           }
-        }) : new (require('stream').Readable)({
-          read() {
-            this.push(data);
-            this.push(null);
-          }
         });
+
         const signOpt = {
           message: await openpgp.createMessage({ binary: dataStream }),
           signingKeys: privateKey,
@@ -3679,7 +3673,7 @@ XfA3pqV4mTzF
           format: 'binary'
         };
         return openpgp.sign(signOpt).then(async function (signed) {
-          expect(stream.isStream(signed)).to.equal(global.ReadableStream ? 'web' : 'node');
+          expect(stream.isStream(signed)).to.equal('web');
           const message = await openpgp.readMessage({ binaryMessage: signed });
           message.packets.push(...await stream.readToEnd(message.packets.stream, _ => _));
           const packets = new openpgp.PacketList();
@@ -3687,12 +3681,12 @@ XfA3pqV4mTzF
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
           verifyOpt.message = await openpgp.readMessage({
             binaryMessage: stream[
-              global.ReadableStream ? 'toStream' : 'webToNode'
+              globalThis.ReadableStream ? 'toStream' : 'webToNode'
             ](packets.write())
           });
           return openpgp.verify(verifyOpt);
         }).then(async function (verified) {
-          expect(stream.isStream(verified.data)).to.equal(global.ReadableStream ? 'web' : 'node');
+          expect(stream.isStream(verified.data)).to.equal('web');
           expect([].slice.call(await stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
           expect(await verified.signatures[0].verified).to.be.true;
           expect(await privateKey.getSigningKey(verified.signatures[0].keyID))

@@ -12,9 +12,6 @@ import util from '../../src/util.js';
 
 import * as input from './testInputs.js';
 
-const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
-const NodeReadableStream = useNativeStream ? undefined : require('stream').Readable;
-
 const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
 
 const pub_key = [
@@ -180,17 +177,11 @@ let dataArrived;
 function tests() {
   it('Encrypt small message', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const encrypted = await openpgp.encrypt({
@@ -657,17 +648,11 @@ function tests() {
 
   it('Detached sign small message', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const signed = await openpgp.sign({
@@ -692,17 +677,11 @@ function tests() {
 
   it('Detached sign small message using brainpool curve keys', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const pub = await openpgp.readKey({ armoredKey: brainpoolPub });
@@ -734,17 +713,11 @@ function tests() {
 
   it('Detached sign small message using curve25519 keys (legacy format)', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       async start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const pub = await openpgp.readKey({ armoredKey: xPub });
@@ -843,7 +816,7 @@ function tests() {
 
       const plaintext = [];
       let i = 0;
-      const data = global.ReadableStream ? new global.ReadableStream({
+      const data = new globalThis.ReadableStream({
         async pull(controller) {
           await new Promise(resolve => { setTimeout(resolve, 10); });
           if (i++ < 10) {
@@ -852,20 +825,6 @@ function tests() {
             plaintext.push(randomData);
           } else {
             controller.close();
-          }
-        }
-      }) : new NodeReadableStream({
-        encoding: 'utf8',
-        async read() {
-          while (true) {
-            await new Promise(resolve => { setTimeout(resolve, 10); });
-            if (i++ < 10) {
-              const randomData = input.createSomeMessage();
-              plaintext.push(randomData);
-              if (!this.push(randomData)) break;
-            } else {
-              return this.push(null);
-            }
           }
         }
       });
@@ -970,7 +929,7 @@ export default () => describe('Streaming', function() {
     plaintext = [];
     i = 0;
     canceled = false;
-    data = global.ReadableStream ? new global.ReadableStream({
+    data = new globalThis.ReadableStream({
       async pull(controller) {
         await new Promise(setTimeout);
         if (test === currentTest && i < (expectedType === 'web' ? 100 : 500)) {
@@ -988,27 +947,8 @@ export default () => describe('Streaming', function() {
       }
     }, new ByteLengthQueuingStrategy({
       highWaterMark: 1024
-    })) : new NodeReadableStream({
-      highWaterMark: 1024,
-      async read() {
-        while (true) {
-          await new Promise(setTimeout);
-          if (test === currentTest && i < (expectedType === 'web' ? 100 : 500)) {
-            i++;
-            if (i === 4) await dataArrivedPromise;
-            const randomBytes = random.getRandomBytes(1024);
-            plaintext.push(randomBytes);
-            if (!this.push(randomBytes)) break;
-          } else {
-            return this.push(null);
-          }
-        }
-      },
-      destroy() {
-        canceled = true;
-      }
-    });
-    expectedType = global.ReadableStream ? 'web' : 'node';
+    }));
+    expectedType = 'web';
   });
 
   tests();
