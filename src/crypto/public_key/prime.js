@@ -18,7 +18,6 @@
 /**
  * @fileoverview Algorithms for probabilistic random prime generation
  * @module crypto/public_key/prime
- * @private
  */
 
 import util from '../../util';

@@ -19,7 +19,6 @@
 
 /**
  * @module crypto/mode/cfb
- * @private
  */
 
 import { AES_CFB } from '@openpgp/asmcrypto.js/dist_es8/aes/cfb';

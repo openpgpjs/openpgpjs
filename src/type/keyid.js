@@ -17,7 +17,6 @@
 
 /**
  * @module type/keyid
- * @private
  */
 
 import util from '../util';
