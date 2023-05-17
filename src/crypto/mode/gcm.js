@@ -19,7 +19,6 @@
  * @fileoverview This module wraps native AES-GCM en/decryption for both
  * the WebCrypto api as well as node.js' crypto api.
  * @module crypto/mode/gcm
- * @private
  */
 
 import { AES_GCM } from '@openpgp/asmcrypto.js/dist_es8/aes/gcm';

@@ -25,7 +25,6 @@
  * private keyring, and to convert passphrases to encryption keys for
  * symmetrically encrypted messages.
  * @module type/s2k
- * @private
  */
 
 import defaultConfig from '../../config';

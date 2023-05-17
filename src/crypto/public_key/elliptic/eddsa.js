@@ -18,7 +18,6 @@
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
  * @module crypto/public_key/elliptic/eddsa
- * @private
  */
 
 import sha512 from 'hash.js/lib/hash/sha/512';

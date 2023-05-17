@@ -21,7 +21,6 @@
  * @fileoverview Provides functions for asymmetric encryption and decryption as
  * well as key generation and parameter handling for all public-key cryptosystems.
  * @module crypto/crypto
- * @private
  */
 
 import publicKey from './public_key';
