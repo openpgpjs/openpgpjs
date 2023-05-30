@@ -21,7 +21,7 @@
  * @module crypto/mode/cfb
  */
 
-import { AES_CFB } from '@openpgp/asmcrypto.js/dist_es8/aes/cfb';
+import { AES_CFB } from '@openpgp/asmcrypto.js/aes/cfb.js';
 import * as stream from '@openpgp/web-stream-tools';
 import getCipher from '../cipher/getCipher';
 import util from '../../util';
