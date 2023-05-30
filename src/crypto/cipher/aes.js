@@ -1,4 +1,4 @@
-import { AES_ECB } from '@openpgp/asmcrypto.js/dist_es8/aes/ecb';
+import { AES_ECB } from '@openpgp/asmcrypto.js/aes/ecb.js';
 
 /**
  * Javascript AES implementation.

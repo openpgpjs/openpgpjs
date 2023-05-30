@@ -21,7 +21,7 @@
  * @module crypto/mode/eax
  */
 
-import { AES_CTR } from '@openpgp/asmcrypto.js/dist_es8/aes/ctr';
+import { AES_CTR } from '@openpgp/asmcrypto.js/aes/ctr.js';
 import CMAC from '../cmac';
 import util from '../../util';
 import enums from '../../enums';
