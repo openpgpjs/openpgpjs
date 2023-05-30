@@ -62,9 +62,10 @@
     "postversion": "git push && git push --tags && npm publish"
   },
   "devDependencies": {
-    "@openpgp/asmcrypto.js": "^2.3.2",
+    "@openpgp/asmcrypto.js": "^3.0.0",
     "@openpgp/elliptic": "^6.5.1",
     "@openpgp/jsdoc": "^3.6.11",
+    "@openpgp/noble-hashes": "^1.3.2-1",
     "@openpgp/seek-bzip": "^1.0.5-git",
     "@openpgp/tweetnacl": "^1.0.3",
     "@openpgp/web-stream-tools": "^0.0.14",
