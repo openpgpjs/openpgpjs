@@ -21,7 +21,7 @@
  * @module crypto/mode/gcm
  */
 
-import { AES_GCM } from '@openpgp/asmcrypto.js/dist_es8/aes/gcm';
+import { AES_GCM } from '@openpgp/asmcrypto.js/aes/gcm.js';
 import util from '../../util';
 import enums from '../../enums';
 
