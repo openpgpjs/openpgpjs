@@ -5,8 +5,8 @@
  * @module crypto/hash
  */
 
-import { Sha1 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha1/sha1';
-import { Sha256 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha256/sha256';
+import { sha1 } from '@openpgp/noble-hashes/sha1';
+import { sha256 } from '@openpgp/noble-hashes/sha256';
 import sha224 from 'hash.js/lib/hash/sha/224';
 import sha384 from 'hash.js/lib/hash/sha/384';
 import sha512 from 'hash.js/lib/hash/sha/512';
@@ -48,29 +48,29 @@ function hashjsHash(hash, webCryptoHash) {
   };
 }
 
-function asmcryptoHash(hash, webCryptoHash) {
+function nobleHash(hash, webCryptoHash) {
   return async function(data, config = defaultConfig) {
     if (stream.isArrayStream(data)) {
       data = await stream.readToEnd(data);
     }
     if (util.isStream(data)) {
-      const hashInstance = new hash();
+      const hashInstance = hash.create();
       return stream.transform(data, value => {
-        hashInstance.process(value);
-      }, () => hashInstance.finish().result);
+        hashInstance.update(value);
+      }, () => hashInstance.digest());
     } else if (webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     } else {
-      return hash.bytes(data);
+      return hash(data);
     }
   };
 }
 
 const hashFunctions = {
   md5: nodeHash('md5') || md5,
-  sha1: nodeHash('sha1') || asmcryptoHash(Sha1, 'SHA-1'),
+  sha1: nodeHash('sha1') || nobleHash(sha1, 'SHA-1'),
   sha224: nodeHash('sha224') || hashjsHash(sha224),
-  sha256: nodeHash('sha256') || asmcryptoHash(Sha256, 'SHA-256'),
+  sha256: nodeHash('sha256') || nobleHash(sha256, 'SHA-256'),
   sha384: nodeHash('sha384') || hashjsHash(sha384, 'SHA-384'),
   sha512: nodeHash('sha512') || hashjsHash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
   ripemd: nodeHash('ripemd160') || hashjsHash(ripemd160)

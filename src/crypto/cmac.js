@@ -4,7 +4,7 @@
  * @module crypto/cmac
  */
 
-import { AES_CBC } from '@openpgp/asmcrypto.js/dist_es8/aes/cbc';
+import { AES_CBC } from '@openpgp/asmcrypto.js/aes/cbc.js';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto();
