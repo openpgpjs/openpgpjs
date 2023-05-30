@@ -96,7 +96,7 @@ export async function encrypt(algo, key, plaintext, iv, config) {
  */
 export async function decrypt(algo, key, ciphertext, iv) {
   const algoName = enums.read(enums.symmetric, algo);
-  if (util.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
+  if (nodeCrypto && nodeAlgos[algoName]) { // Node crypto library.
     return nodeDecrypt(algo, key, ciphertext, iv);
   }
   if (util.isAES(algo)) {
@@ -129,18 +129,122 @@ export async function decrypt(algo, key, ciphertext, iv) {
   return stream.transform(ciphertext, process, process);
 }
 
-function aesEncrypt(algo, key, pt, iv, config) {
-  if (
-    util.getWebCrypto() &&
-    key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    !util.isStream(pt) &&
-    pt.length >= 3000 * config.minBytesForWebCrypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
-  ) { // Web Crypto
-    return webEncrypt(algo, key, pt, iv);
+class WebCryptoEncryptor {
+  constructor(algo, key, iv) {
+    const { blockSize } = getCipher(algo);
+    this.key = key;
+    this.prevBlock = iv;
+    this.nextBlock = new Uint8Array(blockSize);
+    this.i = 0; // pointer inside next block
+    this.blockSize = blockSize;
+    this.zeroBlock = new Uint8Array(this.blockSize);
   }
-  // asm.js fallback
-  const cfb = new AES_CFB(key, iv);
-  return stream.transform(pt, value => cfb.aes.AES_Encrypt_process(value), () => cfb.aes.AES_Encrypt_finish());
+
+  static async isSupported(algo) {
+    const { keySize } = getCipher(algo);
+    return webCrypto.importKey('raw', new Uint8Array(keySize), 'aes-cbc', false, ['encrypt'])
+      .then(() => true, () => false);
+  }
+
+  async _runCBC(plaintext, nonZeroIV) {
+    const mode = 'AES-CBC';
+    this.keyRef = this.keyRef || await webCrypto.importKey('raw', this.key, mode, false, ['encrypt']);
+    const ciphertext = await webCrypto.encrypt(
+      { name: mode, iv: nonZeroIV || this.zeroBlock },
+      this.keyRef,
+      plaintext
+    );
+    return new Uint8Array(ciphertext).subarray(0, plaintext.length);
+  }
+
+  async encryptChunk(value) {
+    const missing = this.nextBlock.length - this.i;
+    const added = value.subarray(0, missing);
+    this.nextBlock.set(added, this.i);
+    if ((this.i + value.length) >= (2 * this.blockSize)) {
+      const leftover = (value.length - missing) % this.blockSize;
+      const plaintext = util.concatUint8Array([
+        this.nextBlock,
+        value.subarray(missing, value.length - leftover)
+      ]);
+      const toEncrypt = util.concatUint8Array([
+        this.prevBlock,
+        plaintext.subarray(0, plaintext.length - this.blockSize) // stop one block "early", since we only need to xor the plaintext and pass it over as prevBlock
+      ]);
+
+      const encryptedBlocks = await this._runCBC(toEncrypt);
+      xorMut(encryptedBlocks, plaintext);
+      this.prevBlock = encryptedBlocks.subarray(-this.blockSize).slice();
+
+      // take care of leftover data
+      if (leftover > 0) this.nextBlock.set(value.subarray(-leftover).slice());
+      this.i = leftover;
+
+      return encryptedBlocks;
+    }
+
+    this.i += added.length;
+    let encryptedBlock = new Uint8Array();
+    if (this.i === this.nextBlock.length) { // block ready to be encrypted
+      const curBlock = this.nextBlock;
+      encryptedBlock = await this._runCBC(this.prevBlock);
+      xorMut(encryptedBlock, curBlock);
+      this.prevBlock = encryptedBlock.slice();
+      this.i = 0;
+
+      const remaining = value.subarray(added.length);
+      this.nextBlock.set(remaining, this.i);
+      this.i += remaining.length;
+    }
+
+    return encryptedBlock;
+  }
+
+  async finish() {
+    let result;
+    if (this.i === 0) { // nothing more to encrypt
+      result = new Uint8Array();
+    } else {
+      this.nextBlock = this.nextBlock.subarray(0, this.i);
+      const curBlock = this.nextBlock;
+      const encryptedBlock = await this._runCBC(this.prevBlock);
+      xorMut(encryptedBlock, curBlock);
+      result = encryptedBlock.subarray(0, curBlock.length);
+    }
+
+    this.clearSensitiveData();
+    return result;
+  }
+
+  clearSensitiveData() {
+    this.nextBlock.fill(0);
+    this.prevBlock.fill(0);
+    this.keyRef = null;
+    this.key = null;
+  }
+
+  async encrypt(plaintext) {
+    // plaintext is internally padded to block length before encryption
+    const encryptedWithPadding = await this._runCBC(
+      util.concatUint8Array([new Uint8Array(this.blockSize), plaintext]),
+      this.iv
+    );
+    // drop encrypted padding
+    const ct = encryptedWithPadding.subarray(0, plaintext.length);
+    xorMut(ct, plaintext);
+    this.clearSensitiveData();
+    return ct;
+  }
+}
+
+async function aesEncrypt(algo, key, pt, iv) {
+  if (webCrypto && await WebCryptoEncryptor.isSupported(algo)) { // Chromium does not implement AES with 192-bit keys
+    const cfb = new WebCryptoEncryptor(algo, key, iv);
+    return util.isStream(pt) ? stream.transform(pt, value => cfb.encryptChunk(value), () => cfb.finish()) : cfb.encrypt(pt);
+  } else {
+    const cfb = new AES_CFB(key, iv);
+    return stream.transform(pt, value => cfb.aes.AES_Encrypt_process(value), () => cfb.aes.AES_Encrypt_finish());
+  }
 }
 
 function aesDecrypt(algo, key, ct, iv) {
@@ -152,19 +256,10 @@ function aesDecrypt(algo, key, ct, iv) {
 }
 
 function xorMut(a, b) {
-  for (let i = 0; i < a.length; i++) {
+  const aLength = Math.min(a.length, b.length);
+  for (let i = 0; i < aLength; i++) {
     a[i] = a[i] ^ b[i];
   }
-}
-
-async function webEncrypt(algo, key, pt, iv) {
-  const ALGO = 'AES-CBC';
-  const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
-  const { blockSize } = getCipher(algo);
-  const cbc_pt = util.concatUint8Array([new Uint8Array(blockSize), pt]);
-  const ct = new Uint8Array(await webCrypto.encrypt({ name: ALGO, iv }, _key, cbc_pt)).subarray(0, pt.length);
-  xorMut(ct, pt);
-  return ct;
 }
 
 function nodeEncrypt(algo, key, pt, iv) {
