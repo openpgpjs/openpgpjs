@@ -1,4 +1,5 @@
 import Benchmark from 'benchmark';
+import { readToEnd } from '@openpgp/web-stream-tools';
 import * as openpgp from 'openpgp';
 
 const wrapAsync = func => ({
@@ -25,6 +26,22 @@ const onError = err => {
 (async () => {
   const suite = new Benchmark.Suite();
   const { armoredKey, privateKey, publicKey, armoredEncryptedMessage, armoredSignedMessage } = await getTestData();
+  function* largeDataGenerator({ chunk, numberOfChunks }) {
+    for (let chunkNumber = 0; chunkNumber < numberOfChunks; chunkNumber++) {
+      yield chunk;
+    }
+  }
+
+  const streamFromGenerator = it => new ReadableStream({
+    pull: controller => {
+      const { value, done } = it.next();
+      if (done) {
+        controller.close();
+      } else {
+        controller.enqueue(value);
+      }
+    }
+  });
 
   suite.add('openpgp.readKey', wrapAsync(async () => {
     await openpgp.readKey({ armoredKey });
@@ -46,6 +63,14 @@ const onError = err => {
   suite.add('openpgp.sign', wrapAsync(async () => {
     const message = await openpgp.createMessage({ text: 'plaintext' });
     await openpgp.sign({ message, signingKeys: privateKey });
+  }));
+
+  suite.add('openpgp.sign (stream)', wrapAsync(async () => {
+    const inputStream = streamFromGenerator(largeDataGenerator({ chunk: new Uint8Array(10000), numberOfChunks: 10 }));
+    const message = await openpgp.createMessage({ binary: inputStream });
+    const signed = await openpgp.sign({ message, signingKeys: privateKey });
+
+    await readToEnd(signed);
   }));
 
   suite.add('openpgp.decrypt', wrapAsync(async () => {
