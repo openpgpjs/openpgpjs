@@ -29,6 +29,7 @@ jobs:
 
   node:
     strategy:
+      fail-fast: false # if tests for one version fail, continue with the rest
       matrix:
         node-version: [16.x, 18.x, '20']
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
