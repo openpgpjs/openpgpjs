@@ -15,9 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { Deflate } from '@openpgp/pako/lib/deflate';
-import { Inflate } from '@openpgp/pako/lib/inflate';
-import { Z_SYNC_FLUSH, Z_FINISH } from '@openpgp/pako/lib/zlib/constants';
+import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
 import { decode as BunzipDecode } from '@openpgp/seek-bzip';
 import * as stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
@@ -168,18 +166,45 @@ function node_zlib(func, create, options = {}) {
   };
 }
 
-function pako_zlib(constructor, options = {}) {
-  return function(data) {
-    const obj = new constructor(options);
-    return stream.transform(data, value => {
-      if (value.length) {
-        obj.push(value, Z_SYNC_FLUSH);
-        return obj.result;
-      }
-    }, () => {
-      if (constructor === Deflate) {
-        obj.push([], Z_FINISH);
-        return obj.result;
+function fflate_zlib(ZlibStreamedConstructor, options) {
+  return data => {
+    if (!util.isStream(data) || stream.isArrayStream(data)) {
+      return stream.fromAsync(() => stream.readToEnd(data).then(inputData => {
+        return new Promise((resolve, reject) => {
+          const zlibStream = new ZlibStreamedConstructor(options);
+          zlibStream.ondata = processedData => {
+            resolve(processedData);
+          };
+          try {
+            zlibStream.push(inputData, true); // only one chunk to push
+          } catch (err) {
+            reject(err);
+          }
+        });
+      }));
+    }
+
+    const inputReader = data.getReader();
+    const zlibStream = new ZlibStreamedConstructor(options);
+
+    return new ReadableStream({
+      async start(controller) {
+        zlibStream.ondata = async (value, isLast) => {
+          controller.enqueue(value);
+          if (isLast) {
+            controller.close();
+          }
+        };
+
+        while (true) {
+          const { done, value } = await inputReader.read();
+          if (done) {
+            zlibStream.push(new Uint8Array(), true);
+            return;
+          } else if (value.length) {
+            zlibStream.push(value);
+          }
+        }
       }
     });
   };
@@ -195,8 +220,8 @@ const compress_fns = nodeZlib ? {
   zip: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.deflateRaw, nodeZlib.createDeflateRaw, { level })(compressed),
   zlib: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.deflate, nodeZlib.createDeflate, { level })(compressed)
 } : {
-  zip: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { raw: true, level })(compressed),
-  zlib: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { level })(compressed)
+  zip: /*#__PURE__*/ (compressed, level) => fflate_zlib(Deflate, { level })(compressed),
+  zlib: /*#__PURE__*/ (compressed, level) => fflate_zlib(Zlib, { level })(compressed)
 };
 
 const decompress_fns = nodeZlib ? {
@@ -206,8 +231,8 @@ const decompress_fns = nodeZlib ? {
   bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
 } : {
   uncompressed: uncompressed,
-  zip: /*#__PURE__*/ pako_zlib(Inflate, { raw: true }),
-  zlib: /*#__PURE__*/ pako_zlib(Inflate),
+  zip: /*#__PURE__*/ fflate_zlib(Inflate),
+  zlib: /*#__PURE__*/ fflate_zlib(Unzlib),
   bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
 };
 
