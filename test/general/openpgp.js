@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 /* globals tryTests, loadStreamsPolyfill */
-import spy from 'sinon/lib/sinon/spy';
+import sinon from 'sinon';
 import * as stream from '@openpgp/web-stream-tools';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
@@ -865,8 +865,8 @@ function withCompression(tests) {
       let decompressSpy;
 
       beforeEach(function () {
-        compressSpy = spy(openpgp.CompressedDataPacket.prototype, 'compress');
-        decompressSpy = spy(openpgp.CompressedDataPacket.prototype, 'decompress');
+        compressSpy = sinon.spy(openpgp.CompressedDataPacket.prototype, 'compress');
+        decompressSpy = sinon.spy(openpgp.CompressedDataPacket.prototype, 'decompress');
       });
 
       afterEach(function () {

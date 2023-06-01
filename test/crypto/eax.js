@@ -1,7 +1,7 @@
 // Modified by ProtonTech AG
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
-import sandbox from 'sinon/lib/sinon/sandbox';
+import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
@@ -148,7 +148,7 @@ export default () => describe('Symmetric AES-EAX', function() {
     });
 
     beforeEach(function () {
-      sinonSandbox = sandbox.create();
+      sinonSandbox = sinon.createSandbox();
       enableNative();
     });
 
@@ -161,7 +161,7 @@ export default () => describe('Symmetric AES-EAX', function() {
 
   describe('Symmetric AES-EAX (asm.js fallback)', function() {
     beforeEach(function () {
-      sinonSandbox = sandbox.create();
+      sinonSandbox = sinon.createSandbox();
       disableNative();
     });
 

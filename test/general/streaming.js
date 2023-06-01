@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 /* globals loadStreamsPolyfill */
 import * as stream from '@openpgp/web-stream-tools';
-import stub from 'sinon/lib/sinon/stub';
+import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
@@ -850,7 +850,7 @@ function tests() {
     it("Don't pull entire input stream when we're not pulling decrypted stream (AEAD)", async function() {
       let coresStub;
       if (detectNode()) {
-        coresStub = stub(util.nodeRequire('os'), 'cpus');
+        coresStub = sinon.stub(util.nodeRequire('os'), 'cpus');
         coresStub.returns(new Array(2));
         // Object.defineProperty(require('os'), 'cpus', { value: () => [,], configurable: true });
       } else {
