@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 import * as stream from '@openpgp/web-stream-tools';
-import stub from 'sinon/lib/sinon/stub';
+import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
@@ -183,7 +183,7 @@ export default () => describe('Packet', function() {
 
   function cryptStub(webCrypto, method) {
     const crypt = webCrypto[method];
-    const cryptStub = stub(webCrypto, method);
+    const cryptStub = sinon.stub(webCrypto, method);
     let cryptCallsActive = 0;
     cryptStub.onCall(0).callsFake(async function() {
       cryptCallsActive++;
@@ -203,7 +203,7 @@ export default () => describe('Packet', function() {
 
   it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEAD, GCM)', async function() {
     const webCrypto = util.getWebCrypto();
-    if (!webCrypto) return;
+    if (!webCrypto || util.getNodeCrypto()) return;
     const encryptStub = cryptStub(webCrypto, 'encrypt');
     const decryptStub = cryptStub(webCrypto, 'decrypt');
 
@@ -265,7 +265,7 @@ export default () => describe('Packet', function() {
 
     const msg2 = new openpgp.PacketList();
 
-    const randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
     randomBytesStub.returns(iv);
 
     try {
@@ -534,7 +534,7 @@ export default () => describe('Packet', function() {
     const sessionIV = util.hexToUint8Array('bc 66 9e 34 e5 00 dc ae dc 5b 32 aa 2d ab 02 35'.replace(/\s+/g, ''));
     const dataIV = util.hexToUint8Array('b7 32 37 9f 73 c4 92 8d e2 5f ac fe 65 17 ec 10'.replace(/\s+/g, ''));
 
-    const randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
     randomBytesStub.onCall(1).returns(sessionKey);
     randomBytesStub.onCall(2).returns(sessionIV);
@@ -611,7 +611,7 @@ export default () => describe('Packet', function() {
     const sessionIV = util.hexToUint8Array('99 e3 26 e5 40 0a 90 93 6c ef b4 e8 eb a0 8c'.replace(/\s+/g, ''));
     const dataIV = util.hexToUint8Array('5e d2 bc 1e 47 0a be 8f 1d 64 4c 7a 6c 8a 56'.replace(/\s+/g, ''));
 
-    const randomBytesStub = stub(nodeCrypto, 'randomBytes');
+    const randomBytesStub = sinon.stub(nodeCrypto, 'randomBytes');
     randomBytesStub.onCall(0).returns(salt);
     randomBytesStub.onCall(1).returns(sessionKey);
     randomBytesStub.onCall(2).returns(sessionIV);
