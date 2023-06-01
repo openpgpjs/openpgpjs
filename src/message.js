@@ -24,7 +24,7 @@ import crypto from './crypto';
 import enums from './enums';
 import util from './util';
 import { Signature } from './signature';
-import { getPreferredHashAlgo, getPreferredCipherSuite, createSignaturePacket } from './key';
+import { getPreferredCipherSuite, createSignaturePacket } from './key';
 import {
   PacketList,
   LiteralDataPacket,
@@ -514,49 +514,14 @@ export class Message {
       throw new Error('No literal data packet to sign.');
     }
 
-    let i;
-    let existingSigPacketlist;
-    // If data packet was created from Uint8Array, use binary, otherwise use text
-    const signatureType = literalDataPacket.text === null ?
-      enums.signature.binary : enums.signature.text;
+    const signaturePackets = await createSignaturePackets(literalDataPacket, signingKeys, signature, signingKeyIDs, date, userIDs, notations, false, config); // this returns the existing signature packets as well
+    const onePassSignaturePackets = signaturePackets.map(
+      (signaturePacket, i) => OnePassSignaturePacket.fromSignaturePacket(signaturePacket, i === 0))
+      .reverse(); // innermost OPS refers to the first signature packet
 
-    if (signature) {
-      existingSigPacketlist = signature.packets.filterByTag(enums.packet.signature);
-      for (i = existingSigPacketlist.length - 1; i >= 0; i--) {
-        const signaturePacket = existingSigPacketlist[i];
-        const onePassSig = new OnePassSignaturePacket();
-        onePassSig.signatureType = signaturePacket.signatureType;
-        onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
-        onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
-        onePassSig.issuerKeyID = signaturePacket.issuerKeyID;
-        if (!signingKeys.length && i === 0) {
-          onePassSig.flags = 1;
-        }
-        packetlist.push(onePassSig);
-      }
-    }
-
-    await Promise.all(Array.from(signingKeys).reverse().map(async function (primaryKey, i) {
-      if (!primaryKey.isPrivate()) {
-        throw new Error('Need private key for signing');
-      }
-      const signingKeyID = signingKeyIDs[signingKeys.length - 1 - i];
-      const signingKey = await primaryKey.getSigningKey(signingKeyID, date, userIDs, config);
-      const onePassSig = new OnePassSignaturePacket();
-      onePassSig.signatureType = signatureType;
-      onePassSig.hashAlgorithm = await getPreferredHashAlgo(primaryKey, signingKey.keyPacket, date, userIDs, config);
-      onePassSig.publicKeyAlgorithm = signingKey.keyPacket.algorithm;
-      onePassSig.issuerKeyID = signingKey.getKeyID();
-      if (i === signingKeys.length - 1) {
-        onePassSig.flags = 1;
-      }
-      return onePassSig;
-    })).then(onePassSignatureList => {
-      onePassSignatureList.forEach(onePassSig => packetlist.push(onePassSig));
-    });
-
+    packetlist.push(...onePassSignaturePackets);
     packetlist.push(literalDataPacket);
-    packetlist.push(...(await createSignaturePackets(literalDataPacket, signingKeys, signature, signingKeyIDs, date, userIDs, notations, false, config)));
+    packetlist.push(...signaturePackets);
 
     return new Message(packetlist);
   }
@@ -733,6 +698,7 @@ export class Message {
  * @param {Date} [date] - Override the creationtime of the signature
  * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
  * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
+ * @param {Array} [signatureSalts] - A list of signature salts matching the number of signingKeys that should be used for v6 signatures
  * @param {Boolean} [detached] - Whether to create detached signature packets
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {Promise<PacketList>} List of signature packets.

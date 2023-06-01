@@ -710,6 +710,68 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(signature.getSigningKeyIDs().map(x => x.toHex())).to.include(publicKey.getKeyID().toHex());
   });
 
+  it('Generates valid one-pass signature packets (v6 keys)', async function () {
+    const v6PrivateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+    const v4PrivateKey = await openpgp.readKey({
+      armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEZOjwQBYJKwYBBAHaRw8BAQdAIzsYHb7T7NhSFmkWKSk5ItaBYv2HET7u
+IFXhGdvOpogAAQDMk8SQlysNkLe7VRwXedX63St1a2V6/dzDG926oPyW3hJ6
+zQ48dGVzdEB0ZXN0Lml0PsKMBBAWCgA+BYJk6PBABAsJBwgJkFMSwQwprjrH
+AxUICgQWAAIBAhkBApsDAh4BFiEEwKKS1V/wldBNfwpjUxLBDCmuOscAAONc
+AQDU1gi9moPtQzh6rrpKPWZ8nMSiZzLb3LYmpqz9Tn9YFAEAmEC2uHET/Oj6
+VVxvMwvGytr5y0nuc6ZV5D0I2qoMcAHHXQRk6PBAEgorBgEEAZdVAQUBAQdA
+xeBFSxzKOtLEQ6mVO2mnxvDiiMKmq7NbOezoWkbeSjgDAQgHAAD/YMvH+eDP
+h1RplHOiaAMwhpTRGSGOaC6+pu6AMWiRLWAQ88J4BBgWCAAqBYJk6PBACZBT
+EsEMKa46xwKbDBYhBMCiktVf8JXQTX8KY1MSwQwprjrHAAD4igEAzoExR6VX
+EY9xxFKtAVdtYOT61d0FZibs0TD0VjbqzdkBAK60jT9jKefpnZ9sGv7bhSRX
+2hrIPyCF2f0R5Js3LCML
+=xyQ6
+-----END PGP PRIVATE KEY BLOCK-----`
+    });
+    const armoredSignedMessage = await openpgp.sign({
+      message: await openpgp.createMessage({ text: 'test' }),
+      signingKeys: [v6PrivateKey, v4PrivateKey, v6PrivateKey] // get multiple signature packets
+    });
+    const signedMessage = await openpgp.readMessage({ armoredMessage: armoredSignedMessage });
+    // read signature packet stream
+    signedMessage.packets.push(...await stream.readToEnd(signedMessage.packets.stream, _ => _));
+    const signature1 = signedMessage.packets[4];
+    const signature2 = signedMessage.packets[5]; // v4 sig
+    const signature3 = signedMessage.packets[6];
+    const opsSignature1 = signedMessage.packets[2];
+    const opsSignature2 = signedMessage.packets[1];
+    const opsSignature3 = signedMessage.packets[0];
+    expect(opsSignature1).to.be.instanceOf(openpgp.OnePassSignaturePacket);
+    expect(signature1).to.be.instanceOf(openpgp.SignaturePacket);
+    expect(opsSignature2).to.be.instanceOf(openpgp.OnePassSignaturePacket);
+    expect(signature2).to.be.instanceOf(openpgp.SignaturePacket);
+    expect(opsSignature3).to.be.instanceOf(openpgp.OnePassSignaturePacket);
+    expect(signature3).to.be.instanceOf(openpgp.SignaturePacket);
+    expect(opsSignature1.version).to.equal(6);
+    expect(opsSignature2.version).to.equal(3);
+    expect(opsSignature3.version).to.equal(6);
+    expect(util.uint8ArrayToHex(opsSignature1.issuerFingerprint)).to.equal(v6PrivateKey.getFingerprint());
+    expect(util.uint8ArrayToHex(opsSignature3.issuerFingerprint)).to.equal(v6PrivateKey.getFingerprint());
+    expect(opsSignature1.salt).to.deep.equal(signature1.salt);
+    expect(opsSignature2.salt).to.be.null;
+    expect(opsSignature3.salt).to.deep.equal(signature3.salt);
+    expect(opsSignature1.salt).to.not.deep.equal(opsSignature3.salt); // sanity check
+  });
+
   it('Throws when reading a signature missing the creation time', async function () {
     const armoredSignature = `-----BEGIN PGP SIGNATURE-----
 
@@ -1109,7 +1171,92 @@ Fk7EflUZzngwY4lBzYAfnNBjEjc30xD/ddo+rwE=
     });
   });
 
-  it('Verify signed message with two one pass signatures', async function() {
+
+  it('Verify signed message with a v6 one pass signature', async function() {
+    // test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.7
+    const message = await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+
+xEYGAQobIHZJX1AhiJD39eLuPBgiUU9wUA9VHYblySHkBONKU/usyxhsTwYJppfk
+1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkBy0p1AAAAAABXaGF0IHdlIG5lZWQgZnJv
+bSB0aGUgZ3JvY2VyeSBzdG9yZToKCi0gdG9mdQotIHZlZ2V0YWJsZXMKLSBub29k
+bGVzCsKYBgEbCgAAACkFgmOYo2MiIQbLGGxPBgmml+TVLfpscisMHx4nwYpWcI9l
+JewnutmsyQAAAABpNiB2SV9QIYiQ9/Xi7jwYIlFPcFAPVR2G5ckh5ATjSlP7rCfQ
+b7gKqPxbyxbhljGygHQPnqau1eBzrQD5QVplPEDnemrnfmkrpx0GmhCfokxYz9jj
+FtCgazStmsuOXF9SFQE=
+-----END PGP MESSAGE-----` });
+    const key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xioGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laPCsQYf
+GwoAAABCBYJjh3/jAwsJBwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxy
+KwwfHifBilZwj2Ul7Ce62azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lw
+gyU2kCcUmKfvBXbAf6rhRYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaE
+QsiPlR4zxP/TP7mhfVEe7XWPxtnMUMtf15OyA51YBM4qBmOHf+MZAAAAIIaTJINn
++eUBXbki+PSAld2nhJh/LVmFsS+60WyvXkQ1wpsGGBsKAAAALAWCY4d/4wKbDCIh
+BssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAAQBIKbpGG2dWTX8
+j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805
+I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+    const signingKeyIDs = message.getSigningKeyIDs();
+    expect(key.getKeys(signingKeyIDs[0])).to.not.be.empty;
+
+    const { data, signatures } = await openpgp.verify({ message, verificationKeys: key });
+    expect(signatures).to.have.length(1);
+    expect(await signatures[0].verified).to.be.true;
+    expect((await signatures[0].signature).packets.length).to.equal(1);
+    expect(data.includes('What we need from the grocery store')).to.be.true;
+  });
+
+  it('Verify signed message with two one pass signatures (v3 and v6)', async function() {
+    // test vector from gopenpgp
+    const message = await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+
+xEYGAAobIBEtnAy3EeX8aDFd2bf/A1Xfi7C/D3mLIkGEwVmD0fecyxhsTwYJppfk
+1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkAxA0DAAoW8jFVDE9H444ByxRiAAAAAABI
+ZWxsbyBXb3JsZCA6KcJ1BAAWCgAnBQJk52D2CRDyMVUMT0fjjhYhBOuFu1+jOnXh
+XpROY/IxVQxPR+OOAABOSwEA2nLYxa9ELDxwuPskKCUVs8noyT4fVEScWlWZAKqP
+ykIBAJEhqqNHFP4Gok1Ss9mvf6fE25tJkdJKD+7PIH0mCJgAwpgGABsKAAAAKQUC
+ZOdg9iKhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAA2MIBEt
+nAy3EeX8aDFd2bf/A1Xfi7C/D3mLIkGEwVmD0fecr0oTPTcMNupiH7SCY4THe3ue
+7PlRvF2WoeWKkNZT1uwcb+ilW5h9eBpp0I4Xj98C0hMA5+rHsTsME2EZM8HADA==
+-----END PGP MESSAGE-----` });
+    const v6Key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xioGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laPCsQYf
+GwoAAABCBYJjh3/jAwsJBwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxy
+KwwfHifBilZwj2Ul7Ce62azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lw
+gyU2kCcUmKfvBXbAf6rhRYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaE
+QsiPlR4zxP/TP7mhfVEe7XWPxtnMUMtf15OyA51YBM4qBmOHf+MZAAAAIIaTJINn
++eUBXbki+PSAld2nhJh/LVmFsS+60WyvXkQ1wpsGGBsKAAAALAWCY4d/4wKbDCIh
+BssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAAQBIKbpGG2dWTX8
+j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805
+I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
+-----END PGP PUBLIC KEY BLOCK-----` });
+    const v4Key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+Comment: Alice's OpenPGP certificate
+
+mDMEXEcE6RYJKwYBBAHaRw8BAQdArjWwk3FAqyiFbFBKT4TzXcVBqPTB3gmzlC/U
+b7O1u120JkFsaWNlIExvdmVsYWNlIDxhbGljZUBvcGVucGdwLmV4YW1wbGU+iJAE
+ExYIADgCGwMFCwkIBwIGFQoJCAsCBBYCAwECHgECF4AWIQTrhbtfozp14V6UTmPy
+MVUMT0fjjgUCXaWfOgAKCRDyMVUMT0fjjukrAPoDnHBSogOmsHOsd9qGsiZpgRnO
+dypvbm+QtXZqth9rvwD9HcDC0tC+PHAsO7OTh1S1TC9RiJsvawAfCPaQZoed8gK4
+OARcRwTpEgorBgEEAZdVAQUBAQdAQv8GIa2rSTzgqbXCpDDYMiKRVitCsy203x3s
+E9+eviIDAQgHiHgEGBYIACAWIQTrhbtfozp14V6UTmPyMVUMT0fjjgUCXEcE6QIb
+DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
+0QEA22Kr7VkCjeAEC08VSTeV+QFsmz55/lntWkwYWhmvOgE=
+=iIGO
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+    const { data, signatures } = await openpgp.verify({ message, verificationKeys: [v4Key, v6Key] });
+    expect(signatures).to.have.length(2);
+    expect(await signatures[0].verified).to.be.true;
+    expect((await signatures[0].signature).packets.length).to.equal(1);
+    expect(await signatures[1].verified).to.be.true;
+    expect((await signatures[1].signature).packets.length).to.equal(1);
+    expect(data).to.equal('Hello World :)');
+  });
+
+  it('Verify signed message with two one pass signatures (both v3)', async function() {
     const msg_armor =
       ['-----BEGIN PGP MESSAGE-----',
         'Version: GnuPG v2.0.19 (GNU/Linux)',
