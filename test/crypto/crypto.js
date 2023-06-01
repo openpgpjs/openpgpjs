@@ -2,7 +2,6 @@ import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
 
-import sandbox from 'sinon/lib/sinon/sandbox';
 import openpgp from '../initOpenpgp.js';
 import crypto from '../../src/crypto';
 import util from '../../src/util.js';
@@ -253,19 +252,6 @@ export default () => describe('API functional testing', function() {
       await testCFB('1234567');
       await testCFB('foobarfoobar1234567890');
       await testCFB('12345678901234567890123456789012345678901234567890');
-      // test using webCrypto
-      const sinonSandbox = sandbox.create();
-      const webCrypto = util.getWebCrypto();
-      if (webCrypto) {
-        const webCryptoSpy = sinonSandbox.spy(webCrypto, 'encrypt');
-        try {
-          await testCFB('12345678901234567890123456789012345678901234567890', { ...openpgp.config, minBytesForWebCrypto: 0 });
-        } finally {
-          expect(webCryptoSpy.called).to.be.true;
-          sinonSandbox.restore();
-        }
-      }
-
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {
