@@ -171,30 +171,27 @@ function verifyHeaders(headers, packetlist) {
     return true;
   };
 
-  let oneHeader = null;
-  let hashAlgos = [];
-  headers.forEach(function(header) {
-    oneHeader = header.match(/^Hash: (.+)$/); // get header value
-    if (oneHeader) {
-      oneHeader = oneHeader[1].replace(/\s/g, ''); // remove whitespace
-      oneHeader = oneHeader.split(',');
-      oneHeader = oneHeader.map(function(hash) {
-        hash = hash.toLowerCase();
-        try {
-          return enums.write(enums.hash, hash);
-        } catch (e) {
-          throw new Error('Unknown hash algorithm in armor header: ' + hash);
-        }
-      });
-      hashAlgos = hashAlgos.concat(oneHeader);
+  const hashAlgos = [];
+  headers.forEach(header => {
+    const hashHeader = header.match(/^Hash: (.+)$/); // get header value
+    if (hashHeader) {
+      const parsedHashIDs = hashHeader[1]
+        .replace(/\s/g, '') // remove whitespace
+        .split(',')
+        .map(hashName => {
+          try {
+            return enums.write(enums.hash, hashName.toLowerCase());
+          } catch (e) {
+            throw new Error('Unknown hash algorithm in armor header: ' + hashName.toLowerCase());
+          }
+        });
+      hashAlgos.push(...parsedHashIDs);
     } else {
       throw new Error('Only "Hash" header allowed in cleartext signed message');
     }
   });
 
-  if (!hashAlgos.length && !checkHashAlgos([enums.hash.md5])) {
-    throw new Error('If no "Hash" header in cleartext signed message, then only MD5 signatures allowed');
-  } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
+  if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
 }

@@ -1365,6 +1365,47 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
     expect(notations[1].critical).to.be.false;
   });
 
+  it('Verify v6 cleartext signed message with openpgp.verify', async function() {
+    // test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-08.html#name-sample-v6-certificate-trans
+    const cleartextMessage = `-----BEGIN PGP SIGNED MESSAGE-----
+
+What we need from the grocery store:
+
+- - tofu
+- - vegetables
+- - noodles
+
+-----BEGIN PGP SIGNATURE-----
+
+wpgGARsKAAAAKQWCY5ijYyIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAGk2IHZJX1AhiJD39eLuPBgiUU9wUA9VHYblySHkBONKU/usJ9BvuAqo
+/FvLFuGWMbKAdA+epq7V4HOtAPlBWmU8QOd6aud+aSunHQaaEJ+iTFjP2OMW0KBr
+NK2ay45cX1IVAQ==
+-----END PGP SIGNATURE-----`;
+
+    const publicKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xioGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laPCsQYf
+GwoAAABCBYJjh3/jAwsJBwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxy
+KwwfHifBilZwj2Ul7Ce62azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lw
+gyU2kCcUmKfvBXbAf6rhRYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaE
+QsiPlR4zxP/TP7mhfVEe7XWPxtnMUMtf15OyA51YBM4qBmOHf+MZAAAAIIaTJINn
++eUBXbki+PSAld2nhJh/LVmFsS+60WyvXkQ1wpsGGBsKAAAALAWCY4d/4wKbDCIh
+BssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAAQBIKbpGG2dWTX8
+j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805
+I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+    const plaintext = 'What we need from the grocery store:\n\n- tofu\n- vegetables\n- noodles\n';
+    const message = await openpgp.readCleartextMessage({ cleartextMessage });
+
+    const { signatures, data } = await openpgp.verify({ message, verificationKeys: publicKey });
+    expect(data).to.equal(plaintext);
+    expect(signatures).to.have.length(1);
+    expect(await signatures[0].verified).to.be.true;
+    expect((await signatures[0].signature).packets.length).to.equal(1);
+  });
+
   it('Verify cleartext signed message with two signatures with openpgp.verify', async function() {
     const cleartextMessage =
       ['-----BEGIN PGP SIGNED MESSAGE-----',
