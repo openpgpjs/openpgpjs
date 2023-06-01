@@ -16,13 +16,11 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import * as stream from '@openpgp/web-stream-tools';
-import SignaturePacket from './signature';
+import SignaturePacket, { saltLengthForHash } from './signature';
 import KeyID from '../type/keyid';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
-
-const VERSION = 3;
 
 /**
  * Implementation of the One-Pass Signature Packets (Tag 4)
@@ -39,8 +37,22 @@ class OnePassSignaturePacket {
     return enums.packet.onePassSignature;
   }
 
+  static fromSignaturePacket(signaturePacket, isLast) {
+    const onePassSig = new OnePassSignaturePacket();
+    onePassSig.version = signaturePacket.version === 6 ? 6 : 3;
+    onePassSig.signatureType = signaturePacket.signatureType;
+    onePassSig.hashAlgorithm = signaturePacket.hashAlgorithm;
+    onePassSig.publicKeyAlgorithm = signaturePacket.publicKeyAlgorithm;
+    onePassSig.issuerKeyID = signaturePacket.issuerKeyID;
+    onePassSig.salt = signaturePacket.salt; // v6 only
+    onePassSig.issuerFingerprint = signaturePacket.issuerFingerprint; // v6 only
+
+    onePassSig.flags = isLast ? 1 : 0;
+    return onePassSig;
+  }
+
   constructor() {
-    /** A one-octet version number.  The current version is 3. */
+    /** A one-octet version number.  The current versions are 3 and 6. */
     this.version = null;
     /**
      * A one-octet signature type.
@@ -62,8 +74,12 @@ class OnePassSignaturePacket {
      * @type {enums.publicKey}
      */
     this.publicKeyAlgorithm = null;
-    /** An eight-octet number holding the Key ID of the signing key. */
+    /** Only for v6, a variable-length field containing the salt. */
+    this.salt = null;
+    /** Only for v3 packets, an eight-octet number holding the Key ID of the signing key. */
     this.issuerKeyID = null;
+    /** Only for v6 packets, 32 octets of the fingerprint of the signing key. */
+    this.issuerFingerprint = null;
     /**
      * A one-octet number holding a flag showing whether the signature is nested.
      * A zero value indicates that the next packet is another One-Pass Signature packet
@@ -79,9 +95,9 @@ class OnePassSignaturePacket {
    */
   read(bytes) {
     let mypos = 0;
-    // A one-octet version number.  The current version is 3.
+    // A one-octet version number.  The current versions are 3 or 6.
     this.version = bytes[mypos++];
-    if (this.version !== VERSION) {
+    if (this.version !== 3 && this.version !== 6) {
       throw new UnsupportedError(`Version ${this.version} of the one-pass signature packet is unsupported.`);
     }
 
@@ -95,10 +111,32 @@ class OnePassSignaturePacket {
     // A one-octet number describing the public-key algorithm used.
     this.publicKeyAlgorithm = bytes[mypos++];
 
-    // An eight-octet number holding the Key ID of the signing key.
-    this.issuerKeyID = new KeyID();
-    this.issuerKeyID.read(bytes.subarray(mypos, mypos + 8));
-    mypos += 8;
+    if (this.version === 6) {
+      // Only for v6 signatures, a variable-length field containing:
+
+      // A one-octet salt size. The value MUST match the value defined
+      // for the hash algorithm as specified in Table 23 (Hash algorithm registry).
+      const saltLength = bytes[mypos++];
+      if (saltLength !== saltLengthForHash(this.hashAlgorithm)) {
+        throw new Error('Unexpected salt size for the hash algorithm');
+      }
+
+      // The salt; a random value value of the specified size.
+      this.salt = bytes.subarray(mypos, mypos + saltLength);
+      mypos += saltLength;
+
+      // Only for v6 packets, 32 octets of the fingerprint of the signing key.
+      this.issuerFingerprint = bytes.subarray(mypos, mypos + 32);
+      mypos += 32;
+      this.issuerKeyID = new KeyID();
+      // For v6 the Key ID is the high-order 64 bits of the fingerprint.
+      this.issuerKeyID.read(this.issuerFingerprint);
+    } else {
+      // Only for v3 packets, an eight-octet number holding the Key ID of the signing key.
+      this.issuerKeyID = new KeyID();
+      this.issuerKeyID.read(bytes.subarray(mypos, mypos + 8));
+      mypos += 8;
+    }
 
     // A one-octet number holding a flag showing whether the signature
     //   is nested.  A zero value indicates that the next packet is
@@ -113,11 +151,23 @@ class OnePassSignaturePacket {
    * @returns {Uint8Array} A Uint8Array representation of a one-pass signature packet.
    */
   write() {
-    const start = new Uint8Array([VERSION, this.signatureType, this.hashAlgorithm, this.publicKeyAlgorithm]);
-
-    const end = new Uint8Array([this.flags]);
-
-    return util.concatUint8Array([start, this.issuerKeyID.write(), end]);
+    const arr = [new Uint8Array([
+      this.version,
+      this.signatureType,
+      this.hashAlgorithm,
+      this.publicKeyAlgorithm
+    ])];
+    if (this.version === 6) {
+      arr.push(
+        new Uint8Array([this.salt.length]),
+        this.salt,
+        this.issuerFingerprint
+      );
+    } else {
+      arr.push(this.issuerKeyID.write());
+    }
+    arr.push(new Uint8Array([this.flags]));
+    return util.concatUint8Array(arr);
   }
 
   calculateTrailer(...args) {
@@ -133,7 +183,11 @@ class OnePassSignaturePacket {
       correspondingSig.signatureType !== this.signatureType ||
       correspondingSig.hashAlgorithm !== this.hashAlgorithm ||
       correspondingSig.publicKeyAlgorithm !== this.publicKeyAlgorithm ||
-      !correspondingSig.issuerKeyID.equals(this.issuerKeyID)
+      !correspondingSig.issuerKeyID.equals(this.issuerKeyID) ||
+      (this.version === 3 && correspondingSig.version === 6) ||
+      (this.version === 6 && correspondingSig.version !== 6) ||
+      (this.version === 6 && !util.equalsUint8Array(correspondingSig.issuerFingerprint, this.issuerFingerprint)) ||
+      (this.version === 6 && !util.equalsUint8Array(correspondingSig.salt, this.salt))
     ) {
       throw new Error('Corresponding signature packet does not match one-pass signature packet');
     }
