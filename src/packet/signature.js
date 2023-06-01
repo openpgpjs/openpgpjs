@@ -214,7 +214,11 @@ class SignaturePacket {
 
     if (this.version === 6) {
       const saltLength = saltLengthForHash(this.hashAlgorithm);
-      this.salt = await crypto.random.getRandomBytes(saltLength);
+      if (this.salt === null) {
+        this.salt = crypto.random.getRandomBytes(saltLength);
+      } else if (saltLength !== this.salt.length) {
+        throw new Error('Provided salt does not have the required length');
+      }
     }
     const toHash = this.toHash(this.signatureType, data, detached);
     const hash = await this.hash(this.signatureType, data, toHash, detached);
@@ -823,7 +827,7 @@ function writeSubPacket(type, critical, data) {
  * @returns {Integer} Salt length.
  * @private
  */
-function saltLengthForHash(hashAlgorithm) {
+export function saltLengthForHash(hashAlgorithm) {
   switch (hashAlgorithm) {
     case enums.hash.sha256: return 16;
     case enums.hash.sha384: return 24;
