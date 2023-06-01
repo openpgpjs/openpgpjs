@@ -1,4 +1,4 @@
-import sandbox from 'sinon/lib/sinon/sandbox';
+import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
@@ -14,7 +14,7 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
   let getNodeCryptoStub;
 
   beforeEach(function () {
-    sinonSandbox = sandbox.create();
+    sinonSandbox = sinon.createSandbox();
     enableNative();
   });
 
