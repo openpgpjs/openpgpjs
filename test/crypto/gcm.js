@@ -1,4 +1,4 @@
-import sandbox from 'sinon/lib/sinon/sandbox';
+import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
@@ -14,7 +14,7 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
   let getNodeCryptoStub;
 
   beforeEach(function () {
-    sinonSandbox = sandbox.create();
+    sinonSandbox = sinon.createSandbox();
     enableNative();
   });
 
@@ -48,8 +48,8 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
         const key = crypto.generateSessionKey(algo);
         const iv = crypto.random.getRandomBytes(crypto.mode.gcm.ivLength);
 
-        const nativeEncryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'encrypt') : sinonSandbox.spy(nodeCrypto, 'createCipheriv');
-        const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'decrypt') : sinonSandbox.spy(nodeCrypto, 'createDecipheriv');
+        const nativeEncryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createCipheriv') : sinonSandbox.spy(webCrypto, 'encrypt');
+        const nativeDecryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createDecipheriv') : sinonSandbox.spy(webCrypto, 'decrypt');
 
         nativeEncrypt || disableNative();
         let modeInstance = await crypto.mode.gcm(algo, key);

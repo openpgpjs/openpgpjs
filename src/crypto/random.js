@@ -32,11 +32,11 @@ const nodeCrypto = util.getNodeCrypto();
  */
 export function getRandomBytes(length) {
   const buf = new Uint8Array(length);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(buf);
-  } else if (nodeCrypto) {
+  if (nodeCrypto) {
     const bytes = nodeCrypto.randomBytes(buf.length);
     buf.set(bytes);
+  } else if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(buf);
   } else {
     throw new Error('No secure random number generator available.');
   }
