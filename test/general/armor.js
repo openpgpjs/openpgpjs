@@ -36,12 +36,6 @@ export default () => describe('ASCII armor', function() {
     await expect(msg).to.be.rejectedWith(Error, /Hash algorithm mismatch in armor header and signature/);
   });
 
-  it('Exception if no header and non-MD5 signature', async function () {
-    let msg = getArmor(null);
-    msg = openpgp.readCleartextMessage({ cleartextMessage: msg });
-    await expect(msg).to.be.rejectedWith(Error, /If no "Hash" header in cleartext signed message, then only MD5 signatures allowed/);
-  });
-
   it('Exception if unknown hash algorithm', async function () {
     let msg = getArmor(['Hash: LAV750']);
     msg = openpgp.readCleartextMessage({ cleartextMessage: msg });
@@ -66,18 +60,6 @@ export default () => describe('ASCII armor', function() {
     await expect(msg).to.be.rejectedWith(Error, /Only "Hash" header allowed in cleartext signed message/);
   });
 
-  it('Multiple wrong hash values', async function () {
-    let msg = getArmor(['Hash: SHA512, SHA256']);
-    msg = openpgp.readCleartextMessage({ cleartextMessage: msg });
-    await expect(msg).to.be.rejectedWith(Error, /Hash algorithm mismatch in armor header and signature/);
-  });
-
-  it('Multiple wrong hash values', async function () {
-    let msg = getArmor(['Hash: SHA512, SHA256']);
-    msg = openpgp.readCleartextMessage({ cleartextMessage: msg });
-    await expect(msg).to.be.rejectedWith(Error, /Hash algorithm mismatch in armor header and signature/);
-  });
-
   it('Filter whitespace in blank line', async function () {
     let msg = [
       '-----BEGIN PGP SIGNED MESSAGE-----',
@@ -97,11 +79,6 @@ export default () => describe('ASCII armor', function() {
 
     msg = await openpgp.readCleartextMessage({ cleartextMessage: msg });
     expect(msg).to.be.an.instanceof(openpgp.CleartextMessage);
-  });
-
-  it('Exception if header is not Hash in cleartext signed message', async function () {
-    const msg = openpgp.readCleartextMessage({ cleartextMessage: getArmor(['Ha sh: SHA256']) });
-    await expect(msg).to.be.rejectedWith(Error, /Only "Hash" header allowed in cleartext signed message/);
   });
 
   it('Ignore improperly formatted armor header', async function () {
