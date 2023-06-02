@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import openpgp from '../initOpenpgp.js';
 
 export default () => describe('ASCII armor', function() {
 

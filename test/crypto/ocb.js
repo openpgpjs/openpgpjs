@@ -2,10 +2,10 @@
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
 import { use as chaiUse, expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
+import openpgp from '../initOpenpgp.js';
 import OCB from '../../src/crypto/mode/ocb.js';
 import util from '../../src/util.js';
 
