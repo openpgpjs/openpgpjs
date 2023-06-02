@@ -1,6 +1,4 @@
-import * as openpgp from 'openpgp';
-if (typeof window !== 'undefined' && !window.openpgp) { window.openpgp = openpgp }
-
+import openpgp from './initOpenpgp.js';
 
 (typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
 
@@ -38,9 +36,6 @@ import runGeneralTests from './general';
 import runSecurityTests from './security';
 
 describe('Unit Tests', function () {
-
-  openpgp.config.s2kIterationCountByte = 0;
-
   if (typeof window !== 'undefined') {
     // Safari 14.1.*, 15.* and 16.* seem to have issues handling rejections when their native TransformStream implementation is involved,
     // so for now we ignore unhandled rejections for those browser versions.

@@ -96,6 +96,7 @@ module.exports = {
     // eslint-plugin-import rules:
     'import/named': 'error',
     'import/extensions': 'error',
+    'import/first': 'off',
     'import/no-extraneous-dependencies': ['error', { 'devDependencies': true, 'optionalDependencies': false, 'peerDependencies': false }],
     'import/no-unassigned-import': 'error',
     'import/prefer-default-export': 'off',
