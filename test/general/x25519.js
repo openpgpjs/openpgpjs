@@ -1,10 +1,9 @@
 import { use as chaiUse, expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : await import('openpgp');
-
 import nacl from '@openpgp/tweetnacl';
+import openpgp from '../initOpenpgp.js';
 
 import * as elliptic from '../../src/crypto/public_key/elliptic';
 import * as signature from '../../src/crypto/signature';
