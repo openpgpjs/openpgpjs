@@ -1,5 +1,5 @@
 import { use as chaiUse, expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
 
 import BN from 'bn.js';
