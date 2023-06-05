@@ -2122,6 +2122,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
         decryptionKeys: originalDecryptedKey
       });
       expect(decrypted.data).to.equal('test');
+    });
   });
 
   describe('encryptSessionKey - unit tests', function() {
@@ -4079,6 +4080,45 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
       const decrypted = await openpgp.decrypt({ message, decryptionKeys: key, verificationKeys: key, config: { allowUnauthenticatedMessages: true } });
       const data = await stream.readToEnd(decrypted.data);
       expect(data).to.equal('test');
+    });
+
+    it('should enforce using AES session keys with x25519 keys (new format)', async function () {
+      // x25519 key (v4) with cast5 as preferred cipher
+      const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZK8BixuMghYwdEgHl+3ASI4VZkn048KG4DVuugT1bMe4QTtFtQCoKBOG
+JxrZh8E+7I5nK7McXP2U9gyC0+RFcD46AxSmRA46zQDCiAQQGwgAPgWCZK8B
+iwQLAwcICZCaWrTxMIPhVwMVCAoEFgACAQIZAQKbAwIeARYhBDFBS8Xnfotk
+Oun5WZpatPEwg+FXAABwwuNWCdr1WahiGrLupYaOYQO4S9y+FYTxqEV/gsOP
+TKwmNIcIJPROV2LgyxvzQo79//0CocEYojEeUhGn7BH5lwvHSQRkrwGLGbVM
+1JxFUJeQ253sHMko73uPkyyb9DvaeyWHPwgF2k9GACA9caoO8GsZI7KMnVGP
+c4EpytBwVIsr4ck3QaEV/UxvDpnCdAQYGwgAKgWCZK8BiwmQmlq08TCD4VcC
+mwwWIQQxQUvF536LZDrp+VmaWrTxMIPhVwAAXycLtMyiv0lon4qU5/rKWjrq
+MIxMchUbHvktvUqomU0pDDLMPqLFtzBbtHqODPVbLTOygJRVLeHyWTOEfmOD
+kl0L
+=SYJZ
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+      await expect(openpgp.generateSessionKey({
+        encryptionKeys: privateKeyCast5,
+        config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
+      })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
+
+      await expect(openpgp.encrypt({
+        message: await openpgp.createMessage({ text: plaintext }),
+        encryptionKeys: privateKeyCast5,
+        sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
+      })).to.be.rejectedWith(/X25519 keys can only encrypt AES session keys/);
+
+      await expect(openpgp.decryptSessionKeys({
+        message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+
+wUQD66NYAXF0vfYZNWpc7s9eihtgj7EhHBeLOq2Ktw79artbhN5JMs+9aCIZ
+A7sB7uYCTVCLIMfPFwVZH+c29gpCzPxSXQ==
+=Dr02
+-----END PGP MESSAGE-----` }),
+        decryptionKeys: privateKeyCast5
+      })).to.be.rejectedWith(/AES session key expected/);
     });
 
     describe('Sign and verify with each curve', function() {

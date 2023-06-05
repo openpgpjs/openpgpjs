@@ -67,12 +67,15 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
       return { V, C: new ECDHSymkey(C) };
     }
     case enums.publicKey.x25519: {
+      if (!util.isAES(symmetricAlgo)) {
+        // see https://gitlab.com/openpgp-wg/rfc4880bis/-/merge_requests/276
+        throw new Error('X25519 keys can only encrypt AES session keys');
+      }
       const { A } = publicParams;
       const { ephemeralPublicKey, wrappedKey } = await publicKey.elliptic.ecdhX.encrypt(
         keyAlgo, data, A);
       const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
       return { ephemeralPublicKey, C };
-     
     }
     default:
       return [];
@@ -119,6 +122,9 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       const { A } = publicKeyParams;
       const { k } = privateKeyParams;
       const { ephemeralPublicKey, C } = sessionKeyParams;
+      if (!util.isAES(C.algorithm)) {
+        throw new Error('AES session key expected');
+      }
       return publicKey.elliptic.ecdhX.decrypt(
         algo, ephemeralPublicKey, C.wrappedKey, A, k);
     }

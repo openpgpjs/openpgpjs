@@ -345,6 +345,15 @@ export class Message {
       enums.read(enums.aead, await getPreferredAlgo('aead', encryptionKeys, date, userIDs, config)) :
       undefined;
 
+    await Promise.all(encryptionKeys.map(key => key.getEncryptionKey()
+      .catch(() => null) // ignore key strength requirements
+      .then(maybeKey => {
+        if (maybeKey && (maybeKey.keyPacket.algorithm === enums.publicKey.x25519) && !util.isAES(algo)) {
+          throw new Error('Could not generate a session key compatible with the given `encryptionKeys`: X22519 keys can only be used to encrypt AES session keys; change `config.preferredSymmetricAlgorithm` accordingly.');
+        }
+      })
+    ));
+
     const sessionKeyData = crypto.generateSessionKey(algo);
     return { data: sessionKeyData, algorithm: algorithmName, aeadAlgorithm: aeadAlgorithmName };
   }

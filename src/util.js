@@ -25,6 +25,7 @@
 
 import * as stream from '@openpgp/web-stream-tools';
 import { getBigInteger } from './biginteger';
+import enums from './enums';
 
 const debugMode = (() => {
   try {
@@ -605,6 +606,12 @@ const util = {
    */
   selectUint8: function(cond, a, b) {
     return (a & (256 - cond)) | (b & (255 + cond));
+  },
+  /**
+   * @param {module:enums.symmetric} cipherAlgo
+   */
+  isAES: function(cipherAlgo) {
+    return cipherAlgo === enums.symmetric.aes128 || cipherAlgo === enums.symmetric.aes192 || cipherAlgo === enums.symmetric.aes256;
   }
 };
 
