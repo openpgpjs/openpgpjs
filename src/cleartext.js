@@ -111,12 +111,16 @@ export class CleartextMessage {
    * @returns {String | ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
-    let hashes = this.signature.packets.map(function(packet) {
-      return enums.read(enums.hash, packet.hashAlgorithm).toUpperCase();
-    });
-    hashes = hashes.filter(function(item, i, ar) { return ar.indexOf(item) === i; });
+    // emit header if one of the signatures has a version not 6
+    const emitHeader = this.signature.packets.some(packet => packet.version !== 6);
+    const hash = emitHeader ?
+      Array.from(new Set(this.signature.packets.map(
+        packet => enums.read(enums.hash, packet.hashAlgorithm).toUpperCase()
+      ))).join() :
+      null;
+
     const body = {
-      hash: hashes.join(),
+      hash,
       text: this.text,
       data: this.signature.packets.write()
     };
