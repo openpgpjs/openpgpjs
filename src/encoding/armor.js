@@ -190,12 +190,12 @@ export function unarmor(input) {
               } else {
                 verifyHeaders(lastHeaders);
                 headersDone = true;
-                if (textDone || type !== 2) {
+                if (textDone || type !== enums.armor.signed) {
                   resolve({ text, data, headers, type });
                   break;
                 }
               }
-            } else if (!textDone && type === 2) {
+            } else if (!textDone && type === enums.armor.signed) {
               if (!reSplit.test(line)) {
                 // Reverse dash-escaping for msg
                 text.push(line.replace(/^- /, ''));
@@ -289,7 +289,7 @@ export function armor(messageType, body, partIndex, partTotal, customComment, co
       break;
     case enums.armor.signed:
       result.push('-----BEGIN PGP SIGNED MESSAGE-----\n');
-      result.push('Hash: ' + hash + '\n\n');
+      result.push(hash ? `Hash: ${hash}\n\n` : '\n');
       result.push(text.replace(/^-/mg, '- -'));
       result.push('\n-----BEGIN PGP SIGNATURE-----\n');
       result.push(addheader(customComment, config));

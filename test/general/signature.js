@@ -1594,6 +1594,38 @@ ${armoredSignature}
     expect(await signatures[0].verified).to.be.true;
   });
 
+  it('Does not emit headers for v6 cleartext message', async function() {
+    const v6PrivateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+    const v4PrivateKey = await openpgp.decryptKey({
+      privateKey: await openpgp.readKey({ armoredKey: priv_key_arm2 }),
+      passphrase: 'hello world'
+    });
+
+    const message = await openpgp.createCleartextMessage({ text: 'check header message' });
+
+    const cleartextMessageV6 = await openpgp.sign({ message, signingKeys: v6PrivateKey });
+    const cleartextMessageV4 = await openpgp.sign({
+      message,
+      signingKeys: [v4PrivateKey, v6PrivateKey],
+      config: { minRSABits: 1024 }
+    });
+    expect(cleartextMessageV6).to.not.contain('Hash:');
+    expect(cleartextMessageV4).to.contain('Hash:');
+  });
+
   function tests() {
     it('Verify signed message with trailing spaces from GPG', async function() {
       const armoredMessage =
