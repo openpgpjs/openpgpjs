@@ -14,7 +14,6 @@ import { ripemd160 } from 'hash.js/lib/hash/ripemd';
 import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
-import defaultConfig from '../../config';
 import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
@@ -34,11 +33,11 @@ function nodeHash(type) {
 }
 
 function hashjsHash(hash, webCryptoHash) {
-  return async function(data, config = defaultConfig) {
+  return async function(data) {
     if (stream.isArrayStream(data)) {
       data = await stream.readToEnd(data);
     }
-    if (!util.isStream(data) && webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
+    if (!util.isStream(data) && webCrypto && webCryptoHash) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     }
     const hashInstance = hash();
@@ -49,7 +48,7 @@ function hashjsHash(hash, webCryptoHash) {
 }
 
 function nobleHash(hash, webCryptoHash) {
-  return async function(data, config = defaultConfig) {
+  return async function(data) {
     if (stream.isArrayStream(data)) {
       data = await stream.readToEnd(data);
     }
@@ -58,7 +57,7 @@ function nobleHash(hash, webCryptoHash) {
       return stream.transform(data, value => {
         hashInstance.update(value);
       }, () => hashInstance.digest());
-    } else if (webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
+    } else if (webCrypto && webCryptoHash) {
       return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
     } else {
       return hash(data);

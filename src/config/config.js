@@ -190,12 +190,6 @@ export default {
    * @property {Set<Integer>} constantTimePKCS1DecryptionSupportedSymmetricAlgorithms {@link module:enums.symmetric}
    */
   constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: new Set([enums.symmetric.aes128, enums.symmetric.aes192, enums.symmetric.aes256]),
-
-  /**
-   * @memberof module:config
-   * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
-   */
-  minBytesForWebCrypto: 1000,
   /**
    * @memberof module:config
    * @property {Boolean} ignoreUnsupportedPackets Ignore unsupported/unrecognizable packets on parsing instead of throwing an error
