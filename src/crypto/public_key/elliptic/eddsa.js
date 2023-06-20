@@ -20,14 +20,14 @@
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import sha512 from 'hash.js/lib/hash/sha/512';
+import { sha512 } from '@openpgp/noble-hashes/sha512';
 import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
 import { getRandomBytes } from '../../random';
 
-nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
+nacl.hash = bytes => sha512(bytes);
 
 /**
  * Generate (non-legacy) EdDSA key
