@@ -95,10 +95,14 @@ module.exports = {
 
     // eslint-plugin-import rules:
     'import/named': 'error',
-    'import/extensions': 'error',
+    'import/extensions': 'off', // temporary: we use them in tests (ESM compliant), but not in the lib (to limit diff)
     'import/first': 'off',
     'import/no-extraneous-dependencies': ['error', { 'devDependencies': true, 'optionalDependencies': false, 'peerDependencies': false }],
     'import/no-unassigned-import': 'error',
+    'import/no-unresolved': ['error', {
+      // esm exports not supported: https://github.com/import-js/eslint-plugin-import/issues/1810
+      ignore: ['openpgp', '@openpgp/noble-hashes', '@openpgp/web-stream-tools', '@openpgp/asmcrypto.js']
+    }],
     'import/prefer-default-export': 'off',
 
     // Custom silencers:
