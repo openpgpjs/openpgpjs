@@ -335,7 +335,6 @@ interface Config {
   s2kType: enums.s2k.iterated | enums.s2k.argon2;
   s2kIterationCountByte: number;
   s2kArgon2Params: { passes: number, parallelism: number; memoryExponent: number; };
-  minBytesForWebCrypto: number;
   maxUserIDLength: number;
   knownNotations: string[];
   useIndutnyElliptic: boolean;
