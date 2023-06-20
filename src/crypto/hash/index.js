@@ -6,11 +6,9 @@
  */
 
 import { sha1 } from '@openpgp/noble-hashes/sha1';
-import { sha256 } from '@openpgp/noble-hashes/sha256';
-import sha224 from 'hash.js/lib/hash/sha/224';
-import sha384 from 'hash.js/lib/hash/sha/384';
-import sha512 from 'hash.js/lib/hash/sha/512';
-import { ripemd160 } from 'hash.js/lib/hash/ripemd';
+import { sha224, sha256 } from '@openpgp/noble-hashes/sha256';
+import { sha384, sha512 } from '@openpgp/noble-hashes/sha512';
+import { ripemd160 } from '@openpgp/noble-hashes/ripemd160';
 import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
@@ -29,21 +27,6 @@ function nodeHash(type) {
     return stream.transform(data, value => {
       shasum.update(value);
     }, () => new Uint8Array(shasum.digest()));
-  };
-}
-
-function hashjsHash(hash, webCryptoHash) {
-  return async function(data) {
-    if (stream.isArrayStream(data)) {
-      data = await stream.readToEnd(data);
-    }
-    if (!util.isStream(data) && webCrypto && webCryptoHash) {
-      return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
-    }
-    const hashInstance = hash();
-    return stream.transform(data, value => {
-      hashInstance.update(value);
-    }, () => new Uint8Array(hashInstance.digest()));
   };
 }
 
@@ -68,28 +51,22 @@ function nobleHash(hash, webCryptoHash) {
 const hashFunctions = {
   md5: nodeHash('md5') || md5,
   sha1: nodeHash('sha1') || nobleHash(sha1, 'SHA-1'),
-  sha224: nodeHash('sha224') || hashjsHash(sha224),
+  sha224: nodeHash('sha224') || nobleHash(sha224),
   sha256: nodeHash('sha256') || nobleHash(sha256, 'SHA-256'),
-  sha384: nodeHash('sha384') || hashjsHash(sha384, 'SHA-384'),
-  sha512: nodeHash('sha512') || hashjsHash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
-  ripemd: nodeHash('ripemd160') || hashjsHash(ripemd160)
+  sha384: nodeHash('sha384') || nobleHash(sha384, 'SHA-384'),
+  sha512: nodeHash('sha512') || nobleHash(sha512, 'SHA-512'),
+  ripemd: nodeHash('ripemd160') || nobleHash(ripemd160)
 };
 
 export default {
 
   /** @see module:md5 */
   md5: hashFunctions.md5,
-  /** @see asmCrypto */
   sha1: hashFunctions.sha1,
-  /** @see hash.js */
   sha224: hashFunctions.sha224,
-  /** @see asmCrypto */
   sha256: hashFunctions.sha256,
-  /** @see hash.js */
   sha384: hashFunctions.sha384,
-  /** @see asmCrypto */
   sha512: hashFunctions.sha512,
-  /** @see hash.js */
   ripemd: hashFunctions.ripemd,
 
   /**
