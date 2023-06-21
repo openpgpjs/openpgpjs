@@ -19,7 +19,7 @@
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @module crypto/public_key/elliptic/curve
  */
-
+import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import nacl from '@openpgp/tweetnacl/nacl-fast-light';
 import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
@@ -205,12 +205,10 @@ class CurveWithOID {
 }
 
 async function generate(curve) {
-  const BigInteger = await util.getBigInteger();
-
   curve = new CurveWithOID(curve);
   const keyPair = await curve.genKeyPair();
-  const Q = new BigInteger(keyPair.publicKey).toUint8Array();
-  const secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
+  const Q = BigInteger.new(keyPair.publicKey).toUint8Array();
+  const secret = BigInteger.new(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
   return {
     oid: curve.oid,
     Q,

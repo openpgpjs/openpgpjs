@@ -24,7 +24,6 @@
 
 import * as stream from '@openpgp/web-stream-tools';
 import { createRequire } from 'module'; // Must be stripped in browser built
-import { getBigInteger } from './biginteger';
 import enums from './enums';
 
 const debugMode = (() => {
@@ -383,15 +382,6 @@ const util = {
   getWebCrypto: function() {
     return typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
   },
-
-  /**
-   * Get BigInteger class
-   * It wraps the native BigInt type if it's available
-   * Otherwise it relies on bn.js
-   * @returns {BigInteger}
-   * @async
-   */
-  getBigInteger,
 
   /**
    * Get native Node.js crypto api.
