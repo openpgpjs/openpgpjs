@@ -19,8 +19,7 @@
  * @fileoverview Algorithms for probabilistic random prime generation
  * @module crypto/public_key/prime
  */
-
-import util from '../../util';
+import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import { getRandomBigInteger } from '../random';
 
 /**
@@ -32,10 +31,9 @@ import { getRandomBigInteger } from '../random';
  * @async
  */
 export async function randomProbablePrime(bits, e, k) {
-  const BigInteger = await util.getBigInteger();
-  const one = new BigInteger(1);
-  const min = one.leftShift(new BigInteger(bits - 1));
-  const thirty = new BigInteger(30);
+  const one = BigInteger.new(1);
+  const min = one.leftShift(BigInteger.new(bits - 1));
+  const thirty = BigInteger.new(30);
   /*
    * We can avoid any multiples of 3 and 5 by looking at n mod 30
    * n mod 30 = 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29
@@ -48,7 +46,7 @@ export async function randomProbablePrime(bits, e, k) {
   let i = n.mod(thirty).toNumber();
 
   do {
-    n.iadd(new BigInteger(adds[i]));
+    n.iadd(BigInteger.new(adds[i]));
     i = (i + adds[i]) % adds.length;
     // If reached the maximum, go back to the minimum.
     if (n.bitLength() > bits) {
@@ -93,15 +91,13 @@ export async function isProbablePrime(n, e, k) {
  * @returns {boolean}
  */
 export async function fermat(n, b) {
-  const BigInteger = await util.getBigInteger();
-  b = b || new BigInteger(2);
+  b = b || BigInteger.new(2);
   return b.modExp(n.dec(), n).isOne();
 }
 
 export async function divisionTest(n) {
-  const BigInteger = await util.getBigInteger();
   return smallPrimes.every(m => {
-    return n.mod(new BigInteger(m)) !== 0;
+    return n.mod(BigInteger.new(m)) !== 0;
   });
 }
 
@@ -228,7 +224,6 @@ const smallPrimes = [
  * @async
  */
 export async function millerRabin(n, k, rand) {
-  const BigInteger = await util.getBigInteger();
   const len = n.bitLength();
 
   if (!k) {
@@ -240,10 +235,10 @@ export async function millerRabin(n, k, rand) {
   // Find d and s, (n - 1) = (2 ^ s) * d;
   let s = 0;
   while (!n1.getBit(s)) { s++; }
-  const d = n.rightShift(new BigInteger(s));
+  const d = n.rightShift(BigInteger.new(s));
 
   for (; k > 0; k--) {
-    const a = rand ? rand() : await getRandomBigInteger(new BigInteger(2), n1);
+    const a = rand ? rand() : await getRandomBigInteger(BigInteger.new(2), n1);
 
     let x = a.modExp(d, n);
     if (x.isOne() || x.equal(n1)) {
