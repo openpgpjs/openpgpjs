@@ -19,6 +19,7 @@
  * @fileoverview A Digital signature algorithm implementation
  * @module crypto/public_key/dsa
  */
+import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import { getRandomBigInteger } from '../random';
 import util from '../../util';
 import { isProbablePrime } from './prime';
@@ -41,12 +42,11 @@ import { isProbablePrime } from './prime';
  * @async
  */
 export async function sign(hashAlgo, hashed, g, p, q, x) {
-  const BigInteger = await util.getBigInteger();
-  const one = new BigInteger(1);
-  p = new BigInteger(p);
-  q = new BigInteger(q);
-  g = new BigInteger(g);
-  x = new BigInteger(x);
+  const one = BigInteger.new(1);
+  p = BigInteger.new(p);
+  q = BigInteger.new(q);
+  g = BigInteger.new(g);
+  x = BigInteger.new(x);
 
   let k;
   let r;
@@ -59,7 +59,7 @@ export async function sign(hashAlgo, hashed, g, p, q, x) {
   // of leftmost bits equal to the number of bits of q.  This (possibly
   // truncated) hash function result is treated as a number and used
   // directly in the DSA signature algorithm.
-  const h = new BigInteger(hashed.subarray(0, q.byteLength())).mod(q);
+  const h = BigInteger.new(hashed.subarray(0, q.byteLength())).mod(q);
   // FIPS-186-4, section 4.6:
   // The values of r and s shall be checked to determine if r = 0 or s = 0.
   // If either r = 0 or s = 0, a new value of k shall be generated, and the
@@ -100,22 +100,21 @@ export async function sign(hashAlgo, hashed, g, p, q, x) {
  * @async
  */
 export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
-  const BigInteger = await util.getBigInteger();
-  const zero = new BigInteger(0);
-  r = new BigInteger(r);
-  s = new BigInteger(s);
+  const zero = BigInteger.new(0);
+  r = BigInteger.new(r);
+  s = BigInteger.new(s);
 
-  p = new BigInteger(p);
-  q = new BigInteger(q);
-  g = new BigInteger(g);
-  y = new BigInteger(y);
+  p = BigInteger.new(p);
+  q = BigInteger.new(q);
+  g = BigInteger.new(g);
+  y = BigInteger.new(y);
 
   if (r.lte(zero) || r.gte(q) ||
       s.lte(zero) || s.gte(q)) {
     util.printDebug('invalid DSA Signature');
     return false;
   }
-  const h = new BigInteger(hashed.subarray(0, q.byteLength())).imod(q);
+  const h = BigInteger.new(hashed.subarray(0, q.byteLength())).imod(q);
   const w = s.modInv(q); // s**-1 mod q
   if (w.isZero()) {
     util.printDebug('invalid DSA Signature');
@@ -143,12 +142,11 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
  * @async
  */
 export async function validateParams(p, q, g, y, x) {
-  const BigInteger = await util.getBigInteger();
-  p = new BigInteger(p);
-  q = new BigInteger(q);
-  g = new BigInteger(g);
-  y = new BigInteger(y);
-  const one = new BigInteger(1);
+  p = BigInteger.new(p);
+  q = BigInteger.new(q);
+  g = BigInteger.new(g);
+  y = BigInteger.new(y);
+  const one = BigInteger.new(1);
   // Check that 1 < g < p
   if (g.lte(one) || g.gte(p)) {
     return false;
@@ -172,8 +170,8 @@ export async function validateParams(p, q, g, y, x) {
   /**
    * Check q is large and probably prime (we mainly want to avoid small factors)
    */
-  const qSize = new BigInteger(q.bitLength());
-  const n150 = new BigInteger(150);
+  const qSize = BigInteger.new(q.bitLength());
+  const n150 = BigInteger.new(150);
   if (qSize.lt(n150) || !(await isProbablePrime(q, null, 32))) {
     return false;
   }
@@ -184,8 +182,8 @@ export async function validateParams(p, q, g, y, x) {
    *
    * Blinded exponentiation computes g**{rq + x} to compare to y
    */
-  x = new BigInteger(x);
-  const two = new BigInteger(2);
+  x = BigInteger.new(x);
+  const two = BigInteger.new(2);
   const r = await getRandomBigInteger(two.leftShift(qSize.dec()), two.leftShift(qSize)); // draw r of same size as q
   const rqx = q.mul(r).add(x);
   if (!y.equal(g.modExp(rqx, p))) {

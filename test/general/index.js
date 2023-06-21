@@ -1,6 +1,5 @@
 import testX25519 from './x25519.js';
 import testUtil from './util.js';
-import testBigInteger from './biginteger.js';
 import testArmor from './armor.js';
 import testPacket from './packet.js';
 import testSignature from './signature.js';
@@ -17,7 +16,6 @@ import testStreaming from './streaming.js';
 export default () => describe('General', function () {
   testX25519();
   testUtil();
-  testBigInteger();
   testArmor();
   testPacket();
   testSignature();
