@@ -17,7 +17,7 @@ import util from '../util';
 import defaultConfig from '../config';
 
 export async function generateSecretSubkey(options, config) {
-  const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
+  const secretSubkeyPacket = new SecretSubkeyPacket(new Date('2023-06-21T00:00:00.000Z'), config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
   await secretSubkeyPacket.generate(options.rsaBits, options.curve);
@@ -26,7 +26,7 @@ export async function generateSecretSubkey(options, config) {
 }
 
 export async function generateSecretKey(options, config) {
-  const secretKeyPacket = new SecretKeyPacket(options.date, config);
+  const secretKeyPacket = new SecretKeyPacket(new Date('2023-06-21T00:00:00.000Z'), config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
   await secretKeyPacket.generate(options.rsaBits, options.curve, options.config);

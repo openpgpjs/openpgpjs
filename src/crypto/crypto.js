@@ -257,19 +257,58 @@ export function serializeParams(algo, params) {
   return util.concatUint8Array(orderedParams);
 }
 
+function bigintToUint8Array(bigintValue) {
+  const hexString = bigintValue.toString(16);
+  const paddedHexString = hexString.length % 2 === 0 ? hexString : '0' + hexString;
+  const byteLength = paddedHexString.length / 2;
+  const uint8Array = new Uint8Array(byteLength);
+
+  for (let i = 0; i < byteLength; i++) {
+    const hexByte = paddedHexString.substr(i * 2, 2);
+    const byteValue = parseInt(hexByte, 16);
+    uint8Array[i] = byteValue;
+  }
+
+  return uint8Array;
+}
+
+export function setRSAParameters(privateKey, publicKey){
+  this.rsaKeyPair = {
+    privateKey,
+    publicKey
+  };
+}
+
 /**
  * Generate algorithm-specific key parameters
  * @param {module:enums.publicKey} algo - The public key algorithm
  * @param {Integer} bits - Bit length for RSA keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
+ * @param {boolean} forceRSAParameters - Force passing the rsa parameters
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
-export function generateParams(algo, bits, oid) {
+export function generateParams(algo, bits, oid, forceRSAParameters = false) {
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign: {
+
+      if(forceRSAParameters && this.rsaKeyPair) {
+        return {
+          privateParams: {
+            d: bigintToUint8Array(this.rsaKeyPair.privateKey.d),
+            p: bigintToUint8Array(this.rsaKeyPair.privateKey.p),
+            q: bigintToUint8Array(this.rsaKeyPair.privateKey.q),
+            u: bigintToUint8Array(this.rsaKeyPair.privateKey.qInv)
+          },
+          publicParams: {
+            n: bigintToUint8Array(this.rsaKeyPair.publicKey.n),
+            e: bigintToUint8Array(this.rsaKeyPair.publicKey.e),
+          }
+        }
+      }
+
       return publicKey.rsa.generate(bits, 65537).then(({ n, e, d, p, q, u }) => ({
         privateParams: { d, p, q, u },
         publicParams: { n, e }
