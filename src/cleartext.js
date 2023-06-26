@@ -89,7 +89,7 @@ export class CleartextMessage {
    * @async
    */
   verify(keys, date = new Date(), config = defaultConfig) {
-    const signatureList = this.signature.packets;
+    const signatureList = this.signature.packets.filterByTag(enums.packet.signature); // drop UnparsablePackets
     const literalDataPacket = new LiteralDataPacket();
     // we assume that cleartext signature is generated based on UTF8 cleartext
     literalDataPacket.setText(this.text);
