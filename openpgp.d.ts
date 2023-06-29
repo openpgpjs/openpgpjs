@@ -395,6 +395,7 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
   public decrypt(passphrase: string): Promise<void>; // throws on error
   public validate(): Promise<void>; // throws on error
   public isDummy(): boolean;
+  public isMissingSecretKeyMaterial(): boolean;
   public makeDummy(config?: Config): void;
 }
 
