@@ -1154,6 +1154,31 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
         expect(privateKeyMismatchingParams).to.deep.equal(originalKey);
       });
     });
+
+    it('should fail for encrypted key with unknown s2k (unparseableKeyMaterial)', async function() {
+      // key encrypted with invalid s2kType = 23, to test that it can still be used for encryption/verification
+      const encryptedKeyUnknownS2K = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYYEZJ2H3RYJKwYBBAHaRw8BAQdA3V39Xv0+436Rpn/2UlcnOC1BGprmAlWY
+RBKjAq0hAtD+CRcIdHzwqoLa54cAbBOEIgBh7Xa1Qh5wCGAmEVWnAldaqvk+
+NcvUL2bR6AQsGIT6YEihOS3xLKobMOd2XlO5ItQoWnONzkWgzjFvctgnlhmq
+I80AwowEEBYKAD4FgmSdh90ECwkHCAmQaBT7gxSTsXwDFQgKBBYAAgECGQEC
+mwMCHgEWIQSvRnJTQT6TtdZFk0NoFPuDFJOxfAAAT7kBALmmUEJt5HMAOWiW
+7/8y4wllm8zNQ9vbl5Q0cWbeWj/8AP9HDa2rRxHY/37g5zXdmL9f/qNWr9Fk
+EBRhLLwusumuDMeLBGSdh90SCisGAQQBl1UBBQEBB0Am2yjjialeIVXHJJ2P
+b7KiapCC0mD95F0EFz6zz0l4DgMBCAf+CRcISMdt0OUFCNUABB/OD0UW7MPK
+Y3t8RrUTYoiCuhuPRDLOJ5NnMNagVQLt3jQsI8JRjzmYbiTrA/V3iJIEDu5C
+NWbnvCM7Hs7+OqPzJPJ2w8J4BBgWCAAqBYJknYfdCZBoFPuDFJOxfAKbDBYh
+BK9GclNBPpO11kWTQ2gU+4MUk7F8AADwfwD8CsOVw/3zm1UwUbGUi+fuf6Pr
+VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
+0pYO
+=rWL8
+-----END PGP PRIVATE KEY BLOCK-----` });
+      await expect(openpgp.decryptKey({
+        privateKey: encryptedKeyUnknownS2K,
+        passphrase: 'test'
+      })).to.be.rejectedWith(/Key packet cannot be decrypted: unsupported S2K or cipher algo/);
+    });
   });
 
   describe('encryptKey - unit tests', function() {
@@ -1991,6 +2016,53 @@ aOU=
       expect(objectMessage.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
       const { data: streamedData } = await openpgp.decrypt({ message: objectMessage, passwords, verificationKeys: privateKey, expectSigned: true, config });
       expect(await stream.readToEnd(streamedData)).to.equal(text);
+    });
+
+    it('should support encrypting with encrypted key with unknown s2k (unparseableKeyMaterial)', async function() {
+      const originalDecryptedKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEZJ2H3RYJKwYBBAHaRw8BAQdA3V39Xv0+436Rpn/2UlcnOC1BGprmAlWY
+RBKjAq0hAtAAAQCykslk/kEP7+O9sOsuvgX2Xfz4peQuNo2vD/w4dMZpchKj
+zQDCjAQQFgoAPgWCZJ2H3QQLCQcICZBoFPuDFJOxfAMVCAoEFgACAQIZAQKb
+AwIeARYhBK9GclNBPpO11kWTQ2gU+4MUk7F8AABPuQEAuaZQQm3kcwA5aJbv
+/zLjCWWbzM1D29uXlDRxZt5aP/wA/0cNratHEdj/fuDnNd2Yv1/+o1av0WQQ
+FGEsvC6y6a4Mx10EZJ2H3RIKKwYBBAGXVQEFAQEHQCbbKOOJqV4hVccknY9v
+sqJqkILSYP3kXQQXPrPPSXgOAwEIBwAA/34s+u8hyLdzdLxjrEEN9zNb+C8d
+EyBNxMpyZ/NJsUxoEIPCeAQYFggAKgWCZJ2H3QmQaBT7gxSTsXwCmwwWIQSv
+RnJTQT6TtdZFk0NoFPuDFJOxfAAA8H8A/ArDlcP985tVMFGxlIvn7n+j61RQ
+SxvLnPSImimp5/w2AQCXGTWR0Un6Q6FdqVAORABItjHY8ZEcrBUJ2D0QLtKW
+Dg==
+=wiwz
+-----END PGP PRIVATE KEY BLOCK-----` });
+      // `originalDecryptedKey` encrypted with invalid s2kType = 23, to test that it can still be used for encryption/verification
+      const encryptedKeyUnknownS2K = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYYEZJ2H3RYJKwYBBAHaRw8BAQdA3V39Xv0+436Rpn/2UlcnOC1BGprmAlWY
+RBKjAq0hAtD+CRcIdHzwqoLa54cAbBOEIgBh7Xa1Qh5wCGAmEVWnAldaqvk+
+NcvUL2bR6AQsGIT6YEihOS3xLKobMOd2XlO5ItQoWnONzkWgzjFvctgnlhmq
+I80AwowEEBYKAD4FgmSdh90ECwkHCAmQaBT7gxSTsXwDFQgKBBYAAgECGQEC
+mwMCHgEWIQSvRnJTQT6TtdZFk0NoFPuDFJOxfAAAT7kBALmmUEJt5HMAOWiW
+7/8y4wllm8zNQ9vbl5Q0cWbeWj/8AP9HDa2rRxHY/37g5zXdmL9f/qNWr9Fk
+EBRhLLwusumuDMeLBGSdh90SCisGAQQBl1UBBQEBB0Am2yjjialeIVXHJJ2P
+b7KiapCC0mD95F0EFz6zz0l4DgMBCAf+CRcISMdt0OUFCNUABB/OD0UW7MPK
+Y3t8RrUTYoiCuhuPRDLOJ5NnMNagVQLt3jQsI8JRjzmYbiTrA/V3iJIEDu5C
+NWbnvCM7Hs7+OqPzJPJ2w8J4BBgWCAAqBYJknYfdCZBoFPuDFJOxfAKbDBYh
+BK9GclNBPpO11kWTQ2gU+4MUk7F8AADwfwD8CsOVw/3zm1UwUbGUi+fuf6Pr
+VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
+0pYO
+=rWL8
+-----END PGP PRIVATE KEY BLOCK-----` });
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: encryptedKeyUnknownS2K
+      });
+
+      // decrypt with original key
+      const decrypted = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: encrypted }),
+        decryptionKeys: originalDecryptedKey
+      });
+      expect(decrypted.data).to.equal('test');
     });
   });
 

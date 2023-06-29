@@ -86,6 +86,7 @@ class SecretKeyPacket extends PublicKeyPacket {
   async read(bytes) {
     // - A Public-Key or Public-Subkey packet, as described above.
     let i = await this.readPublicKey(bytes);
+    const startOfSecretKeyData = i;
 
     // - One octet indicating string-to-key usage conventions.  Zero
     //   indicates that the secret-key data is not encrypted.  255 or 254
@@ -99,40 +100,47 @@ class SecretKeyPacket extends PublicKeyPacket {
       i++;
     }
 
-    // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-    //   one-octet symmetric encryption algorithm.
-    if (this.s2kUsage === 255 || this.s2kUsage === 254 || this.s2kUsage === 253) {
-      this.symmetric = bytes[i++];
-
-      // - [Optional] If string-to-key usage octet was 253, a one-octet
-      //   AEAD algorithm.
-      if (this.s2kUsage === 253) {
-        this.aead = bytes[i++];
-      }
-
+    try {
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
-      //   string-to-key specifier.  The length of the string-to-key
-      //   specifier is implied by its type, as described above.
-      this.s2k = new S2K();
-      i += this.s2k.read(bytes.subarray(i, bytes.length));
+      //   one-octet symmetric encryption algorithm.
+      if (this.s2kUsage === 255 || this.s2kUsage === 254 || this.s2kUsage === 253) {
+        this.symmetric = bytes[i++];
 
-      if (this.s2k.type === 'gnu-dummy') {
-        return;
+        // - [Optional] If string-to-key usage octet was 253, a one-octet
+        //   AEAD algorithm.
+        if (this.s2kUsage === 253) {
+          this.aead = bytes[i++];
+        }
+
+        // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
+        //   string-to-key specifier.  The length of the string-to-key
+        //   specifier is implied by its type, as described above.
+        this.s2k = new S2K();
+        i += this.s2k.read(bytes.subarray(i, bytes.length));
+
+        if (this.s2k.type === 'gnu-dummy') {
+          return;
+        }
+      } else if (this.s2kUsage) {
+        this.symmetric = this.s2kUsage;
       }
-    } else if (this.s2kUsage) {
-      this.symmetric = this.s2kUsage;
-    }
 
-    // - [Optional] If secret data is encrypted (string-to-key usage octet
-    //   not zero), an Initial Vector (IV) of the same length as the
-    //   cipher's block size.
-    if (this.s2kUsage) {
-      this.iv = bytes.subarray(
-        i,
-        i + crypto.getCipher(this.symmetric).blockSize
-      );
+      // - [Optional] If secret data is encrypted (string-to-key usage octet
+      //   not zero), an Initial Vector (IV) of the same length as the
+      //   cipher's block size.
+      if (this.s2kUsage) {
+        this.iv = bytes.subarray(
+          i,
+          i + crypto.getCipher(this.symmetric).blockSize
+        );
 
-      i += this.iv.length;
+        i += this.iv.length;
+      }
+    } catch (e) {
+      // if the s2k is unsupported, we still want to support encrypting and verifying with the given key
+      if (!this.s2kUsage) throw e; // always throw for decrypted keys
+      this.unparseableKeyMaterial = bytes.subarray(startOfSecretKeyData);
+      this.isEncrypted = true;
     }
 
     // - Only for a version 5 packet, a four-octet scalar octet count for
@@ -168,8 +176,15 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @returns {Uint8Array} A string of bytes containing the secret key OpenPGP packet.
    */
   write() {
-    const arr = [this.writePublicKey()];
+    const serializedPublicKey = this.writePublicKey();
+    if (this.unparseableKeyMaterial) {
+      return util.concatUint8Array([
+        serializedPublicKey,
+        this.unparseableKeyMaterial
+      ]);
+    }
 
+    const arr = [serializedPublicKey];
     arr.push(new Uint8Array([this.s2kUsage]));
 
     const optionalFieldsArr = [];
@@ -230,6 +245,18 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   /**
+   * Check whether the key includes secret key material.
+   * Some secret keys do not include it, and can thus only be used
+   * for public-key operations (encryption and verification).
+   * Such keys are:
+   * - GNU-dummy keys, where the secret material has been stripped away
+   * - encrypted keys with unsupported S2K or cipher
+   */
+  isMissingSecretKeyMaterial() {
+    return this.unparseableKeyMaterial === undefined && this.isDummy();
+  }
+
+  /**
    * Check whether this is a gnu-dummy key
    * @returns {Boolean}
    */
@@ -249,6 +276,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     if (this.isDecrypted()) {
       this.clearPrivateParams();
     }
+    delete this.unparseableKeyMaterial;
     this.isEncrypted = null;
     this.keyMaterial = null;
     this.s2k = new S2K(config);
@@ -318,6 +346,10 @@ class SecretKeyPacket extends PublicKeyPacket {
   async decrypt(passphrase) {
     if (this.isDummy()) {
       return false;
+    }
+
+    if (this.unparseableKeyMaterial) {
+      throw new Error('Key packet cannot be decrypted: unsupported S2K or cipher algo');
     }
 
     if (this.isDecrypted()) {
@@ -404,7 +436,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * Clear private key parameters
    */
   clearPrivateParams() {
-    if (this.isDummy()) {
+    if (this.isMissingSecretKeyMaterial()) {
       return;
     }
 
