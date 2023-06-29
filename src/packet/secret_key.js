@@ -253,7 +253,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * - encrypted keys with unsupported S2K or cipher
    */
   isMissingSecretKeyMaterial() {
-    return this.unparseableKeyMaterial === undefined && this.isDummy();
+    return this.unparseableKeyMaterial !== undefined || this.isDummy();
   }
 
   /**

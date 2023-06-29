@@ -2952,6 +2952,7 @@ module.exports = () => describe('Key', function() {
     expect(key.isPrivate()).to.equal(true);
     expect(key.isDecrypted()).to.equal(false);
     expect(key.getSubkeys()).to.have.length(1);
+    expect(key.keyPacket.isMissingSecretKeyMaterial()).to.equal(true);
 
     const expectedSerializedKey = await openpgp.unarmor(encryptedKeyUnknownS2K);
     expect(key.write()).to.deep.equal(expectedSerializedKey.data);
