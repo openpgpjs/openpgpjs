@@ -15,6 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+import { UnsupportedError } from '../packet/packet';
+
 /**
  * Implementation of type KDF parameters
  *
@@ -50,7 +52,7 @@ class KDFParams {
    */
   read(input) {
     if (input.length < 4 || input[0] !== 3 || input[1] !== 1) {
-      throw new Error('Cannot read KDFParams');
+      throw new UnsupportedError('Cannot read KDFParams');
     }
     this.hash = input[2];
     this.cipher = input[3];
