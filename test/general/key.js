@@ -2217,6 +2217,25 @@ UGHMDD0RTiyoiQjvVdCRq3YDQtu38TdIKUurvfjeDjLBfuF1RmED9lCRREqRGwKU
 =kUWS
 -----END PGP PUBLIC KEY BLOCK-----`;
 
+// key encrypted with invalid s2kType = 23, to test that it can still be used for encryption/verification
+const encryptedKeyUnknownS2K = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYYEZJ2H3RYJKwYBBAHaRw8BAQdA3V39Xv0+436Rpn/2UlcnOC1BGprmAlWY
+RBKjAq0hAtD+CRcIdHzwqoLa54cAbBOEIgBh7Xa1Qh5wCGAmEVWnAldaqvk+
+NcvUL2bR6AQsGIT6YEihOS3xLKobMOd2XlO5ItQoWnONzkWgzjFvctgnlhmq
+I80AwowEEBYKAD4FgmSdh90ECwkHCAmQaBT7gxSTsXwDFQgKBBYAAgECGQEC
+mwMCHgEWIQSvRnJTQT6TtdZFk0NoFPuDFJOxfAAAT7kBALmmUEJt5HMAOWiW
+7/8y4wllm8zNQ9vbl5Q0cWbeWj/8AP9HDa2rRxHY/37g5zXdmL9f/qNWr9Fk
+EBRhLLwusumuDMeLBGSdh90SCisGAQQBl1UBBQEBB0Am2yjjialeIVXHJJ2P
+b7KiapCC0mD95F0EFz6zz0l4DgMBCAf+CRcISMdt0OUFCNUABB/OD0UW7MPK
+Y3t8RrUTYoiCuhuPRDLOJ5NnMNagVQLt3jQsI8JRjzmYbiTrA/V3iJIEDu5C
+NWbnvCM7Hs7+OqPzJPJ2w8J4BBgWCAAqBYJknYfdCZBoFPuDFJOxfAKbDBYh
+BK9GclNBPpO11kWTQ2gU+4MUk7F8AADwfwD8CsOVw/3zm1UwUbGUi+fuf6Pr
+VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
+0pYO
+=rWL8
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
@@ -2928,6 +2947,17 @@ module.exports = () => describe('Key', function() {
     expect(primaryUser).to.exist;
   });
 
+  it('Parsing and serialization of encrypted key with unknown S2K type (unparseableKeyMaterial)', async function() {
+    const key = await openpgp.readKey({ armoredKey: encryptedKeyUnknownS2K });
+    expect(key.isPrivate()).to.equal(true);
+    expect(key.isDecrypted()).to.equal(false);
+    expect(key.getSubkeys()).to.have.length(1);
+    expect(key.keyPacket.isMissingSecretKeyMaterial()).to.equal(true);
+
+    const expectedSerializedKey = await openpgp.unarmor(encryptedKeyUnknownS2K);
+    expect(key.write()).to.deep.equal(expectedSerializedKey.data);
+  });
+
   it('Parsing V5 public key packet', async function() {
     // Manually modified from https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b2092/back.mkd#sample-eddsa-key
     const packetBytes = util.hexToUint8Array(`
@@ -3216,6 +3246,14 @@ module.exports = () => describe('Key', function() {
     // confirm that the converted keys can be parsed
     await openpgp.readKey({ armoredKey: encryptedKey.armor() });
     await openpgp.readKey({ armoredKey: decryptedKey.armor() });
+  });
+
+  it('makeDummy() - should work for encrypted keys with unknown s2k (unparseableKeyMaterial)', async function() {
+    const key = await openpgp.readKey({ armoredKey: encryptedKeyUnknownS2K });
+    expect(key.keyPacket.isDummy()).to.be.false;
+    expect(key.keyPacket.makeDummy()).to.not.throw;
+    expect(key.keyPacket.isDummy()).to.be.true;
+    expect(key.keyPacket.unparseableKeyMaterial).to.not.exist;
   });
 
   it('clearPrivateParams() - check that private key can no longer be used', async function() {
