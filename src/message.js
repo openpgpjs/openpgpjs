@@ -652,7 +652,7 @@ export class Message {
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
-    const signatureList = signature.packets;
+    const signatureList = signature.packets.filterByTag(enums.packet.signature); // drop UnparsablePackets
     return createVerificationObjects(signatureList, literalDataList, verificationKeys, date, true, config);
   }
 

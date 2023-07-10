@@ -1642,6 +1642,104 @@ hkJiXopCSWKSlQInL1devkJJUWJmTmZeugJYlpdLAagQJM0JpsCqIQZwKgAA
     });
   });
 
+  it('Should verify detached signature with some unknown versions of Signature packets', async function () {
+    // Test from openpgp-interoperability-test-suite to ensure forward compatibility: https://tests.sequoia-pgp.org/?q=forward-compat
+    const plaintext = 'hello world';
+
+    // This signature includes two Signature packets: a v4 one (verifiable) and a 'dummy' v23 one.
+    const signatureUnknownTrailingPacketVersion = `-----BEGIN PGP SIGNATURE-----
+
+wnUEARYKACcFgmSVpTQJkHEwNzxPuQajFiEE2KiARjeh+fU3dy+5cTA3PE+5
+BqMAAKZNAP0fhECUqrE2Ts7Ho8/fuLFT+9jsGIGo0EviIEmW77vyhQEAtOBa
+N77tTSawgDqnjIRH5RyI6YNC1LNz01VHCYWwegfCwTsXAAEKAG8FgmSVZN4J
+EPv8yCoBXnMwRxQAAAAAAB4AIHNhbHRAbm90YXRpb25zLnNlcXVvaWEtcGdw
+Lm9yZ8jF+epDaQ8yqg9h1mb0LcDLKC71kHyESC8fqFt9fNFsFiEE0aZuGiOx
+gsmYD3iM+/zIKgFeczAAADLxDACKH0qwrZW+Eu3McHHfKojqlHoJ+Ofqotui
+Gtcyx3HrE86xQHQl6346Joweomlzo2A6cjhT/nxL88sfy9yTQyUyKaON0wHz
+4WI+Onu8rSaG99J/u34dDIPqFu5DzhwCrkv0IQwGYfDxG6Lrxg7gsxui2KAt
+4rJqlbaeRGOTeNmew6aH74foUp86LWjdasanZ3RXxjk3yP+R/7nquQjkVGqE
+jElkMwFh44TwTHlrXfI90Ki4gNrFQfbQCQm2v66rT0t3BSgVrL+FZIyXjjOh
+dp83PCrkcvOcbBalvtbYPd5+23cGAylm5hkC9bxQUwUJrcJezdwSpxF5+Vgj
+IkeanKfU2BhKry3Hpn3PL6vLfVkK/w0wUEbDMkFRbGAmW1sPCJWDSX6Zy75/
+Li0CQ3u6tg3/m9VHUdwN5iNVk3g7AtV2eLinv4fKIuVUxUIyvacro+RBxGNc
+EnZwTO2p2I0xifnoRizITFXclUc9J4vK+whpi9PHH5uoqRGcoer72rtjIIs=
+=nReB
+-----END PGP SIGNATURE-----`;
+
+    const publicKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xjMEZJWk4RYJKwYBBAHaRw8BAQdA7p5RuL+Z05qld6xRz6tbJ+9pmDowaCYr
+tMOW8MXHAx3NFW5hbWUgPGVtYWlsQHRlc3QuY29tPsKMBBAWCgA+BYJklaTh
+BAsJBwgJkHEwNzxPuQajAxUICgQWAAIBAhkBApsDAh4BFiEE2KiARjeh+fU3
+dy+5cTA3PE+5BqMAAB5pAQDUHdYs3HRK6yJZ6IrK8lfmLzeqSgW2j9wLG/zF
+TXIARQEAj0PdOzSy3q75VIQraDSHWpBAue8QNEKV4Q8hlkJvmgPOOARklaTh
+EgorBgEEAZdVAQUBAQdAR9bBkzKzh24TB6gJVHR49BWnhTmeF5+vA3PXtX/b
+RHkDAQgHwngEGBYIACoFgmSVpOEJkHEwNzxPuQajApsMFiEE2KiARjeh+fU3
+dy+5cTA3PE+5BqMAAFjVAQDKqKwFLKX+N7le3cDLHAYSqc4AWpksKS4eSBLa
+uDvEBgD+LCEUOPejUTCMqPyd04ssdOq1AlMJOmUGUwLk7kFP7Aw=
+=Q9Px
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+    const { signatures, data } = await openpgp.verify({
+      message: await openpgp.createMessage({ text: plaintext }),
+      signature: await openpgp.readSignature({ armoredSignature: signatureUnknownTrailingPacketVersion }),
+      verificationKeys: await openpgp.readKey({ armoredKey: publicKey })
+    });
+    expect(data).to.equal(plaintext);
+    expect(signatures).to.have.length(1);
+    expect(await signatures[0].verified).to.be.true;
+    expect((await signatures[0].signature).packets.length).to.equal(1);
+  });
+
+  it('Should verify cleartext signature with some unknown versions of Signature packets', async function () {
+    // Test to ensure forward compatibility:
+    // this signature includes two Signature packets: a v4 one (verifiable) and a 'dummy' v23 one.
+    const signatureUnknownTrailingPacketVersion = `-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+hello world
+-----BEGIN PGP SIGNATURE-----
+
+wnUEARYKACcFgmSVpTQJkHEwNzxPuQajFiEE2KiARjeh+fU3dy+5cTA3PE+5
+BqMAAKZNAP0fhECUqrE2Ts7Ho8/fuLFT+9jsGIGo0EviIEmW77vyhQEAtOBa
+N77tTSawgDqnjIRH5RyI6YNC1LNz01VHCYWwegfCwTsXAAEKAG8FgmSVZN4J
+EPv8yCoBXnMwRxQAAAAAAB4AIHNhbHRAbm90YXRpb25zLnNlcXVvaWEtcGdw
+Lm9yZ8jF+epDaQ8yqg9h1mb0LcDLKC71kHyESC8fqFt9fNFsFiEE0aZuGiOx
+gsmYD3iM+/zIKgFeczAAADLxDACKH0qwrZW+Eu3McHHfKojqlHoJ+Ofqotui
+Gtcyx3HrE86xQHQl6346Joweomlzo2A6cjhT/nxL88sfy9yTQyUyKaON0wHz
+4WI+Onu8rSaG99J/u34dDIPqFu5DzhwCrkv0IQwGYfDxG6Lrxg7gsxui2KAt
+4rJqlbaeRGOTeNmew6aH74foUp86LWjdasanZ3RXxjk3yP+R/7nquQjkVGqE
+jElkMwFh44TwTHlrXfI90Ki4gNrFQfbQCQm2v66rT0t3BSgVrL+FZIyXjjOh
+dp83PCrkcvOcbBalvtbYPd5+23cGAylm5hkC9bxQUwUJrcJezdwSpxF5+Vgj
+IkeanKfU2BhKry3Hpn3PL6vLfVkK/w0wUEbDMkFRbGAmW1sPCJWDSX6Zy75/
+Li0CQ3u6tg3/m9VHUdwN5iNVk3g7AtV2eLinv4fKIuVUxUIyvacro+RBxGNc
+EnZwTO2p2I0xifnoRizITFXclUc9J4vK+whpi9PHH5uoqRGcoer72rtjIIs=
+=nReB
+-----END PGP SIGNATURE-----`;
+
+    const publicKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xjMEZJWk4RYJKwYBBAHaRw8BAQdA7p5RuL+Z05qld6xRz6tbJ+9pmDowaCYr
+tMOW8MXHAx3NFW5hbWUgPGVtYWlsQHRlc3QuY29tPsKMBBAWCgA+BYJklaTh
+BAsJBwgJkHEwNzxPuQajAxUICgQWAAIBAhkBApsDAh4BFiEE2KiARjeh+fU3
+dy+5cTA3PE+5BqMAAB5pAQDUHdYs3HRK6yJZ6IrK8lfmLzeqSgW2j9wLG/zF
+TXIARQEAj0PdOzSy3q75VIQraDSHWpBAue8QNEKV4Q8hlkJvmgPOOARklaTh
+EgorBgEEAZdVAQUBAQdAR9bBkzKzh24TB6gJVHR49BWnhTmeF5+vA3PXtX/b
+RHkDAQgHwngEGBYIACoFgmSVpOEJkHEwNzxPuQajApsMFiEE2KiARjeh+fU3
+dy+5cTA3PE+5BqMAAFjVAQDKqKwFLKX+N7le3cDLHAYSqc4AWpksKS4eSBLa
+uDvEBgD+LCEUOPejUTCMqPyd04ssdOq1AlMJOmUGUwLk7kFP7Aw=
+=Q9Px
+-----END PGP PUBLIC KEY BLOCK-----`;
+
+    const { signatures } = await openpgp.verify({
+      message: await openpgp.readCleartextMessage({ cleartextMessage: signatureUnknownTrailingPacketVersion }),
+      verificationKeys: await openpgp.readKey({ armoredKey: publicKey })
+    });
+    expect(signatures).to.have.length(1);
+    expect(await signatures[0].verified).to.be.true;
+    expect((await signatures[0].signature).packets.length).to.equal(1);
+  });
+
   it('Should verify cleartext message correctly when using a detached cleartext signature and binary literal data', async function () {
     const plaintext = 'short message\nnext line \n한국어/조선말';
     const pubKey = await openpgp.readKey({ armoredKey: pub_key_arm2 });

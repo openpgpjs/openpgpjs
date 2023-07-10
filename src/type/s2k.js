@@ -31,6 +31,7 @@
 import defaultConfig from '../config';
 import crypto from '../crypto';
 import enums from '../enums';
+import { UnsupportedError } from '../packet/packet';
 import util from '../util';
 
 class S2K {
@@ -70,7 +71,11 @@ class S2K {
    */
   read(bytes) {
     let i = 0;
-    this.type = enums.read(enums.s2k, bytes[i++]);
+    try {
+      this.type = enums.read(enums.s2k, bytes[i++]);
+    } catch (err) {
+      throw new UnsupportedError('Unknown S2K type.');
+    }
     this.algorithm = bytes[i++];
 
     switch (this.type) {
@@ -98,15 +103,15 @@ class S2K {
             this.type = 'gnu-dummy';
             // GnuPG extension mode 1001 -- don't write secret key at all
           } else {
-            throw new Error('Unknown s2k gnu protection mode.');
+            throw new UnsupportedError('Unknown s2k gnu protection mode.');
           }
         } else {
-          throw new Error('Unknown s2k type.');
+          throw new UnsupportedError('Unknown s2k type.');
         }
         break;
 
       default:
-        throw new Error('Unknown s2k type.');
+        throw new UnsupportedError('Unknown s2k type.'); // unreachable
     }
 
     return i;
