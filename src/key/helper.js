@@ -50,7 +50,7 @@ export async function getLatestValidSignature(signatures, publicKey, signatureTy
       if (
         (!latestValid || signatures[i].created >= latestValid.created)
       ) {
-        await signatures[i].verify(publicKey, signatureType, dataToVerify, date, undefined, config);
+        await signatures[i].verify(publicKey, signatureType, dataToVerify, null, date, undefined, config);
         latestValid = signatures[i];
       }
     } catch (e) {
@@ -154,7 +154,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
  * @returns {Promise<module:enums.symmetric|aead|compression>} Preferred algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = {}, config = defaultConfig) {
   const defaultAlgo = { // these are all must-implement in rfc4880bis
     'symmetric': enums.symmetric.aes128,
     'aead': enums.aead.eax,
@@ -174,8 +174,8 @@ export async function getPreferredAlgo(type, keys = [], date = new Date(), userI
   // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
-  const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
+  const senderAlgoSupport = await Promise.all(keys.map(async function(key) {
+    const primaryUser = await key.getPrimaryUser(date, userIDs[key], config);
     const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
     return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
@@ -271,7 +271,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
         await revocationSignature.verify(
-          key, signatureType, dataToVerify, config.revocationsExpire ? date : null, false, config
+          key, signatureType, dataToVerify, null, config.revocationsExpire ? date : null, false, config
         );
 
         // TODO get an identifier of the revoked object instead

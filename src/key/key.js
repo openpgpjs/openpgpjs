@@ -601,7 +601,7 @@ class Key {
       throw new Error('Revocation signature does not match key');
     }
     try {
-      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, date, undefined, config);
+      await revocationSignature.verify(this.keyPacket, enums.signature.keyRevocation, { key: this.keyPacket }, null, date, undefined, config);
     } catch (e) {
       throw util.wrapError('Could not verify revocation signature', e);
     }
