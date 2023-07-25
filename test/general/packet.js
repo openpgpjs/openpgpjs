@@ -1514,6 +1514,20 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       ).to.be.rejectedWith(/Unsupported S2K type/);
     });
 
+    it('Throws on critical packet even with tolerant mode enabled', async function() {
+      const unknownPacketTag39 = util.hexToUint8Array('e70a750064bf943d6e756c6c'); // critical tag
+
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag39, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false, ignoreMalformedPackets: false })).to.be.rejectedWith(/Unknown packet type/);
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag39, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true, ignoreMalformedPackets: true })).to.be.rejectedWith(/Unknown packet type/);
+    });
+
+    it('Ignores non-critical packet even with tolerant mode disabled', async function() {
+      const unknownPacketTag63 = util.hexToUint8Array('ff0a750064bf943d6e756c6c'); // non-critical tag
+
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: false, ignoreMalformedPackets: false })).to.eventually.have.length(0);
+      await expect(openpgp.PacketList.fromBinary(unknownPacketTag63, allAllowedPackets, { ...openpgp.config, ignoreUnsupportedPackets: true, ignoreMalformedPackets: true })).to.eventually.have.length(0);
+    });
+
     it('Throws on disallowed packet even with tolerant mode enabled', async function() {
       const packets = new openpgp.PacketList();
       packets.push(new openpgp.LiteralDataPacket());
