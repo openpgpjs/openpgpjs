@@ -308,6 +308,19 @@ export class UnsupportedError extends Error {
   }
 }
 
+// unknown packet types are handled differently depending on the packet criticality
+export class UnknownPacketError extends UnsupportedError {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, UnsupportedError);
+    }
+
+    this.name = 'UnknownPacketError';
+  }
+}
+
 export class UnparseablePacket {
   constructor(tag, rawContent) {
     this.tag = tag;
