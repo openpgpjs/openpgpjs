@@ -4,7 +4,8 @@ import {
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength,
   UnparseablePacket,
-  UnsupportedError
+  UnsupportedError,
+  UnknownPacketError
 } from './packet';
 import util from '../util';
 import enums from '../enums';
@@ -25,7 +26,7 @@ export function newPacketFromTag(tag, allowedPackets) {
     try {
       packetType = enums.read(enums.packet, tag);
     } catch (e) {
-      throw new UnsupportedError(`Unknown packet type with tag: ${tag}`);
+      throw new UnknownPacketError(`Unknown packet type with tag: ${tag}`);
     }
     throw new Error(`Packet not allowed in this context: ${packetType}`);
   }
@@ -87,6 +88,17 @@ class PacketList extends Array {
               await packet.read(parsed.packet, config);
               await writer.write(packet);
             } catch (e) {
+              // If an implementation encounters a critical packet where the packet type is unknown in a packet sequence,
+              // it MUST reject the whole packet sequence. On the other hand, an unknown non-critical packet MUST be ignored.
+              // Packet Tags from 0 to 39 are critical. Packet Tags from 40 to 63 are non-critical.
+              if (e instanceof UnknownPacketError) {
+                if (parsed.tag <= 39) {
+                  await writer.abort(e);
+                } else {
+                  return;
+                }
+              }
+
               const throwUnsupportedError = !config.ignoreUnsupportedPackets && e instanceof UnsupportedError;
               const throwMalformedError = !config.ignoreMalformedPackets && !(e instanceof UnsupportedError);
               if (throwUnsupportedError || throwMalformedError || supportsStreaming(parsed.tag)) {
