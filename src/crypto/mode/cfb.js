@@ -57,7 +57,7 @@ export async function encrypt(algo, key, plaintext, iv, config) {
   if (util.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
     return nodeEncrypt(algo, key, plaintext, iv);
   }
-  if (algoName.substr(0, 3) === 'aes') {
+  if (util.isAES(algo)) {
     return aesEncrypt(algo, key, plaintext, iv, config);
   }
 
@@ -100,7 +100,7 @@ export async function decrypt(algo, key, ciphertext, iv) {
   if (util.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
     return nodeDecrypt(algo, key, ciphertext, iv);
   }
-  if (algoName.substr(0, 3) === 'aes') {
+  if (util.isAES(algo)) {
     return aesDecrypt(algo, key, ciphertext, iv);
   }
 

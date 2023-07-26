@@ -2018,6 +2018,65 @@ aOU=
       expect(await stream.readToEnd(streamedData)).to.equal(text);
     });
 
+    it('supports decrypting new x25519 format', async function () {
+      // v4 key
+      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
+GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
+dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
+iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
+BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
+0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
+nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
+BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
+yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
+=bJqd
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+      const messageToDecrypt = `-----BEGIN PGP MESSAGE-----
+
+wUQDYc6clYlCdtoZ3rAsvBDIwvoLmvM0zwViG8Ec0PgFfN5R6C4BqEZD53UZB1WM
+J68hXSj1Sa235XAUYE1pZerTKhglvdI9Aeve8+L0w5RDMjmBBA50Yv/YT8liqhNi
+mNwbfFbSNhZYWjFada77EKBn60j8QT/xCQzLR1clci7ieW2knw==
+=NKye
+-----END PGP MESSAGE-----`;
+      const { data } = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: messageToDecrypt }),
+        decryptionKeys: privateKey
+      });
+      expect(data).to.equal('Hello World!');
+    });
+
+    it('supports encrypting new x25519 format', async function () {
+      // v4 key
+      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
+GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
+dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
+iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
+BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
+0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
+nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
+BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
+yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
+=bJqd
+-----END PGP PRIVATE KEY BLOCK-----` });
+      const plaintext = 'plaintext';
+
+      const signed = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: plaintext }),
+        encryptionKeys: privateKey
+      });
+
+      const { data } = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: signed }),
+        decryptionKeys: privateKey
+      });
+      expect(data).to.equal(plaintext);
+    });
+
     it('should support encrypting with encrypted key with unknown s2k (unparseableKeyMaterial)', async function() {
       const originalDecryptedKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -4023,6 +4082,45 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
       expect(data).to.equal('test');
     });
 
+    it('should enforce using AES session keys with x25519 keys (new format)', async function () {
+      // x25519 key (v4) with cast5 as preferred cipher
+      const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZK8BixuMghYwdEgHl+3ASI4VZkn048KG4DVuugT1bMe4QTtFtQCoKBOG
+JxrZh8E+7I5nK7McXP2U9gyC0+RFcD46AxSmRA46zQDCiAQQGwgAPgWCZK8B
+iwQLAwcICZCaWrTxMIPhVwMVCAoEFgACAQIZAQKbAwIeARYhBDFBS8Xnfotk
+Oun5WZpatPEwg+FXAABwwuNWCdr1WahiGrLupYaOYQO4S9y+FYTxqEV/gsOP
+TKwmNIcIJPROV2LgyxvzQo79//0CocEYojEeUhGn7BH5lwvHSQRkrwGLGbVM
+1JxFUJeQ253sHMko73uPkyyb9DvaeyWHPwgF2k9GACA9caoO8GsZI7KMnVGP
+c4EpytBwVIsr4ck3QaEV/UxvDpnCdAQYGwgAKgWCZK8BiwmQmlq08TCD4VcC
+mwwWIQQxQUvF536LZDrp+VmaWrTxMIPhVwAAXycLtMyiv0lon4qU5/rKWjrq
+MIxMchUbHvktvUqomU0pDDLMPqLFtzBbtHqODPVbLTOygJRVLeHyWTOEfmOD
+kl0L
+=SYJZ
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+      await expect(openpgp.generateSessionKey({
+        encryptionKeys: privateKeyCast5,
+        config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
+      })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
+
+      await expect(openpgp.encrypt({
+        message: await openpgp.createMessage({ text: plaintext }),
+        encryptionKeys: privateKeyCast5,
+        sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
+      })).to.be.rejectedWith(/X25519 keys can only encrypt AES session keys/);
+
+      await expect(openpgp.decryptSessionKeys({
+        message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+
+wUQD66NYAXF0vfYZNWpc7s9eihtgj7EhHBeLOq2Ktw79artbhN5JMs+9aCIZ
+A7sB7uYCTVCLIMfPFwVZH+c29gpCzPxSXQ==
+=Dr02
+-----END PGP MESSAGE-----` }),
+        decryptionKeys: privateKeyCast5
+      })).to.be.rejectedWith(/AES session key expected/);
+    });
+
     describe('Sign and verify with each curve', function() {
       const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
       curves.forEach(curve => {
@@ -4034,6 +4132,34 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
           const verified = await openpgp.verify({ verificationKeys:[key], message: await openpgp.readCleartextMessage({ cleartextMessage: signed }), config });
           expect(await verified.signatures[0].verified).to.be.true;
         });
+      });
+
+      it('sign/verify with new Ed25519 format', async function () {
+        // v4 key, which we do not support generating
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZBw5PBscroGar9fsilA0q9AX979pBhTNkGQ69vQGGW7kxRxNuABB+eAw
+JrQ9A3o1gUJg28ORTQd72+kFo87184qR97a6rRGFzQR0ZXN0wogEEBsIAD4F
+gmQcOTwECwkHCAmQT/m+Rl22Ps8DFQgKBBYAAgECGQECmwMCHgEWIQSUlOfm
+G7MWJd2909ZP+b5GXbY+zwAAVs/4pWH4l7pWcTATBavVqSATMKi4A+usp89G
+J/qaHc+qmcEpIMmPNvLQ7n4F4kEXk8Zwz+OXovVWLQ+Njl5gzooF
+=wYg1
+-----END PGP PRIVATE KEY BLOCK-----
+  ` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.sign({
+          message: await openpgp.createMessage({ text: plaintext }),
+          signingKeys: privateKey
+        });
+
+        const { signatures, data } = await openpgp.verify({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          verificationKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
       });
     });
 

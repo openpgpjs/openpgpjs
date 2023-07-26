@@ -8,6 +8,7 @@ const KDFParams = require('../../src/type/kdf_params');
 const elliptic_curves = require('../../src/crypto/public_key/elliptic');
 const util = require('../../src/util');
 const elliptic_data = require('./elliptic_data');
+const random = require('../../src/crypto/random');
 
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
@@ -19,7 +20,7 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
       data = new Uint8Array(data);
     }
     return Promise.resolve().then(() => {
-      const curve = new elliptic_curves.Curve(oid);
+      const curve = new elliptic_curves.CurveWithOID(oid);
       return elliptic_curves.ecdh.decrypt(
         new OID(curve.oid),
         new KDFParams({ cipher, hash }),
@@ -131,111 +132,122 @@ module.exports = () => describe('ECDH key exchange @lightweight', function () {
     71, 245, 86, 3, 168, 101, 74, 209, 105
   ]);
 
-  describe('ECDHE key generation', function () {
-    const ecdh = elliptic_curves.ecdh;
+  const ecdh = elliptic_curves.ecdh;
 
-    it('Invalid curve', async function () {
-      if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
-        this.skip();
-      }
-      const curve = new elliptic_curves.Curve('secp256k1');
+  it('Invalid curve', async function () {
+    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+      this.skip();
+    }
+    const curve = new elliptic_curves.CurveWithOID('secp256k1');
+    const oid = new OID(curve.oid);
+    const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+    const data = util.stringToUint8Array('test');
+    expect(
+      ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1)
+    ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/);
+  });
+
+  it('Different keys', async function () {
+    const curve = new elliptic_curves.CurveWithOID('curve25519');
+    const oid = new OID(curve.oid);
+    const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+    const data = util.stringToUint8Array('test');
+    const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
+    await expect(
+      ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint1)
+    ).to.be.rejectedWith(/Key Data Integrity failed/);
+  });
+
+  it('Invalid fingerprint', async function () {
+    const curve = new elliptic_curves.CurveWithOID('curve25519');
+    const oid = new OID(curve.oid);
+    const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+    const data = util.stringToUint8Array('test');
+    const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q2, fingerprint1);
+    await expect(
+      ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint2)
+    ).to.be.rejectedWith(/Key Data Integrity failed/);
+  });
+
+  it('Successful exchange x25519 (legacy)', async function () {
+    const curve = new elliptic_curves.CurveWithOID('curve25519');
+    const oid = new OID(curve.oid);
+    const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+    const data = util.stringToUint8Array('test');
+    const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
+    expect(await ecdh.decrypt(oid, kdfParams, V, C, Q1, d1, fingerprint1)).to.deep.equal(data);
+  });
+
+  it('Successful exchange x25519', async function () {
+    const { ecdhX } = elliptic_curves;
+    const data = random.getRandomBytes(32);
+    // Bob's keys from https://www.rfc-editor.org/rfc/rfc7748#section-6.1
+    const b = util.hexToUint8Array('5dab087e624a8a4b79e17f8b83800ee66f3bb1292618b6fd1c2f8b27ff88e0eb');
+    const K_B = util.hexToUint8Array('de9edb7d7b7dc1b4d35b61c2ece435373f8343c85b78674dadfc7e146f882b4f');
+    const { ephemeralPublicKey, wrappedKey } = await ecdhX.encrypt(openpgp.enums.publicKey.x25519, data, K_B);
+    expect(await ecdhX.decrypt(openpgp.enums.publicKey.x25519, ephemeralPublicKey, wrappedKey, K_B, b)).to.deep.equal(data);
+  });
+
+  ['p256', 'p384', 'p521'].forEach(curveName => {
+    it(`NIST ${curveName} - Successful exchange`, async function () {
+      const curve = new elliptic_curves.CurveWithOID(curveName);
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
       const data = util.stringToUint8Array('test');
-      expect(
-        ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1)
-      ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/);
+      const Q = key_data[curveName].pub;
+      const d = key_data[curveName].priv;
+      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
+      expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
     });
-    it('Different keys', async function () {
-      const curve = new elliptic_curves.Curve('curve25519');
-      const oid = new OID(curve.oid);
-      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.stringToUint8Array('test');
-      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
-      await expect(
-        ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint1)
-      ).to.be.rejectedWith(/Key Data Integrity failed/);
+  });
+
+  describe('Comparing decrypting with and without native crypto', () => {
+    let sinonSandbox;
+    let getWebCryptoStub;
+    let getNodeCryptoStub;
+
+    beforeEach(function () {
+      sinonSandbox = sandbox.create();
     });
-    it('Invalid fingerprint', async function () {
-      const curve = new elliptic_curves.Curve('curve25519');
-      const oid = new OID(curve.oid);
-      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.stringToUint8Array('test');
-      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q2, fingerprint1);
-      await expect(
-        ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint2)
-      ).to.be.rejectedWith(/Key Data Integrity failed/);
+
+    afterEach(function () {
+      sinonSandbox.restore();
     });
-    it('Successful exchange curve25519', async function () {
-      const curve = new elliptic_curves.Curve('curve25519');
-      const oid = new OID(curve.oid);
-      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.stringToUint8Array('test');
-      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
-      expect(await ecdh.decrypt(oid, kdfParams, V, C, Q1, d1, fingerprint1)).to.deep.equal(data);
-    });
+
+    const disableNative = () => {
+      enableNative();
+      // stubbed functions return undefined
+      getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
+      getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
+    };
+    const enableNative = () => {
+      getWebCryptoStub && getWebCryptoStub.restore();
+      getNodeCryptoStub && getNodeCryptoStub.restore();
+    };
 
     ['p256', 'p384', 'p521'].forEach(curveName => {
-      it(`NIST ${curveName} - Successful exchange`, async function () {
-        const curve = new elliptic_curves.Curve(curveName);
+      it(`NIST ${curveName}`, async function () {
+        const nodeCrypto = util.getNodeCrypto();
+        const webCrypto = util.getWebCrypto();
+        if (!nodeCrypto && !webCrypto) {
+          this.skip();
+        }
+
+        const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
         const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
         const data = util.stringToUint8Array('test');
         const Q = key_data[curveName].pub;
         const d = key_data[curveName].priv;
         const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
+
+        const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH');
         expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
-      });
-    });
-
-    describe('Comparing decrypting with and without native crypto', () => {
-      let sinonSandbox;
-      let getWebCryptoStub;
-      let getNodeCryptoStub;
-
-      beforeEach(function () {
-        sinonSandbox = sandbox.create();
-      });
-
-      afterEach(function () {
-        sinonSandbox.restore();
-      });
-
-      const disableNative = () => {
-        enableNative();
-        // stubbed functions return undefined
-        getWebCryptoStub = sinonSandbox.stub(util, 'getWebCrypto');
-        getNodeCryptoStub = sinonSandbox.stub(util, 'getNodeCrypto');
-      };
-      const enableNative = () => {
-        getWebCryptoStub && getWebCryptoStub.restore();
-        getNodeCryptoStub && getNodeCryptoStub.restore();
-      };
-
-      ['p256', 'p384', 'p521'].forEach(curveName => {
-        it(`NIST ${curveName}`, async function () {
-          const nodeCrypto = util.getNodeCrypto();
-          const webCrypto = util.getWebCrypto();
-          if (!nodeCrypto && !webCrypto) {
-            this.skip();
-          }
-
-          const curve = new elliptic_curves.Curve(curveName);
-          const oid = new OID(curve.oid);
-          const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-          const data = util.stringToUint8Array('test');
-          const Q = key_data[curveName].pub;
-          const d = key_data[curveName].priv;
-          const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
-
-          const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH');
-          expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
-          disableNative();
-          expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
-          if (curveName !== 'p521') { // safari does not implement p521 in webcrypto
-            expect(nativeDecryptSpy.calledOnce).to.be.true;
-          }
-        });
+        disableNative();
+        expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
+        if (curveName !== 'p521') { // safari does not implement p521 in webcrypto
+          expect(nativeDecryptSpy.calledOnce).to.be.true;
+        }
       });
     });
   });

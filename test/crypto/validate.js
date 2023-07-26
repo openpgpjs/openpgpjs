@@ -87,7 +87,7 @@ async function generatePrivateKeyObject(options) {
 
 /* eslint-disable no-invalid-this */
 module.exports = () => {
-  describe('EdDSA parameter validation', function() {
+  describe('EdDSA parameter validation (legacy format)', function() {
     let eddsaKey;
     before(async () => {
       eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519' });

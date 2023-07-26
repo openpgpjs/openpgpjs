@@ -269,7 +269,7 @@ module.exports = () => describe('API functional testing', function() {
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {
       const symmKey = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
-      return crypto.publicKeyEncrypt(algoRSA, RSAPublicParams, symmKey).then(RSAEncryptedData => {
+      return crypto.publicKeyEncrypt(algoRSA, openpgp.enums.symmetric.aes256, RSAPublicParams, symmKey).then(RSAEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoRSA, RSAPublicParams, RSAPrivateParams, RSAEncryptedData
         ).then(data => {
@@ -280,7 +280,7 @@ module.exports = () => describe('API functional testing', function() {
 
     it('Asymmetric using Elgamal with eme_pkcs1 padding', function () {
       const symmKey = crypto.generateSessionKey(openpgp.enums.symmetric.aes256);
-      return crypto.publicKeyEncrypt(algoElGamal, elGamalPublicParams, symmKey).then(ElgamalEncryptedData => {
+      return crypto.publicKeyEncrypt(algoElGamal, openpgp.enums.symmetric.aes256, elGamalPublicParams, symmKey).then(ElgamalEncryptedData => {
         return crypto.publicKeyDecrypt(
           algoElGamal, elGamalPublicParams, elGamalPrivateParams, ElgamalEncryptedData
         ).then(data => {

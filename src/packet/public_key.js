@@ -260,7 +260,7 @@ class PublicKeyPacket {
     const modulo = this.publicParams.n || this.publicParams.p;
     if (modulo) {
       result.bits = util.uint8ArrayBitLength(modulo);
-    } else {
+    } else if (this.publicParams.oid) {
       result.curve = this.publicParams.oid.getName();
     }
     return result;

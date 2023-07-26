@@ -90,7 +90,7 @@ export default {
     gnu: 101
   },
 
-  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-9.1|RFC4880bis-04, section 9.1}
+  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-08.html#section-9.1|crypto-refresh RFC, section 9.1}
    * @enum {Integer}
    * @readonly
    */
@@ -109,13 +109,22 @@ export default {
     ecdh: 18,
     /** ECDSA (Sign only) [RFC6637] */
     ecdsa: 19,
-    /** EdDSA (Sign only)
+    /** EdDSA (Sign only) - deprecated by crypto-refresh (replaced by `ed25519` identifier below)
      * [{@link https://tools.ietf.org/html/draft-koch-eddsa-for-openpgp-04|Draft RFC}] */
-    eddsa: 22,
+    ed25519Legacy: 22, // NB: this is declared before `eddsa` to translate 22 to 'eddsa' for backwards compatibility
+    eddsa: 22, // to be deprecated in v6
     /** Reserved for AEDH */
     aedh: 23,
     /** Reserved for AEDSA */
-    aedsa: 24
+    aedsa: 24,
+    /** X25519 (Encrypt only) */
+    x25519: 25,
+    /** X448 (Encrypt only) */
+    x448: 26,
+    /** Ed25519 (Sign only) */
+    ed25519: 27,
+    /** Ed448 (Sign only) */
+    ed448: 28
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
