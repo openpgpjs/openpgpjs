@@ -17,7 +17,6 @@
 
 import * as stream from '@openpgp/web-stream-tools';
 import { armor, unarmor } from './encoding/armor';
-import KeyID from './type/keyid';
 import { Argon2OutOfMemoryError } from './type/s2k';
 import defaultConfig from './config';
 import crypto from './crypto';
@@ -431,24 +430,21 @@ export class Message {
    */
   static async encryptSessionKey(sessionKey, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, wildcard = false, encryptionKeyIDs = [], date = new Date(), userIDs = [], config = defaultConfig) {
     const packetlist = new PacketList();
-    const algorithm = enums.write(enums.symmetric, algorithmName);
+    const symmetricAlgorithm = enums.write(enums.symmetric, algorithmName);
     const aeadAlgorithm = aeadAlgorithmName && enums.write(enums.aead, aeadAlgorithmName);
 
     if (encryptionKeys) {
       const results = await Promise.all(encryptionKeys.map(async function(primaryKey, i) {
         const encryptionKey = await primaryKey.getEncryptionKey(encryptionKeyIDs[i], date, userIDs, config);
-        const pkESKeyPacket = new PublicKeyEncryptedSessionKeyPacket();
-        if (aeadAlgorithm) {
-          pkESKeyPacket.version = 6;
-          pkESKeyPacket.publicKeyVersion = wildcard ? 0 : encryptionKey.keyPacket.version;
-          pkESKeyPacket.publicKeyFingerprint = wildcard ? null : encryptionKey.keyPacket.getFingerprintBytes();
-        } else {
-          pkESKeyPacket.version = 3;
-          pkESKeyPacket.publicKeyID = wildcard ? KeyID.wildcard() : encryptionKey.getKeyID();
-        }
-        pkESKeyPacket.publicKeyAlgorithm = encryptionKey.keyPacket.algorithm;
-        pkESKeyPacket.sessionKey = sessionKey;
-        pkESKeyPacket.sessionKeyAlgorithm = algorithm;
+
+        const pkESKeyPacket = PublicKeyEncryptedSessionKeyPacket.fromObject({
+          version: aeadAlgorithm ? 6 : 3,
+          encryptionKeyPacket: encryptionKey.keyPacket,
+          anonymousRecipient: wildcard,
+          sessionKey,
+          sessionKeyAlgorithm: symmetricAlgorithm
+        });
+
         await pkESKeyPacket.encrypt(encryptionKey.keyPacket);
         delete pkESKeyPacket.sessionKey; // delete plaintext session key after encryption
         return pkESKeyPacket;
@@ -487,7 +483,7 @@ export class Message {
         return symEncryptedSessionKeyPacket;
       };
 
-      const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, algorithm, aeadAlgorithm, pwd)));
+      const results = await Promise.all(passwords.map(pwd => encryptPassword(sessionKey, symmetricAlgorithm, aeadAlgorithm, pwd)));
       packetlist.push(...results);
     }
 
