@@ -2581,27 +2581,30 @@ XfA3pqV4mTzF
           });
         });
 
-        it('should encrypt then decrypt with wildcard', async function () {
-          const encOpt = {
+        it('should encrypt then decrypt with wildcard (anonymous recipient)', async function () {
+          const { privateKey: privateKeyV4orV6 } = await openpgp.generateKey({ userIDs: { email: 'test@test.it' }, format: 'object' });
+          const plaintext = 'hello world';
+
+          const encryptedMessage = await openpgp.encrypt({
             message: await openpgp.createMessage({ text: plaintext }),
-            encryptionKeys: publicKey,
-            wildcard: true
-          };
-          const decOpt = {
-            decryptionKeys: privateKey
-          };
-          return openpgp.encrypt(encOpt).then(async function (encrypted) {
-            expect(encrypted).to.match(/^-----BEGIN PGP MESSAGE/);
-            decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            return openpgp.decrypt(decOpt);
-          }).then(function (decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            expect(decrypted.signatures).to.exist;
-            expect(decrypted.signatures.length).to.equal(0);
+            encryptionKeys: privateKeyV4orV6,
+            wildcard: true,
+            format: 'object'
           });
+
+          expect(encryptedMessage.getEncryptionKeyIDs().every(keyID => keyID.isWildcard())).to.be.true;
+          const armoredMessage = encryptedMessage.armor();
+
+          const parsedEncryptedMessage = await openpgp.readMessage({ armoredMessage });
+          expect(parsedEncryptedMessage.getEncryptionKeyIDs().every(keyID => keyID.isWildcard())).to.be.true;
+
+          const decrypted = await openpgp.decrypt({ message: parsedEncryptedMessage, decryptionKeys: privateKeyV4orV6 });
+          expect(decrypted.data).to.equal(plaintext);
+          expect(decrypted.signatures).to.exist;
+          expect(decrypted.signatures.length).to.equal(0);
         });
 
-        it('should encrypt then decrypt with wildcard with multiple private keys', async function () {
+        it('should encrypt then decrypt with wildcard with multiple private keys (anonymous recipient)', async function () {
           const privKeyDE = await openpgp.decryptKey({
             privateKey: await openpgp.readKey({ armoredKey: priv_key_de }),
             passphrase

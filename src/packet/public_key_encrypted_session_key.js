@@ -45,7 +45,7 @@ class PublicKeyEncryptedSessionKeyPacket {
   constructor() {
     this.version = null;
 
-    // For version 3:
+    // For version 3, but also used internally by v6 in e.g. `getEncryptionKeyIDs()`
     this.publicKeyID = new KeyID();
 
     // For version 6:
@@ -64,6 +64,30 @@ class PublicKeyEncryptedSessionKeyPacket {
 
     /** @type {Object} */
     this.encrypted = {};
+  }
+
+  static fromObject({
+    version, encryptionKeyPacket, anonymousRecipient, sessionKey, sessionKeyAlgorithm
+  }) {
+    const pkesk = new PublicKeyEncryptedSessionKeyPacket();
+
+    if (version !== 3 && version !== 6) {
+      throw new Error('Unsupported PKESK version');
+    }
+
+    pkesk.version = version;
+
+    if (version === 6) {
+      pkesk.publicKeyVersion = anonymousRecipient ? null : encryptionKeyPacket.version;
+      pkesk.publicKeyFingerprint = anonymousRecipient ? null : encryptionKeyPacket.getFingerprintBytes();
+    }
+
+    pkesk.publicKeyID = anonymousRecipient ? KeyID.wildcard() : encryptionKeyPacket.getKeyID();
+    pkesk.publicKeyAlgorithm = encryptionKeyPacket.algorithm;
+    pkesk.sessionKey = sessionKey;
+    pkesk.sessionKeyAlgorithm = sessionKeyAlgorithm;
+
+    return pkesk;
   }
 
   /**
