@@ -1329,40 +1329,6 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith('Error decrypting message: Decryption key is not decrypted.');
     });
 
-    it('should decrypt test vector X25519-AEAD-OCB (PKESK v6, SEIPDv2)', async function() {
-      // test vector https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.8
-      const armoredMessage = `-----BEGIN PGP MESSAGE-----
-
-wV0GIQYSyD8ecG9jCP4VGkF3Q6HwM3kOk+mXhIjR2zeNqZMIhRmHzxjV8bU/gXzO
-WgBM85PMiVi93AZfJfhK9QmxfdNnZBjeo1VDeVZheQHgaVf7yopqR6W1FT6NOrfS
-aQIHAgZhZBZTW+CwcW1g4FKlbExAf56zaw76/prQoN+bAzxpohup69LA7JW/Vp0l
-yZnuSj3hcFj0DfqLTGgr4/u717J+sPWbtQBfgMfG9AOIwwrUBqsFE9zW+f1zdlYo
-bhF30A+IitsxxA==
------END PGP MESSAGE-----`;
-
-      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
-exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
-BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
-2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
-RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
-7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
-LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
-GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
-2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
-M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
-k0mXubZvyl4GBg==
------END PGP PRIVATE KEY BLOCK-----` });
-
-      const { data: decryptedData } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage }),
-        decryptionKeys: privateKey
-      });
-
-      expect(decryptedData).to.equal('Hello, world!');
-    });
-
     it('decrypt/verify should succeed with valid signature  (expectSigned=true)', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const privateKey = await openpgp.decryptKey({
@@ -2099,99 +2065,6 @@ aOU=
       expect(objectMessage.packets.filterByTag(openpgp.enums.packet.symEncryptedSessionKey)).to.have.length(1);
       const { data: streamedData } = await openpgp.decrypt({ message: objectMessage, passwords, verificationKeys: privateKey, expectSigned: true, config });
       expect(await stream.readToEnd(streamedData)).to.equal(text);
-    });
-
-    it('supports decrypting new x25519 format', async function () {
-      // v4 key
-      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
-GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
-dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
-iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
-BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
-0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
-nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
-BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
-yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
-=bJqd
------END PGP PRIVATE KEY BLOCK-----` });
-
-      const messageToDecrypt = `-----BEGIN PGP MESSAGE-----
-
-wUQDYc6clYlCdtoZ3rAsvBDIwvoLmvM0zwViG8Ec0PgFfN5R6C4BqEZD53UZB1WM
-J68hXSj1Sa235XAUYE1pZerTKhglvdI9Aeve8+L0w5RDMjmBBA50Yv/YT8liqhNi
-mNwbfFbSNhZYWjFada77EKBn60j8QT/xCQzLR1clci7ieW2knw==
-=NKye
------END PGP MESSAGE-----`;
-      const { data } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: messageToDecrypt }),
-        decryptionKeys: privateKey
-      });
-      expect(data).to.equal('Hello World!');
-    });
-
-    it('supports encrypting/decrypting new x25519 format', async function () {
-      // v4 key
-      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
-GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
-dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
-iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
-BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
-0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
-nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
-BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
-yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
-=bJqd
------END PGP PRIVATE KEY BLOCK-----` });
-      const plaintext = 'plaintext';
-
-      const signed = await openpgp.encrypt({
-        message: await openpgp.createMessage({ text: plaintext }),
-        encryptionKeys: privateKey
-      });
-
-      const { data } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: signed }),
-        decryptionKeys: privateKey
-      });
-      expect(data).to.equal(plaintext);
-    });
-
-    it('supports encrypting/decrypting with x448', async function () {
-      // v4 key
-      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xXsEZRqJ5BwHESfKnw5YJly5WobjigVm0kKY84NxrP6JKeIvIWiFqqSlozGpKZyR
-50YbVTHmxpUCuJ7YNwX0UoAAoSO8IXmMM/XMd4ph00ju+fbSHdtQfyNhfFTi3UoM
-V5DiFT+uOYDP+zwAwLWCR86csxmCWn6O10DNHcDNF1VzZXJBIDxVc2VyQUB0ZXN0
-LnRlc3Q+wroEExwKAD4FAmUaieQJEC8lwIrxSM+5FiEEGR2s5Bj5WVDN0Px6LyXA
-ivFIz7kCGwMCHgkCGQECCwcDFQoIAhYAAycHAgAA21/PqAuGDL5+3qrf3YoVOP+5
-0BoJ+ZMhzcgax+cQTyndmOZYBfOqV/SJ8mf6CRhbB76JhGIvmRMtyYDQgDMVvcoA
-yojVNs6e/Jco16bVJxM85wKDXJuq6AhtPQ8w/0WaCJtEf1uxqeQPEbOM+KtT/xY2
-KgDHeQRlGonkGuOtAhogSIU3z/+gFzF8U7JQe7QDRYr9VWfi2WXFFarzg/3DMRur
-oIB7mqkaaSatrvVuud1ZmRCWAMM4f57dvSdCKsVqSe+tlS225OmdWmnGLqyErBb6
-44E2oENhDUom9OUGUPm8dXUjQbrmw6ec9hNLHWXCpgQYHAoAKgUCZRqJ5AkQLyXA
-ivFIz7kWIQQZHazkGPlZUM3Q/HovJcCK8UjPuQIbDAAAZka10c8KlmwftJuboIV5
-DalGWrZhbywJpEZRfoikcebSYi5++w1SbpXZGu27sl+BznGyyyqAfxyJjoCZaqCs
-ewbKh04DNAg4v4v0W0a8UvD3j/CuciEMXjK9nUErt91zEwxNZy43yrQY2aAayDs8
-94FqMAA=
-=GBh1
------END PGP PRIVATE KEY BLOCK-----` });
-      const plaintext = 'plaintext';
-
-      const signed = await openpgp.encrypt({
-        message: await openpgp.createMessage({ text: plaintext }),
-        encryptionKeys: privateKey
-      });
-
-      const { data } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: signed }),
-        decryptionKeys: privateKey
-      });
-      expect(data).to.equal(plaintext);
     });
 
     it('should support encrypting with encrypted key with unknown s2k (unparseableKeyMaterial)', async function() {
@@ -4378,9 +4251,10 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
       expect(data).to.equal('test');
     });
 
-    it('should enforce using AES session keys with x25519 keys (new format)', async function () {
-      // x25519 key (v4) with cast5 as preferred cipher
-      const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+    describe('X25519/Ed25519 (new format)', async function () {
+      it('should enforce using AES session keys with x25519 keys (v4 key)', async function () {
+        // x25519 key (v4) with cast5 as preferred cipher
+        const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xUkEZK8BixuMghYwdEgHl+3ASI4VZkn048KG4DVuugT1bMe4QTtFtQCoKBOG
 JxrZh8E+7I5nK7McXP2U9gyC0+RFcD46AxSmRA46zQDCiAQQGwgAPgWCZK8B
@@ -4395,31 +4269,126 @@ kl0L
 =SYJZ
 -----END PGP PRIVATE KEY BLOCK-----` });
 
-      await expect(openpgp.generateSessionKey({
-        encryptionKeys: privateKeyCast5,
-        config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
-      })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
+        await expect(openpgp.generateSessionKey({
+          encryptionKeys: privateKeyCast5,
+          config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
+        })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
 
-      await expect(openpgp.encrypt({
-        message: await openpgp.createMessage({ text: plaintext }),
-        encryptionKeys: privateKeyCast5,
-        sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
-      })).to.be.rejectedWith(/X25519 and X448 keys can only encrypt AES session keys/);
+        await expect(openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKeyCast5,
+          sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
+        })).to.be.rejectedWith(/X25519 and X448 keys can only encrypt AES session keys/);
 
-      await expect(openpgp.decryptSessionKeys({
-        message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
-
+        await expect(openpgp.decryptSessionKeys({
+          message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+  
 wUQD66NYAXF0vfYZNWpc7s9eihtgj7EhHBeLOq2Ktw79artbhN5JMs+9aCIZ
 A7sB7uYCTVCLIMfPFwVZH+c29gpCzPxSXQ==
 =Dr02
 -----END PGP MESSAGE-----` }),
-        decryptionKeys: privateKeyCast5
-      })).to.be.rejectedWith(/AES session key expected/);
+          decryptionKeys: privateKeyCast5
+        })).to.be.rejectedWith(/AES session key expected/);
+      });
+
+      it('supports decrypting new x25519 format (v4 key)', async function () {
+        // v4 key
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
+GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
+dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
+iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
+BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
+0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
+nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
+BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
+yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
+=bJqd
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const messageToDecrypt = `-----BEGIN PGP MESSAGE-----
+
+wUQDYc6clYlCdtoZ3rAsvBDIwvoLmvM0zwViG8Ec0PgFfN5R6C4BqEZD53UZB1WM
+J68hXSj1Sa235XAUYE1pZerTKhglvdI9Aeve8+L0w5RDMjmBBA50Yv/YT8liqhNi
+mNwbfFbSNhZYWjFada77EKBn60j8QT/xCQzLR1clci7ieW2knw==
+=NKye
+-----END PGP MESSAGE-----`;
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: messageToDecrypt }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal('Hello World!');
+      });
+
+      it('supports encrypting/decrypting new x25519 format (v4 key)', async function () {
+        // v4 key
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
+GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
+dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
+iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
+BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
+0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
+nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
+BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
+yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
+=bJqd
+-----END PGP PRIVATE KEY BLOCK-----` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKey
+        });
+
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+      });
+
+      it('should decrypt test vector X25519-AEAD-OCB (PKESK v6, SEIPD v2)', async function() {
+        // test vector https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.8
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wV0GIQYSyD8ecG9jCP4VGkF3Q6HwM3kOk+mXhIjR2zeNqZMIhRmHzxjV8bU/gXzO
+WgBM85PMiVi93AZfJfhK9QmxfdNnZBjeo1VDeVZheQHgaVf7yopqR6W1FT6NOrfS
+aQIHAgZhZBZTW+CwcW1g4FKlbExAf56zaw76/prQoN+bAzxpohup69LA7JW/Vp0l
+yZnuSj3hcFj0DfqLTGgr4/u717J+sPWbtQBfgMfG9AOIwwrUBqsFE9zW+f1zdlYo
+bhF30A+IitsxxA==
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const { data: decryptedData } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey
+        });
+
+        expect(decryptedData).to.equal('Hello, world!');
+      });
     });
 
-    it('should enforce using AES session keys with x448 keys', async function () {
-      // X448 key (v4) with cast5 as preferred cipher
-      const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+    describe('X448/Ed448', async function () {
+      it('should enforce using AES session keys with x448 keys (v4 key)', async function () {
+        // X448 key (v4) with cast5 as preferred cipher
+        const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xXsEZRrtaRyScvyNjK0o5ccICztnWhA1MSij7WdzPfuNy7ryUzB+kqzpziBR
 IIKp5PN0NW3mOYRDnUyo7QHBl4AA30tR5ED8u5v/rNIzKz/mKsD6XeYy+d0Q
@@ -4437,26 +4406,342 @@ x8fsFb2AEXLEwlSnL+Eo0O+iUQd3/94yMbMFRlNxrdaqZ3+7CehbnieI/vby
 LIEnN38XBi0HE70uoU5prxUA
 -----END PGP PRIVATE KEY BLOCK-----` });
 
-      await expect(openpgp.generateSessionKey({
-        encryptionKeys: privateKeyCast5,
-        config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
-      })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
+        await expect(openpgp.generateSessionKey({
+          encryptionKeys: privateKeyCast5,
+          config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
+        })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
 
-      await expect(openpgp.encrypt({
-        message: await openpgp.createMessage({ text: plaintext }),
-        encryptionKeys: privateKeyCast5,
-        sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
-      })).to.be.rejectedWith(/X25519 and X448 keys can only encrypt AES session keys/);
+        await expect(openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKeyCast5,
+          sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
+        })).to.be.rejectedWith(/X25519 and X448 keys can only encrypt AES session keys/);
 
-      await expect(openpgp.decryptSessionKeys({
-        message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
-
+        await expect(openpgp.decryptSessionKeys({
+          message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+  
 wVwD2k7TUuqJwZkaXvEGk7B3pklJ5uRcRdKwwDJ40yKT0m5ic1e/2F+Se3xQ
 zDE+N2DZ0B37pu4NUzTGBRo0oLD9EwwZA9+oJpBBOOry3cGmBYWvQHbvBpNE
 5X5l8A==
 -----END PGP MESSAGE-----` }),
-        decryptionKeys: privateKeyCast5
-      })).to.be.rejectedWith(/AES session key expected/);
+          decryptionKeys: privateKeyCast5
+        })).to.be.rejectedWith(/AES session key expected/);
+      });
+
+      it('should enforce using 512-bit signature digest', async function () {
+        // X448 key using sha256 for self signatures
+        const privateKeySHA256 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZCWHXBwwtqciq6ZFU13s+dyhkWR5tOEmF1oX8OiP1B5ypfqyGVM8DkQh
+5eTIMwB1oqJCROANoyA0q2dSigAAbDA5xr74DeClPPXC4ZXJ9uzuJWKvQvE8
+x3EflhgoQCGBM7JfvH5zwdrJvPt8RKDvm0QkZzhPvnFoHnzNBHRlc3TCugQQ
+HAgAPgWCZCWHXAQLCQcICZDsN6h/ys3ppwMVCAoEFgACAQIZAQKbAwIeARYh
+BOJyE9P2eIcU2N2Ne+w3qH/KzemnAAAh1hTFCcEU77bU3YelrJTCNIOQnvt7
+Hs6yZz2053CQTOC+wHkUQLaYYBEXSNyLZxoyv+NuGTiwbuYtAOlbE2erM7Cx
+8B2Qz7M29UkFLMBUfb+yi+gTYYUWCXVQ7Um7MGjjgUG8+9p452i6f28mhRD8
+tTgNAMd5BGQlh1wavTIFgILtbzrqQCiwDGx0YcFNzu9+FZ8vK5Mmm7UEZj0a
+y7FWQtZw8tTaU6mY+RrSa52RjzkGLtQAQO++tgYqc+BnCFdCZ3ZYPRvD3mof
+ffoo3l4xmto+iyvJZbQ4wQPXttg7VjCpEfOsL9TW9Xs09aIbysKmBBgcCAAq
+BYJkJYdcCZDsN6h/ys3ppwKbDBYhBOJyE9P2eIcU2N2Ne+w3qH/KzemnAAC0
+6/eZhh/Oj2gRdab2JeFGWACGIRDKxPXsWRCXR4YrSxcvCKK6rOvsyxQsgIsJ
+JyPYkRPfmbKcseUDAEkSBLAfeizDGh7ea0GOdIMhwE/CW4f/H8ULbwi36y13
+x3oMNVaYsI9dZ588Gpi8XYy2jOtqIPQ1AA==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        await expect(privateKeySHA256.getSigningKey()).to.be.rejectedWith(/Hash algorithm too weak for EdDSA/);
+      });
+
+      it('supports encrypting/decrypting with x448 (v4 key)', async function () {
+        // v4 key
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZRqJ5BwHESfKnw5YJly5WobjigVm0kKY84NxrP6JKeIvIWiFqqSlozGpKZyR
+50YbVTHmxpUCuJ7YNwX0UoAAoSO8IXmMM/XMd4ph00ju+fbSHdtQfyNhfFTi3UoM
+V5DiFT+uOYDP+zwAwLWCR86csxmCWn6O10DNHcDNF1VzZXJBIDxVc2VyQUB0ZXN0
+LnRlc3Q+wroEExwKAD4FAmUaieQJEC8lwIrxSM+5FiEEGR2s5Bj5WVDN0Px6LyXA
+ivFIz7kCGwMCHgkCGQECCwcDFQoIAhYAAycHAgAA21/PqAuGDL5+3qrf3YoVOP+5
+0BoJ+ZMhzcgax+cQTyndmOZYBfOqV/SJ8mf6CRhbB76JhGIvmRMtyYDQgDMVvcoA
+yojVNs6e/Jco16bVJxM85wKDXJuq6AhtPQ8w/0WaCJtEf1uxqeQPEbOM+KtT/xY2
+KgDHeQRlGonkGuOtAhogSIU3z/+gFzF8U7JQe7QDRYr9VWfi2WXFFarzg/3DMRur
+oIB7mqkaaSatrvVuud1ZmRCWAMM4f57dvSdCKsVqSe+tlS225OmdWmnGLqyErBb6
+44E2oENhDUom9OUGUPm8dXUjQbrmw6ec9hNLHWXCpgQYHAoAKgUCZRqJ5AkQLyXA
+ivFIz7kWIQQZHazkGPlZUM3Q/HovJcCK8UjPuQIbDAAAZka10c8KlmwftJuboIV5
+DalGWrZhbywJpEZRfoikcebSYi5++w1SbpXZGu27sl+BznGyyyqAfxyJjoCZaqCs
+ewbKh04DNAg4v4v0W0a8UvD3j/CuciEMXjK9nUErt91zEwxNZy43yrQY2aAayDs8
+94FqMAA=
+=GBh1
+-----END PGP PRIVATE KEY BLOCK-----` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKey
+        });
+
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+      });
+
+      it('supports encrypting/decrypting with x448 (v6 key)', async function () {
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA52IEq/TpKiPp6RofQaq4uhCruTtiG+qiVFnwsQgeh0ui34kHD
+Y1E04mBai0pCoDiFVokwsKt3F5sAAC8lDYfVP/p3atbXJDTJB2W9WmZxIS7pUGhS
+bjlWpZB/OVTBsoIfP/2J+Hi4ESwBRfDUDgwK4aJVKsLAIAYfHAoAAAA/BQJlGoti
+IqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwMCHgkCCwcDFQoI
+AhYABScHAwcCAAAAAPiGIG2qmhCULQ/+H4rKV0XEM1x0uVY3l878Pa6ijZLouZU/
+VRd5PnbGyLPL++q3LDViUUdZ1uusRc01f677Q6wpUU90k8MH/oULwI0+KPtqe1N4
+6nr1NTERsAmAaPjUdf4ZUXX/GWiTd/AlsS5JqGnAQxKRJkzCJacOTOElRMjzGUX7
+CGaAnhSC86YRZ68ocTPfZysAzRdVc2VyQiA8VXNlckJAdGVzdC50ZXN0PsLADQYT
+HAoAAAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUC
+GQEAAAAASKwgVzMoPb2Hbr3lbNI1CRWECokYLokL7F8MbYiMnlg+v6QXLdStvT13
+ZjxdrWQAx3MbihSOUSXbdAys90yMOAdtognj+x418J/TaYFMtIGBHwoHv8gQVnx9
+9ICv8ezx1T5VvGBYNuKZ5Ww0WPEpYMf1VA+Y9JxpohdcRenNBdSug4tLWla2y8NH
+aO28Fltpb4AuGQDHewZlGotiGgAAADjdabr1ohAOnbSUUkVhtUM/LVdnYgDLhmaj
+YZ1N7TWY0fqEpMk2LLo2165HOmhddRPeTB1TWbuwBwB8lKc3czFUzYcAgvZ08T5S
+UUHjfIhjeJeY4yd0OZDfzPw1vbegCc7t94bT+XGoIQbC/Bl7HCyAiMLADQYYHAoA
+AAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwwA
+AAAAHh0gf2kdqLoXdFX+aNVORr5VCVgcm2gBw8l68lDJ1ftA71bMllFi6Q5sLPUr
+6UCpJYYk3o3hYUYzIHmCIZGVYe1pxRgIUNqxydXEfzylJmN5NbiJNkjJizrI7oAR
+1mIcEEb/hmRMOUs1V2mcGuoeALBI/r/SyqDE2GRjH6d6g1RS7ZARPPHlZlY4CTqC
+4a7L+8odDwA=
+=chx0
+-----END PGP PRIVATE KEY BLOCK-----` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKey
+        });
+
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+      });
+
+      it('decrypt/verify should succeed using X448/Ed448 (PKESK v4, SEIPD v2, GCM)', async function() {
+        // data generated by gopenpgp
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wWkGFQQ70agVm6o5r3tEzY5mrYaOV8yHChpUetZ33zrKGtw1F4PeFrE4bYkcTMQM
+IcGoXcZj/0GJDCkOLLleSwrvuAuUwZV11bHBZ6eNTyj+XxhLdVflV/zqPmBhTHY9
+SMn0YYHwgiQFk6PSwGICBwMMRYkTpsy0dE4YKasf6b4Oh9cn6HYY5rjnrtvrwD+F
+LrsELfudYwpwHBA5jnO11Hl5mUyXhhWSdPoLGdeiYP5R/vZjqoZr3P6FL4dCdVni
+fGChUUSYmpO4HIFrRBt2gAxl+f0Q8GCOG8c7EQ7c5600kJOlHM7SuoLqsxd482V1
+H/1Rxd3cPwTDfOjH26KuDv60p0XjdCGyQXcDQMCPV+ZTs0TQl4wTFogZGaRMd9GC
+5D5t/guKzR+H1ipXSFjFdWWTEehx8m0RKKKT3Bl81awKZb8ulR6YKI5x39nwOySN
+azDRR3gn9xlKjcpa83k5sSZbUTxC8lzTeuMP0PkDrU2IpZUZOlzOhGYOGrtTFATK
+PSoZU33h2h3hJqiX9aKrnw==
+=Is5l
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZRqJ5BxV/xdxR4KvPofk3EzKaIZqM0Wlw904q+2S6Z84OmXN6Q1xCYurcwN1
+wLOlGJ/CO2QhByEdGlUldwAAIQSMnMITcmXQU3EWK5S81FS+u1IZFP55j51bA5mS
+HZ/A7MOpyN40ybW8mhMIXXUYB7kC/bOTmwVHGt3NF1VzZXJCIDxVc2VyQkB0ZXN0
+LnRlc3Q+wrwEExwKAEAFAmUaieQJEP3WralmOT0PFiEEq4zuQzIBSh+Nk6G9/dat
+qWY5PQ8CGwMCHgkCGQECCwcDFQoIAhYABScHAwcCAADAvnnhLp0DJYk7E0GfksCg
+pUnnCjEePMVvRPVY3dwr9wLpdL/7T70fz541XVE8giYiZD7eiKvfc/nMgOhu1eqK
+uXGUtDGBeabitJcrbquy2Tp/ENuW6rRHP7sAbu0mj6XxYEeCzKjGRT5Iq25AMevm
+yeoIAMd5BGUaieQaqj/dF+uZGt9QLuji2eOlDC0/quq/sAtdJTbI1xj04aF0X7kJ
+lVhEKeWZeAEpD4rVOCsrhMvr21gAu/BaFVKGUOuf0+ZE5jGcFcBvEP7OGyO296ry
+zV7ONWS/FuoZ/NZmgWo9m9ftPtwqKDsgOWxiIj4cesKmBBgcCgAqBQJlGonkCRD9
+1q2pZjk9DxYhBKuM7kMyAUofjZOhvf3WralmOT0PAhsMAADWb+0aY+NblShwsym/
+2geh6XaqQUCJgdRfEl8xYLau/o8QQAzRp0ZBA+KeK3uwhRW3RizuqIw5iribAK3+
+30Si5nvv0TivalPK2C9yAqzh9rkNNUQa9b17IHYs/WwQrvP3F5EZ3V+StqdveAEo
+FecSL/wTAA==
+=FANS
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const senderKey = await openpgp.readKey({
+          armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xj8EZRqJ5BwHESfKnw5YJly5WobjigVm0kKY84NxrP6JKeIvIWiFqqSlozGpKZyR
+50YbVTHmxpUCuJ7YNwX0UoDNF1VzZXJBIDxVc2VyQUB0ZXN0LnRlc3Q+wroEExwK
+AD4FAmUaieQJEC8lwIrxSM+5FiEEGR2s5Bj5WVDN0Px6LyXAivFIz7kCGwMCHgkC
+GQECCwcDFQoIAhYAAycHAgAA21/PqAuGDL5+3qrf3YoVOP+50BoJ+ZMhzcgax+cQ
+TyndmOZYBfOqV/SJ8mf6CRhbB76JhGIvmRMtyYDQgDMVvcoAyojVNs6e/Jco16bV
+JxM85wKDXJuq6AhtPQ8w/0WaCJtEf1uxqeQPEbOM+KtT/xY2KgDOPgRlGonkGuOt
+AhogSIU3z/+gFzF8U7JQe7QDRYr9VWfi2WXFFarzg/3DMRuroIB7mqkaaSatrvVu
+ud1ZmRCWwqYEGBwKACoFAmUaieQJEC8lwIrxSM+5FiEEGR2s5Bj5WVDN0Px6LyXA
+ivFIz7kCGwwAAGZGtdHPCpZsH7Sbm6CFeQ2pRlq2YW8sCaRGUX6IpHHm0mIufvsN
+Um6V2Rrtu7Jfgc5xsssqgH8ciY6AmWqgrHsGyodOAzQIOL+L9FtGvFLw94/wrnIh
+DF4yvZ1BK7fdcxMMTWcuN8q0GNmgGsg7PPeBajAA
+=VA/P
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+        const { data: decryptedData, signatures } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderKey
+        });
+
+        expect(decryptedData).to.equal('Hello there');
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
+
+
+      it('decrypt/verify should succeed using X448/Ed448 (PKESK v6, SEIPD v2, GCM)', async function() {
+        // data generated by gopenpgp
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wXUGIQZh4qTsn8glFgGNbIdCTl8gH2OtkI/PAGCQ0gi9s9k/rhrDhXo7kUKDJ39F
+fNp3kmAaM24Ce3bcYXwLy0gF2i6rxfL20D+g3cxv0i3CuXQCgcbojTN/8KY8ExiV
+Xdfo+OWIZ5XndtyMpJW28BiLHru+n9bSwM8CBwMMENh7cT8lILXteh885FrUUD1Q
+JMtD7xJUn2y78cVGgFSIkLbvFPDerB37xuhtMRkykuWgbUoJH/kcgBPdeCoYzJmf
+LV9FyATv0/AYq0yWpQ0VUfNLTFyeHIGxz7NHvrzJSrOy1Gm31PXqWvb4sBROjnOX
+oAk12JdPudz3l1QZT/DX947f4h6hwkVv7RRT0oOS2pMaz/mekRuD6utUcpsjFQ/M
+EDphnhOsB4RH0il8YPVc9DCnf3GhSs66h+Z699MXHBaUmdtiN1IgoEgLfb/900U2
+TfI6dvrvC56WIMA8EA1COvLGc9Ge4owW0UE8jIuqWLzA2nVg5belbzhNnOEh9b1c
+OcDUh8CfBuXqHEi/ANMUOMmaIGfcHfQFVu5v/UMcLxcH/fSVF6DvtOxEoUxASWBS
+mp6yC4A778BFuDFXb+/T8FjuJBaUj9rCSkYqt1TYVKG1XZPI4OdIvGtneo+vH/Cq
+F6bxlLWU6oskZ5SE+xJblmmO01ObM9JRi9D8jZnXedTHExAnXHXIb8I=
+=5RQw
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA52IEq/TpKiPp6RofQaq4uhCruTtiG+qiVFnwsQgeh0ui34kHD
+Y1E04mBai0pCoDiFVokwsKt3F5sAAC8lDYfVP/p3atbXJDTJB2W9WmZxIS7pUGhS
+bjlWpZB/OVTBsoIfP/2J+Hi4ESwBRfDUDgwK4aJVKsLAIAYfHAoAAAA/BQJlGoti
+IqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwMCHgkCCwcDFQoI
+AhYABScHAwcCAAAAAPiGIG2qmhCULQ/+H4rKV0XEM1x0uVY3l878Pa6ijZLouZU/
+VRd5PnbGyLPL++q3LDViUUdZ1uusRc01f677Q6wpUU90k8MH/oULwI0+KPtqe1N4
+6nr1NTERsAmAaPjUdf4ZUXX/GWiTd/AlsS5JqGnAQxKRJkzCJacOTOElRMjzGUX7
+CGaAnhSC86YRZ68ocTPfZysAzRdVc2VyQiA8VXNlckJAdGVzdC50ZXN0PsLADQYT
+HAoAAAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUC
+GQEAAAAASKwgVzMoPb2Hbr3lbNI1CRWECokYLokL7F8MbYiMnlg+v6QXLdStvT13
+ZjxdrWQAx3MbihSOUSXbdAys90yMOAdtognj+x418J/TaYFMtIGBHwoHv8gQVnx9
+9ICv8ezx1T5VvGBYNuKZ5Ww0WPEpYMf1VA+Y9JxpohdcRenNBdSug4tLWla2y8NH
+aO28Fltpb4AuGQDHewZlGotiGgAAADjdabr1ohAOnbSUUkVhtUM/LVdnYgDLhmaj
+YZ1N7TWY0fqEpMk2LLo2165HOmhddRPeTB1TWbuwBwB8lKc3czFUzYcAgvZ08T5S
+UUHjfIhjeJeY4yd0OZDfzPw1vbegCc7t94bT+XGoIQbC/Bl7HCyAiMLADQYYHAoA
+AAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwwA
+AAAAHh0gf2kdqLoXdFX+aNVORr5VCVgcm2gBw8l68lDJ1ftA71bMllFi6Q5sLPUr
+6UCpJYYk3o3hYUYzIHmCIZGVYe1pxRgIUNqxydXEfzylJmN5NbiJNkjJizrI7oAR
+1mIcEEb/hmRMOUs1V2mcGuoeALBI/r/SyqDE2GRjH6d6g1RS7ZARPPHlZlY4CTqC
+4a7L+8odDwA=
+=chx0
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const senderKey = await openpgp.readKey({
+          armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xkMGZRqLYhwAAAA5U/IaIOge/FoLzCetXKx029bdJHCz2hMFBRMuzq4msjaT+hLe
+V6puyC/PeSEfaanqTuo31vvsti2AwsAeBh8cCgAAAD0FAmUai2IioQYDGJ2wdEcO
+zIVPDVDs6gYQASdGfG2EozBUGqEgvaj4dQIbAwIeCQILBwMVCggCFgADJwcCAAAA
+ADYqIL5j5+FD/jwKRP1atdNf1IKfe8fPjdZv74CSalYvUdCaskTdLiAaW17NkrYT
+2i9qDPErFWsvXi4LqGzqQnQkiJZBJ4x57EJPL4Z2vqPTBvgWEU2egi7fK7YAGZmk
+Vf/n/X3Vh5ZSvIoUMChRmYqBBNI7MkS/I7QAJHkvi9XcANx44B0bz+yqETz2tNJ6
+8VeeDgkAzRdVc2VyQSA8VXNlckFAdGVzdC50ZXN0PsLADQYTHAoAAAAsBQJlGoti
+IqEGAxidsHRHDsyFTw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUCGQEAAAAAXD8gfvYz
+WLLMxaFuC3C/RJH9fG84hb9mtPgjH3bfqW+g4Ti1ov8PjoJtk6ObtUB45J9J3G3X
+FIqegAtGwI1Dy1U+M9dyXOqvpHwxs8iAFbEpwxLZ5K1ikFsbmoCZz4rmN0DbFyX2
+JbltaV5nUtNqHiUXqoKIPvch98ANe3PDyIAxNf7TAzk3W0lQQa+Cp7TSiFEqJADO
+QgZlGotiGgAAADjKb5lwMEt0ubSvwydaAF89wsn6H8NJO7kox5ioWW2Grn88CUZD
+YaRBZj3ZH8HMdaih5kN4hJAeCMLADQYYHAoAAAAsBQJlGotiIqEGAxidsHRHDsyF
+Tw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUCGwwAAAAAFIQgGYYweuBej4XHAgZrcez8
+8VoTbIZDjMv6Qbj9g6jjW16Fyp10DKda10FFmbY+YjbNvQNYksF9bN/KFSS/PTYt
+AVaOZDfW4fiN5s1QaYmA/xCT/zLHEYGryYCJLoLd7KLw28LS1KAWrC9h5cY6+fZE
+05cavO/D/WqBLVPuA+5bftXnDvGcVS1p7buaMtQjKz4hAwA=
+=GUIG
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+        const { data: decryptedData, signatures } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderKey
+        });
+
+        expect(decryptedData).to.equal('Hello there');
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
+
+      it('decrypt/verify should succeed using X448/Ed448 (PKESK v6, SEIPD v2, OCB)', async function() {
+        // data generated by gopenpgp
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wXUGIQaYemlYu2ObOZ2IjFbL77NygqexwaCgtb0COZ0EnXfXlBri0wADNxbvwCnJ
+GDlRX9VhIy46oPAvVJjm2d7ZC6wqxNfFuzQEB8KzwYBkExmZuAfO5KJ8la6+DRhc
+OUH3A9cBGzq0eiKaKRqjHkiLHY5pFNPSwNoCBwIM98RL63I8iMyxcXpXQlBrYlBx
+5uegrENlleNg6UJFr7rBT4eJH+Qeksb//V87eZymzqXZBsrTYmUjsFgYd5kL8NlU
+wovy+qQnZmEaUKieDx3w+orR8b32ub5CNjHJa5lCdNWsIK825S5JUifZDd3hR6lC
+EgtZRwxY/1CyQU94LR9j6w/YVF0W31+LxGGkL+uJEx0khJUzpxUM9QSEREOY7Frs
+EegHNwDvxvxEwWpfkJOPIDME6Y7UcpsNp6xgiZ/XF06IRsliCRbeYaH1IWW+y0OS
+CmPvvTFUzjwTxWogDccHz8YLHU0y6TKxf14YMvVLg2tf2P/BVVZSg0ejz6pfDKA5
+AP+Q/eXBAH272SpBjKo7YcVpTsz0KpWyhB6Jra4xaUFkt6pg39ydR3RJMvxbQVlR
+aZqV/+1rwIiIauyHKiJFdCiXYPDU3xibVkFIFhuk5JwHm29XvOV1r8FFx7d78X5P
+yJnXcXsl+GxwOojcLXSL0CEIU/iRqyAIyyhvUyyss3glehhgx0fENV2P/Ygi/naN
+nJUJgg==
+=m19C
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA5U/IaIOge/FoLzCetXKx029bdJHCz2hMFBRMuzq4msjaT+hLe
+V6puyC/PeSEfaanqTuo31vvsti2AAIttr4GDGXF4vfPzbzkWV9dT4VVsIU7QqLv1
+hzwZ+k7pHroRyXnUiYxRYHuzlg7Vw4CrAtN/8T65OMLAHgYfHAoAAAA9BQJlGoti
+IqEGAxidsHRHDsyFTw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUCGwMCHgkCCwcDFQoI
+AhYAAycHAgAAAAA2KiC+Y+fhQ/48CkT9WrXTX9SCn3vHz43Wb++AkmpWL1HQmrJE
+3S4gGltezZK2E9ovagzxKxVrL14uC6hs6kJ0JIiWQSeMeexCTy+Gdr6j0wb4FhFN
+noIu3yu2ABmZpFX/5/191YeWUryKFDAoUZmKgQTSOzJEvyO0ACR5L4vV3ADceOAd
+G8/sqhE89rTSevFXng4JAM0XVXNlckEgPFVzZXJBQHRlc3QudGVzdD7CwA0GExwK
+AAAALAUCZRqLYiKhBgMYnbB0Rw7MhU8NUOzqBhABJ0Z8bYSjMFQaoSC9qPh1AhkB
+AAAAAFw/IH72M1iyzMWhbgtwv0SR/XxvOIW/ZrT4Ix9236lvoOE4taL/D46CbZOj
+m7VAeOSfSdxt1xSKnoALRsCNQ8tVPjPXclzqr6R8MbPIgBWxKcMS2eStYpBbG5qA
+mc+K5jdA2xcl9iW5bWleZ1LTah4lF6qCiD73IffADXtzw8iAMTX+0wM5N1tJUEGv
+gqe00ohRKiQAx3sGZRqLYhoAAAA4ym+ZcDBLdLm0r8MnWgBfPcLJ+h/DSTu5KMeY
+qFlthq5/PAlGQ2GkQWY92R/BzHWooeZDeISQHggAuraV/u+CE642fcbcq90OY+qg
+n739wkHcBps/s/MgMI+Q2H13vEsFpYZ/kuBIIYP39xkdU48/1GbCwA0GGBwKAAAA
+LAUCZRqLYiKhBgMYnbB0Rw7MhU8NUOzqBhABJ0Z8bYSjMFQaoSC9qPh1AhsMAAAA
+ABSEIBmGMHrgXo+FxwIGa3Hs/PFaE2yGQ4zL+kG4/YOo41tehcqddAynWtdBRZm2
+PmI2zb0DWJLBfWzfyhUkvz02LQFWjmQ31uH4jebNUGmJgP8Qk/8yxxGBq8mAiS6C
+3eyi8NvC0tSgFqwvYeXGOvn2RNOXGrzvw/1qgS1T7gPuW37V5w7xnFUtae27mjLU
+Iys+IQMA
+=iwhO
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const senderKey = await openpgp.readKey({
+          armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xkMGZRqLYhwAAAA52IEq/TpKiPp6RofQaq4uhCruTtiG+qiVFnwsQgeh0ui34kHD
+Y1E04mBai0pCoDiFVokwsKt3F5sAwsAgBh8cCgAAAD8FAmUai2IioQahuzG3xYqw
+y4lYA3JNelYx0LVA3/sTIkKV9yz6cGCp1QIbAwIeCQILBwMVCggCFgAFJwcDBwIA
+AAAA+IYgbaqaEJQtD/4fispXRcQzXHS5VjeXzvw9rqKNkui5lT9VF3k+dsbIs8v7
+6rcsNWJRR1nW66xFzTV/rvtDrClRT3STwwf+hQvAjT4o+2p7U3jqevU1MRGwCYBo
++NR1/hlRdf8ZaJN38CWxLkmoacBDEpEmTMIlpw5M4SVEyPMZRfsIZoCeFILzphFn
+ryhxM99nKwDNF1VzZXJCIDxVc2VyQkB0ZXN0LnRlc3Q+wsANBhMcCgAAACwFAmUa
+i2IioQahuzG3xYqwy4lYA3JNelYx0LVA3/sTIkKV9yz6cGCp1QIZAQAAAABIrCBX
+Myg9vYduveVs0jUJFYQKiRguiQvsXwxtiIyeWD6/pBct1K29PXdmPF2tZADHcxuK
+FI5RJdt0DKz3TIw4B22iCeP7HjXwn9NpgUy0gYEfCge/yBBWfH30gK/x7PHVPlW8
+YFg24pnlbDRY8Slgx/VUD5j0nGmiF1xF6c0F1K6Di0taVrbLw0do7bwWW2lvgC4Z
+AM5CBmUai2IaAAAAON1puvWiEA6dtJRSRWG1Qz8tV2diAMuGZqNhnU3tNZjR+oSk
+yTYsujbXrkc6aF11E95MHVNZu7AHwsANBhgcCgAAACwFAmUai2IioQahuzG3xYqw
+y4lYA3JNelYx0LVA3/sTIkKV9yz6cGCp1QIbDAAAAAAeHSB/aR2ouhd0Vf5o1U5G
+vlUJWBybaAHDyXryUMnV+0DvVsyWUWLpDmws9SvpQKklhiTejeFhRjMgeYIhkZVh
+7WnFGAhQ2rHJ1cR/PKUmY3k1uIk2SMmLOsjugBHWYhwQRv+GZEw5SzVXaZwa6h4A
+sEj+v9LKoMTYZGMfp3qDVFLtkBE88eVmVjgJOoLhrsv7yh0PAA==
+=2Usy
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+        const { data: decryptedData, signatures } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderKey
+        });
+
+        expect(decryptedData).to.equal('Hello nice to meet you');
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
     });
 
     describe('Sign and verify with each curve', function() {
@@ -4531,29 +4816,6 @@ bWleZ1LTah4lF6qCiD73IffADXtzw8iAMTX+0wM5N1tJUEGvgqe00ohRKiQA
         expect(data).to.equal(plaintext);
         expect(signatures).to.have.length(1);
         expect(await signatures[0].verified).to.be.true;
-      });
-
-      it('should enforce using 512-bit signature digest', async function () {
-        // X448 key using sha256 for self signatures
-        const privateKeySHA256 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xXsEZCWHXBwwtqciq6ZFU13s+dyhkWR5tOEmF1oX8OiP1B5ypfqyGVM8DkQh
-5eTIMwB1oqJCROANoyA0q2dSigAAbDA5xr74DeClPPXC4ZXJ9uzuJWKvQvE8
-x3EflhgoQCGBM7JfvH5zwdrJvPt8RKDvm0QkZzhPvnFoHnzNBHRlc3TCugQQ
-HAgAPgWCZCWHXAQLCQcICZDsN6h/ys3ppwMVCAoEFgACAQIZAQKbAwIeARYh
-BOJyE9P2eIcU2N2Ne+w3qH/KzemnAAAh1hTFCcEU77bU3YelrJTCNIOQnvt7
-Hs6yZz2053CQTOC+wHkUQLaYYBEXSNyLZxoyv+NuGTiwbuYtAOlbE2erM7Cx
-8B2Qz7M29UkFLMBUfb+yi+gTYYUWCXVQ7Um7MGjjgUG8+9p452i6f28mhRD8
-tTgNAMd5BGQlh1wavTIFgILtbzrqQCiwDGx0YcFNzu9+FZ8vK5Mmm7UEZj0a
-y7FWQtZw8tTaU6mY+RrSa52RjzkGLtQAQO++tgYqc+BnCFdCZ3ZYPRvD3mof
-ffoo3l4xmto+iyvJZbQ4wQPXttg7VjCpEfOsL9TW9Xs09aIbysKmBBgcCAAq
-BYJkJYdcCZDsN6h/ys3ppwKbDBYhBOJyE9P2eIcU2N2Ne+w3qH/KzemnAAC0
-6/eZhh/Oj2gRdab2JeFGWACGIRDKxPXsWRCXR4YrSxcvCKK6rOvsyxQsgIsJ
-JyPYkRPfmbKcseUDAEkSBLAfeizDGh7ea0GOdIMhwE/CW4f/H8ULbwi36y13
-x3oMNVaYsI9dZ588Gpi8XYy2jOtqIPQ1AA==
------END PGP PRIVATE KEY BLOCK-----` });
-
-        await expect(privateKeySHA256.getSigningKey()).to.be.rejectedWith(/Hash algorithm too weak for EdDSA/);
       });
     });
 
