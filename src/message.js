@@ -397,12 +397,10 @@ export class Message {
 
     const msg = await Message.encryptSessionKey(sessionKeyData, algorithmName, aeadAlgorithmName, encryptionKeys, passwords, wildcard, encryptionKeyIDs, date, userIDs, config);
 
-    const symEncryptedPacket = new SymEncryptedIntegrityProtectedDataPacket();
-    if (aeadAlgorithmName) {
-      symEncryptedPacket.version = 2;
-      symEncryptedPacket.aeadAlgorithm = enums.write(enums.aead, aeadAlgorithmName);
-    }
-
+    const symEncryptedPacket = SymEncryptedIntegrityProtectedDataPacket.fromObject({
+      version: aeadAlgorithmName ? 2 : 1,
+      aeadAlgorithm: aeadAlgorithmName ? enums.write(enums.aead, aeadAlgorithmName) : null
+    });
     symEncryptedPacket.packets = this.packets;
 
     const algorithm = enums.write(enums.symmetric, algorithmName);
