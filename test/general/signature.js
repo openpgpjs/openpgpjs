@@ -896,6 +896,32 @@ hUhMKMuiM3pRwdIyDOItkUWQmjEEw7/XmhgInkXsCw==
     expect(sig.data).to.match(/-----END PGP MESSAGE-----\r\n$/);
   });
 
+  it('Reject cleartext message with arbitrary text added around hash headers (spoofed cleartext message)', async function() {
+    await expect(openpgp.cleartext.readArmored(`-----BEGIN PGP SIGNED MESSAGE-----
+This is not signed but you might think it is Hash: SHA512
+
+This is signed
+-----BEGIN PGP SIGNATURE-----
+
+wnUEARYKACcFgmTsqxgJkEhlqJkkhIfRFiEEUA/OS4xZ3EwNC5l8SGWomSSE
+h9EAALyPAQDDR0IYwq/5XMVSYPWojBamM4NhcP5arA656ALIq9cJYAEAlw0H
+Fk7EflUZzngwY4lBzYAfnNBjEjc30xD/ddo+rwE=
+=O7mt
+-----END PGP SIGNATURE-----`)).to.be.rejectedWith(/Only "Hash" header allowed/);
+
+    await expect(openpgp.cleartext.readArmored(`-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512\vThis is not signed but you might think it is 
+
+This is signed
+-----BEGIN PGP SIGNATURE-----
+
+wnUEARYKACcFgmTsqxgJkEhlqJkkhIfRFiEEUA/OS4xZ3EwNC5l8SGWomSSE
+h9EAALyPAQDDR0IYwq/5XMVSYPWojBamM4NhcP5arA656ALIq9cJYAEAlw0H
+Fk7EflUZzngwY4lBzYAfnNBjEjc30xD/ddo+rwE=
+=O7mt
+-----END PGP SIGNATURE-----` )).to.be.rejectedWith(/Unknown hash algorithm in armor header/);
+  });
+
   it('Supports non-human-readable notations', async function() {
     const { packets: [signature] } = await openpgp.message.readArmored(signature_with_non_human_readable_notations);
     // There are no human-readable notations so `notations` property does not
