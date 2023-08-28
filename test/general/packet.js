@@ -137,6 +137,7 @@ export default () => describe('Packet', function() {
 
     const literal = new openpgp.LiteralDataPacket();
     const enc = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+    enc.version = 1;
     enc.packets = new openpgp.PacketList();
     enc.packets.push(literal);
     const msg = new openpgp.PacketList();
@@ -616,6 +617,7 @@ export default () => describe('Packet', function() {
       literal.setText(testText);
       const skesk = new openpgp.SymEncryptedSessionKeyPacket();
       const seip = new openpgp.SymEncryptedIntegrityProtectedDataPacket();
+      seip.version = 1;
       seip.packets = new openpgp.PacketList();
       seip.packets.push(literal);
       const msg = new openpgp.PacketList();
