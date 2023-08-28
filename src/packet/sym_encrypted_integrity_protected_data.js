@@ -52,8 +52,22 @@ class SymEncryptedIntegrityProtectedDataPacket {
     return enums.packet.symEncryptedIntegrityProtectedData;
   }
 
+  static fromObject({ version, aeadAlgorithm }) {
+    if (version !== 1 && version !== 2) {
+      throw new Error('Unsupported SEIPD version');
+    }
+
+    const seip = new SymEncryptedIntegrityProtectedDataPacket();
+    seip.version = version;
+    if (version === 2) {
+      seip.aeadAlgorithm = aeadAlgorithm;
+    }
+
+    return seip;
+  }
+
   constructor() {
-    this.version = 1;
+    this.version = null;
 
     // The following 4 fields are for V2 only.
     /** @type {enums.symmetric} */
