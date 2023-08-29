@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: KDFParams</title>
+    <title>JSDoc: Module: type/x25519x448_symkey</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: KDFParams</h1>
+    <h1 class="page-title">Module: type/x25519x448_symkey</h1>
 
     
 
@@ -28,7 +28,8 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>KDFParams<span class="signature">(hash, cipher)</span><span class="type-signature"></span></h2>
+        
+            
         
     
 </header>
@@ -37,95 +38,22 @@
     <div class="container-overview">
     
         
-
-    
-
-    
-    <h4 class="name" id="KDFParams"><span class="type-signature"></span>new KDFParams<span class="signature">(hash, cipher)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
+            <div class="description"><p>Encoded symmetric key for x25519 and x448
+The payload format varies for v3 and v6 PKESK:
+the former includes an algorithm byte preceeding the encrypted session key.</p></div>
         
 
         
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>hash</code></td>
             
 
-            <td class="type">
-            
-                
-<span class="param-type">enums.hash</span>
 
 
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Hash algorithm</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>cipher</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">enums.symmetric</span>
 
 
-            
-            </td>
 
-            
 
-            
 
-            <td class="description last"><p>Symmetric algorithm</p></td>
-        </tr>
 
-    
-    </tbody>
-</table>
 
 
 
@@ -163,7 +91,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/kdf_params.js">type/kdf_params.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/kdf_params.js#L37">line 37</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/ecdh_x_symkey.js">type/ecdh_x_symkey.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/ecdh_x_symkey.js#L1">line 1</a>
     </li></ul></dd>
     
 
@@ -193,6 +121,7 @@
 
 
 
+        
     
     </div>
 
@@ -210,283 +139,6 @@
 
     
 
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="read"><span class="type-signature"></span>read<span class="signature">(input)</span><span class="type-signature"> &rarr; {Number}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Read KDFParams from an Uint8Array</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>input</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Where to read the KDFParams from</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/kdf_params.js">type/kdf_params.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/kdf_params.js#L53">line 53</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Number of read bytes.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Number</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="write"><span class="type-signature"></span>write<span class="signature">()</span><span class="type-signature"> &rarr; {Uint8Array}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Write KDFParams to an Uint8Array</p>
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/kdf_params.js">type/kdf_params.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.10.0/src/type/kdf_params.js#L66">line 66</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Array with the KDFParams value</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Uint8Array</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
     
 
     
