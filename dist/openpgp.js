@@ -1,4 +1,4 @@
-/*! OpenPGP.js v4.10.10 - 2021-01-24 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
+/*! OpenPGP.js v4.10.11 - 2023-08-29 - this is LGPL licensed code, see LICENSE/our website https://openpgpjs.org/ for more information. */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.openpgp = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 (function (global){
 "use strict";
@@ -24863,7 +24863,7 @@ function verifyHeaders(headers, packetlist) {
   let oneHeader = null;
   let hashAlgos = [];
   headers.forEach(function (header) {
-    oneHeader = header.match(/Hash: (.+)/); // get header value
+    oneHeader = header.match(/^Hash: (.+)$/); // get header value
     if (oneHeader) {
       oneHeader = oneHeader[1].replace(/\s/g, ''); // remove whitespace
       oneHeader = oneHeader.split(',');
@@ -25058,7 +25058,7 @@ exports.default = {
    * @memberof module:config
    * @property {String} versionstring A version string to be included in armored messages
    */
-  versionstring: "OpenPGP.js v4.10.10",
+  versionstring: "OpenPGP.js v4.10.11",
   /**
    * @memberof module:config
    * @property {String} commentstring A comment string to be included in armored messages
