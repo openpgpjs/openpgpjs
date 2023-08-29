@@ -174,7 +174,7 @@ function verifyHeaders(headers, packetlist) {
   let oneHeader = null;
   let hashAlgos = [];
   headers.forEach(function(header) {
-    oneHeader = header.match(/Hash: (.+)/); // get header value
+    oneHeader = header.match(/^Hash: (.+)$/); // get header value
     if (oneHeader) {
       oneHeader = oneHeader[1].replace(/\s/g, ''); // remove whitespace
       oneHeader = oneHeader.split(',');
