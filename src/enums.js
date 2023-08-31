@@ -371,7 +371,7 @@ export default {
     placeholderBackwardsCompatibility: 10,
     preferredSymmetricAlgorithms: 11,
     revocationKey: 12,
-    issuer: 16,
+    issuerKeyID: 16,
     notationData: 20,
     preferredHashAlgorithms: 21,
     preferredCompressionAlgorithms: 22,
