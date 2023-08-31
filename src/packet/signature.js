@@ -444,7 +444,19 @@ class SignaturePacket {
 
       case enums.signatureSubpacket.issuer:
         // Issuer
-        this.issuerKeyID.read(bytes.subarray(mypos, bytes.length));
+        if (this.version === 4) {
+          this.issuerKeyID.read(bytes.subarray(mypos, bytes.length));
+        } else if (hashed) {
+          // If the version of the key is greater than 4, this subpacket MUST NOT be included in the signature,
+          // since the Issuer Fingerprint subpacket is to be used instead.
+          // The `issuerKeyID` value will be set when reading the issuerFingerprint packet.
+          // For this reason, if the issuer Key ID packet is present but unhashed, we simply ignore it,
+          // to avoid situations where `.getSigningKeyIDs()` returns a keyID potentially different from the (signed)
+          // issuerFingerprint.
+          // If the packet is hashed, then we reject the signature, to avoid verifying data different from
+          // what was parsed.
+          throw new Error('Unexpected Issuer Key ID subpacket');
+        }
         break;
 
       case enums.signatureSubpacket.notationData: {
