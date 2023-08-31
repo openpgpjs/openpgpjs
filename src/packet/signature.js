@@ -30,7 +30,7 @@ const verified = Symbol('verified');
 // Tampering with those invalidates the signature, so we still trust them and parse them.
 // All other unhashed subpackets are ignored.
 const allowedUnhashedSubpackets = new Set([
-  enums.signatureSubpacket.issuer,
+  enums.signatureSubpacket.issuerKeyID,
   enums.signatureSubpacket.issuerFingerprint,
   enums.signatureSubpacket.embeddedSignature
 ]);
@@ -278,7 +278,7 @@ class SignaturePacket {
     if (!this.issuerKeyID.isNull() && this.issuerKeyVersion < 5) {
       // If the version of [the] key is greater than 4, this subpacket
       // MUST NOT be included in the signature.
-      arr.push(writeSubPacket(sub.issuer, true, this.issuerKeyID.write()));
+      arr.push(writeSubPacket(sub.issuerKeyID, true, this.issuerKeyID.write()));
     }
     this.rawNotations.forEach(({ name, value, humanReadable, critical }) => {
       bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
@@ -442,7 +442,7 @@ class SignaturePacket {
         this.revocationKeyFingerprint = bytes.subarray(mypos, mypos + 20);
         break;
 
-      case enums.signatureSubpacket.issuer:
+      case enums.signatureSubpacket.issuerKeyID:
         // Issuer
         if (this.version === 4) {
           this.issuerKeyID.read(bytes.subarray(mypos, bytes.length));
