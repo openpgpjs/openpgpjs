@@ -56,6 +56,13 @@ export default {
    */
   aeadProtect: false,
   /**
+   * When reading private keys which were encrypted by OpenPGP.js v5 (or older) using `config.aeadProtect = true`
+   * and `config.v5Keys = false`, this option must be set, otherwise key parsing and/or key decryption will fail.
+   * Note: only set this flag if you know that the keys are of the legacy type, as non-legacy keys
+   * will be processed incorrectly.
+   */
+  parseAEADEncryptedV4KeysAsLegacy: false,
+  /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aeadProtect is set to true.
    * @memberof module:config
