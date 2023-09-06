@@ -139,7 +139,8 @@ export async function reformat(options, config) {
         helper.getLatestValidSignature(subkey.bindingSignatures, secretKeyPacket, enums.signature.subkeyBinding, dataToVerify, null, config)
       ).catch(() => ({}));
       return {
-        sign: bindingSignature.keyFlags && (bindingSignature.keyFlags[0] & enums.keyFlags.signData)
+        sign: bindingSignature.keyFlags && (bindingSignature.keyFlags[0] & enums.keyFlags.signData),
+        forwarding: bindingSignature.keyFlags && (bindingSignature.keyFlags[0] & enums.keyFlags.forwardedCommunication)
       };
     }));
   }
