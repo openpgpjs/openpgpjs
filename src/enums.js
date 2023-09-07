@@ -116,11 +116,7 @@ export default {
     ecdsa: 19,
     /** EdDSA (Sign only) - deprecated by crypto-refresh (replaced by `ed25519` identifier below)
      * [{@link https://tools.ietf.org/html/draft-koch-eddsa-for-openpgp-04|Draft RFC}] */
-    eddsaLegacy: 22, // NB: this is declared before `eddsa` to translate 22 to 'eddsa' for backwards compatibility
-    /** @deprecated use `eddsaLegacy` instead */
-    ed25519Legacy: 22,
-    /** @deprecated use `eddsaLegacy` instead */
-    eddsa: 22,
+    eddsaLegacy: 22,
     /** Reserved for AEDH */
     aedh: 23,
     /** Reserved for AEDSA */
