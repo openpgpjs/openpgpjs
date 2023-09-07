@@ -32,11 +32,13 @@ import { checkKeyRequirements } from './key/helper';
 
 
 /**
- * Generates a new OpenPGP key pair. Supports RSA and ECC keys. By default, primary and subkeys will be of same type.
+ * Generates a new OpenPGP key pair. Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519 keys.
+ * By default, primary and subkeys will be of same type.
  * The generated primary key will have signing capabilities. By default, one subkey with encryption capabilities is also generated.
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
+ * @param {'ecc'|'rsa'|'curve448'|'curve25519'} [options.type='ecc'] - The primary key algorithm type: ECC (default), RSA, Curve448 or Curve25519 (new format).
+ *                                                                     Note: Curve448 and Curve25519 (new format) are not widely supported yet.
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:

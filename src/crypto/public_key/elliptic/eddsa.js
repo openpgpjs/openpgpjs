@@ -36,14 +36,14 @@ ed25519.hash = bytes => sha512(bytes);
  * @returns {Promise<{ A: Uint8Array, seed: Uint8Array }>}
  */
 export async function generate(algo) {
-  const seed = getRandomBytes(getPayloadSize(algo));
-
   switch (algo) {
     case enums.publicKey.ed25519: {
+      const seed = getRandomBytes(getPayloadSize(algo));
       const { publicKey: A } = ed25519.sign.keyPair.fromSeed(seed);
       return { A, seed };
     }
     case enums.publicKey.ed448: {
+      const seed = ed448.utils.randomPrivateKey();
       const A = ed448.getPublicKey(seed);
       return { A, seed };
     }
