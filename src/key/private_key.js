@@ -198,8 +198,10 @@ class PrivateKey extends PublicKey {
 
   /**
    * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
-   * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
-   * @param {ecc|rsa} options.type       The subkey algorithm: ECC or RSA
+   * Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519.
+   * Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
+   * @param {ecc|rsa|curve25519|curve448} options.type The subkey algorithm: ECC, RSA, Curve448 or Curve25519 (new format).
+   *                                                   Note: Curve448 and Curve25519 are not widely supported yet.
    * @param {String}  options.curve      (optional) Elliptic curve for ECC keys
    * @param {Integer} options.rsaBits    (optional) Number of bits for RSA subkeys
    * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
@@ -225,7 +227,7 @@ class PrivateKey extends PublicKey {
       throw new Error('Key is not decrypted');
     }
     const defaultOptions = secretKeyPacket.getAlgorithmInfo();
-    defaultOptions.type = defaultOptions.curve ? 'ecc' : 'rsa'; // DSA keys default to RSA
+    defaultOptions.type = getDefaultSubkeyType(defaultOptions.algorithm);
     defaultOptions.rsaBits = defaultOptions.bits || 4096;
     defaultOptions.curve = defaultOptions.curve || 'curve25519';
     options = helper.sanitizeKeyOptions(options, defaultOptions);
@@ -235,6 +237,27 @@ class PrivateKey extends PublicKey {
     const packetList = this.toPacketList();
     packetList.push(keyPacket, bindingSignature);
     return new PrivateKey(packetList);
+  }
+}
+
+function getDefaultSubkeyType(algoName) {
+  const algo = enums.write(enums.publicKey, algoName);
+  // NB: no encryption-only algos, since they cannot be in primary keys
+  switch (algo) {
+    case enums.publicKey.rsaEncrypt:
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaSign:
+    case enums.publicKey.dsa:
+      return 'rsa';
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+      return 'ecc';
+    case enums.publicKey.ed25519:
+      return 'curve25519';
+    case enums.publicKey.ed448:
+      return 'curve448';
+    default:
+      throw new Error('Unsupported algorithm');
   }
 }
 
