@@ -2467,7 +2467,7 @@ function versionSpecificTests() {
     const opt = { userIDs: [userID], format: 'object' };
     return openpgp.generateKey(opt).then(function({ privateKey: key }) {
       expect(key.isDecrypted()).to.be.true;
-      expect(key.getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(key.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
@@ -2567,7 +2567,7 @@ function versionSpecificTests() {
       expect(key.subkeys).to.have.length(2);
       expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
       expect(await key.getEncryptionKey()).to.equal(key.subkeys[0]);
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
       expect(await key.getSigningKey()).to.equal(key.subkeys[1]);
     });
   });
@@ -2585,7 +2585,7 @@ function versionSpecificTests() {
       expect(key.subkeys).to.have.length(2);
       expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
       expect(await key.getEncryptionKey()).to.equal(key.subkeys[0]);
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
       expect(await key.getSigningKey()).to.equal(key.subkeys[1]);
     });
   });
@@ -4344,7 +4344,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
       const subkeyOid = subkey2.keyPacket.publicParams.oid;
       const pkOid = privateKey.keyPacket.publicParams.oid;
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
-      expect(subkey2.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
+      expect(subkey2.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       await subkey2.verify();
     });
 
@@ -4359,7 +4359,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
       expect(newPrivateKey.subkeys.length).to.be.equal(total + 1);
       expect(newPrivateKey.getAlgorithmInfo().curve).to.be.equal('ed25519');
       expect(subkey.getAlgorithmInfo().curve).to.be.equal('p256');
-      expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
+      expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdsa');
 
       await subkey.verify();
@@ -4427,7 +4427,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
       const subkeyOid = subkey.keyPacket.publicParams.oid;
       const pkOid = newPrivateKey.keyPacket.publicParams.oid;
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
-      expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
+      expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       await subkey.verify();
       expect(await newPrivateKey.getSigningKey()).to.be.equal(subkey);
       const signed = await openpgp.sign({ message: await openpgp.createMessage({ text: 'the data to signed' }), signingKeys: newPrivateKey, format: 'binary' });

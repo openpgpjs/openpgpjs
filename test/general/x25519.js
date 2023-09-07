@@ -396,7 +396,7 @@ function omnibus() {
       const primaryKey = hi.keyPacket;
       const subkey = hi.subkeys[0];
       expect(hi.getAlgorithmInfo().curve).to.equal('ed25519');
-      expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
       expect(subkey.getAlgorithmInfo().curve).to.equal('curve25519');
       expect(subkey.getAlgorithmInfo().algorithm).to.equal('ecdh');
 
@@ -416,7 +416,7 @@ function omnibus() {
 
       return openpgp.generateKey(options).then(async function({ privateKey: bye }) {
         expect(bye.getAlgorithmInfo().curve).to.equal('ed25519');
-        expect(bye.getAlgorithmInfo().algorithm).to.equal('eddsa');
+        expect(bye.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
         expect(bye.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
         expect(bye.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
 
