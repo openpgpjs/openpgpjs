@@ -2509,6 +2509,54 @@ function versionSpecificTests() {
     }
   });
 
+  it('Generate Ed25519 key (new format) - default subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve25519', userIDs: [userID], passphrase: '123', format: 'object' };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed25519');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x25519');
+  });
+
+  it('Generate Ed25519 key (new format) - one signing subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve25519', userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ sign: true }] };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed25519');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ed25519');
+  });
+
+  it('Generate Ed448 key - default subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve448', userIDs: [userID], passphrase: '123', format: 'object' };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed448');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x448');
+  });
+
+  it('Generate Ed448 key - one signing subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve448', userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ sign: true }] };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed448');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ed448');
+  });
+
   it('Generate key - one signing subkey', function() {
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{}, { sign: true }] };
@@ -4194,6 +4242,16 @@ VYGdb3eNlV8CfoEC
       const newKey = await key.addSubkey();
       expect(newKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
       expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+    });
+
+    it('Add a new default subkey to an Ed488 key', async function() {
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { type: 'curve448', userIDs: [userID], format: 'object', subkeys: [] };
+      const { privateKey: key } = await openpgp.generateKey(opt);
+      expect(key.subkeys).to.have.length(0);
+      const newKey = await key.addSubkey();
+      expect(newKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x448');
+      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.be.undefined;
     });
 
     it('Add a new default subkey to a dsa key', async function() {

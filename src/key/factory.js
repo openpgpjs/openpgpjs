@@ -64,9 +64,9 @@ function createKey(packetlist) {
 
 
 /**
- * Generates a new OpenPGP key. Supports RSA and ECC keys.
+ * Generates a new OpenPGP key. Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519 keys.
  * By default, primary and subkeys will be of same type.
- * @param {ecc|rsa} options.type                  The primary key algorithm type: ECC or RSA
+ * @param {ecc|rsa|curve448|curve25519} options.type                  The primary key algorithm type: ECC, RSA, Curve448 or Curve25519 (new format).
  * @param {String}  options.curve                 Elliptic curve for ECC keys
  * @param {Integer} options.rsaBits               Number of bits for RSA keys
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }

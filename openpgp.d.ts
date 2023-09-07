@@ -816,7 +816,7 @@ export namespace enums {
     aeadEncryptedData = 20,
   }
 
-  export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsa' | 'aedh' | 'aedsa';
+  export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsa' | 'ed25519Legacy' | 'aedh' | 'aedsa' | 'ed25519' | 'x25519' | 'ed448' | 'x448';
   enum publicKey {
     rsaEncryptSign = 1,
     rsaEncrypt = 2,
@@ -830,6 +830,10 @@ export namespace enums {
     eddsaLegacy = 22,
     aedh = 23,
     aedsa = 24,
+    x25519 = 25,
+    x448 = 26,
+    ed25519 = 27,
+    ed448 = 28
   }
 
   enum curve {

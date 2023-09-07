@@ -326,7 +326,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.sign = options.sign || false;
 
   switch (options.type) {
-    case 'ecc':
+    case 'ecc': // NB: this case also handles legacy eddsa and x25519 keys, based on `options.curve`
       try {
         options.curve = enums.write(enums.curve, options.curve);
       } catch (e) {
@@ -340,6 +340,12 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       } else {
         options.algorithm = enums.publicKey.ecdh;
       }
+      break;
+    case 'curve25519':
+      options.algorithm = options.sign ? enums.publicKey.ed25519 : enums.publicKey.x25519;
+      break;
+    case 'curve448':
+      options.algorithm = options.sign ? enums.publicKey.ed448 : enums.publicKey.x448;
       break;
     case 'rsa':
       options.algorithm = enums.publicKey.rsaEncryptSign;
