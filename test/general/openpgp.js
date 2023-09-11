@@ -2250,6 +2250,71 @@ XfA3pqV4mTzF
     });
   });
 
+  describe('decryptSessionKeys - unit tests', function() {
+    it('should decrypt message with two SKESKs where the wrong password returns a symmetric algo equal to 0', async function () {
+      // SKESK packets do not have an intrisic integrity check, and the session key must be used to check its validity.
+      // This message is such that when the password is used to try and decrypt the first (mismatching) SKESK, the result returns a '0' byte for
+      // the session key algo. This corresponds to the 'plaintext' algo identifier (https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#section-12.2.1),
+      // now removed from OpenPGP.js .
+      // This test guards against regressions caused by mishandling this value on SKESK decryption.
+      const message = await openpgp.readMessage({ armoredMessage:`-----BEGIN PGP MESSAGE-----
+
+wy4ECQMIf6HA/a6XkOAAlaU1z+uVfU5kmHmqNqahQH859nAMresQ6w1uIjsL
+ZE5bwy4ECQMIKVfCf+GWBesA5KFPuIDa6kLLn/AvEgbCi5DOg2xdIf73SNSN
+Tqy7nfex0sANAVtHHRkHVTRVTVa3MFjjiWeBEDtnfyVMntWJ21ihrIU9eb9p
+qS7UljZZ0u++xSWclU2IGBXCIdO0wLuS6hYk3q5OFexWj8OIoYJX88nkA2iW
+5xyGd9EFRWVsR4CREt8lwrIE2t/h8XpRlhJmY6Iefg8+2DeN8vDdhNs/B02o
+0zAE0hF+3xvwZTLi4hDrhBZEgBedPaeX4jlmDc3qzh2wlgV/Mq/FUakYfSLl
+bc1PCpfqkLZSuCfv4eoTrWohWi9lS/pRXY9hzzHtlnjo6w==
+-----END PGP MESSAGE-----` });
+      const sessionKeys = await openpgp.decryptSessionKeys({ message, passwords: 'I am another password' });
+      expect(sessionKeys).to.have.length(1); // first SKESK dropped due to '0' being treated as invalid algo identifier
+      expect(sessionKeys[0].algorithm).to.equal('aes256');
+
+      // decrypt() used to fail on this type of input
+      const decrypted = await openpgp.decrypt({ message, passwords: 'I am another password', format: 'binary' });
+      expect(decrypted.data).to.deep.equal(
+        util.hexToUint8Array('e280872009d699e0b5bae18ba1e28c86d280d184e1b888e1a8b3e28ab7e0afa8e0b98be283bde28db5e1b1afd48de1b5b2e280a7e199b0e1a487e185afd3a1e18ca5e0bfb4e28892e19e98e29bb8e29594e0baaae0b681e1929af09f9882f09f9897f09f9882f09f98abf09f988ff09f98b6f09f98bcf09f98bcf09f9981f09f9982e2808720090d0aed959ceab5adec96b42feca1b0ec84a0eba790')
+      );
+      expect(decrypted.signatures.length).to.equal(0);
+    });
+
+    it('should decrypt PKESK v6 and return a null symmetric algorithm', async function() {
+      // test vector https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.8
+      const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wV0GIQYSyD8ecG9jCP4VGkF3Q6HwM3kOk+mXhIjR2zeNqZMIhRmHzxjV8bU/gXzO
+WgBM85PMiVi93AZfJfhK9QmxfdNnZBjeo1VDeVZheQHgaVf7yopqR6W1FT6NOrfS
+aQIHAgZhZBZTW+CwcW1g4FKlbExAf56zaw76/prQoN+bAzxpohup69LA7JW/Vp0l
+yZnuSj3hcFj0DfqLTGgr4/u717J+sPWbtQBfgMfG9AOIwwrUBqsFE9zW+f1zdlYo
+bhF30A+IitsxxA==
+-----END PGP MESSAGE-----`;
+
+      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+      const sessionKeys = await openpgp.decryptSessionKeys({
+        message: await openpgp.readMessage({ armoredMessage }),
+        decryptionKeys: privateKey
+      });
+
+      expect(sessionKeys).to.have.length(1);
+      expect(sessionKeys[0].algorithm).to.equal(null); // PKESK v6 does not include the algo info
+    });
+  });
+
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
     let privateKey_2000_2008;
     let publicKey_2000_2008;

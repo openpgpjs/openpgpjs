@@ -181,7 +181,7 @@ export function generateSessionKey(options: { encryptionKeys: MaybeArray<PublicK
 export function encryptSessionKey(options: EncryptSessionKeyOptions & { format?: 'armored' }): Promise<string>;
 export function encryptSessionKey(options: EncryptSessionKeyOptions & { format: 'binary' }): Promise<Uint8Array>;
 export function encryptSessionKey(options: EncryptSessionKeyOptions & { format: 'object' }): Promise<Message<Data>>;
-export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { message: Message<T>, decryptionKeys?: MaybeArray<PrivateKey>, passwords?: MaybeArray<string>, date?: Date, config?: PartialConfig }): Promise<SessionKey[]>;
+export function decryptSessionKeys<T extends MaybeStream<Data>>(options: { message: Message<T>, decryptionKeys?: MaybeArray<PrivateKey>, passwords?: MaybeArray<string>, date?: Date, config?: PartialConfig }): Promise<DecryptedSessionKey[]>;
 
 export function readMessage<T extends MaybeStream<string>>(options: { armoredMessage: T, config?: PartialConfig }): Promise<Message<T>>;
 export function readMessage<T extends MaybeStream<Uint8Array>>(options: { binaryMessage: T, config?: PartialConfig }): Promise<Message<T>>;
@@ -578,6 +578,11 @@ export interface SessionKey {
   aeadAlgorithm?: enums.aeadNames;
 }
 
+export interface DecryptedSessionKey {
+  data: Uint8Array;
+  algorithm: enums.symmetricNames | null; // `null` if the session key is associated with a SEIPDv2 packet
+}
+
 export interface ReasonForRevocation { flag?: enums.reasonForRevocation, string?: string }
 
 interface EncryptOptions {
@@ -837,9 +842,8 @@ export namespace enums {
     brainpoolP512r1 = 'brainpoolP512r1'
   }
 
-  export type symmetricNames = 'plaintext' | 'idea' | 'tripledes' | 'cast5' | 'blowfish' | 'aes128' | 'aes192' | 'aes256' | 'twofish';
+  export type symmetricNames = 'idea' | 'tripledes' | 'cast5' | 'blowfish' | 'aes128' | 'aes192' | 'aes256' | 'twofish';
   enum symmetric {
-    plaintext = 0,
     idea = 1,
     tripledes = 2,
     cast5 = 3,
