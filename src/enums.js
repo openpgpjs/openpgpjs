@@ -140,7 +140,6 @@ export default {
    * @readonly
    */
   symmetric: {
-    plaintext: 0,
     /** Not implemented! */
     idea: 1,
     tripledes: 2,
