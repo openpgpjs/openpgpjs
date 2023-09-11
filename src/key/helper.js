@@ -179,7 +179,11 @@ export async function getPreferredCompressionAlgo(keys = [], date = new Date(), 
  */
 export async function getPreferredCipherSuite(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
   const selfSigs = await Promise.all(keys.map((key, i) => key.getPrimarySelfSignature(date, userIDs[i], config)));
-  if (config.aeadProtect && selfSigs.every(selfSig => selfSig.features[0] & enums.features.seipdv2)) {
+  const withAEAD = keys.length ?
+    selfSigs.every(selfSig => selfSig.features[0] & enums.features.seipdv2) :
+    config.aeadProtect;
+
+  if (withAEAD) {
     const defaultCipherSuite = { symmetricAlgo: enums.symmetric.aes128, aeadAlgo: enums.aead.ocb };
     const desiredCipherSuite = { symmetricAlgo: config.preferredSymmetricAlgorithm, aeadAlgo: config.preferredAEADAlgorithm };
     return selfSigs.every(selfSig => selfSig.preferredCipherSuites && selfSig.preferredCipherSuites.some(

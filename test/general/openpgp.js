@@ -2004,13 +2004,6 @@ aOU=
   });
 
   describe('encrypt - unit tests', function() {
-    it('Does not encrypt to expired key (expiration time subpacket on a direct-key signature)', async function() {
-      const expiredKey = await openpgp.readKey({ armoredKey: expiredPublicKeyThroughDirectSignature });
-      await expect(
-        openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: expiredKey })
-      ).to.be.rejectedWith(/Primary key is expired/);
-    });
-
     it('should output message of expected format', async function() {
       const passwords = 'password';
       const text = 'test';
@@ -2177,6 +2170,55 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       });
       expect(decrypted.data).to.equal('test');
     });
+
+    it('does not encrypt to expired key (expiration time subpacket on a direct-key signature)', async function() {
+      const expiredKey = await openpgp.readKey({ armoredKey: expiredPublicKeyThroughDirectSignature });
+      await expect(
+        openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: expiredKey })
+      ).to.be.rejectedWith(/Primary key is expired/);
+    });
+
+    it('uses AEAD when the encryption key prefs support it (SEIPv2', async function() {
+      const v4PrivateKeyWithOCBPref = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+      const v6PrivateKeyWithOCBPref = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: [v4PrivateKeyWithOCBPref, v6PrivateKeyWithOCBPref],
+        format: 'object'
+      });
+
+      const seipd = encrypted.packets[2];
+      expect(seipd).to.be.instanceOf(openpgp.SymEncryptedIntegrityProtectedDataPacket);
+      expect(seipd.version).to.equal(2);
+      expect(seipd.aeadAlgorithm).to.equal(openpgp.enums.aead.ocb);
+    });
   });
 
   describe('encryptSessionKey - unit tests', function() {
@@ -2203,34 +2245,6 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
         algorithm: 'aes256',
         data: util.hexToUint8Array('3e99c1bb485e70a1fcef09a7ad8d38d171015243bbdd853e1a2b0e334d122ff3')
       })).to.be.rejectedWith(/No encryption keys or passwords provided/);
-    });
-
-    it('supports decrypting with argon2 s2k (memory-heavy params)', async function() {
-      const passwords = 'password';
-      // Test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#appendix-A.8.1
-      const armoredMessage = `-----BEGIN PGP MESSAGE-----
-Comment: Encrypted using AES with 128-bit key
-Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F
-
-wycEBwScUvg8J/leUNU1RA7N/zE2AQQVnlL8rSLPP5VlQsunlO+ECxHSPgGYGKY+
-YJz4u6F+DDlDBOr5NRQXt/KJIf4m4mOlKyC/uqLbpnLJZMnTq3o79GxBTdIdOzhH
-XfA3pqV4mTzF
------END PGP MESSAGE-----`;
-      const expectedSessionKey = util.hexToUint8Array('01FE16BBACFD1E7B78EF3B865187374F');
-
-      try {
-        const [decryptedSessionKey] = await openpgp.decryptSessionKeys({
-          message: await openpgp.readMessage({ armoredMessage }),
-          passwords
-        });
-        expect(decryptedSessionKey.data).to.deep.equal(expectedSessionKey);
-        expect(decryptedSessionKey.algorithm).to.equal('aes128');
-      } catch (err) {
-        if (detectBrowser()) { // Expected to fail in the CI, especially in Browserstack
-          expect(err.message).to.match(/Could not allocate required memory/);
-        }
-      }
-
     });
 
     // keep this after the 'memory-heavy' test to confirm that the Wasm module was successfully reloaded
@@ -2312,6 +2326,33 @@ k0mXubZvyl4GBg==
 
       expect(sessionKeys).to.have.length(1);
       expect(sessionKeys[0].algorithm).to.equal(null); // PKESK v6 does not include the algo info
+    });
+
+    it('supports decrypting with argon2 s2k (memory-heavy params)', async function() {
+      const passwords = 'password';
+      // Test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#appendix-A.8.1
+      const armoredMessage = `-----BEGIN PGP MESSAGE-----
+Comment: Encrypted using AES with 128-bit key
+Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F
+
+wycEBwScUvg8J/leUNU1RA7N/zE2AQQVnlL8rSLPP5VlQsunlO+ECxHSPgGYGKY+
+YJz4u6F+DDlDBOr5NRQXt/KJIf4m4mOlKyC/uqLbpnLJZMnTq3o79GxBTdIdOzhH
+XfA3pqV4mTzF
+-----END PGP MESSAGE-----`;
+      const expectedSessionKey = util.hexToUint8Array('01FE16BBACFD1E7B78EF3B865187374F');
+
+      try {
+        const [decryptedSessionKey] = await openpgp.decryptSessionKeys({
+          message: await openpgp.readMessage({ armoredMessage }),
+          passwords
+        });
+        expect(decryptedSessionKey.data).to.deep.equal(expectedSessionKey);
+        expect(decryptedSessionKey.algorithm).to.equal('aes128');
+      } catch (err) {
+        if (detectBrowser()) { // Expected to fail in the CI, especially in Browserstack
+          expect(err.message).to.match(/Could not allocate required memory/);
+        }
+      }
     });
   });
 
