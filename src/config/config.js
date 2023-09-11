@@ -174,7 +174,14 @@ export default {
    * @property {Boolean} allowInsecureDecryptionWithSigningKeys
    */
   allowInsecureVerificationWithReformattedKeys: false,
-
+  /**
+   * Allow using keys that do not have any key flags set.
+   * Key flags are needed to restrict key usage to specific purposes: for instance, a signing key could only be allowed to certify other keys, and not sign messages
+   * (see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#section-5.2.3.29).
+   * Some older keys do not declare any key flags, which means they are not allowed to be used for any operation.
+   * This setting allows using such keys for any operation for which they are compatible, based on their public key algorithm.
+   */
+  allowMissingKeyFlags: false,
   /**
    * Enable constant-time decryption of RSA- and ElGamal-encrypted session keys, to hinder Bleichenbacher-like attacks (https://link.springer.com/chapter/10.1007/BFb0055716).
    * This setting has measurable performance impact and it is only helpful in application scenarios where both of the following conditions apply:
