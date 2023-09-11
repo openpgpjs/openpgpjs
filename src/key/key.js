@@ -269,7 +269,7 @@ class Key {
           const bindingSignature = await helper.getLatestValidSignature(
             subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
           );
-          if (!helper.isValidSigningKeyPacket(subkey.keyPacket, bindingSignature)) {
+          if (!helper.isValidSigningKeyPacket(subkey.keyPacket, bindingSignature, config)) {
             continue;
           }
           if (!bindingSignature.embeddedSignature) {
@@ -322,7 +322,7 @@ class Key {
           await subkey.verify(date, config);
           const dataToVerify = { key: primaryKey, bind: subkey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (helper.isValidEncryptionKeyPacket(subkey.keyPacket, bindingSignature)) {
+          if (helper.isValidEncryptionKeyPacket(subkey.keyPacket, bindingSignature, config)) {
             helper.checkKeyRequirements(subkey.keyPacket, config);
             return subkey;
           }
@@ -336,7 +336,7 @@ class Key {
       // if no valid subkey for encryption, evaluate primary key
       const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
-          helper.isValidEncryptionKeyPacket(primaryKey, selfCertification)) {
+          helper.isValidEncryptionKeyPacket(primaryKey, selfCertification, config)) {
         helper.checkKeyRequirements(primaryKey, config);
         return this;
       }

@@ -3402,7 +3402,7 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
       expect(selfCertification.valid).to.be.true;
 
       const certifyingKey = await openpgp.readKey({ armoredKey: certifying_key });
-      const certifyingSigningKey = await certifyingKey.getSigningKey();
+      const certifyingSigningKey = await certifyingKey.getSigningKey(undefined, undefined, undefined, { ...openpgp.config, allowMissingKeyFlags: true });
       const signatures = await pubKey.verifyPrimaryUser([certifyingKey]);
       expect(signatures.length).to.equal(2);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
@@ -3411,7 +3411,9 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
       expect(signatures[1].valid).to.be.false;
 
       const { user } = await pubKey.getPrimaryUser();
-      await expect(user.verifyCertificate(user.otherCertifications[0], [certifyingKey], undefined, openpgp.config)).to.be.rejectedWith('User certificate is revoked');
+      await expect(
+        user.verifyCertificate(user.otherCertifications[0], [certifyingKey], undefined, { ...openpgp.config, allowMissingKeyFlags: true })
+      ).to.be.rejectedWith('User certificate is revoked');
     } finally {
       openpgp.config.rejectPublicKeyAlgorithms = rejectPublicKeyAlgorithms;
     }

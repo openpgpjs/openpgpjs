@@ -2188,7 +2188,7 @@ uDvEBgD+LCEUOPejUTCMqPyd04ssdOq1AlMJOmUGUwLk7kFP7Aw=
 
     const message = await openpgp.createMessage({ text: content });
     await message.appendSignature(detachedSig);
-    const { data, signatures } = await openpgp.verify({ verificationKeys:[publicKey], message, config: { minRSABits: 1024 } });
+    const { data, signatures } = await openpgp.verify({ verificationKeys:[publicKey], message, config: { minRSABits: 1024, allowMissingKeyFlags: true } });
     expect(data).to.equal(content);
     expect(signatures).to.have.length(1);
     expect(await signatures[0].verified).to.be.true;
