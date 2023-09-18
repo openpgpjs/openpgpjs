@@ -367,6 +367,7 @@ export function isValidSigningKeyPacket(keyPacket, signature) {
   return keyAlgo !== enums.publicKey.rsaEncrypt &&
     keyAlgo !== enums.publicKey.elgamal &&
     keyAlgo !== enums.publicKey.ecdh &&
+    keyAlgo !== enums.publicKey.x25519 &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.signData) !== 0);
 }
@@ -377,6 +378,7 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
     keyAlgo !== enums.publicKey.rsaSign &&
     keyAlgo !== enums.publicKey.ecdsa &&
     keyAlgo !== enums.publicKey.eddsa &&
+    keyAlgo !== enums.publicKey.ed25519 &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
       (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0);
