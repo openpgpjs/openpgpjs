@@ -833,6 +833,8 @@ export function saltLengthForHash(hashAlgorithm) {
     case enums.hash.sha384: return 24;
     case enums.hash.sha512: return 32;
     case enums.hash.sha224: return 16;
+    case enums.hash.sha3_256: return 16;
+    case enums.hash.sha3_512: return 32;
     default: throw new Error('Unsupported hash function for V6 signatures');
   }
 }
