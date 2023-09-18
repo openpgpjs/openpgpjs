@@ -119,7 +119,7 @@ export async function decrypt(algo, key, ciphertext, iv) {
     let j = 0;
     while (chunk ? ct.length >= block_size : ct.length) {
       const decblock = cipherfn.encrypt(blockp);
-      blockp = ct;
+      blockp = ct.subarray(0, block_size);
       for (i = 0; i < block_size; i++) {
         plaintext[j++] = blockp[i] ^ decblock[i];
       }
