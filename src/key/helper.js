@@ -357,7 +357,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   return options;
 }
 
-export function isValidSigningKeyPacket(keyPacket, signature, config) {
+export function validateSigningKeyPacket(keyPacket, signature, config) {
   switch (keyPacket.algorithm) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign:
@@ -365,18 +365,41 @@ export function isValidSigningKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ecdsa:
     case enums.publicKey.eddsaLegacy:
     case enums.publicKey.ed25519:
-    case enums.publicKey.ed448: {
+    case enums.publicKey.ed448:
       if (!signature.keyFlags && !config.allowMissingKeyFlags) {
         throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
       }
-
       return !signature.keyFlags ||
         (signature.keyFlags[0] & enums.keyFlags.signData) !== 0;
-    }
+    default:
+      return false;
   }
 }
 
-export function isValidEncryptionKeyPacket(keyPacket, signature, config) {
+export function validateEncryptionKeyPacket(keyPacket, signature, config) {
+  switch (keyPacket.algorithm) {
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaEncrypt:
+    case enums.publicKey.elgamal:
+    case enums.publicKey.ecdh:
+    case enums.publicKey.x25519:
+    case enums.publicKey.x448:
+      if (!signature.keyFlags && !config.allowMissingKeyFlags) {
+        throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
+      }
+      return !signature.keyFlags ||
+        (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
+        (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
+    default:
+      return false;
+  }
+}
+
+export function validateDecryptionKeyPacket(keyPacket, signature, config) {
+  if (!signature.keyFlags && !config.allowMissingKeyFlags) {
+    throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
+  }
+
   switch (keyPacket.algorithm) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt:
@@ -384,31 +407,19 @@ export function isValidEncryptionKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ecdh:
     case enums.publicKey.x25519:
     case enums.publicKey.x448: {
-      if (!signature.keyFlags && !config.allowMissingKeyFlags) {
-        throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
+      const isValidSigningKeyPacket = !signature.keyFlags || (signature.keyFlags[0] & enums.keyFlags.signData) !== 0;
+      if (isValidSigningKeyPacket && config.allowInsecureDecryptionWithSigningKeys) {
+        // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
+        return true;
       }
 
       return !signature.keyFlags ||
-        (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
-        (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
+      (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
+      (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
     }
+    default:
+      return false;
   }
-}
-
-export function isValidDecryptionKeyPacket(signature, config) {
-  if (!signature.keyFlags && !config.allowMissingKeyFlags) {
-    throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
-  }
-
-  const isValidSigningKeyPacket = !signature.keyFlags || (signature.keyFlags[0] & enums.keyFlags.signData) !== 0;
-  if (isValidSigningKeyPacket && config.allowInsecureDecryptionWithSigningKeys) {
-    // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
-    return true;
-  }
-
-  return !signature.keyFlags ||
-    (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
-    (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
 }
 
 /**

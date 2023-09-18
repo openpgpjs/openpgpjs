@@ -85,7 +85,7 @@ class PrivateKey extends PublicKey {
         try {
           const dataToVerify = { key: primaryKey, bind: this.subkeys[i].keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(this.subkeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
+          if (helper.validateDecryptionKeyPacket(this.subkeys[i].keyPacket, bindingSignature, config)) {
             keys.push(this.subkeys[i]);
           }
         } catch (e) {}
@@ -95,7 +95,7 @@ class PrivateKey extends PublicKey {
     // evaluate primary key
     const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
     if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) &&
-        helper.isValidDecryptionKeyPacket(selfCertification, config)) {
+        helper.validateDecryptionKeyPacket(primaryKey, selfCertification, config)) {
       keys.push(this);
     }
 
