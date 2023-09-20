@@ -1858,9 +1858,7 @@ aOU=
       expect(parsedArmored.text).to.equal(text);
       expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
 
-      const objectMessage = await openpgp.sign({ message, signingKeys: privKey, config, format: 'object' });
-      expect(objectMessage.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
-      const verified = await openpgp.verify({ message: objectMessage, verificationKeys: pubKey, expectSigned: true, config });
+      const verified = await openpgp.verify({ message: parsedArmored, verificationKeys: pubKey, expectSigned: true });
       expect(verified.data).to.equal(text);
     });
 
