@@ -14,6 +14,7 @@ import keyIDType from '../../src/type/keyid.js';
 import { getPreferredCipherSuite } from '../../src/key';
 
 import * as input from './testInputs.js';
+import enums from '../../src/enums.js';
 
 const detectBrowser = () => typeof navigator === 'object';
 
@@ -1852,10 +1853,13 @@ aOU=
       const text = 'Hello, world.';
       const message = await openpgp.createCleartextMessage({ text });
 
-      const cleartextMessage = await openpgp.sign({ message, signingKeys: privKey, config, format: 'armored' });
+      const cleartextMessage = await openpgp.sign({ message, signingKeys: privKey, format: 'armored' });
       const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
       expect(parsedArmored.text).to.equal(text);
       expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      expect(
+        parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
+      ).to.equal(enums.hash.sha3_512);
 
       const verified = await openpgp.verify({ message: parsedArmored, verificationKeys: pubKey, expectSigned: true });
       expect(verified.data).to.equal(text);
