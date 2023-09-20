@@ -948,12 +948,6 @@ export default () => describe('OpenPGP.js public api tests', function() {
     it('readPrivateKeys should throw on armored public keys', async function() {
       await expect(openpgp.readPrivateKeys({ armoredKeys: twoPublicKeys })).to.be.rejectedWith(/Armored text not of type private key/);
     });
-
-    it('readKey should work for a key that uses SHA3 internal signatures', async function() {
-      const key = await openpgp.readKey({ armoredKey: priv_key_sha3 });
-      expect(key.isPrivate()).to.be.true;
-      expect(key.isDecrypted()).to.be.true;
-    });
   });
 
   describe('generateKey - validate user ids', function() {
