@@ -1851,7 +1851,6 @@ aOU=
       const pubKey = privKey.toPublic();
       const text = 'Hello, world.';
       const message = await openpgp.createCleartextMessage({ text });
-      const config = { minRSABits: 1024 };
 
       const cleartextMessage = await openpgp.sign({ message, signingKeys: privKey, config, format: 'armored' });
       const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
