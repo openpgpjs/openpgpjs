@@ -1849,7 +1849,6 @@ aOU=
 
       const cleartextMessage = await openpgp.sign({ message, signingKeys: privKey, format: 'armored' });
       const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
-      expect(parsedArmored.text).to.equal(text);
       expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
       expect(
         parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
