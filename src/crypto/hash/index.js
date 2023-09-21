@@ -57,8 +57,8 @@ const hashFunctions = {
   sha384: nodeHash('sha384') || nobleHash(sha384, 'SHA-384'),
   sha512: nodeHash('sha512') || nobleHash(sha512, 'SHA-512'),
   ripemd: nodeHash('ripemd160') || nobleHash(ripemd160),
-  sha3_256: nobleHash(sha3_256),
-  sha3_512: nobleHash(sha3_512)
+  sha3_256: nodeHash('sha3-256') || nobleHash(sha3_256),
+  sha3_512: nodeHash('sha3-512') || nobleHash(sha3_512)
 };
 
 export default {
