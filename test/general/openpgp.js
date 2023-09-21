@@ -1851,7 +1851,7 @@ aOU=
       expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
       expect(
         parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
-      ).to.equal(enums.hash.sha3_512);
+      ).to.equal(openpgp.enums.hash.sha3_512);
 
       const verified = await openpgp.verify({ message: parsedArmored, verificationKeys: pubKey, expectSigned: true });
       expect(verified.data).to.equal(text);
