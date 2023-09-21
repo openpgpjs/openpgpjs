@@ -14,7 +14,6 @@ import keyIDType from '../../src/type/keyid.js';
 import { getPreferredCipherSuite } from '../../src/key';
 
 import * as input from './testInputs.js';
-import enums from '../../src/enums.js';
 
 const detectBrowser = () => typeof navigator === 'object';
 
