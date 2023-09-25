@@ -101,7 +101,7 @@ export default {
       case enums.hash.sha3_512:
         return this.sha3_512(data);
       default:
-        throw new Error('Invalid hash function.');
+        throw new Error('Unsupported hash function');
     }
   },
 

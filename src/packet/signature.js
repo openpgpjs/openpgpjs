@@ -697,6 +697,11 @@ class SignaturePacket {
   }
 
   async hash(signatureType, data, toHash, detached = false) {
+    if (this.version === 6 && this.salt.length !== saltLengthForHash(this.hashAlgorithm)) {
+      // avoid hashing unexpected salt size
+      throw new Error('Signature salt does not have the expected length');
+    }
+
     if (!toHash) toHash = this.toHash(signatureType, data, detached);
     return crypto.hash.digest(this.hashAlgorithm, toHash);
   }
@@ -719,9 +724,6 @@ class SignaturePacket {
     }
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
-    }
-    if (this.version === 6 && this.salt.length !== saltLengthForHash(this.hashAlgorithm)) {
-      throw new Error('Signature salt does not have the expected length');
     }
 
     const isMessageSignature = signatureType === enums.signature.binary || signatureType === enums.signature.text;
@@ -836,6 +838,6 @@ function saltLengthForHash(hashAlgorithm) {
     case enums.hash.sha224: return 16;
     case enums.hash.sha3_256: return 16;
     case enums.hash.sha3_512: return 32;
-    default: throw new Error('Unsupported hash function for V6 signatures');
+    default: throw new Error('Unsupported hash function');
   }
 }

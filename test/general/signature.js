@@ -812,7 +812,7 @@ OiDfb1DkjT/HJ8vXMGpwWdgFPoqsWzTNhd5VCQ==
 -----END PGP PRIVATE KEY BLOCK-----`;
 
     const key = await openpgp.readKey({ armoredKey });
-    await expect(key.getSigningKey()).to.be.rejectedWith(/Invalid hash function/);
+    await expect(key.getSigningKey()).to.be.rejectedWith(/Unsupported hash function/);
   });
 
   it('Ignores marker packets when verifying signatures', async function () {
@@ -939,9 +939,7 @@ SlcdMBDgwngEGBYIAAkFAmFppjQCGwwAIQkQDmTSjoPv10MWIQRqj/4SGmAk
 ibGeE60OZNKOg+/XQx/EAQCM0UYrObp60YbOCxu07Dm6XjCVylbOcsaxCnE7
 2eMU4AD+OkgajZgbqSIdAR1ud76FW+W+3xlDi/SMFdU7D49SbQI=
 =ASQu
------END PGP PRIVATE KEY BLOCK-----
-
-`;
+-----END PGP PRIVATE KEY BLOCK-----`;
     const armoredMessage = `-----BEGIN PGP MESSAGE-----
 
 xA0DAQoWDmTSjoPv10MByw91AGFpplFwbGFpbnRleHTCdQQBFgoABgUCYWml
