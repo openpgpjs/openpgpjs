@@ -790,6 +790,31 @@ kCNcH9WI6idSzFjuYegECf+ZA1xOCjS9oLTGbSeT7jNfC8dH5+E92qlBLq4Ctt7k
     await expect(openpgp.readSignature({ armoredSignature })).to.be.rejectedWith(/Missing signature creation time/);
   });
 
+  it('Supports parsing v6 signature with unknown hash algo', async function () {
+    // v6 signatures must check that the salt size is correct.
+    // but we want to support parsing signatures with unknown hash algos.
+    // this test checks that the parsing succeeds, while signing/verification fails.
+
+    // key with direct signature of unknown hash algo 99
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGZN8edBsAAAAgdUMlFMFCVKNo7sdUd6FVBos6NNjpUpSdrodk6BfPb/kA
++3buA2+WY2LwyxlX5o07WR2VSn+wuegC3v28yO0tClHCtwYfG2MAAABIBYJk
+3x50BAsJCAcHFQ4MCgkICwIWAAIXgAKbAwIeCSIhBpbSe0QWuaCNSSLaePhX
+EP3BxQ2VHX3WpW1U6svHvCUiBScJAgcCAAAAACMZIP8aHixoyC9wS3q/TNV/
+IfOQa81f+U5Ucz6H4I+c5bWRYUzH/piBB4n5FoYlld+/SViCQIBCQ+fynLma
+j5wlf22+mISTt/9je1ZfYWlJ+WSJyi5gY5EH9DubfuIU3VaqCM0aQmVybmFk
+ZXR0ZSA8YkBleGFtcGxlLm9yZz7CugYTGw4AAABLBYJk3x50BAsJCAcHFQ4M
+CgkICwIWAAIXgAIZAQKbAwIeCSIhBpbSe0QWuaCNSSLaePhXEP3BxQ2VHX3W
+pW1U6svHvCUiBScJAgcCAAAAAMMGIJEi9+yqkFKsNwX1H5II0riPudFpwBx2
+ypVjNk4aNb7Exl56Aac4tXEhz4fH41q0dAzFww2erZaiUqmohQ4AFSw1jN/W
+OiDfb1DkjT/HJ8vXMGpwWdgFPoqsWzTNhd5VCQ==
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+    const key = await openpgp.readKey({ armoredKey });
+    await expect(key.getSigningKey()).to.be.rejectedWith(/Invalid hash function/);
+  });
+
   it('Ignores marker packets when verifying signatures', async function () {
     const signatureWithMarkerPacket = `-----BEGIN PGP SIGNATURE-----
 
@@ -1060,6 +1085,39 @@ eSvSZutLuKKbidSYMLhWROPlwKc2GU2ws6PrLZAyCAel/lU=
       config: { minRSABits: 1024 }
     });
     expect(await sigInfo.verified).to.be.true;
+  });
+
+  it('Verification fails if v6 signature has unexpected salt length', async function() {
+    // signature with salt shorter than expected
+    const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+xEQGAQoWHgTCf3OkPcYPPB6GmoMeaOz1wYXbuSvHxW/PVbRIynPv5yU3YApt
+KDJPb4mCbmxvCoKjGx6CMjDpDsVB+wDFAcsLdQBlEWcKaGVsbG/CmgYBFgoA
+AAApBYJlEWcKIqEGc+/nJTdgCm0oMk9viYJubG8KgqMbHoIyMOkOxUH7AMUA
+AAAA5GYeBMJ/c6Q9xg88Hoaagx5o7PXBhdu5K8fFb89VtEjKAQCW/XwAPo2V
+ugvc1634oGA/74j7KonU2qdl0LvxVJuB2wEAtutHh3wry/SNkc+japCGO4u4
+XjIVmkzQNtymmOECUwI=
+-----END PGP MESSAGE-----`;
+    const key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVoGZRFjtxYAAAAtCSsGAQQB2kcPAQEHQJRcfAi8wlCCWAeBcvpRO6iL5YK8
+1e8BVcOkAGVXKDguAAEAxIUb1xswIKPfVEyOZkqSFukVOegoArxIeEuDaoK0
+feXCrQYfFgoAAAA6BYJlEWO3AwsJBwMVCAoCFgACmwMCHgEioQZz7+clN2AK
+bSgyT2+Jgm5sbwqCoxsegjIw6Q7FQfsAxQAAAACBKyDA5Ih9cWlc9o5NUzmo
+jSCtKhy54bBzfRX0t9Jha4BfZwD9FvmhOEpJAnYRDmBrEiaO4okM3D6eNZz9
+rmGZkLT9oJMBAI6UbwsjgWw42W85Kb57tfYdF/779TrLHcNRZLNV0p8NzQDC
+nwYQFgoAAAAsBYJlEWO3AhkBIqEGc+/nJTdgCm0oMk9viYJubG8KgqMbHoIy
+MOkOxUH7AMUAAAAAV2kgOkNvj/g+Q6hFcHcpRFekCUxOons+JgXE+lxuKnbt
+l10BAO7pYlHAee5dxkzQI3WPiiYFt/OYrnr7fT5QadRZhAutAP9n5bvQaoLX
+vfHp79dKJnU1qDnSTEshB7ytt9I3Ze+DAQ==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+    const { signatures } = await openpgp.verify({
+      message: await openpgp.readMessage({ armoredMessage }),
+      verificationKeys: key
+    });
+    expect(signatures).to.have.length(1);
+    await expect(signatures[0].verified).to.be.rejectedWith(/Signature salt does not have the expected length/);
   });
 
   it('Reject cleartext message with arbitrary text added around hash headers (spoofed cleartext message)', async function() {

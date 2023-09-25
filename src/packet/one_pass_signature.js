@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import * as stream from '@openpgp/web-stream-tools';
-import SignaturePacket, { saltLengthForHash } from './signature';
+import SignaturePacket from './signature';
 import KeyID from '../type/keyid';
 import enums from '../enums';
 import util from '../util';
@@ -116,10 +116,8 @@ class OnePassSignaturePacket {
 
       // A one-octet salt size. The value MUST match the value defined
       // for the hash algorithm as specified in Table 23 (Hash algorithm registry).
+      // To allow parsing unknown hash algos, we only check the expected salt length when signing.
       const saltLength = bytes[mypos++];
-      if (saltLength !== saltLengthForHash(this.hashAlgorithm)) {
-        throw new Error('Unexpected salt size for the hash algorithm');
-      }
 
       // The salt; a random value value of the specified size.
       this.salt = bytes.subarray(mypos, mypos + saltLength);

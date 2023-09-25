@@ -145,10 +145,8 @@ class SignaturePacket {
     if (this.version === 6) {
       // A one-octet salt size. The value MUST match the value defined
       // for the hash algorithm as specified in Table 23 (Hash algorithm registry).
+      // To allow parsing unknown hash algos, we only check the expected salt length when verifying.
       const saltLength = bytes[i++];
-      if (saltLength !== saltLengthForHash(this.hashAlgorithm)) {
-        throw new Error('Unexpected salt size for the hash algorithm');
-      }
 
       // The salt; a random value value of the specified size.
       this.salt = bytes.subarray(i, i + saltLength);
@@ -722,6 +720,9 @@ class SignaturePacket {
     if (this.publicKeyAlgorithm !== key.algorithm) {
       throw new Error('Public key algorithm used to sign signature does not match issuer key algorithm.');
     }
+    if (this.version === 6 && this.salt.length !== saltLengthForHash(this.hashAlgorithm)) {
+      throw new Error('Signature salt does not have the expected length');
+    }
 
     const isMessageSignature = signatureType === enums.signature.binary || signatureType === enums.signature.text;
     // Cryptographic validity is cached after one successful verification.
@@ -827,7 +828,7 @@ function writeSubPacket(type, critical, data) {
  * @returns {Integer} Salt length.
  * @private
  */
-export function saltLengthForHash(hashAlgorithm) {
+function saltLengthForHash(hashAlgorithm) {
   switch (hashAlgorithm) {
     case enums.hash.sha256: return 16;
     case enums.hash.sha384: return 24;
