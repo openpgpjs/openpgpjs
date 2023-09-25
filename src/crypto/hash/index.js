@@ -8,6 +8,7 @@
 import { sha1 } from '@openpgp/noble-hashes/sha1';
 import { sha224, sha256 } from '@openpgp/noble-hashes/sha256';
 import { sha384, sha512 } from '@openpgp/noble-hashes/sha512';
+import { sha3_256, sha3_512 } from '@openpgp/noble-hashes/sha3';
 import { ripemd160 } from '@openpgp/noble-hashes/ripemd160';
 import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
@@ -55,7 +56,9 @@ const hashFunctions = {
   sha256: nodeHash('sha256') || nobleHash(sha256, 'SHA-256'),
   sha384: nodeHash('sha384') || nobleHash(sha384, 'SHA-384'),
   sha512: nodeHash('sha512') || nobleHash(sha512, 'SHA-512'),
-  ripemd: nodeHash('ripemd160') || nobleHash(ripemd160)
+  ripemd: nodeHash('ripemd160') || nobleHash(ripemd160),
+  sha3_256: nodeHash('sha3-256') || nobleHash(sha3_256),
+  sha3_512: nodeHash('sha3-512') || nobleHash(sha3_512)
 };
 
 export default {
@@ -68,6 +71,8 @@ export default {
   sha384: hashFunctions.sha384,
   sha512: hashFunctions.sha512,
   ripemd: hashFunctions.ripemd,
+  sha3_256: hashFunctions.sha3_256,
+  sha3_512: hashFunctions.sha3_512,
 
   /**
    * Create a hash on the specified data using the specified algorithm
@@ -91,6 +96,10 @@ export default {
         return this.sha512(data);
       case enums.hash.sha224:
         return this.sha224(data);
+      case enums.hash.sha3_256:
+        return this.sha3_256(data);
+      case enums.hash.sha3_512:
+        return this.sha3_512(data);
       default:
         throw new Error('Invalid hash function.');
     }
@@ -116,6 +125,10 @@ export default {
         return 64;
       case enums.hash.sha224:
         return 28;
+      case enums.hash.sha3_256:
+        return 32;
+      case enums.hash.sha3_512:
+        return 64;
       default:
         throw new Error('Invalid hash algorithm.');
     }
