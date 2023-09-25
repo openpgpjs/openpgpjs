@@ -168,7 +168,9 @@ export default {
     sha256: 8,
     sha384: 9,
     sha512: 10,
-    sha224: 11
+    sha224: 11,
+    sha3_256: 12,
+    sha3_512: 14
   },
 
   /** A list of hash names as accepted by webCrypto functions.
