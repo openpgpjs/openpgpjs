@@ -297,6 +297,25 @@ DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
 =/7PI
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const priv_key_sha3 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGZN8edBsAAAAgdUMlFMFCVKNo7sdUd6FVBos6NNjpUpSdrodk6BfPb/kA+3bu
+A2+WY2LwyxlX5o07WR2VSn+wuegC3v28yO0tClHCtwYfGw4AAABIBYJk3x50BAsJ
+CAcHFQ4MCgkICwIWAAIXgAKbAwIeCSIhBpbSe0QWuaCNSSLaePhXEP3BxQ2VHX3W
+pW1U6svHvCUiBScJAgcCAAAAACMZIP8aHixoyC9wS3q/TNV/IfOQa81f+U5Ucz6H
+4I+c5bWRYUzH/piBB4n5FoYlld+/SViCQIBCQ+fynLmaj5wlf22+mISTt/9je1Zf
+YWlJ+WSJyi5gY5EH9DubfuIU3VaqCM0aQmVybmFkZXR0ZSA8YkBleGFtcGxlLm9y
+Zz7CugYTGw4AAABLBYJk3x50BAsJCAcHFQ4MCgkICwIWAAIXgAIZAQKbAwIeCSIh
+BpbSe0QWuaCNSSLaePhXEP3BxQ2VHX3WpW1U6svHvCUiBScJAgcCAAAAAMMGIJEi
+9+yqkFKsNwX1H5II0riPudFpwBx2ypVjNk4aNb7Exl56Aac4tXEhz4fH41q0dAzF
+ww2erZaiUqmohQ4AFSw1jN/WOiDfb1DkjT/HJ8vXMGpwWdgFPoqsWzTNhd5VCcdL
+BmTfHnQZAAAAIAGMcsqVCXLclRhVamWciSxmnYF1FFs80W7dNUH07HUOAHh/S601
+If+/eZKDIj3jq7oOe2PzHSYEK+mpQD1hBpF2wpsGGBsOAAAALAWCZN8edAKbDCIh
+BpbSe0QWuaCNSSLaePhXEP3BxQ2VHX3WpW1U6svHvCUiAAAAANj3IBknZTPsMpWA
+we0Jl5gw/Dj4lWAGoJfWfk+6s3Q86Hag3Hu8VBsapzmul+vzy0KJa+ZRcZz2n8aj
+0vTl4sOZ0EcCdFDfkh/tR//gKkT6BiSBG86WoFq3f6U/RC+z0Ym7Dw==
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 const passphrase = 'hello world';
 const plaintext = input.createSomeMessage();
 const password1 = 'I am a password';
@@ -1819,6 +1838,23 @@ aOU=
       await expect(openpgp.sign({
         message: await openpgp.createMessage({ text: plaintext })
       })).to.be.rejectedWith(/No signing keys provided/);
+    });
+
+    it('Signing with key which uses sha3 should generate a valid sha3 signature', async function() {
+      const privKey = await openpgp.readKey({ armoredKey: priv_key_sha3 });
+      const pubKey = privKey.toPublic();
+      const text = 'Hello, world.';
+      const message = await openpgp.createCleartextMessage({ text });
+
+      const cleartextMessage = await openpgp.sign({ message, signingKeys: privKey, format: 'armored' });
+      const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
+      expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      expect(
+        parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
+      ).to.equal(openpgp.enums.hash.sha3_512);
+
+      const verified = await openpgp.verify({ message: parsedArmored, verificationKeys: pubKey, expectSigned: true });
+      expect(verified.data).to.equal(text);
     });
 
     it('should output cleartext message of expected format', async function() {
