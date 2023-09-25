@@ -116,7 +116,7 @@ class OnePassSignaturePacket {
 
       // A one-octet salt size. The value MUST match the value defined
       // for the hash algorithm as specified in Table 23 (Hash algorithm registry).
-      // To allow parsing unknown hash algos, we only check the expected salt length when signing.
+      // To allow parsing unknown hash algos, we only check the expected salt length when verifying.
       const saltLength = bytes[mypos++];
 
       // The salt; a random value value of the specified size.
