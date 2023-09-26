@@ -4314,6 +4314,26 @@ XvmoLueOOShu01X/kaylMqaT8w==
       expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('secp256k1');
     });
 
+    it('should throw when trying to add a curve25519Legacy key to a v6 key', async function() {
+      const v6Key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMA
+GXKBexK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJj
+h3/jAwsJBwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifB
+ilZwj2Ul7Ce62azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2
+kCcUmKfvBXbAf6rhRYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaE
+QsiPlR4zxP/TP7mhfVEe7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaT
+JINn+eUBXbki+PSAld2nhJh/LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u
+/tVY6a//1q0NWC1X+yui3O24wpsGGBsKAAAALAWCY4d/4wKbDCIhBssYbE8G
+CaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAAQBIKbpGG2dWTX8j+Vj
+FM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805
+I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+      expect(v6Key.subkeys).to.have.length(1);
+      await expect(v6Key.addSubkey({ type: 'ecc' })).to.be.rejectedWith(/Cannot generate v6 keys of type 'ecc' with curve curve25519/);
+      expect(v6Key.subkeys).to.have.length(1);
+    });
+
     it('should throw when trying to encrypt a subkey separately from key', async function() {
       const privateKey = await openpgp.decryptKey({
         privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
