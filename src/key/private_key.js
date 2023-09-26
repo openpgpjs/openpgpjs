@@ -231,7 +231,11 @@ class PrivateKey extends PublicKey {
     defaultOptions.rsaBits = defaultOptions.bits || 4096;
     defaultOptions.curve = defaultOptions.curve || 'curve25519';
     options = helper.sanitizeKeyOptions(options, defaultOptions);
-    const keyPacket = await helper.generateSecretSubkey(options);
+    // Every subkey for a v4 primary key MUST be a v4 subkey.
+    // Every subkey for a v6 primary key MUST be a v6 subkey.
+    // For v5 keys, since we dropped generation support, a v4 subkey is added.
+    // The config is always overwritten since we cannot tell if the defaultConfig was changed by the user.
+    const keyPacket = await helper.generateSecretSubkey(options, { ...config, v6Keys: this.keyPacket.version === 6 });
     helper.checkKeyRequirements(keyPacket, config);
     const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options, config);
     const packetList = this.toPacketList();
