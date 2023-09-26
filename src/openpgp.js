@@ -37,7 +37,7 @@ import { checkKeyRequirements } from './key/helper';
  * The generated primary key will have signing capabilities. By default, one subkey with encryption capabilities is also generated.
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {'ecc'|'rsa'|'curve448'|'curve25519'} [options.type='ecc'] - The primary key algorithm type: ECC (default), RSA, Curve448 or Curve25519 (new format).
+ * @param {'ecc'|'rsa'|'curve448'|'curve25519'} [options.type='ecc'] - The primary key algorithm type: ECC (default for v4 keys), RSA, Curve448 or Curve25519 (new format, default for v6 keys).
  *                                                                     Note: Curve448 and Curve25519 (new format) are not widely supported yet.
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
@@ -55,8 +55,15 @@ import { checkKeyRequirements } from './key/helper';
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase, type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
+export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBits = 4096, keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
+  if (!type && !curve) {
+    type = config.v6Keys ? 'curve25519' : 'ecc'; // default to new curve25519 for v6 keys (legacy curve25519 cannot be used with them)
+    curve = 'curve25519'; // unused with type != 'ecc'
+  } else {
+    type = type || 'ecc';
+    curve = curve || 'curve25519';
+  }
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 

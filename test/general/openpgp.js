@@ -1012,7 +1012,7 @@ export default () => describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - unit tests', function() {
-    it('should have default params set', function() {
+    it('should have default params set (v4 key)', function() {
       const now = util.normalizeDate(new Date());
       const opt = {
         userIDs: { name: 'Test User', email: 'text@example.com' },
@@ -1023,6 +1023,7 @@ export default () => describe('OpenPGP.js public api tests', function() {
       return openpgp.generateKey(opt).then(async function({ privateKey, publicKey }) {
         for (const key of [publicKey, privateKey]) {
           expect(key).to.exist;
+          expect(key.keyPacket.version).to.equal(4);
           expect(key.users.length).to.equal(1);
           expect(key.users[0].userID.name).to.equal('Test User');
           expect(key.users[0].userID.email).to.equal('text@example.com');
@@ -1033,6 +1034,37 @@ export default () => describe('OpenPGP.js public api tests', function() {
           expect(key.subkeys.length).to.equal(1);
           expect(key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
           expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+          expect(+key.subkeys[0].getCreationTime()).to.equal(+now);
+          expect(await key.subkeys[0].getExpirationTime()).to.equal(Infinity);
+        }
+      });
+    });
+
+    it('should have default params set (v6 key)', function() {
+      const now = util.normalizeDate(new Date());
+      const opt = {
+        userIDs: { name: 'Test User', email: 'text@example.com' },
+        passphrase: 'secret',
+        date: now,
+        format: 'object',
+        config: { v6Keys: true }
+      };
+      return openpgp.generateKey(opt).then(async function({ privateKey, publicKey }) {
+        for (const key of [publicKey, privateKey]) {
+          expect(key).to.exist;
+          expect(key.keyPacket.version).to.equal(6);
+          expect(key.users.length).to.equal(1);
+          expect(key.users[0].userID.name).to.equal('Test User');
+          expect(key.users[0].userID.email).to.equal('text@example.com');
+          expect(key.getAlgorithmInfo().algorithm).to.equal('ed25519');
+          expect(key.getAlgorithmInfo().rsaBits).to.equal(undefined);
+          expect(key.getAlgorithmInfo().curve).to.equal(undefined);
+          expect(+key.getCreationTime()).to.equal(+now);
+          expect(await key.getExpirationTime()).to.equal(Infinity);
+          expect(key.subkeys.length).to.equal(1);
+          expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x25519');
+          expect(key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
+          expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal(undefined);
           expect(+key.subkeys[0].getCreationTime()).to.equal(+now);
           expect(await key.subkeys[0].getExpirationTime()).to.equal(Infinity);
         }

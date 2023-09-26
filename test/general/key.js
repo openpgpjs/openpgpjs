@@ -2463,29 +2463,35 @@ function versionSpecificTests() {
   });
 
   it('Generate key - default values', function() {
+    const v6Key = openpgp.config.v6Keys;
+
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], format: 'object' };
     return openpgp.generateKey(opt).then(function({ privateKey: key }) {
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.isDecrypted()).to.be.true;
-      expect(key.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
+      expect(key.getAlgorithmInfo().algorithm).to.equal(v6Key ? 'ed25519' : 'eddsaLegacy');
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(1);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
     });
   });
 
   it('Generate key - two subkeys with default values', function() {
+    const v6Key = openpgp.config.v6Keys;
+
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{},{}] };
     return openpgp.generateKey(opt).then(function({ privateKey: key }) {
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(2);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
     });
   });
 
@@ -2558,34 +2564,39 @@ function versionSpecificTests() {
   });
 
   it('Generate key - one signing subkey', function() {
+    const v6Key = openpgp.config.v6Keys;
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{}, { sign: true }] };
+
     return openpgp.generateKey(opt).then(async function({ privateKey: key }) {
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(2);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
       expect(await key.getEncryptionKey()).to.equal(key.subkeys[0]);
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'ed25519' : 'eddsaLegacy');
       expect(await key.getSigningKey()).to.equal(key.subkeys[1]);
     });
   });
 
   it('Reformat key - one signing subkey', async function() {
+    const v6Key = openpgp.config.v6Keys;
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], format: 'object', subkeys:[{}, { sign: true }] };
     const { privateKey } = await openpgp.generateKey(opt);
 
     return openpgp.reformatKey({ privateKey, userIDs: [userID] }).then(async function({ privateKey: armoredKey }) {
       const key = await openpgp.readKey({ armoredKey });
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(2);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
       expect(await key.getEncryptionKey()).to.equal(key.subkeys[0]);
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'ed25519' : 'eddsaLegacy');
       expect(await key.getSigningKey()).to.equal(key.subkeys[1]);
     });
   });
@@ -2596,7 +2607,7 @@ function versionSpecificTests() {
     openpgp.config.minRSABits = rsaBits;
 
     const userID = { name: 'test', email: 'a@b.com' };
-    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ type: 'ecc', curve: 'curve25519' }] };
+    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ type: 'ecc', curve: 'p256' }] };
     try {
       const { privateKey: key } = await openpgp.generateKey(opt);
       expect(key.users.length).to.equal(1);
