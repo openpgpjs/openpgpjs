@@ -124,6 +124,17 @@ class PublicKeyPacket {
 
       // - A series of values comprising the key material.
       const { read, publicParams } = crypto.parsePublicKeyParams(this.algorithm, bytes.subarray(pos));
+      // The deprecated OIDs for Ed25519Legacy and Curve25519Legacy are used in legacy version 4 keys and signatures.
+      // Implementations MUST NOT accept or generate v6 key material using the deprecated OIDs.
+      if (
+        this.version === 6 &&
+        publicParams.oid && (
+          publicParams.oid.getName() === enums.curve.curve25519Legacy ||
+          publicParams.oid.getName() === enums.curve.ed25519Legacy
+        )
+      ) {
+        throw new Error('Legacy curve25519 cannot be used with v6 keys');
+      }
       this.publicParams = publicParams;
       pos += read;
 
