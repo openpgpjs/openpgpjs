@@ -468,3 +468,20 @@ function checkSupportedCurve(oid) {
     throw new UnsupportedError('Unknown curve OID');
   }
 }
+
+/**
+ * Get preferred hash algo for a given elliptic algo
+ * @param {module:enums.publicKey} algo - alrogithm identifier
+ * @param {module:type/oid} [oid] - curve OID if needed by algo
+ */
+export function getPreferredCurveHashAlgo(algo, oid) {
+  switch (algo) {
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+      return publicKey.elliptic.getPreferredHashAlgo(oid);
+    case enums.publicKey.ed25519:
+      return enums.hash.sha256;
+    default:
+      throw new Error('Unknown elliptic signing algo');
+  }
+}

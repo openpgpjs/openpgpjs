@@ -5,8 +5,6 @@
  */
 
 import {
-  PublicKeyPacket,
-  PublicSubkeyPacket,
   SecretKeyPacket,
   SecretSubkeyPacket,
   SignaturePacket
@@ -129,17 +127,11 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
         prefAlgo : hashAlgo;
     }
   }
-  switch (Object.getPrototypeOf(keyPacket)) {
-    case SecretKeyPacket.prototype:
-    case PublicKeyPacket.prototype:
-    case SecretSubkeyPacket.prototype:
-    case PublicSubkeyPacket.prototype:
-      switch (keyPacket.algorithm) {
-        case enums.publicKey.ecdh:
-        case enums.publicKey.ecdsa:
-        case enums.publicKey.eddsaLegacy:
-          prefAlgo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
-      }
+  switch (keyPacket.algorithm) {
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+    case enums.publicKey.ed25519:
+      prefAlgo = crypto.getPreferredCurveHashAlgo(keyPacket.algorithm, keyPacket.publicParams.oid);
   }
   return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
     prefAlgo : hashAlgo;
