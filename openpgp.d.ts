@@ -820,7 +820,9 @@ export namespace enums {
     dsa = 17,
     ecdh = 18,
     ecdsa = 19,
+    /** @deprecated use `eddsaLegacy` instead */
     eddsa = 22,
+    eddsaLegacy = 22,
     aedh = 23,
     aedsa = 24,
   }

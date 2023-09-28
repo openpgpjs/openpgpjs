@@ -178,7 +178,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
         showComment: true,
         preferredCompressionAlgorithm: openpgp.enums.compression.zip,
         preferredHashAlgorithm: openpgp.enums.hash.sha512,
-        rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) // should not matter in this context
+        rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) // should not matter in this context
       };
       const opt2 = { privateKey: origKey, userIDs, config };
       const { privateKey: refKeyArmored2 } = await openpgp.reformatKey(opt2);
@@ -366,7 +366,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
     await expect(openpgp.sign(opt2)).to.be.rejectedWith(/Insecure hash algorithm/);
 
     await expect(openpgp.sign({
-      message, signingKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
+      message, signingKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) }
     })).to.be.eventually.rejectedWith(/eddsa keys are considered too weak/);
     await expect(openpgp.sign({
       message, signingKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519]) }
@@ -411,7 +411,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
     const opt4 = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
       verificationKeys: [key],
-      config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
+      config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) }
     };
     const { signatures: [sig4] } = await openpgp.verify(opt4);
     await expect(sig4.verified).to.be.rejectedWith(/eddsa keys are considered too weak/);

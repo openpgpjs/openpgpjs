@@ -92,7 +92,7 @@ const curves = {
   },
   ed25519: {
     oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
-    keyType: enums.publicKey.eddsa,
+    keyType: enums.publicKey.eddsaLegacy,
     hash: enums.hash.sha512,
     node: false, // nodeCurves.ed25519 TODO
     payloadSize: 32

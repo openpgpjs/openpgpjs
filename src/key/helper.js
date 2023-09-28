@@ -137,7 +137,7 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
       switch (keyPacket.algorithm) {
         case enums.publicKey.ecdh:
         case enums.publicKey.ecdsa:
-        case enums.publicKey.eddsa:
+        case enums.publicKey.eddsaLegacy:
           prefAlgo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
       }
   }
@@ -348,7 +348,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
         options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
       }
       if (options.sign) {
-        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
+        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsaLegacy : enums.publicKey.ecdsa;
       } else {
         options.algorithm = enums.publicKey.ecdh;
       }
@@ -377,7 +377,7 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
   return keyAlgo !== enums.publicKey.dsa &&
     keyAlgo !== enums.publicKey.rsaSign &&
     keyAlgo !== enums.publicKey.ecdsa &&
-    keyAlgo !== enums.publicKey.eddsa &&
+    keyAlgo !== enums.publicKey.eddsaLegacy &&
     keyAlgo !== enums.publicKey.ed25519 &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
@@ -417,7 +417,7 @@ export function checkKeyRequirements(keyPacket, config) {
       }
       break;
     case enums.publicKey.ecdsa:
-    case enums.publicKey.eddsa:
+    case enums.publicKey.eddsaLegacy:
     case enums.publicKey.ecdh:
       if (config.rejectCurves.has(algoInfo.curve)) {
         throw new Error(`Support for ${algoInfo.algorithm} keys using curve ${algoInfo.curve} is disabled.`);
