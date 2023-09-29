@@ -89,7 +89,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
   const subkeySignaturePacket = new SignaturePacket();
   subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
   subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
-  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey, undefined, undefined, config);
+  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, primaryKey, undefined, undefined, config);
   if (options.sign) {
     subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
     subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
