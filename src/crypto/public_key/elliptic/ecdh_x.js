@@ -27,8 +27,6 @@ export async function generate(algo) {
     case enums.publicKey.x25519: {
       // k stays in little-endian, unlike legacy ECDH over curve25519
       const k = getRandomBytes(32);
-      k[0] &= 248;
-      k[31] = (k[31] & 127) | 64;
       const { publicKey: A } = nacl.box.keyPair.fromSecretKey(k);
       return { A, k };
     }
