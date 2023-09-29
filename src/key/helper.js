@@ -86,23 +86,20 @@ export async function createBindingSignature(subkey, primaryKey, options, config
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
-  const subkeySignaturePacket = new SignaturePacket();
-  subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
-  subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
-  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, primaryKey, undefined, undefined, config);
+  const signatureProperties = { signatureType: enums.signature.subkeyBinding };
   if (options.sign) {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
-    subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
+    signatureProperties.keyFlags = [enums.keyFlags.signData];
+    signatureProperties.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
       signatureType: enums.signature.keyBinding
     }, options.date, undefined, undefined, undefined, config);
   } else {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
+    signatureProperties.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
   }
   if (options.keyExpirationTime > 0) {
-    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
-    subkeySignaturePacket.keyNeverExpires = false;
+    signatureProperties.keyExpirationTime = options.keyExpirationTime;
+    signatureProperties.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date);
+  const subkeySignaturePacket = await createSignaturePacket(dataToSign, null, primaryKey, signatureProperties, options.date, undefined, undefined, undefined, config);
   return subkeySignaturePacket;
 }
 

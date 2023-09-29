@@ -197,50 +197,50 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     const dataToSign = {};
     dataToSign.userID = userIDPacket;
     dataToSign.key = secretKeyPacket;
-    const signaturePacket = new SignaturePacket();
-    signaturePacket.signatureType = enums.signature.certGeneric;
-    signaturePacket.publicKeyAlgorithm = secretKeyPacket.algorithm;
-    signaturePacket.hashAlgorithm = await helper.getPreferredHashAlgo(null, secretKeyPacket, undefined, undefined, config);
-    signaturePacket.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
-    signaturePacket.preferredSymmetricAlgorithms = createPreferredAlgos([
+
+    const signatureProperties = {};
+    signatureProperties.signatureType = enums.signature.certGeneric;
+    signatureProperties.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
+    signatureProperties.preferredSymmetricAlgorithms = createPreferredAlgos([
       // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       enums.symmetric.aes256,
       enums.symmetric.aes128,
       enums.symmetric.aes192
     ], config.preferredSymmetricAlgorithm);
     if (config.aeadProtect) {
-      signaturePacket.preferredAEADAlgorithms = createPreferredAlgos([
+      signatureProperties.preferredAEADAlgorithms = createPreferredAlgos([
         enums.aead.eax,
         enums.aead.ocb
       ], config.preferredAEADAlgorithm);
     }
-    signaturePacket.preferredHashAlgorithms = createPreferredAlgos([
+    signatureProperties.preferredHashAlgorithms = createPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
       enums.hash.sha256,
       enums.hash.sha512
     ], config.preferredHashAlgorithm);
-    signaturePacket.preferredCompressionAlgorithms = createPreferredAlgos([
+    signatureProperties.preferredCompressionAlgorithms = createPreferredAlgos([
       enums.compression.zlib,
       enums.compression.zip,
       enums.compression.uncompressed
     ], config.preferredCompressionAlgorithm);
     if (index === 0) {
-      signaturePacket.isPrimaryUserID = true;
+      signatureProperties.isPrimaryUserID = true;
     }
     // integrity protection always enabled
-    signaturePacket.features = [0];
-    signaturePacket.features[0] |= enums.features.modificationDetection;
+    signatureProperties.features = [0];
+    signatureProperties.features[0] |= enums.features.modificationDetection;
     if (config.aeadProtect) {
-      signaturePacket.features[0] |= enums.features.aead;
+      signatureProperties.features[0] |= enums.features.aead;
     }
     if (config.v5Keys) {
-      signaturePacket.features[0] |= enums.features.v5Keys;
+      signatureProperties.features[0] |= enums.features.v5Keys;
     }
     if (options.keyExpirationTime > 0) {
-      signaturePacket.keyExpirationTime = options.keyExpirationTime;
-      signaturePacket.keyNeverExpires = false;
+      signatureProperties.keyExpirationTime = options.keyExpirationTime;
+      signatureProperties.keyNeverExpires = false;
     }
-    await signaturePacket.sign(secretKeyPacket, dataToSign, options.date);
+
+    const signaturePacket = await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {
