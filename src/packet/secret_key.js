@@ -195,7 +195,10 @@ class SecretKeyPacket extends PublicKeyPacket {
         }
       }
       try {
-        const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+        const { read, privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+        if (read < cleartext.length) {
+          throw new Error('Error reading MPIs');
+        }
         this.privateParams = privateParams;
       } catch (err) {
         if (err instanceof UnsupportedError) throw err;

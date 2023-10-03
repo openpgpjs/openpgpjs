@@ -128,7 +128,12 @@ export default {
    * process large streams while limiting memory usage by releasing the decrypted chunks as soon as possible
    * and deferring checking their integrity until the decrypted stream has been read in full.
    *
-   * This setting is **insecure** if the partially decrypted message is processed further or displayed to the user.
+   * This setting is **insecure** if the encrypted data has been corrupted by a malicious entity:
+   * - if the partially decrypted message is processed further or displayed to the user, it opens up the possibility of attacks such as EFAIL
+   *    (see https://efail.de/).
+   * - an attacker with access to traces or timing info of internal processing errors could learn some info about the data.
+   *
+   * NB: this setting does not apply to AEAD-encrypted data, where the AEAD data chunk is never released until integrity is confirmed.
    * @memberof module:config
    * @property {Boolean} allowUnauthenticatedStream
    */

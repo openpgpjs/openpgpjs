@@ -186,7 +186,7 @@ export function parsePublicKeyParams(algo, bytes) {
     case enums.publicKey.ed448:
     case enums.publicKey.x25519:
     case enums.publicKey.x448: {
-      const A = bytes.subarray(read, read + getCurvePayloadSize(algo)); read += A.length;
+      const A = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(algo)); read += A.length;
       return { read, publicParams: { A } };
     }
     default:
@@ -234,13 +234,13 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448: {
       const payloadSize = getCurvePayloadSize(algo);
-      const seed = bytes.subarray(read, read + payloadSize); read += seed.length;
+      const seed = util.readExactSubarray(bytes, read, read + payloadSize); read += seed.length;
       return { read, privateParams: { seed } };
     }
     case enums.publicKey.x25519:
     case enums.publicKey.x448: {
       const payloadSize = getCurvePayloadSize(algo);
-      const k = bytes.subarray(read, read + payloadSize); read += k.length;
+      const k = util.readExactSubarray(bytes, read, read + payloadSize); read += k.length;
       return { read, privateParams: { k } };
     }
     default:
@@ -288,7 +288,7 @@ export function parseEncSessionKeyParams(algo, bytes) {
     case enums.publicKey.x25519:
     case enums.publicKey.x448: {
       const pointSize = getCurvePayloadSize(algo);
-      const ephemeralPublicKey = bytes.subarray(read, read + pointSize); read += ephemeralPublicKey.length;
+      const ephemeralPublicKey = util.readExactSubarray(bytes, read, read + pointSize); read += ephemeralPublicKey.length;
       const C = new ECDHXSymmetricKey(); C.read(bytes.subarray(read));
       return { ephemeralPublicKey, C };
     }
