@@ -27,10 +27,10 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
-      const s = util.readMPI(signature.subarray(read));
+      const s = util.readMPI(signature.subarray(read)); read += s.length + 2;
       // The signature needs to be the same length as the public key modulo n.
       // We pad s on signature verification, where we have access to n.
-      return { s };
+      return { read, signatureParams: { s } };
     }
     // Algorithm-Specific Fields for DSA or ECDSA signatures:
     // -  MPI of DSA or ECDSA value r.
@@ -39,8 +39,8 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.ecdsa:
     {
       const r = util.readMPI(signature.subarray(read)); read += r.length + 2;
-      const s = util.readMPI(signature.subarray(read));
-      return { r, s };
+      const s = util.readMPI(signature.subarray(read)); read += s.length + 2;
+      return { read, signatureParams: { r, s } };
     }
     // Algorithm-Specific Fields for legacy EdDSA signatures:
     // -  MPI of an EC point r.
@@ -50,9 +50,9 @@ export function parseSignatureParams(algo, signature) {
       // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
       let r = util.readMPI(signature.subarray(read)); read += r.length + 2;
       r = util.leftPad(r, 32);
-      let s = util.readMPI(signature.subarray(read));
+      let s = util.readMPI(signature.subarray(read)); read += s.length + 2;
       s = util.leftPad(s, 32);
-      return { r, s };
+      return { read, signatureParams: { r, s } };
     }
     // Algorithm-Specific Fields for Ed25519 signatures:
     // - 64 octets of the native signature
@@ -61,8 +61,8 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448: {
       const rsSize = 2 * publicKey.elliptic.eddsa.getPayloadSize(algo);
-      const RS = signature.subarray(read, read + rsSize); read += RS.length;
-      return { RS };
+      const RS = util.readExactSubarray(signature, read, read + rsSize); read += RS.length;
+      return { read, signatureParams: { RS } };
     }
 
     default:

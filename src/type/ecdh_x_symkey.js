@@ -27,7 +27,7 @@ class ECDHXSymmetricKey {
     let followLength = bytes[read++];
     this.algorithm = followLength % 2 ? bytes[read++] : null; // session key size is always even
     followLength -= followLength % 2;
-    this.wrappedKey = bytes.subarray(read, read + followLength); read += followLength;
+    this.wrappedKey = util.readExactSubarray(bytes, read, read + followLength); read += followLength;
   }
 
   /**

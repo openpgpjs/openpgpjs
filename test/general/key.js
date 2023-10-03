@@ -3257,6 +3257,29 @@ AAAAHh0gf2kdqLoXdFX+aNVORr5VCVgcm2gBw8l68lDJ1ftA71bMllFi6Q5sLPUr
     expect(encryptionKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'x448' });
   });
 
+  it('Throw when parsing x448 key with unexpected secret param size', async function() {
+    // x448 subkey with secret seed of 57 bytes instead of 56
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZRwKeRx0854v253kTyH54UIFSy3dLbMLTSIGh+UeC6IWXvxt2551rUee
+wn9y5hJbJwm/f2eA3vkOUqhKbAAAy7hGpOu61AMTr6w9G9VLStDR9Int/vgi
+cNSl1LTvF8f5lqBrpMFFPUHwi4igNMqb7I/c7J2Uc+4uInvNAMK3BBAcCgA7
+BYJlHAp5AwsJBwmQ+2DdQup2xx8DFQgKAhYAAhkBApsDAh4BFiEE5NkqBdRy
+GYLB7cPm+2DdQup2xx8AAIuONFkN6wRtRJA9EJvwhj7DkzNRjFNw8OE/ENzj
+3XcN/WtZYCnLZ+ih9HSar9+CZzI+4mHtvOunq7sAjuvPbGndbbdg46DSy0Ac
+wIVxSeIMNpwpktMyUx/ugIZeu7VvcnW4SbQOEB5KPlja/qjapWwg4wIAx3oE
+ZRwKeRogjMz3j2jL4X1Zhk+i/EK09BTU/2zuYuB+Pl9Y+RKDaxuOmZ4zzx+S
+xa/RYWEVKkcIY9pBAxd4RgDZs0rJP9DRIe69vix1Wd/LxuSctG2SMfcjzyAl
+5mmCsb+sgubDduEBotTv3qFnNTYMUUHEFojWC4EfjcKmBBgcCgAqBYJlHAp5
+CZD7YN1C6nbHHwKbDBYhBOTZKgXUchmCwe3D5vtg3ULqdscfAAD/uWh1fZy7
+hMeb7552mWqB0eGXpOJR9K/rLDj8woLkXJMyyhfYU5PTwmRpowsGwbm7TMku
+gXxMryvfgBDKTN8tkgJ4BJUsDDwU7aJE1fzOZ5TP4iNHpPOY1qqpmaAtTh6Q
+PzIEeL7UH3trraFmi+Gq8u4kAA==
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+    await expect(openpgp.readKey({ armoredKey })).to.be.rejectedWith(/Error reading MPIs/);
+  });
+
   it('Testing key ID and fingerprint for V4 keys', async function() {
     const pubKeysV4 = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKeysV4).to.exist;
