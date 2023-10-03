@@ -153,7 +153,12 @@ class SignaturePacket {
       i += saltLength;
     }
 
-    this.params = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, bytes.subarray(i, bytes.length));
+    const signatureMaterial = bytes.subarray(i, bytes.length);
+    const { read, signatureParams } = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, signatureMaterial);
+    if (read < signatureMaterial.length) {
+      throw new Error('Error reading MPIs');
+    }
+    this.params = signatureParams;
   }
 
   /**

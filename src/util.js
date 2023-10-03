@@ -89,7 +89,26 @@ const util = {
   readMPI: function (bytes) {
     const bits = (bytes[0] << 8) | bytes[1];
     const bytelen = (bits + 7) >>> 3;
-    return bytes.subarray(2, 2 + bytelen);
+    // There is a decryption oracle risk here by enforcing the MPI length using `readExactSubarray` in the context of SEIPDv1 encrypted signatures,
+    // where unauthenticated streamed decryption is done (via `config.allowUnauthenticatedStream`), since the decrypted signature data being processed
+    // has not been authenticated (yet).
+    // However, such config setting is known to be insecure, and there are other packet parsing errors that can cause similar issues.
+    // Also, AEAD is also not affected.
+    return util.readExactSubarray(bytes, 2, 2 + bytelen);
+  },
+
+  /**
+   * Read exactly `end - start` bytes from input.
+   * This is a stricter version of `.subarray`.
+   * @param {Uint8Array} input - Input data to parse
+   * @returns {Uint8Array} subarray of size always equal to `end - start`
+   * @throws if the input array is too short.
+   */
+  readExactSubarray: function (input, start, end) {
+    if (input.length < (end - start)) {
+      throw new Error('Input array too short');
+    }
+    return input.subarray(start, end);
   },
 
   /**
