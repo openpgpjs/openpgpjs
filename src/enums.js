@@ -43,17 +43,21 @@ export default {
     '2b8104000a':   'secp256k1',
     '2B8104000A':   'secp256k1',
 
-    /** Ed25519 */
+    /** Ed25519 - deprecated by crypto-refresh (replaced by standaone Ed25519 algo) */
+    'ed25519Legacy':          'ed25519',
     'ED25519':                'ed25519',
+    /** @deprecated use `ed25519Legacy` instead */
     'ed25519':                'ed25519',
     'Ed25519':                'ed25519',
     '1.3.6.1.4.1.11591.15.1': 'ed25519',
     '2b06010401da470f01':     'ed25519',
     '2B06010401DA470F01':     'ed25519',
 
-    /** Curve25519 */
+    /** Curve25519 - deprecated by crypto-refresh (replaced by standaone X25519 algo) */
+    'x25519Legacy':           'curve25519',
     'X25519':                 'curve25519',
     'cv25519':                'curve25519',
+    /** @deprecated use `x25519Legacy` instead */
     'curve25519':             'curve25519',
     'Curve25519':             'curve25519',
     '1.3.6.1.4.1.3029.1.5.1': 'curve25519',

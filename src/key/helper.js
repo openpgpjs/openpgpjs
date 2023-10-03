@@ -333,11 +333,11 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       } catch (e) {
         throw new Error('Unknown curve');
       }
-      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
+      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.x25519Legacy) {
+        options.curve = options.sign ? enums.curve.ed25519Legacy : enums.curve.x25519Legacy;
       }
       if (options.sign) {
-        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsaLegacy : enums.publicKey.ecdsa;
+        options.algorithm = options.curve === enums.curve.ed25519Legacy ? enums.publicKey.eddsaLegacy : enums.publicKey.ecdsa;
       } else {
         options.algorithm = enums.publicKey.ecdh;
       }
