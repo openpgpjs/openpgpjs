@@ -480,7 +480,7 @@ export function getPreferredCurveHashAlgo(algo, oid) {
     case enums.publicKey.eddsaLegacy:
       return publicKey.elliptic.getPreferredHashAlgo(oid);
     case enums.publicKey.ed25519:
-      return enums.hash.sha256;
+      return publicKey.elliptic.eddsa.getPreferredHashAlgo(algo);
     default:
       throw new Error('Unknown elliptic signing algo');
   }
