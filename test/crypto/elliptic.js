@@ -68,10 +68,10 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       done();
     });
     it('Creating KeyPair', function () {
-      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
+      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
         this.skip();
       }
-      const names = config.useIndutnyElliptic ? ['p256', 'p384', 'p521', 'secp256k1', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
+      const names = config.useEllipticFallback ? ['p256', 'p384', 'p521', 'secp256k1', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
         ['p256', 'p384', 'p521', 'curve25519Legacy'];
       return Promise.all(names.map(function (name) {
         const curve = new elliptic_curves.CurveWithOID(name);
@@ -186,7 +186,7 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       )).to.be.rejectedWith(Error, /Unknown curve/);
     });
     it('secp256k1 - Invalid public key', async function () {
-      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
+      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
       await expect(verify_signature(
@@ -197,7 +197,7 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       )).to.eventually.be.false;
     });
     it('secp256k1 - Invalid point', async function () {
-      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
+      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
       await expect(verify_signature(
@@ -205,7 +205,7 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       )).to.eventually.be.false;
     });
     it('secp256k1 - Invalid signature', function (done) {
-      if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
+      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
         this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
       }
       expect(verify_signature(

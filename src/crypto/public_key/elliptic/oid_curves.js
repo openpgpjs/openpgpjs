@@ -33,6 +33,7 @@ import util from '../../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
 import { UnsupportedError } from '../../../packet/packet';
+import defaultConfig from '../../../config';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -65,6 +66,10 @@ const nobleCurvess = {
   [enums.curve.brainpoolP512r1]: brainpoolP512r1
 };
 export const getNobleCurve = curveName => {
+  if (!defaultConfig.useEllipticFallback) {
+    // TODO make import dynamic
+    throw new Error('This curve is only supported in the full build of OpenPGP.js');
+  }
   const curve = nobleCurvess[curveName];
   if (!curve) throw new Error('Unsupported curve');
   return curve;
