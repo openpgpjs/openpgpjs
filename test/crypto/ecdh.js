@@ -72,7 +72,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(Error, /Unknown curve/).notify(done);
   });
   it('Invalid ephemeral key', function (done) {
-    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip();
     }
     expect(decrypt_message(
@@ -80,7 +80,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(Error, /Private key is not valid for specified curve|second arg must be public key/).notify(done);
   });
   it('Invalid elliptic public key', function (done) {
-    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip();
     }
     expect(decrypt_message(
@@ -88,7 +88,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     )).to.be.rejectedWith(/Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|bad point/).notify(done);
   });
   it('Invalid key data integrity', function (done) {
-    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip();
     }
     expect(decrypt_message(
@@ -136,7 +136,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
   const ecdh = elliptic_curves.ecdh;
 
   it('Invalid curve', async function () {
-    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip();
     }
     const curve = new elliptic_curves.CurveWithOID('secp256k1');

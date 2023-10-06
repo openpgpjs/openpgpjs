@@ -246,13 +246,12 @@ export default {
    */
   knownNotations: [],
   /**
-   * Whether to use the indutny/elliptic library for curves (other than Curve25519) that are not supported by the available native crypto API.
+   * Whether to use the the noble-curves library for curves (other than Curve25519) that are not supported by the available native crypto API.
    * When false, certain standard curves will not be supported (depending on the platform).
-   * Note: the indutny/elliptic curve library is not designed to be constant time.
    * @memberof module:config
-   * @property {Boolean} useIndutnyElliptic
+   * @property {Boolean} useEllipticFallback
    */
-  useIndutnyElliptic: true,
+  useEllipticFallback: true,
   /**
    * Reject insecure hash algorithms
    * @memberof module:config
