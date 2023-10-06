@@ -77,7 +77,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     }
     expect(decrypt_message(
       'secp256k1', 2, 7, [], [], [], [], []
-    )).to.be.rejectedWith(Error, /Private key is not valid for specified curve|Unknown point format/).notify(done);
+    )).to.be.rejectedWith(Error, /Private key is not valid for specified curve|second arg must be public key/).notify(done);
   });
   it('Invalid elliptic public key', function (done) {
     if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
@@ -85,7 +85,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     }
     expect(decrypt_message(
       'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_invalid_point, secp256k1_data, []
-    )).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Invalid elliptic public key/).notify(done);
+    )).to.be.rejectedWith(/Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|bad point/).notify(done);
   });
   it('Invalid key data integrity', function (done) {
     if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
@@ -93,7 +93,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     }
     expect(decrypt_message(
       'secp256k1', 2, 7, secp256k1_value, secp256k1_point, secp256k1_point, secp256k1_data, []
-    )).to.be.rejectedWith(Error, /Key Data Integrity failed/).notify(done);
+    )).to.be.rejectedWith(/Key Data Integrity failed/).notify(done);
   });
 
   const Q1 = new Uint8Array([
@@ -143,9 +143,9 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');
-    expect(
-      ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1)
-    ).to.be.rejectedWith(Error, /Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|Unknown point format/);
+    await expect(
+      ecdh.encrypt(oid, kdfParams, data, Q1.subarray(1), fingerprint1)
+    ).to.be.rejectedWith(/Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|second arg must be public key/);
   });
 
   it('Different keys', async function () {
@@ -199,8 +199,9 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     expect(await ecdhX.decrypt(openpgp.enums.publicKey.x448, ephemeralPublicKey, wrappedKey, K_B, b)).to.deep.equal(data);
   });
 
-  ['p256', 'p384', 'p521'].forEach(curveName => {
-    it(`NIST ${curveName} - Successful exchange`, async function () {
+  const allCurves = ['secp256k1', 'p256', 'p384', 'p521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+  allCurves.forEach(curveName => {
+    it(`${curveName} - Successful exchange`, async function () {
       const curve = new elliptic_curves.CurveWithOID(curveName);
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
@@ -236,13 +237,15 @@ export default () => describe('ECDH key exchange @lightweight', function () {
       getNodeCryptoStub && getNodeCryptoStub.restore();
     };
 
-    ['p256', 'p384', 'p521'].forEach(curveName => {
-      it(`NIST ${curveName}`, async function () {
+    allCurves.forEach(curveName => {
+      it(`${curveName}`, async function () {
         const nodeCrypto = util.getNodeCrypto();
         const webCrypto = util.getWebCrypto();
         if (!nodeCrypto && !webCrypto) {
           this.skip();
         }
+
+        const expectNativeWeb = new Set(['p256', 'p384']); // older versions of safari do not implement p521
 
         const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
@@ -254,9 +257,11 @@ export default () => describe('ECDH key exchange @lightweight', function () {
 
         const nativeDecryptSpy = webCrypto ? sinonSandbox.spy(webCrypto, 'deriveBits') : sinonSandbox.spy(nodeCrypto, 'createECDH');
         expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
+        const expectedNativeCallCount = nativeDecryptSpy.callCount;
         disableNative();
         expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
-        if (curveName !== 'p521') { // safari does not implement p521 in webcrypto
+        expect(nativeDecryptSpy.callCount).to.equal(expectedNativeCallCount); // assert that fallback implementation was called
+        if (expectNativeWeb.has(curveName)) {
           expect(nativeDecryptSpy.calledOnce).to.be.true;
         }
       });
