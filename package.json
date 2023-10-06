@@ -64,7 +64,6 @@
   "devDependencies": {
     "@openpgp/asmcrypto.js": "^3.0.0",
     "@openpgp/noble-curves": "^1.2.1-0",
-    "@openpgp/elliptic": "^6.5.1",
     "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/noble-hashes": "^1.3.3-0",
     "@openpgp/seek-bzip": "^1.0.5-git",

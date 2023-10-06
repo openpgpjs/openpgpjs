@@ -19,36 +19,57 @@
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @module crypto/public_key/elliptic/curve
  */
-import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import nacl from '@openpgp/tweetnacl/nacl-fast-light';
+import { p256 } from '@openpgp/noble-curves/p256';
+import { p384 } from '@openpgp/noble-curves/p384';
+import { p521 } from '@openpgp/noble-curves/p521';
+import { brainpoolP256r1 } from '@openpgp/noble-curves/brainpoolP256r1';
+import { brainpoolP384r1 } from '@openpgp/noble-curves/brainpoolP384r1';
+import { brainpoolP512r1 } from '@openpgp/noble-curves/brainpoolP512r1';
+import { secp256k1 } from '@openpgp/noble-curves/secp256k1';
 import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
-import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 import { UnsupportedError } from '../../../packet/packet';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
 const webCurves = {
-  'p256': 'P-256',
-  'p384': 'P-384',
-  'p521': 'P-521'
+  [enums.curve.p256]: 'P-256',
+  [enums.curve.p384]: 'P-384',
+  [enums.curve.p521]: 'P-521'
 };
 const knownCurves = nodeCrypto ? nodeCrypto.getCurves() : [];
 const nodeCurves = nodeCrypto ? {
-  secp256k1: knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
-  p256: knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
-  p384: knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
-  p521: knownCurves.includes('secp521r1') ? 'secp521r1' : undefined,
-  ed25519: knownCurves.includes('ED25519') ? 'ED25519' : undefined,
-  curve25519: knownCurves.includes('X25519') ? 'X25519' : undefined,
-  brainpoolP256r1: knownCurves.includes('brainpoolP256r1') ? 'brainpoolP256r1' : undefined,
-  brainpoolP384r1: knownCurves.includes('brainpoolP384r1') ? 'brainpoolP384r1' : undefined,
-  brainpoolP512r1: knownCurves.includes('brainpoolP512r1') ? 'brainpoolP512r1' : undefined
+  [enums.curve.secp256k1]: knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
+  [enums.curve.p256]: knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
+  [enums.curve.p384]: knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
+  [enums.curve.p521]: knownCurves.includes('secp521r1') ? 'secp521r1' : undefined,
+  [enums.curve.ed25519Legacy]: knownCurves.includes('ED25519') ? 'ED25519' : undefined,
+  [enums.curve.curve25519Legacy]: knownCurves.includes('X25519') ? 'X25519' : undefined,
+  [enums.curve.brainpoolP256r1]: knownCurves.includes('brainpoolP256r1') ? 'brainpoolP256r1' : undefined,
+  [enums.curve.brainpoolP384r1]: knownCurves.includes('brainpoolP384r1') ? 'brainpoolP384r1' : undefined,
+  [enums.curve.brainpoolP512r1]: knownCurves.includes('brainpoolP512r1') ? 'brainpoolP512r1' : undefined
 } : {};
+
+const nobleCurvess = {
+  [enums.curve.p256]: p256,
+  [enums.curve.p384]: p384,
+  [enums.curve.p521]: p521,
+  [enums.curve.secp256k1]: secp256k1,
+  [enums.curve.brainpoolP256r1]: brainpoolP256r1,
+  [enums.curve.brainpoolP384r1]: brainpoolP384r1,
+  [enums.curve.brainpoolP512r1]: brainpoolP512r1
+};
+export const getNobleCurve = curveName => {
+  const curve = nobleCurvess[curveName];
+  if (!curve) throw new Error('Unsupported curve');
+  return curve;
+};
+
 
 const curves = {
   p256: {
@@ -169,14 +190,13 @@ class CurveWithOID {
   }
 
   async genKeyPair() {
-    let keyPair;
     switch (this.type) {
       case 'web':
         try {
           return await webGenKeyPair(this.name);
         } catch (err) {
           util.printDebugError('Browser did not support generating ec key ' + err.message);
-          break;
+          return jsGenKeyPair(this.name);
         }
       case 'node':
         return nodeGenKeyPair(this.name);
@@ -185,8 +205,8 @@ class CurveWithOID {
         privateKey[0] = (privateKey[0] & 127) | 64;
         privateKey[31] &= 248;
         const secretKey = privateKey.slice().reverse();
-        keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
-        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+        const { publicKey: rawPublicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
+        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), rawPublicKey]);
         return { publicKey, privateKey };
       }
       case 'ed25519Legacy': {
@@ -195,26 +215,23 @@ class CurveWithOID {
         const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
         return { publicKey, privateKey };
       }
+      default: {
+        return jsGenKeyPair(this.name);
+      }
     }
-    const indutnyCurve = await getIndutnyCurve(this.name);
-    keyPair = await indutnyCurve.genKeyPair({
-      entropy: util.uint8ArrayToString(getRandomBytes(32))
-    });
-    return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
   }
 }
 
-async function generate(curve) {
-  curve = new CurveWithOID(curve);
+async function generate(curveName) {
+  const curve = new CurveWithOID(curveName);
+  const { oid, hash, cipher } = curve;
   const keyPair = await curve.genKeyPair();
-  const Q = BigInteger.new(keyPair.publicKey).toUint8Array();
-  const secret = BigInteger.new(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
   return {
-    oid: curve.oid,
-    Q,
-    secret,
-    hash: curve.hash,
-    cipher: curve.cipher
+    oid,
+    Q: keyPair.publicKey,
+    secret: util.leftPad(keyPair.privateKey, curve.payloadSize),
+    hash,
+    cipher
   };
 }
 
@@ -269,20 +286,13 @@ async function validateStandardParams(algo, oid, Q, d) {
     return true;
   }
 
-  const curve = await getIndutnyCurve(curveName);
-  try {
-    // Parse Q and check that it is on the curve but not at infinity
-    Q = keyFromPublic(curve, Q).getPublic();
-  } catch (validationErrors) {
-    return false;
-  }
-
-  /**
+  const nobleCurve = getNobleCurve(enums.write(enums.curve, oid.toHex()));
+  /*
    * Re-derive public point Q' = dG from private key
    * Expect Q == Q'
    */
-  const dG = keyFromPrivate(curve, d).getPublic();
-  if (!dG.eq(Q)) {
+  const dG = nobleCurve.getPublicKey(d, false);
+  if (!util.equalsUint8Array(dG, Q)) {
     return false;
   }
 
@@ -298,7 +308,12 @@ export {
 //   Helper functions   //
 //                      //
 //////////////////////////
-
+function jsGenKeyPair(name) {
+  const nobleCurve = getNobleCurve(name);
+  const privateKey = nobleCurve.utils.randomPrivateKey();
+  const publicKey = nobleCurve.getPublicKey(privateKey, false);
+  return { publicKey, privateKey };
+}
 
 async function webGenKeyPair(name) {
   // Note: keys generated with ECDSA and ECDH are structurally equivalent

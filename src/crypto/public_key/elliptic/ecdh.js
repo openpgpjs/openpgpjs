@@ -21,7 +21,7 @@
  */
 
 import nacl from '@openpgp/tweetnacl/nacl-fast-light';
-import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams } from './oid_curves';
+import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, getNobleCurve } from './oid_curves';
 import * as aesKW from '../../aes_kw';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
@@ -29,7 +29,6 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { b64ToUint8Array } from '../../../encoding/base64';
 import * as pkcs5 from '../../pkcs5';
-import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 import getCipher from '../../cipher/getCipher';
 
 const webCrypto = util.getWebCrypto();
@@ -105,13 +104,16 @@ async function genPublicEphemeralKey(curve, Q) {
           return await webPublicEphemeralKey(curve, Q);
         } catch (err) {
           util.printDebugError(err);
+          return jsPublicEphemeralKey(curve, Q);
         }
       }
       break;
     case 'node':
       return nodePublicEphemeralKey(curve, Q);
+    default: {
+      return jsPublicEphemeralKey(curve, Q);
+    }
   }
-  return ellipticPublicEphemeralKey(curve, Q);
 }
 
 /**
@@ -165,13 +167,16 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
           return await webPrivateEphemeralKey(curve, V, Q, d);
         } catch (err) {
           util.printDebugError(err);
+          return jsPrivateEphemeralKey(curve, V, d);
         }
       }
       break;
     case 'node':
       return nodePrivateEphemeralKey(curve, V, d);
+    default: {
+      return jsPrivateEphemeralKey(curve, V, d);
+    }
   }
-  return ellipticPrivateEphemeralKey(curve, V, d);
 }
 
 /**
@@ -203,6 +208,24 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
     }
   }
   throw err;
+}
+
+function jsPrivateEphemeralKey(curve, V, d) {
+  const nobleCurve = getNobleCurve(curve.name);
+  // The output includes parity byte
+  const sharedSecretWithParity = nobleCurve.getSharedSecret(d, V);
+  const sharedKey = sharedSecretWithParity.subarray(1);
+  return { secretKey: d, sharedKey };
+}
+
+async function jsPublicEphemeralKey(curve, Q) {
+  const nobleCurve = getNobleCurve(curve.name);
+  const { publicKey: V, privateKey: v } = await curve.genKeyPair();
+
+  // The output includes parity byte
+  const sharedSecretWithParity = nobleCurve.getSharedSecret(v, Q);
+  const sharedKey = sharedSecretWithParity.subarray(1);
+  return { publicKey: V, sharedKey };
 }
 
 /**
@@ -303,46 +326,6 @@ async function webPublicEphemeralKey(curve, Q) {
   [s, p] = await Promise.all([s, p]);
   const sharedKey = new Uint8Array(s);
   const publicKey = new Uint8Array(jwkToRawPublic(p));
-  return { publicKey, sharedKey };
-}
-
-/**
- * Generate ECDHE secret from private key and public part of ephemeral key using indutny/elliptic
- *
- * @param {CurveWithOID} curve - Elliptic curve object
- * @param {Uint8Array} V - Public part of ephemeral key
- * @param {Uint8Array} d - Recipient private key
- * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
- * @async
- */
-async function ellipticPrivateEphemeralKey(curve, V, d) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  V = keyFromPublic(indutnyCurve, V);
-  d = keyFromPrivate(indutnyCurve, d);
-  const secretKey = new Uint8Array(d.getPrivate());
-  const S = d.derive(V.getPublic());
-  const len = indutnyCurve.curve.p.byteLength();
-  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
-  return { secretKey, sharedKey };
-}
-
-/**
- * Generate ECDHE ephemeral key and secret from public key using indutny/elliptic
- *
- * @param {CurveWithOID} curve - Elliptic curve object
- * @param {Uint8Array} Q - Recipient public key
- * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
- * @async
- */
-async function ellipticPublicEphemeralKey(curve, Q) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  const v = await curve.genKeyPair();
-  Q = keyFromPublic(indutnyCurve, Q);
-  const V = keyFromPrivate(indutnyCurve, v.privateKey);
-  const publicKey = v.publicKey;
-  const S = V.derive(Q.getPublic());
-  const len = indutnyCurve.curve.p.byteLength();
-  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
   return { publicKey, sharedKey };
 }
 

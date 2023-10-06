@@ -24,8 +24,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
-import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams } from './oid_curves';
-import { getIndutnyCurve, keyFromPrivate, keyFromPublic } from './indutnyKey';
+import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, getNobleCurve } from './oid_curves';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -74,7 +73,14 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
       }
     }
   }
-  return ellipticSign(curve, hashed, privateKey);
+
+  const nobleCurve = getNobleCurve(curve.name);
+  // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
+  const signature = nobleCurve.sign(hashed, privateKey, { lowS: false });
+  return {
+    r: signature.r.toUint8Array('be', curve.payloadSize),
+    s: signature.s.toUint8Array('be', curve.payloadSize)
+  };
 }
 
 /**
@@ -111,8 +117,10 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
         return nodeVerify(curve, hashAlgo, signature, message, publicKey);
     }
   }
-  const digest = (typeof hashAlgo === 'undefined') ? message : hashed;
-  return ellipticVerify(curve, signature, digest, publicKey);
+
+  const nobleCurve = getNobleCurve(curve.name);
+  // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
+  return nobleCurve.verify(util.concatUint8Array([signature.r, signature.s]), hashed, publicKey, { lowS: false });
 }
 
 /**
@@ -156,23 +164,6 @@ export async function validateParams(oid, Q, d) {
 //   Helper functions   //
 //                      //
 //////////////////////////
-
-async function ellipticSign(curve, hashed, privateKey) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  const key = keyFromPrivate(indutnyCurve, privateKey);
-  const signature = key.sign(hashed);
-  return {
-    r: signature.r.toArrayLike(Uint8Array),
-    s: signature.s.toArrayLike(Uint8Array)
-  };
-}
-
-async function ellipticVerify(curve, signature, digest, publicKey) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  const key = keyFromPublic(indutnyCurve, publicKey);
-  return key.verify(digest, signature);
-}
-
 async function webSign(curve, hashAlgo, message, keyPair) {
   const len = curve.payloadSize;
   const jwk = privateToJWK(curve.payloadSize, webCurves[curve.name], keyPair.publicKey, keyPair.privateKey);
