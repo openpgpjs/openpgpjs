@@ -97,12 +97,25 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  */
 export async function verify(oid, hashAlgo, signature, message, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
+  // See https://github.com/openpgpjs/openpgpjs/pull/948.
+  // NB: the impact was more likely limited to Brainpool curves, since thanks
+  // to WebCrypto availability, NIST curve should not have been affected.
+  // Similarly, secp256k1 should have been used rarely enough.
+  // However, we implement the fix for all curves, since it's only needed in case of
+  // verification failure, which is unexpected, hence a minor slowdown is acceptable.
+  const tryFallbackVerificationForOldBug = () => (
+    hashed[0] === 0 ?
+      jsVerify(curve, signature, hashed.subarray(1), publicKey) :
+      false
+  );
+
   if (message && !util.isStream(message)) {
     switch (curve.type) {
       case 'web':
         try {
           // Need to await to make sure browser succeeds
-          return await webVerify(curve, hashAlgo, signature, message, publicKey);
+          const verified = await webVerify(curve, hashAlgo, signature, message, publicKey);
+          return verified || tryFallbackVerificationForOldBug();
         } catch (err) {
           // We do not fallback if the error is related to key integrity
           // Unfortunately Safari does not support p521 and throws a DataError when using it
@@ -113,14 +126,15 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
           util.printDebugError('Browser did not support verifying: ' + err.message);
         }
         break;
-      case 'node':
-        return nodeVerify(curve, hashAlgo, signature, message, publicKey);
+      case 'node': {
+        const verified = await nodeVerify(curve, hashAlgo, signature, message, publicKey);
+        return verified || tryFallbackVerificationForOldBug();
+      }
     }
   }
 
-  const nobleCurve = getNobleCurve(curve.name);
-  // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
-  return nobleCurve.verify(util.concatUint8Array([signature.r, signature.s]), hashed, publicKey, { lowS: false });
+  const verified = jsVerify(curve, signature, hashed, publicKey);
+  return verified || tryFallbackVerificationForOldBug();
 }
 
 /**
@@ -164,6 +178,17 @@ export async function validateParams(oid, Q, d) {
 //   Helper functions   //
 //                      //
 //////////////////////////
+
+/**
+ * Fallback javascript implementation of ECDSA verification.
+ * To be used if no native implementation is available for the given curve/operation.
+ */
+function jsVerify(curve, signature, hashed, publicKey) {
+  const nobleCurve = getNobleCurve(curve.name);
+  // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
+  return nobleCurve.verify(util.concatUint8Array([signature.r, signature.s]), hashed, publicKey, { lowS: false });
+}
+
 async function webSign(curve, hashAlgo, message, keyPair) {
   const len = curve.payloadSize;
   const jwk = privateToJWK(curve.payloadSize, webCurves[curve.name], keyPair.publicKey, keyPair.privateKey);
