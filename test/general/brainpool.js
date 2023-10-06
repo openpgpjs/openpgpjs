@@ -13,7 +13,7 @@ export default () => (openpgp.config.ci ? describe.skip : describe)('Brainpool C
   let rejectCurvesVal;
   before(function() {
     //only x25519 crypto is fully functional in lightbuild
-    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip(); // eslint-disable-line no-invalid-this
     }
   });
@@ -283,7 +283,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   });
 
   tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
-    if: openpgp.config.useIndutnyElliptic || util.getNodeCrypto()
+    if: openpgp.config.useEllipticFallback || util.getNodeCrypto()
   });
 });
 

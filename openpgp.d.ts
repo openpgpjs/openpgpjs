@@ -336,7 +336,7 @@ interface Config {
   s2kArgon2Params: { passes: number, parallelism: number; memoryExponent: number; };
   maxUserIDLength: number;
   knownNotations: string[];
-  useIndutnyElliptic: boolean;
+  useEllipticFallback: boolean;
   rejectHashAlgorithms: Set<enums.hash>;
   rejectMessageHashAlgorithms: Set<enums.hash>;
   rejectPublicKeyAlgorithms: Set<enums.publicKey>;

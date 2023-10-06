@@ -6,7 +6,7 @@ import openpgp from '../initOpenpgp.js';
 import util from '../../src/util.js';
 
 export default () => describe('Elliptic Curve Cryptography for secp256k1 curve @lightweight', function () {
-  if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+  if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
     before(function() {
       this.skip(); // eslint-disable-line no-invalid-this
     });
