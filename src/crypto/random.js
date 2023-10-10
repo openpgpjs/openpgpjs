@@ -21,7 +21,6 @@
  * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @module crypto/random
  */
-import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import util from '../util';
 
 const nodeCrypto = util.getNodeCrypto();
@@ -52,6 +51,8 @@ export function getRandomBytes(length) {
  * @async
  */
 export async function getRandomBigInteger(min, max) {
+  const BigInteger = await util.getBigInteger();
+
   if (max.lt(min)) {
     throw new Error('Illegal parameter value: max <= min');
   }

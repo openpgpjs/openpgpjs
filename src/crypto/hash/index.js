@@ -5,11 +5,6 @@
  * @module crypto/hash
  */
 
-import { sha1 } from '@openpgp/noble-hashes/sha1';
-import { sha224, sha256 } from '@openpgp/noble-hashes/sha256';
-import { sha384, sha512 } from '@openpgp/noble-hashes/sha512';
-import { sha3_256, sha3_512 } from '@openpgp/noble-hashes/sha3';
-import { ripemd160 } from '@openpgp/noble-hashes/ripemd160';
 import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
@@ -31,48 +26,47 @@ function nodeHash(type) {
   };
 }
 
-function nobleHash(hash, webCryptoHash) {
+function nobleHash(nobleHashName, webCryptoHashName) {
+  const getNobleHash = async () => {
+    const { nobleHashes } = await import('./noble_hashes');
+    const hash = nobleHashes.get(nobleHashName);
+    if (!hash) throw new Error('Unsupported hash');
+    return hash;
+  };
+
   return async function(data) {
     if (stream.isArrayStream(data)) {
       data = await stream.readToEnd(data);
     }
     if (util.isStream(data)) {
+      const hash = await getNobleHash();
+
       const hashInstance = hash.create();
       return stream.transform(data, value => {
         hashInstance.update(value);
       }, () => hashInstance.digest());
-    } else if (webCrypto && webCryptoHash) {
-      return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
+    } else if (webCrypto && webCryptoHashName) {
+      return new Uint8Array(await webCrypto.digest(webCryptoHashName, data));
     } else {
+      const hash = await getNobleHash();
+
       return hash(data);
     }
   };
 }
 
-const hashFunctions = {
-  md5: nodeHash('md5') || md5,
-  sha1: nodeHash('sha1') || nobleHash(sha1, 'SHA-1'),
-  sha224: nodeHash('sha224') || nobleHash(sha224),
-  sha256: nodeHash('sha256') || nobleHash(sha256, 'SHA-256'),
-  sha384: nodeHash('sha384') || nobleHash(sha384, 'SHA-384'),
-  sha512: nodeHash('sha512') || nobleHash(sha512, 'SHA-512'),
-  ripemd: nodeHash('ripemd160') || nobleHash(ripemd160),
-  sha3_256: nodeHash('sha3-256') || nobleHash(sha3_256),
-  sha3_512: nodeHash('sha3-512') || nobleHash(sha3_512)
-};
-
 export default {
 
   /** @see module:md5 */
-  md5: hashFunctions.md5,
-  sha1: hashFunctions.sha1,
-  sha224: hashFunctions.sha224,
-  sha256: hashFunctions.sha256,
-  sha384: hashFunctions.sha384,
-  sha512: hashFunctions.sha512,
-  ripemd: hashFunctions.ripemd,
-  sha3_256: hashFunctions.sha3_256,
-  sha3_512: hashFunctions.sha3_512,
+  md5: nodeHash('md5') || md5,
+  sha1: nodeHash('sha1') || nobleHash('sha1', 'SHA-1'),
+  sha224: nodeHash('sha224') || nobleHash('sha224'),
+  sha256: nodeHash('sha256') || nobleHash('sha256', 'SHA-256'),
+  sha384: nodeHash('sha384') || nobleHash('sha384', 'SHA-384'),
+  sha512: nodeHash('sha512') || nobleHash('sha512', 'SHA-512'),
+  ripemd: nodeHash('ripemd160') || nobleHash('ripemd160'),
+  sha3_256: nodeHash('sha3-256') || nobleHash('sha3_256'),
+  sha3_512: nodeHash('sha3-512') || nobleHash('sha3_512'),
 
   /**
    * Create a hash on the specified data using the specified algorithm

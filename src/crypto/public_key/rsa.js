@@ -19,7 +19,6 @@
  * @fileoverview RSA implementation
  * @module crypto/public_key/rsa
  */
-import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import { randomProbablePrime } from './prime';
 import { getRandomBigInteger } from '../random';
 import util from '../../util';
@@ -159,6 +158,8 @@ export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
  * @async
  */
 export async function generate(bits, e) {
+  const BigInteger = await util.getBigInteger();
+
   e = BigInteger.new(e);
 
   // Native RSA keygen using Web Crypto
@@ -262,6 +263,8 @@ export async function generate(bits, e) {
  * @async
  */
 export async function validateParams(n, e, d, p, q, u) {
+  const BigInteger = await util.getBigInteger();
+
   n = BigInteger.new(n);
   p = BigInteger.new(p);
   q = BigInteger.new(q);
@@ -300,6 +303,8 @@ export async function validateParams(n, e, d, p, q, u) {
 }
 
 async function bnSign(hashAlgo, n, d, hashed) {
+  const BigInteger = await util.getBigInteger();
+
   n = BigInteger.new(n);
   const m = BigInteger.new(await emsaEncode(hashAlgo, hashed, n.byteLength()));
   d = BigInteger.new(d);
@@ -360,6 +365,8 @@ async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
 }
 
 async function bnVerify(hashAlgo, s, n, e, hashed) {
+  const BigInteger = await util.getBigInteger();
+
   n = BigInteger.new(n);
   s = BigInteger.new(s);
   e = BigInteger.new(e);
@@ -427,6 +434,8 @@ async function nodeEncrypt(data, n, e) {
 }
 
 async function bnEncrypt(data, n, e) {
+  const BigInteger = await util.getBigInteger();
+
   n = BigInteger.new(n);
   data = BigInteger.new(emeEncode(data, n.byteLength()));
   e = BigInteger.new(e);
@@ -478,6 +487,8 @@ async function nodeDecrypt(data, n, e, d, p, q, u, randomPayload) {
 }
 
 async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
+  const BigInteger = await util.getBigInteger();
+
   data = BigInteger.new(data);
   n = BigInteger.new(n);
   e = BigInteger.new(e);
@@ -519,6 +530,8 @@ async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
  * @param {Uint8Array} u
  */
 async function privateToJWK(n, e, d, p, q, u) {
+  const BigInteger = await util.getBigInteger();
+
   const pNum = BigInteger.new(p);
   const qNum = BigInteger.new(q);
   const dNum = BigInteger.new(d);

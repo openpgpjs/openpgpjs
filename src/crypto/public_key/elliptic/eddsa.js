@@ -20,15 +20,12 @@
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import { sha512 } from '@openpgp/noble-hashes/sha512';
 import ed25519 from '@openpgp/tweetnacl';
-import { ed448 } from '@openpgp/noble-curves/ed448';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
 import { getRandomBytes } from '../../random';
 
-ed25519.hash = bytes => sha512(bytes);
 
 /**
  * Generate (non-legacy) EdDSA key
@@ -43,6 +40,7 @@ export async function generate(algo) {
       return { A, seed };
     }
     case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
       const seed = ed448.utils.randomPrivateKey();
       const A = ed448.getPublicKey(seed);
       return { A, seed };
@@ -76,6 +74,7 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
       return { RS: signature };
     }
     case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
       const signature = ed448.sign(hashed, privateKey);
       return { RS: signature };
     }
@@ -104,8 +103,10 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
     case enums.publicKey.ed25519: {
       return ed25519.sign.detached.verify(hashed, RS, publicKey);
     }
-    case enums.publicKey.ed448:
+    case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
       return ed448.verify(RS, hashed, publicKey);
+    }
     default:
       throw new Error('Unsupported EdDSA algorithm');
   }
@@ -131,6 +132,8 @@ export async function validateParams(algo, A, seed) {
     }
 
     case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
+
       const publicKey = ed448.getPublicKey(seed);
       return util.equalsUint8Array(A, publicKey);
     }

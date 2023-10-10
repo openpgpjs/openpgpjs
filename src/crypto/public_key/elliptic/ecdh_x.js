@@ -4,7 +4,6 @@
  */
 
 import x25519 from '@openpgp/tweetnacl';
-import { x448 } from '@openpgp/noble-curves/ed448';
 import * as aesKW from '../../aes_kw';
 import { getRandomBytes } from '../../random';
 
@@ -32,6 +31,7 @@ export async function generate(algo) {
       return { A, k };
     }
     case enums.publicKey.x448: {
+      const x448 = await util.getNobleCurve(enums.publicKey.x448);
       const k = x448.utils.randomPrivateKey();
       const A = x448.getPublicKey(k);
       return { A, k };
@@ -60,6 +60,7 @@ export async function validateParams(algo, A, k) {
       return util.equalsUint8Array(A, publicKey);
     }
     case enums.publicKey.x448: {
+      const x448 = await util.getNobleCurve(enums.publicKey.x448);
       /**
        * Derive public point A' from private key
        * and expect A == A'
@@ -102,6 +103,7 @@ export async function encrypt(algo, data, recipientA) {
       return { ephemeralPublicKey, wrappedKey };
     }
     case enums.publicKey.x448: {
+      const x448 = await util.getNobleCurve(enums.publicKey.x448);
       const ephemeralSecretKey = x448.utils.randomPrivateKey();
       const sharedSecret = x448.getSharedSecret(ephemeralSecretKey, recipientA);
       const ephemeralPublicKey = x448.getPublicKey(ephemeralSecretKey);
@@ -146,6 +148,7 @@ export async function decrypt(algo, ephemeralPublicKey, wrappedKey, A, k) {
       return aesKW.unwrap(encryptionKey, wrappedKey);
     }
     case enums.publicKey.x448: {
+      const x448 = await util.getNobleCurve(enums.publicKey.x448);
       const sharedSecret = x448.getSharedSecret(k, ephemeralPublicKey);
       const hkdfInput = util.concatUint8Array([
         ephemeralPublicKey,
