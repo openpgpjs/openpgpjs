@@ -168,8 +168,7 @@ export function parsePublicKeyParams(algo, bytes) {
       const Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       return { read: read, publicParams: { oid, Q } };
     }
-    case enums.publicKey.eddsa:
-    case enums.publicKey.ed25519Legacy: {
+    case enums.publicKey.eddsaLegacy: {
       const oid = new OID(); read += oid.read(bytes);
       checkSupportedCurve(oid);
       let Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
@@ -224,8 +223,7 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
       d = util.leftPad(d, curve.payloadSize);
       return { read, privateParams: { d } };
     }
-    case enums.publicKey.eddsa:
-    case enums.publicKey.ed25519Legacy: {
+    case enums.publicKey.eddsaLegacy: {
       const curve = new CurveWithOID(publicParams.oid);
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
       seed = util.leftPad(seed, curve.payloadSize);
@@ -331,8 +329,7 @@ export function generateParams(algo, bits, oid) {
         privateParams: { d: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
-    case enums.publicKey.eddsa:
-    case enums.publicKey.ed25519Legacy:
+    case enums.publicKey.eddsaLegacy:
       return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
         privateParams: { seed: secret },
         publicParams: { oid: new OID(oid), Q }
@@ -401,8 +398,7 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { d } = privateParams;
       return algoModule.validateParams(oid, Q, d);
     }
-    case enums.publicKey.eddsa:
-    case enums.publicKey.ed25519Legacy: {
+    case enums.publicKey.eddsaLegacy: {
       const { Q, oid } = publicParams;
       const { seed } = privateParams;
       return publicKey.elliptic.eddsaLegacy.validateParams(oid, Q, seed);
@@ -470,5 +466,22 @@ function checkSupportedCurve(oid) {
     oid.getName();
   } catch (e) {
     throw new UnsupportedError('Unknown curve OID');
+  }
+}
+
+/**
+ * Get preferred hash algo for a given elliptic algo
+ * @param {module:enums.publicKey} algo - alrogithm identifier
+ * @param {module:type/oid} [oid] - curve OID if needed by algo
+ */
+export function getPreferredCurveHashAlgo(algo, oid) {
+  switch (algo) {
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+      return publicKey.elliptic.getPreferredHashAlgo(oid);
+    case enums.publicKey.ed25519:
+      return publicKey.elliptic.eddsa.getPreferredHashAlgo(algo);
+    default:
+      throw new Error('Unknown elliptic signing algo');
   }
 }

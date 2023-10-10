@@ -5,8 +5,6 @@
  */
 
 import {
-  PublicKeyPacket,
-  PublicSubkeyPacket,
   SecretKeyPacket,
   SecretSubkeyPacket,
   SignaturePacket
@@ -88,23 +86,20 @@ export async function createBindingSignature(subkey, primaryKey, options, config
   const dataToSign = {};
   dataToSign.key = primaryKey;
   dataToSign.bind = subkey;
-  const subkeySignaturePacket = new SignaturePacket();
-  subkeySignaturePacket.signatureType = enums.signature.subkeyBinding;
-  subkeySignaturePacket.publicKeyAlgorithm = primaryKey.algorithm;
-  subkeySignaturePacket.hashAlgorithm = await getPreferredHashAlgo(null, subkey, undefined, undefined, config);
+  const signatureProperties = { signatureType: enums.signature.subkeyBinding };
   if (options.sign) {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.signData];
-    subkeySignaturePacket.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
+    signatureProperties.keyFlags = [enums.keyFlags.signData];
+    signatureProperties.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
       signatureType: enums.signature.keyBinding
     }, options.date, undefined, undefined, undefined, config);
   } else {
-    subkeySignaturePacket.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
+    signatureProperties.keyFlags = [enums.keyFlags.encryptCommunication | enums.keyFlags.encryptStorage];
   }
   if (options.keyExpirationTime > 0) {
-    subkeySignaturePacket.keyExpirationTime = options.keyExpirationTime;
-    subkeySignaturePacket.keyNeverExpires = false;
+    signatureProperties.keyExpirationTime = options.keyExpirationTime;
+    signatureProperties.keyNeverExpires = false;
   }
-  await subkeySignaturePacket.sign(primaryKey, dataToSign, options.date);
+  const subkeySignaturePacket = await createSignaturePacket(dataToSign, null, primaryKey, signatureProperties, options.date, undefined, undefined, undefined, config);
   return subkeySignaturePacket;
 }
 
@@ -129,17 +124,11 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
         prefAlgo : hashAlgo;
     }
   }
-  switch (Object.getPrototypeOf(keyPacket)) {
-    case SecretKeyPacket.prototype:
-    case PublicKeyPacket.prototype:
-    case SecretSubkeyPacket.prototype:
-    case PublicSubkeyPacket.prototype:
-      switch (keyPacket.algorithm) {
-        case enums.publicKey.ecdh:
-        case enums.publicKey.ecdsa:
-        case enums.publicKey.eddsa:
-          prefAlgo = crypto.publicKey.elliptic.getPreferredHashAlgo(keyPacket.publicParams.oid);
-      }
+  switch (keyPacket.algorithm) {
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+    case enums.publicKey.ed25519:
+      prefAlgo = crypto.getPreferredCurveHashAlgo(keyPacket.algorithm, keyPacket.publicParams.oid);
   }
   return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
     prefAlgo : hashAlgo;
@@ -344,11 +333,11 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       } catch (e) {
         throw new Error('Unknown curve');
       }
-      if (options.curve === enums.curve.ed25519 || options.curve === enums.curve.curve25519) {
-        options.curve = options.sign ? enums.curve.ed25519 : enums.curve.curve25519;
+      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.x25519Legacy) {
+        options.curve = options.sign ? enums.curve.ed25519Legacy : enums.curve.x25519Legacy;
       }
       if (options.sign) {
-        options.algorithm = options.curve === enums.curve.ed25519 ? enums.publicKey.eddsa : enums.publicKey.ecdsa;
+        options.algorithm = options.curve === enums.curve.ed25519Legacy ? enums.publicKey.eddsaLegacy : enums.publicKey.ecdsa;
       } else {
         options.algorithm = enums.publicKey.ecdh;
       }
@@ -377,7 +366,7 @@ export function isValidEncryptionKeyPacket(keyPacket, signature) {
   return keyAlgo !== enums.publicKey.dsa &&
     keyAlgo !== enums.publicKey.rsaSign &&
     keyAlgo !== enums.publicKey.ecdsa &&
-    keyAlgo !== enums.publicKey.eddsa &&
+    keyAlgo !== enums.publicKey.eddsaLegacy &&
     keyAlgo !== enums.publicKey.ed25519 &&
     (!signature.keyFlags ||
       (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
@@ -417,7 +406,7 @@ export function checkKeyRequirements(keyPacket, config) {
       }
       break;
     case enums.publicKey.ecdsa:
-    case enums.publicKey.eddsa:
+    case enums.publicKey.eddsaLegacy:
     case enums.publicKey.ecdh:
       if (config.rejectCurves.has(algoInfo.curve)) {
         throw new Error(`Support for ${algoInfo.algorithm} keys using curve ${algoInfo.curve} is disabled.`);

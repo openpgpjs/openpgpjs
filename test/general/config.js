@@ -178,7 +178,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
         showComment: true,
         preferredCompressionAlgorithm: openpgp.enums.compression.zip,
         preferredHashAlgorithm: openpgp.enums.hash.sha512,
-        rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) // should not matter in this context
+        rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) // should not matter in this context
       };
       const opt2 = { privateKey: origKey, userIDs, config };
       const { privateKey: refKeyArmored2 } = await openpgp.reformatKey(opt2);
@@ -296,11 +296,11 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       })).to.be.eventually.rejectedWith(/ecdh keys are considered too weak/);
 
       await expect(openpgp.encrypt({
-        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.curve25519]) }
+        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.x25519Legacy]) }
       })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519 is disabled/);
 
       const echdEncrypted = await openpgp.encrypt({
-        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519]) }
+        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
       });
       expect(echdEncrypted).to.match(/---BEGIN PGP MESSAGE---/);
     } finally {
@@ -366,10 +366,10 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
     await expect(openpgp.sign(opt2)).to.be.rejectedWith(/Insecure hash algorithm/);
 
     await expect(openpgp.sign({
-      message, signingKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
+      message, signingKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) }
     })).to.be.eventually.rejectedWith(/eddsa keys are considered too weak/);
     await expect(openpgp.sign({
-      message, signingKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519]) }
+      message, signingKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
     })).to.be.eventually.rejectedWith(/Support for eddsa keys using curve ed25519 is disabled/);
   });
 
@@ -411,7 +411,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
     const opt4 = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
       verificationKeys: [key],
-      config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsa]) }
+      config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) }
     };
     const { signatures: [sig4] } = await openpgp.verify(opt4);
     await expect(sig4.verified).to.be.rejectedWith(/eddsa keys are considered too weak/);
@@ -419,7 +419,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
     const opt5 = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
       verificationKeys: [key],
-      config: { rejectCurves: new Set([openpgp.enums.curve.ed25519]) }
+      config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
     };
     const { signatures: [sig5] } = await openpgp.verify(opt5);
     await expect(sig5.verified).to.be.eventually.rejectedWith(/Support for eddsa keys using curve ed25519 is disabled/);

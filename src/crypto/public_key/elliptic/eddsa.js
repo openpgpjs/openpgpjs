@@ -61,9 +61,8 @@ export async function generate(algo) {
  * @async
  */
 export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashed) {
-  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
-    // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
-    throw new Error('Hash algorithm too weak: sha256 or stronger is required for EdDSA.');
+  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(getPreferredHashAlgo(algo))) {
+    throw new Error('Hash algorithm too weak for EdDSA.');
   }
   switch (algo) {
     case enums.publicKey.ed25519: {
@@ -90,6 +89,9 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
  * @async
  */
 export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
+  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(getPreferredHashAlgo(algo))) {
+    throw new Error('Hash algorithm too weak for EdDSA.');
+  }
   switch (algo) {
     case enums.publicKey.ed25519: {
       return nacl.sign.detached.verify(hashed, RS, publicKey);
@@ -122,5 +124,14 @@ export async function validateParams(algo, A, seed) {
     case enums.publicKey.ed448: // unsupported
     default:
       return false;
+  }
+}
+
+export function getPreferredHashAlgo(algo) {
+  switch (algo) {
+    case enums.publicKey.ed25519:
+      return enums.hash.sha256;
+    default:
+      throw new Error('Unknown EdDSA algo');
   }
 }

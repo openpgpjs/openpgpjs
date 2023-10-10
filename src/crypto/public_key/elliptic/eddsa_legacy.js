@@ -47,7 +47,7 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
-    throw new Error('Hash algorithm too weak: sha256 or stronger is required for EdDSA.');
+    throw new Error('Hash algorithm too weak for EdDSA.');
   }
   const secretKey = util.concatUint8Array([privateKey, publicKey.subarray(1)]);
   const signature = nacl.sign.detached(hashed, secretKey);
@@ -71,6 +71,9 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  * @async
  */
 export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
+  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
+    throw new Error('Hash algorithm too weak for EdDSA.');
+  }
   const signature = util.concatUint8Array([r, s]);
   return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
 }
