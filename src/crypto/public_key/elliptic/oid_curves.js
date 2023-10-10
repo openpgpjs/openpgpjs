@@ -20,20 +20,12 @@
  * @module crypto/public_key/elliptic/curve
  */
 import nacl from '@openpgp/tweetnacl';
-import { p256 } from '@openpgp/noble-curves/p256';
-import { p384 } from '@openpgp/noble-curves/p384';
-import { p521 } from '@openpgp/noble-curves/p521';
-import { brainpoolP256r1 } from '@openpgp/noble-curves/brainpoolP256r1';
-import { brainpoolP384r1 } from '@openpgp/noble-curves/brainpoolP384r1';
-import { brainpoolP512r1 } from '@openpgp/noble-curves/brainpoolP512r1';
-import { secp256k1 } from '@openpgp/noble-curves/secp256k1';
 import { getRandomBytes } from '../../random';
 import enums from '../../../enums';
 import util from '../../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
 import { UnsupportedError } from '../../../packet/packet';
-import defaultConfig from '../../../config';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -55,26 +47,6 @@ const nodeCurves = nodeCrypto ? {
   [enums.curve.brainpoolP384r1]: knownCurves.includes('brainpoolP384r1') ? 'brainpoolP384r1' : undefined,
   [enums.curve.brainpoolP512r1]: knownCurves.includes('brainpoolP512r1') ? 'brainpoolP512r1' : undefined
 } : {};
-
-const nobleCurvess = {
-  [enums.curve.p256]: p256,
-  [enums.curve.p384]: p384,
-  [enums.curve.p521]: p521,
-  [enums.curve.secp256k1]: secp256k1,
-  [enums.curve.brainpoolP256r1]: brainpoolP256r1,
-  [enums.curve.brainpoolP384r1]: brainpoolP384r1,
-  [enums.curve.brainpoolP512r1]: brainpoolP512r1
-};
-export const getNobleCurve = curveName => {
-  if (!defaultConfig.useEllipticFallback) {
-    // TODO make import dynamic
-    throw new Error('This curve is only supported in the full build of OpenPGP.js');
-  }
-  const curve = nobleCurvess[curveName];
-  if (!curve) throw new Error('Unsupported curve');
-  return curve;
-};
-
 
 const curves = {
   p256: {
@@ -291,7 +263,7 @@ async function validateStandardParams(algo, oid, Q, d) {
     return true;
   }
 
-  const nobleCurve = getNobleCurve(enums.write(enums.curve, oid.toHex()));
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, enums.write(enums.curve, oid.toHex())); // excluding curve25519Legacy, ecdh and ecdsa use the same curves
   /*
    * Re-derive public point Q' = dG from private key
    * Expect Q == Q'
@@ -313,8 +285,8 @@ export {
 //   Helper functions   //
 //                      //
 //////////////////////////
-function jsGenKeyPair(name) {
-  const nobleCurve = getNobleCurve(name);
+async function jsGenKeyPair(name) {
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, name); // excluding curve25519Legacy, ecdh and ecdsa use the same curves
   const privateKey = nobleCurve.utils.randomPrivateKey();
   const publicKey = nobleCurve.getPublicKey(privateKey, false);
   return { publicKey, privateKey };

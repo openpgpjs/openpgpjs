@@ -25,6 +25,8 @@
 import * as stream from '@openpgp/web-stream-tools';
 import { createRequire } from 'module'; // Must be stripped in browser built
 import enums from './enums';
+import defaultConfig from './config';
+import { getBigInteger } from './biginteger';
 
 const debugMode = (() => {
   try {
@@ -47,6 +49,37 @@ const util = {
   isUint8Array: stream.isUint8Array,
 
   isStream: stream.isStream,
+
+  getBigInteger,
+
+  /**
+   * Load noble-curves lib on demand and return the requested curve function
+   * @param {enums.publicKey} publicKeyAlgo
+   * @param {enums.curve} [curveName] - for algos supporting different curves (e.g. ECDSA)
+   * @returns curve implementation
+   * @throws on unrecognized curve, or curve not implemented by noble-curve
+   */
+  getNobleCurve: async (publicKeyAlgo, curveName) => {
+    if (!defaultConfig.useEllipticFallback) {
+      throw new Error('This curve is only supported in the full build of OpenPGP.js');
+    }
+
+    const { nobleCurves } = await import('./crypto/public_key/elliptic/noble_curves');
+    switch (publicKeyAlgo) {
+      case enums.publicKey.ecdh:
+      case enums.publicKey.ecdsa: {
+        const curve = nobleCurves.get(curveName);
+        if (!curve) throw new Error('Unsupported curve');
+        return curve;
+      }
+      case enums.publicKey.x448:
+        return nobleCurves.get('x448');
+      case enums.publicKey.ed448:
+        return nobleCurves.get('ed448');
+      default:
+        throw new Error('Unsupported curve');
+    }
+  },
 
   readNumber: function (bytes) {
     let n = 0;

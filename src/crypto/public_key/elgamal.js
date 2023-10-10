@@ -19,9 +19,9 @@
  * @fileoverview ElGamal implementation
  * @module crypto/public_key/elgamal
  */
-import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import { getRandomBigInteger } from '../random';
 import { emeEncode, emeDecode } from '../pkcs1';
+import util from '../../util';
 
 /**
  * ElGamal Encryption function
@@ -34,6 +34,8 @@ import { emeEncode, emeDecode } from '../pkcs1';
  * @async
  */
 export async function encrypt(data, p, g, y) {
+  const BigInteger = await util.getBigInteger();
+
   p = BigInteger.new(p);
   g = BigInteger.new(g);
   y = BigInteger.new(y);
@@ -63,6 +65,8 @@ export async function encrypt(data, p, g, y) {
  * @async
  */
 export async function decrypt(c1, c2, p, x, randomPayload) {
+  const BigInteger = await util.getBigInteger();
+
   c1 = BigInteger.new(c1);
   c2 = BigInteger.new(c2);
   p = BigInteger.new(p);
@@ -82,6 +86,8 @@ export async function decrypt(c1, c2, p, x, randomPayload) {
  * @async
  */
 export async function validateParams(p, g, y, x) {
+  const BigInteger = await util.getBigInteger();
+
   p = BigInteger.new(p);
   g = BigInteger.new(g);
   y = BigInteger.new(y);
