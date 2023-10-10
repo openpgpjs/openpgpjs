@@ -19,7 +19,6 @@
  * @fileoverview A Digital signature algorithm implementation
  * @module crypto/public_key/dsa
  */
-import { BigInteger } from '@openpgp/noble-hashes/biginteger';
 import { getRandomBigInteger } from '../random';
 import util from '../../util';
 import { isProbablePrime } from './prime';
@@ -42,6 +41,8 @@ import { isProbablePrime } from './prime';
  * @async
  */
 export async function sign(hashAlgo, hashed, g, p, q, x) {
+  const BigInteger = await util.getBigInteger();
+
   const one = BigInteger.new(1);
   p = BigInteger.new(p);
   q = BigInteger.new(q);
@@ -100,6 +101,8 @@ export async function sign(hashAlgo, hashed, g, p, q, x) {
  * @async
  */
 export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
+  const BigInteger = await util.getBigInteger();
+
   const zero = BigInteger.new(0);
   r = BigInteger.new(r);
   s = BigInteger.new(s);
@@ -142,6 +145,8 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
  * @async
  */
 export async function validateParams(p, q, g, y, x) {
+  const BigInteger = await util.getBigInteger();
+
   p = BigInteger.new(p);
   q = BigInteger.new(q);
   g = BigInteger.new(g);

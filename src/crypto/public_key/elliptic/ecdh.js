@@ -21,7 +21,7 @@
  */
 
 import nacl from '@openpgp/tweetnacl';
-import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, getNobleCurve } from './oid_curves';
+import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams } from './oid_curves';
 import * as aesKW from '../../aes_kw';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
@@ -210,8 +210,8 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   throw err;
 }
 
-function jsPrivateEphemeralKey(curve, V, d) {
-  const nobleCurve = getNobleCurve(curve.name);
+async function jsPrivateEphemeralKey(curve, V, d) {
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdh, curve.name);
   // The output includes parity byte
   const sharedSecretWithParity = nobleCurve.getSharedSecret(d, V);
   const sharedKey = sharedSecretWithParity.subarray(1);
@@ -219,7 +219,7 @@ function jsPrivateEphemeralKey(curve, V, d) {
 }
 
 async function jsPublicEphemeralKey(curve, Q) {
-  const nobleCurve = getNobleCurve(curve.name);
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdh, curve.name);
   const { publicKey: V, privateKey: v } = await curve.genKeyPair();
 
   // The output includes parity byte

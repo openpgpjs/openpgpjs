@@ -24,7 +24,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
-import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, getNobleCurve } from './oid_curves';
+import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams } from './oid_curves';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -74,7 +74,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
     }
   }
 
-  const nobleCurve = getNobleCurve(curve.name);
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curve.name);
   // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
   const signature = nobleCurve.sign(hashed, privateKey, { lowS: false });
   return {
@@ -103,7 +103,7 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
   // Similarly, secp256k1 should have been used rarely enough.
   // However, we implement the fix for all curves, since it's only needed in case of
   // verification failure, which is unexpected, hence a minor slowdown is acceptable.
-  const tryFallbackVerificationForOldBug = () => (
+  const tryFallbackVerificationForOldBug = async () => (
     hashed[0] === 0 ?
       jsVerify(curve, signature, hashed.subarray(1), publicKey) :
       false
@@ -133,7 +133,7 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
     }
   }
 
-  const verified = jsVerify(curve, signature, hashed, publicKey);
+  const verified = await jsVerify(curve, signature, hashed, publicKey);
   return verified || tryFallbackVerificationForOldBug();
 }
 
@@ -183,8 +183,8 @@ export async function validateParams(oid, Q, d) {
  * Fallback javascript implementation of ECDSA verification.
  * To be used if no native implementation is available for the given curve/operation.
  */
-function jsVerify(curve, signature, hashed, publicKey) {
-  const nobleCurve = getNobleCurve(curve.name);
+async function jsVerify(curve, signature, hashed, publicKey) {
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curve.name);
   // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
   return nobleCurve.verify(util.concatUint8Array([signature.r, signature.s]), hashed, publicKey, { lowS: false });
 }
