@@ -255,7 +255,7 @@ module.exports = () => describe('API functional testing', function() {
       // test using webCrypto
       const sinonSandbox = sandbox.create();
       const webCrypto = util.getWebCrypto();
-      if (webCrypto) {
+      if (webCrypto && !util.getNodeCrypto()) {
         const webCryptoSpy = sinonSandbox.spy(webCrypto, 'encrypt');
         try {
           await testCFB('12345678901234567890123456789012345678901234567890', { ...openpgp.config, minBytesForWebCrypto: 0 });
