@@ -3,7 +3,7 @@
  * @module crypto/public_key/elliptic/ecdh
  */
 
-import x25519 from '@openpgp/tweetnacl/nacl-fast-light';
+import x25519 from '@openpgp/tweetnacl';
 import { x448 } from '@openpgp/noble-curves/ed448';
 import * as aesKW from '../../aes_kw';
 import { getRandomBytes } from '../../random';

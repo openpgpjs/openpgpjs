@@ -21,13 +21,10 @@
  * @module crypto/public_key/elliptic/eddsa_legacy
  */
 
-import { sha512 } from '@openpgp/noble-hashes/sha512';
-import nacl from '@openpgp/tweetnacl/nacl-fast-light';
+import nacl from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
-
-nacl.hash = bytes => sha512(bytes);
 
 /**
  * Sign a message using the provided legacy EdDSA key

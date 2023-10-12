@@ -20,7 +20,7 @@
  * @module crypto/public_key/elliptic/ecdh
  */
 
-import nacl from '@openpgp/tweetnacl/nacl-fast-light';
+import nacl from '@openpgp/tweetnacl';
 import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, getNobleCurve } from './oid_curves';
 import * as aesKW from '../../aes_kw';
 import { getRandomBytes } from '../../random';
