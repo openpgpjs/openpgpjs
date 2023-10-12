@@ -160,7 +160,7 @@ export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
 export async function generate(bits, e) {
   const BigInteger = await util.getBigInteger();
 
-  e = BigInteger.new(e);
+  e = new BigInteger(e);
 
   // Native RSA keygen using Web Crypto
   if (util.getWebCrypto()) {
@@ -265,24 +265,24 @@ export async function generate(bits, e) {
 export async function validateParams(n, e, d, p, q, u) {
   const BigInteger = await util.getBigInteger();
 
-  n = BigInteger.new(n);
-  p = BigInteger.new(p);
-  q = BigInteger.new(q);
+  n = new BigInteger(n);
+  p = new BigInteger(p);
+  q = new BigInteger(q);
 
   // expect pq = n
   if (!p.mul(q).equal(n)) {
     return false;
   }
 
-  const two = BigInteger.new(2);
+  const two = new BigInteger(2);
   // expect p*u = 1 mod q
-  u = BigInteger.new(u);
+  u = new BigInteger(u);
   if (!p.mul(u).mod(q).isOne()) {
     return false;
   }
 
-  e = BigInteger.new(e);
-  d = BigInteger.new(d);
+  e = new BigInteger(e);
+  d = new BigInteger(d);
   /**
    * In RSA pkcs#1 the exponents (d, e) are inverses modulo lcm(p-1, q-1)
    * We check that [de = 1 mod (p-1)] and [de = 1 mod (q-1)]
@@ -290,7 +290,7 @@ export async function validateParams(n, e, d, p, q, u) {
    *
    * We blind the multiplication with r, and check that rde = r mod lcm(p-1, q-1)
    */
-  const nSizeOver3 = BigInteger.new(Math.floor(n.bitLength() / 3));
+  const nSizeOver3 = new BigInteger(Math.floor(n.bitLength() / 3));
   const r = await getRandomBigInteger(two, two.leftShift(nSizeOver3)); // r in [ 2, 2^{|n|/3} ) < p and q
   const rde = r.mul(d).mul(e);
 
@@ -305,9 +305,9 @@ export async function validateParams(n, e, d, p, q, u) {
 async function bnSign(hashAlgo, n, d, hashed) {
   const BigInteger = await util.getBigInteger();
 
-  n = BigInteger.new(n);
-  const m = BigInteger.new(await emsaEncode(hashAlgo, hashed, n.byteLength()));
-  d = BigInteger.new(d);
+  n = new BigInteger(n);
+  const m = new BigInteger(await emsaEncode(hashAlgo, hashed, n.byteLength()));
+  d = new BigInteger(d);
   if (m.gte(n)) {
     throw new Error('Message size cannot exceed modulus size');
   }
@@ -367,9 +367,9 @@ async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
 async function bnVerify(hashAlgo, s, n, e, hashed) {
   const BigInteger = await util.getBigInteger();
 
-  n = BigInteger.new(n);
-  s = BigInteger.new(s);
-  e = BigInteger.new(e);
+  n = new BigInteger(n);
+  s = new BigInteger(s);
+  e = new BigInteger(e);
   if (s.gte(n)) {
     throw new Error('Signature size cannot exceed modulus size');
   }
@@ -436,9 +436,9 @@ async function nodeEncrypt(data, n, e) {
 async function bnEncrypt(data, n, e) {
   const BigInteger = await util.getBigInteger();
 
-  n = BigInteger.new(n);
-  data = BigInteger.new(emeEncode(data, n.byteLength()));
-  e = BigInteger.new(e);
+  n = new BigInteger(n);
+  data = new BigInteger(emeEncode(data, n.byteLength()));
+  e = new BigInteger(e);
   if (data.gte(n)) {
     throw new Error('Message size cannot exceed modulus size');
   }
@@ -489,20 +489,20 @@ async function nodeDecrypt(data, n, e, d, p, q, u, randomPayload) {
 async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
   const BigInteger = await util.getBigInteger();
 
-  data = BigInteger.new(data);
-  n = BigInteger.new(n);
-  e = BigInteger.new(e);
-  d = BigInteger.new(d);
-  p = BigInteger.new(p);
-  q = BigInteger.new(q);
-  u = BigInteger.new(u);
+  data = new BigInteger(data);
+  n = new BigInteger(n);
+  e = new BigInteger(e);
+  d = new BigInteger(d);
+  p = new BigInteger(p);
+  q = new BigInteger(q);
+  u = new BigInteger(u);
   if (data.gte(n)) {
     throw new Error('Data too large.');
   }
   const dq = d.mod(q.dec()); // d mod (q-1)
   const dp = d.mod(p.dec()); // d mod (p-1)
 
-  const unblinder = (await getRandomBigInteger(BigInteger.new(2), n)).mod(n);
+  const unblinder = (await getRandomBigInteger(new BigInteger(2), n)).mod(n);
   const blinder = unblinder.modInv(n).modExp(e, n);
   data = data.mul(blinder).mod(n);
 
@@ -532,9 +532,9 @@ async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
 async function privateToJWK(n, e, d, p, q, u) {
   const BigInteger = await util.getBigInteger();
 
-  const pNum = BigInteger.new(p);
-  const qNum = BigInteger.new(q);
-  const dNum = BigInteger.new(d);
+  const pNum = new BigInteger(p);
+  const qNum = new BigInteger(q);
+  const dNum = new BigInteger(d);
 
   let dq = dNum.mod(qNum.dec()); // d mod (q-1)
   let dp = dNum.mod(pNum.dec()); // d mod (p-1)

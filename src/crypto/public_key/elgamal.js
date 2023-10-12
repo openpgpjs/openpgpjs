@@ -36,16 +36,16 @@ import util from '../../util';
 export async function encrypt(data, p, g, y) {
   const BigInteger = await util.getBigInteger();
 
-  p = BigInteger.new(p);
-  g = BigInteger.new(g);
-  y = BigInteger.new(y);
+  p = new BigInteger(p);
+  g = new BigInteger(g);
+  y = new BigInteger(y);
 
   const padded = emeEncode(data, p.byteLength());
-  const m = BigInteger.new(padded);
+  const m = new BigInteger(padded);
 
   // OpenPGP uses a "special" version of ElGamal where g is generator of the full group Z/pZ*
   // hence g has order p-1, and to avoid that k = 0 mod p-1, we need to pick k in [1, p-2]
-  const k = await getRandomBigInteger(BigInteger.new(1), p.dec());
+  const k = await getRandomBigInteger(new BigInteger(1), p.dec());
   return {
     c1: g.modExp(k, p).toUint8Array(),
     c2: y.modExp(k, p).imul(m).imod(p).toUint8Array()
@@ -67,10 +67,10 @@ export async function encrypt(data, p, g, y) {
 export async function decrypt(c1, c2, p, x, randomPayload) {
   const BigInteger = await util.getBigInteger();
 
-  c1 = BigInteger.new(c1);
-  c2 = BigInteger.new(c2);
-  p = BigInteger.new(p);
-  x = BigInteger.new(x);
+  c1 = new BigInteger(c1);
+  c2 = new BigInteger(c2);
+  p = new BigInteger(p);
+  x = new BigInteger(x);
 
   const padded = c1.modExp(x, p).modInv(p).imul(c2).imod(p);
   return emeDecode(padded.toUint8Array('be', p.byteLength()), randomPayload);
@@ -88,19 +88,19 @@ export async function decrypt(c1, c2, p, x, randomPayload) {
 export async function validateParams(p, g, y, x) {
   const BigInteger = await util.getBigInteger();
 
-  p = BigInteger.new(p);
-  g = BigInteger.new(g);
-  y = BigInteger.new(y);
+  p = new BigInteger(p);
+  g = new BigInteger(g);
+  y = new BigInteger(y);
 
-  const one = BigInteger.new(1);
+  const one = new BigInteger(1);
   // Check that 1 < g < p
   if (g.lte(one) || g.gte(p)) {
     return false;
   }
 
   // Expect p-1 to be large
-  const pSize = BigInteger.new(p.bitLength());
-  const n1023 = BigInteger.new(1023);
+  const pSize = new BigInteger(p.bitLength());
+  const n1023 = new BigInteger(1023);
   if (pSize.lt(n1023)) {
     return false;
   }
@@ -120,8 +120,8 @@ export async function validateParams(p, g, y, x) {
    * We just check g**i != 1 for all i up to a threshold
    */
   let res = g;
-  const i = BigInteger.new(1);
-  const threshold = BigInteger.new(2).leftShift(BigInteger.new(17)); // we want order > threshold
+  const i = new BigInteger(1);
+  const threshold = new BigInteger(2).leftShift(new BigInteger(17)); // we want order > threshold
   while (i.lt(threshold)) {
     res = res.mul(g).imod(p);
     if (res.isOne()) {
@@ -136,8 +136,8 @@ export async function validateParams(p, g, y, x) {
    *
    * Blinded exponentiation computes g**{r(p-1) + x} to compare to y
    */
-  x = BigInteger.new(x);
-  const two = BigInteger.new(2);
+  x = new BigInteger(x);
+  const two = new BigInteger(2);
   const r = await getRandomBigInteger(two.leftShift(pSize.dec()), two.leftShift(pSize)); // draw r of same size as p-1
   const rqx = p.dec().imul(r).iadd(x);
   if (!y.equal(g.modExp(rqx, p))) {
