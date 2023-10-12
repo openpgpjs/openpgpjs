@@ -63,6 +63,6 @@ export async function getRandomBigInteger(min, max) {
   // Using a while loop is necessary to avoid bias introduced by the mod operation.
   // However, we request 64 extra random bits so that the bias is negligible.
   // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-  const r = BigInteger.new(await getRandomBytes(bytes + 8));
+  const r = new BigInteger(getRandomBytes(bytes + 8));
   return r.mod(modulus).add(min);
 }
