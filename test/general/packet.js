@@ -202,7 +202,7 @@ module.exports = () => describe('Packet', function() {
 
   it('Sym. encrypted AEAD protected packet is encrypted in parallel (AEAD, GCM)', async function() {
     const webCrypto = util.getWebCrypto();
-    if (!webCrypto) return;
+    if (!webCrypto || util.getNodeCrypto()) return;
     const encryptStub = cryptStub(webCrypto, 'encrypt');
     const decryptStub = cryptStub(webCrypto, 'decrypt');
 
