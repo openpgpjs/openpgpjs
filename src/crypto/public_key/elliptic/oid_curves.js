@@ -19,7 +19,7 @@
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @module crypto/public_key/elliptic/curve
  */
-import nacl from '@openpgp/tweetnacl/nacl-fast-light';
+import nacl from '@openpgp/tweetnacl';
 import { p256 } from '@openpgp/noble-curves/p256';
 import { p384 } from '@openpgp/noble-curves/p384';
 import { p521 } from '@openpgp/noble-curves/p521';
