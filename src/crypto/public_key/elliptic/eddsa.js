@@ -21,7 +21,7 @@
  */
 
 import { sha512 } from '@openpgp/noble-hashes/sha512';
-import ed25519 from '@openpgp/tweetnacl/nacl-fast-light';
+import ed25519 from '@openpgp/tweetnacl';
 import { ed448 } from '@openpgp/noble-curves/ed448';
 import util from '../../../util';
 import enums from '../../../enums';
