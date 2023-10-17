@@ -44,10 +44,11 @@ export default {
   deflateLevel: 6,
   /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
-   * This setting is relevant for:
-   * - key generation (encryption key preferences)
-   * - password-based message encryption
-   * - private key encryption
+   * This option is applicable to:
+   * - key generation (encryption key preferences),
+   * - password-based message encryption, and
+   * - private key encryption.
+   * In the case of message encryption using public keys, the encryption key preferences are respected instead.
    * Note: not all OpenPGP implementations are compatible with this option.
    * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-10.html|draft-crypto-refresh-10}
    * @memberof module:config
