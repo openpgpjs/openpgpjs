@@ -15,8 +15,6 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import emailAddresses from 'email-addresses';
-
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -79,12 +77,27 @@ class UserIDPacket {
     if (userID.length > config.maxUserIDLength) {
       throw new Error('User ID string is too long');
     }
-    try {
-      const { name, address: email, comments } = emailAddresses.parseOneAddress({ input: userID, atInDisplayName: true });
-      this.comment = comments.replace(/^\(|\)$/g, '');
-      this.name = name;
-      this.email = email;
-    } catch (e) {}
+
+    /**
+     * We support the conventional cases described in https://www.ietf.org/id/draft-dkg-openpgp-userid-conventions-00.html#section-4.1,
+     * as well comments placed between the name (if present) and the bracketed email address:
+     * - name (comment) <email>
+     * - email
+     * In the first case, the `email` is the only required part, and it must contain the `@` symbol.
+     * The `name` and `comment` parts can include any letters, whitespace, and symbols, except for `(` and `)`,
+     * since they interfere with `comment` parsing.
+     */
+    const re = /^(?<name>[^()]+\s+)?(?<comment>\([^()]+\)\s+)?(?<email><\S+@\S+>)$/;
+    const matches = re.exec(userID);
+    if (matches !== null) {
+      const { name, comment, email } = matches.groups;
+      this.comment = comment?.replace(/^\(|\)|\s$/g, '').trim() || ''; // remove parenthesis and separating whiltespace
+      this.name = name?.trim() || '';
+      this.email = email.substring(1, email.length - 1); // remove brackets
+    } else if (/^[^\s@]+@[^\s@]+$/.test(userID)) { // unbracketed email: enforce single @ and no whitespace
+      this.email = userID;
+    }
+
     this.userID = userID;
   }
 
