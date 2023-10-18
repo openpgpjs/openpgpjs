@@ -1565,4 +1565,60 @@ kePFjAnu9cpynKXu3usf8+FuBw2zLsg1Id1n7ttxoAte416KjBN9lFBt8mcu
       expect(otherPackets[0].constructor.tag).to.equal(openpgp.enums.packet.userID);
     });
   });
+
+  describe('UserID', () => {
+    it('parse conventional userID', () => {
+      const userID = 'Mr. Ed, the Talking Horse <ed@example.org>';
+
+      const packet = new openpgp.UserIDPacket();
+      packet.read(new TextEncoder().encode(userID));
+      expect(packet.comment).to.equal('');
+      expect(packet.email).to.equal('ed@example.org');
+      expect(packet.userID).to.equal(userID);
+    });
+
+    it('parse userID with comment', () => {
+      const userID = 'Alice Jones (the Great) <alice@example.org>';
+
+      const packet = new openpgp.UserIDPacket();
+      packet.read(new TextEncoder().encode(userID));
+      expect(packet.name).to.equal('Alice Jones');
+      expect(packet.comment).to.equal('the Great');
+      expect(packet.email).to.equal('alice@example.org');
+      expect(packet.userID).to.equal(userID);
+    });
+
+    it('parse userID with unbracketed email address', () => {
+      const userID = 'alice@example.org';
+
+      const packet = new openpgp.UserIDPacket();
+      packet.read(new TextEncoder().encode(userID));
+      expect(packet.name).to.equal('');
+      expect(packet.comment).to.equal('');
+      expect(packet.email).to.equal('alice@example.org');
+      expect(packet.userID).to.equal(userID);
+    });
+
+    it('parse userID with whitespace between parts', () => {
+      const userID = '  A name surrounded by whitespace   ( a comment surrounded too   )    <ed@example.org>';
+
+      const packet = new openpgp.UserIDPacket();
+      packet.read(new TextEncoder().encode(userID));
+      expect(packet.name).to.equal('A name surrounded by whitespace');
+      expect(packet.comment).to.equal('a comment surrounded too');
+      expect(packet.email).to.equal('ed@example.org');
+      expect(packet.userID).to.equal(userID);
+    });
+
+    it('store userID without parts if parsing fails', () => {
+      const userID = 'Name only';
+
+      const packet = new openpgp.UserIDPacket();
+      packet.read(new TextEncoder().encode(userID));
+      expect(packet.name).to.equal('');
+      expect(packet.comment).to.equal('');
+      expect(packet.email).to.equal('');
+      expect(packet.userID).to.equal(userID);
+    });
+  });
 });
