@@ -1,6 +1,7 @@
 /* eslint-disable no-process-env */
 
 import { builtinModules } from 'module';
+import { readFileSync } from 'fs';
 
 import alias from '@rollup/plugin-alias';
 import resolve from '@rollup/plugin-node-resolve';
@@ -9,7 +10,9 @@ import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
 import { wasm } from '@rollup/plugin-wasm';
 
-import pkg from './package.json';
+// ESlint does not support JSON module imports yet, see https://github.com/eslint/eslint/discussions/15305
+// import pkg from './package.json' assert { type: 'json' };
+const pkg = JSON.parse(readFileSync('./package.json'));
 
 const nodeDependencies = Object.keys(pkg.dependencies);
 const nodeBuiltinModules = builtinModules.concat(['module']);
@@ -55,8 +58,7 @@ export default Object.assign([
       { file: 'dist/openpgp.min.js', format: 'iife', name: pkg.name, banner, intro, plugins: [terser(terserOptions)], sourcemap: true },
       { file: 'dist/openpgp.mjs', format: 'es', banner, intro },
       { file: 'dist/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
-    ],
-    inlineDynamicImports: true,
+    ].map(options => ({ ...options, inlineDynamicImports: true })),
     plugins: [
       resolve({
         browser: true
@@ -74,14 +76,13 @@ export default Object.assign([
   },
   {
     input: 'src/index.js',
-    inlineDynamicImports: true,
     external: nodeBuiltinModules.concat(nodeDependencies),
     output: [
       { file: 'dist/node/openpgp.cjs', format: 'cjs', name: pkg.name, banner, intro },
       { file: 'dist/node/openpgp.min.cjs', format: 'cjs', name: pkg.name, banner, intro, plugins: [terser(terserOptions)], sourcemap: true },
       { file: 'dist/node/openpgp.mjs', format: 'es', banner, intro },
       { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
-    ],
+    ].map(options => ({ ...options, inlineDynamicImports: true })),
     plugins: [
       resolve(),
       commonjs(),
@@ -117,9 +118,8 @@ export default Object.assign([
   {
     input: 'test/unittests.js',
     output: [
-      { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true }
+      { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true, inlineDynamicImports: true }
     ],
-    inlineDynamicImports: true,
     external: nodeBuiltinModules.concat(nodeDependencies),
     plugins: [
       alias({
