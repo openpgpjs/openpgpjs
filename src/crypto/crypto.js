@@ -331,12 +331,11 @@ export function generateParams(algo, bits, oid) {
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
-    case enums.publicKey.rsaSign: {
+    case enums.publicKey.rsaSign:
       return publicKey.rsa.generate(bits, 65537).then(({ n, e, d, p, q, u }) => ({
         privateParams: { d, p, q, u },
         publicParams: { n, e }
       }));
-    }
     case enums.publicKey.ecdsa:
       return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
         privateParams: { d: secret },

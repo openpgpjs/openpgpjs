@@ -100,9 +100,8 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
   switch (algo) {
-    case enums.publicKey.ed25519: {
+    case enums.publicKey.ed25519:
       return ed25519.sign.detached.verify(hashed, RS, publicKey);
-    }
     case enums.publicKey.ed448: {
       const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
       return ed448.verify(RS, hashed, publicKey);

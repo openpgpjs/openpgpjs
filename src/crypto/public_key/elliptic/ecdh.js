@@ -110,9 +110,9 @@ async function genPublicEphemeralKey(curve, Q) {
       break;
     case 'node':
       return nodePublicEphemeralKey(curve, Q);
-    default: {
+    default:
       return jsPublicEphemeralKey(curve, Q);
-    }
+
   }
 }
 
@@ -173,9 +173,8 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
       break;
     case 'node':
       return nodePrivateEphemeralKey(curve, V, d);
-    default: {
+    default:
       return jsPrivateEphemeralKey(curve, V, d);
-    }
   }
 }
 

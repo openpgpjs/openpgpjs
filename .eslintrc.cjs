@@ -13,7 +13,8 @@ module.exports = {
 
   'plugins': [
     'chai-friendly',
-    'import'
+    'import',
+    'unicorn'
   ],
 
   'globals': { // TODO are all these necessary?
@@ -118,6 +119,7 @@ module.exports = {
     'max-lines': [2, { 'max': 620, 'skipBlankLines': true, 'skipComments': true }],
     'no-unused-expressions': 0,
     'chai-friendly/no-unused-expressions': [2, { 'allowShortCircuit': true }],
+    'unicorn/switch-case-braces': ['error', 'avoid'],
 
     // Custom warnings:
     'no-console': 1

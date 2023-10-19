@@ -192,9 +192,8 @@ class CurveWithOID {
         const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
         return { publicKey, privateKey };
       }
-      default: {
+      default:
         return jsGenKeyPair(this.name);
-      }
     }
   }
 }

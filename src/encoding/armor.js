@@ -47,33 +47,33 @@ function getType(text) {
   // parts, and this is the Xth part out of Y.
   if (/MESSAGE, PART \d+\/\d+/.test(header[1])) {
     return enums.armor.multipartSection;
-  } else
+  }
   // BEGIN PGP MESSAGE, PART X
   // Used for multi-part messages, where this is the Xth part of an
   // unspecified number of parts. Requires the MESSAGE-ID Armor
   // Header to be used.
   if (/MESSAGE, PART \d+/.test(header[1])) {
     return enums.armor.multipartLast;
-  } else
+  }
   // BEGIN PGP SIGNED MESSAGE
   if (/SIGNED MESSAGE/.test(header[1])) {
     return enums.armor.signed;
-  } else
+  }
   // BEGIN PGP MESSAGE
   // Used for signed, encrypted, or compressed files.
   if (/MESSAGE/.test(header[1])) {
     return enums.armor.message;
-  } else
+  }
   // BEGIN PGP PUBLIC KEY BLOCK
   // Used for armoring public keys.
   if (/PUBLIC KEY BLOCK/.test(header[1])) {
     return enums.armor.publicKey;
-  } else
+  }
   // BEGIN PGP PRIVATE KEY BLOCK
   // Used for armoring private keys.
   if (/PRIVATE KEY BLOCK/.test(header[1])) {
     return enums.armor.privateKey;
-  } else
+  }
   // BEGIN PGP SIGNATURE
   // Used for detached signatures, OpenPGP/MIME signatures, and
   // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE

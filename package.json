@@ -86,6 +86,7 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-chai-friendly": "^0.7.2",
     "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-unicorn": "^48.0.1",
     "fflate": "^0.7.4",
     "http-server": "^14.1.1",
     "karma": "^6.4.0",

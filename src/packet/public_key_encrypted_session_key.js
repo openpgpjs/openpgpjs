@@ -218,14 +218,13 @@ function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.elgamal:
-    case enums.publicKey.ecdh: {
+    case enums.publicKey.ecdh:
       // add checksum
       return util.concatUint8Array([
         new Uint8Array(version === 6 ? [] : [cipherAlgo]),
         sessionKeyData,
         util.writeChecksum(sessionKeyData.subarray(sessionKeyData.length % 8))
       ]);
-    }
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
       return sessionKeyData;

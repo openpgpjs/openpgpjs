@@ -48,7 +48,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
   if (message && !util.isStream(message)) {
     const keyPair = { publicKey, privateKey };
     switch (curve.type) {
-      case 'web': {
+      case 'web':
         // If browser doesn't support a curve, we'll catch it
         try {
           // Need to await to make sure browser succeeds
@@ -63,7 +63,6 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
           util.printDebugError('Browser did not support signing: ' + err.message);
         }
         break;
-      }
       case 'node': {
         const signature = await nodeSign(curve, hashAlgo, message, keyPair);
         return {
