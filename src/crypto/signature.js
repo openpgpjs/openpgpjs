@@ -153,9 +153,8 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { x } = privateKeyParams;
       return publicKey.dsa.sign(hashAlgo, hashed, g, p, q, x);
     }
-    case enums.publicKey.elgamal: {
+    case enums.publicKey.elgamal:
       throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
-    }
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicKeyParams;
       const { d } = privateKeyParams;
