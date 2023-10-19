@@ -834,9 +834,9 @@ export namespace enums {
     /** @deprecated use `ed25519Legacy` instead */
     ed25519 = 'ed25519',
     ed25519Legacy = 'ed25519',
-    /** @deprecated use `x25519Legacy` instead */
+    /** @deprecated use `curve25519Legacy` instead */
     curve25519 = 'curve25519',
-    x25519Legacy = 'curve25519',
+    curve25519Legacy = 'curve25519',
     secp256k1 = 'secp256k1',
     brainpoolP256r1 = 'brainpoolP256r1',
     brainpoolP384r1 = 'brainpoolP384r1',

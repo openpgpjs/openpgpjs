@@ -333,8 +333,8 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       } catch (e) {
         throw new Error('Unknown curve');
       }
-      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.x25519Legacy) {
-        options.curve = options.sign ? enums.curve.ed25519Legacy : enums.curve.x25519Legacy;
+      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.curve25519Legacy) {
+        options.curve = options.sign ? enums.curve.ed25519Legacy : enums.curve.curve25519Legacy;
       }
       if (options.sign) {
         options.algorithm = options.curve === enums.curve.ed25519Legacy ? enums.publicKey.eddsaLegacy : enums.publicKey.ecdsa;

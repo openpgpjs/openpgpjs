@@ -54,10 +54,10 @@ export default {
     '2B06010401DA470F01':     'ed25519',
 
     /** Curve25519 - deprecated by crypto-refresh (replaced by standaone X25519 algo) */
-    'x25519Legacy':           'curve25519',
+    'curve25519Legacy':       'curve25519',
     'X25519':                 'curve25519',
     'cv25519':                'curve25519',
-    /** @deprecated use `x25519Legacy` instead */
+    /** @deprecated use `curve25519Legacy` instead */
     'curve25519':             'curve25519',
     'Curve25519':             'curve25519',
     '1.3.6.1.4.1.3029.1.5.1': 'curve25519',

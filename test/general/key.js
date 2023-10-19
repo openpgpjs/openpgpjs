@@ -4070,7 +4070,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
       const subkey = newPrivateKey.subkeys[total];
       expect(subkey).to.exist;
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdh');
-      expect(subkey.getAlgorithmInfo().curve).to.be.equal(openpgp.enums.curve.x25519Legacy);
+      expect(subkey.getAlgorithmInfo().curve).to.be.equal(openpgp.enums.curve.curve25519Legacy);
       await subkey.verify();
     });
 

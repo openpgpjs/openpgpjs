@@ -296,7 +296,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       })).to.be.eventually.rejectedWith(/ecdh keys are considered too weak/);
 
       await expect(openpgp.encrypt({
-        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.x25519Legacy]) }
+        message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.curve25519Legacy]) }
       })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519 is disabled/);
 
       const echdEncrypted = await openpgp.encrypt({
