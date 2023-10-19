@@ -42,12 +42,15 @@ export default {
    * @property {Integer} deflateLevel Default zip/zlib compression level, between 1 and 9
    */
   deflateLevel: 6,
-
   /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
+   * This option is applicable to:
+   * - key generation (encryption key preferences),
+   * - password-based message encryption, and
+   * - private key encryption.
+   * In the case of message encryption using public keys, the encryption key preferences are respected instead.
    * Note: not all OpenPGP implementations are compatible with this option.
-   * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
-   * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-07|RFC4880bis-07}
+   * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-10.html|draft-crypto-refresh-10}
    * @memberof module:config
    * @property {Boolean} aeadProtect
    */
