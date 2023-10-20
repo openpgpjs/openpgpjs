@@ -299,7 +299,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
 
       await expect(openpgp.encrypt({
         message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.curve25519Legacy]) }
-      })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519 is disabled/);
+      })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519Legacy is disabled/);
 
       const echdEncrypted = await openpgp.encrypt({
         message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
@@ -372,7 +372,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
     })).to.be.eventually.rejectedWith(/eddsaLegacy keys are considered too weak/);
     await expect(openpgp.sign({
       message, signingKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
-    })).to.be.eventually.rejectedWith(/Support for eddsaLegacy keys using curve ed25519 is disabled/);
+    })).to.be.eventually.rejectedWith(/Support for eddsaLegacy keys using curve ed25519Legacy is disabled/);
   });
 
   it('openpgp.verify', async function() {
@@ -424,7 +424,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
     };
     const { signatures: [sig5] } = await openpgp.verify(opt5);
-    await expect(sig5.verified).to.be.eventually.rejectedWith(/Support for eddsaLegacy keys using curve ed25519 is disabled/);
+    await expect(sig5.verified).to.be.eventually.rejectedWith(/Support for eddsaLegacy keys using curve ed25519Legacy is disabled/);
   });
 
   describe('detects unknown config property', async function() {

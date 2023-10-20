@@ -91,7 +91,7 @@ export default () => {
   describe('EdDSA parameter validation (legacy format)', function() {
     let eddsaKey;
     before(async () => {
-      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519' });
+      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
     });
 
     it('EdDSA params should be valid', async function() {
@@ -115,7 +115,7 @@ export default () => {
     let ecdhKey;
     let ecdsaKey;
     before(async () => {
-      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519' });
+      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
       ecdhKey = eddsaKey.subkeys[0];
       ecdsaKey = await generatePrivateKeyObject({ curve: 'p256' });
     });
@@ -203,7 +203,7 @@ export default () => {
           ecdsaKey = await generatePrivateKeyObject({ curve });
           ecdhKey = ecdsaKey.subkeys[0];
         } else {
-          const eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519' });
+          const eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
           ecdhKey = eddsaKey.subkeys[0];
         }
       });

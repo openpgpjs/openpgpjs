@@ -86,7 +86,7 @@ export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
  */
 export async function validateParams(oid, Q, k) {
   // Check whether the given curve is supported
-  if (oid.getName() !== 'ed25519') {
+  if (oid.getName() !== enums.curve.ed25519Legacy) {
     return false;
   }
 

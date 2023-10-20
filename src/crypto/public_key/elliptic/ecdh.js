@@ -92,7 +92,7 @@ async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTraili
  */
 async function genPublicEphemeralKey(curve, Q) {
   switch (curve.type) {
-    case 'curve25519': {
+    case 'curve25519Legacy': {
       const d = getRandomBytes(32);
       const { secretKey, sharedKey } = await genPrivateEphemeralKey(curve, Q, null, d);
       let { publicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
@@ -154,7 +154,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
     d = privateKey;
   }
   switch (curve.type) {
-    case 'curve25519': {
+    case 'curve25519Legacy': {
       const secretKey = d.slice().reverse();
       const sharedKey = nacl.scalarMult(secretKey, V.subarray(1));
       return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below

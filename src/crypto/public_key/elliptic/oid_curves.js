@@ -89,14 +89,14 @@ const curves = {
     node: nodeCurves.secp256k1,
     payloadSize: 32
   },
-  ed25519: {
+  ed25519Legacy: {
     oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
     keyType: enums.publicKey.eddsaLegacy,
     hash: enums.hash.sha512,
     node: false, // nodeCurves.ed25519 TODO
     payloadSize: 32
   },
-  curve25519: {
+  curve25519Legacy: {
     oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
     keyType: enums.publicKey.ecdh,
     hash: enums.hash.sha256,
@@ -161,10 +161,10 @@ class CurveWithOID {
       this.type = 'web';
     } else if (this.node && util.getNodeCrypto()) {
       this.type = 'node';
-    } else if (this.name === 'curve25519') {
-      this.type = 'curve25519';
-    } else if (this.name === 'ed25519') {
-      this.type = 'ed25519';
+    } else if (this.name === enums.curve.curve25519Legacy) {
+      this.type = 'curve25519Legacy';
+    } else if (this.name === enums.curve.ed25519Legacy) {
+      this.type = 'ed25519Legacy';
     }
   }
 
@@ -180,7 +180,7 @@ class CurveWithOID {
         }
       case 'node':
         return nodeGenKeyPair(this.name);
-      case 'curve25519': {
+      case 'curve25519Legacy': {
         const privateKey = getRandomBytes(32);
         privateKey[0] = (privateKey[0] & 127) | 64;
         privateKey[31] &= 248;
@@ -189,7 +189,7 @@ class CurveWithOID {
         const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
         return { publicKey, privateKey };
       }
-      case 'ed25519': {
+      case 'ed25519Legacy': {
         const privateKey = getRandomBytes(32);
         const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
         const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
@@ -243,7 +243,7 @@ async function validateStandardParams(algo, oid, Q, d) {
     p384: true,
     p521: true,
     secp256k1: true,
-    curve25519: algo === enums.publicKey.ecdh,
+    curve25519Legacy: algo === enums.publicKey.ecdh,
     brainpoolP256r1: true,
     brainpoolP384r1: true,
     brainpoolP512r1: true
@@ -255,7 +255,7 @@ async function validateStandardParams(algo, oid, Q, d) {
     return false;
   }
 
-  if (curveName === 'curve25519') {
+  if (curveName === enums.curve.curve25519Legacy) {
     d = d.slice().reverse();
     // Re-derive public point Q'
     const { publicKey } = nacl.box.keyPair.fromSecretKey(d);
