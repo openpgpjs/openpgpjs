@@ -149,7 +149,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
   });
 
   it('Different keys', async function () {
-    const curve = new elliptic_curves.CurveWithOID('curve25519');
+    const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');
@@ -160,7 +160,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
   });
 
   it('Invalid fingerprint', async function () {
-    const curve = new elliptic_curves.CurveWithOID('curve25519');
+    const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');
@@ -171,7 +171,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
   });
 
   it('Successful exchange x25519 (legacy)', async function () {
-    const curve = new elliptic_curves.CurveWithOID('curve25519');
+    const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = util.stringToUint8Array('test');

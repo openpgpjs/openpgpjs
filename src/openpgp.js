@@ -41,8 +41,8 @@ import { checkKeyRequirements } from './key/helper';
  *                                                                     Note: Curve448 and Curve25519 (new format) are not widely supported yet.
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
- * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
- *                                             curve25519 (default), p256, p384, p521, secp256k1,
+ * @param {String} [options.curve='curve25519Legacy'] - Elliptic curve for ECC keys:
+ *                                             curve25519Legacy (default), p256, p384, p521, secp256k1,
  *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
@@ -59,10 +59,10 @@ export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBi
   config = { ...defaultConfig, ...config }; checkConfig(config);
   if (!type && !curve) {
     type = config.v6Keys ? 'curve25519' : 'ecc'; // default to new curve25519 for v6 keys (legacy curve25519 cannot be used with them)
-    curve = 'curve25519'; // unused with type != 'ecc'
+    curve = 'curve25519Legacy'; // unused with type != 'ecc'
   } else {
     type = type || 'ecc';
-    curve = curve || 'curve25519';
+    curve = curve || 'curve25519Legacy';
   }
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);

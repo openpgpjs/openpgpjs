@@ -1012,6 +1012,24 @@ export default () => describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - unit tests', function() {
+    it('should still support curve="curve25519" for ECC key type (v4 key)', function() {
+      const opt = {
+        userIDs: { name: 'Test User', email: 'text@example.com' },
+        type: 'ecc',
+        curve: 'curve25519',
+        format: 'object'
+      };
+      return openpgp.generateKey(opt).then(async function({ privateKey: key }) {
+        expect(key).to.exist;
+        expect(key.getAlgorithmInfo().rsaBits).to.equal(undefined);
+        expect(key.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
+        expect(key.getAlgorithmInfo().curve).to.equal('ed25519Legacy');
+        expect(key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
+        expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+        expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519Legacy');
+      });
+    });
+
     it('should have default params set (v4 key)', function() {
       const now = util.normalizeDate(new Date());
       const opt = {
@@ -1028,12 +1046,12 @@ export default () => describe('OpenPGP.js public api tests', function() {
           expect(key.users[0].userID.name).to.equal('Test User');
           expect(key.users[0].userID.email).to.equal('text@example.com');
           expect(key.getAlgorithmInfo().rsaBits).to.equal(undefined);
-          expect(key.getAlgorithmInfo().curve).to.equal('ed25519');
+          expect(key.getAlgorithmInfo().curve).to.equal('ed25519Legacy');
           expect(+key.getCreationTime()).to.equal(+now);
           expect(await key.getExpirationTime()).to.equal(Infinity);
           expect(key.subkeys.length).to.equal(1);
           expect(key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
-          expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+          expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519Legacy');
           expect(+key.subkeys[0].getCreationTime()).to.equal(+now);
           expect(await key.subkeys[0].getExpirationTime()).to.equal(Infinity);
         }
@@ -4777,7 +4795,7 @@ sEj+v9LKoMTYZGMfp3qDVFLtkBE88eVmVjgJOoLhrsv7yh0PAA==
     });
 
     describe('Sign and verify with each curve', function() {
-      const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+      const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
       curves.forEach(curve => {
         it(`sign/verify with ${curve}`, async function() {
           const config = { rejectCurves: new Set() };

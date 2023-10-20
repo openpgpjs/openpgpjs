@@ -332,7 +332,8 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       } catch (e) {
         throw new Error('Unknown curve');
       }
-      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.curve25519Legacy) {
+      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.curve25519Legacy ||
+        options.curve === 'ed25519' || options.curve === 'curve25519') { // keep support for curve names without 'Legacy' addition, for now
         options.curve = options.sign ? enums.curve.ed25519Legacy : enums.curve.curve25519Legacy;
       }
       if (options.sign) {

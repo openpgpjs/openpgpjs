@@ -229,7 +229,7 @@ class PrivateKey extends PublicKey {
     const defaultOptions = secretKeyPacket.getAlgorithmInfo();
     defaultOptions.type = getDefaultSubkeyType(defaultOptions.algorithm);
     defaultOptions.rsaBits = defaultOptions.bits || 4096;
-    defaultOptions.curve = defaultOptions.curve || 'curve25519';
+    defaultOptions.curve = defaultOptions.curve || 'curve25519Legacy';
     options = helper.sanitizeKeyOptions(options, defaultOptions);
     // Every subkey for a v4 primary key MUST be a v4 subkey.
     // Every subkey for a v6 primary key MUST be a v6 subkey.

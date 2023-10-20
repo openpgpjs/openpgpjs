@@ -44,25 +44,25 @@ export default {
     '2B8104000A':   'secp256k1',
 
     /** Ed25519 - deprecated by crypto-refresh (replaced by standaone Ed25519 algo) */
-    'ed25519Legacy':          'ed25519',
-    'ED25519':                'ed25519',
+    'ed25519Legacy':          'ed25519Legacy',
+    'ED25519':                'ed25519Legacy',
     /** @deprecated use `ed25519Legacy` instead */
-    'ed25519':                'ed25519',
-    'Ed25519':                'ed25519',
-    '1.3.6.1.4.1.11591.15.1': 'ed25519',
-    '2b06010401da470f01':     'ed25519',
-    '2B06010401DA470F01':     'ed25519',
+    'ed25519':                'ed25519Legacy',
+    'Ed25519':                'ed25519Legacy',
+    '1.3.6.1.4.1.11591.15.1': 'ed25519Legacy',
+    '2b06010401da470f01':     'ed25519Legacy',
+    '2B06010401DA470F01':     'ed25519Legacy',
 
     /** Curve25519 - deprecated by crypto-refresh (replaced by standaone X25519 algo) */
-    'curve25519Legacy':       'curve25519',
-    'X25519':                 'curve25519',
-    'cv25519':                'curve25519',
+    'curve25519Legacy':       'curve25519Legacy',
+    'X25519':                 'curve25519Legacy',
+    'cv25519':                'curve25519Legacy',
     /** @deprecated use `curve25519Legacy` instead */
-    'curve25519':             'curve25519',
-    'Curve25519':             'curve25519',
-    '1.3.6.1.4.1.3029.1.5.1': 'curve25519',
-    '2b060104019755010501':   'curve25519',
-    '2B060104019755010501':   'curve25519',
+    'curve25519':             'curve25519Legacy',
+    'Curve25519':             'curve25519Legacy',
+    '1.3.6.1.4.1.3029.1.5.1': 'curve25519Legacy',
+    '2b060104019755010501':   'curve25519Legacy',
+    '2B060104019755010501':   'curve25519Legacy',
 
     /** BrainpoolP256r1 Curve */
     'brainpoolP256r1':       'brainpoolP256r1',
