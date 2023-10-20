@@ -71,8 +71,8 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       if (!config.useIndutnyElliptic && !util.getNodeCrypto()) {
         this.skip();
       }
-      const names = config.useIndutnyElliptic ? ['p256', 'p384', 'p521', 'secp256k1', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
-        ['p256', 'p384', 'p521', 'curve25519'];
+      const names = config.useIndutnyElliptic ? ['p256', 'p384', 'p521', 'secp256k1', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'] :
+        ['p256', 'p384', 'p521', 'curve25519Legacy'];
       return Promise.all(names.map(function (name) {
         const curve = new elliptic_curves.CurveWithOID(name);
         return curve.genKeyPair().then(keyPair => {

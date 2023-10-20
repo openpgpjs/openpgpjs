@@ -687,7 +687,7 @@ interface KeyPair {
   publicKey: PublicKey;
 }
 
-export type EllipticCurveName = 'ed25519' | 'curve25519' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
+export type EllipticCurveName = 'ed25519Legacy' | 'curve25519Legacy' | 'p256' | 'p384' | 'p521' | 'secp256k1' | 'brainpoolP256r1' | 'brainpoolP384r1' | 'brainpoolP512r1';
 
 interface GenerateKeyOptions {
   userIDs: MaybeArray<UserID>;
@@ -839,11 +839,11 @@ export namespace enums {
     p384 = 'p384',
     p521 = 'p521',
     /** @deprecated use `ed25519Legacy` instead */
-    ed25519 = 'ed25519',
-    ed25519Legacy = 'ed25519',
+    ed25519 = 'ed25519Legacy',
+    ed25519Legacy = 'ed25519Legacy',
     /** @deprecated use `curve25519Legacy` instead */
-    curve25519 = 'curve25519',
-    curve25519Legacy = 'curve25519',
+    curve25519 = 'curve25519Legacy',
+    curve25519Legacy = 'curve25519Legacy',
     secp256k1 = 'secp256k1',
     brainpoolP256r1 = 'brainpoolP256r1',
     brainpoolP384r1 = 'brainpoolP384r1',

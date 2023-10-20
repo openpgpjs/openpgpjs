@@ -3510,7 +3510,7 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
   });
 
   it("validate() - don't throw if key parameters correspond", async function() {
-    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519', format: 'object' });
+    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519Legacy', format: 'object' });
     await expect(key.validate()).to.not.be.rejected;
   });
 
@@ -3536,7 +3536,7 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
 
   it('isDecrypted() - should reflect whether all (sub)keys are encrypted', async function() {
     const passphrase = '12345678';
-    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519', passphrase, format: 'object' });
+    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519Legacy', passphrase, format: 'object' });
     expect(key.isDecrypted()).to.be.false;
     await key.subkeys[0].keyPacket.decrypt(passphrase);
     expect(key.isDecrypted()).to.be.true;
@@ -4252,7 +4252,7 @@ VYGdb3eNlV8CfoEC
       expect(key.subkeys).to.have.length(0);
       const newKey = await key.addSubkey();
       expect(newKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
-      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519Legacy');
     });
 
     it('Add a new default subkey to an Ed488 key', async function() {
@@ -4330,7 +4330,7 @@ FM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805
 I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
 -----END PGP PRIVATE KEY BLOCK-----` });
       expect(v6Key.subkeys).to.have.length(1);
-      await expect(v6Key.addSubkey({ type: 'ecc' })).to.be.rejectedWith(/Cannot generate v6 keys of type 'ecc' with curve curve25519/);
+      await expect(v6Key.addSubkey({ type: 'ecc' })).to.be.rejectedWith(/Cannot generate v6 keys of type 'ecc' with curve curve25519Legacy/);
       expect(v6Key.subkeys).to.have.length(1);
     });
 
@@ -4369,10 +4369,10 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
     it('create and add a new eddsa subkey to a eddsa key', async function() {
       const passphrase = '12345678';
       const userID = { name: 'test', email: 'a@b.com' };
-      const { privateKey } = await openpgp.generateKey({ curve: 'curve25519', userIDs: [userID], format: 'object', subkeys:[] });
+      const { privateKey } = await openpgp.generateKey({ curve: 'curve25519Legacy', userIDs: [userID], format: 'object', subkeys:[] });
       const total = privateKey.subkeys.length;
 
-      let newPrivateKey = await privateKey.addSubkey({ curve: 'curve25519', userIDs: [userID], sign: true });
+      let newPrivateKey = await privateKey.addSubkey({ curve: 'curve25519Legacy', userIDs: [userID], sign: true });
       const subkey1 = newPrivateKey.subkeys[total];
       const encNewPrivateKey = await openpgp.encryptKey({ privateKey: newPrivateKey, passphrase });
       newPrivateKey = await openpgp.decryptKey({
@@ -4393,14 +4393,14 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
 
     it('create and add a new ecdsa subkey to a eddsa key', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
-      const { privateKey } = await openpgp.generateKey({ curve: 'ed25519', userIDs: [userID], format: 'object', subkeys:[] });
+      const { privateKey } = await openpgp.generateKey({ curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys:[] });
       const total = privateKey.subkeys.length;
       let newPrivateKey = await privateKey.addSubkey({ curve: 'p256', sign: true });
       newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
       const subkey = newPrivateKey.subkeys[total];
       expect(subkey).to.exist;
       expect(newPrivateKey.subkeys.length).to.be.equal(total + 1);
-      expect(newPrivateKey.getAlgorithmInfo().curve).to.be.equal('ed25519');
+      expect(newPrivateKey.getAlgorithmInfo().curve).to.be.equal('ed25519Legacy');
       expect(subkey.getAlgorithmInfo().curve).to.be.equal('p256');
       expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdsa');
@@ -4428,7 +4428,7 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
 
     it('create and add a new rsa subkey to a ecc key', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
-      const opt = { curve: 'ed25519', userIDs: [userID], format: 'object', subkeys:[] };
+      const opt = { curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys:[] };
       const { privateKey } = await openpgp.generateKey(opt);
       const total = privateKey.subkeys.length;
       let newPrivateKey = await privateKey.addSubkey({ type: 'rsa' });
