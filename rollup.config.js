@@ -98,7 +98,7 @@ export default Object.assign([
       { dir: 'dist/lightweight', entryFileNames: 'openpgp.mjs', chunkFileNames: chunkInfo => getChunkFileName(chunkInfo, 'mjs'), format: 'es', banner, intro },
       { dir: 'dist/lightweight', entryFileNames: 'openpgp.min.mjs', chunkFileNames: chunkInfo => getChunkFileName(chunkInfo, 'min.mjs'), format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
     ],
-    preserveEntrySignatures: 'allow-extension',
+    preserveEntrySignatures: 'exports-only',
     plugins: [
       resolve({
         browser: true
