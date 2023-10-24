@@ -1,7 +1,7 @@
 OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?badge_key=N1l2eHFOanVBMU9wYWxJM3ZnWERnc1lidkt5UkRqa3BralV3SWVhOGpGTT0tLVljSjE4Z3dzVmdiQjl6RWgxb2c3T2c9PQ==--5864052cd523f751b6b907d547ac9c4c5f88c8a3)](https://automate.browserstack.com/public-build/N1l2eHFOanVBMU9wYWxJM3ZnWERnc1lidkt5UkRqa3BralV3SWVhOGpGTT0tLVljSjE4Z3dzVmdiQjl6RWgxb2c3T2c9PQ==--5864052cd523f751b6b907d547ac9c4c5f88c8a3) [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openpgpjs/openpgpjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ==========
 
-[OpenPGP.js](https://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. It implements [RFC4880](https://tools.ietf.org/html/rfc4880) and parts of [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10).
+[OpenPGP.js](https://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. It implements the [crypto-refresh](https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh) (superseding [RFC4880](https://tools.ietf.org/html/rfc4880) and [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10)).
 
 **Table of Contents**
 
@@ -33,22 +33,22 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
 
 ### Platform Support
 
-* The `dist/openpgp.min.js` bundle works well with recent versions of Chrome, Firefox, Safari and Edge.
+* The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 13+.
 
-* The `dist/node/openpgp.min.js` bundle works well in Node.js. It is used by default when you `require('openpgp')` in Node.js.
+* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v16+: it is used by default when you `import ... from 'openpgp'` (resp. `require('openpgp')`).
 
-* Currently, Chrome, Safari and Edge have partial implementations of the
-[Streams specification](https://streams.spec.whatwg.org/), and Firefox
-has a partial implementation behind feature flags. Chrome is the only
-browser that implements `TransformStream`s, which we need, so we include
-a [polyfill](https://github.com/MattiasBuelens/web-streams-polyfill) for
-all other browsers. Please note that in those browsers, the global
-`ReadableStream` property gets overwritten with the polyfill version if
-it exists. In some edge cases, you might need to use the native
+* Streaming support: the latest versions of Chrome, Firefox, Edge and Safari implement the
+[Streams specification](https://streams.spec.whatwg.org/), including `TransformStream`s.
+These are needed if you use the library with streamed inputs.
+In previous versions of OpenPGP.js, WebStreams were automatically polyfilled by the library,
+but from v6 this task is left up to the library user, due to the more extensive browser support, and the
+polyfilling side-effects. If you're working with [older browsers versions which do not implement e.g. TransformStreams](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream), you can manually
+load [WebStream polyfill](https://github.com/MattiasBuelens/web-streams-polyfills).
+Please note that when you load the polyfills, the global `ReadableStream` property (if it exists) gets overwritten with the polyfill version.
+In some edge cases, you might need to use the native
 `ReadableStream` (for example when using it to create a `Response`
 object), in which case you should store a reference to it before loading
-OpenPGP.js. There is also the
-[web-streams-adapter](https://github.com/MattiasBuelens/web-streams-adapter)
+the polyfills. There is also the [web-streams-adapter](https://github.com/MattiasBuelens/web-streams-adapter)
 library to convert back and forth between them.
 
 ### Performance
@@ -71,21 +71,20 @@ library to convert back and forth between them.
    \** the curve25519 and ed25519 implementations are algorithmically constant-time, but may not be constant-time after optimizations of the JavaScript compiler  
    \*** these curves are only constant-time if the underlying native implementation is available and constant-time
 
-* Version 2.x of the library has been built from the ground up with Uint8Arrays. This allows for much better performance and memory usage than strings.
-
 * If the user's browser supports [native WebCrypto](https://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` API, this will be used. Under Node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used.
 
-* The library implements the [IETF proposal](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10) for authenticated encryption using native AES-EAX, OCB, or GCM. This makes symmetric encryption up to 30x faster on supported platforms. Since the specification has not been finalized and other OpenPGP implementations haven't adopted it yet, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations, and also with future versions of OpenPGP.js. Don't use it with messages you want to store on disk or in a database.** You can enable it by setting `openpgp.config.aeadProtect = true`.
+* The library implements authenticated encryption (AEAD) as per the ["crypto refresh" draft standard](https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh) using AES-OCB, EAX, or GCM. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.** You can enable it by setting `openpgp.config.aeadProtect = true`.
+Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in a later draft of the crypto refresh.
 
   You can change the AEAD mode by setting one of the following options:
 
   ```
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax // Default, native
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM // **Non-standard**, fastest
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb; // Default (widest ecosystem support), non-native
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.gcm; // Native in WebCrypto and Node.js
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax; // Native in Node.js
   ```
 
-* For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256.
+* For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) AES and AEAD implementations.
 
 
 ### Getting started
@@ -98,16 +97,15 @@ Install OpenPGP.js using npm and save it in your dependencies:
 npm install --save openpgp
 ```
 
-And import it as a CommonJS module:
+And import it as an ES module, from a .mjs file:
+```js
+import * as openpgp from 'openpgp';
+```
+
+Or as a CommonJS module:
 
 ```js
 const openpgp = require('openpgp');
-```
-
-Or as an ES6 module, from an .mjs file:
-
-```js
-import * as openpgp from 'openpgp';
 ```
 
 #### Deno (experimental)
