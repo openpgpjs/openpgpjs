@@ -89,7 +89,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/index.js">config/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/index.js#L1">line 1</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/index.js">config/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/index.js#L1">line 1</a>
     </li></ul></dd>
     
 
@@ -247,7 +247,7 @@ as a global config setting, but can be used for specific function calls (e.g. de
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L187">line 187</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L220">line 220</a>
     </li></ul></dd>
     
 
@@ -365,7 +365,7 @@ Must be an integer value from 0 to 56.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L69">line 69</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L72">line 72</a>
     </li></ul></dd>
     
 
@@ -390,8 +390,14 @@ Must be an integer value from 0 to 56.</p>
 
 <div class="description">
     <p>Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
-Note: not all OpenPGP implementations are compatible with this option.
-<strong>FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION</strong></p>
+This option is applicable to:</p>
+<ul>
+<li>key generation (encryption key preferences),</li>
+<li>password-based message encryption, and</li>
+<li>private key encryption.
+In the case of message encryption using public keys, the encryption key preferences are respected instead.
+Note: not all OpenPGP implementations are compatible with this option.</li>
+</ul>
 </div>
 
 
@@ -483,7 +489,7 @@ Note: not all OpenPGP implementations are compatible with this option.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L54">line 54</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L57">line 57</a>
     </li></ul></dd>
     
 
@@ -493,7 +499,7 @@ Note: not all OpenPGP implementations are compatible with this option.
     <dt class="tag-see">See:</dt>
     <dd class="tag-see">
         <ul>
-            <li><a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-07">RFC4880bis-07</a></li>
+            <li><a href="https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-10.html">draft-crypto-refresh-10</a></li>
         </ul>
     </dd>
     
@@ -608,7 +614,7 @@ where key flags were ignored when selecting a key for encryption.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L135">line 135</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L167">line 167</a>
     </li></ul></dd>
     
 
@@ -727,7 +733,7 @@ and have self-signature's creation date that does not match the primary key crea
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L144">line 144</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L176">line 176</a>
     </li></ul></dd>
     
 
@@ -848,7 +854,7 @@ This is an <strong>insecure</strong> setting:</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L93">line 93</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L125">line 125</a>
     </li></ul></dd>
     
 
@@ -875,7 +881,13 @@ This is an <strong>insecure</strong> setting:</p>
     <p>Allow streaming unauthenticated data before its integrity has been checked. This would allow the application to
 process large streams while limiting memory usage by releasing the decrypted chunks as soon as possible
 and deferring checking their integrity until the decrypted stream has been read in full.</p>
-<p>This setting is <strong>insecure</strong> if the partially decrypted message is processed further or displayed to the user.</p>
+<p>This setting is <strong>insecure</strong> if the encrypted data has been corrupted by a malicious entity:</p>
+<ul>
+<li>if the partially decrypted message is processed further or displayed to the user, it opens up the possibility of attacks such as EFAIL
+(see https://efail.de/).</li>
+<li>an attacker with access to traces or timing info of internal processing errors could learn some info about the data.</li>
+</ul>
+<p>NB: this setting does not apply to AEAD-encrypted data, where the AEAD data chunk is never released until integrity is confirmed.</p>
 </div>
 
 
@@ -967,119 +979,7 @@ and deferring checking their integrity until the decrypted stream has been read 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L103">line 103</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id=".checksumRequired"><span class="type-signature">(static) </span>checksumRequired<span class="type-signature"></span></h4>
-
-
-
-
-
-
-
-
-
-
-    <h5 class="subsection-title">Properties:</h5>
-
-    
-
-<table class="props">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>checksumRequired</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Do not throw error when armor is missing a checksum</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L108">line 108</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L140">line 140</a>
     </li></ul></dd>
     
 
@@ -1191,7 +1091,7 @@ and deferring checking their integrity until the decrypted stream has been read 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L207">line 207</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L240">line 240</a>
     </li></ul></dd>
     
 
@@ -1313,7 +1213,7 @@ See also <code>constantTimePKCS1DecryptionSupportedSymmetricAlgorithms</code>.</
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L155">line 155</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L194">line 194</a>
     </li></ul></dd>
     
 
@@ -1431,7 +1331,7 @@ However, the more algorithms are added, the slower the decryption procedure beco
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L163">line 163</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L202">line 202</a>
     </li></ul></dd>
     
 
@@ -1543,7 +1443,7 @@ However, the more algorithms are added, the slower the decryption procedure beco
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L44">line 44</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L44">line 44</a>
     </li></ul></dd>
     
 
@@ -1655,7 +1555,7 @@ However, the more algorithms are added, the slower the decryption procedure beco
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L179">line 179</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L212">line 212</a>
     </li></ul></dd>
     
 
@@ -1767,7 +1667,7 @@ However, the more algorithms are added, the slower the decryption procedure beco
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L174">line 174</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L207">line 207</a>
     </li></ul></dd>
     
 
@@ -1884,7 +1784,7 @@ validation error when the notation is marked as critical.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L221">line 221</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L254">line 254</a>
     </li></ul></dd>
     
 
@@ -2000,119 +1900,7 @@ validation error when the notation is marked as critical.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L214">line 214</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
-            
-<h4 class="name" id=".minBytesForWebCrypto"><span class="type-signature">(static) </span>minBytesForWebCrypto<span class="type-signature"></span></h4>
-
-
-
-
-
-
-
-
-
-
-    <h5 class="subsection-title">Properties:</h5>
-
-    
-
-<table class="props">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>minBytesForWebCrypto</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>The minimum amount of bytes for which to use native WebCrypto APIs when available</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L169">line 169</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L247">line 247</a>
     </li></ul></dd>
     
 
@@ -2229,7 +2017,7 @@ The default is 2047 since due to a bug, previous versions of OpenPGP.js could ge
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L115">line 115</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L147">line 147</a>
     </li></ul></dd>
     
 
@@ -2346,7 +2134,7 @@ The default is 2047 since due to a bug, previous versions of OpenPGP.js could ge
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L122">line 122</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L154">line 154</a>
     </li></ul></dd>
     
 
@@ -2463,7 +2251,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L61">line 61</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L64">line 64</a>
     </li></ul></dd>
     
 
@@ -2575,7 +2363,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L39">line 39</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L39">line 39</a>
     </li></ul></dd>
     
 
@@ -2687,7 +2475,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L29">line 29</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L29">line 29</a>
     </li></ul></dd>
     
 
@@ -2799,7 +2587,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L34">line 34</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L34">line 34</a>
     </li></ul></dd>
     
 
@@ -2915,7 +2703,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L253">line 253</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L285">line 285</a>
     </li></ul></dd>
     
 
@@ -3031,7 +2819,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L235">line 235</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L267">line 267</a>
     </li></ul></dd>
     
 
@@ -3147,7 +2935,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L241">line 241</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L273">line 273</a>
     </li></ul></dd>
     
 
@@ -3263,7 +3051,7 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L247">line 247</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L279">line 279</a>
     </li></ul></dd>
     
 
@@ -3375,7 +3163,222 @@ Only has an effect when aeadProtect is set to true.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L127">line 127</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L159">line 159</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".s2kArgon2Params"><span class="type-signature">(static) </span>s2kArgon2Params<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p><a href="https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-07.html#section-3.7.1.4"> draft-crypto-refresh 3.7.1.4</a>:
+Argon2 parameters for S2K (String to Key).
+Only relevant if <code>config.s2kType</code> is set to <code>enums.s2k.argon2</code>.
+Default settings correspond to the second recommendation from RFC9106 (&quot;uniformly safe option&quot;),
+to ensure compatibility with memory-constrained environments.
+For more details on the choice of parameters, see https://tools.ietf.org/html/rfc9106#section-4.</p>
+</div>
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>params</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>passes</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>number of iterations t</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>parallelism</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>degree of parallelism p</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>memoryExponent</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Integer</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>one-octet exponent indicating the memory size, which will be: 2**memoryExponent kibibytes.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L112">line 112</a>
     </li></ul></dd>
     
 
@@ -3399,8 +3402,10 @@ Only has an effect when aeadProtect is set to true.</p>
 
 
 <div class="description">
-    <p><a href="https://tools.ietf.org/html/rfc4880#section-3.7.1.3">RFC4880 3.7.1.3</a>:
-Iteration Count Byte for S2K (String to Key)</p>
+    <p><a href="https://tools.ietf.org/html/rfc4880#section-3.7.1.3"> RFC4880 3.7.1.3</a>:
+Iteration Count Byte for Iterated and Salted S2K (String to Key).
+Only relevant if <code>config.s2kType</code> is set to <code>enums.s2k.iterated</code>.
+Note: this is the exponent value, not the final number of iterations (refer to specs for more details).</p>
 </div>
 
 
@@ -3492,7 +3497,129 @@ Iteration Count Byte for S2K (String to Key)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L84">line 84</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L98">line 98</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id=".s2kType"><span class="type-signature">(static) </span>s2kType<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    <p>S2K (String to Key) type, used for key derivation in the context of secret key encryption
+and password-encrypted data. Weaker s2k options are not allowed.
+Note: Argon2 is the strongest option but not all OpenPGP implementations are compatible with it
+(pending standardisation).</p>
+</div>
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>s2kType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">enums.s2k.argon2</span>
+|
+
+<span class="param-type">enums.s2k.iterated</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p><a href="module-enums.html#.s2k">module:enums.s2k</a></p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L89">line 89</a>
     </li></ul></dd>
     
 
@@ -3604,7 +3731,7 @@ Iteration Count Byte for S2K (String to Key)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L197">line 197</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L230">line 230</a>
     </li></ul></dd>
     
 
@@ -3716,7 +3843,7 @@ Iteration Count Byte for S2K (String to Key)</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L192">line 192</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L225">line 225</a>
     </li></ul></dd>
     
 
@@ -3734,15 +3861,14 @@ Iteration Count Byte for S2K (String to Key)</p>
 
         
             
-<h4 class="name" id=".useIndutnyElliptic"><span class="type-signature">(static) </span>useIndutnyElliptic<span class="type-signature"></span></h4>
+<h4 class="name" id=".useEllipticFallback"><span class="type-signature">(static) </span>useEllipticFallback<span class="type-signature"></span></h4>
 
 
 
 
 <div class="description">
-    <p>Whether to use the indutny/elliptic library for curves (other than Curve25519) that are not supported by the available native crypto API.
-When false, certain standard curves will not be supported (depending on the platform).
-Note: the indutny/elliptic curve library is not designed to be constant time.</p>
+    <p>Whether to use the the noble-curves library for curves (other than Curve25519) that are not supported by the available native crypto API.
+When false, certain standard curves will not be supported (depending on the platform).</p>
 </div>
 
 
@@ -3777,7 +3903,7 @@ Note: the indutny/elliptic curve library is not designed to be constant time.</p
 
         <tr>
             
-                <td class="name"><code>useIndutnyElliptic</code></td>
+                <td class="name"><code>useEllipticFallback</code></td>
             
 
             <td class="type">
@@ -3834,7 +3960,7 @@ Note: the indutny/elliptic curve library is not designed to be constant time.</p
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L229">line 229</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L261">line 261</a>
     </li></ul></dd>
     
 
@@ -3852,13 +3978,13 @@ Note: the indutny/elliptic curve library is not designed to be constant time.</p
 
         
             
-<h4 class="name" id=".v5Keys"><span class="type-signature">(static) </span>v5Keys<span class="type-signature"></span></h4>
+<h4 class="name" id=".v6Keys"><span class="type-signature">(static) </span>v6Keys<span class="type-signature"></span></h4>
 
 
 
 
 <div class="description">
-    <p>Use V5 keys.
+    <p>Use v6 keys.
 Note: not all OpenPGP implementations are compatible with this option.
 <strong>FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION</strong></p>
 </div>
@@ -3895,7 +4021,7 @@ Note: not all OpenPGP implementations are compatible with this option.
 
         <tr>
             
-                <td class="name"><code>v5Keys</code></td>
+                <td class="name"><code>v6Keys</code></td>
             
 
             <td class="type">
@@ -3952,7 +4078,7 @@ Note: not all OpenPGP implementations are compatible with this option.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L77">line 77</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L80">line 80</a>
     </li></ul></dd>
     
 
@@ -4064,7 +4190,7 @@ Note: not all OpenPGP implementations are compatible with this option.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v5.11.0/src/config/config.js#L202">line 202</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js">config/config.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.0/src/config/config.js#L235">line 235</a>
     </li></ul></dd>
     
 
@@ -4098,13 +4224,13 @@ Note: not all OpenPGP implementations are compatible with this option.
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#aes">aes</a></li><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#formatObject">formatObject</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li><li><a href="global.html#wrapKeyObject">wrapKeyObject</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-type_x25519x448_symkey.html">type/x25519x448_symkey</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-key_Subkey-Subkey.html">Subkey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-S2K.html">S2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Functions</h3><ul><li><a href="global.html#aes">aes</a></li><li><a href="global.html#armor">armor</a></li><li><a href="global.html#createCleartextMessage">createCleartextMessage</a></li><li><a href="global.html#createKey">createKey</a></li><li><a href="global.html#createMessage">createMessage</a></li><li><a href="global.html#decrypt">decrypt</a></li><li><a href="global.html#decryptKey">decryptKey</a></li><li><a href="global.html#decryptSessionKeys">decryptSessionKeys</a></li><li><a href="global.html#detectBigInt">detectBigInt</a></li><li><a href="global.html#encrypt">encrypt</a></li><li><a href="global.html#encryptKey">encryptKey</a></li><li><a href="global.html#encryptSessionKey">encryptSessionKey</a></li><li><a href="global.html#formatObject">formatObject</a></li><li><a href="global.html#generateKey">generateKey</a></li><li><a href="global.html#generateSessionKey">generateSessionKey</a></li><li><a href="global.html#newPacketFromTag">newPacketFromTag</a></li><li><a href="global.html#newS2KFromConfig">newS2KFromConfig</a></li><li><a href="global.html#newS2KFromType">newS2KFromType</a></li><li><a href="global.html#produceEncryptionKey">produceEncryptionKey</a></li><li><a href="global.html#readCleartextMessage">readCleartextMessage</a></li><li><a href="global.html#readKey">readKey</a></li><li><a href="global.html#readKeys">readKeys</a></li><li><a href="global.html#readMessage">readMessage</a></li><li><a href="global.html#readPrivateKey">readPrivateKey</a></li><li><a href="global.html#readPrivateKeys">readPrivateKeys</a></li><li><a href="global.html#readSignature">readSignature</a></li><li><a href="global.html#reformatKey">reformatKey</a></li><li><a href="global.html#revokeKey">revokeKey</a></li><li><a href="global.html#runAEAD">runAEAD</a></li><li><a href="global.html#sign">sign</a></li><li><a href="global.html#unarmor">unarmor</a></li><li><a href="global.html#verify">verify</a></li><li><a href="global.html#wrapKeyObject">wrapKeyObject</a></li></ul><h3>Modules</h3><ul><li><a href="module-config.html">config</a></li><li><a href="module-crypto.html">crypto</a></li><li><a href="module-crypto_aes_kw.html">crypto/aes_kw</a></li><li><a href="module-crypto_cipher.html">crypto/cipher</a></li><li><a href="module-crypto_cmac.html">crypto/cmac</a></li><li><a href="module-crypto_crypto.html">crypto/crypto</a></li><li><a href="module-crypto_hash.html">crypto/hash</a></li><li><a href="module-crypto_hkdf.html">crypto/hkdf</a></li><li><a href="module-crypto_mode.html">crypto/mode</a></li><li><a href="module-crypto_mode_cfb.html">crypto/mode/cfb</a></li><li><a href="module-crypto_mode_eax.html">crypto/mode/eax</a></li><li><a href="module-crypto_mode_gcm.html">crypto/mode/gcm</a></li><li><a href="module-crypto_mode_ocb.html">crypto/mode/ocb</a></li><li><a href="module-crypto_pkcs1.html">crypto/pkcs1</a></li><li><a href="module-crypto_public_key.html">crypto/public_key</a></li><li><a href="module-crypto_public_key_dsa.html">crypto/public_key/dsa</a></li><li><a href="module-crypto_public_key_elgamal.html">crypto/public_key/elgamal</a></li><li><a href="module-crypto_public_key_elliptic.html">crypto/public_key/elliptic</a></li><li><a href="module-crypto_public_key_elliptic_curve.html">crypto/public_key/elliptic/curve</a></li><li><a href="module-crypto_public_key_elliptic_ecdh.html">crypto/public_key/elliptic/ecdh</a></li><li><a href="module-crypto_public_key_elliptic_ecdsa.html">crypto/public_key/elliptic/ecdsa</a></li><li><a href="module-crypto_public_key_elliptic_eddsa.html">crypto/public_key/elliptic/eddsa</a></li><li><a href="module-crypto_public_key_elliptic_eddsa_legacy.html">crypto/public_key/elliptic/eddsa_legacy</a></li><li><a href="module-crypto_public_key_prime.html">crypto/public_key/prime</a></li><li><a href="module-crypto_public_key_rsa.html">crypto/public_key/rsa</a></li><li><a href="module-crypto_random.html">crypto/random</a></li><li><a href="module-crypto_signature.html">crypto/signature</a></li><li><a href="module-encoding_base64.html">encoding/base64</a></li><li><a href="module-enums.html">enums</a></li><li><a href="module-key_helper.html">key/helper</a></li><li><a href="module-key_Subkey.html">key/Subkey</a></li><li><a href="module-key_User.html">key/User</a></li><li><a href="module-packet_packet.html">packet/packet</a></li><li><a href="module-type_ecdh_symkey.html">type/ecdh_symkey</a></li><li><a href="module-type_keyid.html">type/keyid</a></li><li><a href="module-type_oid.html">type/oid</a></li><li><a href="module-type_s2k.html">type/s2k</a></li><li><a href="module-type_x25519x448_symkey.html">type/x25519x448_symkey</a></li><li><a href="module-util.html">util</a></li></ul><h3>Classes</h3><ul><li><a href="AEADEncryptedDataPacket.html">AEADEncryptedDataPacket</a></li><li><a href="Argon2S2K.html">Argon2S2K</a></li><li><a href="CleartextMessage.html">CleartextMessage</a></li><li><a href="CompressedDataPacket.html">CompressedDataPacket</a></li><li><a href="Key.html">Key</a></li><li><a href="LiteralDataPacket.html">LiteralDataPacket</a></li><li><a href="MarkerPacket.html">MarkerPacket</a></li><li><a href="Message.html">Message</a></li><li><a href="module-key_Subkey-Subkey.html">Subkey</a></li><li><a href="module-key_User-User.html">User</a></li><li><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></li><li><a href="module-type_keyid-KeyID.html">KeyID</a></li><li><a href="module-type_s2k-GenericS2K.html">GenericS2K</a></li><li><a href="OnePassSignaturePacket.html">OnePassSignaturePacket</a></li><li><a href="PacketList.html">PacketList</a></li><li><a href="PaddingPacket.html">PaddingPacket</a></li><li><a href="PrivateKey.html">PrivateKey</a></li><li><a href="PublicKey.html">PublicKey</a></li><li><a href="PublicKeyEncryptedSessionKeyPacket.html">PublicKeyEncryptedSessionKeyPacket</a></li><li><a href="PublicKeyPacket.html">PublicKeyPacket</a></li><li><a href="PublicSubkeyPacket.html">PublicSubkeyPacket</a></li><li><a href="SecretKeyPacket.html">SecretKeyPacket</a></li><li><a href="SecretSubkeyPacket.html">SecretSubkeyPacket</a></li><li><a href="Signature.html">Signature</a></li><li><a href="SignaturePacket.html">SignaturePacket</a></li><li><a href="SymEncryptedIntegrityProtectedDataPacket.html">SymEncryptedIntegrityProtectedDataPacket</a></li><li><a href="SymEncryptedSessionKeyPacket.html">SymEncryptedSessionKeyPacket</a></li><li><a href="SymmetricallyEncryptedDataPacket.html">SymmetricallyEncryptedDataPacket</a></li><li><a href="TrustPacket.html">TrustPacket</a></li><li><a href="UserAttributePacket.html">UserAttributePacket</a></li><li><a href="UserIDPacket.html">UserIDPacket</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.4</a>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.11</a>
 </footer>
 
 <script> prettyPrint(); </script>
