@@ -2262,7 +2262,7 @@ function versionSpecificTests() {
         ]);
       }
       const hash = openpgp.enums.hash;
-      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512]);
+      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha3_256, hash.sha3_512]);
       const compr = openpgp.enums.compression;
       expect(selfSignature.preferredCompressionAlgorithms).to.eql([compr.uncompressed]);
 
@@ -2317,7 +2317,7 @@ function versionSpecificTests() {
         ]);
       }
       const hash = openpgp.enums.hash;
-      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
+      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512, hash.sha3_256, hash.sha3_512]);
       const compr = openpgp.enums.compression;
       expect(selfSignature.preferredCompressionAlgorithms).to.eql([compr.zlib, compr.uncompressed]);
 
