@@ -4607,6 +4607,17 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(v6Key.subkeys).to.have.length(1);
     });
 
+    it('should throw when trying to add a ML-KEM PQC key to a v4 key', async function() {
+      const v4Key = await openpgp.decryptKey({
+        privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
+        passphrase: 'hello world'
+      });
+      expect(v4Key.keyPacket.version).to.equal(4);
+      expect(v4Key.subkeys).to.have.length(1);
+      await expect(v4Key.addSubkey({ type: 'pqc', sign: false })).to.be.rejectedWith(/Cannot generate v4 keys of type 'pqc'/);
+      expect(v4Key.subkeys).to.have.length(1);
+    });
+
     it('should throw when trying to encrypt a subkey separately from key', async function() {
       const privateKey = await openpgp.decryptKey({
         privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),

@@ -21,6 +21,12 @@ import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
 
+const algosWithV3CleartextSessionKeyAlgorithm = new Set([
+  enums.publicKey.x25519,
+  enums.publicKey.x448,
+  enums.publicKey.pqc_mlkem_x25519
+]);
+
 /**
  * Public-Key Encrypted Session Key Packets (Tag 1)
  *
@@ -128,7 +134,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     }
     this.publicKeyAlgorithm = bytes[offset++];
     this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(offset));
-    if (this.publicKeyAlgorithm === enums.publicKey.x25519 || this.publicKeyAlgorithm === enums.publicKey.x448) {
+    if (algosWithV3CleartextSessionKeyAlgorithm.has(this.publicKeyAlgorithm)) {
       if (this.version === 3) {
         this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
       } else if (this.encrypted.C.algorithm !== null) {
@@ -211,7 +217,7 @@ class PublicKeyEncryptedSessionKeyPacket {
 
     if (this.version === 3) {
       // v3 Montgomery curves have cleartext cipher algo
-      const hasEncryptedAlgo = this.publicKeyAlgorithm !== enums.publicKey.x25519 && this.publicKeyAlgorithm !== enums.publicKey.x448;
+      const hasEncryptedAlgo = !algosWithV3CleartextSessionKeyAlgorithm.has(this.publicKeyAlgorithm);
       this.sessionKeyAlgorithm = hasEncryptedAlgo ? sessionKeyAlgorithm : this.sessionKeyAlgorithm;
 
       if (sessionKey.length !== crypto.getCipherParams(this.sessionKeyAlgorithm).keySize) {
@@ -240,6 +246,7 @@ function encodeSessionKey(version, keyAlgo, cipherAlgo, sessionKeyData) {
       ]);
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
+    case enums.publicKey.pqc_mlkem_x25519:
       return sessionKeyData;
     default:
       throw new Error('Unsupported public key algorithm');
@@ -288,6 +295,7 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
     }
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
+    case enums.publicKey.pqc_mlkem_x25519:
       return {
         sessionKeyAlgorithm: null,
         sessionKey: decryptedData

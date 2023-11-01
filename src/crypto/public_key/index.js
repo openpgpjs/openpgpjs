@@ -8,6 +8,7 @@ import * as elgamal from './elgamal';
 import * as elliptic from './elliptic';
 import * as dsa from './dsa';
 import * as hmac from './hmac';
+import * as postQuantum from './post_quantum';
 
 export default {
   /** @see module:crypto/public_key/rsa */
@@ -19,5 +20,7 @@ export default {
   /** @see module:crypto/public_key/dsa */
   dsa: dsa,
   /** @see module:crypto/public_key/hmac */
-  hmac: hmac
+  hmac: hmac,
+  /** @see module:crypto/public_key/post_quantum */
+  postQuantum
 };
