@@ -782,7 +782,7 @@ export namespace enums {
     bzip2 = 3,
   }
 
-  export type hashNames = 'md5' | 'sha1' | 'ripemd' | 'sha256' | 'sha384' | 'sha512' | 'sha224';
+  export type hashNames = 'md5' | 'sha1' | 'ripemd' | 'sha256' | 'sha384' | 'sha512' | 'sha224' | 'sha3_256' | 'sha3_512';
   enum hash {
     md5 = 1,
     sha1 = 2,
@@ -791,6 +791,8 @@ export namespace enums {
     sha384 = 9,
     sha512 = 10,
     sha224 = 11,
+    sha3_256 = 12,
+    sha3_512 = 14
   }
 
   export type packetNames = 'publicKeyEncryptedSessionKey' | 'signature' | 'symEncryptedSessionKey' | 'onePassSignature' | 'secretKey' | 'publicKey'
