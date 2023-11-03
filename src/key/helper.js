@@ -399,7 +399,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   switch (options.type) {
     case 'pqc':
       if (options.sign) {
-        throw new Error('Post-quantum signing algorithms are not yet supported.');
+        options.algorithm = enums.publicKey.pqc_mldsa_ed25519;
       } else {
         options.algorithm = enums.publicKey.pqc_mlkem_x25519;
       }
@@ -462,6 +462,7 @@ export function validateSigningKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448:
     case enums.publicKey.hmac:
+    case enums.publicKey.pqc_mldsa_ed25519:
       if (!signature.keyFlags && !config.allowMissingKeyFlags) {
         throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
       }
