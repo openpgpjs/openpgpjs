@@ -3,6 +3,10 @@
     "./build/"
   ],
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "allowJs": true,
+    "module": "ESNext",
+    "moduleResolution":"node16",
+    "downlevelIteration":true,
   }
 }

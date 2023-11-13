@@ -6,6 +6,7 @@ import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 import { terser } from 'rollup-plugin-terser';
+import typescript from 'rollup-plugin-typescript2';
 
 import pkg from './package.json';
 
@@ -43,6 +44,7 @@ export default Object.assign([
       resolve({
         browser: true
       }),
+      typescript({ tsconfig:'./tsconfig.json' }),
       commonjs({
         ignore: builtinModules.concat(nodeDependencies)
       }),
@@ -65,6 +67,7 @@ export default Object.assign([
     ],
     plugins: [
       resolve(),
+      typescript({ tsconfig:'./tsconfig.json' }),
       commonjs(),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`
@@ -82,6 +85,7 @@ export default Object.assign([
       resolve({
         browser: true
       }),
+      typescript({ tsconfig:'./tsconfig.json' }),
       commonjs({
         ignore: builtinModules.concat(nodeDependencies)
       }),
@@ -103,6 +107,7 @@ export default Object.assign([
       resolve({
         browser: true
       }),
+      typescript({ tsconfig:'./tsconfig.json' }),
       commonjs({
         ignore: builtinModules.concat(nodeDependencies)
       }),
