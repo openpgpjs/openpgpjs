@@ -38,20 +38,19 @@ flowchart LR
     end
     subgraph InternalLibraries [Internal Libraries and Forks]
       direction LR
-      ASMCRYPTO.JS(@openpgp/asmcrypto.js fork)
-      JSDOC(@openpgp/jsdoc fork)
-      PAKO(@openpgp/pako fork)
-      SEEK-BZIP(@openpgp/seek-bzip fork)
-      TWEETNACL(@openpgp/tweetnacl fork)
-      WEB-STREAM-TOOLS(@openpgp/web-stream-tools)
+      ASMCRYPTO.JS(openpgp/asmcrypto.js fork)
+      JSDOC(openpgp/jsdoc fork)
+      PAKO(openpgp/pako fork)
+      SEEK-BZIP(openpgp/seek-bzip fork)
+      TWEETNACL(openpgp/tweetnacl fork)
+      WEB-STREAM-TOOLS(openpgp/web-stream-tools) -->|depends on| JSDOC
     end
-    WEB-STREAM-TOOLS -->|depends on| JSDOC
     subgraph v6InternalLibraries [Internal Libraries that will be added in v6]
       NOBLE-CURVES(Noble Curves fork)
       NOBLE-HASHES(Noble Hashes fork)
     end
     subgraph SoonObsolete [Internal Libraries that will be removed in v6]
-      ELLIPTIC(@openpgp/elliptic fork)
+      ELLIPTIC(openpgp/elliptic fork)
     end
     subgraph UnusedForks [Unused Forks]
       direction LR
