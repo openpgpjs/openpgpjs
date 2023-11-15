@@ -5,7 +5,7 @@ process.env.CHROME_BIN = chromium.executablePath();
 process.env.FIREFOX_BIN = firefox.executablePath();
 process.env.WEBKIT_HEADLESS_BIN = webkit.executablePath();
 
-module.exports = function(config) {
+module.exports = function (config) {
   config.set({
 
     // base path that will be used to resolve all patterns (eg. files, exclude)
@@ -16,7 +16,7 @@ module.exports = function(config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha'],
+    frameworks: ['mocha', 'karma-typescript'],
 
     // plugins
     plugins: [
@@ -25,7 +25,8 @@ module.exports = function(config) {
       'karma-firefox-launcher',
       'karma-webkit-launcher',
       'karma-mocha-reporter',
-      'karma-browserstack-launcher'
+      'karma-browserstack-launcher',
+      'karma-typescript'
     ],
 
     client: {
@@ -64,12 +65,24 @@ module.exports = function(config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
+      '**/*.ts': 'karma-typescript' // *.tsx for React Jsx
+    },
+
+    karmaTypescriptConfig: {
+      'compilerOptions': {
+        'allowJs': true,
+        'module': 'es2020',
+        moduleResolution:'node',
+        'allowImportingTsExtensions': true,
+        'allowArbitraryExtensions': true,
+        'downlevelIteration':true
+      }
     },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['mocha', 'BrowserStack'],
+    reporters: ['mocha', 'BrowserStack', 'karma-typescript'],
 
     // web server host and port
     port: 9876,
