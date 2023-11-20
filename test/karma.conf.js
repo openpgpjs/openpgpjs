@@ -16,7 +16,7 @@ module.exports = function (config) {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['mocha', 'karma-typescript'],
+    frameworks: ['mocha'],
 
     // plugins
     plugins: [
@@ -25,8 +25,7 @@ module.exports = function (config) {
       'karma-firefox-launcher',
       'karma-webkit-launcher',
       'karma-mocha-reporter',
-      'karma-browserstack-launcher',
-      'karma-typescript'
+      'karma-browserstack-launcher'
     ],
 
     client: {
@@ -65,24 +64,13 @@ module.exports = function (config) {
     // preprocess matching files before serving them to the browser
     // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
     preprocessors: {
-      '**/*.ts': 'karma-typescript' // *.tsx for React Jsx
-    },
 
-    karmaTypescriptConfig: {
-      'compilerOptions': {
-        'allowJs': true,
-        'module': 'es2020',
-        moduleResolution:'node',
-        'allowImportingTsExtensions': true,
-        'allowArbitraryExtensions': true,
-        'downlevelIteration':true
-      }
     },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['mocha', 'BrowserStack', 'karma-typescript'],
+    reporters: ['mocha', 'BrowserStack'],
 
     // web server host and port
     port: 9876,

@@ -1,12 +1,14 @@
 {
   "exclude": [
-    "./build/"
+    "./dist/",
+    "/node_modules"
   ],
   "compilerOptions": {
     "strict": true,
     "allowJs": true,
     "module": "ESNext",
-    "moduleResolution":"node16",
+    "moduleResolution":"Node",
+    "target": "ES2015",
     "downlevelIteration":true,
   }
 }
