@@ -27,7 +27,7 @@
       "browser": "./dist/openpgp.min.mjs"
     },
     "./lightweight": {
-      "types": "../openpgp.d.ts",
+      "types": "./openpgp.d.ts",
       "browser": "./dist/lightweight/openpgp.min.mjs"
     }
   },
