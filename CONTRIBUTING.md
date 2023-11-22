@@ -29,8 +29,7 @@ If you are looking for something to work on, we try to maintain a list of issues
 
 ### Notify your interest
 
-Please let us know you want to work on it so we can avoid multiple people working on the same issue.
-// TODO: How?
+Please let us know you want to work on it so we can avoid multiple people working on the same issue. Ideally, notify us by our [Gitter](https://gitter.im/openpgpjs/openpgpjs), but expressing your interest in the issue itself it's also ok.
 
 **Please ask first** before embarking on any significant pull request (e.g. implementing features, refactoring code), otherwise you risk spending a lot of time working on something that the project's developers might not want to merge into the project.
 
@@ -55,29 +54,37 @@ Please let us know you want to work on it so we can avoid multiple people workin
    npm install
    ```
 
-   // TODO: do they want other package managers here as well?
-
 3. Create a new topic branch (off the main project development branch) to contain your feature, change, or fix:
 
    ```bash
    git checkout -b <topic-branch-name>
    ```
 
-// TODO: Coding conventions?
+4. Follow our [coding conventions](#coding-conventions) while developing your changes. You can also run `npm run lint` to match our requirements.
 
-4. Write clear and meaningful git commit messages. Please follow our commit message conventions while committing to your branch // TODO: review if they have commit conventions
+5. Write clear and meaningful git commit messages. Please follow our [commit message conventions](#commit-conventions) while committing to your branch.
 
-5. Make sure to update or add to the tests when appropriate. Run the appropriate testing suites to check that all tests pass after you've made changes. You can read about our different types of tests in our [Testing](#testing) section.
+6. Make sure to update or add to the tests when appropriate. Run the appropriate testing suites to check that all tests pass after you've made changes. You can read about our different types of tests in our [Testing](#testing) section.
 
-6. If you added or changed a feature, make sure to document it accordingly in the [README.md](https://github.com/openpgpjs/openpgpjs/blob/main/README.md) file.
+7. If you added or changed a feature, make sure to document it accordingly in the [README.md](https://github.com/openpgpjs/openpgpjs/blob/main/README.md) file.
 
 ## Coding conventions
 
-// TODO: check if they have
+We ensure code consistency through our [ESLint config](https://github.com/openpgpjs/openpgpjs/blob/main/.eslintrc.js). You can run `npm run lint` to lint your changes. When in doubt, follow the style of the surrounding code.
 
 ## Commit conventions
 
-// TODO: check if they have
+We follow the seven rules of a great Git commit message, which is extensively described in [this blog post](https://cbea.ms/git-commit/), but in short the principles are:
+
+1. Separate subject from body with a blank line
+2. Limit the subject line to 50 characters
+3. Capitalize the subject line
+4. Do not end the subject line with a period
+5. Use the imperative mood in the subject line
+6. Wrap the body at 72 characters
+7. Use the body to explain what and why vs. how
+
+You can also take a look at our [main branch commits](https://github.com/openpgpjs/openpgpjs/commits/main).
 
 ## Testing
 
@@ -157,7 +164,7 @@ If you have never created a pull request before, welcome :smile: [Here is a grea
 
 ### I have submitted my PR, what are the next steps?
 
-First of all, thank you for your contribution! Sit and relax. Someone from the team will review your PR and respond with comments as soon as possible (usually within a few weeks // TODO: what is an acceptable time frame for them?). Once you have addressed all the comments, your PR will be approved and merged.
+First of all, thank you for your contribution! Sit and relax. Someone from the team will review your PR and respond with comments as soon as possible (usually within a few weeks). Once you have addressed all the comments, your PR will be approved and merged.
 
 ## Bug reports
 

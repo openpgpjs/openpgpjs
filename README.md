@@ -678,8 +678,10 @@ For debugging browser errors, you can run `npm start` and open [`http://localhos
 
 You want to help, great! We have two guides for you to read: [our new contributors](https://github.com/openpgpjs/openpgpjs/blob/main/NEW-CONTRIBUTORS.md) guide, and afterwards you can take a look at our general [contributing](https://github.com/openpgpjs/openpgpjs/blob/main/CONTRIBUTING.md) guide. If you have questions, don't hesitate to write us on [Gitter](https://gitter.im/openpgpjs/openpgpjs) :)
 
+### Code of conduct
+
+The contributions are governed by our [Code of Conduct](https://github.com/openpgpjs/openpgpjs/blob/main/CODE_OF_CONDUCT.md).
+
 ### License
 
 [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl-3.0.en.html) (3.0 or any later version). Please take a look at the [LICENSE](LICENSE) file for more information.
-
-// TODO: Link to code of conduct
