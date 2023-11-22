@@ -29,7 +29,7 @@ If you are looking for something to work on, we try to maintain a list of issues
 
 ### Notify your interest
 
-Please let us know you want to work on it so we can avoid multiple people working on the same issue. 
+Please let us know you want to work on it so we can avoid multiple people working on the same issue.
 // TODO: How?
 
 **Please ask first** before embarking on any significant pull request (e.g. implementing features, refactoring code), otherwise you risk spending a lot of time working on something that the project's developers might not want to merge into the project.
@@ -38,22 +38,24 @@ Please let us know you want to work on it so we can avoid multiple people workin
 
 1. [Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) the project, clone your fork, and configure the remotes:
 
-    ```bash
-    # Clone your fork of the repo into the current directory
-    git clone https://github.com/<your-username>/<repo-name>
-    
-    # Navigate to the newly cloned directory
-    cd <repo-name>
-    
-    # Assign the original repo to a remote called "upstream"
-    git remote add upstream https://github.com/openpgpjs/<repo-name>
-    ```
+   ```bash
+   # Clone your fork of the repo into the current directory
+   git clone https://github.com/<your-username>/<repo-name>
+
+   # Navigate to the newly cloned directory
+   cd <repo-name>
+
+   # Assign the original repo to a remote called "upstream"
+   git remote add upstream https://github.com/openpgpjs/<repo-name>
+   ```
 
 2. Install dependencies with your preferred package manager:
+
    ```bash
    npm install
    ```
-// TODO: do they want other package managers here as well?
+
+   // TODO: do they want other package managers here as well?
 
 3. Create a new topic branch (off the main project development branch) to contain your feature, change, or fix:
 
@@ -69,47 +71,65 @@ Please let us know you want to work on it so we can avoid multiple people workin
 
 6. If you added or changed a feature, make sure to document it accordingly in the [README.md](https://github.com/openpgpjs/openpgpjs/blob/main/README.md) file.
 
-## Coding conventions 
+## Coding conventions
 
 // TODO: check if they have
 
-## Commit conventions 
+## Commit conventions
 
 // TODO: check if they have
 
 ## Testing
 
 We have multiple types of tests. They are located in the root [`/test`](https://github.com/openpgpjs/openpgpjs/tree/main/test) folder.
+Before you can run the tests you need to build the project using `npm run build` and this will bundle the project and the tests for it be used in our different testing environments.
 
-- **Unit**. 
-   ```sh
-   npm run test
-   ```
+**Unit Tests:**
+Unit tests are handled by mocha and run inside node, you can run them using this command:
 
-- **Performance** (under `/benchmarks`): to avoid performance regressions, we measure time and memory usage with the following testing suites:
+```sh
+npm run test
+```
 
-   ```sh
-   npm run benchmark-time
-   npm run benchmark-memory-usage
-   ```
+**Browser Tests:**
+For debugging browser errors, you can run `npm start` and open [`http://localhost:8080/test/unittests.html`](http://localhost:8080/test/unittests.html) in a browser, or run one the following commands:
 
-- **Browser**. For debugging browser errors, you can run `npm start` and open [`http://localhost:8080/test/unittests.html`](http://localhost:8080/test/unittests.html) in a browser, or run the following command:
+This will run the tests inside a browser environment:
 
-   ```sh
+```sh
    npm run browsertest
-   ```
+```
 
-- **Typescript definitions**
+You can run the tests for multiple headless browsers using KarmaJs:
 
-   ```sh
-   npm run test-type-definitions
-   ```
+` npm run test-browser`
 
-- **Coverage**. We have good numbers but we could always use some help improving them!
+If you wanna start the tests using KarmaJs and BrowserStack:
+`npm run test-browserstack`
 
-   ```sh
-   npm run coverage
-   ```
+**_NOTE:_**: You need to configure you env with `BROWSER_STACK_ACCESS_KEY` and `BROWSERSTACK_USERNAME` to be able to run the BrowserStack tests.
+
+
+**Performance:** 
+(under `/benchmarks`) to avoid performance regressions, we measure time and memory usage with the following testing suites:
+
+```sh
+npm run benchmark-time
+npm run benchmark-memory-usage
+```
+
+**Typescript definitions**
+
+```sh
+npm run test-type-definitions
+```
+
+**Coverage**.
+We have good numbers but we could always use some help improving them!
+
+```sh
+npm run coverage
+```
 
 ## Pull requests
 
@@ -131,7 +151,7 @@ If you have never created a pull request before, welcome :smile: [Here is a grea
 
 3. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/) with a clear title and follow the instructions specified in the Pull Request template. Include a detailed description explaining the reasons for the changes, making sure there is sufficient information for the reviewer to understand your changes.
 
-4.  Check if the Github Actions workflows have passed. Address the errors if they have not.
+4. Check if the Github Actions workflows have passed. Address the errors if they have not.
 
 **IMPORTANT**: By submitting a patch, you agree to license your work under the same license as that used by the project.
 
@@ -169,6 +189,6 @@ This list is designed for both new contributors who are seeking a suitable entry
 
 Feel free to reach out! You can do so in our [Gitter](https://gitter.im/openpgpjs/openpgpjs) or in our [GitHub discussions](https://github.com/openpgpjs/openpgpjs/discussions)
 
-## Thank you 
+## Thank you
 
 Thanks to [Hoodie](https://github.com/hoodiehq/hoodie) for inspiring this contributing guide.
