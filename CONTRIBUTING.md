@@ -7,25 +7,25 @@ Following these guidelines helps to communicate that you respect the time of the
 As for everything else in the project, the contributions are governed by our [Code of Conduct](https://github.com/openpgpjs/openpgpjs/blob/main/CODE_OF_CONDUCT.md).
 
 - [Contributing to OpenPGP.js](#contributing-to-openpgpjs)
-  - [Coding conventions // TODO: check if they have](#coding-conventions--todo-check-if-they-have)
   - [Getting started](#getting-started)
     - [Decide what you want to work on](#decide-what-you-want-to-work-on)
     - [Notify your interest](#notify-your-interest)
     - [Setting up the project in your local machine](#setting-up-the-project-in-your-local-machine)
+  - [Coding conventions](#coding-conventions)
+  - [Commit conventions](#commit-conventions)
+  - [Testing](#testing)
   - [Pull requests](#pull-requests)
     - [I have submitted my PR, what are the next steps?](#i-have-submitted-my-pr-what-are-the-next-steps)
   - [Bug reports](#bug-reports)
-  - [Release process](#release-process)
+  - [Non-coding contributions](#non-coding-contributions)
   - [Communication](#communication)
-  - [Thank you // maybe??](#thank-you--maybe)
-
-## Coding conventions // TODO: check if they have
+  - [Thank you](#thank-you)
 
 ## Getting started
 
 ### Decide what you want to work on
 
-If you are looking for something to work on, we try to maintain a list of issues that should be suitable for first time contributions, they can be found tagged [`good-first-issue`](https://github.com/openpgpjs/openpgpjs/labels/good-first-issue). You can also look through our issues and pick some you like.
+If you are looking for something to work on, we try to maintain a list of issues that should be suitable for first time contributions, they can be found tagged [`good-first-issue`](https://github.com/openpgpjs/openpgpjs/labels/good-first-issue). You can also look through our issues and pick some you like. If you're still unsure, please [reach out](#communication) and we would help you with the best of our abilities.
 
 ### Notify your interest
 
@@ -61,13 +61,55 @@ Please let us know you want to work on it so we can avoid multiple people workin
    git checkout -b <topic-branch-name>
    ```
 
-// Coding conventions?
+// TODO: Coding conventions?
 
-4. Please follow our commit message conventions while committing to your branch // TODO: review if they have commit conventions
+4. Write clear and meaningful git commit messages. Please follow our commit message conventions while committing to your branch // TODO: review if they have commit conventions
 
-5. Make sure to update, or add to the tests when appropriate. Run `npm test` to check that all tests pass after you've made changes. Look for a `Testing` section in the project’s README for more information.
+5. Make sure to update or add to the tests when appropriate. Run the appropriate testing suites to check that all tests pass after you've made changes. You can read about our different types of tests in our [Testing](#testing) section.
 
-6. If you added or changed a feature, make sure to document it accordingly in the `README.md` file.
+6. If you added or changed a feature, make sure to document it accordingly in the [README.md](https://github.com/openpgpjs/openpgpjs/blob/main/README.md) file.
+
+## Coding conventions 
+
+// TODO: check if they have
+
+## Commit conventions 
+
+// TODO: check if they have
+
+## Testing
+
+We have multiple types of tests. They are located in the root [`/test`](https://github.com/openpgpjs/openpgpjs/tree/main/test) folder.
+
+- **Unit**. 
+   ```sh
+   npm run test
+   ```
+
+- **Performance** (under `/benchmarks`): to avoid performance regressions, we measure time and memory usage with the following testing suites:
+
+   ```sh
+   npm run benchmark-time
+   npm run benchmark-memory-usage
+   ```
+
+- **Browser**. For debugging browser errors, you can run `npm start` and open [`http://localhost:8080/test/unittests.html`](http://localhost:8080/test/unittests.html) in a browser, or run the following command:
+
+   ```sh
+   npm run browsertest
+   ```
+
+- **Typescript definitions**
+
+   ```sh
+   npm run test-type-definitions
+   ```
+
+- **Coverage**. We have good numbers but we could always use some help improving them!
+
+   ```sh
+   npm run coverage
+   ```
 
 ## Pull requests
 
@@ -75,34 +117,33 @@ Good pull requests - patches, improvements, new features - are a fantastic help.
 
 If you have never created a pull request before, welcome :smile: [Here is a great tutorial](https://app.egghead.io/playlists/how-to-contribute-to-an-open-source-project-on-github) on how to create a pull request.
 
-1. Push your topic branch up to your fork:
-
-   ```bash
-   git push origin <topic-branch-name>
-   ```
-
-2. Update your branch to the latest changes in the upstream main branch. You can do that locally with:
+1. Update your branch to the latest changes in the upstream main branch, solving conflicts if any appear. You can do that locally with:
 
    ```bash
    git pull --rebase upstream main
    ```
 
-3. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/) with a clear title and follow the instructions specified in the Pull Request template.
+2. Push your topic branch up to your fork:
 
-10. Check if the Github Actions workflows have passed. Address the errors if they have not.
+   ```bash
+   git push origin <topic-branch-name>
+   ```
+
+3. [Open a Pull Request](https://help.github.com/articles/using-pull-requests/) with a clear title and follow the instructions specified in the Pull Request template. Include a detailed description explaining the reasons for the changes, making sure there is sufficient information for the reviewer to understand your changes.
+
+4.  Check if the Github Actions workflows have passed. Address the errors if they have not.
 
 **IMPORTANT**: By submitting a patch, you agree to license your work under the same license as that used by the project.
 
 ### I have submitted my PR, what are the next steps?
 
-First of all, thank you for your contribution! Sit and relax. Someone from the team will review your PR and respond with comments as soon as possible (usually within two weeks // TODO: what is an acceptable time frame for them?). Once you have addressed all the comments, your PR will be approved and merged.
+First of all, thank you for your contribution! Sit and relax. Someone from the team will review your PR and respond with comments as soon as possible (usually within a few weeks // TODO: what is an acceptable time frame for them?). Once you have addressed all the comments, your PR will be approved and merged.
 
 ## Bug reports
 
-First things first: **Do NOT report security vulnerabilities in public issues!** Please, disclose responsibly following the instructions detailed in [SECURITY.md](https://github.com/openpgpjs/openpgpjs/blob/main/SECURITY.md). Thank you.
+First things first: please **do not report security vulnerabilities in public issues!** Disclose responsibly following the instructions detailed in [SECURITY.md](https://github.com/openpgpjs/openpgpjs/blob/main/SECURITY.md). Thank you.
 
-A bug is a _demonstrable problem_ that is caused by the code in our repository.
-Good bug reports are extremely helpful - thank you!
+A bug is a _demonstrable problem_ that is caused by the code in our repository. Good bug reports are extremely helpful!
 
 Guidelines for bug reports:
 
@@ -116,14 +157,18 @@ A good bug report shouldn't leave others needing to chase you up for more inform
 
 To create a new bug report, go to Issues, and select the Bug Report template.
 
+## Non-coding contributions
+
+This list is designed for both new contributors who are seeking a suitable entry point, as well as for existing contributors who would like to do something different. These suggestions do not involve coding directly but may require familiarity with either our codebase or OpenPGP concepts.
+
+- Documentation: typos, document features, add diagrams and visual explanations of concepts
+- Answering questions on our [Gitter](https://gitter.im/openpgpjs/openpgpjs) or our [GitHub discussions](https://github.com/openpgpjs/openpgpjs/discussions)
+- Evangelism of the project: do demos, write blog posts, talk about the project in meetups
+
 ## Communication
 
-Link here the gitter and github discussions?
+Feel free to reach out! You can do so in our [Gitter](https://gitter.im/openpgpjs/openpgpjs) or in our [GitHub discussions](https://github.com/openpgpjs/openpgpjs/discussions)
 
-## Thank you // maybe??
+## Thank you 
 
-Special thanks to [Hoodie](https://github.com/hoodiehq/hoodie) for the great CONTRIBUTING.md template.
-
-
-
-TODO: read here and see if we can get ideas https://github.com/kubernetes/community/blob/master/contributors/guide/non-code-contributions.md
+Thanks to [Hoodie](https://github.com/hoodiehq/hoodie) for inspiring this contributing guide.

@@ -3,8 +3,6 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
 
 [OpenPGP.js](https://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. It implements [RFC4880](https://tools.ietf.org/html/rfc4880) and parts of [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10).
 
-// add testing section
-
 **Table of Contents**
 
 - [OpenPGP.js](#openpgpjs)
@@ -678,12 +676,10 @@ For debugging browser errors, you can run `npm start` and open [`http://localhos
 
 ### How do I get involved?
 
-You want to help, great! It's probably best to send us a message on [Gitter](https://gitter.im/openpgpjs/openpgpjs) before you start your undertaking, to make sure nobody else is working on it, and so we can discuss the best course of action. Other than that, just go ahead and fork our repo, make your changes and send us a pull request! :)
-
-// Add link here
+You want to help, great! We have two guides for you to read: [our new contributors](https://github.com/openpgpjs/openpgpjs/blob/main/NEW-CONTRIBUTORS.md) guide, and afterwards you can take a look at our general [contributing](https://github.com/openpgpjs/openpgpjs/blob/main/CONTRIBUTING.md) guide. If you have questions, don't hesitate to write us on [Gitter](https://gitter.im/openpgpjs/openpgpjs) :)
 
 ### License
 
 [GNU Lesser General Public License](https://www.gnu.org/licenses/lgpl-3.0.en.html) (3.0 or any later version). Please take a look at the [LICENSE](LICENSE) file for more information.
 
-// Link to code of conduct
+// TODO: Link to code of conduct
