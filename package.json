@@ -47,6 +47,7 @@
     "prepare": "npm run build",
     "test": "mocha --timeout 120000 test/unittests.js",
     "test-type-definitions": "ts-node --esm test/typescript/definitions.ts",
+    "fuzz": "jazzer test/fuzz/fuzzTarget.js",
     "benchmark-time": "node test/benchmarks/time.js",
     "benchmark-memory-usage": "node test/benchmarks/memory_usage.js",
     "start": "http-server",
@@ -62,6 +63,7 @@
     "postversion": "git push && git push --tags && npm publish"
   },
   "devDependencies": {
+    "@jazzer.js/core": "^2.1.0",
     "@openpgp/asmcrypto.js": "^3.0.0",
     "@openpgp/noble-curves": "^1.2.1-0",
     "@openpgp/jsdoc": "^3.6.11",
