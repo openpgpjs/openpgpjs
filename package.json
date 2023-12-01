@@ -47,7 +47,7 @@
     "prepare": "npm run build",
     "test": "mocha --timeout 120000 test/unittests.js",
     "test-type-definitions": "ts-node --esm test/typescript/definitions.ts",
-    "fuzz": "jazzer test/fuzz/fuzzTarget.js",
+    "fuzz": "jazzer test/fuzz/fuzz -- -artifact_prefix=test/fuzz/",
     "benchmark-time": "node test/benchmarks/time.js",
     "benchmark-memory-usage": "node test/benchmarks/memory_usage.js",
     "start": "http-server",
