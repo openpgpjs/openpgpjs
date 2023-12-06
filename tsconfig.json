@@ -1,12 +1,17 @@
 {
+  "exclude": [
+    "./dist/",
+    "/node_modules"
+  ],
   "compilerOptions": {
     "strict": true,
     "target": "es2021",
     "module": "esnext",
     "moduleResolution": "node",
+    "downlevelIteration":true,
     "allowJs": true,
     "paths": {
       "openpgp": [ "." ]
-  },
+    },
   }
 }
