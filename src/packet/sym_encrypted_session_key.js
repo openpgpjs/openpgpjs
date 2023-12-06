@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k/index.ts';
 import defaultConfig from '../config';
 import crypto from '../crypto';
 import computeHKDF from '../crypto/hkdf';

@@ -8,7 +8,7 @@ const ARGON2_VERSION = 0x13;
 const ARGON2_SALT_SIZE = 16;
 
 export class Argon2OutOfMemoryError extends Error {
-  constructor(...params) {
+  constructor(...params: string[]) {
     super(...params);
 
     if (Error.captureStackTrace) {
@@ -20,16 +20,22 @@ export class Argon2OutOfMemoryError extends Error {
 }
 
 // cache argon wasm module
-let loadArgonWasmModule;
-let argon2Promise;
+let loadArgonWasmModule: Function;
+let argon2Promise: Promise<Function>;
 // reload wasm module above this treshold, to deallocated used memory
 const ARGON2_WASM_MEMORY_THRESHOLD_RELOAD = 2 << 19;
 
 class Argon2S2K {
+    type: string;
+    salt: Uint8Array | null;
+    t: number;
+    p: number;
+    encodedM: number;
   /**
   * @param {Object} [config] - Full configuration, defaults to openpgp.config
   */
   constructor(config = defaultConfig) {
+    
     const { passes, parallelism, memoryExponent } = config.s2kArgon2Params;
 
     this.type = 'argon2';
@@ -52,7 +58,7 @@ class Argon2S2K {
   * @param {Uint8Array} bytes - Payload of argon2 string-to-key specifier
   * @returns {Integer} Actual length of the object.
   */
-  read(bytes) {
+  read(bytes: Uint8Array) {
     let i = 0;
 
     this.salt = bytes.subarray(i, i + 16);
@@ -69,7 +75,7 @@ class Argon2S2K {
   * Serializes s2k information
   * @returns {Uint8Array} Binary representation of s2k.
   */
-  write() {
+  write(): Uint8Array {
     const arr = [
       new Uint8Array([enums.write(enums.s2k, this.type)]),
       this.salt,
@@ -87,7 +93,7 @@ class Argon2S2K {
   * @throws {Argon2OutOfMemoryError|Errors}
   * @async
   */
-  async produceKey(passphrase, keySize) {
+  async produceKey(passphrase: string, keySize: number): Promise<Uint8Array> {
     const decodedM = 2 << (this.encodedM - 1);
 
     try {
@@ -120,7 +126,7 @@ class Argon2S2K {
       }
       return hash;
     } catch (e) {
-      if (e.message && (
+      if (e instanceof Error && e.message && (
         e.message.includes('Unable to grow instance memory') || // Chrome
         e.message.includes('failed to grow memory') || // Firefox
         e.message.includes('WebAssembly.Memory.grow') || // Safari

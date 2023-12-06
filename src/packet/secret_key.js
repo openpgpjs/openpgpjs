@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PublicKeyPacket from './public_key';
-import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k/index.ts';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';

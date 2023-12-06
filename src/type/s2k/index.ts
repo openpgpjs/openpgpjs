@@ -13,7 +13,7 @@ const allowedS2KTypesForEncryption = new Set([enums.s2k.argon2, enums.s2k.iterat
  * @returns {Object} New s2k object
  * @throws {Error} for unknown or unsupported types
  */
-export function newS2KFromType(type, config = defaultConfig) {
+export function newS2KFromType (type: number, config = defaultConfig): Argon2S2K | GenericS2K {
   switch (type) {
     case enums.s2k.argon2:
       return new Argon2S2K(config);
@@ -33,7 +33,7 @@ export function newS2KFromType(type, config = defaultConfig) {
  * @returns {Object} New s2k object
  * @throws {Error} for unknown or unsupported types
  */
-export function newS2KFromConfig(config) {
+export function newS2KFromConfig(config = defaultConfig) {
   const { s2kType } = config;
 
   if (!allowedS2KTypesForEncryption.has(s2kType)) {

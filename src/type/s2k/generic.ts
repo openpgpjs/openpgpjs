@@ -34,10 +34,14 @@ import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
 
 class GenericS2K {
+  algorithm: number;
+  type: string;
+  c: number;
+  salt: Uint8Array | null;
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  constructor(s2kType, config = defaultConfig) {
+  constructor(s2kType: number, config = defaultConfig) {
     /**
      * Hash function identifier, or 0 for gnu-dummy keys
      * @type {module:enums.hash | 0}
@@ -76,7 +80,7 @@ class GenericS2K {
    * @param {Uint8Array} bytes - Payload of string-to-key specifier
    * @returns {Integer} Actual length of the object.
    */
-  read(bytes) {
+  read(bytes: Uint8Array): Number {
     let i = 0;
     this.algorithm = bytes[i++];
 
@@ -123,7 +127,7 @@ class GenericS2K {
    * Serializes s2k information
    * @returns {Uint8Array} Binary representation of s2k.
    */
-  write() {
+  write(): Uint8Array {
     if (this.type === 'gnu-dummy') {
       return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 1]);
     }
@@ -133,10 +137,10 @@ class GenericS2K {
       case 'simple':
         break;
       case 'salted':
-        arr.push(this.salt);
+        this.salt && arr.push(this.salt);
         break;
       case 'iterated':
-        arr.push(this.salt);
+        this.salt &&arr.push(this.salt);
         arr.push(new Uint8Array([this.c]));
         break;
       case 'gnu':
@@ -156,8 +160,8 @@ class GenericS2K {
    * hashAlgorithm hash length
    * @async
    */
-  async produceKey(passphrase, numBytes) {
-    passphrase = util.encodeUTF8(passphrase);
+  async produceKey(passphrase: string, numBytes: number): Promise<Uint8Array> {
+    const encodedPassphrase = util.encodeUTF8(passphrase);
 
     const arr = [];
     let rlength = 0;
@@ -167,13 +171,13 @@ class GenericS2K {
       let toHash;
       switch (this.type) {
         case 'simple':
-          toHash = util.concatUint8Array([new Uint8Array(prefixlen), passphrase]);
+          toHash = util.concatUint8Array([new Uint8Array(prefixlen), encodedPassphrase]);
           break;
         case 'salted':
-          toHash = util.concatUint8Array([new Uint8Array(prefixlen), this.salt, passphrase]);
+          toHash = util.concatUint8Array([new Uint8Array(prefixlen), this.salt, encodedPassphrase]);
           break;
         case 'iterated': {
-          const data = util.concatUint8Array([this.salt, passphrase]);
+          const data = util.concatUint8Array([this.salt, encodedPassphrase]);
           let datalen = data.length;
           const count = Math.max(this.getCount(), datalen);
           toHash = new Uint8Array(prefixlen + count);
