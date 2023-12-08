@@ -46,7 +46,7 @@
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
     "test": "mocha --timeout 120000 test/unittests.js",
-    "test-type-definitions": "ts-node --esm test/typescript/definitions.ts",
+    "test-type-definitions": "node --loader ts-node/esm test/typescript/definitions.ts",
     "benchmark-time": "node test/benchmarks/time.js",
     "benchmark-memory-usage": "node test/benchmarks/memory_usage.js",
     "start": "http-server",
