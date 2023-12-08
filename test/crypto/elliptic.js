@@ -242,7 +242,7 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
     const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
     curves.forEach(curveName => it(`${curveName} - Sign and verify message`, async function () {
       const curve = new elliptic_curves.CurveWithOID(curveName);
-      const { publicKey: keyPublic, privateKey: keyPrivate } = await curve.genKeyPair();
+      const { Q: keyPublic, secret: keyPrivate } = await elliptic_curves.generate(curveName);
       const message = new Uint8Array([
         0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
         0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
