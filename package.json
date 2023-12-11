@@ -62,6 +62,7 @@
     "postversion": "git push && git push --tags && npm publish"
   },
   "devDependencies": {
+    "@jazzer.js/core": "^2.1.0",
     "@openpgp/asmcrypto.js": "^3.0.0",
     "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/noble-curves": "^1.2.1-0",
