@@ -2,7 +2,7 @@
 node_modules/
 npm*
 test/lib/
-test/typescript/definitions.js
 dist/
 openpgp.store/
 coverage
+test/fuzz/reports
