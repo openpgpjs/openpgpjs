@@ -28,7 +28,6 @@
  */
 
 import defaultConfig from '../../config';
-import crypto from '../../crypto';
 import enums from '../../enums';
 import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
