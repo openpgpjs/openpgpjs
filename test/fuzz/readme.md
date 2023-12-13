@@ -11,14 +11,7 @@ To generate and run fuzz tests, we use the [Jazzer.js](https://github.com/CodeIn
 
 This directory contains fuzz targets like for example `createMessageBinary`.
 
-You can run this fuzz target without options:
-```sh
-npx jazzer test/fuzz/createMessageBinary.cjs
-```
-(You will notice the `.cjs` file ending. This is because jazzer does not support esm, yet)
-
-or with the given settings at your package.json:
-
+You can run this fuzz target:
 ```sh
 TARGET=createMessageBinary npm run fuzz
 ```
@@ -50,12 +43,12 @@ See further details in [Fuzzing using fuzz targets and the CLI](https://github.c
 
 ### Run limitations
 
-You can pass the `-max_total_time` flag to the internal fuzzing engine to stop the fuzzing run after 10 seconds.
+You can edit the npm command and pass the `-max_total_time` flag to the internal fuzzing engine to stop the fuzzing run after 10 seconds.
 ```sh
-npx jazzer test/fuzz/createMessageBinary.cjs -- -max_total_time=10
+jazzer test/fuzz/$TARGET -- -max_total_time=10
 ```
 
 Or you can limit the number of runs:
 ```sh
-npx jazzer test/fuzz/createMessageBinary.cjs -- -runs=4000000
+jazzer test/fuzz/$TARGET -- -runs=4000000
 ```
