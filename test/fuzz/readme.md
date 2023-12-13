@@ -37,22 +37,6 @@ You should see the fuzzer that looks similar to this:
 It will continue to generate random inputs forever, until it finds a bug or is terminated.
 The testcases for bugs it finds can be seen in the form of `crash-*`, `timeout-*` or `oom-*` at `test/fuzz/reports`.
 
-## Running with coverage
-To generate a coverage report, run the `fuzz-coverage` script from the package.json:
-```sh
-TARGET=createMessageBinary npm run fuzz-coverage
-```
-
-The coverage reports can be found in `test/fuzz/coverage`.
-
-_Note:_ The output will tell you that using `--sync` might be useful:
-> Exclusively observed synchronous return values from fuzzed function. Fuzzing in synchronous mode seems beneficial!
-To enable it, append a `--sync` to your Jazzer.js invocation.
-
-But, [be careful](https://github.com/CodeIntelligenceTesting/jazzer.js/blob/main/docs/fuzz-targets.md#synchronous-execution).
-It **may only be used for entirely synchronous code** and it is not fully compatible with callbacks, that are used in the tests.
-
-
 ## The fuzz target module
 All functions that need to be fuzz-tested are here, at the `test/fuzz/` directory.
 
