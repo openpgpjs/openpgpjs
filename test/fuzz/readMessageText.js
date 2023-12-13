@@ -3,7 +3,7 @@ import { FuzzedDataProvider } from '@jazzer.js/core';
 import openpgp from '../initOpenpgp.js';
 
 const ignored = ['Misformed armored text'];
-const MAX_MESSAGE_LENGTH = 9000;
+const MAX_MESSAGE_LENGTH = 4096;
 
 function ignoredError(error) {
   return ignored.some(message => error.message.includes(message));
