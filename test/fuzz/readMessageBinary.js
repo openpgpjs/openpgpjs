@@ -10,8 +10,8 @@ function ignoredError(error) {
  * @param { Buffer } inputData
  */
 export function fuzz (inputData) {
-  const binaryMessage = new Uint8Array(`-----BEGIN PGP MESSAGE-----\n ${inputData.toString('base64')} -----END PGP MESSAGE-----`);
-
+  const binaryMessage = new Uint8Array(inputData);
+  binaryMessage[0] |= 0x80;
   return readMessage({ binaryMessage })
     .catch(error => {
       if (error.message && !ignoredError(error)) {

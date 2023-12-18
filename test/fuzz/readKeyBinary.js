@@ -10,8 +10,8 @@ function ignoredError(error) {
  * @param { Buffer } inputData
  */
 export function fuzz (inputData) {
-  const binaryKey = new Uint8Array(`-----BEGIN PGP PRIVATE KEY BLOCK-----\n ${inputData.toString('base64')} -----END PGP PRIVATE KEY BLOCK-----`);
-
+  const binaryKey = new Uint8Array(inputData);
+  binaryKey[0] |= 0x80;
   return readKey({ binaryKey })
     .catch(error => {
       if (error.message && !ignoredError(error)) {
