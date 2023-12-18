@@ -89,7 +89,7 @@ module.exports = {
     'prefer-template': 'off',
     'quote-props': 'off',
     'quotes': ['error', 'single', { 'avoidEscape': true }],
-    'space-before-function-paren': 'off',
+    'space-before-function-paren': ['error', { 'anonymous': 'ignore', 'named': 'never', 'asyncArrow': 'always' }],
     'spaced-comment': 'off',
     'indent': ['error', 2, { 'SwitchCase': 1 }],
     'no-unused-vars': 'error',
