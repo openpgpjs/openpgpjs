@@ -6,4 +6,4 @@ test/typescript/definitions.js
 dist/
 openpgp.store/
 coverage
-test/fuzz/reports
+test/fuzz/artifacts
