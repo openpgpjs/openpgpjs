@@ -1,6 +1,6 @@
 import { FuzzedDataProvider } from '@jazzer.js/core';
 
-import openpgp from '../initOpenpgp.js';
+import { readKey } from 'openpgp';
 
 const ignored = ['Misformed armored text'];
 const MAX_MESSAGE_LENGTH = 4096;
@@ -18,7 +18,7 @@ export function fuzz (inputData) {
   const fuzzedText = data.consumeString(MAX_MESSAGE_LENGTH, 'utf-8');
   const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----\n ${fuzzedText} -----END PGP PRIVATE KEY BLOCK-----`;
 
-  return openpgp.readKey({ armoredKey })
+  return readKey({ armoredKey })
     .catch(error => {
       if (error.message && !ignoredError(error)) {
         throw error;

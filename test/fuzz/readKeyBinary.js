@@ -1,4 +1,4 @@
-import openpgp from '../initOpenpgp.js';
+import { readKey } from 'openpgp';
 
 const ignored = ['This message / key probably does not conform to a valid OpenPGP format'];
 
@@ -12,7 +12,7 @@ function ignoredError(error) {
 export function fuzz (inputData) {
   const binaryKey = new Uint8Array(`-----BEGIN PGP PRIVATE KEY BLOCK-----\n ${inputData.toString('base64')} -----END PGP PRIVATE KEY BLOCK-----`);
 
-  return openpgp.readKey({ binaryKey })
+  return readKey({ binaryKey })
     .catch(error => {
       if (error.message && !ignoredError(error)) {
         throw error;

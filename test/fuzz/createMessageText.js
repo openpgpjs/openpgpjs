@@ -1,6 +1,6 @@
 import { FuzzedDataProvider } from '@jazzer.js/core';
 
-import openpgp from '../initOpenpgp.js';
+import { createMessage } from 'openpgp';
 
 const MAX_MESSAGE_LENGTH = 4096;
 
@@ -9,5 +9,5 @@ const MAX_MESSAGE_LENGTH = 4096;
  */
 export function fuzz (inputData) {
   const data = new FuzzedDataProvider(inputData);
-  return openpgp.createMessage({ text: data.consumeString(MAX_MESSAGE_LENGTH, 'utf-8') });
+  return createMessage({ text: data.consumeString(MAX_MESSAGE_LENGTH, 'utf-8') });
 }

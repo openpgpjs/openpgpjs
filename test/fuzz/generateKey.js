@@ -1,6 +1,6 @@
 import { FuzzedDataProvider } from '@jazzer.js/core';
 
-import openpgp from '../initOpenpgp.js';
+import { generateKey } from 'openpgp';
 
 const MAX_NAME_LENGTH = 30;
 const MAX_COMMENT_LENGTH = 500;
@@ -14,7 +14,7 @@ export function fuzz (inputData) {
   const asciiString = data.consumeString(MAX_COMMENT_LENGTH);
   const utf8String = data.consumeString(MAX_NAME_LENGTH, 'utf-8');
 
-  return openpgp.generateKey({ userIDs: [
+  return generateKey({ userIDs: [
     { name: utf8String },
     { email: utf8String },
     { comment: asciiString },

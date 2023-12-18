@@ -1,9 +1,9 @@
-import openpgp from '../initOpenpgp.js';
+import { createMessage } from 'openpgp';
 
 /**
  * @param { Buffer } inputData
  */
 export function fuzz (inputData) {
-  return openpgp.createMessage({ binary: new Uint8Array(inputData) });
+  return createMessage({ binary: new Uint8Array(inputData) });
 }
 
