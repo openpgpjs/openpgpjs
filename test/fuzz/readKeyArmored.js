@@ -2,11 +2,11 @@ import { FuzzedDataProvider } from '@jazzer.js/core';
 
 import { readKey } from 'openpgp';
 
-const ignored = ['Misformed armored text'];
+const expected = ['Misformed armored text'];
 const MAX_MESSAGE_LENGTH = 4096;
 
 function ignoredError(error) {
-  return ignored.some(message => error.message.includes(message));
+  return expected.some(message => error.message.includes(message));
 }
 
 /**

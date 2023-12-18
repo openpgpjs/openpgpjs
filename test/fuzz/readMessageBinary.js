@@ -1,9 +1,9 @@
 import { readMessage } from 'openpgp';
 
-const ignored = ['This message / key probably does not conform to a valid OpenPGP format'];
+const expected = ['This message / key probably does not conform to a valid OpenPGP format'];
 
 function ignoredError(error) {
-  return ignored.some(message => error.message.includes(message));
+  return expected.some(message => error.message.includes(message));
 }
 
 /**
