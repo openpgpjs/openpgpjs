@@ -17,7 +17,7 @@ const allowedS2KTypesForEncryption = new Set([enums.s2k.argon2, enums.s2k.iterat
 export function newS2KFromType (type: number, config = defaultConfig): Argon2S2K | GenericS2K | GnuS2K {
   switch (type) {
     case enums.s2k.gnu:
-      return new GnuS2K(config);
+      return new GnuS2K();
     case enums.s2k.argon2:
       return new Argon2S2K(config);
     case enums.s2k.iterated:
