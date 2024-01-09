@@ -1,9 +1,9 @@
-import defaultConfig from '../../config';
 import Argon2S2K, { Argon2OutOfMemoryError } from './argon2';
 import GenericS2K from './generic';
 import enums from '../../enums';
 import { UnsupportedError } from '../../packet/packet';
 import GnuS2K from './gnu';
+import { Config } from '../../../openpgp';
 
 const allowedS2KTypesForEncryption = new Set([enums.s2k.argon2, enums.s2k.iterated]);
 
@@ -14,7 +14,7 @@ const allowedS2KTypesForEncryption = new Set([enums.s2k.argon2, enums.s2k.iterat
  * @returns {Object} New s2k object
  * @throws {Error} for unknown or unsupported types
  */
-export function newS2KFromType (type: number, config = defaultConfig): Argon2S2K | GenericS2K | GnuS2K {
+export function newS2KFromType (type: number, config: Config): Argon2S2K | GenericS2K | GnuS2K {
   switch (type) {
     case enums.s2k.gnu:
       return new GnuS2K();
@@ -35,7 +35,7 @@ export function newS2KFromType (type: number, config = defaultConfig): Argon2S2K
  * @returns {Object} New s2k object
  * @throws {Error} for unknown or unsupported types
  */
-export function newS2KFromConfig(config = defaultConfig) {
+export function newS2KFromConfig(config: Config) {
   const { s2kType } = config;
 
   if (!allowedS2KTypesForEncryption.has(s2kType)) {

@@ -2,6 +2,8 @@ import defaultConfig from '../../config';
 import enums from '../../enums';
 import util from '../../util';
 import crypto from '../../crypto';
+import type { default as loadArgonWasmModuleType } from 'argon2id';
+import { Config } from '../../../openpgp';
 
 const ARGON2_TYPE = 0x02; // id
 const ARGON2_VERSION = 0x13;
@@ -20,21 +22,21 @@ export class Argon2OutOfMemoryError extends Error {
 }
 
 // cache argon wasm module
-let loadArgonWasmModule: Function;
-let argon2Promise: Promise<Function>;
+let loadArgonWasmModule: typeof loadArgonWasmModuleType;
+let argon2Promise: ReturnType<typeof loadArgonWasmModuleType>;
 // reload wasm module above this treshold, to deallocated used memory
 const ARGON2_WASM_MEMORY_THRESHOLD_RELOAD = 2 << 19;
 
 class Argon2S2K {
-    type: string;
-    salt: Uint8Array | null;
-    t: number;
-    p: number;
-    encodedM: number;
+    type: 'argon2';
+    private salt: Uint8Array | null;
+    private t: number;
+    private p: number;
+    private encodedM: number;
   /**
   * @param {Object} [config] - Full configuration, defaults to openpgp.config
   */
-  constructor(config = defaultConfig) {
+  constructor(config: Config) {
     
     const { passes, parallelism, memoryExponent } = config.s2kArgon2Params;
 
