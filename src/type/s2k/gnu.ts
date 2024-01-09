@@ -15,46 +15,14 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-/**
- * Implementation of the String-to-key specifier
- *
- * {@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC4880 3.7}:
- * String-to-key (S2K) specifiers are used to convert passphrase strings
- * into symmetric-key encryption/decryption keys.  They are used in two
- * places, currently: to encrypt the secret part of private keys in the
- * private keyring, and to convert passphrases to encryption keys for
- * symmetrically encrypted messages.
- * @module type/s2k
- */
-
-import defaultConfig from '../../config';
 import enums from '../../enums';
 import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
 
-class GnuS2k {
-  algorithm: number;
-  type: string;
-  c: number;
-  /**
-   * @param {Object} [config] - Full configuration, defaults to openpgp.config
-   */
-  constructor(config = defaultConfig) {
-    /**
-     * Hash function identifier, or 0 for gnu-dummy keys
-     * @type {module:enums.hash | 0}
-     */
-    this.algorithm = enums.hash.sha256;
-    /**
-     * enums.s2k identifier or 'gnu-dummy'
-     * @type {String}
-     */
-    this.type = 'gnu';
-    /** 
-     * @type {Integer}  
-     */
-    this.c = config.s2kIterationCountByte;
-  }
+class GnuS2K {
+  type: 'gnu' = 'gnu';
+  gnuType?: 'gnu-dummy' = undefined;
+  algorithm: number = enums.hash.sha256
 
   /**
    * Parsing function for a string-to-key specifier ({@link https://tools.ietf.org/html/rfc4880#section-3.7|RFC 4880 3.7}).
@@ -68,7 +36,7 @@ class GnuS2k {
         i += 3; // GNU
         const gnuExtType = 1000 + bytes[i++];
         if (gnuExtType === 1001) {
-          this.type = 'gnu-dummy';
+          this.gnuType = 'gnu-dummy';
           // GnuPG extension mode 1001 -- don't write secret key at all
         } else {
           throw new UnsupportedError('Unknown s2k gnu protection mode.');
@@ -85,7 +53,7 @@ class GnuS2k {
    * @returns {Uint8Array} Binary representation of s2k.
    */
   write(): Uint8Array {
-    if (this.type === 'gnu-dummy') {
+    if (this.gnuType === 'gnu-dummy') {
       return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 1]);
     } else {
       throw new Error('GNU s2k type not supported.');
@@ -101,19 +69,8 @@ class GnuS2k {
    * @async
    */
   async produceKey(passphrase: string, numBytes: number): Promise<Uint8Array> {
-    const arr: number[] = [];
-    let rlength = 0;
-
-    while (rlength < numBytes) {
-      if (this.type !== 'gnu') {
-        throw new Error('Unknown s2k type.');
-      } else {
-        throw new Error('GNU s2k type not supported.');
-      }
-    }
-
-    return util.concatUint8Array(arr).subarray(0, numBytes);
+    throw new Error('Gnu S2K does not support producing keys');
   }
 }
 
-export default GnuS2k;
+export default GnuS2K;

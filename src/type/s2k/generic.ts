@@ -27,9 +27,10 @@
  * @module type/s2k
  */
 
-import defaultConfig from '../../config';
-import crypto from '../../crypto';
+import type { Config, enums as enumsType } from '../../../openpgp';
 import enums from '../../enums';
+
+import crypto from '../../crypto';
 import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
 
@@ -41,7 +42,7 @@ class GenericS2K {
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  constructor(s2kType: number, config = defaultConfig) {
+  constructor(s2kType: enumsType.s2k.simple | enumsType.s2k.salted | enumsType.s2k.iterated, config: Config) {
     /**
      * Hash function identifier, or 0 for gnu-dummy keys
      * @type {module:enums.hash | 0}
