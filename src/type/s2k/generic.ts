@@ -27,7 +27,12 @@
  * @module type/s2k
  */
 
-import type { Config, enums as enumsType } from '../../../openpgp';
+import type {
+  Config,
+  S2KNames,
+  S2KType,
+  enums as enumsType,
+} from '../../../openpgp';
 import enums from '../../enums';
 
 import crypto from '../../crypto';
@@ -36,16 +41,16 @@ import util from '../../util';
 
 class GenericS2K {
   private algorithm: number;
-  type: string;
+  type: S2KNames;
   private c: number;
   private salt: Uint8Array | null;
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  constructor(s2kType: enumsType.s2k.simple | enumsType.s2k.salted | enumsType.s2k.iterated, config:Config ) {
+  constructor(s2kType: S2KType, config: Config) {
     /**
-     * Hash function identifier, or 0 for gnu-dummy keys
-     * @type {module:enums.hash | 0}
+     * Hash function identifier
+     * @type {module:enums.hash}
      */
     this.algorithm = enums.hash.sha256;
     /**
@@ -81,7 +86,7 @@ class GenericS2K {
    * @param {Uint8Array} bytes - Payload of string-to-key specifier
    * @returns {Integer} Actual length of the object.
    */
-  read(bytes: Uint8Array): Number {
+  read(bytes: Uint8Array): number {
     let i = 0;
     this.algorithm = bytes[i++];
 
@@ -103,10 +108,8 @@ class GenericS2K {
         break;
 
       default:
-        
         throw new UnsupportedError('Unknown s2k type.'); // unreachable
     }
-
     return i;
   }
 
@@ -115,17 +118,19 @@ class GenericS2K {
    * @returns {Uint8Array} Binary representation of s2k.
    */
   write(): Uint8Array {
-    const arr = [new Uint8Array([enums.write(enums.s2k, this.type), this.algorithm])];
+    const arr = [
+      new Uint8Array([enums.write(enums.s2k, this.type), this.algorithm]),
+    ];
 
     switch (this.type) {
       case 'simple':
         break;
       case 'salted':
-        if (!this.salt) { throw Error('Salt was not set') }
+        if (!this.salt) throw Error('Salt was not set');
         arr.push(this.salt);
         break;
       case 'iterated':
-        this.salt &&arr.push(this.salt);
+        this.salt && arr.push(this.salt);
         arr.push(new Uint8Array([this.c]));
         break;
       default:
@@ -154,10 +159,17 @@ class GenericS2K {
       let toHash;
       switch (this.type) {
         case 'simple':
-          toHash = util.concatUint8Array([new Uint8Array(prefixlen), encodedPassphrase]);
+          toHash = util.concatUint8Array([
+            new Uint8Array(prefixlen),
+            encodedPassphrase,
+          ]);
           break;
         case 'salted':
-          toHash = util.concatUint8Array([new Uint8Array(prefixlen), this.salt, encodedPassphrase]);
+          toHash = util.concatUint8Array([
+            new Uint8Array(prefixlen),
+            this.salt,
+            encodedPassphrase,
+          ]);
           break;
         case 'iterated': {
           const data = util.concatUint8Array([this.salt, encodedPassphrase]);
@@ -165,7 +177,11 @@ class GenericS2K {
           const count = Math.max(this.getCount(), datalen);
           toHash = new Uint8Array(prefixlen + count);
           toHash.set(data, prefixlen);
-          for (let pos = prefixlen + datalen; pos < count; pos += datalen, datalen *= 2) {
+          for (
+            let pos = prefixlen + datalen;
+            pos < count;
+            pos += datalen, datalen *= 2
+          ) {
             toHash.copyWithin(pos, prefixlen, pos);
           }
           break;
