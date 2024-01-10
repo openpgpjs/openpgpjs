@@ -121,7 +121,8 @@ class GenericS2K {
       case 'simple':
         break;
       case 'salted':
-        this.salt && arr.push(this.salt);
+        if (!this.salt) { throw Error('Salt was not set') }
+        arr.push(this.salt);
         break;
       case 'iterated':
         this.salt &&arr.push(this.salt);
