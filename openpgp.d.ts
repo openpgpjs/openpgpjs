@@ -314,6 +314,7 @@ interface Config {
   showVersion: boolean;
   showComment: boolean;
   deflateLevel: number;
+  additionalAllowedPackets:string[];
   aeadProtect: boolean;
   allowUnauthenticatedMessages: boolean;
   allowUnauthenticatedStream: boolean;
@@ -341,7 +342,7 @@ interface Config {
   rejectHashAlgorithms: Set<enums.hash>;
   rejectMessageHashAlgorithms: Set<enums.hash>;
   rejectPublicKeyAlgorithms: Set<enums.publicKey>;
-  rejectCurves: Set<enums.curve>;
+  rejectCurves: Set<string>;
 }
 export var config: Config;
 

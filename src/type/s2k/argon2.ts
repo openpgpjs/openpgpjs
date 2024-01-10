@@ -1,10 +1,9 @@
-import defaultConfig from '../../config';
 import enums from '../../enums';
 import util from '../../util';
 import crypto from '../../crypto';
 import type { default as loadArgonWasmModuleType } from 'argon2id';
+// import defaultConfig from '../../config';
 import { Config } from '../../../openpgp';
-
 const ARGON2_TYPE = 0x02; // id
 const ARGON2_VERSION = 0x13;
 const ARGON2_SALT_SIZE = 16;
@@ -29,20 +28,20 @@ const ARGON2_WASM_MEMORY_THRESHOLD_RELOAD = 2 << 19;
 
 class Argon2S2K {
     type: 'argon2';
-    private salt: Uint8Array | null;
+    private salt: Uint8Array;
     private t: number;
     private p: number;
     private encodedM: number;
   /**
   * @param {Object} [config] - Full configuration, defaults to openpgp.config
   */
-  constructor(config: Config) {
+  constructor(config:Config) {
     
     const { passes, parallelism, memoryExponent } = config.s2kArgon2Params;
 
     this.type = 'argon2';
     /**  @type {Uint8Array} 16 bytes of salt */
-    this.salt = null;
+    this.salt = new Uint8Array();
     /** @type {Integer} number of passes */
     this.t = passes;
     /** @type {Integer} degree of parallelism (lanes) */
@@ -110,6 +109,7 @@ class Argon2S2K {
 
       const passwordBytes = util.encodeUTF8(passphrase);
       const hash = argon2({
+        //@ts-ignore
         version: ARGON2_VERSION,
         type: ARGON2_TYPE,
         password: passwordBytes,

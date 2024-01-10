@@ -42,7 +42,7 @@ class GenericS2K {
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  constructor(s2kType: enumsType.s2k.simple | enumsType.s2k.salted | enumsType.s2k.iterated, config: Config) {
+  constructor(s2kType: enumsType.s2k.simple | enumsType.s2k.salted | enumsType.s2k.iterated, config:Config ) {
     /**
      * Hash function identifier, or 0 for gnu-dummy keys
      * @type {module:enums.hash | 0}
