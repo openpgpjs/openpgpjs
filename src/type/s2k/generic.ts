@@ -35,10 +35,10 @@ import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
 
 class GenericS2K {
-  algorithm: number;
+  private algorithm: number;
   type: string;
-  c: number;
-  salt: Uint8Array | null;
+  private c: number;
+  private salt: Uint8Array | null;
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
@@ -69,7 +69,7 @@ class GenericS2K {
     }
   }
 
-  getCount() {
+  private getCount() {
     // Exponent bias, defined in RFC4880
     const expbias = 6;
 
