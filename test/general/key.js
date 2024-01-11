@@ -3106,6 +3106,7 @@ Cg==
     const passphrase = 'passphrase';
     const encryptedKey = await openpgp.readKey({ armoredKey, config: { parseAEADEncryptedV4KeysAsLegacy: true } });
     expect(encryptedKey.keyPacket.isLegacyAEAD).to.be.true;
+    expect(encryptedKey.keyPacket.usedModernAEAD).to.be.false; // legacy AEAD does not guarantee integrity of public key material
     expect(encryptedKey.write()).to.deep.equal(binaryKey);
 
     const decryptedKey = await openpgp.decryptKey({
@@ -3576,6 +3577,69 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
   it('validate() - curve ed25519 (eddsa) cannot be used for ecdsa', async function() {
     const key = await openpgp.readKey({ armoredKey: eddsaKeyAsEcdsa });
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
+  });
+
+  it('validate() - should skip for AEAD-encrypted key (non-legacy)', async function() {
+    const v4KeyWithAEAD = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYMEZaAFFxYJKwYBBAHaRw8BAQdA/C3ybUC91HiWAGd/KtPtjmYwWk7VmB+X
+GXhQY9yyZkf9CQEDCBpqDPXSr+aPAGoAsXz/V2uY7EE0Xlutx3MVMEbqWz6m
+fRRUn3/mtGr+PCdj9bbl0rVK+fR62kTbwATUpNdL4rrt1cNgOTlDtq1ZCc0P
+PGFlYWRAdGVzdC5jb20+wpsEEBYKAE0FgmWgBRcDCwkHCZB2ZM+malVbdgUV
+CAoMDgQWAAIBAhkBApsDAh4JFiEE8e8z3IJRZ+bZze8ldmTPpmpVW3YNJwkD
+BwMJAQcBCQIHAgAAplYBALLKSm4Q0dPoX4mBgEuOMgtAEewfyUhp8MJdJvCa
+9KIMAP9f3Qxf4ykXQwgL/e1pn1nNQgiQ7x33LXQ2vHynPkOyDceIBGWgBRcS
+CisGAQQBl1UBBQEBB0Bfk/JMj2ONL/1hi31q3OePnDHLmo8IsafeG0RZY8wF
+OgMBCAf9CQEDCHS8bQidEDvkAP6LovPpHodzcF7F+zbKlJKTI3l6xK4t2Dj6
+BIgBQov9zJ4OK2xFbyraXSLqStQJOQV7XBfIYKHYdIBtxj6cfTYtBMJ4BBgW
+CgAqBYJloAUXCZB2ZM+malVbdgKbDBYhBPHvM9yCUWfm2c3vJXZkz6ZqVVt2
+AAA+gQD9EpMMjlBFvvyACsKwQRmIqUNTfCy4uHL1Ee1fJ4ur9ZQBAP2CiOSN
+CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
+-----END PGP PRIVATE KEY BLOCK-----` });
+    const passphrase = 'passphrase';
+    // sanity checks about key encryption mechanism
+    expect(v4KeyWithAEAD.keyPacket.aead).to.not.be.null;
+    expect(v4KeyWithAEAD.keyPacket.isLegacyAEAD).to.be.false;
+    expect(v4KeyWithAEAD.keyPacket.usedModernAEAD).to.be.true;
+
+    const decryptedKey = await openpgp.decryptKey({ privateKey: v4KeyWithAEAD, passphrase });
+    decryptedKey.keyPacket.privateParams.seed = new Uint8Array(1); // corrupt key to confirm that the actual validation is skipped
+    await expect(decryptedKey.validate()).to.be.fulfilled;
+  });
+
+  it('validate() - should be run if AEAD-encrypted key gets re-encrypted without AEAD', async function() {
+    const v4KeyWithAEAD = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYMEZaAFFxYJKwYBBAHaRw8BAQdA/C3ybUC91HiWAGd/KtPtjmYwWk7VmB+X
+GXhQY9yyZkf9CQEDCBpqDPXSr+aPAGoAsXz/V2uY7EE0Xlutx3MVMEbqWz6m
+fRRUn3/mtGr+PCdj9bbl0rVK+fR62kTbwATUpNdL4rrt1cNgOTlDtq1ZCc0P
+PGFlYWRAdGVzdC5jb20+wpsEEBYKAE0FgmWgBRcDCwkHCZB2ZM+malVbdgUV
+CAoMDgQWAAIBAhkBApsDAh4JFiEE8e8z3IJRZ+bZze8ldmTPpmpVW3YNJwkD
+BwMJAQcBCQIHAgAAplYBALLKSm4Q0dPoX4mBgEuOMgtAEewfyUhp8MJdJvCa
+9KIMAP9f3Qxf4ykXQwgL/e1pn1nNQgiQ7x33LXQ2vHynPkOyDceIBGWgBRcS
+CisGAQQBl1UBBQEBB0Bfk/JMj2ONL/1hi31q3OePnDHLmo8IsafeG0RZY8wF
+OgMBCAf9CQEDCHS8bQidEDvkAP6LovPpHodzcF7F+zbKlJKTI3l6xK4t2Dj6
+BIgBQov9zJ4OK2xFbyraXSLqStQJOQV7XBfIYKHYdIBtxj6cfTYtBMJ4BBgW
+CgAqBYJloAUXCZB2ZM+malVbdgKbDBYhBPHvM9yCUWfm2c3vJXZkz6ZqVVt2
+AAA+gQD9EpMMjlBFvvyACsKwQRmIqUNTfCy4uHL1Ee1fJ4ur9ZQBAP2CiOSN
+CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
+-----END PGP PRIVATE KEY BLOCK-----` });
+    const passphrase = 'passphrase';
+    // sanity checks about key encryption mechanism
+    expect(v4KeyWithAEAD.keyPacket.aead).to.not.be.null;
+    expect(v4KeyWithAEAD.keyPacket.isLegacyAEAD).to.be.false;
+    expect(v4KeyWithAEAD.keyPacket.usedModernAEAD).to.be.true;
+
+    const reEncryptedKey = await openpgp.encryptKey({
+      privateKey: await openpgp.decryptKey({ privateKey: v4KeyWithAEAD, passphrase }),
+      passphrase,
+      config: { aeadProtect: false }
+    });
+
+    expect(reEncryptedKey.keyPacket.usedModernAEAD).to.be.false;
+    const reDecryptedKey = await openpgp.decryptKey({ privateKey: reEncryptedKey, passphrase });
+    reDecryptedKey.keyPacket.privateParams.seed = new Uint8Array(1); // corrupt key to confirm that the actual validation is now run
+    await expect(reDecryptedKey.validate()).to.be.rejectedWith('Key is invalid');
   });
 
   it('isDecrypted() - should reflect whether all (sub)keys are encrypted', async function() {

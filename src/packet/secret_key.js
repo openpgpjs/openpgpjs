@@ -83,6 +83,13 @@ class SecretKeyPacket extends PublicKeyPacket {
      * @type {Object}
      */
     this.privateParams = null;
+    /**
+     * `true` for keys whose integrity is already confirmed, based on
+     * the AEAD encryption mechanism
+     * @type {Boolean}
+     * @private
+     */
+    this.usedModernAEAD = null;
   }
 
   // 5.5.3.  Secret-Key Packet Formats
@@ -169,6 +176,7 @@ class SecretKeyPacket extends PublicKeyPacket {
             i,
             i + crypto.getCipher(this.symmetric).blockSize
           );
+          this.usedModernAEAD = false;
         } else {
           // crypto-refresh: If string-to-key usage octet was 253 (that is, the secret data is AEAD-encrypted),
           // an initialization vector (IV) of size specified by the AEAD algorithm (see Section 5.13.2), which
@@ -177,6 +185,8 @@ class SecretKeyPacket extends PublicKeyPacket {
             i,
             i + crypto.getAEADMode(this.aead).ivLength
           );
+          // the non-legacy AEAD encryption mechanism also authenticates public key params; no need for manual validation.
+          this.usedModernAEAD = true;
         }
 
         i += this.iv.length;
@@ -347,6 +357,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2kUsage = 254;
     this.symmetric = enums.symmetric.aes256;
     this.isLegacyAEAD = null;
+    this.usedModernAEAD = null;
   }
 
   /**
@@ -384,6 +395,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.aead = enums.aead.eax;
       const mode = crypto.getAEADMode(this.aead);
       this.isLegacyAEAD = this.version === 5; // v4 is always re-encrypted with standard format instead.
+      this.usedModernAEAD = !this.isLegacyAEAD; // legacy AEAD does not guarantee integrity of public key material
 
       const serializedPacketTag = writeTag(this.constructor.tag);
       const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag);
@@ -397,6 +409,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), associateData);
     } else {
       this.s2kUsage = 254;
+      this.usedModernAEAD = false;
       const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric);
       this.iv = crypto.random.getRandomBytes(blockSize);
       this.keyMaterial = await crypto.mode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
@@ -491,6 +504,11 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     if (!this.isDecrypted()) {
       throw new Error('Key is not decrypted');
+    }
+
+    if (this.usedModernAEAD) {
+      // key integrity confirmed by successful AEAD decryption
+      return;
     }
 
     let validParams;
