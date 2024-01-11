@@ -38,13 +38,13 @@ Please let us know you want to work on it so we can avoid multiple people workin
 
    ```bash
    # Clone your fork of the repo into the current directory
-   git clone https://github.com/<your-username>/<repo-name>
+   git clone https://github.com/<your-username>/openpgpjs
 
    # Navigate to the newly cloned directory
-   cd <repo-name>
+   cd openpgpjs
 
    # Assign the original repo to a remote called "upstream"
-   git remote add upstream https://github.com/openpgpjs/<repo-name>
+   git remote add upstream https://github.com/openpgpjs/openpgpjs
    ```
 
 2. Install dependencies with your preferred package manager:
@@ -65,7 +65,7 @@ Please let us know you want to work on it so we can avoid multiple people workin
 
 6. Make sure to update or add to the tests when appropriate. Run the appropriate testing suites to check that all tests pass after you've made changes. You can read about our different types of tests in our [Testing](#testing) section.
 
-7. If you added or changed a feature, make sure to document it accordingly in the [README.md](https://github.com/openpgpjs/openpgpjs/blob/main/README.md) file.
+7. If you added or changed a feature, make sure to document it accordingly in the [README.md](https://github.com/openpgpjs/openpgpjs/blob/main/README.md) file, when appropriate.
 
 ## Coding conventions
 
@@ -73,17 +73,9 @@ We ensure code consistency through our [ESLint config](https://github.com/openpg
 
 ## Commit conventions
 
-We follow the seven rules of a great Git commit message, which is extensively described in [this blog post](https://cbea.ms/git-commit/), but in short the principles are:
+We roughly follow the Git commit guidelines in [this blog post](https://cbea.ms/git-commit/).
 
-1. Separate subject from body with a blank line
-2. Limit the subject line to 50 characters
-3. Capitalize the subject line
-4. Do not end the subject line with a period
-5. Use the imperative mood in the subject line
-6. Wrap the body at 72 characters
-7. Use the body to explain what and why vs. how
-
-You can also take a look at our [main branch commits](https://github.com/openpgpjs/openpgpjs/commits/main).
+Additionally, please try to follow the style of the commit messages on our [main branch](https://github.com/openpgpjs/openpgpjs/commits/main).
 
 ## Testing
 
@@ -91,11 +83,7 @@ We have multiple types of tests. They are located in the root [`/test`](https://
 Before you can run the tests you need to build the project using `npm run build` and this will bundle the project and the tests for it be used in our different testing environments.
 
 **Unit Tests:**
-Unit tests are handled by mocha and run inside node, you can run them using this command:
-
-```sh
-npm run test
-```
+To run the tests in Node.js, run `npm test`.
 
 **Browser Tests:**
 For debugging browser errors, you can run `npm start` and open [`http://localhost:8080/test/unittests.html`](http://localhost:8080/test/unittests.html) in a browser, or run one the following commands:
@@ -126,9 +114,9 @@ npm run benchmark-memory-usage
 
 **Typescript definitions**
 
-```sh
-npm run test-type-definitions
-```
+When changing TypeScript definitions, update [the definitions.ts test file](https://github.com/openpgpjs/openpgpjs/blob/main/test/typescript/definitions.ts) accordingly.
+Then, run `npm run test-type-definitions` to verify that it still type-checks.
+(This is also automatically done for every PR.)
 
 **Coverage**
 We have good numbers but we could always use some help improving them!
@@ -139,9 +127,9 @@ npm run coverage
 
 ## Pull requests
 
-Good pull requests - patches, improvements, new features - are a fantastic help. They should remain focused in scope and avoid containing unrelated commits.
+Good pull requests - patches, improvements, new features - are sa fantastic help. They should remain focused in scope and avoid containing unrelated commits.
 
-If you have never created a pull request before, welcome :smile: [Here is a great tutorial](https://app.egghead.io/playlists/how-to-contribute-to-an-open-source-project-on-github) on how to create a pull request.
+If you have never created a pull request before, welcome 🙂 Read the GitHub docs on [how to create a pull request from a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
 
 1. Update your branch to the latest changes in the upstream main branch, solving conflicts if any appear. You can do that locally with:
 

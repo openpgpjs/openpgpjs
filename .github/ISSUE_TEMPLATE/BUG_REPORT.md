@@ -6,7 +6,7 @@ about: Report an issue with this library
 
 Before creating a new bug report, please take a few moments to review the following:
 - Have you searched existing issues and discussions about your problem? Your problem might be already solved, and this could avoid creating duplicates
-- Is this a security related bug? If so, disclose it privately following the procedure described in https://github.com/openpgpjs/openpgpjs/blob/main/SECURITY.md
+- Could this issue cause a security vulnerability? If so, please disclose it privately following the procedure described in https://github.com/openpgpjs/openpgpjs/blob/main/SECURITY.md
 - Is this an implementation or support question? If so, open a discussion here https://github.com/openpgpjs/openpgpjs/discussions/categories/q-a 
 
 Thank you for your collaboration! 

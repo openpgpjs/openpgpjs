@@ -6,7 +6,7 @@
 -->
 
 **Description:**
-<!-- Explain what this PR does and why we need it  -->
+<!-- Explain what this PR does and why we need it -->
 
 **Which issue(s) this PR fixes:**
 <!--

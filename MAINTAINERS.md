@@ -57,13 +57,24 @@ Issues can be of various types, some of which have labels:
 
 Support requests, eg. issues that are not bugs and exclusively concern the usage of the code as it is, will be converted in to a discussion and closed.
 
-Here is [an example](https://github.com/openpgpjs/openpgpjs/issues/1661) of this occuring
+Here is [an example](https://github.com/openpgpjs/openpgpjs/issues/1661) of this occuring.
 
 If you find yourself doing this a lot, your `.github/ISSUE_TEMPLATE` needs improvement. The template should be effectively guiding people in need of support to the discussions and away from the issues.
 
 If you realise that the question is a duplicate of an existing discussion, and you can easily find that discussion, it’s worth linking to the existing one instead of creating a new one.
 
 If questions are frequently asked, they might be a frequently asked question! Consider adding the solution to the documentation, Wiki or FAQ, whichever applies and is easily discoverable.
+
+#### `Bug` for things that don’t work as intended
+
+1. Assuming this is not or no longer a `Need more info` issue, attempt to reproduce the bug
+   1. Search for duplicates, if one exists, point the current issue there, and close the new one
+   2. If you can reproduce it and there are no duplicates, prioritize it and add the `Bug` label
+      1. If you need more info before this issue becomes actionable despite being able to reproduce it, prod the author and add a `Need more info` label
+   3. If you can’t reproduce it, contact the author with the reason, and add a `Need more info` to the `Bug` label
+      1. If the issue cannot be reproduced by anyone other than the author, agree with them that the issue should be closed
+
+As with regular `Need more info` issues, `Need more info` + `Bug` issues are also subject to the [Abandoned/Stale](#abandonedstale) rule above, and should be closed after a set period of time.
 
 #### `Wontfix` for misplaced or irrelevant issues
 
@@ -81,27 +92,16 @@ These are usually `Need more info` issues where the original author does not res
 
 Here’s [an example](https://github.com/openpgpjs/openpgpjs/issues/883) of an issue that was manually closed after the author not responding for a year.
 
-#### `Bug` for things that don’t work as intended
-
-1. Assuming this is not or no longer a `Need more info` issue, attempt to reproduce the bug
-   1. Search for duplicates, if one exists, point the current issue there, and close the new one
-   2. If you can reproduce it and there are no duplicates, prioritize it and add the `Bug` label
-      1. If you need more info before this issue becomes actionable despite being able to reproduce it, prod the author and add a `Need more info` label
-   3. If you can’t reproduce it, contact the author with the reason, and add a `Need more info` to the `Bug` label
-      1. If the issue cannot be reproduced by anyone other than the author, agree with them that the issue should be closed
-
-As with regular `Need more info` issues, `Need more info` + `Bug` issues are also subject to the [Abandoned/Stale](#abandonedstale) rule above, and should be closed after a set period of time.
-
 #### Good First Issues and Help Wanted Issues
 
-To identify issues that are specifically groomed for new contributors, we use the `Help wanted` _and_ `Good first issue` labels. As to the difference between the two:
+To identify issues that are specifically groomed for new contributors, we use the `Good first issue` label.
+
+As to the difference between `Help wanted` and `Good first issue`:
 
 - a `Good first issue` always also implies `Help wanted` from outside the project
 - but `Help wanted` does not necessarily mean it’s a `Good first issue`. Might be really tricky but none of the current maintainers has the resources to tackle it
 
 ##### Criteria for a `Help wanted` Issue
-
-- **Low Barrier to Entry:** It should be easy for new contributors. Documentation on how that type of change should be made should already exist.
 
 - **Clear Task:** The task is agreed upon and does not require further discussions in the community. Call out if that area of code is untested and requires new fixtures.
 
@@ -114,8 +114,6 @@ To identify issues that are specifically groomed for new contributors, we use th
 Items marked with the `Good first issue` label are intended for first-time contributors. It indicates that maintainers will _proactively_ keep an eye out for the corresponding pull requests and shepherd them along.
 
 New contributors should not be left to find an approver, ping for reviews, or identify that their build failed due to a flake. It is important to make new contributors feel welcome and valued. We should assure them that they will have an extra level of help with their first contribution.
-
-After a contributor has successfully completed one or two `Good first issue` items, they should be ready to move on to `Help wanted` items.
 
 All `Good first issue` items need to follow the guidelines for help wanted items in addition to meeting the following criteria:
 
@@ -184,7 +182,7 @@ It should be clear who is responsible for working on an issue once it has been t
 ### Step 4: Follow up
 
 - **If no PR is opened on an issue within a month**, a maintainer should contact the assignee and ask them to create a PR or unassign themselves
-- **If a PR is ready for review**, use your triage meeting to find someone to review it within a reasonable amount of time. If you cannot manage a review soon, explain that to the contributor so they’re not left hanging and know what to expect.
+- **If a PR is ready for review**, find someone to review it within a reasonable amount of time. If you cannot manage a review soon, explain that to the contributor so they’re not left hanging and know what to expect.
 
 ## Release process
 
@@ -194,6 +192,6 @@ We keep it simple. We use npm’s `version` command as following:
 npm version {major,minor,patch}
 ```
 
-Which will trigger the `preversion`, `version` and `postversion` scripts specified in the `package.json`. These will handle the testing, building, publish to npm and pushing to GitHub. 
+(Depending on whether a major, minor or patch release is to be created.) This command will run tests, create a build, publish it to npm, and push to GitHub. 
 
 Additionally, we create a changelog in [GitHub releases](https://github.com/openpgpjs/openpgpjs/releases).
