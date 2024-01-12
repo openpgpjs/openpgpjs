@@ -70,6 +70,15 @@ class SecretKeyPacket extends PublicKeyPacket {
      */
     this.aead = null;
     /**
+     * Whether the key is encrypted using the legacy AEAD format proposal from RFC4880bis
+     * (i.e. it was encrypted with the flag `config.aeadProtect` in OpenPGP.js v5 or older).
+     * This value is only relevant to know how to decrypt the key:
+     * if AEAD is enabled, a v4 key is always re-encrypted using the standard AEAD mechanism.
+     * @type {Boolean}
+     * @private
+     */
+    this.isLegacyAEAD = null;
+    /**
      * Decrypted private parameters, referenced by name
      * @type {Object}
      */
@@ -84,7 +93,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @param {Uint8Array} bytes - Input string to read the packet from
    * @async
    */
-  async read(bytes) {
+  async read(bytes, config = defaultConfig) {
     // - A Public-Key or Public-Subkey packet, as described above.
     let i = await this.readPublicKey(bytes);
     const startOfSecretKeyData = i;
@@ -143,12 +152,19 @@ class SecretKeyPacket extends PublicKeyPacket {
 
 
       if (this.s2kUsage) {
+        // OpenPGP.js up to v5 used to support encrypting v4 keys using AEAD as specified by draft RFC4880bis (https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-5.5.3-3.5).
+        // This legacy format is incompatible, but fundamentally indistinguishable, from that of the crypto-refresh for v4 keys (v5 keys are always in legacy format).
+        // While parsing the key may succeed (if IV and AES block sizes match), key decryption will always
+        // fail if the key was parsed according to the wrong format, since the keys are processed differently.
+        // Thus, for v4 keys, we rely on the caller to instruct us to process the key as legacy, via config flag.
+        this.isLegacyAEAD = this.s2kUsage === 253 && (
+          this.version === 5 || (this.version === 4 && config.parseAEADEncryptedV4KeysAsLegacy));
         // - crypto-refresh: If string-to-key usage octet was 255, 254 [..], an initialization vector (IV)
         // of the same length as the cipher's block size.
         // - RFC4880bis (v5 keys, regardless of AEAD): an Initial Vector (IV) of the same length as the
         //   cipher's block size. If string-to-key usage octet was 253 the IV is used as the nonce for the AEAD algorithm.
         // If the AEAD algorithm requires a shorter nonce, the high-order bits of the IV are used and the remaining bits MUST be zero
-        if (this.s2kUsage !== 253 || this.version === 5) {
+        if (this.s2kUsage !== 253 || this.isLegacyAEAD) {
           this.iv = bytes.subarray(
             i,
             i + crypto.getCipher(this.symmetric).blockSize
@@ -330,6 +346,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k.type = 'gnu-dummy';
     this.s2kUsage = 254;
     this.symmetric = enums.symmetric.aes256;
+    this.isLegacyAEAD = null;
   }
 
   /**
@@ -366,13 +383,14 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.s2kUsage = 253;
       this.aead = enums.aead.eax;
       const mode = crypto.getAEADMode(this.aead);
+      this.isLegacyAEAD = this.version === 5; // v4 is always re-encrypted with standard format instead.
 
       const serializedPacketTag = writeTag(this.constructor.tag);
       const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag);
 
       const modeInstance = await mode(this.symmetric, key);
-      this.iv = (this.version === 5) ? crypto.random.getRandomBytes(blockSize) : crypto.random.getRandomBytes(mode.ivLength);
-      const associateData = this.version === 5 ?
+      this.iv = this.isLegacyAEAD ? crypto.random.getRandomBytes(blockSize) : crypto.random.getRandomBytes(mode.ivLength);
+      const associateData = this.isLegacyAEAD ?
         new Uint8Array() :
         util.concatUint8Array([serializedPacketTag, this.writePublicKey()]);
 
@@ -414,7 +432,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     const serializedPacketTag = writeTag(this.constructor.tag); // relevant for AEAD only
     if (this.s2kUsage === 254 || this.s2kUsage === 253) {
       key = await produceEncryptionKey(
-        this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag);
+        this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD);
     } else if (this.s2kUsage === 255) {
       throw new Error('Encrypted private key is authenticated using an insecure two-byte hash');
     } else {
@@ -426,7 +444,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       const mode = crypto.getAEADMode(this.aead);
       const modeInstance = await mode(this.symmetric, key);
       try {
-        const associateData = this.version === 5 ?
+        const associateData = this.isLegacyAEAD ?
           new Uint8Array() :
           util.concatUint8Array([serializedPacketTag, this.writePublicKey()]);
         cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), associateData);
@@ -458,6 +476,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2kUsage = 0;
     this.aead = null;
     this.symmetric = null;
+    this.isLegacyAEAD = null;
   }
 
   /**
@@ -526,13 +545,14 @@ class SecretKeyPacket extends PublicKeyPacket {
  * @param {String} passphrase
  * @param {module:enums.symmetric} cipherAlgo
  * @param {module:enums.aead} [aeadMode] - for AEAD-encrypted keys only (excluding v5)
- * @param {Uint8Array} serializedPacketTag - for AEAD-encrypted keys only (excluding v5)
+ * @param {Uint8Array} [serializedPacketTag] - for AEAD-encrypted keys only (excluding v5)
+ * @param {Boolean} [isLegacyAEAD] - for AEAD-encrypted keys from RFC4880bis (v4 and v5 only)
  * @returns encryption key
  */
-async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag) {
+async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag, isLegacyAEAD) {
   const { keySize } = crypto.getCipher(cipherAlgo);
   const derivedKey = await s2k.produceKey(passphrase, keySize);
-  if (!aeadMode || keyVersion === 5) {
+  if (!aeadMode || keyVersion === 5 || isLegacyAEAD) {
     return derivedKey;
   }
   const info = util.concatUint8Array([
