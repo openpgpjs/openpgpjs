@@ -7,7 +7,7 @@
  *  - Errietta Kostala <https://github.com/errietta>
  */
 
-import type { WebStream as GenericWebStream, NodeStream as GenericNodeStream } from '@openpgp/web-stream-tools';
+import type { WebStream as GenericWebStream, NodeWebStream as GenericNodeWebStream } from '@openpgp/web-stream-tools';
 
 /* ############## v5 KEY #################### */
 // The Key and PublicKey types can be used interchangably since TS cannot detect the difference, as they have the same class properties.
@@ -191,24 +191,24 @@ export function createMessage<T extends MaybeStream<Uint8Array>>(options: { bina
 
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format?: 'armored' }): Promise<
   T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeStream<infer X> ? NodeStream<string> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
   string
 >;
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format: 'binary' }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
   Uint8Array
 >;
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
 
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format?: 'armored' }): Promise<
   T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeStream<infer X> ? NodeStream<string> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
   string
 >;
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format: 'binary' }): Promise<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
   Uint8Array
 >;
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
@@ -218,25 +218,25 @@ export function sign(options: SignOptions & { message: CleartextMessage, format:
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & {
   data:
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
   Uint8Array
 }>;
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T> }): Promise<DecryptMessageResult & {
   data:
   T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeStream<infer X> ? NodeStream<string> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
   string
 }>;
 
 export function verify(options: VerifyOptions & { message: CleartextMessage, format?: 'utf8' }): Promise<VerifyMessageResult<string>>;
 export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult<
   T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeStream<infer X> ? NodeStream<Uint8Array> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
   Uint8Array
 >>;
 export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T> }): Promise<VerifyMessageResult<
   T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeStream<infer X> ? NodeStream<string> :
+  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
   string
 >>;
 
@@ -565,8 +565,8 @@ export class PacketList<T extends AnyPacket> extends Array<T> {
 
 type Data = Uint8Array | string;
 export interface WebStream<T extends Data> extends GenericWebStream<T> {}
-export interface NodeStream<T extends Data> extends GenericNodeStream<T> {}
-export type Stream<T extends Data> = WebStream<T> | NodeStream<T>;
+export interface NodeWebStream<T extends Data> extends GenericNodeWebStream<T> {}
+export type Stream<T extends Data> = WebStream<T> | NodeWebStream<T>;
 export type MaybeStream<T extends Data> = T | Stream<T>;
 
 /* ############## v5 GENERAL #################### */

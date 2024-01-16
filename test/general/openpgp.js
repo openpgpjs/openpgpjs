@@ -3840,9 +3840,7 @@ XfA3pqV4mTzF
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
           verifyOpt.message = await openpgp.readMessage({
-            binaryMessage: stream[
-              globalThis.ReadableStream ? 'toStream' : 'webToNode'
-            ](packets.write())
+            binaryMessage: stream.toStream(packets.write())
           });
           return openpgp.verify(verifyOpt);
         }).then(async function (verified) {

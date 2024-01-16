@@ -416,7 +416,7 @@ function tests() {
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage({
-        armoredMessage: stream[expectedType === 'node' ? 'webToNode' : 'toStream'](stream.transform(encrypted, value => {
+        armoredMessage: stream.toStream(stream.transform(encrypted, value => {
           value += '';
           const newlineIndex = value.indexOf('\n', 500);
           if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
@@ -453,7 +453,7 @@ function tests() {
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage({
-        armoredMessage: stream[expectedType === 'node' ? 'webToNode' : 'toStream'](stream.transform(encrypted, value => {
+        armoredMessage: stream.toStream(stream.transform(encrypted, value => {
           value += '';
           const newlineIndex = value.indexOf('\n', 500);
           if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
@@ -486,7 +486,7 @@ function tests() {
     expect(stream.isStream(signed)).to.equal(expectedType);
 
     const message = await openpgp.readMessage({
-      armoredMessage: stream[expectedType === 'node' ? 'webToNode' : 'toStream'](stream.transform(signed, value => {
+      armoredMessage: stream.toStream(stream.transform(signed, value => {
         value += '';
         const newlineIndex = value.indexOf('\n', 500);
         if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
@@ -872,6 +872,7 @@ function tests() {
 
 export default () => describe('Streaming', function() {
   let currentTest = 0;
+  const needsStreamPolyfills = !globalThis.ReadableStream;
 
   before(async function() {
     pubKey = await openpgp.readKey({ armoredKey: pub_key });
@@ -916,40 +917,41 @@ export default () => describe('Streaming', function() {
 
   tests();
 
-  if (detectNode()) {
+  if (detectNode() && !needsStreamPolyfills) { // ReadableStream polyfills interfere with these tests
     const fs = util.nodeRequire('fs');
+    const { Readable: NodeReadableStream } = util.nodeRequire('stream');
     const { fileURLToPath } = util.nodeRequire('url');
     const __filename = fileURLToPath(import.meta.url);
 
     it('Node: Encrypt and decrypt text message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.
       const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js'), 'utf8'); // eslint-disable-line no-sync
-      const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'), { encoding: 'utf8' });
+      const data = NodeReadableStream.toWeb(fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'), { encoding: 'utf8' }));
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: data }),
         passwords: ['test']
       });
-      expect(stream.isStream(encrypted)).to.equal('node');
+      expect(stream.isStream(encrypted)).to.equal('web');
 
       const message = await openpgp.readMessage({ armoredMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message
       });
-      expect(stream.isStream(decrypted.data)).to.equal('node');
+      expect(stream.isStream(decrypted.data)).to.equal('web');
       expect(await stream.readToEnd(decrypted.data)).to.equal(plaintext);
     });
 
     it('Node: Encrypt and decrypt binary message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.
       const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js')); // eslint-disable-line no-sync
-      const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'));
+      const data = NodeReadableStream.toWeb(fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js')));
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
         passwords: ['test'],
         format: 'binary'
       });
-      expect(stream.isStream(encrypted)).to.equal('node');
+      expect(stream.isStream(encrypted)).to.equal('web');
 
       const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
@@ -957,7 +959,7 @@ export default () => describe('Streaming', function() {
         message,
         format: 'binary'
       });
-      expect(stream.isStream(decrypted.data)).to.equal('node');
+      expect(stream.isStream(decrypted.data)).to.equal('web');
       expect(await stream.readToEnd(decrypted.data)).to.deep.equal(plaintext);
     });
   }
