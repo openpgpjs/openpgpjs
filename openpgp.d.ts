@@ -9,7 +9,17 @@
 
 import type { WebStream as GenericWebStream, NodeWebStream as GenericNodeWebStream } from '@openpgp/web-stream-tools';
 
-/* ############## v5 KEY #################### */
+/* ############## STREAM #################### */
+type Data = Uint8Array | string;
+// web-stream-tools might end up supporting additional data types, so we re-declare the types
+// to enforce the type contraint that we need.
+export type WebStream<T extends Data> = GenericWebStream<T>;
+export type NodeWebStream<T extends Data> = GenericNodeWebStream<T>;
+export type Stream<T extends Data> = WebStream<T> | NodeWebStream<T>;
+export type MaybeStream<T extends Data> = T | Stream<T>;
+type MaybeArray<T> = T | Array<T>;
+
+/* ############## KEY #################### */
 // The Key and PublicKey types can be used interchangably since TS cannot detect the difference, as they have the same class properties.
 // The declared readKey(s) return type is Key instead of a PublicKey since it seems more obvious that a Key can be cast to a PrivateKey.
 export function readKey(options: { armoredKey: string, config?: PartialConfig }): Promise<Key>;
@@ -118,13 +128,13 @@ export interface PrimaryUser {
   selfCertification: SignaturePacket;
 }
 
-type AlgorithmInfo = {
+export type AlgorithmInfo = {
   algorithm: enums.publicKeyNames;
   bits?: number;
   curve?: EllipticCurveName;
 };
 
-/* ############## v5 SIG #################### */
+/* ############## SIG #################### */
 
 export function readSignature(options: { armoredSignature: string, config?: PartialConfig }): Promise<Signature>;
 export function readSignature(options: { binarySignature: Uint8Array, config?: PartialConfig }): Promise<Signature>;
@@ -143,7 +153,7 @@ interface VerificationResult {
   signature: Promise<Signature>;
 }
 
-/* ############## v5 CLEARTEXT #################### */
+/* ############## CLEARTEXT #################### */
 
 export function readCleartextMessage(options: { cleartextMessage: string, config?: PartialConfig }): Promise<CleartextMessage>;
 
@@ -176,7 +186,7 @@ export class CleartextMessage {
   verify(keys: PublicKey[], date?: Date, config?: Config): Promise<VerificationResult[]>;
 }
 
-/* ############## v5 MSG #################### */
+/* ############## MSG #################### */
 export function generateSessionKey(options: { encryptionKeys: MaybeArray<PublicKey>, date?: Date, encryptionUserIDs?: MaybeArray<UserID>, config?: PartialConfig }): Promise<SessionKey>;
 export function encryptSessionKey(options: EncryptSessionKeyOptions & { format?: 'armored' }): Promise<string>;
 export function encryptSessionKey(options: EncryptSessionKeyOptions & { format: 'binary' }): Promise<Uint8Array>;
@@ -305,7 +315,7 @@ export class Message<T extends MaybeStream<Data>> {
 }
 
 
-/* ############## v5 CONFIG #################### */
+/* ############## CONFIG #################### */
 
 interface Config {
   preferredHashAlgorithm: enums.hash;
@@ -347,11 +357,11 @@ export var config: Config;
 
 // PartialConfig has the same properties as Config, but declared as optional.
 // This interface is relevant for top-level functions, which accept a subset of configuration options
-interface PartialConfig extends Partial<Config> {}
+export interface PartialConfig extends Partial<Config> {}
 
-/* ############## v5 PACKET #################### */
+/* ############## PACKET #################### */
 
-declare abstract class BasePacket {
+export declare abstract class BasePacket {
   static readonly tag: enums.packet;
   public read(bytes: Uint8Array): void;
   public write(): Uint8Array;
@@ -561,16 +571,7 @@ export class PacketList<T extends AnyPacket> extends Array<T> {
   public findPacket(tag: enums.packet): T | undefined;
 }
 
-/* ############## v5 STREAM #################### */
-
-type Data = Uint8Array | string;
-export interface WebStream<T extends Data> extends GenericWebStream<T> {}
-export interface NodeWebStream<T extends Data> extends GenericNodeWebStream<T> {}
-export type Stream<T extends Data> = WebStream<T> | NodeWebStream<T>;
-export type MaybeStream<T extends Data> = T | Stream<T>;
-
-/* ############## v5 GENERAL #################### */
-type MaybeArray<T> = T | Array<T>;
+/* ############## GENERAL #################### */
 
 export interface UserID { name?: string; email?: string; comment?: string; }
 export interface SessionKey {
@@ -586,7 +587,7 @@ export interface DecryptedSessionKey {
 
 export interface ReasonForRevocation { flag?: enums.reasonForRevocation, string?: string }
 
-interface EncryptOptions {
+export interface EncryptOptions {
   /** message to be encrypted as created by createMessage */
   message: Message<MaybeStream<Data>>;
   /** (optional) array of keys or single key, used to encrypt the message */
@@ -618,7 +619,7 @@ interface EncryptOptions {
   config?: PartialConfig;
 }
 
-interface DecryptOptions {
+export interface DecryptOptions {
   /** the message object with the encrypted data */
   message: Message<MaybeStream<Data>>;
   /** (optional) private keys with decrypted secret key data or session key */
@@ -640,7 +641,7 @@ interface DecryptOptions {
   config?: PartialConfig;
 }
 
-interface SignOptions {
+export interface SignOptions {
   message: CleartextMessage | Message<MaybeStream<Data>>;
   signingKeys: MaybeArray<PrivateKey>;
   format?: 'armored' | 'binary' | 'object';
@@ -652,7 +653,7 @@ interface SignOptions {
   config?: PartialConfig;
 }
 
-interface VerifyOptions {
+export interface VerifyOptions {
   /** (cleartext) message object with signatures */
   message: CleartextMessage | Message<MaybeStream<Data>>;
   /** array of publicKeys or single key, to verify signatures */
@@ -668,7 +669,7 @@ interface VerifyOptions {
   config?: PartialConfig;
 }
 
-interface EncryptSessionKeyOptions extends SessionKey {
+export interface EncryptSessionKeyOptions extends SessionKey {
   encryptionKeys?: MaybeArray<PublicKey>,
   passwords?: MaybeArray<string>,
   format?: 'armored' | 'binary' | 'object',
@@ -704,7 +705,7 @@ interface GenerateKeyOptions {
 }
 export type KeyOptions = GenerateKeyOptions;
 
-interface SubkeyOptions {
+export interface SubkeyOptions {
   type?: 'ecc' | 'rsa';
   curve?: EllipticCurveName;
   rsaBits?: number;
@@ -714,20 +715,20 @@ interface SubkeyOptions {
   config?: PartialConfig;
 }
 
-declare class KeyID {
+export declare class KeyID {
   bytes: string;
   equals(keyID: KeyID, matchWildcard?: boolean): boolean;
   toHex(): string;
   static fromID(hex: string): KeyID;
 }
 
-interface DecryptMessageResult {
+export interface DecryptMessageResult {
   data: MaybeStream<Data>;
   signatures: VerificationResult[];
   filename: string;
 }
 
-interface VerifyMessageResult<T extends MaybeStream<Data> = MaybeStream<Data>> {
+export interface VerifyMessageResult<T extends MaybeStream<Data> = MaybeStream<Data>> {
   data: T;
   signatures: VerificationResult[];
 }
