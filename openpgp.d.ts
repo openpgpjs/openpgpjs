@@ -323,7 +323,6 @@ interface Config {
   preferredCompressionAlgorithm: enums.compression;
   showVersion: boolean;
   showComment: boolean;
-  deflateLevel: number;
   aeadProtect: boolean;
   allowUnauthenticatedMessages: boolean;
   allowUnauthenticatedStream: boolean;
