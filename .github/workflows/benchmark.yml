@@ -20,6 +20,8 @@ jobs:
           ref: main
           path: main
       - uses: actions/setup-node@v3
+        with:
+          node-version: '>=20.6.0'
 
       - name: Run pull request time benchmark
         run: cd pr && npm install && npm run --silent benchmark-time > benchmarks.txt && cat benchmarks.txt

@@ -287,7 +287,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
   if (!signingKeys) {
     signingKeys = [];
   }
-  const streaming = message.fromStream;
+
   try {
     if (signingKeys.length || signature) { // sign the message only if signing keys or signature is specified
       message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
@@ -301,7 +301,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
     // serialize data
     const armor = format === 'armored';
     const data = armor ? message.armor(config) : message.write();
-    return convertStream(data, streaming, armor ? 'utf8' : 'binary');
+    return convertStream(data);
   } catch (err) {
     throw util.wrapError('Error encrypting message', err);
   }
@@ -372,7 +372,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
         })
       ]);
     }
-    result.data = await convertStream(result.data, message.fromStream, format);
+    result.data = await convertStream(result.data);
     return result;
   } catch (err) {
     throw util.wrapError('Error decrypting message', err);
@@ -438,7 +438,7 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
         ]);
       });
     }
-    return convertStream(signature, message.fromStream, armor ? 'utf8' : 'binary');
+    return convertStream(signature);
   } catch (err) {
     throw util.wrapError('Error signing message', err);
   }
@@ -501,7 +501,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
         })
       ]);
     }
-    result.data = await convertStream(result.data, message.fromStream, format);
+    result.data = await convertStream(result.data);
     return result;
   } catch (err) {
     throw util.wrapError('Error verifying signed message', err);
@@ -672,21 +672,14 @@ function toArray(param) {
 /**
  * Convert data to or from Stream
  * @param {Object} data - the data to convert
- * @param {'web'|'node'|false} streaming - Whether to return a ReadableStream, and of what type
- * @param {'utf8'|'binary'} [encoding] - How to return data in Node Readable streams
  * @returns {Promise<Object>} The data in the respective format.
  * @async
  * @private
  */
-async function convertStream(data, streaming, encoding = 'utf8') {
+async function convertStream(data) {
   const streamType = util.isStream(data);
   if (streamType === 'array') {
     return stream.readToEnd(data);
-  }
-  if (streaming === 'node') {
-    data = stream.webToNode(data);
-    if (encoding !== 'binary') data.setEncoding(encoding);
-    return data;
   }
   return data;
 }
