@@ -251,7 +251,7 @@ const util = {
   /**
    * Convert a native javascript string to a Uint8Array of utf8 bytes
    * @param {String|ReadableStream} str - The string to convert
-   * @returns {Uint8Array|ReadableStream} A valid squence of utf8 bytes.
+   * @returns {Uint8Array} A valid sequence of utf8 bytes.
    */
   encodeUTF8: function (str) {
     const encoder = new TextEncoder('utf-8');

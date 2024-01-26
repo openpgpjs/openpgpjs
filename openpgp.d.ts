@@ -324,6 +324,7 @@ interface Config {
   showVersion: boolean;
   showComment: boolean;
   deflateLevel: number;
+  additionalAllowedPackets:string[];
   aeadProtect: boolean;
   allowUnauthenticatedMessages: boolean;
   allowUnauthenticatedStream: boolean;
@@ -351,7 +352,7 @@ interface Config {
   rejectHashAlgorithms: Set<enums.hash>;
   rejectMessageHashAlgorithms: Set<enums.hash>;
   rejectPublicKeyAlgorithms: Set<enums.publicKey>;
-  rejectCurves: Set<enums.curve>;
+  rejectCurves: Set<string>;
 }
 export var config: Config;
 
@@ -731,6 +732,16 @@ export interface DecryptMessageResult {
 export interface VerifyMessageResult<T extends MaybeStream<Data> = MaybeStream<Data>> {
   data: T;
   signatures: VerificationResult[];
+}
+
+export type S2KType = enums.s2k.argon2 | enums.s2k.gnu | enums.s2k.iterated | enums.s2k.salted | enums.s2k.simple
+
+type S2KNames = 'argon2' | 'gnu' | 'iterated' | 'salted' | 'simple' | string
+export interface S2K {
+  type: S2KNames
+  read(bytes: Uint8Array):number
+  write(): Uint8Array
+  produceKey(passphrase: string, keySize: number): Promise<Uint8Array>
 }
 
 

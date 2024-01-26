@@ -17,7 +17,7 @@
 
 import * as stream from '@openpgp/web-stream-tools';
 import { armor, unarmor } from './encoding/armor';
-import { Argon2OutOfMemoryError } from './type/s2k';
+import { Argon2OutOfMemoryError } from './type/s2k/index.ts';
 import defaultConfig from './config';
 import crypto from './crypto';
 import enums from './enums';

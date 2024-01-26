@@ -27,20 +27,30 @@
  * @module type/s2k
  */
 
-import defaultConfig from '../../config';
-import crypto from '../../crypto';
+import type {
+  Config,
+  S2KNames,
+  S2KType,
+  enums as enumsType,
+} from '../../../openpgp';
 import enums from '../../enums';
+
+import crypto from '../../crypto';
 import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
 
 class GenericS2K {
+  private algorithm: number;
+  type: S2KNames;
+  private c: number;
+  private salt: Uint8Array | null;
   /**
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  constructor(s2kType, config = defaultConfig) {
+  constructor(s2kType: S2KType, config: Config) {
     /**
-     * Hash function identifier, or 0 for gnu-dummy keys
-     * @type {module:enums.hash | 0}
+     * Hash function identifier
+     * @type {module:enums.hash}
      */
     this.algorithm = enums.hash.sha256;
     /**
@@ -64,7 +74,7 @@ class GenericS2K {
     }
   }
 
-  getCount() {
+  private getCount() {
     // Exponent bias, defined in RFC4880
     const expbias = 6;
 
@@ -76,7 +86,7 @@ class GenericS2K {
    * @param {Uint8Array} bytes - Payload of string-to-key specifier
    * @returns {Integer} Actual length of the object.
    */
-  read(bytes) {
+  read(bytes: Uint8Array): number {
     let i = 0;
     this.algorithm = bytes[i++];
 
@@ -97,25 +107,9 @@ class GenericS2K {
         this.c = bytes[i++];
         break;
 
-      case 'gnu':
-        if (util.uint8ArrayToString(bytes.subarray(i, i + 3)) === 'GNU') {
-          i += 3; // GNU
-          const gnuExtType = 1000 + bytes[i++];
-          if (gnuExtType === 1001) {
-            this.type = 'gnu-dummy';
-            // GnuPG extension mode 1001 -- don't write secret key at all
-          } else {
-            throw new UnsupportedError('Unknown s2k gnu protection mode.');
-          }
-        } else {
-          throw new UnsupportedError('Unknown s2k type.');
-        }
-        break;
-
       default:
         throw new UnsupportedError('Unknown s2k type.'); // unreachable
     }
-
     return i;
   }
 
@@ -123,24 +117,22 @@ class GenericS2K {
    * Serializes s2k information
    * @returns {Uint8Array} Binary representation of s2k.
    */
-  write() {
-    if (this.type === 'gnu-dummy') {
-      return new Uint8Array([101, 0, ...util.stringToUint8Array('GNU'), 1]);
-    }
-    const arr = [new Uint8Array([enums.write(enums.s2k, this.type), this.algorithm])];
+  write(): Uint8Array {
+    const arr = [
+      new Uint8Array([enums.write(enums.s2k, this.type), this.algorithm]),
+    ];
 
     switch (this.type) {
       case 'simple':
         break;
       case 'salted':
+        if (!this.salt) throw Error('Salt was not set');
         arr.push(this.salt);
         break;
       case 'iterated':
-        arr.push(this.salt);
+        this.salt && arr.push(this.salt);
         arr.push(new Uint8Array([this.c]));
         break;
-      case 'gnu':
-        throw new Error('GNU s2k type not supported.');
       default:
         throw new Error('Unknown s2k type.');
     }
@@ -156,8 +148,8 @@ class GenericS2K {
    * hashAlgorithm hash length
    * @async
    */
-  async produceKey(passphrase, numBytes) {
-    passphrase = util.encodeUTF8(passphrase);
+  async produceKey(passphrase: string, numBytes: number): Promise<Uint8Array> {
+    const encodedPassphrase = util.encodeUTF8(passphrase);
 
     const arr = [];
     let rlength = 0;
@@ -167,24 +159,33 @@ class GenericS2K {
       let toHash;
       switch (this.type) {
         case 'simple':
-          toHash = util.concatUint8Array([new Uint8Array(prefixlen), passphrase]);
+          toHash = util.concatUint8Array([
+            new Uint8Array(prefixlen),
+            encodedPassphrase,
+          ]);
           break;
         case 'salted':
-          toHash = util.concatUint8Array([new Uint8Array(prefixlen), this.salt, passphrase]);
+          toHash = util.concatUint8Array([
+            new Uint8Array(prefixlen),
+            this.salt,
+            encodedPassphrase,
+          ]);
           break;
         case 'iterated': {
-          const data = util.concatUint8Array([this.salt, passphrase]);
+          const data = util.concatUint8Array([this.salt, encodedPassphrase]);
           let datalen = data.length;
           const count = Math.max(this.getCount(), datalen);
           toHash = new Uint8Array(prefixlen + count);
           toHash.set(data, prefixlen);
-          for (let pos = prefixlen + datalen; pos < count; pos += datalen, datalen *= 2) {
+          for (
+            let pos = prefixlen + datalen;
+            pos < count;
+            pos += datalen, datalen *= 2
+          ) {
             toHash.copyWithin(pos, prefixlen, pos);
           }
           break;
         }
-        case 'gnu':
-          throw new Error('GNU s2k type not supported.');
         default:
           throw new Error('Unknown s2k type.');
       }

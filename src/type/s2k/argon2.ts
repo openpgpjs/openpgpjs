@@ -1,14 +1,15 @@
-import defaultConfig from '../../config';
 import enums from '../../enums';
 import util from '../../util';
 import crypto from '../../crypto';
+import type { default as loadArgonWasmModuleType } from 'argon2id';
 
+import { Config } from '../../../openpgp';
 const ARGON2_TYPE = 0x02; // id
 const ARGON2_VERSION = 0x13;
 const ARGON2_SALT_SIZE = 16;
 
 export class Argon2OutOfMemoryError extends Error {
-  constructor(...params) {
+  constructor(...params: string[]) {
     super(...params);
 
     if (Error.captureStackTrace) {
@@ -20,21 +21,26 @@ export class Argon2OutOfMemoryError extends Error {
 }
 
 // cache argon wasm module
-let loadArgonWasmModule;
-let argon2Promise;
+let loadArgonWasmModule: typeof loadArgonWasmModuleType;
+let argon2Promise: ReturnType<typeof loadArgonWasmModuleType>;
 // reload wasm module above this treshold, to deallocated used memory
 const ARGON2_WASM_MEMORY_THRESHOLD_RELOAD = 2 << 19;
 
 class Argon2S2K {
+  type: 'argon2';
+  private salt: Uint8Array;
+  private t: number;
+  private p: number;
+  private encodedM: number;
   /**
-  * @param {Object} [config] - Full configuration, defaults to openpgp.config
-  */
-  constructor(config = defaultConfig) {
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   */
+  constructor(config: Config) {
     const { passes, parallelism, memoryExponent } = config.s2kArgon2Params;
 
     this.type = 'argon2';
     /**  @type {Uint8Array} 16 bytes of salt */
-    this.salt = null;
+    this.salt = new Uint8Array();
     /** @type {Integer} number of passes */
     this.t = passes;
     /** @type {Integer} degree of parallelism (lanes) */
@@ -48,11 +54,11 @@ class Argon2S2K {
   }
 
   /**
-  * Parsing function for argon2 string-to-key specifier.
-  * @param {Uint8Array} bytes - Payload of argon2 string-to-key specifier
-  * @returns {Integer} Actual length of the object.
-  */
-  read(bytes) {
+   * Parsing function for argon2 string-to-key specifier.
+   * @param {Uint8Array} bytes - Payload of argon2 string-to-key specifier
+   * @returns {Integer} Actual length of the object.
+   */
+  read(bytes: Uint8Array) {
     let i = 0;
 
     this.salt = bytes.subarray(i, i + 16);
@@ -66,35 +72,36 @@ class Argon2S2K {
   }
 
   /**
-  * Serializes s2k information
-  * @returns {Uint8Array} Binary representation of s2k.
-  */
-  write() {
+   * Serializes s2k information
+   * @returns {Uint8Array} Binary representation of s2k.
+   */
+  write(): Uint8Array {
     const arr = [
       new Uint8Array([enums.write(enums.s2k, this.type)]),
       this.salt,
-      new Uint8Array([this.t, this.p, this.encodedM])
+      new Uint8Array([this.t, this.p, this.encodedM]),
     ];
 
     return util.concatUint8Array(arr);
   }
 
   /**
-  * Produces a key using the specified passphrase and the defined
-  * hashAlgorithm
-  * @param {String} passphrase - Passphrase containing user input
-  * @returns {Promise<Uint8Array>} Produced key with a length corresponding to `keySize`
-  * @throws {Argon2OutOfMemoryError|Errors}
-  * @async
-  */
-  async produceKey(passphrase, keySize) {
+   * Produces a key using the specified passphrase and the defined
+   * hashAlgorithm
+   * @param {String} passphrase - Passphrase containing user input
+   * @returns {Promise<Uint8Array>} Produced key with a length corresponding to `keySize`
+   * @throws {Argon2OutOfMemoryError|Errors}
+   * @async
+   */
+  async produceKey(passphrase: string, keySize: number): Promise<Uint8Array> {
     const decodedM = 2 << (this.encodedM - 1);
 
     try {
       // on first load, the argon2 lib is imported and the WASM module is initialized.
       // the two steps need to be atomic to avoid race conditions causing multiple wasm modules
       // being loaded when `argon2Promise` is not initialized.
-      loadArgonWasmModule = loadArgonWasmModule || (await import('argon2id')).default;
+      loadArgonWasmModule =
+        loadArgonWasmModule || (await import('argon2id')).default;
       argon2Promise = argon2Promise || loadArgonWasmModule();
 
       // important to keep local ref to argon2 in case the module is reloaded by another instance
@@ -102,6 +109,7 @@ class Argon2S2K {
 
       const passwordBytes = util.encodeUTF8(passphrase);
       const hash = argon2({
+        //@ts-ignore
         version: ARGON2_VERSION,
         type: ARGON2_TYPE,
         password: passwordBytes,
@@ -109,7 +117,7 @@ class Argon2S2K {
         tagLength: keySize,
         memorySize: decodedM,
         parallelism: this.p,
-        passes: this.t
+        passes: this.t,
       });
 
       // a lot of memory was used, reload to deallocate
@@ -120,13 +128,17 @@ class Argon2S2K {
       }
       return hash;
     } catch (e) {
-      if (e.message && (
-        e.message.includes('Unable to grow instance memory') || // Chrome
-        e.message.includes('failed to grow memory') || // Firefox
-        e.message.includes('WebAssembly.Memory.grow') || // Safari
-        e.message.includes('Out of memory') // Safari iOS
-      )) {
-        throw new Argon2OutOfMemoryError('Could not allocate required memory for Argon2');
+      if (
+        e instanceof Error &&
+        e.message &&
+        (e.message.includes('Unable to grow instance memory') || // Chrome
+          e.message.includes('failed to grow memory') || // Firefox
+          e.message.includes('WebAssembly.Memory.grow') || // Safari
+          e.message.includes('Out of memory')) // Safari iOS
+      ) {
+        throw new Argon2OutOfMemoryError(
+          'Could not allocate required memory for Argon2'
+        );
       } else {
         throw e;
       }

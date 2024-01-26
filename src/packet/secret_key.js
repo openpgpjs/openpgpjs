@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PublicKeyPacket from './public_key';
-import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k/index.ts';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -150,7 +150,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         this.s2k = newS2KFromType(s2kType);
         i += this.s2k.read(bytes.subarray(i, bytes.length));
 
-        if (this.s2k.type === 'gnu-dummy') {
+        if (this.s2k.gnuType === 'gnu-dummy') {
           return;
         }
       } else if (this.s2kUsage) {
@@ -279,7 +279,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - [Optional] If secret data is encrypted (string-to-key usage octet
     //   not zero), an Initial Vector (IV) of the same length as the
     //   cipher's block size.
-    if (this.s2kUsage && this.s2k.type !== 'gnu-dummy') {
+    if (this.s2kUsage && this.s2k.gnuType !== 'gnu-dummy') {
       optionalFieldsArr.push(...this.iv);
     }
 
@@ -332,7 +332,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @returns {Boolean}
    */
   isDummy() {
-    return !!(this.s2k && this.s2k.type === 'gnu-dummy');
+    return !!(this.s2k && this.s2k.gnuType === 'gnu-dummy');
   }
 
   /**
@@ -353,7 +353,8 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.s2k = newS2KFromType(enums.s2k.gnu, config);
     this.s2k.algorithm = 0;
     this.s2k.c = 0;
-    this.s2k.type = 'gnu-dummy';
+    this.s2k.type = 'gnu';
+    this.s2k.gnuType = 'gnu-dummy';
     this.s2kUsage = 254;
     this.symmetric = enums.symmetric.aes256;
     this.isLegacyAEAD = null;
