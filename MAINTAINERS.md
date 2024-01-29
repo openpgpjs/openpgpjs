@@ -47,7 +47,6 @@ Triage can happen asynchronously and continuously, or in regularly scheduled mee
 - Prevents issues and the project itself becoming stale
 - Provides structure and an opportunity for collaborative decision-making with regards to the project trajectory and roadmap
 
-It can be beneficial to have triage be part of already existing regular meetings, and if the volume of incoming issues requires it, have a regular, public triage meeting. If there is a regular meeting, make sure it is added here and in the [CONTRIBUTING.md](/CONTRIBUTING.md). Also consider adding it to the [NEW-CONTRIBUTORS.md](/NEW-CONTRIBUTORS.MD) and explicitly invite new and prospective contributors to listen in or participate. This will give interested people a plannable, social opportunity to meet the maintainers and gain insight into the project, with both a low barrier to entry for the new contributors and a low amount of additional effort for the maintainers.
 
 ### Step 1: Type the Issue
 
@@ -99,7 +98,7 @@ To identify issues that are specifically groomed for new contributors, we use th
 As to the difference between `Help wanted` and `Good first issue`:
 
 - a `Good first issue` always also implies `Help wanted` from outside the project
-- but `Help wanted` does not necessarily mean it’s a `Good first issue`. Might be really tricky but none of the current maintainers has the resources to tackle it
+- but `Help wanted` does not necessarily mean it’s a `Good first issue`. Might be really tricky but the core maintainers won't have time for it and would welcome external contributors.
 
 ##### Criteria for a `Help wanted` Issue
 
@@ -107,7 +106,6 @@ As to the difference between `Help wanted` and `Good first issue`:
 
 - **Goldilocks priority:** The priority should not be so high that a core contributor should do it, but not too low that it isn't useful enough for a core contributor to spend time reviewing it, answering questions, helping get it into a release, etc.
 
-- **Up-To-Date:** Often these issues become obsolete and have already been completed, are no longer desired, no longer make sense, or have changed priority or difficulty.
 
 ##### Criteria for a `Good first issue`
 
@@ -155,34 +153,9 @@ There are a variety of additonal labels that are generally self-explanatory, for
 
 A full list can always be found on the project’s [labels page](https://github.com/openpgpjs/openpgpjs/labels).
 
-### Step 2: Prioritize the Issue
+### Step 2: Follow up
 
-Aside from a type label and the housekeeping labels, issues that are or should become actionable also benefit from having a priority label.
-
-#### `priority/critical-urgent`
-
-Something has gone 💥. Stuff is on fire. Drop what you’re doing and work on this next. Must be in the next planned release, or requires its own release.
-
-#### `priority/important-soon`
-
-Must be staffed and worked on either currently or very soon—ideally in time for the next release. Important, but wouldn't block a release.
-
-#### `priority/important-longterm`
-
-Important over the long term, but may not be currently staffed and/or may require multiple releases to complete. Wouldn't block a release.
-
-#### `priority/backlog`
-
-Would be nice, but no one has the resources to work on it. Good candidates for the `Help wanted` label.
-
-### Step 3: Assign the Work
-
-It should be clear who is responsible for working on an issue once it has been triaged and deemed actionable. This also includes eventual reviews. Ideally don’t assign things to people who aren’t expecting it.
-
-### Step 4: Follow up
-
-- **If no PR is opened on an issue within a month**, a maintainer should contact the assignee and ask them to create a PR or unassign themselves
-- **If a PR is ready for review**, find someone to review it within a reasonable amount of time. If you cannot manage a review soon, explain that to the contributor so they’re not left hanging and know what to expect.
+**If a PR is ready for review**, find someone to review it within a reasonable amount of time. If you cannot manage a review soon, explain that to the contributor so they’re not left hanging and know what to expect.
 
 ## Release process
 
