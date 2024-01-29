@@ -20,8 +20,6 @@ There’s a [useful discussion](https://github.com/openpgpjs/openpgpjs/discussio
 flowchart LR
     CORE -->|depends on| InternalLibraries
     CORE -->|depends on| PublicLibraries
-    CORE -->|depends on| SoonObsolete
-    CORE .->|will depend on| v6InternalLibraries
     CORE .->|no longer depends on| UnusedForks
     subgraph Core
       CORE(OpenPGP.js)
@@ -43,29 +41,28 @@ flowchart LR
       direction LR
       ASMCRYPTO.JS(openpgp/asmcrypto.js fork)
       JSDOC(openpgp/jsdoc fork)
-      PAKO(openpgp/pako fork)
       SEEK-BZIP(openpgp/seek-bzip fork)
       TWEETNACL(openpgp/tweetnacl fork)
       WEB-STREAM-TOOLS(openpgp/web-stream-tools) -->|depends on| JSDOC
-    end
-    subgraph v6InternalLibraries [Internal Libraries that will be added in v6]
       NOBLE-CURVES(Noble Curves fork)
       NOBLE-HASHES(Noble Hashes fork)
-    end
-    subgraph SoonObsolete [Internal Libraries that will be removed in v6]
-      ELLIPTIC(openpgp/elliptic fork)
     end
     subgraph UnusedForks [Unused Forks]
       direction LR
       COMPRESSJS(compressjs fork, unused since 2018)
-      ES6-PROMISE(es6-promise fork, seems unused?)
+      ES6-PROMISE(es6-promise fork)
       EMAIL-ADDRESSES(email-addresses fork, replaced by upstream in 528fbfb, 2019)
+      PAKO(openpgp/pako fork)
+      ELLIPTIC(openpgp/elliptic fork)
     end
 ```
 
 
 ## OpenPGP.js Overview
-OpenPGP.js is an implementation of [RFC 4880](https://datatracker.ietf.org/doc/html/rfc4880). 
+OpenPGP.js is a JavaScript implementation of the OpenPGP protocol. It implements
+ [RFC 4880](https://datatracker.ietf.org/doc/html/rfc4880) and most of the [crypto refresh](https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh)
+.
+
 And consists of these main building blocks:
 
 ### Key Module
@@ -173,10 +170,10 @@ These algorithms are implemented in `src/crypto/hash`.
 
 ## Crypto Refresh Features
 
-A new revision of the OpenPGP spec is currently under development but has not yet been stabilized, its working name is [draft-ietf-openpgp-crypto-refresh](https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh)
- and its main purpose is to update the algorithms used in OpenPGP to include advances in cryptography since RFC 4880 was published.
+A new version of the OpenPGP spec called [crypto-refresh](https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh), will be published as an RFC soon. 
+Its main purpose is to update the algorithms used in OpenPGP to include advances in cryptography since RFC 4880 was published.
 
-With v6 of OpenPGP.js all crypto refresh features will be available:
+With v6 of OpenPGP.js most of crypto refresh features will be available:
 
 - support for v6 keys, signatures, and encrypted-session keys & more (behind feature flag openpgp.config.v6Keys)
 - support for AEAD-protected encrypted messages (new format, behind feature flag openpgp.config.aeadProtect) - support for Argon2
