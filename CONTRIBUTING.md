@@ -79,38 +79,14 @@ Additionally, please try to follow the style of the commit messages on our [main
 
 ## Testing
 
-We have multiple types of tests. They are located in the root [`/test`](https://github.com/openpgpjs/openpgpjs/tree/main/test) folder.
-Before you can run the tests you need to build the project using `npm run build` and this will bundle the project and the tests for it be used in our different testing environments.
+Tests. They are located in the root [`/test`](https://github.com/openpgpjs/openpgpjs/tree/main/test) folder.
+Before running the tests, run `npm run build` to build OpenPGP.js if you've made changes since running `npm install`.
 
 **Unit Tests:**
 To run the tests in Node.js, run `npm test`.
 
-**Browser Tests:**
-For debugging browser errors, you can run `npm start` and open [`http://localhost:8080/test/unittests.html`](http://localhost:8080/test/unittests.html) in a browser, or run one the following commands:
+To run the tests in a browser, run `npm run browsertest`.
 
-This will run the tests inside a browser environment:
-
-```sh
-   npm run browsertest
-```
-
-You can run the tests for multiple headless browsers using KarmaJs:
-
-` npm run test-browser`
-
-If you wanna start the tests using KarmaJs and BrowserStack:
-`npm run test-browserstack`
-
-**_NOTE_**: You need to configure you env with `BROWSER_STACK_ACCESS_KEY` and `BROWSERSTACK_USERNAME` to be able to run the BrowserStack tests.
-
-
-**Performance:** 
-To avoid performance regressions, we measure time and memory usage with the following testing suites (in `/benchmarks`):
-
-```sh
-npm run benchmark-time
-npm run benchmark-memory-usage
-```
 
 **Typescript definitions**
 
