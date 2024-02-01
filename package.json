@@ -46,7 +46,7 @@
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
     "test": "mocha --timeout 120000 test/unittests.js",
-    "test-type-definitions": "node --loader ts-node/esm test/typescript/definitions.ts",
+    "test-type-definitions": "tsx test/typescript/definitions.ts",
     "benchmark-time": "node test/benchmarks/time.js",
     "benchmark-memory-usage": "node test/benchmarks/memory_usage.js",
     "start": "http-server",
@@ -102,6 +102,7 @@
     "rollup": "^4.9.5",
     "sinon": "^15.1.0",
     "ts-node": "^10.9.1",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "web-streams-polyfill": "^3.2.0"
   },
