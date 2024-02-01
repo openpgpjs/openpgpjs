@@ -38,11 +38,6 @@ export default {
    */
   preferredCompressionAlgorithm: enums.compression.uncompressed,
   /**
-   * @memberof module:config
-   * @property {Integer} deflateLevel Default zip/zlib compression level, between 1 and 9
-   */
-  deflateLevel: 6,
-  /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
    * This option is applicable to:
    * - key generation (encryption key preferences),

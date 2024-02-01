@@ -278,8 +278,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
 
       const config = {
         aeadProtect: true,
-        preferredCompressionAlgorithm: openpgp.enums.compression.zip,
-        deflateLevel: 1
+        preferredCompressionAlgorithm: openpgp.enums.compression.zip
       };
       const armored2 = await openpgp.encrypt({ message, passwords, config });
       const encrypted2 = await openpgp.readMessage({ armoredMessage: armored2 });
