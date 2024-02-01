@@ -129,32 +129,25 @@ const curves = {
 };
 
 class CurveWithOID {
-  constructor(oidOrName, params) {
+  constructor(oidOrName) {
     try {
-      if (util.isArray(oidOrName) ||
-          util.isUint8Array(oidOrName)) {
-        // by oid byte array
-        oidOrName = new OID(oidOrName);
-      }
-      if (oidOrName instanceof OID) {
-        // by curve OID
-        oidOrName = oidOrName.getName();
-      }
-      // by curve name or oid string
-      this.name = enums.write(enums.curve, oidOrName);
+      this.name = oidOrName instanceof OID ?
+        oidOrName.getName() :
+        enums.write(enums.curve,oidOrName);
     } catch (err) {
       throw new UnsupportedError('Unknown curve');
     }
-    params = params || curves[this.name];
+    const params = curves[this.name];
 
     this.keyType = params.keyType;
 
     this.oid = params.oid;
     this.hash = params.hash;
     this.cipher = params.cipher;
-    this.node = params.node && curves[this.name];
-    this.web = params.web && curves[this.name];
+    this.node = params.node;
+    this.web = params.web;
     this.payloadSize = params.payloadSize;
+    this.sharedSize = params.sharedSize;
     if (this.web && util.getWebCrypto()) {
       this.type = 'web';
     } else if (this.node && util.getNodeCrypto()) {

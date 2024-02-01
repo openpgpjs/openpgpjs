@@ -241,7 +241,6 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
     });
     const curves = ['secp256k1' , 'nistP256', 'nistP384', 'nistP521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
     curves.forEach(curveName => it(`${curveName} - Sign and verify message`, async function () {
-      const curve = new elliptic_curves.CurveWithOID(curveName);
       const { Q: keyPublic, secret: keyPrivate } = await elliptic_curves.generate(curveName);
       const message = new Uint8Array([
         0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
@@ -249,8 +248,8 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       ]);
       const messageDigest = await hashMod.digest(openpgp.enums.hash.sha512, message);
       await testNativeAndFallback(async () => {
-        const signature = await elliptic_curves.ecdsa.sign(curve.oid, openpgp.enums.hash.sha512, message, keyPublic, keyPrivate, messageDigest);
-        await expect(elliptic_curves.ecdsa.verify(curve.oid, openpgp.enums.hash.sha512, signature, message, keyPublic, messageDigest)).to.eventually.be.true;
+        const signature = await elliptic_curves.ecdsa.sign(curveName, openpgp.enums.hash.sha512, message, keyPublic, keyPrivate, messageDigest);
+        await expect(elliptic_curves.ecdsa.verify(curveName, openpgp.enums.hash.sha512, signature, message, keyPublic, messageDigest)).to.eventually.be.true;
       });
     }));
   });
