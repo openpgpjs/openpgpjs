@@ -49,52 +49,52 @@ const nodeCurves = nodeCrypto ? {
 } : {};
 
 const curves = {
-  nistP256: {
+  [enums.curve.nistP256]: {
     oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.nistP256,
-    web: webCurves.nistP256,
+    node: nodeCurves[enums.curve.nistP256],
+    web: webCurves[enums.curve.nistP256],
     payloadSize: 32,
     sharedSize: 256
   },
-  nistP384: {
+  [enums.curve.nistP384]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    node: nodeCurves.nistP384,
-    web: webCurves.nistP384,
+    node: nodeCurves[enums.curve.nistP384],
+    web: webCurves[enums.curve.nistP384],
     payloadSize: 48,
     sharedSize: 384
   },
-  nistP521: {
+  [enums.curve.nistP521]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    node: nodeCurves.nistP521,
-    web: webCurves.nistP521,
+    node: nodeCurves[enums.curve.nistP521],
+    web: webCurves[enums.curve.nistP521],
     payloadSize: 66,
     sharedSize: 528
   },
-  secp256k1: {
+  [enums.curve.secp256k1]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x0A],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.secp256k1,
+    node: nodeCurves[enums.curve.secp256k1],
     payloadSize: 32
   },
-  ed25519Legacy: {
+  [enums.curve.ed25519Legacy]: {
     oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
     keyType: enums.publicKey.eddsaLegacy,
     hash: enums.hash.sha512,
     node: false, // nodeCurves.ed25519 TODO
     payloadSize: 32
   },
-  curve25519Legacy: {
+  [enums.curve.curve25519Legacy]: {
     oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
     keyType: enums.publicKey.ecdh,
     hash: enums.hash.sha256,
@@ -102,28 +102,28 @@ const curves = {
     node: false, // nodeCurves.curve25519 TODO
     payloadSize: 32
   },
-  brainpoolP256r1: {
+  [enums.curve.brainpoolP256r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.brainpoolP256r1,
+    node: nodeCurves[enums.curve.brainpoolP256r1],
     payloadSize: 32
   },
-  brainpoolP384r1: {
+  [enums.curve.brainpoolP384r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    node: nodeCurves.brainpoolP384r1,
+    node: nodeCurves[enums.curve.brainpoolP384r1],
     payloadSize: 48
   },
-  brainpoolP512r1: {
+  [enums.curve.brainpoolP512r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    node: nodeCurves.brainpoolP512r1,
+    node: nodeCurves[enums.curve.brainpoolP512r1],
     payloadSize: 64
   }
 };
@@ -217,7 +217,7 @@ async function generate(curveName) {
  * @returns {enums.hash} hash algorithm
  */
 function getPreferredHashAlgo(oid) {
-  return curves[enums.write(enums.curve, oid.toHex())].hash;
+  return curves[oid.getName()].hash;
 }
 
 /**
@@ -232,14 +232,14 @@ function getPreferredHashAlgo(oid) {
  */
 async function validateStandardParams(algo, oid, Q, d) {
   const supportedCurves = {
-    nistP256: true,
-    nistP384: true,
-    nistP521: true,
-    secp256k1: true,
-    curve25519Legacy: algo === enums.publicKey.ecdh,
-    brainpoolP256r1: true,
-    brainpoolP384r1: true,
-    brainpoolP512r1: true
+    [enums.curve.nistP256]: true,
+    [enums.curve.nistP384]: true,
+    [enums.curve.nistP521]: true,
+    [enums.curve.secp256k1]: true,
+    [enums.curve.curve25519Legacy]: algo === enums.publicKey.ecdh,
+    [enums.curve.brainpoolP256r1]: true,
+    [enums.curve.brainpoolP384r1]: true,
+    [enums.curve.brainpoolP512r1]: true
   };
 
   // Check whether the given curve is supported
@@ -262,7 +262,7 @@ async function validateStandardParams(algo, oid, Q, d) {
     return true;
   }
 
-  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, enums.write(enums.curve, oid.toHex())); // excluding curve25519Legacy, ecdh and ecdsa use the same curves
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curveName); // excluding curve25519Legacy, ecdh and ecdsa use the same curves
   /*
    * Re-derive public point Q' = dG from private key
    * Expect Q == Q'

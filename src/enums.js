@@ -16,46 +16,37 @@ export default {
     'nistP256':               'nistP256',
     /** @deprecated use `nistP256` instead */
     'p256':                   'nistP256',
-    '2a8648ce3d030107':       'nistP256',
 
     /** NIST P-384 Curve */
     'nistP384':               'nistP384',
     /** @deprecated use `nistP384` instead */
     'p384':                   'nistP384',
-    '2b81040022':             'nistP384',
 
     /** NIST P-521 Curve */
     'nistP521':               'nistP521',
     /** @deprecated use `nistP521` instead */
     'p521':                   'nistP521',
-    '2b81040023':             'nistP521',
 
     /** SECG SECP256k1 Curve */
     'secp256k1':              'secp256k1',
-    '2b8104000a':             'secp256k1',
 
     /** Ed25519 - deprecated by crypto-refresh (replaced by standaone Ed25519 algo) */
     'ed25519Legacy':          'ed25519Legacy',
     /** @deprecated use `ed25519Legacy` instead */
     'ed25519':                'ed25519Legacy',
-    '2b06010401da470f01':     'ed25519Legacy',
 
     /** Curve25519 - deprecated by crypto-refresh (replaced by standaone X25519 algo) */
     'curve25519Legacy':       'curve25519Legacy',
     /** @deprecated use `curve25519Legacy` instead */
     'curve25519':             'curve25519Legacy',
-    '2b060104019755010501':   'curve25519Legacy',
 
     /** BrainpoolP256r1 Curve */
     'brainpoolP256r1':       'brainpoolP256r1',
-    '2b2403030208010107':    'brainpoolP256r1',
 
     /** BrainpoolP384r1 Curve */
     'brainpoolP384r1':       'brainpoolP384r1',
-    '2b240303020801010b':    'brainpoolP384r1',
 
     /** BrainpoolP512r1 Curve */
-    '2b240303020801010d':    'brainpoolP512r1',
     'brainpoolP512r1':       'brainpoolP512r1'
   },
 
