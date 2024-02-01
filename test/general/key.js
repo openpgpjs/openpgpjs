@@ -4284,11 +4284,9 @@ VYGdb3eNlV8CfoEC
 
   it('Reject encryption with key revoked with appended revocation cert', async function() {
     const key = await openpgp.readKey({ armoredKey: pub_revoked_with_cert });
-    return openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }) }).then(() => {
-      throw new Error('encryptSessionKey should not encrypt with revoked public key');
-    }).catch(function(error) {
-      expect(error.message).to.equal('Error encrypting message: Primary key is revoked');
-    });
+    await expect(
+      openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }) })
+    ).to.be.rejectedWith(/Primary key is revoked/);
   });
 
   it('Merge key with another key with non-ID user attributes', async function() {

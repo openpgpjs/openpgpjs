@@ -300,10 +300,25 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
         message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.curve25519Legacy]) }
       })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519Legacy is disabled/);
 
-      const echdEncrypted = await openpgp.encrypt({
+      await expect(openpgp.encrypt({
         message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
-      });
-      expect(echdEncrypted).to.match(/---BEGIN PGP MESSAGE---/);
+      })).to.be.eventually.rejectedWith(/Could not verify primary key: Support for eddsaLegacy keys using curve ed25519Legacy is disabled/);
+
+      // RSA 512 bits primary key, ECC subkey
+      const weakPrimaryKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xk0EZbuUkQECAOVRTj4yGjMTk94lHaJGJZpwAnPJzSLr0lsqRzbsaeL+JeUr
+HtKQyv8wEnqN0o7j39DXdFBI8f2/T0DkC4gkbQsAEQEAAc0OPHRlc3RAdGVz
+dC5pdD7CiwQQAQgAPwWCZbuUkQMLCQcJkL/AJzZtSewrBRUICgwOBBYAAgEC
+GQECmwMCHgEWIQSUuxkscrvIncEIj8K/wCc2bUnsKwAABpYCAMsq3UDscj6W
+IVz8+VubCuJma95dgMXjqDGd2XGLUthYzKQ+k0USut3nwrt5aJOiQGse7W9O
+Mjr/KnRCNGrJdm7OOARlu5SREgorBgEEAZdVAQUBAQdAkDQHPjXorB969PXZ
+p09HqVCOqcOAzKi4KLL7I3QosmsDAQgHwnYEGAEIACoFgmW7lJEJkL/AJzZt
+SewrApsMFiEElLsZLHK7yJ3BCI/Cv8AnNm1J7CsAAJ6VAf9uBYUWIM2LFx1L
+c1HGHD56KA0Mu4eQksKNEugotEyBuWiZCVO+LBrDUFztC1IwXaNPL3bCjYaD
+5f5A+c8qOY1f
+-----END PGP PUBLIC KEY BLOCK-----` });
+      await expect(openpgp.encrypt({ message, encryptionKeys: weakPrimaryKey, config: { minRSABits: 2048 } })).to.be.rejectedWith(/Could not verify primary key: RSA keys shorter than 2048 bits are considered too weak./);
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;

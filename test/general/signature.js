@@ -895,7 +895,8 @@ DQmhI0SZoTKy4EGhS0bNJ+g2+dJ8Y22fKzLWXwo=
     await expect(openpgp.sign({
       signingKeys: key,
       date: new Date(key.keyPacket.created - 3600),
-      message: await openpgp.createMessage({ text: 'Hello World' })
+      message: await openpgp.createMessage({ text: 'Hello World' }),
+      config: { minRSABits: 1024 }
     })).to.be.rejectedWith(/Signature creation time is in the future/);
   });
 
