@@ -117,7 +117,7 @@ export default () => {
     before(async () => {
       eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
       ecdhKey = eddsaKey.subkeys[0];
-      ecdsaKey = await generatePrivateKeyObject({ curve: 'p256' });
+      ecdsaKey = await generatePrivateKeyObject({ curve: 'nistP256' });
     });
 
     it('EdDSA params are not valid for ECDH', async function() {
@@ -193,7 +193,7 @@ export default () => {
     });
   });
 
-  const curves = ['curve25519Legacy', 'p256', 'p384', 'p521', 'secp256k1', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+  const curves = ['curve25519Legacy', 'nistP256', 'nistP384', 'nistP521', 'secp256k1', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
   curves.forEach(curve => {
     describe(`ECC ${curve} parameter validation`, () => {
       let ecdsaKey;

@@ -31,16 +31,16 @@ const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
 const webCurves = {
-  [enums.curve.p256]: 'P-256',
-  [enums.curve.p384]: 'P-384',
-  [enums.curve.p521]: 'P-521'
+  [enums.curve.nistP256]: 'P-256',
+  [enums.curve.nistP384]: 'P-384',
+  [enums.curve.nistP521]: 'P-521'
 };
 const knownCurves = nodeCrypto ? nodeCrypto.getCurves() : [];
 const nodeCurves = nodeCrypto ? {
   [enums.curve.secp256k1]: knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
-  [enums.curve.p256]: knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
-  [enums.curve.p384]: knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
-  [enums.curve.p521]: knownCurves.includes('secp521r1') ? 'secp521r1' : undefined,
+  [enums.curve.nistP256]: knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
+  [enums.curve.nistP384]: knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
+  [enums.curve.nistP521]: knownCurves.includes('secp521r1') ? 'secp521r1' : undefined,
   [enums.curve.ed25519Legacy]: knownCurves.includes('ED25519') ? 'ED25519' : undefined,
   [enums.curve.curve25519Legacy]: knownCurves.includes('X25519') ? 'X25519' : undefined,
   [enums.curve.brainpoolP256r1]: knownCurves.includes('brainpoolP256r1') ? 'brainpoolP256r1' : undefined,
@@ -49,33 +49,33 @@ const nodeCurves = nodeCrypto ? {
 } : {};
 
 const curves = {
-  p256: {
+  nistP256: {
     oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.p256,
-    web: webCurves.p256,
+    node: nodeCurves.nistP256,
+    web: webCurves.nistP256,
     payloadSize: 32,
     sharedSize: 256
   },
-  p384: {
+  nistP384: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    node: nodeCurves.p384,
-    web: webCurves.p384,
+    node: nodeCurves.nistP384,
+    web: webCurves.nistP384,
     payloadSize: 48,
     sharedSize: 384
   },
-  p521: {
+  nistP521: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    node: nodeCurves.p521,
-    web: webCurves.p521,
+    node: nodeCurves.nistP521,
+    web: webCurves.nistP521,
     payloadSize: 66,
     sharedSize: 528
   },
@@ -232,9 +232,9 @@ function getPreferredHashAlgo(oid) {
  */
 async function validateStandardParams(algo, oid, Q, d) {
   const supportedCurves = {
-    p256: true,
-    p384: true,
-    p521: true,
+    nistP256: true,
+    nistP384: true,
+    nistP521: true,
     secp256k1: true,
     curve25519Legacy: algo === enums.publicKey.ecdh,
     brainpoolP256r1: true,

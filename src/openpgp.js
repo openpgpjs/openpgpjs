@@ -42,7 +42,7 @@ import { checkKeyRequirements } from './key/helper';
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
  * @param {String} [options.curve='curve25519Legacy'] - Elliptic curve for ECC keys:
- *                                             curve25519Legacy (default), p256, p384, p521, secp256k1,
+ *                                             curve25519Legacy (default), nistP256, nistP384, nistP521, secp256k1,
  *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires

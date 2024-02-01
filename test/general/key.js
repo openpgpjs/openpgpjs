@@ -2606,7 +2606,7 @@ function versionSpecificTests() {
     openpgp.config.minRSABits = rsaBits;
 
     const userID = { name: 'test', email: 'a@b.com' };
-    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ type: 'ecc', curve: 'p256' }] };
+    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ type: 'ecc', curve: 'nistP256' }] };
     try {
       const { privateKey: key } = await openpgp.generateKey(opt);
       expect(key.users.length).to.equal(1);
@@ -4503,13 +4503,13 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       const userID = { name: 'test', email: 'a@b.com' };
       const { privateKey } = await openpgp.generateKey({ curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys:[] });
       const total = privateKey.subkeys.length;
-      let newPrivateKey = await privateKey.addSubkey({ curve: 'p256', sign: true });
+      let newPrivateKey = await privateKey.addSubkey({ curve: 'nistP256', sign: true });
       newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
       const subkey = newPrivateKey.subkeys[total];
       expect(subkey).to.exist;
       expect(newPrivateKey.subkeys.length).to.be.equal(total + 1);
       expect(newPrivateKey.getAlgorithmInfo().curve).to.be.equal('ed25519Legacy');
-      expect(subkey.getAlgorithmInfo().curve).to.be.equal('p256');
+      expect(subkey.getAlgorithmInfo().curve).to.be.equal('nistP256');
       expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdsa');
 

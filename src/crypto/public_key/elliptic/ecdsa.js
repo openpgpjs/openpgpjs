@@ -55,9 +55,9 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
           return await webSign(curve, hashAlgo, message, keyPair);
         } catch (err) {
           // We do not fallback if the error is related to key integrity
-          // Unfortunaley Safari does not support p521 and throws a DataError when using it
+          // Unfortunaley Safari does not support nistP521 and throws a DataError when using it
           // So we need to always fallback for that curve
-          if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+          if (curve.name !== 'nistP521' && (err.name === 'DataError' || err.name === 'OperationError')) {
             throw err;
           }
           util.printDebugError('Browser did not support signing: ' + err.message);
@@ -117,9 +117,9 @@ export async function verify(oid, hashAlgo, signature, message, publicKey, hashe
           return verified || tryFallbackVerificationForOldBug();
         } catch (err) {
           // We do not fallback if the error is related to key integrity
-          // Unfortunately Safari does not support p521 and throws a DataError when using it
+          // Unfortunately Safari does not support nistP521 and throws a DataError when using it
           // So we need to always fallback for that curve
-          if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+          if (curve.name !== 'nistP521' && (err.name === 'DataError' || err.name === 'OperationError')) {
             throw err;
           }
           util.printDebugError('Browser did not support verifying: ' + err.message);
