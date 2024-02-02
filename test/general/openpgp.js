@@ -3990,7 +3990,7 @@ XfA3pqV4mTzF
           }).then(function() {
             throw new Error('Should not encrypt with revoked key');
           }).catch(function(error) {
-            expect(error.message).to.match(/Error encrypting message: Primary key is revoked/);
+            expect(error.message).to.match(/Primary key is revoked/);
           });
         });
       });

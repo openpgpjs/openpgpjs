@@ -259,6 +259,11 @@ class Key {
   async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
+    try {
+      helper.checkKeyRequirements(primaryKey, config);
+    } catch (err) {
+      throw util.wrapError('Could not verify primary key', err);
+    }
     const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
     for (const subkey of subkeys) {
@@ -313,6 +318,11 @@ class Key {
   async getEncryptionKey(keyID, date = new Date(), userID = {}, config = defaultConfig) {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
+    try {
+      helper.checkKeyRequirements(primaryKey, config);
+    } catch (err) {
+      throw util.wrapError('Could not verify primary key', err);
+    }
     // V4: by convention subkeys are preferred for encryption service
     const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
