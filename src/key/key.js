@@ -257,8 +257,8 @@ class Key {
    * @async
    */
   async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
-    const primaryKey = this.keyPacket;
     await this.verifyPrimaryKey(date, userID, config);
+    const primaryKey = this.keyPacket;
     try {
       helper.checkKeyRequirements(primaryKey, config);
     } catch (err) {
@@ -316,8 +316,8 @@ class Key {
    * @async
    */
   async getEncryptionKey(keyID, date = new Date(), userID = {}, config = defaultConfig) {
-    const primaryKey = this.keyPacket;
     await this.verifyPrimaryKey(date, userID, config);
+    const primaryKey = this.keyPacket;
     try {
       helper.checkKeyRequirements(primaryKey, config);
     } catch (err) {
