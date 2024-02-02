@@ -108,7 +108,7 @@ export default () => describe('Util unit tests', function() {
       const data = 'test@example.com';
       expect(util.isEmailAddress(data)).to.be.true;
     });
-    it('should return true for valid email address (-- in domain part)', function() {
+    it('should return true for valid email address (internationalized domain name)', function() {
       const data = 'test@xn--wgv.xn--q9jyb4c';
       expect(util.isEmailAddress(data)).to.be.true;
     });
@@ -116,8 +116,8 @@ export default () => describe('Util unit tests', function() {
       const data = 'test1@com.com09';
       expect(util.isEmailAddress(data)).to.be.true;
     });
-    it('should return false for invalid email address (no . in domain part)', function() {
-      const data = 'test@examplecom';
+    it('should return true for valid email address (no . in domain part)', function() {
+      const data = 'test@localhost';
       expect(util.isEmailAddress(data)).to.be.true;
     });
     it('should return false for invalid email address (full userID)', function() {

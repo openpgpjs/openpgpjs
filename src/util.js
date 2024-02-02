@@ -459,8 +459,9 @@ const util = {
 
   /**
    * Test email format based on W3C HTML5 specification.
-   * This check is not exaustive, and includes a willful violation of RFC5322
-   * (see https://html.spec.whatwg.org/multipage/input.html#email-state-(type=email))
+   * This check is not exaustive, and does not match RFC 5322 exactly
+   * (see https://html.spec.whatwg.org/multipage/input.html#email-state-(type=email)),
+   * but is commonly used for email address validation.
    */
   isEmailAddress: function(data) {
     if (!util.isString(data)) {
