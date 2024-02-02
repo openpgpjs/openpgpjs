@@ -4793,7 +4793,7 @@ sEj+v9LKoMTYZGMfp3qDVFLtkBE88eVmVjgJOoLhrsv7yh0PAA==
     });
 
     describe('Sign and verify with each curve', function() {
-      const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+      const curves = ['secp256k1' , 'nistP256', 'nistP384', 'nistP521', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
       curves.forEach(curve => {
         it(`sign/verify with ${curve}`, async function() {
           const config = { rejectCurves: new Set() };

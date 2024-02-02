@@ -59,9 +59,9 @@ library to convert back and forth between them.
     |:---------------:|:----------:|:---------:|:----------:|:---------:|:-----------------:|
     | curve25519      | ECDH       | N/A       | No         | No        | Algorithmically** |
     | ed25519         | N/A        | EdDSA     | No         | No        | Algorithmically** |
-    | p256            | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | p384            | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | p521            | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
+    | nistP256        | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
+    | nistP384        | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
+    | nistP521        | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
     | brainpoolP256r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
     | brainpoolP384r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
     | brainpoolP512r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
@@ -451,7 +451,7 @@ can `.pipe()` to a `Writable` stream, for example.
 
 ECC keys (smaller and faster to generate):
 
-Possible values for `curve` are: `curve25519`, `ed25519`, `p256`, `p384`, `p521`,
+Possible values for `curve` are: `curve25519`, `ed25519`, `nistP256`, `nistP384`, `nistP521`,
 `brainpoolP256r1`, `brainpoolP384r1`, `brainpoolP512r1`, and `secp256k1`.
 Note that both the `curve25519` and `ed25519` options generate a primary key for signing using Ed25519
 and a subkey for encryption using Curve25519.

@@ -238,24 +238,24 @@ async function jsPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function webPrivateEphemeralKey(curve, V, Q, d) {
-  const recipient = privateToJWK(curve.payloadSize, curve.web.web, Q, d);
+  const recipient = privateToJWK(curve.payloadSize, curve.web, Q, d);
   let privateKey = webCrypto.importKey(
     'jwk',
     recipient,
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     true,
     ['deriveKey', 'deriveBits']
   );
-  const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, V);
+  const jwk = rawPublicToJWK(curve.payloadSize, curve.web, V);
   let sender = webCrypto.importKey(
     'jwk',
     jwk,
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     true,
     []
@@ -264,11 +264,11 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
   let S = webCrypto.deriveBits(
     {
       name: 'ECDH',
-      namedCurve: curve.web.web,
+      namedCurve: curve.web,
       public: sender
     },
     privateKey,
-    curve.web.sharedSize
+    curve.sharedSize
   );
   let secret = webCrypto.exportKey(
     'jwk',
@@ -289,11 +289,11 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
  * @async
  */
 async function webPublicEphemeralKey(curve, Q) {
-  const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, Q);
+  const jwk = rawPublicToJWK(curve.payloadSize, curve.web, Q);
   let keyPair = webCrypto.generateKey(
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     true,
     ['deriveKey', 'deriveBits']
@@ -303,7 +303,7 @@ async function webPublicEphemeralKey(curve, Q) {
     jwk,
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     false,
     []
@@ -312,11 +312,11 @@ async function webPublicEphemeralKey(curve, Q) {
   let s = webCrypto.deriveBits(
     {
       name: 'ECDH',
-      namedCurve: curve.web.web,
+      namedCurve: curve.web,
       public: recipient
     },
     keyPair.privateKey,
-    curve.web.sharedSize
+    curve.sharedSize
   );
   let p = webCrypto.exportKey(
     'jwk',
@@ -338,7 +338,7 @@ async function webPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function nodePrivateEphemeralKey(curve, V, d) {
-  const recipient = nodeCrypto.createECDH(curve.node.node);
+  const recipient = nodeCrypto.createECDH(curve.node);
   recipient.setPrivateKey(d);
   const sharedKey = new Uint8Array(recipient.computeSecret(V));
   const secretKey = new Uint8Array(recipient.getPrivateKey());
@@ -354,7 +354,7 @@ async function nodePrivateEphemeralKey(curve, V, d) {
  * @async
  */
 async function nodePublicEphemeralKey(curve, Q) {
-  const sender = nodeCrypto.createECDH(curve.node.node);
+  const sender = nodeCrypto.createECDH(curve.node);
   sender.generateKeys();
   const sharedKey = new Uint8Array(sender.computeSecret(Q));
   const publicKey = new Uint8Array(sender.getPublicKey());

@@ -199,7 +199,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     expect(await ecdhX.decrypt(openpgp.enums.publicKey.x448, ephemeralPublicKey, wrappedKey, K_B, b)).to.deep.equal(data);
   });
 
-  const allCurves = ['secp256k1', 'p256', 'p384', 'p521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+  const allCurves = ['secp256k1', 'nistP256', 'nistP384', 'nistP521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
   allCurves.forEach(curveName => {
     it(`${curveName} - Successful exchange`, async function () {
       const curve = new elliptic_curves.CurveWithOID(curveName);
@@ -245,7 +245,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
           this.skip();
         }
 
-        const expectNativeWeb = new Set(['p256', 'p384']); // older versions of safari do not implement p521
+        const expectNativeWeb = new Set(['nistP256', 'nistP384']); // older versions of safari do not implement nistP521
 
         const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
