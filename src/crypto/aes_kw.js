@@ -21,7 +21,7 @@
  * @module crypto/aes_kw
  */
 
-import * as cipher from './cipher';
+import { getCipher } from './cipher';
 import util from '../util';
 
 /**
@@ -31,8 +31,9 @@ import util from '../util';
  * @param {Uint8Array} data
  * @returns {Uint8Array}
  */
-export function wrap(key, data) {
-  const aes = new cipher['aes' + (key.length * 8)](key);
+export async function wrap(algo, key, data) {
+  const Cipher = await getCipher(algo);
+  const aes = new Cipher(key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const P = unpack(data);
   let A = IV;
@@ -71,8 +72,9 @@ export function wrap(key, data) {
  * @returns {Uint8Array}
  * @throws {Error}
  */
-export function unwrap(key, data) {
-  const aes = new cipher['aes' + (key.length * 8)](key);
+export async function unwrap(algo, key, data) {
+  const Cipher = await getCipher(algo);
+  const aes = new Cipher(key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const C = unpack(data);
   let A = C.subarray(0, 2);

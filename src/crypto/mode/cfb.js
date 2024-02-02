@@ -23,9 +23,9 @@
 
 import { AES_CFB } from '@openpgp/asmcrypto.js/aes/cfb.js';
 import * as stream from '@openpgp/web-stream-tools';
-import getCipher from '../cipher/getCipher';
 import util from '../../util';
 import enums from '../../enums';
+import { getCipher, getCipherParams } from '../cipher';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -60,7 +60,7 @@ export async function encrypt(algo, key, plaintext, iv, config) {
     return aesEncrypt(algo, key, plaintext, iv, config);
   }
 
-  const Cipher = getCipher(algo);
+  const Cipher = await getCipher(algo);
   const cipherfn = new Cipher(key);
   const block_size = cipherfn.blockSize;
 
@@ -103,7 +103,7 @@ export async function decrypt(algo, key, ciphertext, iv) {
     return aesDecrypt(algo, key, ciphertext, iv);
   }
 
-  const Cipher = getCipher(algo);
+  const Cipher = await getCipher(algo);
   const cipherfn = new Cipher(key);
   const block_size = cipherfn.blockSize;
 
@@ -131,7 +131,7 @@ export async function decrypt(algo, key, ciphertext, iv) {
 
 class WebCryptoEncryptor {
   constructor(algo, key, iv) {
-    const { blockSize } = getCipher(algo);
+    const { blockSize } = getCipherParams(algo);
     this.key = key;
     this.prevBlock = iv;
     this.nextBlock = new Uint8Array(blockSize);
@@ -141,7 +141,7 @@ class WebCryptoEncryptor {
   }
 
   static async isSupported(algo) {
-    const { keySize } = getCipher(algo);
+    const { keySize } = getCipherParams(algo);
     return webCrypto.importKey('raw', new Uint8Array(keySize), 'aes-cbc', false, ['encrypt'])
       .then(() => true, () => false);
   }

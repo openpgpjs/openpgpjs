@@ -138,7 +138,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
       this.chunkSizeByte = config.aeadChunkSizeByte;
       this.encrypted = await runAEAD(this, 'encrypt', key, bytes);
     } else {
-      const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
+      const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
 
       const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
       const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
@@ -169,7 +169,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (this.version === 2) {
       packetbytes = await runAEAD(this, 'decrypt', key, encrypted);
     } else {
-      const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
+      const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
       const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(blockSize));
 
       // there must be a modification detection code packet as the
@@ -231,7 +231,7 @@ export async function runAEAD(packet, fn, key, data) {
   let iv;
   let ivView;
   if (isSEIPDv2) {
-    const { keySize } = crypto.getCipher(packet.cipherAlgorithm);
+    const { keySize } = crypto.getCipherParams(packet.cipherAlgorithm);
     const { ivLength } = mode;
     const info = new Uint8Array(adataBuffer, 0, 5);
     const derived = await computeHKDF(enums.hash.sha256, key, packet.salt, info, keySize + ivLength);

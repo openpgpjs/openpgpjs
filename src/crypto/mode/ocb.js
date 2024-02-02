@@ -20,9 +20,8 @@
  * @module crypto/mode/ocb
  */
 
-import * as ciphers from '../cipher';
+import { getCipher } from '../cipher';
 import util from '../../util';
-import enums from '../../enums';
 
 const blockLength = 16;
 const ivLength = 15;
@@ -68,11 +67,11 @@ async function OCB(cipher, key) {
   let decipher;
   let mask;
 
-  constructKeyVariables(cipher, key);
+  await constructKeyVariables(cipher, key);
 
-  function constructKeyVariables(cipher, key) {
-    const cipherName = enums.read(enums.symmetric, cipher);
-    const aes = new ciphers[cipherName](key);
+  async function constructKeyVariables(cipher, key) {
+    const Cipher = await getCipher(cipher);
+    const aes = new Cipher(key);
     encipher = aes.encrypt.bind(aes);
     decipher = aes.decrypt.bind(aes);
 

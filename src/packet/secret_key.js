@@ -174,7 +174,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         if (this.s2kUsage !== 253 || this.isLegacyAEAD) {
           this.iv = bytes.subarray(
             i,
-            i + crypto.getCipher(this.symmetric).blockSize
+            i + crypto.getCipherParams(this.symmetric).blockSize
           );
           this.usedModernAEAD = false;
         } else {
@@ -388,7 +388,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;
 
-    const { blockSize } = crypto.getCipher(this.symmetric);
+    const { blockSize } = crypto.getCipherParams(this.symmetric);
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
@@ -568,7 +568,7 @@ class SecretKeyPacket extends PublicKeyPacket {
  * @returns encryption key
  */
 async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag, isLegacyAEAD) {
-  const { keySize } = crypto.getCipher(cipherAlgo);
+  const { keySize } = crypto.getCipherParams(cipherAlgo);
   const derivedKey = await s2k.produceKey(passphrase, keySize);
   if (!aeadMode || keyVersion === 5 || isLegacyAEAD) {
     return derivedKey;

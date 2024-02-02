@@ -9,8 +9,8 @@ import { getRandomBytes } from '../../random';
 
 import enums from '../../../enums';
 import util from '../../../util';
-import getCipher from '../../cipher/getCipher';
 import computeHKDF from '../../hkdf';
+import { getCipherParams } from '../../cipher';
 
 const HKDF_INFO = {
   x25519: util.encodeUTF8('OpenPGP X25519'),
@@ -97,9 +97,10 @@ export async function encrypt(algo, data, recipientA) {
         recipientA,
         sharedSecret
       ]);
-      const { keySize } = getCipher(enums.symmetric.aes128);
+      const cipherAlgo = enums.symmetric.aes128;
+      const { keySize } = getCipherParams(cipherAlgo);
       const encryptionKey = await computeHKDF(enums.hash.sha256, hkdfInput, new Uint8Array(), HKDF_INFO.x25519, keySize);
-      const wrappedKey = aesKW.wrap(encryptionKey, data);
+      const wrappedKey = await aesKW.wrap(cipherAlgo, encryptionKey, data);
       return { ephemeralPublicKey, wrappedKey };
     }
     case enums.publicKey.x448: {
@@ -112,9 +113,10 @@ export async function encrypt(algo, data, recipientA) {
         recipientA,
         sharedSecret
       ]);
-      const { keySize } = getCipher(enums.symmetric.aes256);
+      const cipherAlgo = enums.symmetric.aes256;
+      const { keySize } = getCipherParams(enums.symmetric.aes256);
       const encryptionKey = await computeHKDF(enums.hash.sha512, hkdfInput, new Uint8Array(), HKDF_INFO.x448, keySize);
-      const wrappedKey = aesKW.wrap(encryptionKey, data);
+      const wrappedKey = await aesKW.wrap(cipherAlgo, encryptionKey, data);
       return { ephemeralPublicKey, wrappedKey };
     }
 
@@ -143,9 +145,10 @@ export async function decrypt(algo, ephemeralPublicKey, wrappedKey, A, k) {
         A,
         sharedSecret
       ]);
-      const { keySize } = getCipher(enums.symmetric.aes128);
+      const cipherAlgo = enums.symmetric.aes128;
+      const { keySize } = getCipherParams(cipherAlgo);
       const encryptionKey = await computeHKDF(enums.hash.sha256, hkdfInput, new Uint8Array(), HKDF_INFO.x25519, keySize);
-      return aesKW.unwrap(encryptionKey, wrappedKey);
+      return aesKW.unwrap(cipherAlgo, encryptionKey, wrappedKey);
     }
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
@@ -155,9 +158,10 @@ export async function decrypt(algo, ephemeralPublicKey, wrappedKey, A, k) {
         A,
         sharedSecret
       ]);
-      const { keySize } = getCipher(enums.symmetric.aes256);
+      const cipherAlgo = enums.symmetric.aes256;
+      const { keySize } = getCipherParams(enums.symmetric.aes256);
       const encryptionKey = await computeHKDF(enums.hash.sha512, hkdfInput, new Uint8Array(), HKDF_INFO.x448, keySize);
-      return aesKW.unwrap(encryptionKey, wrappedKey);
+      return aesKW.unwrap(cipherAlgo, encryptionKey, wrappedKey);
     }
     default:
       throw new Error('Unsupported ECDH algorithm');
