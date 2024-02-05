@@ -14,7 +14,7 @@ import { wasm } from '@rollup/plugin-wasm';
 // import pkg from './package.json' assert { type: 'json' };
 const pkg = JSON.parse(readFileSync('./package.json'));
 
-const nodeDependencies = Object.keys(pkg.dependencies);
+const nodeDependencies = Object.keys(pkg.dependencies || {});
 const nodeBuiltinModules = builtinModules.concat(['module']);
 
 const wasmOptions = {

@@ -78,10 +78,10 @@
     "@types/chai": "^4.2.14",
     "argon2id": "^1.0.1",
     "benchmark": "^2.1.4",
-    "bn.js": "^4.11.8",
     "c8": "^8.0.1",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
+    "eckey-utils": "^0.7.14",
     "eslint": "^8.34.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-base": "^15.0.0",
@@ -105,9 +105,6 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "web-streams-polyfill": "^3.2.0"
-  },
-  "dependencies": {
-    "asn1.js": "^5.0.0"
   },
   "repository": {
     "type": "git",
