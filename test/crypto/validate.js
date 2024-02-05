@@ -1,9 +1,9 @@
-import BN from 'bn.js';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
+import util from '../../src/util.js';
 
 const armoredDSAKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -387,15 +387,16 @@ export default () => {
     });
 
     it('detect g with small order', async function() {
-      const keyPacket = await cloneKeyPacket(egKey);
-      const p = keyPacket.publicParams.p;
-      const g = keyPacket.publicParams.g;
+      const BigInteger = await util.getBigInteger();
 
-      const pBN = new BN(p);
-      const gModP = new BN(g).toRed(new BN.red(pBN));
+      const keyPacket = await cloneKeyPacket(egKey);
+      const { p, g } = keyPacket.publicParams;
+
+      const pBN = new BigInteger(p);
+      const gBN = new BigInteger(g);
       // g**(p-1)/2 has order 2
-      const gOrd2 = gModP.redPow(pBN.subn(1).shrn(1));
-      keyPacket.publicParams.g = gOrd2.toArrayLike(Uint8Array, 'be');
+      const gOrd2 = gBN.modExp(pBN.dec().irightShift(new BigInteger(1)), pBN);
+      keyPacket.publicParams.g = gOrd2.toUint8Array();
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
   });
