@@ -7,24 +7,19 @@ export async function getCipher(algo) {
     case enums.symmetric.aes192:
     case enums.symmetric.aes256:
       return aes(getCipherKeySize(algo));
+    case enums.symmetric.cast5:
+    case enums.symmetric.blowfish:
+    case enums.symmetric.twofish:
     case enums.symmetric.tripledes: {
-      const { TripleDES } = await import('./des');
-      return TripleDES;
-    }
-    case enums.symmetric.cast5: {
-      const { default: CAST5 } = await import('./cast5');
-      return CAST5;
-    }
-    case enums.symmetric.twofish: {
-      const { default: TwoFish } = await import('./twofish');
-      return TwoFish;
-    }
-    case enums.symmetric.blowfish: {
-      const { default: BlowFish } = await import('./blowfish');
-      return BlowFish;
+      const { legacyCiphers } = await import('./legacy_ciphers');
+      const cipher = legacyCiphers.get(algo);
+      if (!cipher) {
+        throw new Error('Unsupported cipher algorithm');
+      }
+      return cipher;
     }
     default:
-      throw new Error('Unsupported symmetric-key algorithm');
+      throw new Error('Unsupported cipher algorithm');
   }
 }
 
