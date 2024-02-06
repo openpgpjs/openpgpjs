@@ -420,11 +420,18 @@ const util = {
   },
 
   /**
-   * Get native Web Cryptography api, only the current version of the spec.
-   * @returns {Object} The SubtleCrypto api or 'undefined'.
+   * Get native Web Cryptography API.
+   * @returns {Object} The SubtleCrypto API
+   * @throws if the API is not available
    */
   getWebCrypto: function() {
-    return typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
+    const globalWebCrypto = typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
+    // Fallback for Node 16, which does not expose WebCrypto as a global
+    const webCrypto = globalWebCrypto || this.getNodeCrypto()?.webcrypto.subtle;
+    if (!webCrypto) {
+      throw new Error('The WebCrypto API is not available');
+    }
+    return webCrypto;
   },
 
   /**
