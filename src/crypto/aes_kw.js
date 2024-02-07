@@ -24,15 +24,75 @@
 import { getCipher } from './cipher';
 import util from '../util';
 
+const webCrypto = util.getWebCrypto();
 /**
  * AES key wrap
- * @function
- * @param {Uint8Array} key
- * @param {Uint8Array} data
- * @returns {Uint8Array}
+ * @param {enums.symmetric.aes128|enums.symmetric.aes256|enums.symmetric.aes192} algo - AES algo
+ * @param {Uint8Array} key - wrapping key
+ * @param {Uint8Array} dataToWrap
+ * @returns {Uint8Array} wrapped key
  */
-export async function wrap(algo, key, data) {
-  const Cipher = await getCipher(algo);
+export async function wrap(algo, key, dataToWrap) {
+  if (!util.isAES(algo)) {
+    throw new Error('AES algorithm expected');
+  }
+
+  try {
+    const wrappingKey = await webCrypto.importKey('raw', key, { name: 'AES-KW' }, false, ['wrapKey']);
+    // Import data as HMAC key, as it has no key length requirements
+    const keyToWrap = await webCrypto.importKey('raw', dataToWrap, { name: 'HMAC', hash: 'SHA-256' }, true, ['sign']);
+    const wrapped = await webCrypto.wrapKey('raw', keyToWrap, wrappingKey, { name: 'AES-KW' });
+    return new Uint8Array(wrapped);
+  } catch (err) {
+    // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    if (err.name !== 'NotSupportedError' &&
+      !(key.length === 24 && err.name === 'OperationError')) {
+      throw err;
+    }
+    util.printDebugError('Browser did not support operation: ' + err.message);
+  }
+
+  return asmcryptoWrap(algo, key, dataToWrap);
+}
+
+/**
+ * AES key unwrap
+ * @param {enums.symmetric.aes128|enums.symmetric.aes256|enums.symmetric.aes192} algo - AES algo
+ * @param {Uint8Array} key - wrapping key
+ * @param {Uint8Array} wrappedData
+ * @returns {Uint8Array} unwrapped data
+ */
+export async function unwrap(algo, key, wrappedData) {
+  if (!util.isAES(algo)) {
+    throw new Error('AES algorithm expected');
+  }
+
+  let wrappingKey;
+  try {
+    wrappingKey = await webCrypto.importKey('raw', key, { name: 'AES-KW' }, false, ['unwrapKey']);
+  } catch (err) {
+    // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+    if (err.name !== 'NotSupportedError' &&
+      !(key.length === 24 && err.name === 'OperationError')) {
+      throw err;
+    }
+    util.printDebugError('Browser did not support operation: ' + err.message);
+    return asmcryptoUnwrap(algo, key, wrappedData);
+  }
+
+  try {
+    const unwrapped = await webCrypto.unwrapKey('raw', wrappedData, wrappingKey, { name: 'AES-KW' }, { name: 'HMAC', hash: 'SHA-256' }, true, ['sign']);
+    return new Uint8Array(await webCrypto.exportKey('raw', unwrapped));
+  } catch (err) {
+    if (err.name === 'OperationError') {
+      throw new Error('Key Data Integrity failed');
+    }
+    throw err;
+  }
+}
+
+async function asmcryptoWrap(aesAlgo, key, data) {
+  const Cipher = await getCipher(aesAlgo);
   const aes = new Cipher(key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const P = unpack(data);
@@ -64,16 +124,8 @@ export async function wrap(algo, key, data) {
   return pack(A, R);
 }
 
-/**
- * AES key unwrap
- * @function
- * @param {String} key
- * @param {String} data
- * @returns {Uint8Array}
- * @throws {Error}
- */
-export async function unwrap(algo, key, data) {
-  const Cipher = await getCipher(algo);
+async function asmcryptoUnwrap(aesAlgo, key, data) {
+  const Cipher = await getCipher(aesAlgo);
   const aes = new Cipher(key);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const C = unpack(data);

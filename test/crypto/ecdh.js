@@ -63,6 +63,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
   ]);
   const secp256k1_data = new Uint8Array([
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   ]);
 
@@ -142,7 +143,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const curve = new elliptic_curves.CurveWithOID('secp256k1');
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-    const data = util.stringToUint8Array('test');
+    const data = random.getRandomBytes(16);
     await expect(
       ecdh.encrypt(oid, kdfParams, data, Q1.subarray(1), fingerprint1)
     ).to.be.rejectedWith(/Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|second arg must be public key/);
@@ -152,7 +153,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-    const data = util.stringToUint8Array('test');
+    const data = random.getRandomBytes(16);
     const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
     await expect(
       ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint1)
@@ -163,7 +164,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-    const data = util.stringToUint8Array('test');
+    const data = random.getRandomBytes(16);
     const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q2, fingerprint1);
     await expect(
       ecdh.decrypt(oid, kdfParams, V, C, Q2, d2, fingerprint2)
@@ -174,7 +175,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
     const oid = new OID(curve.oid);
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-    const data = util.stringToUint8Array('test');
+    const data = random.getRandomBytes(16);
     const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1);
     expect(await ecdh.decrypt(oid, kdfParams, V, C, Q1, d1, fingerprint1)).to.deep.equal(data);
   });
@@ -191,7 +192,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
 
   it('Successful exchange x448', async function () {
     const { ecdhX } = elliptic_curves;
-    const data = random.getRandomBytes();
+    const data = random.getRandomBytes(16);
     // Bob's keys from https://www.rfc-editor.org/rfc/rfc7748#section-6.2
     const b = util.hexToUint8Array('1c306a7ac2a0e2e0990b294470cba339e6453772b075811d8fad0d1d6927c120bb5ee8972b0d3e21374c9c921b09d1b0366f10b65173992d');
     const K_B = util.hexToUint8Array('3eb7a829b0cd20f5bcfc0b599b6feccf6da4627107bdb0d4f345b43027d8b972fc3e34fb4232a13ca706dcb57aec3dae07bdc1c67bf33609');
@@ -205,7 +206,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
       const curve = new elliptic_curves.CurveWithOID(curveName);
       const oid = new OID(curve.oid);
       const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-      const data = util.stringToUint8Array('test');
+      const data = random.getRandomBytes(16);
       const Q = key_data[curveName].pub;
       const d = key_data[curveName].priv;
       const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
@@ -250,7 +251,7 @@ export default () => describe('ECDH key exchange @lightweight', function () {
         const curve = new elliptic_curves.CurveWithOID(curveName);
         const oid = new OID(curve.oid);
         const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
-        const data = util.stringToUint8Array('test');
+        const data = random.getRandomBytes(16);
         const Q = key_data[curveName].pub;
         const d = key_data[curveName].priv;
         const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);

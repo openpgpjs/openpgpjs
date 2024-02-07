@@ -55,9 +55,9 @@ export default () => describe('AES Key Wrap and Unwrap', function () {
       const algo = test[1];
       const kek = util.hexToUint8Array(test[2]);
       const input = test[3].replace(/\s/g, '');
-      const input_bin = util.uint8ArrayToString(util.hexToUint8Array(input));
+      const input_bin = util.hexToUint8Array(input);
       const output = test[4].replace(/\s/g, '');
-      const output_bin = util.uint8ArrayToString(util.hexToUint8Array(output));
+      const output_bin = util.hexToUint8Array(output);
       expect(util.uint8ArrayToHex(await aesKW.wrap(algo, kek, input_bin)).toUpperCase()).to.equal(output);
       expect(util.uint8ArrayToHex(await aesKW.unwrap(algo, kek, output_bin)).toUpperCase()).to.equal(input);
     });
