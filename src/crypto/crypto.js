@@ -26,7 +26,7 @@
 import publicKey from './public_key';
 import mode from './mode';
 import { getRandomBytes } from './random';
-import { getCipher, getCipherParams } from './cipher';
+import { getCipherParams } from './cipher';
 import ECDHSymkey from '../type/ecdh_symkey';
 import KDFParams from '../type/kdf_params';
 import enums from '../enums';
@@ -524,4 +524,4 @@ export function getPreferredCurveHashAlgo(algo, oid) {
 }
 
 
-export { getCipher, getCipherParams };
+export { getCipherParams };

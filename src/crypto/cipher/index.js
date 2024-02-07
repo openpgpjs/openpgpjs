@@ -1,12 +1,11 @@
-import aes from './aes'; // can be imported dynamically once Web Crypto is used for AES-KW too
 import enums from '../../enums';
 
-export async function getCipher(algo) {
+export async function getLegacyCipher(algo) {
   switch (algo) {
     case enums.symmetric.aes128:
     case enums.symmetric.aes192:
     case enums.symmetric.aes256:
-      return aes(getCipherKeySize(algo));
+      throw new Error('Not a legacy cipher');
     case enums.symmetric.cast5:
     case enums.symmetric.blowfish:
     case enums.symmetric.twofish:
