@@ -20,7 +20,8 @@
  * @module crypto/mode/ocb
  */
 
-import { getCipher } from '../cipher';
+import { AES_CBC } from '@openpgp/asmcrypto.js/aes/cbc.js';
+import { getCipherParams } from '../cipher';
 import util from '../../util';
 
 const blockLength = 16;
@@ -61,20 +62,24 @@ const one = new Uint8Array([1]);
  * @param {Uint8Array} key - The encryption key
  */
 async function OCB(cipher, key) {
+  const { keySize } = getCipherParams(cipher);
+  // sanity checks
+  if (!util.isAES(cipher) || key.length !== keySize) {
+    throw new Error('Unexpected algorithm or key size');
+  }
 
   let maxNtz = 0;
-  let encipher;
-  let decipher;
+
+  // `encipher` and `decipher` cannot be async, since `crypt` shares state across calls,
+  // hence its execution cannot be broken up.
+  // As a result, WebCrypto cannot currently be used for `encipher`.
+  const encipher = block => AES_CBC.encrypt(block, key, false);
+  const decipher = block => AES_CBC.decrypt(block, key, false);
   let mask;
 
-  await constructKeyVariables(cipher, key);
+  constructKeyVariables(cipher, key);
 
-  async function constructKeyVariables(cipher, key) {
-    const Cipher = await getCipher(cipher);
-    const aes = new Cipher(key);
-    encipher = aes.encrypt.bind(aes);
-    decipher = aes.decrypt.bind(aes);
-
+  function constructKeyVariables() {
     const mask_x = encipher(zeroBlock);
     const mask_$ = util.double(mask_x);
     mask = [];

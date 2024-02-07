@@ -25,7 +25,7 @@ import { AES_CFB } from '@openpgp/asmcrypto.js/aes/cfb.js';
 import * as stream from '@openpgp/web-stream-tools';
 import util from '../../util';
 import enums from '../../enums';
-import { getCipher, getCipherParams } from '../cipher';
+import { getLegacyCipher, getCipherParams } from '../cipher';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -60,8 +60,8 @@ export async function encrypt(algo, key, plaintext, iv, config) {
     return aesEncrypt(algo, key, plaintext, iv, config);
   }
 
-  const Cipher = await getCipher(algo);
-  const cipherfn = new Cipher(key);
+  const LegacyCipher = await getLegacyCipher(algo);
+  const cipherfn = new LegacyCipher(key);
   const block_size = cipherfn.blockSize;
 
   const blockc = iv.slice();
@@ -103,8 +103,8 @@ export async function decrypt(algo, key, ciphertext, iv) {
     return aesDecrypt(algo, key, ciphertext, iv);
   }
 
-  const Cipher = await getCipher(algo);
-  const cipherfn = new Cipher(key);
+  const LegacyCipher = await getLegacyCipher(algo);
+  const cipherfn = new LegacyCipher(key);
   const block_size = cipherfn.blockSize;
 
   let blockp = iv;

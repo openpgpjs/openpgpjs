@@ -21,7 +21,8 @@
  * @module crypto/aes_kw
  */
 
-import { getCipher } from './cipher';
+import { AES_CBC } from '@openpgp/asmcrypto.js/aes/cbc.js';
+import { getCipherParams } from './cipher';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto();
@@ -33,8 +34,10 @@ const webCrypto = util.getWebCrypto();
  * @returns {Uint8Array} wrapped key
  */
 export async function wrap(algo, key, dataToWrap) {
-  if (!util.isAES(algo)) {
-    throw new Error('AES algorithm expected');
+  const { keySize } = getCipherParams(algo);
+  // sanity checks, since WebCrypto does not use the `algo` input
+  if (!util.isAES(algo) || key.length !== keySize) {
+    throw new Error('Unexpected algorithm or key size');
   }
 
   try {
@@ -63,8 +66,10 @@ export async function wrap(algo, key, dataToWrap) {
  * @returns {Uint8Array} unwrapped data
  */
 export async function unwrap(algo, key, wrappedData) {
-  if (!util.isAES(algo)) {
-    throw new Error('AES algorithm expected');
+  const { keySize } = getCipherParams(algo);
+  // sanity checks, since WebCrypto does not use the `algo` input
+  if (!util.isAES(algo) || key.length !== keySize) {
+    throw new Error('Unexpected algorithm or key size');
   }
 
   let wrappingKey;
@@ -91,9 +96,8 @@ export async function unwrap(algo, key, wrappedData) {
   }
 }
 
-async function asmcryptoWrap(aesAlgo, key, data) {
-  const Cipher = await getCipher(aesAlgo);
-  const aes = new Cipher(key);
+function asmcryptoWrap(aesAlgo, key, data) {
+  const aesInstance = new AES_CBC(key, new Uint8Array(16), false);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const P = unpack(data);
   let A = IV;
@@ -111,7 +115,7 @@ async function asmcryptoWrap(aesAlgo, key, data) {
       B[2] = R[2 * i];
       B[3] = R[2 * i + 1];
       // B = AES(K, B)
-      B = unpack(aes.encrypt(pack(B)));
+      B = unpack(aesInstance.encrypt(pack(B)));
       // A = MSB(64, B) ^ t
       A = B.subarray(0, 2);
       A[0] ^= t[0];
@@ -124,9 +128,8 @@ async function asmcryptoWrap(aesAlgo, key, data) {
   return pack(A, R);
 }
 
-async function asmcryptoUnwrap(aesAlgo, key, data) {
-  const Cipher = await getCipher(aesAlgo);
-  const aes = new Cipher(key);
+function asmcryptoUnwrap(aesAlgo, key, data) {
+  const aesInstance = new AES_CBC(key, new Uint8Array(16), false);
   const IV = new Uint32Array([0xA6A6A6A6, 0xA6A6A6A6]);
   const C = unpack(data);
   let A = C.subarray(0, 2);
@@ -144,7 +147,7 @@ async function asmcryptoUnwrap(aesAlgo, key, data) {
       B[2] = R[2 * i];
       B[3] = R[2 * i + 1];
       // B = AES-1(B)
-      B = unpack(aes.decrypt(pack(B)));
+      B = unpack(aesInstance.decrypt(pack(B)));
       // A = MSB(64, B)
       A = B.subarray(0, 2);
       // R[i] = LSB(64, B)
@@ -158,25 +161,11 @@ async function asmcryptoUnwrap(aesAlgo, key, data) {
   throw new Error('Key Data Integrity failed');
 }
 
-function createArrayBuffer(data) {
-  if (util.isString(data)) {
-    const { length } = data;
-    const buffer = new ArrayBuffer(length);
-    const view = new Uint8Array(buffer);
-    for (let j = 0; j < length; ++j) {
-      view[j] = data.charCodeAt(j);
-    }
-    return buffer;
-  }
-  return new Uint8Array(data).buffer;
-}
-
 function unpack(data) {
-  const { length } = data;
-  const buffer = createArrayBuffer(data);
+  const buffer = data.buffer;
   const view = new DataView(buffer);
-  const arr = new Uint32Array(length / 4);
-  for (let i = 0; i < length / 4; ++i) {
+  const arr = new Uint32Array(data.length / 4);
+  for (let i = 0; i < data.length / 4; ++i) {
     arr[i] = view.getUint32(4 * i);
   }
   return arr;
