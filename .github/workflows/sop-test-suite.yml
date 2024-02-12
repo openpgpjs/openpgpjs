@@ -16,10 +16,10 @@ jobs:
         password: ${{ secrets.github_token }}
     steps:
       # check out repo for scripts
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # check out pull request branch
       - name: Checkout openpgpjs-branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: openpgpjs-branch
       - name: Install openpgpjs-branch
@@ -30,7 +30,7 @@ jobs:
           OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-branch
       # check out main branch
       - name: Checkout openpgpjs-main
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: main
           path: openpgpjs-main
@@ -72,7 +72,7 @@ jobs:
     needs: test-suite
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Download test results json artifact
         id: download-test-results
         uses: actions/download-artifact@v3
