@@ -22,6 +22,7 @@ export { CleartextMessage, readCleartextMessage, createCleartextMessage } from '
 export * from './packet';
 
 export { default as KDFParams } from './type/kdf_params';
+export { default as Argon2S2K, Argon2OutOfMemoryError } from './type/s2k/argon2';
 
 export * from './encoding/armor';
 
