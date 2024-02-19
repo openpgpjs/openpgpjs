@@ -174,10 +174,10 @@ To offload cryptographic operations off the main thread, you can implement a Web
 
 #### TypeScript
 
-Since TS is not fully integrated in the library, TS-only dependencies are currently listed as `devDependencies`, so to compile the project you’ll need to add `@openpgp/web-stream-tools` manually:
+Since TS is not fully integrated in the library, TS-only dependencies are currently listed as `devDependencies`, so to compile the project you’ll need to add `@openpgp/web-stream-tools` manually (NB: only versions below v0.12 are compatible with OpenPGP.js v5):
 
 ```sh
-npm install --save-dev @openpgp/web-stream-tools
+npm install --save-dev @openpgp/web-stream-tools@0.0.11-patch-0
 ```
 
 If you notice missing or incorrect type definitions, feel free to open a PR.
