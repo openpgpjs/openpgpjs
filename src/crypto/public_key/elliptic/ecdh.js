@@ -29,7 +29,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { b64ToUint8Array } from '../../../encoding/base64';
 import * as pkcs5 from '../../pkcs5';
-import getCipher from '../../cipher/getCipher';
+import { getCipherParams } from '../../cipher';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -133,9 +133,9 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
   const curve = new CurveWithOID(oid);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
-  const { keySize } = getCipher(kdfParams.cipher);
+  const { keySize } = getCipherParams(kdfParams.cipher);
   const Z = await kdf(kdfParams.hash, sharedKey, keySize, param);
-  const wrappedKey = aesKW.wrap(Z, m);
+  const wrappedKey = await aesKW.wrap(kdfParams.cipher, Z, m);
   return { publicKey, wrappedKey };
 }
 
@@ -195,13 +195,13 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   const curve = new CurveWithOID(oid);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
-  const { keySize } = getCipher(kdfParams.cipher);
+  const { keySize } = getCipherParams(kdfParams.cipher);
   let err;
   for (let i = 0; i < 3; i++) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
       const Z = await kdf(kdfParams.hash, sharedKey, keySize, param, i === 1, i === 2);
-      return pkcs5.decode(aesKW.unwrap(Z, C));
+      return pkcs5.decode(await aesKW.unwrap(kdfParams.cipher, Z, C));
     } catch (e) {
       err = e;
     }

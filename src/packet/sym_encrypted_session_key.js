@@ -163,7 +163,7 @@ class SymEncryptedSessionKeyPacket {
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
-    const { blockSize, keySize } = crypto.getCipher(algo);
+    const { blockSize, keySize } = crypto.getCipherParams(algo);
     const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.version >= 5) {
@@ -199,7 +199,7 @@ class SymEncryptedSessionKeyPacket {
     this.s2k = newS2KFromConfig(config);
     this.s2k.generateSalt();
 
-    const { blockSize, keySize } = crypto.getCipher(algo);
+    const { blockSize, keySize } = crypto.getCipherParams(algo);
     const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.sessionKey === null) {

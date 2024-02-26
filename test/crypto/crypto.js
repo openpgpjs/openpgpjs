@@ -254,7 +254,7 @@ export default () => describe('API functional testing', function() {
     async function testCFB(plaintext, config = openpgp.config) {
       await Promise.all(symmAlgoNames.map(async function(algoName) {
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
-        const { blockSize } = crypto.getCipher(algo);
+        const { blockSize } = crypto.getCipherParams(algo);
         const symmKey = crypto.generateSessionKey(algo);
         const IV = new Uint8Array(blockSize);
         const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, config);

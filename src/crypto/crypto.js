@@ -26,7 +26,7 @@
 import publicKey from './public_key';
 import mode from './mode';
 import { getRandomBytes } from './random';
-import getCipher from './cipher/getCipher';
+import { getCipher, getCipherParams } from './cipher';
 import ECDHSymkey from '../type/ecdh_symkey';
 import KDFParams from '../type/kdf_params';
 import enums from '../enums';
@@ -442,7 +442,7 @@ export async function validateParams(algo, publicParams, privateParams) {
  * @async
  */
 export async function getPrefixRandom(algo) {
-  const { blockSize } = getCipher(algo);
+  const { blockSize } = getCipherParams(algo);
   const prefixrandom = await getRandomBytes(blockSize);
   const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
   return util.concat([prefixrandom, repeat]);
@@ -455,7 +455,7 @@ export async function getPrefixRandom(algo) {
  * @returns {Uint8Array} Random bytes as a string to be used as a key.
  */
 export function generateSessionKey(algo) {
-  const { keySize } = getCipher(algo);
+  const { keySize } = getCipherParams(algo);
   return getRandomBytes(keySize);
 }
 
@@ -469,8 +469,6 @@ export function getAEADMode(algo) {
   const algoName = enums.read(enums.aead, algo);
   return mode[algoName];
 }
-
-export { getCipher };
 
 /**
  * Check whether the given curve OID is supported
@@ -524,3 +522,6 @@ export function getPreferredCurveHashAlgo(algo, oid) {
       throw new Error('Unknown elliptic signing algo');
   }
 }
+
+
+export { getCipher, getCipherParams };

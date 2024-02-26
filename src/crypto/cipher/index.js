@@ -1,80 +1,73 @@
-/**
- * @fileoverview Symmetric cryptography functions
- * @module crypto/cipher
- */
+import aes from './aes'; // can be imported dynamically once Web Crypto is used for AES-KW too
+import enums from '../../enums';
 
-import aes from './aes';
-import { DES, TripleDES } from './des';
-import CAST5 from './cast5';
-import TF from './twofish';
-import BF from './blowfish';
+export async function getCipher(algo) {
+  switch (algo) {
+    case enums.symmetric.aes128:
+    case enums.symmetric.aes192:
+    case enums.symmetric.aes256:
+      return aes(getCipherKeySize(algo));
+    case enums.symmetric.cast5:
+    case enums.symmetric.blowfish:
+    case enums.symmetric.twofish:
+    case enums.symmetric.tripledes: {
+      const { legacyCiphers } = await import('./legacy_ciphers');
+      const cipher = legacyCiphers.get(algo);
+      if (!cipher) {
+        throw new Error('Unsupported cipher algorithm');
+      }
+      return cipher;
+    }
+    default:
+      throw new Error('Unsupported cipher algorithm');
+  }
+}
 
 /**
- * AES-128 encryption and decryption (ID 7)
- * @function
- * @param {String} key - 128-bit key
- * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
- * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
- * @returns {Object}
+ * Get block size for given cipher algo
+ * @param {module:enums.symmetric} algo - alrogithm identifier
  */
-export const aes128 = aes(128);
+function getCipherBlockSize(algo) {
+  switch (algo) {
+    case enums.symmetric.aes128:
+    case enums.symmetric.aes192:
+    case enums.symmetric.aes256:
+    case enums.symmetric.twofish:
+      return 16;
+    case enums.symmetric.blowfish:
+    case enums.symmetric.cast5:
+    case enums.symmetric.tripledes:
+      return 8;
+    default:
+      throw new Error('Unsupported cipher');
+  }
+}
+
 /**
- * AES-128 Block Cipher (ID 8)
- * @function
- * @param {String} key - 192-bit key
- * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
- * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
- * @returns {Object}
+ * Get key size for given cipher algo
+ * @param {module:enums.symmetric} algo - alrogithm identifier
  */
-export const aes192 = aes(192);
+function getCipherKeySize(algo) {
+  switch (algo) {
+    case enums.symmetric.aes128:
+    case enums.symmetric.blowfish:
+    case enums.symmetric.cast5:
+      return 16;
+    case enums.symmetric.aes192:
+    case enums.symmetric.tripledes:
+      return 24;
+    case enums.symmetric.aes256:
+    case enums.symmetric.twofish:
+      return 32;
+    default:
+      throw new Error('Unsupported cipher');
+  }
+}
+
 /**
- * AES-128 Block Cipher (ID 9)
- * @function
- * @param {String} key - 256-bit key
- * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
- * @see {@link https://csrc.nist.gov/publications/fips/fips197/fips-197.pdf|NIST FIPS-197}
- * @returns {Object}
+ * Get block and key size for given cipher algo
+ * @param {module:enums.symmetric} algo - alrogithm identifier
  */
-export const aes256 = aes(256);
-// Not in OpenPGP specifications
-export const des = DES;
-/**
- * Triple DES Block Cipher (ID 2)
- * @function
- * @param {String} key - 192-bit key
- * @see {@link https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-67r2.pdf|NIST SP 800-67}
- * @returns {Object}
- */
-export const tripledes = TripleDES;
-/**
- * CAST-128 Block Cipher (ID 3)
- * @function
- * @param {String} key - 128-bit key
- * @see {@link https://tools.ietf.org/html/rfc2144|The CAST-128 Encryption Algorithm}
- * @returns {Object}
- */
-export const cast5 = CAST5;
-/**
- * Twofish Block Cipher (ID 10)
- * @function
- * @param {String} key - 256-bit key
- * @see {@link https://tools.ietf.org/html/rfc4880#ref-TWOFISH|TWOFISH}
- * @returns {Object}
- */
-export const twofish = TF;
-/**
- * Blowfish Block Cipher (ID 4)
- * @function
- * @param {String} key - 128-bit key
- * @see {@link https://tools.ietf.org/html/rfc4880#ref-BLOWFISH|BLOWFISH}
- * @returns {Object}
- */
-export const blowfish = BF;
-/**
- * Not implemented
- * @function
- * @throws {Error}
- */
-export const idea = function() {
-  throw new Error('IDEA symmetric-key algorithm not implemented');
-};
+export function getCipherParams(algo) {
+  return { keySize: getCipherKeySize(algo), blockSize: getCipherBlockSize(algo) };
+}
