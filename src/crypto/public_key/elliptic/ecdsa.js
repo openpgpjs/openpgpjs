@@ -24,7 +24,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
-import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams } from './oid_curves';
+import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves } from './oid_curves';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -63,13 +63,8 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
           util.printDebugError('Browser did not support signing: ' + err.message);
         }
         break;
-      case 'node': {
-        const signature = await nodeSign(curve, hashAlgo, message, keyPair);
-        return {
-          r: signature.r.toArrayLike(Uint8Array),
-          s: signature.s.toArrayLike(Uint8Array)
-        };
-      }
+      case 'node':
+        return nodeSign(curve, hashAlgo, message, privateKey);
     }
   }
 
@@ -247,85 +242,45 @@ async function webVerify(curve, hashAlgo, { r, s }, message, publicKey) {
   );
 }
 
-async function nodeSign(curve, hashAlgo, message, keyPair) {
+async function nodeSign(curve, hashAlgo, message, privateKey) {
+  // JWT encoding cannot be used for now, as Brainpool curves are not supported
+  const ecKeyUtils = util.nodeRequire('eckey-utils');
+  const nodeBuffer = util.getNodeBuffer();
+  const { privateKey: derPrivateKey } = ecKeyUtils.generateDer({
+    curveName: nodeCurves[curve.name],
+    privateKey: nodeBuffer.from(privateKey)
+  });
+
   const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
   sign.write(message);
   sign.end();
-  const key = ECPrivateKey.encode({
-    version: 1,
-    parameters: curve.oid,
-    privateKey: Array.from(keyPair.privateKey),
-    publicKey: { unused: 0, data: Array.from(keyPair.publicKey) }
-  }, 'pem', {
-    label: 'EC PRIVATE KEY'
-  });
 
-  return ECDSASignature.decode(sign.sign(key), 'der');
+  const signature = new Uint8Array(sign.sign({ key: derPrivateKey, format: 'der', type: 'sec1', dsaEncoding: 'ieee-p1363' }));
+  const len = curve.payloadSize;
+
+  return {
+    r: signature.subarray(0, len),
+    s: signature.subarray(len, len << 1)
+  };
 }
 
 async function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
-  const { default: BN } = await import('bn.js');
+  const ecKeyUtils = util.nodeRequire('eckey-utils');
+  const nodeBuffer = util.getNodeBuffer();
+  const { publicKey: derPublicKey } = ecKeyUtils.generateDer({
+    curveName: nodeCurves[curve.name],
+    publicKey: nodeBuffer.from(publicKey)
+  });
 
   const verify = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
   verify.write(message);
   verify.end();
-  const key = SubjectPublicKeyInfo.encode({
-    algorithm: {
-      algorithm: [1, 2, 840, 10045, 2, 1],
-      parameters: curve.oid
-    },
-    subjectPublicKey: { unused: 0, data: Array.from(publicKey) }
-  }, 'pem', {
-    label: 'PUBLIC KEY'
-  });
-  const signature = ECDSASignature.encode({
-    r: new BN(r), s: new BN(s)
-  }, 'der');
+
+  const signature = util.concatUint8Array([r, s]);
 
   try {
-    return verify.verify(key, signature);
+    return verify.verify({ key: derPublicKey, format: 'der', type: 'spki', dsaEncoding: 'ieee-p1363' }, signature);
   } catch (err) {
     return false;
   }
 }
-
-// Originally written by Owen Smith https://github.com/omsmith
-// Adapted on Feb 2018 from https://github.com/Brightspace/node-jwk-to-pem/
-
-/* eslint-disable no-invalid-this */
-
-const asn1 = nodeCrypto ? util.nodeRequire('asn1.js') : undefined;
-
-const ECDSASignature = nodeCrypto ?
-  asn1.define('ECDSASignature', function() {
-    this.seq().obj(
-      this.key('r').int(),
-      this.key('s').int()
-    );
-  }) : undefined;
-
-const ECPrivateKey = nodeCrypto ?
-  asn1.define('ECPrivateKey', function() {
-    this.seq().obj(
-      this.key('version').int(),
-      this.key('privateKey').octstr(),
-      this.key('parameters').explicit(0).optional().any(),
-      this.key('publicKey').explicit(1).optional().bitstr()
-    );
-  }) : undefined;
-
-const AlgorithmIdentifier = nodeCrypto ?
-  asn1.define('AlgorithmIdentifier', function() {
-    this.seq().obj(
-      this.key('algorithm').objid(),
-      this.key('parameters').optional().any()
-    );
-  }) : undefined;
-
-const SubjectPublicKeyInfo = nodeCrypto ?
-  asn1.define('SubjectPublicKeyInfo', function() {
-    this.seq().obj(
-      this.key('algorithm').use(AlgorithmIdentifier),
-      this.key('subjectPublicKey').bitstr()
-    );
-  }) : undefined;
