@@ -259,8 +259,8 @@ async function nodeSign(curve, hashAlgo, message, privateKey) {
   const len = curve.payloadSize;
 
   return {
-    r: signature.slice(0, len),
-    s: signature.slice(len, len << 1)
+    r: signature.subarray(0, len),
+    s: signature.subarray(len, len << 1)
   };
 }
 
