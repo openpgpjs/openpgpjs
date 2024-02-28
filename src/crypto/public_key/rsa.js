@@ -114,8 +114,15 @@ export async function encrypt(data, n, e) {
  * @async
  */
 export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
-  if (util.getNodeCrypto()) {
-    return nodeDecrypt(data, n, e, d, p, q, u, randomPayload);
+  // Node v18.19.1, 20.11.1 and 21.6.2 have disabled support for PKCS#1 decryption,
+  // and we want to avoid checking the error type to decide if the random payload
+  // should indeed be returned.
+  if (util.getNodeCrypto() && !randomPayload) {
+    try {
+      return await nodeDecrypt(data, n, e, d, p, q, u);
+    } catch (err) {
+      util.printDebugError(err);
+    }
   }
   return bnDecrypt(data, n, e, d, p, q, u, randomPayload);
 }
@@ -350,16 +357,13 @@ async function bnEncrypt(data, n, e) {
   return data.modExp(e, n).toUint8Array('be', n.byteLength());
 }
 
-async function nodeDecrypt(data, n, e, d, p, q, u, randomPayload) {
+async function nodeDecrypt(data, n, e, d, p, q, u) {
   const jwk = await privateToJWK(n, e, d, p, q, u);
   const key = { key: jwk, format: 'jwk' , type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
 
   try {
     return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
   } catch (err) {
-    if (randomPayload) {
-      return randomPayload;
-    }
     throw new Error('Decryption error');
   }
 }

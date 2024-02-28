@@ -1391,7 +1391,7 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
       ],
       config
     });
-    expect(openpgp.decrypt({
+    await expect(openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage: message_with_notation }),
       decryptionKeys: privKey,
       verificationKeys: privKey,
