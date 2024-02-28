@@ -74,7 +74,7 @@ library to convert back and forth between them.
 * If the user's browser supports [native WebCrypto](https://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` API, this will be used. Under Node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used.
 
 * The library implements authenticated encryption (AEAD) as per the ["crypto refresh" draft standard](https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh) using AES-OCB, EAX, or GCM. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.** You can enable it by setting `openpgp.config.aeadProtect = true`.
-Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in a later draft of the crypto refresh.
+Note that this setting has a different effect from the one in OpenPGP.js v6, which implemented support for a provisional version of AEAD from [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in a later draft of the crypto refresh.
 
   You can change the AEAD mode by setting one of the following options:
 
@@ -182,7 +182,7 @@ If you notice missing or incorrect type definitions, feel free to open a PR.
 
 ### Examples
 
-Here are some examples of how to use OpenPGP.js v5. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js). If you're upgrading from v4 it might help to check out the [changelog](https://github.com/openpgpjs/openpgpjs/wiki/V5-Changelog) and [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
+Here are some examples of how to use OpenPGP.js v6. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js). If you're upgrading from v4 it might help to check out the [changelog](https://github.com/openpgpjs/openpgpjs/wiki/v6-Changelog) and [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
