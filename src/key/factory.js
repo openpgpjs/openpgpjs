@@ -219,8 +219,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     signatureProperties.preferredHashAlgorithms = createPreferredAlgos([
       enums.hash.sha512,
       enums.hash.sha256,
-      enums.hash.sha3_512,
-      enums.hash.sha3_256
+      ...(secretKeyPacket.version === 6 ? [enums.hash.sha3_512, enums.hash.sha3_256] : [])
     ], config.preferredHashAlgorithm);
     signatureProperties.preferredCompressionAlgorithms = createPreferredAlgos([
       enums.compression.uncompressed,
