@@ -51,6 +51,15 @@ const terserOptions = {
   compress: {
     unsafe: true
   },
+  /**
+   * The Babel plugin `@babel/plugin-transform-regenerator` used in the web-app Jest tests
+   * (as part of @babel/preset-env) introduces a bug when transforming the minified lightweight built.
+   * The issue is that the mangled `ArrayStream` class name (`n` in the specific case) gets wrongly
+   * reused and shadowed by a local variable in the `readPacket` function (see https://github.com/babel/babel/issues/16334).
+   * As a workaround for the problem, and to not have to amend the babel config for each monorepo workspace, we disable mangling
+   * the specific class name.
+   */
+  mangle: { reserved: ['ArrayStream'] },
   output: {
     comments: '/^(?:!|#__)/',
     preserve_annotations: true
