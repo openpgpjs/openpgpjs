@@ -128,9 +128,12 @@ class PublicKeyEncryptedSessionKeyPacket {
     }
     this.publicKeyAlgorithm = bytes[offset++];
     this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(offset));
-    if (this.version === 3 && (
-      this.publicKeyAlgorithm === enums.publicKey.x25519 || this.publicKeyAlgorithm === enums.publicKey.x448)) {
-      this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
+    if (this.publicKeyAlgorithm === enums.publicKey.x25519 || this.publicKeyAlgorithm === enums.publicKey.x448) {
+      if (this.version === 3) {
+        this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
+      } else if (this.encrypted.C.algorithm !== null) {
+        throw new Error('Unexpected cleartext symmetric algorithm');
+      }
     }
   }
 
