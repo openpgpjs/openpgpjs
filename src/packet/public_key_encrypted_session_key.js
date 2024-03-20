@@ -278,6 +278,7 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
       return {
+        sessionKeyAlgorithm: null,
         sessionKey: decryptedData
       };
     default:
