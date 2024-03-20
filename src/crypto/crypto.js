@@ -39,7 +39,7 @@ import ECDHXSymmetricKey from '../type/ecdh_x_symkey';
  * Encrypts data using specified algorithm and public key parameters.
  * See {@link https://tools.ietf.org/html/rfc4880#section-9.1|RFC 4880 9.1} for public key algorithms.
  * @param {module:enums.publicKey} keyAlgo - Public key algorithm
- * @param {module:enums.symmetric} symmetricAlgo - Cipher algorithm
+ * @param {module:enums.symmetric|null} symmetricAlgo - Cipher algorithm (v3 only)
  * @param {Object} publicParams - Algorithm-specific public key parameters
  * @param {Uint8Array} data - Session key data to be encrypted
  * @param {Uint8Array} fingerprint - Recipient fingerprint
@@ -66,7 +66,7 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
     }
     case enums.publicKey.x25519:
     case enums.publicKey.x448: {
-      if (!util.isAES(symmetricAlgo)) {
+      if (symmetricAlgo && !util.isAES(symmetricAlgo)) {
         // see https://gitlab.com/openpgp-wg/rfc4880bis/-/merge_requests/276
         throw new Error('X25519 and X448 keys can only encrypt AES session keys');
       }
