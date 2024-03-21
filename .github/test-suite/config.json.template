@@ -21,7 +21,8 @@
         "path": "__GPGME_SOP__"
       },
       {
-        "path": "__GOSOP__"
+        "id": "gosop-v2",
+        "path": "__GOSOP_V2__"
       },
       {
         "path": "__RNP_SOP__"
