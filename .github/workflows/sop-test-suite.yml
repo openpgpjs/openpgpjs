@@ -84,4 +84,4 @@ jobs:
           results: ${{ steps.download-test-results.outputs.download-path }}/test-suite-results.json
           output: baseline-comparison.json
           baseline: sop-openpgpjs-main
-          target: sop-openpgpjs-main
+          target: sop-openpgpjs-branch
