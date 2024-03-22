@@ -128,9 +128,12 @@ class PublicKeyEncryptedSessionKeyPacket {
     }
     this.publicKeyAlgorithm = bytes[offset++];
     this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(offset));
-    if (this.version === 3 && (
-      this.publicKeyAlgorithm === enums.publicKey.x25519 || this.publicKeyAlgorithm === enums.publicKey.x448)) {
-      this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
+    if (this.publicKeyAlgorithm === enums.publicKey.x25519 || this.publicKeyAlgorithm === enums.publicKey.x448) {
+      if (this.version === 3) {
+        this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
+      } else if (this.encrypted.C.algorithm !== null) {
+        throw new Error('Unexpected cleartext symmetric algorithm');
+      }
     }
   }
 
@@ -174,9 +177,12 @@ class PublicKeyEncryptedSessionKeyPacket {
    */
   async encrypt(key) {
     const algo = enums.write(enums.publicKey, this.publicKeyAlgorithm);
-    const encoded = encodeSessionKey(this.version, algo, this.sessionKeyAlgorithm, this.sessionKey);
+    // No symmetric encryption algorithm identifier is passed to the public-key algorithm for a
+    // v6 PKESK packet, as it is included in the v2 SEIPD packet.
+    const sessionKeyAlgorithm = this.version === 3 ? this.sessionKeyAlgorithm : null;
+    const encoded = encodeSessionKey(this.version, algo, sessionKeyAlgorithm, this.sessionKey);
     this.encrypted = await crypto.publicKeyEncrypt(
-      algo, this.sessionKeyAlgorithm, key.publicParams, encoded, key.getFingerprintBytes());
+      algo, sessionKeyAlgorithm, key.publicParams, encoded, key.getFingerprintBytes());
   }
 
   /**
@@ -275,6 +281,7 @@ function decodeSessionKey(version, keyAlgo, decryptedData, randomSessionKey) {
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
       return {
+        sessionKeyAlgorithm: null,
         sessionKey: decryptedData
       };
     default:

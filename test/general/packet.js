@@ -8,6 +8,8 @@ chaiUse(chaiAsPromised);
 import openpgp from '../initOpenpgp.js';
 import crypto from '../../src/crypto';
 import util from '../../src/util.js';
+import * as packet from '../../src/packet';
+
 
 import * as input from './testInputs.js';
 
@@ -469,32 +471,64 @@ export default () => describe('Packet', function() {
     });
   });
 
-  it('Public key encrypted symmetric key packet', function() {
-    const rsa = openpgp.enums.publicKey.rsaEncryptSign;
-    const keySize = 1024;
+  describe('Public key encrypted symmetric key packet - roundtrip', () => {
+    const testData = [{
+      algoLabel: 'RSA',
+      publicKeyAlgorithm: openpgp.enums.publicKey.rsaEncryptSign,
+      paramsPromise: crypto.generateParams(openpgp.enums.publicKey.rsaEncryptSign, 1024, 65537)
+    },
+    {
+      algoLabel: 'ECDH NIST P-256',
+      publicKeyAlgorithm: openpgp.enums.publicKey.ecdh,
+      paramsPromise: crypto.generateParams(openpgp.enums.publicKey.ecdh, null, openpgp.enums.curve.nistP256)
+    },
+    {
+      algoLabel: 'ECDH x25519Legacy',
+      publicKeyAlgorithm: openpgp.enums.publicKey.ecdh,
+      paramsPromise: crypto.generateParams(openpgp.enums.publicKey.ecdh, null, openpgp.enums.curve.curve25519Legacy)
+    },
+    {
+      algoLabel: 'x25519',
+      publicKeyAlgorithm: openpgp.enums.publicKey.x25519,
+      paramsPromise: crypto.generateParams(openpgp.enums.publicKey.x25519)
+    }];
 
-    return crypto.generateParams(rsa, keySize, 65537).then(function({ publicParams, privateParams }) {
-      const enc = new openpgp.PublicKeyEncryptedSessionKeyPacket();
-      enc.version = 3;
-      const msg = new openpgp.PacketList();
-      const msg2 = new openpgp.PacketList();
+    function testRoundtrip({ v6 }) {
+      testData.forEach(({ algoLabel, publicKeyAlgorithm, paramsPromise }) => {
+        it(`${algoLabel} (PKESK ${v6 ? 'v6' : 'v3'})`, async () => {
+          const { publicParams, privateParams } = await paramsPromise;
+          // cannot use the `openpgp` exported values, since the different context gives issues when internally
+          // evaluating the `OID` instanceof of `publicParams.oid`, as part of `pkesk.encrypt` and `decrypt`
+          const pkesk = new packet.PublicKeyEncryptedSessionKeyPacket();
+          pkesk.version = v6 ? 6 : 3;
+          const msg = new packet.PacketList();
+          const msg2 = new packet.PacketList();
 
-      enc.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
-      enc.publicKeyAlgorithm = openpgp.enums.publicKey.rsaEncryptSign;
-      enc.sessionKeyAlgorithm = openpgp.enums.symmetric.aes256;
-      enc.publicKeyID.bytes = '12345678';
-      return enc.encrypt({ publicParams, getFingerprintBytes() {} }).then(async () => {
+          const privateKey = {
+            algorithm: publicKeyAlgorithm,
+            publicParams,
+            privateParams,
+            getFingerprintBytes: () => new Uint8Array(64)
+          };
+          pkesk.sessionKey = new Uint8Array([1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2]);
+          pkesk.publicKeyAlgorithm = publicKeyAlgorithm;
+          pkesk.sessionKeyAlgorithm = openpgp.enums.symmetric.aes256;
+          pkesk.publicKeyID.bytes = '12345678';
+          await pkesk.encrypt({ publicParams: privateKey.publicParams, getFingerprintBytes: privateKey.getFingerprintBytes });
 
-        msg.push(enc);
-        await msg2.read(msg.write(), allAllowedPackets);
+          msg.push(pkesk);
+          const allAllowedPackets = util.constructAllowedPackets([...Object.values(packet).filter(packetClass => !!packetClass.tag)]);
+          await msg2.read(msg.write(), allAllowedPackets);
 
-        const privateKey = { algorithm: openpgp.enums.publicKey.rsaEncryptSign, publicParams, privateParams, getFingerprintBytes() {} };
-        return msg2[0].decrypt(privateKey).then(() => {
-          expect(stringify(msg2[0].sessionKey)).to.equal(stringify(enc.sessionKey));
-          expect(msg2[0].sessionKeyAlgorithm).to.equal(enc.sessionKeyAlgorithm);
+          await msg2[0].decrypt(privateKey);
+          expect(msg2[0].sessionKey).to.deep.equal(pkesk.sessionKey);
+          expect(msg2[0].sessionKeyAlgorithm).to.equal(v6 ? null : pkesk.sessionKeyAlgorithm);
         });
       });
-    });
+    }
+
+    testRoundtrip({ v6: false });
+    testRoundtrip({ v6: true });
   });
 
   it('Secret key packet (reading, unencrypted)', async function() {
