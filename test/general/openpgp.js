@@ -868,6 +868,56 @@ MbVkSnU2Z+vhSmYubDCldNOSVwE=
 =bTUQ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const rsaKeyWithNoFeaturesFromRNP = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+8wENR68u88WrKOGN359vq/DKwd3A
+=c2mQ
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function withCompression(tests) {
   const compressionTypes = Object.values(openpgp.enums.compression);
 
@@ -2203,6 +2253,19 @@ k0mXubZvyl4GBg==
       expect(seipd).to.be.instanceOf(openpgp.SymEncryptedIntegrityProtectedDataPacket);
       expect(seipd.version).to.equal(2);
       expect(seipd.aeadAlgorithm).to.equal(openpgp.enums.aead.ocb);
+    });
+
+    it('should support encrypting to a key without features (missing SEIPDv1 feature)', async function () {
+      const key = await openpgp.readKey({ armoredKey: rsaKeyWithNoFeaturesFromRNP });
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: key
+      });
+      const decrypted = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: encrypted }),
+        decryptionKeys: key
+      });
+      expect(decrypted.data).to.equal('test');
     });
   });
 
