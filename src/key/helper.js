@@ -282,7 +282,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
         await revocationSignature.verify(
-          key, signatureType, dataToVerify, config.revocationsExpire ? date : null, false, config
+          key, signatureType, dataToVerify, date, false, config
         );
 
         // TODO get an identifier of the revoked object instead
