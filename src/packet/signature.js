@@ -26,6 +26,12 @@ import defaultConfig from '../config';
 // Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
 const verified = Symbol('verified');
 
+// A salt notation is used to randomize EdDSA signatures, as they are  known to be vulnerable to fault attacks
+// which can lead to secret key extraction if two signatures over the same data can be collected (see https://github.com/jedisct1/libsodium/issues/170).
+// v6 signatures do not need to rely on this notation, as they already include a separate, built-in salt.
+const SALT_NOTATION_NAME = 'salt@notations.openpgpjs.org';
+const publicKeyAlgorithmsToAlwaysSalt = new Set([enums.publicKey.eddsaLegacy, enums.publicKey.ed25519, enums.publicKey.ed448]);
+
 // GPG puts the Issuer and Signature subpackets in the unhashed area.
 // Tampering with those invalidates the signature, so we still trust them and parse them.
 // All other unhashed subpackets are ignored.
@@ -195,7 +201,7 @@ class SignaturePacket {
    * @throws {Error} if signing failed
    * @async
    */
-  async sign(key, data, date = new Date(), detached = false) {
+  async sign(key, data, date = new Date(), detached = false, config) {
     this.version = key.version;
 
     this.created = util.normalizeDate(date);
@@ -204,6 +210,31 @@ class SignaturePacket {
     this.issuerKeyID = key.getKeyID();
 
     const arr = [new Uint8Array([this.version, this.signatureType, this.publicKeyAlgorithm, this.hashAlgorithm])];
+
+    // add randomness to the signature
+    if (this.version === 6) {
+      const saltLength = saltLengthForHash(this.hashAlgorithm);
+      if (this.salt === null) {
+        this.salt = crypto.random.getRandomBytes(saltLength);
+      } else if (saltLength !== this.salt.length) {
+        throw new Error('Provided salt does not have the required length');
+      }
+    } else if (config.nonDeterministicEdDSASignaturesViaNotation && publicKeyAlgorithmsToAlwaysSalt.has(this.publicKeyAlgorithm)) {
+      const saltNotations = this.rawNotations.filter(({ name }) => (name === SALT_NOTATION_NAME));
+      // since re-signing the same object is not supported, it's not expected to have multiple salt notations,
+      // but we guard against it as a sanity check
+      if (saltNotations.length === 0) {
+        const saltValue = crypto.random.getRandomBytes(saltLengthForHash(this.hashAlgorithm));
+        this.rawNotations.push({
+          name: SALT_NOTATION_NAME,
+          value: saltValue,
+          humanReadable: false,
+          critical: false
+        });
+      } else {
+        throw new Error('Unexpected existing salt notation');
+      }
+    }
 
     // Add hashed subpackets
     arr.push(this.writeHashedSubPackets());
@@ -215,14 +246,6 @@ class SignaturePacket {
 
     this.signatureData = util.concat(arr);
 
-    if (this.version === 6) {
-      const saltLength = saltLengthForHash(this.hashAlgorithm);
-      if (this.salt === null) {
-        this.salt = crypto.random.getRandomBytes(saltLength);
-      } else if (saltLength !== this.salt.length) {
-        throw new Error('Provided salt does not have the required length');
-      }
-    }
     const toHash = this.toHash(this.signatureType, data, detached);
     const hash = await this.hash(this.signatureType, data, toHash, detached);
 
