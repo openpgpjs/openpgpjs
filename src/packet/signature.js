@@ -26,11 +26,12 @@ import defaultConfig from '../config';
 // Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
 const verified = Symbol('verified');
 
-// A salt notation is used to randomize EdDSA signatures, as they are  known to be vulnerable to fault attacks
+// A salt notation is used to randomize signatures; EdDSA signatures in particular are  known to be vulnerable to fault attacks
 // which can lead to secret key extraction if two signatures over the same data can be collected (see https://github.com/jedisct1/libsodium/issues/170).
+// For simplicity, we add the salt to all algos, as it may also serve as protection in case of weaknesses in the hash algo, potentially hindering e.g.
+// some chosen-prefix attacks.
 // v6 signatures do not need to rely on this notation, as they already include a separate, built-in salt.
 const SALT_NOTATION_NAME = 'salt@notations.openpgpjs.org';
-const publicKeyAlgorithmsToAlwaysSalt = new Set([enums.publicKey.eddsaLegacy, enums.publicKey.ed25519, enums.publicKey.ed448]);
 
 // GPG puts the Issuer and Signature subpackets in the unhashed area.
 // Tampering with those invalidates the signature, so we still trust them and parse them.
@@ -219,7 +220,7 @@ class SignaturePacket {
       } else if (saltLength !== this.salt.length) {
         throw new Error('Provided salt does not have the required length');
       }
-    } else if (config.nonDeterministicEdDSASignaturesViaNotation && publicKeyAlgorithmsToAlwaysSalt.has(this.publicKeyAlgorithm)) {
+    } else if (config.nonDeterministicSignaturesViaNotation) {
       const saltNotations = this.rawNotations.filter(({ name }) => (name === SALT_NOTATION_NAME));
       // since re-signing the same object is not supported, it's not expected to have multiple salt notations,
       // but we guard against it as a sanity check
