@@ -4275,7 +4275,8 @@ VYGdb3eNlV8CfoEC
     const key = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
     key.revocationSignatures = [];
     key.users[0].revocationSignatures = [];
-    return openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }), date: new Date(1386842743000) }).then(() => {
+    const subkeyRevocationTime = key.subkeys[0].revocationSignatures[0].created;
+    return openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }), date: subkeyRevocationTime }).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(error => {
       expect(error.message).to.equal('Error encrypting message: Could not find valid encryption key packet in key ' + key.getKeyID().toHex() + ': Subkey is revoked');

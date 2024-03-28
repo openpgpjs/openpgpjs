@@ -328,7 +328,6 @@ interface Config {
   allowUnauthenticatedStream: boolean;
   minRSABits: number;
   passwordCollisionCheck: boolean;
-  revocationsExpire: boolean;
   ignoreUnsupportedPackets: boolean;
   ignoreMalformedPackets: boolean;
   versionString: string;

@@ -156,11 +156,6 @@ export default {
    */
   passwordCollisionCheck: false,
   /**
-   * @memberof module:config
-   * @property {Boolean} revocationsExpire If true, expired revocation signatures are ignored
-   */
-  revocationsExpire: false,
-  /**
    * Allow decryption using RSA keys without `encrypt` flag.
    * This setting is potentially insecure, but it is needed to get around an old openpgpjs bug
    * where key flags were ignored when selecting a key for encryption.
