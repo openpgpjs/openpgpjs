@@ -1,8 +1,7 @@
-const { expect } = require('chai');
-const util = require('../../src/util');
+import { expect } from 'chai';
+import util from '../../src/util';
 
-
-module.exports = () => describe('Util unit tests', function() {
+export default () => describe('Util unit tests', function() {
 
   describe('isString', function() {
     it('should return true for type "string"', function() {
@@ -109,19 +108,23 @@ module.exports = () => describe('Util unit tests', function() {
       const data = 'test@example.com';
       expect(util.isEmailAddress(data)).to.be.true;
     });
-    it('should return true for valid email address', function() {
+    it('should return true for valid email address (internationalized domain name)', function() {
       const data = 'test@xn--wgv.xn--q9jyb4c';
       expect(util.isEmailAddress(data)).to.be.true;
     });
-    it('should return false for invalid email address', function() {
+    it('should return true for valid email address (trailing numbers in domain)', function() {
+      const data = 'test1@com.com09';
+      expect(util.isEmailAddress(data)).to.be.true;
+    });
+    it('should return true for valid email address (no . in domain part)', function() {
+      const data = 'test@localhost';
+      expect(util.isEmailAddress(data)).to.be.true;
+    });
+    it('should return false for invalid email address (full userID)', function() {
       const data = 'Test User <test@example.com>';
       expect(util.isEmailAddress(data)).to.be.false;
     });
-    it('should return false for invalid email address', function() {
-      const data = 'test@examplecom';
-      expect(util.isEmailAddress(data)).to.be.false;
-    });
-    it('should return false for invalid email address', function() {
+    it('should return false for invalid email address (missing @)', function() {
       const data = 'testexamplecom';
       expect(util.isEmailAddress(data)).to.be.false;
     });

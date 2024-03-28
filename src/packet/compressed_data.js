@@ -15,9 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import { Deflate } from '@openpgp/pako/lib/deflate';
-import { Inflate } from '@openpgp/pako/lib/inflate';
-import { Z_SYNC_FLUSH, Z_FINISH } from '@openpgp/pako/lib/zlib/constants';
+import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
 import { decode as BunzipDecode } from '@openpgp/seek-bzip';
 import * as stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
@@ -69,11 +67,6 @@ class CompressedDataPacket {
      * @type {Uint8Array | ReadableStream<Uint8Array>}
      */
     this.compressed = null;
-
-    /**
-     * zip/zlib compression level, between 1 and 9
-     */
-    this.deflateLevel = config.deflateLevel;
   }
 
   /**
@@ -133,7 +126,7 @@ class CompressedDataPacket {
       throw new Error(`${compressionName} compression not supported`);
     }
 
-    this.compressed = compressionFn(this.packets.write(), this.deflateLevel);
+    this.compressed = compressionFn(this.packets.write());
   }
 }
 
@@ -145,41 +138,65 @@ export default CompressedDataPacket;
 //                      //
 //////////////////////////
 
-
-const nodeZlib = util.getNodeZlib();
-
-function uncompressed(data) {
-  return data;
-}
-
-function node_zlib(func, create, options = {}) {
-  return function (data) {
+/**
+ * Zlib processor relying on Compression Stream API if available, or falling back to fflate otherwise.
+ * @param {function(): CompressionStream|function(): DecompressionStream} compressionStreamInstantiator
+ * @param {FunctionConstructor} ZlibStreamedConstructor - fflate constructor
+ * @returns {ReadableStream<Uint8Array>} compressed or decompressed data
+ */
+function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
+  return data => {
     if (!util.isStream(data) || stream.isArrayStream(data)) {
-      return stream.fromAsync(() => stream.readToEnd(data).then(data => {
+      return stream.fromAsync(() => stream.readToEnd(data).then(inputData => {
         return new Promise((resolve, reject) => {
-          func(data, options, (err, result) => {
-            if (err) return reject(err);
-            resolve(result);
-          });
+          const zlibStream = new ZlibStreamedConstructor();
+          zlibStream.ondata = processedData => {
+            resolve(processedData);
+          };
+          try {
+            zlibStream.push(inputData, true); // only one chunk to push
+          } catch (err) {
+            reject(err);
+          }
         });
       }));
     }
-    return stream.nodeToWeb(stream.webToNode(data).pipe(create(options)));
-  };
-}
 
-function pako_zlib(constructor, options = {}) {
-  return function(data) {
-    const obj = new constructor(options);
-    return stream.transform(data, value => {
-      if (value.length) {
-        obj.push(value, Z_SYNC_FLUSH);
-        return obj.result;
+    // Use Compression Streams API if available (see https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API)
+    if (compressionStreamInstantiator) {
+      try {
+        const compressorOrDecompressor = compressionStreamInstantiator();
+        return data.pipeThrough(compressorOrDecompressor);
+      } catch (err) {
+        // If format is unsupported in Compression/DecompressionStream, then a TypeError in thrown, and we fallback to fflate.
+        if (err.name !== 'TypeError') {
+          throw err;
+        }
       }
-    }, () => {
-      if (constructor === Deflate) {
-        obj.push([], Z_FINISH);
-        return obj.result;
+    }
+
+    // JS fallback
+    const inputReader = data.getReader();
+    const zlibStream = new ZlibStreamedConstructor();
+
+    return new ReadableStream({
+      async start(controller) {
+        zlibStream.ondata = async (value, isLast) => {
+          controller.enqueue(value);
+          if (isLast) {
+            controller.close();
+          }
+        };
+
+        while (true) {
+          const { done, value } = await inputReader.read();
+          if (done) {
+            zlibStream.push(new Uint8Array(), true);
+            return;
+          } else if (value.length) {
+            zlibStream.push(value);
+          }
+        }
       }
     });
   };
@@ -191,23 +208,27 @@ function bzip2(func) {
   };
 }
 
-const compress_fns = nodeZlib ? {
-  zip: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.deflateRaw, nodeZlib.createDeflateRaw, { level })(compressed),
-  zlib: /*#__PURE__*/ (compressed, level) => node_zlib(nodeZlib.deflate, nodeZlib.createDeflate, { level })(compressed)
-} : {
-  zip: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { raw: true, level })(compressed),
-  zlib: /*#__PURE__*/ (compressed, level) => pako_zlib(Deflate, { level })(compressed)
+/**
+ * Get Compression Stream API instatiators if the constructors are implemented.
+ * NB: the return instatiator functions will throw when called if the provided `compressionFormat` is not supported
+ * (supported formats cannot be determined in advance).
+ * @param {'deflate-raw'|'deflate'|'gzip'|string} compressionFormat
+ * @returns {{ compressor: function(): CompressionStream | false, decompressor: function(): DecompressionStream | false }}
+ */
+const getCompressionStreamInstantiators = compressionFormat => ({
+  compressor: typeof CompressionStream !== 'undefined' && (() => new CompressionStream(compressionFormat)),
+  decompressor: typeof DecompressionStream !== 'undefined' && (() => new DecompressionStream(compressionFormat))
+});
+
+const compress_fns = {
+  zip: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate-raw').compressor, Deflate),
+  zlib: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate').compressor, Zlib)
 };
 
-const decompress_fns = nodeZlib ? {
-  uncompressed: uncompressed,
-  zip: /*#__PURE__*/ node_zlib(nodeZlib.inflateRaw, nodeZlib.createInflateRaw),
-  zlib: /*#__PURE__*/ node_zlib(nodeZlib.inflate, nodeZlib.createInflate),
-  bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
-} : {
-  uncompressed: uncompressed,
-  zip: /*#__PURE__*/ pako_zlib(Inflate, { raw: true }),
-  zlib: /*#__PURE__*/ pako_zlib(Inflate),
+const decompress_fns = {
+  uncompressed: data => data,
+  zip: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate-raw').decompressor, Inflate),
+  zlib: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate').decompressor, Unzlib),
   bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
 };
 

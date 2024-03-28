@@ -1,17 +1,16 @@
 /* eslint-disable max-lines */
-const stream = require('@openpgp/web-stream-tools');
-const stub = require('sinon/lib/sinon/stub');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+/* globals loadStreamsPolyfill */
+import * as stream from '@openpgp/web-stream-tools';
+import sinon from 'sinon';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const random = require('../../src/crypto/random');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import * as random from '../../src/crypto/random.js';
+import util from '../../src/util.js';
 
-const input = require('./testInputs');
-
-const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
-const NodeReadableStream = useNativeStream ? undefined : require('stream').Readable;
+import * as input from './testInputs.js';
 
 const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
 
@@ -178,17 +177,11 @@ let dataArrived;
 function tests() {
   it('Encrypt small message', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const encrypted = await openpgp.encrypt({
@@ -410,7 +403,7 @@ function tests() {
     }
   });
 
-  it('Detect MDC modifications (allowUnauthenticatedStream=true)', async function() {
+  it('Detect modification (allowUnauthenticatedStream=true)', async function() {
     const aeadProtectValue = openpgp.config.aeadProtect;
     openpgp.config.aeadProtect = false;
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
@@ -423,9 +416,8 @@ function tests() {
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage({
-        armoredMessage: stream[expectedType === 'node' ? 'webToNode' : global.ReadableStream === stream.ReadableStream ? 'toStream' : 'toNativeReadable'](stream.transform(encrypted, value => {
+        armoredMessage: stream.toStream(stream.transform(encrypted, value => {
           value += '';
-          if (value === '=' || value.length === 5) return; // Remove checksum
           const newlineIndex = value.indexOf('\n', 500);
           if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
           return value;
@@ -448,7 +440,7 @@ function tests() {
     }
   });
 
-  it('Detect armor checksum error (allowUnauthenticatedStream=true)', async function() {
+  it('Detect modification when not passing public keys (allowUnauthenticatedStream=true)', async function() {
     const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
     openpgp.config.allowUnauthenticatedStream = true;
     try {
@@ -461,44 +453,7 @@ function tests() {
       expect(stream.isStream(encrypted)).to.equal(expectedType);
 
       const message = await openpgp.readMessage({
-        armoredMessage: stream[expectedType === 'node' ? 'webToNode' : global.ReadableStream === stream.ReadableStream ? 'toStream' : 'toNativeReadable'](stream.transform(encrypted, value => {
-          value += '';
-          const newlineIndex = value.indexOf('\n', 500);
-          if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
-          return value;
-        }), { encoding: 'utf8' })
-      });
-      const decrypted = await openpgp.decrypt({
-        verificationKeys: pubKey,
-        decryptionKeys: privKey,
-        message,
-        format: 'binary'
-      });
-      expect(stream.isStream(decrypted.data)).to.equal(expectedType);
-      const reader = stream.getReader(decrypted.data);
-      expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
-      dataArrived();
-      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
-      expect(decrypted.signatures).to.exist.and.have.length(1);
-    } finally {
-      openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStreamValue;
-    }
-  });
-
-  it('Detect armor checksum error when not passing public keys (allowUnauthenticatedStream=true)', async function() {
-    const allowUnauthenticatedStreamValue = openpgp.config.allowUnauthenticatedStream;
-    openpgp.config.allowUnauthenticatedStream = true;
-    try {
-      const encrypted = await openpgp.encrypt({
-        message: await openpgp.createMessage({ binary: data }),
-        encryptionKeys: pubKey,
-        signingKeys: privKey,
-        config: { minRSABits: 1024 }
-      });
-      expect(stream.isStream(encrypted)).to.equal(expectedType);
-
-      const message = await openpgp.readMessage({
-        armoredMessage: stream[expectedType === 'node' ? 'webToNode' : global.ReadableStream === stream.ReadableStream ? 'toStream' : 'toNativeReadable'](stream.transform(encrypted, value => {
+        armoredMessage: stream.toStream(stream.transform(encrypted, value => {
           value += '';
           const newlineIndex = value.indexOf('\n', 500);
           if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
@@ -514,7 +469,7 @@ function tests() {
       const reader = stream.getReader(decrypted.data);
       expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
       dataArrived();
-      await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
+      await expect(reader.readToEnd()).to.be.rejectedWith('Modification detected.');
       expect(decrypted.signatures).to.exist.and.have.length(1);
       await expect(decrypted.signatures[0].verified).to.be.eventually.rejectedWith(/Could not find signing key/);
     } finally {
@@ -522,7 +477,7 @@ function tests() {
     }
   });
 
-  it('Sign/verify: Detect armor checksum error', async function() {
+  it('Sign/verify: Detect modification', async function() {
     const signed = await openpgp.sign({
       message: await openpgp.createMessage({ binary: data }),
       signingKeys: privKey,
@@ -531,7 +486,7 @@ function tests() {
     expect(stream.isStream(signed)).to.equal(expectedType);
 
     const message = await openpgp.readMessage({
-      armoredMessage: stream[expectedType === 'node' ? 'webToNode' : global.ReadableStream === stream.ReadableStream ? 'toStream' : 'toNativeReadable'](stream.transform(signed, value => {
+      armoredMessage: stream.toStream(stream.transform(signed, value => {
         value += '';
         const newlineIndex = value.indexOf('\n', 500);
         if (value.length > 1000) return value.slice(0, newlineIndex - 1) + (value[newlineIndex - 1] === 'a' ? 'b' : 'a') + value.slice(newlineIndex);
@@ -548,8 +503,9 @@ function tests() {
     const reader = stream.getReader(verified.data);
     expect(await reader.peekBytes(1024)).not.to.deep.equal(plaintext[0]);
     dataArrived();
-    await expect(reader.readToEnd()).to.be.rejectedWith('Ascii armor integrity check failed');
     expect(verified.signatures).to.exist.and.have.length(1);
+    await reader.readToEnd();
+    await expect(verified.signatures[0].verified).to.be.rejectedWith('Signed digest did not match');
   });
 
   it('stream.transformPair()', async function() {
@@ -655,17 +611,11 @@ function tests() {
 
   it('Detached sign small message', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const signed = await openpgp.sign({
@@ -690,17 +640,11 @@ function tests() {
 
   it('Detached sign small message using brainpool curve keys', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const pub = await openpgp.readKey({ armoredKey: brainpoolPub });
@@ -732,17 +676,11 @@ function tests() {
 
   it('Detached sign small message using curve25519 keys (legacy format)', async function() {
     dataArrived(); // Do not wait until data arrived.
-    const data = global.ReadableStream ? new global.ReadableStream({
+    const data = new globalThis.ReadableStream({
       async start(controller) {
         controller.enqueue(util.stringToUint8Array('hello '));
         controller.enqueue(util.stringToUint8Array('world'));
         controller.close();
-      }
-    }) : new NodeReadableStream({
-      read() {
-        this.push(util.stringToUint8Array('hello '));
-        this.push(util.stringToUint8Array('world'));
-        this.push(null);
       }
     });
     const pub = await openpgp.readKey({ armoredKey: xPub });
@@ -841,7 +779,7 @@ function tests() {
 
       const plaintext = [];
       let i = 0;
-      const data = global.ReadableStream ? new global.ReadableStream({
+      const data = new globalThis.ReadableStream({
         async pull(controller) {
           await new Promise(resolve => { setTimeout(resolve, 10); });
           if (i++ < 10) {
@@ -850,20 +788,6 @@ function tests() {
             plaintext.push(randomData);
           } else {
             controller.close();
-          }
-        }
-      }) : new NodeReadableStream({
-        encoding: 'utf8',
-        async read() {
-          while (true) {
-            await new Promise(resolve => { setTimeout(resolve, 10); });
-            if (i++ < 10) {
-              const randomData = input.createSomeMessage();
-              plaintext.push(randomData);
-              if (!this.push(randomData)) break;
-            } else {
-              return this.push(null);
-            }
           }
         }
       });
@@ -889,7 +813,7 @@ function tests() {
     it("Don't pull entire input stream when we're not pulling decrypted stream (AEAD)", async function() {
       let coresStub;
       if (detectNode()) {
-        coresStub = stub(require('os'), 'cpus');
+        coresStub = sinon.stub(util.nodeRequire('os'), 'cpus');
         coresStub.returns(new Array(2));
         // Object.defineProperty(require('os'), 'cpus', { value: () => [,], configurable: true });
       } else {
@@ -946,8 +870,9 @@ function tests() {
   });
 }
 
-module.exports = () => describe('Streaming', function() {
+export default () => describe('Streaming', function() {
   let currentTest = 0;
+  const needsStreamPolyfills = !globalThis.ReadableStream;
 
   before(async function() {
     pubKey = await openpgp.readKey({ armoredKey: pub_key });
@@ -956,7 +881,7 @@ module.exports = () => describe('Streaming', function() {
       passphrase: 'hello world'
     });
 
-    await stream.loadStreamsPonyfill();
+    await loadStreamsPolyfill();
   });
 
   beforeEach(function() {
@@ -968,7 +893,7 @@ module.exports = () => describe('Streaming', function() {
     plaintext = [];
     i = 0;
     canceled = false;
-    data = global.ReadableStream ? new global.ReadableStream({
+    data = new globalThis.ReadableStream({
       async pull(controller) {
         await new Promise(setTimeout);
         if (test === currentTest && i < (expectedType === 'web' ? 100 : 500)) {
@@ -986,63 +911,47 @@ module.exports = () => describe('Streaming', function() {
       }
     }, new ByteLengthQueuingStrategy({
       highWaterMark: 1024
-    })) : new NodeReadableStream({
-      highWaterMark: 1024,
-      async read() {
-        while (true) {
-          await new Promise(setTimeout);
-          if (test === currentTest && i < (expectedType === 'web' ? 100 : 500)) {
-            i++;
-            if (i === 4) await dataArrivedPromise;
-            const randomBytes = random.getRandomBytes(1024);
-            plaintext.push(randomBytes);
-            if (!this.push(randomBytes)) break;
-          } else {
-            return this.push(null);
-          }
-        }
-      },
-      destroy() {
-        canceled = true;
-      }
-    });
-    expectedType = global.ReadableStream ? 'web' : 'node';
+    }));
+    expectedType = 'web';
   });
 
   tests();
 
-  if (detectNode()) {
-    const fs = require('fs');
+  if (detectNode() && !needsStreamPolyfills) { // ReadableStream polyfills interfere with these tests
+    const fs = util.nodeRequire('fs');
+    const { Readable: NodeReadableStream } = util.nodeRequire('stream');
+    const { fileURLToPath } = util.nodeRequire('url');
+    const __filename = fileURLToPath(import.meta.url);
 
     it('Node: Encrypt and decrypt text message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.
       const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js'), 'utf8'); // eslint-disable-line no-sync
-      const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'), { encoding: 'utf8' });
+      const data = NodeReadableStream.toWeb(fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'), { encoding: 'utf8' }));
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ text: data }),
         passwords: ['test']
       });
-      expect(stream.isStream(encrypted)).to.equal('node');
+      expect(stream.isStream(encrypted)).to.equal('web');
 
       const message = await openpgp.readMessage({ armoredMessage: encrypted });
       const decrypted = await openpgp.decrypt({
         passwords: ['test'],
         message
       });
-      expect(stream.isStream(decrypted.data)).to.equal('node');
+      expect(stream.isStream(decrypted.data)).to.equal('web');
       expect(await stream.readToEnd(decrypted.data)).to.equal(plaintext);
     });
 
     it('Node: Encrypt and decrypt binary message roundtrip', async function() {
       dataArrived(); // Do not wait until data arrived.
       const plaintext = fs.readFileSync(__filename.replace('streaming.js', 'openpgp.js')); // eslint-disable-line no-sync
-      const data = fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js'));
+      const data = NodeReadableStream.toWeb(fs.createReadStream(__filename.replace('streaming.js', 'openpgp.js')));
       const encrypted = await openpgp.encrypt({
         message: await openpgp.createMessage({ binary: data }),
         passwords: ['test'],
         format: 'binary'
       });
-      expect(stream.isStream(encrypted)).to.equal('node');
+      expect(stream.isStream(encrypted)).to.equal('web');
 
       const message = await openpgp.readMessage({ binaryMessage: encrypted });
       const decrypted = await openpgp.decrypt({
@@ -1050,7 +959,7 @@ module.exports = () => describe('Streaming', function() {
         message,
         format: 'binary'
       });
-      expect(stream.isStream(decrypted.data)).to.equal('node');
+      expect(stream.isStream(decrypted.data)).to.equal('web');
       expect(await stream.readToEnd(decrypted.data)).to.deep.equal(plaintext);
     });
   }

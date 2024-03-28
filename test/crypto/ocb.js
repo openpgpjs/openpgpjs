@@ -1,14 +1,15 @@
 // Modified by ProtonTech AG
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const OCB = require('../../src/crypto/mode/ocb');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import OCB from '../../src/crypto/mode/ocb.js';
+import util from '../../src/util.js';
 
-module.exports = () => describe('Symmetric AES-OCB', function() {
+export default () => describe('Symmetric AES-OCB', function() {
   it('Passes all test vectors', async function() {
     const K = '000102030405060708090A0B0C0D0E0F';
     const keyBytes = util.hexToUint8Array(K);

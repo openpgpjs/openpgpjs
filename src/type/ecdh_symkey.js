@@ -19,7 +19,6 @@
  * Encoded symmetric key for ECDH (incl. legacy x25519)
  *
  * @module type/ecdh_symkey
- * @private
  */
 
 import util from '../util';

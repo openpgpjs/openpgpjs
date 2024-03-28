@@ -64,9 +64,9 @@ function createKey(packetlist) {
 
 
 /**
- * Generates a new OpenPGP key. Supports RSA and ECC keys.
+ * Generates a new OpenPGP key. Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519 keys.
  * By default, primary and subkeys will be of same type.
- * @param {ecc|rsa} options.type                  The primary key algorithm type: ECC or RSA
+ * @param {ecc|rsa|curve448|curve25519} options.type                  The primary key algorithm type: ECC, RSA, Curve448 or Curve25519 (new format).
  * @param {String}  options.curve                 Elliptic curve for ECC keys
  * @param {Integer} options.rsaBits               Number of bits for RSA keys
  * @param {Array<String|Object>} options.userIDs  User IDs as strings or objects: 'Jo Doe <info@jo.com>' or { name:'Jo Doe', email:'info@jo.com' }
@@ -188,56 +188,78 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   const packetlist = new PacketList();
   packetlist.push(secretKeyPacket);
 
-  await Promise.all(options.userIDs.map(async function(userID, index) {
-    function createPreferredAlgos(algos, preferredAlgo) {
-      return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
-    }
+  function createPreferredAlgos(algos, preferredAlgo) {
+    return [preferredAlgo, ...algos.filter(algo => algo !== preferredAlgo)];
+  }
 
-    const userIDPacket = UserIDPacket.fromObject(userID);
-    const dataToSign = {};
-    dataToSign.userID = userIDPacket;
-    dataToSign.key = secretKeyPacket;
-
+  function getKeySignatureProperties() {
     const signatureProperties = {};
-    signatureProperties.signatureType = enums.signature.certGeneric;
     signatureProperties.keyFlags = [enums.keyFlags.certifyKeys | enums.keyFlags.signData];
-    signatureProperties.preferredSymmetricAlgorithms = createPreferredAlgos([
-      // prefer aes256, aes128, then aes192 (no WebCrypto support: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
+    const symmetricAlgorithms = createPreferredAlgos([
+      // prefer aes256, aes128, no aes192 (no Web Crypto support in Chrome: https://www.chromium.org/blink/webcrypto#TOC-AES-support)
       enums.symmetric.aes256,
-      enums.symmetric.aes128,
-      enums.symmetric.aes192
+      enums.symmetric.aes128
     ], config.preferredSymmetricAlgorithm);
+    signatureProperties.preferredSymmetricAlgorithms = symmetricAlgorithms;
     if (config.aeadProtect) {
-      signatureProperties.preferredAEADAlgorithms = createPreferredAlgos([
+      const aeadAlgorithms = createPreferredAlgos([
+        enums.aead.gcm,
         enums.aead.eax,
         enums.aead.ocb
       ], config.preferredAEADAlgorithm);
+      signatureProperties.preferredCipherSuites = aeadAlgorithms.flatMap(aeadAlgorithm => {
+        return symmetricAlgorithms.map(symmetricAlgorithm => {
+          return [symmetricAlgorithm, aeadAlgorithm];
+        });
+      });
     }
     signatureProperties.preferredHashAlgorithms = createPreferredAlgos([
       // prefer fast asm.js implementations (SHA-256)
       enums.hash.sha256,
-      enums.hash.sha512
+      enums.hash.sha512,
+      enums.hash.sha3_256,
+      enums.hash.sha3_512
     ], config.preferredHashAlgorithm);
     signatureProperties.preferredCompressionAlgorithms = createPreferredAlgos([
+      enums.compression.uncompressed,
       enums.compression.zlib,
-      enums.compression.zip,
-      enums.compression.uncompressed
+      enums.compression.zip
     ], config.preferredCompressionAlgorithm);
-    if (index === 0) {
-      signatureProperties.isPrimaryUserID = true;
-    }
     // integrity protection always enabled
     signatureProperties.features = [0];
     signatureProperties.features[0] |= enums.features.modificationDetection;
     if (config.aeadProtect) {
-      signatureProperties.features[0] |= enums.features.aead;
-    }
-    if (config.v5Keys) {
-      signatureProperties.features[0] |= enums.features.v5Keys;
+      signatureProperties.features[0] |= enums.features.seipdv2;
     }
     if (options.keyExpirationTime > 0) {
       signatureProperties.keyExpirationTime = options.keyExpirationTime;
       signatureProperties.keyNeverExpires = false;
+    }
+    return signatureProperties;
+  }
+
+  if (secretKeyPacket.version === 6) { // add direct key signature with key prefs
+    const dataToSign = {
+      key: secretKeyPacket
+    };
+
+    const signatureProperties = getKeySignatureProperties();
+    signatureProperties.signatureType = enums.signature.key;
+
+    const signaturePacket = await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
+    packetlist.push(signaturePacket);
+  }
+
+  await Promise.all(options.userIDs.map(async function(userID, index) {
+    const userIDPacket = UserIDPacket.fromObject(userID);
+    const dataToSign = {
+      userID: userIDPacket,
+      key: secretKeyPacket
+    };
+    const signatureProperties = secretKeyPacket.version !== 6 ? getKeySignatureProperties() : {};
+    signatureProperties.signatureType = enums.signature.certGeneric;
+    if (index === 0) {
+      signatureProperties.isPrimaryUserID = true;
     }
 
     const signaturePacket = await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);

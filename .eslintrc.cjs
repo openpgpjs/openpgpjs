@@ -13,7 +13,8 @@ module.exports = {
 
   'plugins': [
     'chai-friendly',
-    'import'
+    'import',
+    'unicorn'
   ],
 
   'globals': { // TODO are all these necessary?
@@ -88,16 +89,21 @@ module.exports = {
     'prefer-template': 'off',
     'quote-props': 'off',
     'quotes': ['error', 'single', { 'avoidEscape': true }],
-    'space-before-function-paren': 'off',
+    'space-before-function-paren': ['error', { 'anonymous': 'ignore', 'named': 'never', 'asyncArrow': 'always' }],
     'spaced-comment': 'off',
     'indent': ['error', 2, { 'SwitchCase': 1 }],
     'no-unused-vars': 'error',
 
     // eslint-plugin-import rules:
     'import/named': 'error',
-    'import/extensions': 'error',
+    'import/extensions': 'off', // temporary: we use them in tests (ESM compliant), but not in the lib (to limit diff)
+    'import/first': 'off',
     'import/no-extraneous-dependencies': ['error', { 'devDependencies': true, 'optionalDependencies': false, 'peerDependencies': false }],
     'import/no-unassigned-import': 'error',
+    'import/no-unresolved': ['error', {
+      // esm exports not supported: https://github.com/import-js/eslint-plugin-import/issues/1810
+      ignore: ['openpgp', '@openpgp/noble-hashes', '@openpgp/web-stream-tools', '@openpgp/asmcrypto.js']
+    }],
     'import/prefer-default-export': 'off',
 
     // Custom silencers:
@@ -113,6 +119,7 @@ module.exports = {
     'max-lines': [2, { 'max': 620, 'skipBlankLines': true, 'skipComments': true }],
     'no-unused-expressions': 0,
     'chai-friendly/no-unused-expressions': [2, { 'allowShortCircuit': true }],
+    'unicorn/switch-case-braces': ['error', 'avoid'],
 
     // Custom warnings:
     'no-console': 1

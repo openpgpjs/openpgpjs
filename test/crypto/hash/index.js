@@ -1,5 +1,9 @@
-module.exports = () => describe('Hash', function () {
-  require('./md5')();
-  require('./ripemd')();
-  require('./sha')();
+import testMD5 from './md5';
+import testRipeMD from './ripemd';
+import testSHA from './sha';
+
+export default () => describe('Hash', function () {
+  testMD5();
+  testRipeMD();
+  testSHA();
 });

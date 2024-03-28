@@ -18,7 +18,6 @@
 /**
  * @fileoverview A Digital signature algorithm implementation
  * @module crypto/public_key/dsa
- * @private
  */
 import { getRandomBigInteger } from '../random';
 import util from '../../util';
@@ -43,6 +42,7 @@ import { isProbablePrime } from './prime';
  */
 export async function sign(hashAlgo, hashed, g, p, q, x) {
   const BigInteger = await util.getBigInteger();
+
   const one = new BigInteger(1);
   p = new BigInteger(p);
   q = new BigInteger(q);
@@ -102,6 +102,7 @@ export async function sign(hashAlgo, hashed, g, p, q, x) {
  */
 export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
   const BigInteger = await util.getBigInteger();
+
   const zero = new BigInteger(0);
   r = new BigInteger(r);
   s = new BigInteger(s);
@@ -145,6 +146,7 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
  */
 export async function validateParams(p, q, g, y, x) {
   const BigInteger = await util.getBigInteger();
+
   p = new BigInteger(p);
   q = new BigInteger(q);
   g = new BigInteger(g);
