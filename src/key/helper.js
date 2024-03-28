@@ -219,7 +219,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
   signaturePacket.rawNotations = notations;
-  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
+  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached, config);
   return signaturePacket;
 }
 

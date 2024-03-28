@@ -50,7 +50,7 @@ export default () => it('Does not trust subkeys without Primary Key Binding Sign
   fakeBindingSignature.publicKeyAlgorithm = attackerPrivKey.keyPacket.algorithm;
   fakeBindingSignature.hashAlgorithm = enums.hash.sha256;
   fakeBindingSignature.keyFlags = [enums.keyFlags.signData];
-  await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign);
+  await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign, undefined, undefined, openpgp.config);
   const newList = new PacketList();
   newList.push(
     pktPubAttacker[0], // attacker private key
