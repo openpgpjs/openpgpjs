@@ -1409,7 +1409,7 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
     });
     expect(await sig.verified).to.be.true;
     const { packets: [{ rawNotations: notations }] } = await sig.signature;
-    expect(notations).to.have.length(2);
+    expect(notations).to.have.length(3);
     expect(notations[0].name).to.equal('test@example.com');
     expect(notations[0].value).to.deep.equal(new Uint8Array([116, 101, 115, 116]));
     expect(notations[0].humanReadable).to.be.true;
@@ -1418,9 +1418,12 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
     expect(notations[1].value).to.deep.equal(new Uint8Array([0, 1, 2, 3]));
     expect(notations[1].humanReadable).to.be.false;
     expect(notations[1].critical).to.be.false;
+    expect(notations[2].name).to.equal('salt@notations.openpgpjs.org');
+    expect(notations[2].humanReadable).to.be.false;
+    expect(notations[2].critical).to.be.false;
   });
 
-  it('EdDSA v4 signatures are randomized via salt notation (`config.nonDeterministicEdDSASignaturesViaNotation`)', async function() {
+  it('v4 signatures are randomized via salt notation (`config.nonDeterministicSignaturesViaNotation`)', async function() {
     const v4SigningKey = await openpgp.readKey({
       armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -1466,14 +1469,14 @@ GBgpBmrf6IVv484jBswGDA==
       signingKeys: v4SigningKey,
       date,
       detached: true,
-      config: { nonDeterministicEdDSASignaturesViaNotation: false }
+      config: { nonDeterministicSignaturesViaNotation: false }
     });
     const armoredDeterministicSignature2 = await openpgp.sign({
       message: await openpgp.createMessage({ text }),
       signingKeys: v4SigningKey,
       date,
       detached: true,
-      config: { nonDeterministicEdDSASignaturesViaNotation: false }
+      config: { nonDeterministicSignaturesViaNotation: false }
     });
     const deterministicSignature1 = await openpgp.readSignature({ armoredSignature: armoredDeterministicSignature1 });
     const deterministicSignature2 = await openpgp.readSignature({ armoredSignature: armoredDeterministicSignature2 });
