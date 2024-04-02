@@ -26,8 +26,9 @@ import defaultConfig from '../config';
 // Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
 const verified = Symbol('verified');
 
-// A salt notation is used to randomize signatures; EdDSA signatures in particular are  known to be vulnerable to fault attacks
-// which can lead to secret key extraction if two signatures over the same data can be collected (see https://github.com/jedisct1/libsodium/issues/170).
+// A salt notation is used to randomize signatures.
+// This is to protect EdDSA signatures in particular, which are known to be vulnerable to fault attacks
+// leading to secret key extraction if two signatures over the same data can be collected (see https://github.com/jedisct1/libsodium/issues/170).
 // For simplicity, we add the salt to all algos, as it may also serve as protection in case of weaknesses in the hash algo, potentially hindering e.g.
 // some chosen-prefix attacks.
 // v6 signatures do not need to rely on this notation, as they already include a separate, built-in salt.
