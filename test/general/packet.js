@@ -1432,7 +1432,7 @@ V+HOQJQxXJkVRYa3QrFUehiMzTeqqMdgC6ZqJy7+
       signature.publicKeyAlgorithm = openpgp.enums.publicKey.rsaSign;
       signature.signatureType = openpgp.enums.signature.text;
 
-      return signature.sign(key, literal).then(async () => {
+      return signature.sign(key, literal, undefined, undefined, openpgp.config).then(async () => {
 
         signed.push(literal);
         signed.push(signature);

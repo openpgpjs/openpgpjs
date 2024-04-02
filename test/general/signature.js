@@ -1409,7 +1409,7 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
     });
     expect(await sig.verified).to.be.true;
     const { packets: [{ rawNotations: notations }] } = await sig.signature;
-    expect(notations).to.have.length(2);
+    expect(notations).to.have.length(3);
     expect(notations[0].name).to.equal('test@example.com');
     expect(notations[0].value).to.deep.equal(new Uint8Array([116, 101, 115, 116]));
     expect(notations[0].humanReadable).to.be.true;
@@ -1418,6 +1418,71 @@ DAAKCRDyMVUMT0fjjlnQAQDFHUs6TIcxrNTtEZFjUFm1M0PJ1Dng/cDW4xN80fsn
     expect(notations[1].value).to.deep.equal(new Uint8Array([0, 1, 2, 3]));
     expect(notations[1].humanReadable).to.be.false;
     expect(notations[1].critical).to.be.false;
+    expect(notations[2].name).to.equal('salt@notations.openpgpjs.org');
+    expect(notations[2].humanReadable).to.be.false;
+    expect(notations[2].critical).to.be.false;
+  });
+
+  it('v4 signatures are randomized via salt notation (`config.nonDeterministicSignaturesViaNotation`)', async function() {
+    const v4SigningKey = await openpgp.readKey({
+      armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEX8+jfBYJKwYBBAHaRw8BAQdA9GbdDjprR0sWf0R5a5IpulUauc0FsmzJ
+mOYCfoowt8EAAP9UwaqC0LWWQ5RlX7mps3728vFa/If1KBVwAjk7Uqhi2BKL
+zQ90ZXN0MiA8YkBhLmNvbT7CjAQQFgoAHQUCX8+jfAQLCQcIAxUICgQWAgEA
+AhkBAhsDAh4BACEJEG464aV2od77FiEEIcg441MtKnyJnPDRbjrhpXah3vuR
+gQD+Il6Gw2oIok4/ANyDDLBYZtKqRrMv4NcfF9DHYuAFcP4BAPhFOffyP3qU
+AEZb7QPrWdLfhn8/FeSFZxJvnmupQ9sDx10EX8+jfBIKKwYBBAGXVQEFAQEH
+QOSzo9cX1U2esGFClprOt0QWXNJ97228R5tKFxo6/0NoAwEIBwAA/0n4sq2i
+N6/jE+6rVO4o/7LW0xahxpV1tTA6qv1Op9TwFIDCeAQYFggACQUCX8+jfAIb
+DAAhCRBuOuGldqHe+xYhBCHIOONTLSp8iZzw0W464aV2od773XcA/jlmX8/c
+1/zIotEkyMZB4mI+GAg3FQ6bIACFBH1sz0MzAP9Snri0P4FRZ8D5THRCJoUm
+GBgpBmrf6IVv484jBswGDA==
+=8rBO
+-----END PGP PRIVATE KEY BLOCK-----`
+    });
+
+    const date = new Date('Tue, 25 Dec 2023 00:00:00 GMT');
+    const text = 'test';
+    const armoredRandomSignature1 = await openpgp.sign({
+      message: await openpgp.createMessage({ text }),
+      signingKeys: v4SigningKey,
+      date,
+      detached: true
+    });
+    const armoredRandomSignature2 = await openpgp.sign({
+      message: await openpgp.createMessage({ text }),
+      signingKeys: v4SigningKey,
+      date,
+      detached: true
+    });
+    const randomSignature1 = await openpgp.readSignature({ armoredSignature: armoredRandomSignature1 });
+    const randomSignature2 = await openpgp.readSignature({ armoredSignature: armoredRandomSignature2 });
+    expect(randomSignature1.packets[0].signedHashValue).to.not.deep.equal(randomSignature2.packets[0].signedHashValue);
+
+    // ensure the signatures are verifiable, as a sanity check
+    const verification1 = await openpgp.verify({ message: await openpgp.createMessage({ text }), signature: randomSignature1, verificationKeys: v4SigningKey, expectSigned: true });
+    expect(verification1.data).to.equal(text);
+
+    const armoredDeterministicSignature1 = await openpgp.sign({
+      message: await openpgp.createMessage({ text }),
+      signingKeys: v4SigningKey,
+      date,
+      detached: true,
+      config: { nonDeterministicSignaturesViaNotation: false }
+    });
+    const armoredDeterministicSignature2 = await openpgp.sign({
+      message: await openpgp.createMessage({ text }),
+      signingKeys: v4SigningKey,
+      date,
+      detached: true,
+      config: { nonDeterministicSignaturesViaNotation: false }
+    });
+    const deterministicSignature1 = await openpgp.readSignature({ armoredSignature: armoredDeterministicSignature1 });
+    const deterministicSignature2 = await openpgp.readSignature({ armoredSignature: armoredDeterministicSignature2 });
+    expect(deterministicSignature1.packets[0].signedHashValue).to.deep.equal(deterministicSignature2.packets[0].signedHashValue);
+    const verification2 = await openpgp.verify({ message: await openpgp.createMessage({ text }), signature: deterministicSignature1, verificationKeys: v4SigningKey, expectSigned: true });
+    expect(verification2.data).to.equal(text);
   });
 
   it('Verify v6 cleartext signed message with openpgp.verify', async function() {
