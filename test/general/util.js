@@ -120,12 +120,28 @@ export default () => describe('Util unit tests', function() {
       const data = 'test@localhost';
       expect(util.isEmailAddress(data)).to.be.true;
     });
+    it('should return true for valid email address (unicode chars)', function() {
+      const data = '🙂@localhost';
+      expect(util.isEmailAddress(data)).to.be.true;
+    });
     it('should return false for invalid email address (full userID)', function() {
       const data = 'Test User <test@example.com>';
       expect(util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for invalid email address (missing @)', function() {
       const data = 'testexamplecom';
+      expect(util.isEmailAddress(data)).to.be.false;
+    });
+    it('should return false for invalid email address (invisible unicode control char)', function() {
+      const data = 'test\u{feff}ctrl@email.it';
+      expect(util.isEmailAddress(data)).to.be.false;
+    });
+    it('should return false for invalid email address (trailing punctuation)', function() {
+      const data = 'test@localhost.';
+      expect(util.isEmailAddress(data)).to.be.false;
+    });
+    it('should return false for invalid email address (including whitespace)', function() {
+      const data = 'test space@email.it';
       expect(util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for empty string', function() {

@@ -465,16 +465,19 @@ const util = {
   },
 
   /**
-   * Test email format based on W3C HTML5 specification.
-   * This check is not exaustive, and does not match RFC 5322 exactly
-   * (see https://html.spec.whatwg.org/multipage/input.html#email-state-(type=email)),
-   * but is commonly used for email address validation.
+   * Test email format to ensure basic compliance:
+   * - must include a single @
+   * - no control or space unicode chars allowed
+   * - no backslash and square brackets (as the latter can mess with the userID parsing)
+   * - cannot end with a punctuation char
+   * These checks are not meant to be exhaustive; applications are strongly encouraged to implement stricter validation,
+   * e.g. based on the W3C HTML spec (https://html.spec.whatwg.org/multipage/input.html#email-state-(type=email)).
    */
   isEmailAddress: function(data) {
     if (!util.isString(data)) {
       return false;
     }
-    const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    const re = /^[^\p{C}\p{Z}@<>\\]+@[^\p{C}\p{Z}@<>\\]+[^\p{C}\p{Z}\p{P}]$/u;
     return re.test(data);
   },
 
