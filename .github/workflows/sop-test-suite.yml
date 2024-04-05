@@ -10,7 +10,7 @@ jobs:
     name: Run interoperability test suite
     runs-on: ubuntu-latest
     container: 
-      image: ghcr.io/protonmail/openpgp-interop-test-docker:v1.1.6
+      image: ghcr.io/protonmail/openpgp-interop-test-docker:v1.1.7
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
@@ -25,7 +25,7 @@ jobs:
       - name: Install openpgpjs-branch
         run: cd openpgpjs-branch && npm install
       - name: Print openpgpjs-branch version
-        run: $SOP_OPENPGPJS version --extended
+        run: $SOP_OPENPGPJS_V2 version --extended
         env: 
           OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-branch
       # check out main branch
@@ -37,7 +37,7 @@ jobs:
       - name: Install openpgpjs-main
         run: cd openpgpjs-main && npm install
       - name: Print openpgpjs-main version
-        run: $SOP_OPENPGPJS version --extended
+        run: $SOP_OPENPGPJS_V2 version --extended
         env: 
           OPENPGPJS_PATH: ${{ github.workspace }}/openpgpjs-main
       # Run test suite

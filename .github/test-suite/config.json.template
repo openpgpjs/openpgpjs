@@ -11,7 +11,8 @@
         "id": "sop-openpgpjs-main",
         "path": "__SOP_OPENPGPJS__",
         "env": {
-          "OPENPGPJS_PATH": "__OPENPGPJS_MAIN__"
+          "OPENPGPJS_PATH": "__OPENPGPJS_MAIN__",
+          "DISABLE_PROFILES": "true"
         }
       },
       {
