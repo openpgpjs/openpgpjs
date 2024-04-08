@@ -612,7 +612,9 @@ class Key {
     const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.keyRevocation, dataToVerify, date, config);
     const packetlist = new PacketList();
     packetlist.push(revocationSignature);
-    return armor(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate');
+    // An ASCII-armored Transferable Public Key packet sequence of a v6 key MUST NOT contain a CRC24 footer.
+    const v6Key = this.keyPacket.version === 6;
+    return armor(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate', !v6Key);
   }
 
   /**

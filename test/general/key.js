@@ -4024,7 +4024,7 @@ CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
 
     const input = await openpgp.unarmor(revocation_certificate_arm4);
     const packetlist = await openpgp.PacketList.fromBinary(input.data, util.constructAllowedPackets([openpgp.SignaturePacket]), openpgp.config);
-    const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write());
+    const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write(), undefined, undefined, undefined, true);
 
     expect(revocationCertificate.replace(/^Comment: .*$\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\n/mg, ''));
   });

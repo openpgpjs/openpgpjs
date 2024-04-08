@@ -255,6 +255,40 @@ export default () => describe('ASCII armor', function() {
     expect(msg.text).to.equal('\r\nsign this');
   });
 
+  it('Selectively output CRC checksum', async function () {
+    const includesArmorChecksum = armoredData => {
+      const lines = armoredData.split('\n');
+      const lastDataLine = lines[lines.length - 3];
+      return (lastDataLine[0] === '=' && lastDataLine.length === 5);
+    };
+
+    // unless explicitly forbidden by the spec, we include the checksum to workaround an GnuPG bug (https://dev.gnupg.org/T7071)
+    const { privateKey: v4Key } = await openpgp.generateKey({ userIDs: { email: 'v4@armor.test' }, format: 'object' });
+    expect(includesArmorChecksum(v4Key.armor())).to.be.true;
+    const { privateKey: v6Key } = await openpgp.generateKey({ userIDs: { email: 'v6@armor.test' }, config: { v6Keys: true, aeadProtect: true }, format: 'object' });
+    expect(includesArmorChecksum(v6Key.armor())).to.be.false;
+
+    const messageWithSEIPDv1 = await openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: v4Key });
+    expect(includesArmorChecksum(messageWithSEIPDv1)).to.be.true;
+    const messageWithSEIPDv2 = await openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: v6Key });
+    expect(includesArmorChecksum(messageWithSEIPDv2)).to.be.false;
+
+    const signatureV4V6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: [v4Key, v6Key] });
+    expect(includesArmorChecksum(signatureV4V6)).to.be.true;
+    const signatureV6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: v6Key });
+    expect(includesArmorChecksum(signatureV6)).to.be.false;
+
+    const detachedSignatureV4V6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: [v4Key, v6Key], detached: true });
+    expect(includesArmorChecksum(detachedSignatureV4V6)).to.be.true;
+    const detachedSignatureV6 = await openpgp.sign({ message: await openpgp.createMessage({ text: 'test' }), signingKeys: v6Key, detached: true });
+    expect(includesArmorChecksum(detachedSignatureV6)).to.be.false;
+
+    const cleartextSignatureV4V6 = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: 'test' }), signingKeys: [v4Key, v6Key] });
+    expect(includesArmorChecksum(cleartextSignatureV4V6)).to.be.true;
+    const cleartextSignatureV6 = await openpgp.sign({ message: await openpgp.createCleartextMessage({ text: 'test' }), signingKeys: v6Key });
+    expect(includesArmorChecksum(cleartextSignatureV6)).to.be.false;
+  });
+
   it('Do not add extraneous blank line when base64 ends on line break', async function () {
     const pubKey = `-----BEGIN PGP PUBLIC KEY BLOCK-----
 

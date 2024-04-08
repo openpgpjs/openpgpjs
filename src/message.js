@@ -680,7 +680,13 @@ export class Message {
    * @returns {ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
-    return armor(enums.armor.message, this.write(), null, null, null, config);
+    const trailingPacket = this.packets[this.packets.length - 1];
+    // An ASCII-armored Encrypted Message packet sequence that ends in an v2 SEIPD packet MUST NOT contain a CRC24 footer.
+    // An ASCII-armored sequence of Signature packets that only includes v6 Signature packets MUST NOT contain a CRC24 footer.
+    const includeArmorChecksum = trailingPacket.constructor.tag === SymEncryptedIntegrityProtectedDataPacket.tag ?
+      trailingPacket.version !== 2 :
+      this.packets.some(packet => packet.constructor.tag === SignaturePacket.tag && packet.version !== 6);
+    return armor(enums.armor.message, this.write(), null, null, null, includeArmorChecksum, config);
   }
 }
 

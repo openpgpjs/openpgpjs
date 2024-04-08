@@ -49,7 +49,9 @@ export class Signature {
    * @returns {ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
-    return armor(enums.armor.signature, this.write(), undefined, undefined, undefined, config);
+    // An ASCII-armored sequence of Signature packets that only includes v6 Signature packets MUST NOT contain a CRC24 footer.
+    const includesNonV6Signatures = this.packets.some(packet => packet.constructor.tag === SignaturePacket.tag && packet.version !== 6);
+    return armor(enums.armor.signature, this.write(), undefined, undefined, undefined, includesNonV6Signatures, config);
   }
 
   /**
