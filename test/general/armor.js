@@ -262,7 +262,7 @@ export default () => describe('ASCII armor', function() {
       return (lastDataLine[0] === '=' && lastDataLine.length === 5);
     };
 
-    // unless explicitly forbidden by the spec, we include the checksum to workaround an GnuPG bug (https://dev.gnupg.org/T7071)
+    // unless explicitly forbidden by the spec, we include the checksum to work around a GnuPG bug (https://dev.gnupg.org/T7071)
     const { privateKey: v4Key } = await openpgp.generateKey({ userIDs: { email: 'v4@armor.test' }, format: 'object' });
     expect(includesArmorChecksum(v4Key.armor())).to.be.true;
     const { privateKey: v6Key } = await openpgp.generateKey({ userIDs: { email: 'v6@armor.test' }, config: { v6Keys: true, aeadProtect: true }, format: 'object' });

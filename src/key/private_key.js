@@ -65,8 +65,8 @@ class PrivateKey extends PublicKey {
    */
   armor(config = defaultConfig) {
     // An ASCII-armored Transferable Public Key packet sequence of a v6 key MUST NOT contain a CRC24 footer.
-    const v6Key = this.keyPacket.version === 6;
-    return armor(enums.armor.privateKey, this.toPacketList().write(), undefined, undefined, undefined, !v6Key, config);
+    const emitChecksum = this.keyPacket.version !== 6;
+    return armor(enums.armor.privateKey, this.toPacketList().write(), undefined, undefined, undefined, emitChecksum, config);
   }
 
   /**

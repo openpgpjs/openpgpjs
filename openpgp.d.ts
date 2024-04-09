@@ -735,7 +735,7 @@ export interface VerifyMessageResult<T extends MaybeStream<Data> = MaybeStream<D
 /**
  * Armor an OpenPGP binary packet block
  */
-export function armor(messagetype: enums.armor, body: object, partindex?: number, parttotal?: number, customComment?: string, config?: Config): string;
+export function armor(messagetype: enums.armor, body: object, partindex?: number, parttotal?: number, customComment?: string, emitChecksum?: boolean, config?: Config): string;
 
 /**
  * DeArmor an OpenPGP armored message; verify the checksum and return the encoded bytes

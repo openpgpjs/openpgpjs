@@ -334,13 +334,13 @@ export function unarmor(input) {
  * @param {Integer} [partIndex]
  * @param {Integer} [partTotal]
  * @param {String} [customComment] - Additional comment to add to the armored string
- * @param {Boolean} [withChecksum] - Whether to compute and include the CRC checksum
+ * @param {Boolean} [emitChecksum] - Whether to compute and include the CRC checksum
  *  (NB: some types of data must not include it, but compliance is left as responsibility of the caller: this function does not carry out any checks)
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {String | ReadableStream<String>} Armored text.
  * @static
  */
-export function armor(messageType, body, partIndex, partTotal, customComment, withChecksum = false, config = defaultConfig) {
+export function armor(messageType, body, partIndex, partTotal, customComment, emitChecksum = false, config = defaultConfig) {
   let text;
   let hash;
   if (messageType === enums.armor.signed) {
@@ -348,9 +348,9 @@ export function armor(messageType, body, partIndex, partTotal, customComment, wi
     hash = body.hash;
     body = body.data;
   }
-  // unless explicitly forbidden by the spec, we need to include the checksum to workaround an GnuPG bug
+  // unless explicitly forbidden by the spec, we need to include the checksum to work around a GnuPG bug
   // where data fails to be decoded if the base64 ends with no padding chars (=) (see https://dev.gnupg.org/T7071)
-  const maybeBodyClone = withChecksum && stream.passiveClone(body);
+  const maybeBodyClone = emitChecksum && stream.passiveClone(body);
 
   const result = [];
   switch (messageType) {

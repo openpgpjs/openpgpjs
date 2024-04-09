@@ -111,9 +111,9 @@ export class CleartextMessage {
    * @returns {String | ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
-    const includesNonV6Signatures = this.signature.packets.some(packet => packet.version !== 6);
-    // emit header if one of the signatures has a version not 6
-    const hash = includesNonV6Signatures ?
+    // emit header and checksum if one of the signatures has a version not 6
+    const emitHeaderAndChecksum = this.signature.packets.some(packet => packet.version !== 6);
+    const hash = emitHeaderAndChecksum ?
       Array.from(new Set(this.signature.packets.map(
         packet => enums.read(enums.hash, packet.hashAlgorithm).toUpperCase()
       ))).join() :
@@ -126,7 +126,7 @@ export class CleartextMessage {
     };
 
     // An ASCII-armored sequence of Signature packets that only includes v6 Signature packets MUST NOT contain a CRC24 footer.
-    return armor(enums.armor.signed, body, undefined, undefined, undefined, includesNonV6Signatures, config);
+    return armor(enums.armor.signed, body, undefined, undefined, undefined, emitHeaderAndChecksum, config);
   }
 }
 
