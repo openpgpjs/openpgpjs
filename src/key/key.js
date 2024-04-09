@@ -613,8 +613,8 @@ class Key {
     const packetlist = new PacketList();
     packetlist.push(revocationSignature);
     // An ASCII-armored Transferable Public Key packet sequence of a v6 key MUST NOT contain a CRC24 footer.
-    const v6Key = this.keyPacket.version === 6;
-    return armor(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate', !v6Key);
+    const emitChecksum = this.keyPacket.version !== 6;
+    return armor(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate', emitChecksum);
   }
 
   /**
