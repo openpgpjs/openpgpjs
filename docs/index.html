@@ -205,7 +205,7 @@ library to convert back and forth between them.</p>
 </li>
 <li>
 <p>The library implements authenticated encryption (AEAD) as per the <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh">&quot;crypto refresh&quot; draft standard</a> using AES-OCB, EAX, or GCM. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. <strong>Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.</strong> You can enable it by setting <code>openpgp.config.aeadProtect = true</code>.
-Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from <a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10">RFC4880bis</a>, which was modified in a later draft of the crypto refresh.</p>
+Note that this setting has a different effect from the one in OpenPGP.js v6, which implemented support for a provisional version of AEAD from <a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10">RFC4880bis</a>, which was modified in a later draft of the crypto refresh.</p>
 <p>You can change the AEAD mode by setting one of the following options:</p>
 <pre class="prettyprint source"><code>openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb; // Default (widest ecosystem support), non-native
 openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.gcm; // Native in WebCrypto and Node.js
@@ -265,7 +265,7 @@ import * as openpgp from './openpgp.min.mjs';
 </code></pre>
 <p>If you notice missing or incorrect type definitions, feel free to open a PR.</p>
 <h3 id="examples">Examples</h3>
-<p>Here are some examples of how to use OpenPGP.js v5. For more elaborate examples and working code, please check out the <a href="https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js">public API unit tests</a>. If you're upgrading from v4 it might help to check out the <a href="https://github.com/openpgpjs/openpgpjs/wiki/V5-Changelog">changelog</a> and <a href="https://github.com/openpgpjs/openpgpjs#documentation">documentation</a>.</p>
+<p>Here are some examples of how to use OpenPGP.js v6. For more elaborate examples and working code, please check out the <a href="https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js">public API unit tests</a>. If you're upgrading from v4 it might help to check out the <a href="https://github.com/openpgpjs/openpgpjs/wiki/v6-Changelog">changelog</a> and <a href="https://github.com/openpgpjs/openpgpjs#documentation">documentation</a>.</p>
 <h4 id="encrypt-and-decrypt-uint8array-data-with-a-password">Encrypt and decrypt <em>Uint8Array</em> data with a password</h4>
 <p>Encryption will use the algorithm specified in config.preferredSymmetricAlgorithm (defaults to aes256), and decryption will use the algorithm used for encryption.</p>
 <pre class="prettyprint source lang-js"><code>(async () => {

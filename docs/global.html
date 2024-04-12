@@ -106,7 +106,7 @@
     
 
     
-    <h4 class="name" id="armor"><span class="type-signature"></span>armor<span class="signature">(messageType, body, partIndex<span class="signature-attributes">opt</span>, partTotal<span class="signature-attributes">opt</span>, customComment<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {String|ReadableStream.&lt;String>}</span></h4>
+    <h4 class="name" id="armor"><span class="type-signature"></span>armor<span class="signature">(messageType, body, partIndex<span class="signature-attributes">opt</span>, partTotal<span class="signature-attributes">opt</span>, customComment<span class="signature-attributes">opt</span>, emitChecksum<span class="signature-attributes">opt</span>, config<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {String|ReadableStream.&lt;String>}</span></h4>
     
 
     
@@ -313,6 +313,73 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>emitChecksum</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Boolean</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Whether to compute and include the CRC checksum
+(NB: some types of data must not include it, but compliance is left as responsibility of the caller: this function does not carry out any checks)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Full configuration, defaults to openpgp.config</p></td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -352,7 +419,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/encoding/armor.js#L268">line 268</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/encoding/armor.js#L343">line 343</a>
     </li></ul></dd>
     
 
@@ -565,7 +632,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/cleartext.js#L210">line 210</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/cleartext.js#L212">line 212</a>
     </li></ul></dd>
     
 
@@ -704,7 +771,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js#L53">line 53</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js#L53">line 53</a>
     </li></ul></dd>
     
 
@@ -1113,7 +1180,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/message.js#L882">line 882</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/message.js#L888">line 888</a>
     </li></ul></dd>
     
 
@@ -1694,7 +1761,7 @@ One of <code>decryptionKeys</code>, <code>sessionkeys</code> or <code>passwords<
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L343">line 343</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L343">line 343</a>
     </li></ul></dd>
     
 
@@ -1997,7 +2064,7 @@ This method does not change the original key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L181">line 181</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L181">line 181</a>
     </li></ul></dd>
     
 
@@ -2356,7 +2423,7 @@ One of <code>decryptionKeys</code> or <code>passwords</code> must be specified.<
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L596">line 596</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L596">line 596</a>
     </li></ul></dd>
     
 
@@ -2488,7 +2555,7 @@ Ultimately, the interface provides no advantages and it's only needed because of
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/biginteger.js">biginteger.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/biginteger.js#L9">line 9</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/biginteger.js">biginteger.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/biginteger.js#L9">line 9</a>
     </li></ul></dd>
     
 
@@ -3257,7 +3324,7 @@ must be specified. If signing keys are specified, those will be used to sign the
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L274">line 274</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L274">line 274</a>
     </li></ul></dd>
     
 
@@ -3545,7 +3612,7 @@ This method does not change the original key.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L215">line 215</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L215">line 215</a>
     </li></ul></dd>
     
 
@@ -4165,7 +4232,7 @@ At least one of <code>encryptionKeys</code> or <code>passwords</code> must be sp
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L562">line 562</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L562">line 562</a>
     </li></ul></dd>
     
 
@@ -4381,7 +4448,7 @@ At least one of <code>encryptionKeys</code> or <code>passwords</code> must be sp
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L718">line 718</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L718">line 718</a>
     </li></ul></dd>
     
 
@@ -4982,7 +5049,7 @@ default to main key options, except for <code>sign</code> parameter that default
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L58">line 58</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L58">line 58</a>
     </li></ul></dd>
     
 
@@ -5332,7 +5399,7 @@ default to main key options, except for <code>sign</code> parameter that default
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L529">line 529</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L529">line 529</a>
     </li></ul></dd>
     
 
@@ -5493,7 +5560,7 @@ default to main key options, except for <code>sign</code> parameter that default
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/crypto/cipher/index.js">crypto/cipher/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/crypto/cipher/index.js#L29">line 29</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/crypto/cipher/index.js">crypto/cipher/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/crypto/cipher/index.js#L29">line 29</a>
     </li></ul></dd>
     
 
@@ -5632,7 +5699,7 @@ default to main key options, except for <code>sign</code> parameter that default
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/crypto/cipher/index.js">crypto/cipher/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/crypto/cipher/index.js#L49">line 49</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/crypto/cipher/index.js">crypto/cipher/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/crypto/cipher/index.js#L49">line 49</a>
     </li></ul></dd>
     
 
@@ -5771,7 +5838,7 @@ default to main key options, except for <code>sign</code> parameter that default
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/crypto/cipher/index.js">crypto/cipher/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/crypto/cipher/index.js#L70">line 70</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/crypto/cipher/index.js">crypto/cipher/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/crypto/cipher/index.js#L70">line 70</a>
     </li></ul></dd>
     
 
@@ -5921,7 +5988,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/compressed_data.js">packet/compressed_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/compressed_data.js#L218">line 218</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/compressed_data.js">packet/compressed_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/compressed_data.js#L218">line 218</a>
     </li></ul></dd>
     
 
@@ -6101,7 +6168,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/packetlist.js#L14">line 14</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/packetlist.js">packet/packetlist.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/packetlist.js#L14">line 14</a>
     </li></ul></dd>
     
 
@@ -6245,7 +6312,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/type/s2k/index.js">type/s2k/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/type/s2k/index.js#L36">line 36</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/type/s2k/index.js">type/s2k/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/type/s2k/index.js#L36">line 36</a>
     </li></ul></dd>
     
 
@@ -6435,7 +6502,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/type/s2k/index.js">type/s2k/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/type/s2k/index.js#L16">line 16</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/type/s2k/index.js">type/s2k/index.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/type/s2k/index.js#L16">line 16</a>
     </li></ul></dd>
     
 
@@ -6827,7 +6894,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/secret_key.js">packet/secret_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/secret_key.js#L570">line 570</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/secret_key.js">packet/secret_key.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/secret_key.js#L570">line 570</a>
     </li></ul></dd>
     
 
@@ -7068,7 +7135,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/cleartext.js#L140">line 140</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/cleartext.js">cleartext.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/cleartext.js#L142">line 142</a>
     </li></ul></dd>
     
 
@@ -7356,7 +7423,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js#L319">line 319</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js#L319">line 319</a>
     </li></ul></dd>
     
 
@@ -7644,7 +7711,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js#L393">line 393</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js#L393">line 393</a>
     </li></ul></dd>
     
 
@@ -7938,7 +8005,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/message.js#L842">line 842</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/message.js">message.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/message.js#L848">line 848</a>
     </li></ul></dd>
     
 
@@ -8226,7 +8293,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js#L356">line 356</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js#L356">line 356</a>
     </li></ul></dd>
     
 
@@ -8514,7 +8581,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js#L438">line 438</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js#L438">line 438</a>
     </li></ul></dd>
     
 
@@ -8802,7 +8869,7 @@ NB: the return instatiator functions will throw when called if the provided <cod
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/signature.js">signature.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/signature.js#L74">line 74</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/signature.js">signature.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/signature.js#L76">line 76</a>
     </li></ul></dd>
     
 
@@ -9264,7 +9331,7 @@ to set the same date as the key creation time to ensure that old message signatu
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L109">line 109</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L109">line 109</a>
     </li></ul></dd>
     
 
@@ -9793,7 +9860,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L150">line 150</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L150">line 150</a>
     </li></ul></dd>
     
 
@@ -10008,7 +10075,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/sym_encrypted_integrity_protected_data.js">packet/sym_encrypted_integrity_protected_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/sym_encrypted_integrity_protected_data.js#L211">line 211</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/sym_encrypted_integrity_protected_data.js">packet/sym_encrypted_integrity_protected_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/sym_encrypted_integrity_protected_data.js#L211">line 211</a>
     </li></ul></dd>
     
 
@@ -10557,7 +10624,7 @@ If a revocation certificate is passed, the reasonForRevocation parameter will be
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L406">line 406</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L406">line 406</a>
     </li></ul></dd>
     
 
@@ -10719,7 +10786,7 @@ the encoded bytes</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/encoding/armor.js#L157">line 157</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/encoding/armor.js">encoding/armor.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/encoding/armor.js#L229">line 229</a>
     </li></ul></dd>
     
 
@@ -11181,7 +11248,7 @@ an attribute &quot;data&quot; containing a stream of bytes and &quot;type&quot; 
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/openpgp.js#L475">line 475</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js">openpgp.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/openpgp.js#L475">line 475</a>
     </li></ul></dd>
     
 
@@ -11426,7 +11493,7 @@ The new key includes a revocation certificate that must be removed before return
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/key/factory.js#L175">line 175</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js">key/factory.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/key/factory.js#L175">line 175</a>
     </li></ul></dd>
     
 
@@ -11606,7 +11673,7 @@ The new key includes a revocation certificate that must be removed before return
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/compressed_data.js">packet/compressed_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-alpha.1/src/packet/compressed_data.js#L147">line 147</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/compressed_data.js">packet/compressed_data.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.0/src/packet/compressed_data.js#L147">line 147</a>
     </li></ul></dd>
     
 
