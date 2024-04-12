@@ -335,6 +335,20 @@ class MemoryBenchamrkSuite {
     await decryptedData.pipeTo(sink);
   });
 
+  suite.add('openpgp.encrypt/decryptSessionKeys (argon2)', async () => {
+    const config = { s2kType: openpgp.enums.s2k.argon2 };
+    const passwords = 'password';
+    const sessionKey = {
+      algorithm: 'aes128',
+      data: require('crypto').getRandomValues(new Uint8Array(16))
+    };
+    const encrypted = await openpgp.encryptSessionKey({ ...sessionKey, passwords, config, format: 'object' });
+    assert(encrypted.packets.length === 1);
+    const skesk = encrypted.packets[0];
+    assert(skesk.s2k.type === 'argon2');
+    await openpgp.decryptSessionKeys({ message: encrypted, passwords });
+  });
+
   const stats = await suite.run();
   // Print JSON stats to stdout
   console.log(JSON.stringify(stats, null, 4));
