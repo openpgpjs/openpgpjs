@@ -2406,6 +2406,17 @@ k0mXubZvyl4GBg==
       expect(seipd).to.be.instanceOf(openpgp.SymEncryptedIntegrityProtectedDataPacket);
       expect(seipd.version).to.equal(2);
       expect(seipd.aeadAlgorithm).to.equal(openpgp.enums.aead.ocb);
+
+      const encryptedWithoutAEAD = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: [v4PrivateKeyWithOCBPref, v6PrivateKeyWithOCBPref],
+        format: 'object',
+        config: { ignoreSEIPDv2FeatureFlag: true }
+      });
+
+      const seipdV1 = encryptedWithoutAEAD.packets[2];
+      expect(seipdV1).to.be.instanceOf(openpgp.SymEncryptedIntegrityProtectedDataPacket);
+      expect(seipdV1.version).to.equal(1);
     });
 
     it('should support encrypting to a key without features (missing SEIPDv1 feature)', async function () {
