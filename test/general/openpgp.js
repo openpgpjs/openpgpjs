@@ -2213,7 +2213,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       ).to.be.rejectedWith(/Primary key is expired/);
     });
 
-    it('uses AEAD when the encryption key prefs support it (SEIPv2', async function() {
+    it('uses AEAD when the encryption key prefs support it (SEIPDv2', async function() {
       const v4PrivateKeyWithOCBPref = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
@@ -2859,7 +2859,8 @@ XfA3pqV4mTzF
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
+            const supportsSEIPDv2 = !!(publicKey.users[0].selfCertifications[0].features?.[0] & openpgp.enums.features.seipdv2);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2883,7 +2884,8 @@ XfA3pqV4mTzF
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
+            const supportsSEIPDv2 = !!(publicKey.users[0].selfCertifications[0].features?.[0] & openpgp.enums.features.seipdv2);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2906,7 +2908,7 @@ XfA3pqV4mTzF
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(false);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(1);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2923,6 +2925,7 @@ XfA3pqV4mTzF
           };
 
           return openpgp.generateKey(genOpt).then(async function(newKey) {
+            const supportsSEIPDv2 = openpgp.config.aeadProtect;
             const newPublicKey = await openpgp.readKey({ armoredKey: newKey.publicKey });
             const newPrivateKey = await openpgp.readKey({ armoredKey: newKey.privateKey });
 
@@ -2937,7 +2940,7 @@ XfA3pqV4mTzF
             };
             return openpgp.encrypt(encOpt).then(async function (encrypted) {
               decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-              expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
+              expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
               return openpgp.decrypt(decOpt);
             }).then(async function (decrypted) {
               expect(decrypted.data).to.equal(plaintext);
@@ -2953,6 +2956,7 @@ XfA3pqV4mTzF
           const newKey = await openpgp.generateKey({
             userIDs: [{ name: 'Test User', email: 'text@example.com' }]
           });
+          const supportsSEIPDv2 = openpgp.config.aeadProtect;
           const newPublicKey = await openpgp.readKey({ armoredKey: newKey.publicKey });
           const newPrivateKey = await openpgp.readKey({ armoredKey: newKey.privateKey });
 
@@ -2966,7 +2970,7 @@ XfA3pqV4mTzF
             detached: true
           });
           const message = await openpgp.readMessage({ armoredMessage: encrypted });
-          expect(message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(openpgp.config.aeadProtect);
+          expect(message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
           const decrypted = await openpgp.decrypt({
             message,
             signature: await openpgp.readSignature({ armoredSignature: signed }),
