@@ -86,7 +86,9 @@ export default Object.assign([
       { file: 'dist/node/openpgp.min.mjs', format: 'es', banner, intro, plugins: [terser(terserOptions)], sourcemap: true }
     ].map(options => ({ ...options, inlineDynamicImports: true })),
     plugins: [
-      resolve(),
+      resolve({
+        exportConditions: ['node'] // needed for resolution of noble-curves import of '@noble/crypto' in Node 16 and 18
+      }),
       typescript(),
       commonjs(),
       replace({
