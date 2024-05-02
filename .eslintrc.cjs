@@ -102,7 +102,7 @@ module.exports = {
     'import/no-unassigned-import': 'error',
     'import/no-unresolved': ['error', {
       // esm exports not supported: https://github.com/import-js/eslint-plugin-import/issues/1810
-      ignore: ['openpgp', '@openpgp/noble-hashes', '@openpgp/web-stream-tools', '@openpgp/asmcrypto.js']
+      ignore: ['openpgp', '@noble/hashes', '@openpgp/web-stream-tools', '@openpgp/asmcrypto.js']
     }],
     'import/prefer-default-export': 'off',
 
