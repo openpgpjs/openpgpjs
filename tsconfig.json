@@ -3,7 +3,7 @@
     "strict": true,
     "target": "es2021",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "Bundler",
     "allowJs": true,
     "paths": {
       "openpgp": [ "." ]

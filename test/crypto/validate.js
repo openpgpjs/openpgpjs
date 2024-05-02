@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import util from '../../src/util.js';
+import BigInteger from '../../src/biginteger.js';
 
 const armoredDSAKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -387,8 +387,6 @@ export default () => {
     });
 
     it('detect g with small order', async function() {
-      const BigInteger = await util.getBigInteger();
-
       const keyPacket = await cloneKeyPacket(egKey);
       const { p, g } = keyPacket.publicParams;
 

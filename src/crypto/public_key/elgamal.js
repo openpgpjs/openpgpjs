@@ -21,7 +21,7 @@
  */
 import { getRandomBigInteger } from '../random';
 import { emeEncode, emeDecode } from '../pkcs1';
-import util from '../../util';
+import BigInteger from '../../biginteger';
 
 /**
  * ElGamal Encryption function
@@ -34,8 +34,6 @@ import util from '../../util';
  * @async
  */
 export async function encrypt(data, p, g, y) {
-  const BigInteger = await util.getBigInteger();
-
   p = new BigInteger(p);
   g = new BigInteger(g);
   y = new BigInteger(y);
@@ -65,8 +63,6 @@ export async function encrypt(data, p, g, y) {
  * @async
  */
 export async function decrypt(c1, c2, p, x, randomPayload) {
-  const BigInteger = await util.getBigInteger();
-
   c1 = new BigInteger(c1);
   c2 = new BigInteger(c2);
   p = new BigInteger(p);
@@ -86,8 +82,6 @@ export async function decrypt(c1, c2, p, x, randomPayload) {
  * @async
  */
 export async function validateParams(p, g, y, x) {
-  const BigInteger = await util.getBigInteger();
-
   p = new BigInteger(p);
   g = new BigInteger(g);
   y = new BigInteger(y);
