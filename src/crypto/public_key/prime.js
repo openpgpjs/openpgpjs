@@ -19,6 +19,7 @@
  * @fileoverview Algorithms for probabilistic random prime generation
  * @module crypto/public_key/prime
  */
+import BigInteger from '../../biginteger';
 import util from '../../util';
 import { getRandomBigInteger } from '../random';
 
@@ -31,8 +32,6 @@ import { getRandomBigInteger } from '../random';
  * @async
  */
 export async function randomProbablePrime(bits, e, k) {
-  const BigInteger = await util.getBigInteger();
-
   const one = new BigInteger(1);
   const min = one.leftShift(new BigInteger(bits - 1));
   const thirty = new BigInteger(30);
@@ -93,15 +92,11 @@ export async function isProbablePrime(n, e, k) {
  * @returns {boolean}
  */
 export async function fermat(n, b) {
-  const BigInteger = await util.getBigInteger();
-
   b = b || new BigInteger(2);
   return b.modExp(n.dec(), n).isOne();
 }
 
 export async function divisionTest(n) {
-  const BigInteger = await util.getBigInteger();
-
   return smallPrimes.every(m => {
     return n.mod(new BigInteger(m)) !== 0;
   });
@@ -230,8 +225,6 @@ const smallPrimes = [
  * @async
  */
 export async function millerRabin(n, k, rand) {
-  const BigInteger = await util.getBigInteger();
-
   const len = n.bitLength();
 
   if (!k) {

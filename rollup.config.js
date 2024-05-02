@@ -9,6 +9,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
 import { wasm } from '@rollup/plugin-wasm';
+import typescript from '@rollup/plugin-typescript';
 
 // ESlint does not support JSON module imports yet, see https://github.com/eslint/eslint/discussions/15305
 // import pkg from './package.json' assert { type: 'json' };
@@ -63,6 +64,7 @@ export default Object.assign([
       resolve({
         browser: true
       }),
+      typescript(),
       commonjs({
         ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
@@ -85,6 +87,7 @@ export default Object.assign([
     ].map(options => ({ ...options, inlineDynamicImports: true })),
     plugins: [
       resolve(),
+      typescript(),
       commonjs(),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`
@@ -104,6 +107,7 @@ export default Object.assign([
       resolve({
         browser: true
       }),
+      typescript(),
       commonjs({
         ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
@@ -130,6 +134,7 @@ export default Object.assign([
       resolve({
         browser: true
       }),
+      typescript(),
       commonjs({
         ignore: nodeBuiltinModules.concat(nodeDependencies),
         requireReturnsDefault: 'preferred'

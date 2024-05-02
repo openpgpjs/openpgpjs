@@ -25,6 +25,7 @@ import util from '../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64';
 import { emsaEncode, emeEncode, emeDecode } from '../pkcs1';
 import enums from '../../enums';
+import BigInteger from '../../biginteger';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -141,8 +142,6 @@ export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
  * @async
  */
 export async function generate(bits, e) {
-  const BigInteger = await util.getBigInteger();
-
   e = new BigInteger(e);
 
   // Native RSA keygen using Web Crypto
@@ -223,8 +222,6 @@ export async function generate(bits, e) {
  * @async
  */
 export async function validateParams(n, e, d, p, q, u) {
-  const BigInteger = await util.getBigInteger();
-
   n = new BigInteger(n);
   p = new BigInteger(p);
   q = new BigInteger(q);
@@ -263,8 +260,6 @@ export async function validateParams(n, e, d, p, q, u) {
 }
 
 async function bnSign(hashAlgo, n, d, hashed) {
-  const BigInteger = await util.getBigInteger();
-
   n = new BigInteger(n);
   const m = new BigInteger(await emsaEncode(hashAlgo, hashed, n.byteLength()));
   d = new BigInteger(d);
@@ -301,8 +296,6 @@ async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
 }
 
 async function bnVerify(hashAlgo, s, n, e, hashed) {
-  const BigInteger = await util.getBigInteger();
-
   n = new BigInteger(n);
   s = new BigInteger(s);
   e = new BigInteger(e);
@@ -346,8 +339,6 @@ async function nodeEncrypt(data, n, e) {
 }
 
 async function bnEncrypt(data, n, e) {
-  const BigInteger = await util.getBigInteger();
-
   n = new BigInteger(n);
   data = new BigInteger(emeEncode(data, n.byteLength()));
   e = new BigInteger(e);
@@ -369,8 +360,6 @@ async function nodeDecrypt(data, n, e, d, p, q, u) {
 }
 
 async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
-  const BigInteger = await util.getBigInteger();
-
   data = new BigInteger(data);
   n = new BigInteger(n);
   e = new BigInteger(e);
@@ -412,8 +401,6 @@ async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
  * @param {Uint8Array} u
  */
 async function privateToJWK(n, e, d, p, q, u) {
-  const BigInteger = await util.getBigInteger();
-
   const pNum = new BigInteger(p);
   const qNum = new BigInteger(q);
   const dNum = new BigInteger(d);

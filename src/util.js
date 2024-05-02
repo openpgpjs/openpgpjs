@@ -26,7 +26,6 @@ import * as stream from '@openpgp/web-stream-tools';
 import { createRequire } from 'module'; // Must be stripped in browser built
 import enums from './enums';
 import defaultConfig from './config';
-import { getBigInteger } from './biginteger';
 
 const debugMode = (() => {
   try {
@@ -49,8 +48,6 @@ const util = {
   isUint8Array: stream.isUint8Array,
 
   isStream: stream.isStream,
-
-  getBigInteger,
 
   /**
    * Load noble-curves lib on demand and return the requested curve function
