@@ -35,7 +35,7 @@ class PublicSubkeyPacket extends PublicKeyPacket {
    * @param {Date} [date] - Creation date
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
-  // eslint-disable-next-line no-useless-constructor
+  // eslint-disable-next-line @typescript-eslint/no-useless-constructor
   constructor(date, config) {
     super(date, config);
   }

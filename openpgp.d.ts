@@ -1,3 +1,5 @@
+/* eslint-disable max-lines, @typescript-eslint/indent */
+
 /**
  * Type definitions for OpenPGP.js http://openpgpjs.org/
  *
@@ -64,8 +66,8 @@ export abstract class Key {
   // NB: the order of the `update` declarations matters, since PublicKey includes PrivateKey
   public update(sourceKey: PrivateKey, date?: Date, config?: Config): Promise<PrivateKey>;
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PublicKey>;
-  public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<this>
-  public signAllUsers(privateKeys: PrivateKey[], date?: Date, config?: Config): Promise<this>
+  public signPrimaryUser(privateKeys: PrivateKey[], date?: Date, userID?: UserID, config?: Config): Promise<this>;
+  public signAllUsers(privateKeys: PrivateKey[], date?: Date, config?: Config): Promise<this>;
   public verifyPrimaryKey(date?: Date, userID?: UserID, config?: Config): Promise<void>; // throws on error
   public verifyPrimaryUser(publicKeys: PublicKey[], date?: Date, userIDs?: UserID, config?: Config): Promise<{ keyID: KeyID, valid: boolean | null }[]>;
   public verifyAllUsers(publicKeys?: PublicKey[], date?: Date, config?: Config): Promise<{ userID: string, keyID: KeyID, valid: boolean | null }[]>;
@@ -92,7 +94,7 @@ export class PrivateKey extends PublicKey {
   public revoke(reason?: ReasonForRevocation, date?: Date, config?: Config): Promise<PrivateKey>;
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
-  public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>
+  public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>;
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
 }
 
@@ -108,9 +110,9 @@ export class Subkey {
   public getCreationTime(): Date;
   public getAlgorithmInfo(): AlgorithmInfo;
   public getKeyID(): KeyID;
-  public getExpirationTime(date?: Date, config?: Config): Promise<Date | typeof Infinity | null>
+  public getExpirationTime(date?: Date, config?: Config): Promise<Date | typeof Infinity | null>;
   public isRevoked(signature: SignaturePacket, key: AnyKeyPacket, date?: Date, config?: Config): Promise<boolean>;
-  public update(subKey: Subkey, date?: Date, config?: Config): Promise<void>
+  public update(subKey: Subkey, date?: Date, config?: Config): Promise<void>;
   public revoke(primaryKey: SecretKeyPacket, reasonForRevocation?: ReasonForRevocation, date?: Date, config?: Config): Promise<Subkey>;
 }
 
@@ -200,25 +202,25 @@ export function createMessage<T extends MaybeStream<string>>(options: { text: T,
 export function createMessage<T extends MaybeStream<Uint8Array>>(options: { binary: T, filename?: string, date?: Date, format?: enums.literalFormatNames }): Promise<Message<T>>;
 
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format?: 'armored' }): Promise<
-  T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
+  T extends WebStream<Data> ? WebStream<string> :
+  T extends NodeWebStream<Data> ? NodeWebStream<string> :
   string
 >;
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format: 'binary' }): Promise<
-  T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
+  T extends WebStream<Data> ? WebStream<Uint8Array> :
+  T extends NodeWebStream<Data> ? NodeWebStream<Uint8Array> :
   Uint8Array
 >;
 export function encrypt<T extends MaybeStream<Data>>(options: EncryptOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
 
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format?: 'armored' }): Promise<
-  T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
+  T extends WebStream<Data> ? WebStream<string> :
+  T extends NodeWebStream<Data> ? NodeWebStream<string> :
   string
 >;
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format: 'binary' }): Promise<
-  T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
+  T extends WebStream<Data> ? WebStream<Uint8Array> :
+  T extends NodeWebStream<Data> ? NodeWebStream<Uint8Array> :
   Uint8Array
 >;
 export function sign<T extends MaybeStream<Data>>(options: SignOptions & { message: Message<T>, format: 'object' }): Promise<Message<T>>;
@@ -227,26 +229,26 @@ export function sign(options: SignOptions & { message: CleartextMessage, format:
 
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T>, format: 'binary' }): Promise<DecryptMessageResult & {
   data:
-  T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
+  T extends WebStream<Data> ? WebStream<Uint8Array> :
+  T extends NodeWebStream<Data> ? NodeWebStream<Uint8Array> :
   Uint8Array
 }>;
 export function decrypt<T extends MaybeStream<Data>>(options: DecryptOptions & { message: Message<T> }): Promise<DecryptMessageResult & {
   data:
-  T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
+  T extends WebStream<Data> ? WebStream<string> :
+  T extends NodeWebStream<Data> ? NodeWebStream<string> :
   string
 }>;
 
 export function verify(options: VerifyOptions & { message: CleartextMessage, format?: 'utf8' }): Promise<VerifyMessageResult<string>>;
 export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T>, format: 'binary' }): Promise<VerifyMessageResult<
-  T extends WebStream<infer X> ? WebStream<Uint8Array> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<Uint8Array> :
+  T extends WebStream<Data> ? WebStream<Uint8Array> :
+  T extends NodeWebStream<Data> ? NodeWebStream<Uint8Array> :
   Uint8Array
 >>;
 export function verify<T extends MaybeStream<Data>>(options: VerifyOptions & { message: Message<T> }): Promise<VerifyMessageResult<
-  T extends WebStream<infer X> ? WebStream<string> :
-  T extends NodeWebStream<infer X> ? NodeWebStream<string> :
+  T extends WebStream<Data> ? WebStream<string> :
+  T extends NodeWebStream<Data> ? NodeWebStream<string> :
   string
 >>;
 
@@ -273,7 +275,7 @@ export class Message<T extends MaybeStream<Data>> {
   /** Encrypt the message
       @param encryptionKeys array of public keys, used to encrypt the message
   */
-  public encrypt(encryptionKeys?: PublicKey[],  passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<MaybeStream<Data>>>;
+  public encrypt(encryptionKeys?: PublicKey[], passwords?: string[], sessionKeys?: SessionKey[], wildcard?: boolean, encryptionKeyIDs?: KeyID[], date?: Date, userIDs?: UserID[], config?: Config): Promise<Message<MaybeStream<Data>>>;
 
   /** Returns the key IDs of the keys to which the session key is encrypted
    */
@@ -351,7 +353,7 @@ interface Config {
   rejectPublicKeyAlgorithms: Set<enums.publicKey>;
   rejectCurves: Set<enums.curve>;
 }
-export var config: Config;
+export const config: Config;
 
 // PartialConfig has the same properties as Config, but declared as optional.
 // This interface is relevant for top-level functions, which accept a subset of configuration options
@@ -432,7 +434,7 @@ export class AEADEncryptedDataPacket extends BasePacket {
   static readonly tag: enums.packet.aeadEncryptedData;
   private decrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
   private encrypt(sessionKeyAlgorithm: enums.symmetric, sessionKey: Uint8Array, config?: Config): void;
-  private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>
+  private crypt(fn: Function, sessionKey: Uint8Array, data: MaybeStream<Uint8Array>): MaybeStream<Uint8Array>;
 }
 
 export class PublicKeyEncryptedSessionKeyPacket extends BasePacket {
@@ -678,7 +680,7 @@ export interface EncryptSessionKeyOptions extends SessionKey {
   config?: PartialConfig
 }
 
-interface SerializedKeyPair<T extends string|Uint8Array> {
+interface SerializedKeyPair<T extends string | Uint8Array> {
   privateKey: T;
   publicKey: T;
 }
@@ -745,44 +747,44 @@ export function unarmor(input: string, config?: Config): Promise<{ text: string,
 /* ############## v5 ENUMS #################### */
 
 export namespace enums {
-  function read(type: typeof armor, e: armor): armorNames;
-  function read(type: typeof compression, e: compression): compressionNames;
-  function read(type: typeof hash, e: hash): hashNames;
-  function read(type: typeof packet, e: packet): packetNames;
-  function read(type: typeof publicKey, e: publicKey): publicKeyNames;
-  function read(type: typeof symmetric, e: symmetric): symmetricNames;
-  function read(type: typeof keyStatus, e: keyStatus): keyStatusNames;
-  function read(type: typeof keyFlags, e: keyFlags): keyFlagsNames;
+  export function read(type: typeof armor, e: armor): armorNames;
+  export function read(type: typeof compression, e: compression): compressionNames;
+  export function read(type: typeof hash, e: hash): hashNames;
+  export function read(type: typeof packet, e: packet): packetNames;
+  export function read(type: typeof publicKey, e: publicKey): publicKeyNames;
+  export function read(type: typeof symmetric, e: symmetric): symmetricNames;
+  export function read(type: typeof keyStatus, e: keyStatus): keyStatusNames;
+  export function read(type: typeof keyFlags, e: keyFlags): keyFlagsNames;
 
   export type armorNames = 'multipartSection' | 'multipartLast' | 'signed' | 'message' | 'publicKey' | 'privateKey';
-  enum armor {
+  export enum armor {
     multipartSection = 0,
     multipartLast = 1,
     signed = 2,
     message = 3,
     publicKey = 4,
     privateKey = 5,
-    signature = 6,
+    signature = 6
   }
 
-  enum reasonForRevocation {
+  export enum reasonForRevocation {
     noReason = 0, // No reason specified (key revocations or cert revocations)
     keySuperseded = 1, // Key is superseded (key revocations)
     keyCompromised = 2, // Key material has been compromised (key revocations)
     keyRetired = 3, // Key is retired and no longer used (key revocations)
-    userIDInvalid = 32, // User ID information is no longer valid (cert revocations)
+    userIDInvalid = 32 // User ID information is no longer valid (cert revocations)
   }
 
   export type compressionNames = 'uncompressed' | 'zip' | 'zlib' | 'bzip2';
-  enum compression {
+  export enum compression {
     uncompressed = 0,
     zip = 1,
     zlib = 2,
-    bzip2 = 3,
+    bzip2 = 3
   }
 
   export type hashNames = 'md5' | 'sha1' | 'ripemd' | 'sha256' | 'sha384' | 'sha512' | 'sha224' | 'sha3_256' | 'sha3_512';
-  enum hash {
+  export enum hash {
     md5 = 1,
     sha1 = 2,
     ripemd = 3,
@@ -794,10 +796,10 @@ export namespace enums {
     sha3_512 = 14
   }
 
-  export type packetNames = 'publicKeyEncryptedSessionKey' | 'signature' | 'symEncryptedSessionKey' | 'onePassSignature' | 'secretKey' | 'publicKey'
-    | 'secretSubkey' | 'compressed' | 'symmetricallyEncrypted' | 'marker' | 'literal' | 'trust' | 'userID' | 'publicSubkey' | 'userAttribute'
-    | 'symEncryptedIntegrityProtected' | 'modificationDetectionCode' | 'AEADEncryptedDataPacket';
-  enum packet {
+  export type packetNames = 'publicKeyEncryptedSessionKey' | 'signature' | 'symEncryptedSessionKey' | 'onePassSignature' | 'secretKey' | 'publicKey' |
+  'secretSubkey' | 'compressed' | 'symmetricallyEncrypted' | 'marker' | 'literal' | 'trust' | 'userID' | 'publicSubkey' | 'userAttribute' |
+  'symEncryptedIntegrityProtected' | 'modificationDetectionCode' | 'AEADEncryptedDataPacket';
+  export enum packet {
     publicKeyEncryptedSessionKey = 1,
     signature = 2,
     symEncryptedSessionKey = 3,
@@ -815,11 +817,11 @@ export namespace enums {
     userAttribute = 17,
     symEncryptedIntegrityProtectedData = 18,
     modificationDetectionCode = 19,
-    aeadEncryptedData = 20,
+    aeadEncryptedData = 20
   }
 
   export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsaLegacy' | 'aedh' | 'aedsa' | 'ed25519' | 'x25519' | 'ed448' | 'x448';
-  enum publicKey {
+  export enum publicKey {
     rsaEncryptSign = 1,
     rsaEncrypt = 2,
     rsaSign = 3,
@@ -836,7 +838,7 @@ export namespace enums {
     ed448 = 28
   }
 
-  enum curve {
+  export enum curve {
     /** @deprecated use `nistP256` instead */
     p256 = 'nistP256',
     nistP256 = 'nistP256',
@@ -859,7 +861,7 @@ export namespace enums {
   }
 
   export type symmetricNames = 'idea' | 'tripledes' | 'cast5' | 'blowfish' | 'aes128' | 'aes192' | 'aes256' | 'twofish';
-  enum symmetric {
+  export enum symmetric {
     idea = 1,
     tripledes = 2,
     cast5 = 3,
@@ -867,31 +869,30 @@ export namespace enums {
     aes128 = 7,
     aes192 = 8,
     aes256 = 9,
-    twofish = 10,
+    twofish = 10
   }
 
   export type keyStatusNames = 'invalid' | 'expired' | 'revoked' | 'valid' | 'noSelfCert';
-  enum keyStatus {
+  export enum keyStatus {
     invalid = 0,
     expired = 1,
     revoked = 2,
     valid = 3,
-    noSelfCert = 4,
+    noSelfCert = 4
   }
 
-  export type keyFlagsNames = 'certifyKeys' | 'signData' | 'encryptCommunication' | 'encryptStorage' | 'splitPrivateKey' | 'authentication'
-    | 'sharedPrivateKey';
-  enum keyFlags {
+  export type keyFlagsNames = 'certifyKeys' | 'signData' | 'encryptCommunication' | 'encryptStorage' | 'splitPrivateKey' | 'authentication' | 'sharedPrivateKey';
+  export enum keyFlags {
     certifyKeys = 1,
     signData = 2,
     encryptCommunication = 4,
     encryptStorage = 8,
     splitPrivateKey = 16,
     authentication = 32,
-    sharedPrivateKey = 128,
+    sharedPrivateKey = 128
   }
 
-  enum signature {
+  export enum signature {
     binary = 0,
     text = 1,
     standalone = 2,
@@ -910,21 +911,21 @@ export namespace enums {
   }
 
   export type aeadNames = 'eax' | 'ocb' | 'gcm';
-  enum aead {
+  export enum aead {
     eax = 1,
     ocb = 2,
     experimentalGCM = 100 // Private algorithm
   }
 
-  export type literalFormatNames = 'utf8' | 'binary' | 'text' | 'mime'
-  enum literal {
+  export type literalFormatNames = 'utf8' | 'binary' | 'text' | 'mime';
+  export enum literal {
     binary = 98,
     text = 116,
     utf8 = 117,
     mime = 109
   }
 
-  enum s2k {
+  export enum s2k {
     simple = 0,
     salted = 1,
     iterated = 3,

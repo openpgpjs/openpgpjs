@@ -501,6 +501,7 @@ class Key {
       }
     }
     if (!users.length) {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       throw exception || new Error('Could not find primary user');
     }
     await Promise.all(users.map(async function (a) {

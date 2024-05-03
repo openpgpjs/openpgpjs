@@ -301,7 +301,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
     // serialize data
     const armor = format === 'armored';
     const data = armor ? message.armor(config) : message.write();
-    return convertStream(data);
+    return await convertStream(data);
   } catch (err) {
     throw util.wrapError('Error encrypting message', err);
   }
@@ -438,7 +438,7 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
         ]);
       });
     }
-    return convertStream(signature);
+    return await convertStream(signature);
   } catch (err) {
     throw util.wrapError('Error signing message', err);
   }

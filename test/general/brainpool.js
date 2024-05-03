@@ -318,14 +318,13 @@ function omnibus() {
         signingKeys: [hi]
       });
       // Decrypting and verifying
-      return openpgp.decrypt({
+      const output = await openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         decryptionKeys: bye,
         verificationKeys: [pubHi]
-      }).then(async output => {
-        expect(output.data).to.equal(testData2);
-        await expect(output.signatures[0].verified).to.eventually.be.true;
       });
+      expect(output.data).to.equal(testData2);
+      await expect(output.signatures[0].verified).to.eventually.be.true;
     } finally {
       openpgp.config.rejectCurves = rejectCurves;
     }

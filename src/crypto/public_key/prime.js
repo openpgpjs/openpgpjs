@@ -20,7 +20,6 @@
  * @module crypto/public_key/prime
  */
 import BigInteger from '../../biginteger';
-import util from '../../util';
 import { getRandomBigInteger } from '../random';
 
 /**

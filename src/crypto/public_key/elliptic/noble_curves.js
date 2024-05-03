@@ -7,11 +7,11 @@
 import { p256 as nistP256 } from '@noble/curves/p256';
 import { p384 as nistP384 } from '@noble/curves/p384';
 import { p521 as nistP521 } from '@noble/curves/p521';
+import { x448, ed448 } from '@noble/curves/ed448';
+import { secp256k1 } from '@noble/curves/secp256k1';
 import { brainpoolP256r1 } from './brainpool/brainpoolP256r1';
 import { brainpoolP384r1 } from './brainpool/brainpoolP384r1';
 import { brainpoolP512r1 } from './brainpool/brainpoolP512r1';
-import { x448, ed448 } from '@noble/curves/ed448';
-import { secp256k1 } from '@noble/curves/secp256k1';
 
 export const nobleCurves = new Map(Object.entries({
   nistP256,
