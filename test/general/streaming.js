@@ -254,7 +254,7 @@ function tests() {
     expect(stream.isStream(encrypted)).to.equal(expectedType);
 
     const message = await openpgp.readMessage({ binaryMessage: encrypted });
-    setTimeout(dataArrived, 3000); // Do not wait until data arrived, but wait a bit to check that it doesn't arrive early.
+    setTimeout(() => dataArrived(), 3000); // Do not wait until data arrived, but wait a bit to check that it doesn't arrive early.
     const decrypted = await openpgp.decrypt({
       passwords: ['test'],
       message,

@@ -191,14 +191,15 @@ export default () => describe('Packet', function() {
     cryptStub.onCall(0).callsFake(async function() {
       cryptCallsActive++;
       try {
-        return await crypt.apply(this, arguments); // eslint-disable-line no-invalid-this
+        // eslint-disable-next-line @typescript-eslint/return-await
+        return await crypt.apply(this, arguments);
       } finally {
         cryptCallsActive--;
       }
     });
     cryptStub.onCall(1).callsFake(function() {
       expect(cryptCallsActive).to.equal(1);
-      return crypt.apply(this, arguments); // eslint-disable-line no-invalid-this
+      return crypt.apply(this, arguments);
     });
     cryptStub.callThrough();
     return cryptStub;

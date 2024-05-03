@@ -7,6 +7,7 @@
  */
 export default class BigInteger {
   private value: bigint;
+
   /**
    * Get a BigInteger (input must be big endian for strings and arrays)
    * @param {Number|String|Uint8Array} n - Value to convert
@@ -21,7 +22,7 @@ export default class BigInteger {
       const bytes = n;
       const hexAlphabet = '0123456789ABCDEF';
       let s = '';
-      bytes.forEach((v) => {
+      bytes.forEach(v => {
         s += hexAlphabet[v >> 4] + hexAlphabet[v & 15];
       });
       this.value = BigInt('0x0' + s);
@@ -239,9 +240,9 @@ export default class BigInteger {
     }
 
     return {
-      x: new BigInteger(aNegated? -xPrev : xPrev),
+      x: new BigInteger(aNegated ? -xPrev : xPrev),
       y: new BigInteger(bNegated ? -yPrev : yPrev),
-      gcd: new BigInteger(a),
+      gcd: new BigInteger(a)
     };
   }
 

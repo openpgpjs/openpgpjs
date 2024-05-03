@@ -157,6 +157,7 @@ export async function validateParams(oid, Q, d) {
       const hashed = await hash.digest(hashAlgo, message);
       try {
         const signature = await sign(oid, hashAlgo, message, Q, d, hashed);
+        // eslint-disable-next-line @typescript-eslint/return-await
         return await verify(oid, hashAlgo, signature, message, Q, hashed);
       } catch (err) {
         return false;

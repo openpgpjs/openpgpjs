@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import BigInteger from '../../src/biginteger.js';
+import BigInteger from '../../src/biginteger.ts';
 
 const armoredDSAKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 

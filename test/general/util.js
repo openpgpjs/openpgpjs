@@ -38,7 +38,7 @@ export default () => describe('Util unit tests', function() {
       expect(util.isArray(data)).to.be.true;
     });
     it('should return true for type Array', function() {
-      const data = Array(); // eslint-disable-line no-array-constructor
+      const data = Array(); // eslint-disable-line @typescript-eslint/no-array-constructor
       expect(util.isArray(data)).to.be.true;
     });
     it('should return true for inherited type of Array', function() {

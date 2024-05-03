@@ -325,7 +325,7 @@ async function nodeVerify(hashAlgo, data, s, n, e) {
   verify.end();
 
   try {
-    return await verify.verify(key, s);
+    return verify.verify(key, s);
   } catch (err) {
     return false;
   }

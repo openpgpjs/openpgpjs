@@ -287,7 +287,7 @@ export async function runAEAD(packet, fn, key, data) {
           done = true;
         }
         cryptedBytes += chunk.length - tagLengthIfDecrypting;
-        // eslint-disable-next-line no-loop-func
+        // eslint-disable-next-line @typescript-eslint/no-loop-func
         latestPromise = latestPromise.then(() => cryptedPromise).then(async crypted => {
           await writer.ready;
           await writer.write(crypted);
