@@ -53,7 +53,7 @@
     "prebrowsertest": "npm run build-test",
     "browsertest": "npm start -- -o test/unittests.html",
     "test-browser": "karma start test/karma.conf.cjs",
-    "test-browserstack": "karma start test/karma.conf.cjs --browsers bs_safari_latest,bs_ios_14,bs_safari_13_1",
+    "test-browserstack": "karma start test/karma.conf.cjs --browsers bs_safari_latest,bs_ios_14,bs_safari_14",
     "coverage": "c8 npm test",
     "lint": "eslint .",
     "docs": "jsdoc --configure .jsdocrc.cjs --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
