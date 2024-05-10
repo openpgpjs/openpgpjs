@@ -25,7 +25,7 @@ import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
 import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves } from './oid_curves';
-import BigInteger from '../../../biginteger';
+import { bigIntToUint8Array } from '../../biginteger';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -73,8 +73,8 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
   // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
   const signature = nobleCurve.sign(hashed, privateKey, { lowS: false });
   return {
-    r: new BigInteger(signature.r).toUint8Array('be', curve.payloadSize),
-    s: new BigInteger(signature.s).toUint8Array('be', curve.payloadSize)
+    r: bigIntToUint8Array(signature.r, 'be', curve.payloadSize),
+    s: bigIntToUint8Array(signature.s, 'be', curve.payloadSize)
   };
 }
 

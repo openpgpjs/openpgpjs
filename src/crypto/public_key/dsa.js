@@ -22,13 +22,16 @@
 import { getRandomBigInteger } from '../random';
 import util from '../../util';
 import { isProbablePrime } from './prime';
-import BigInteger from '../../biginteger';
+import { bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger';
 
 /*
   TODO regarding the hash function, read:
    https://tools.ietf.org/html/rfc4880#section-13.6
    https://tools.ietf.org/html/rfc4880#section-14
 */
+
+const _0n = BigInt(0);
+const _1n = BigInt(1);
 
 /**
  * DSA Sign function
@@ -42,24 +45,24 @@ import BigInteger from '../../biginteger';
  * @async
  */
 export async function sign(hashAlgo, hashed, g, p, q, x) {
-  const one = new BigInteger(1);
-  p = new BigInteger(p);
-  q = new BigInteger(q);
-  g = new BigInteger(g);
-  x = new BigInteger(x);
+  const _0n = BigInt(0);
+  p = uint8ArrayToBigInt(p);
+  q = uint8ArrayToBigInt(q);
+  g = uint8ArrayToBigInt(g);
+  x = uint8ArrayToBigInt(x);
 
   let k;
   let r;
   let s;
   let t;
-  g = g.mod(p);
-  x = x.mod(q);
+  g = mod(g, p);
+  x = mod(x, q);
   // If the output size of the chosen hash is larger than the number of
   // bits of q, the hash result is truncated to fit by taking the number
   // of leftmost bits equal to the number of bits of q.  This (possibly
   // truncated) hash function result is treated as a number and used
   // directly in the DSA signature algorithm.
-  const h = new BigInteger(hashed.subarray(0, q.byteLength())).mod(q);
+  const h = mod(uint8ArrayToBigInt(hashed.subarray(0, byteLength(q))), q);
   // FIPS-186-4, section 4.6:
   // The values of r and s shall be checked to determine if r = 0 or s = 0.
   // If either r = 0 or s = 0, a new value of k shall be generated, and the
@@ -67,22 +70,22 @@ export async function sign(hashAlgo, hashed, g, p, q, x) {
   // or s = 0 if signatures are generated properly.
   while (true) {
     // See Appendix B here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-    k = await getRandomBigInteger(one, q); // returns in [1, q-1]
-    r = g.modExp(k, p).imod(q); // (g**k mod p) mod q
-    if (r.isZero()) {
+    k = getRandomBigInteger(_1n, q); // returns in [1, q-1]
+    r = mod(modExp(g, k, p), q); // (g**k mod p) mod q
+    if (r === _0n) {
       continue;
     }
-    const xr = x.mul(r).imod(q);
-    t = h.add(xr).imod(q); // H(m) + x*r mod q
-    s = k.modInv(q).imul(t).imod(q); // k**-1 * (H(m) + x*r) mod q
-    if (s.isZero()) {
+    const xr = mod(x * r, q);
+    t = mod(h + xr, q); // H(m) + x*r mod q
+    s = mod(modInv(k, q) * t, q); // k**-1 * (H(m) + x*r) mod q
+    if (s === _0n) {
       continue;
     }
     break;
   }
   return {
-    r: r.toUint8Array('be', q.byteLength()),
-    s: s.toUint8Array('be', q.byteLength())
+    r: bigIntToUint8Array(r, 'be', byteLength(p)),
+    s: bigIntToUint8Array(s, 'be', byteLength(p))
   };
 }
 
@@ -100,35 +103,34 @@ export async function sign(hashAlgo, hashed, g, p, q, x) {
  * @async
  */
 export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
-  const zero = new BigInteger(0);
-  r = new BigInteger(r);
-  s = new BigInteger(s);
+  r = uint8ArrayToBigInt(r);
+  s = uint8ArrayToBigInt(s);
 
-  p = new BigInteger(p);
-  q = new BigInteger(q);
-  g = new BigInteger(g);
-  y = new BigInteger(y);
+  p = uint8ArrayToBigInt(p);
+  q = uint8ArrayToBigInt(q);
+  g = uint8ArrayToBigInt(g);
+  y = uint8ArrayToBigInt(y);
 
-  if (r.lte(zero) || r.gte(q) ||
-      s.lte(zero) || s.gte(q)) {
+  if (r <= _0n || r >= q ||
+      s <= _0n || s >= q) {
     util.printDebug('invalid DSA Signature');
     return false;
   }
-  const h = new BigInteger(hashed.subarray(0, q.byteLength())).imod(q);
-  const w = s.modInv(q); // s**-1 mod q
-  if (w.isZero()) {
+  const h = mod(uint8ArrayToBigInt(hashed.subarray(0, byteLength(q))), q);
+  const w = modInv(s, q); // s**-1 mod q
+  if (w === _0n) {
     util.printDebug('invalid DSA Signature');
     return false;
   }
 
-  g = g.mod(p);
-  y = y.mod(p);
-  const u1 = h.mul(w).imod(q); // H(m) * w mod q
-  const u2 = r.mul(w).imod(q); // r * w mod q
-  const t1 = g.modExp(u1, p); // g**u1 mod p
-  const t2 = y.modExp(u2, p); // y**u2 mod p
-  const v = t1.mul(t2).imod(p).imod(q); // (g**u1 * y**u2 mod p) mod q
-  return v.equal(r);
+  g = mod(g, p);
+  y = mod(y, p);
+  const u1 = mod(h * w, q); // H(m) * w mod q
+  const u2 = mod(r * w, q); // r * w mod q
+  const t1 = modExp(g, u1, p); // g**u1 mod p
+  const t2 = modExp(y, u2, p); // y**u2 mod p
+  const v = mod(mod(t1 * t2, p), q); // (g**u1 * y**u2 mod p) mod q
+  return v === r;
 }
 
 /**
@@ -142,20 +144,19 @@ export async function verify(hashAlgo, r, s, hashed, g, p, q, y) {
  * @async
  */
 export async function validateParams(p, q, g, y, x) {
-  p = new BigInteger(p);
-  q = new BigInteger(q);
-  g = new BigInteger(g);
-  y = new BigInteger(y);
-  const one = new BigInteger(1);
+  p = uint8ArrayToBigInt(p);
+  q = uint8ArrayToBigInt(q);
+  g = uint8ArrayToBigInt(g);
+  y = uint8ArrayToBigInt(y);
   // Check that 1 < g < p
-  if (g.lte(one) || g.gte(p)) {
+  if (g <= _1n || g >= p) {
     return false;
   }
 
   /**
    * Check that subgroup order q divides p-1
    */
-  if (!p.dec().mod(q).isZero()) {
+  if (mod(p - _1n, q) !== _0n) {
     return false;
   }
 
@@ -163,16 +164,16 @@ export async function validateParams(p, q, g, y, x) {
    * g has order q
    * Check that g ** q = 1 mod p
    */
-  if (!g.modExp(q, p).isOne()) {
+  if (modExp(g, q, p) !== _1n) {
     return false;
   }
 
   /**
    * Check q is large and probably prime (we mainly want to avoid small factors)
    */
-  const qSize = new BigInteger(q.bitLength());
-  const n150 = new BigInteger(150);
-  if (qSize.lt(n150) || !(await isProbablePrime(q, null, 32))) {
+  const qSize = BigInt(bitLength(q));
+  const _150n = BigInt(150);
+  if (qSize < _150n || !isProbablePrime(q, null, 32)) {
     return false;
   }
 
@@ -182,11 +183,11 @@ export async function validateParams(p, q, g, y, x) {
    *
    * Blinded exponentiation computes g**{rq + x} to compare to y
    */
-  x = new BigInteger(x);
-  const two = new BigInteger(2);
-  const r = await getRandomBigInteger(two.leftShift(qSize.dec()), two.leftShift(qSize)); // draw r of same size as q
-  const rqx = q.mul(r).add(x);
-  if (!y.equal(g.modExp(rqx, p))) {
+  x = uint8ArrayToBigInt(x);
+  const _2n = BigInt(2);
+  const r = getRandomBigInteger(_2n << (qSize - _1n), _2n << qSize); // draw r of same size as q
+  const rqx = q * r + x;
+  if (y !== modExp(g, rqx, p)) {
     return false;
   }
 

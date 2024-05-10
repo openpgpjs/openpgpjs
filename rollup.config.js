@@ -64,7 +64,9 @@ export default Object.assign([
       resolve({
         browser: true
       }),
-      typescript(),
+      typescript({
+        compilerOptions: { outDir: './dist/tmp-ts' } // to avoid js files being overwritten
+      }),
       commonjs({
         ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
@@ -89,7 +91,9 @@ export default Object.assign([
       resolve({
         exportConditions: ['node'] // needed for resolution of noble-curves import of '@noble/crypto' in Node 16 and 18
       }),
-      typescript(),
+      typescript({
+        compilerOptions: { outDir: './dist/tmp-ts' }
+      }),
       commonjs(),
       replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`
@@ -109,7 +113,9 @@ export default Object.assign([
       resolve({
         browser: true
       }),
-      typescript(),
+      typescript({
+        compilerOptions: { outDir: './dist/lightweight/tmp-ts' }
+      }),
       commonjs({
         ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
@@ -136,7 +142,9 @@ export default Object.assign([
       resolve({
         browser: true
       }),
-      typescript(),
+      typescript({
+        compilerOptions: { outDir: './test/lib/tmp-ts' }
+      }),
       commonjs({
         ignore: nodeBuiltinModules.concat(nodeDependencies),
         requireReturnsDefault: 'preferred'

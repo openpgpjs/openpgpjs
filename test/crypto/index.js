@@ -1,3 +1,4 @@
+import testBigInteger from './biginteger';
 import testCipher from './cipher';
 import testHash from './hash';
 import testCrypto from './crypto';
@@ -14,6 +15,7 @@ import testRSA from './rsa';
 import testValidate from './validate';
 
 export default () => describe('Crypto', function () {
+  testBigInteger();
   testCipher();
   testHash();
   testCrypto();

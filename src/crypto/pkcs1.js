@@ -132,7 +132,7 @@ export function emeDecode(encoded, randomPayload) {
  * @param {Integer} emLen - Intended length in octets of the encoded message
  * @returns {Uint8Array} Encoded message.
  */
-export async function emsaEncode(algo, hashed, emLen) {
+export function emsaEncode(algo, hashed, emLen) {
   let i;
   if (hashed.length !== hash.getHashByteLength(algo)) {
     throw new Error('Invalid hash length');

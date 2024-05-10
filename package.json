@@ -80,6 +80,7 @@
     "@typescript-eslint/parser": "^7.8.0",
     "argon2id": "^1.0.1",
     "benchmark": "^2.1.4",
+    "bn.js": "^5.2.1",
     "c8": "^8.0.1",
     "chai": "^4.4.1",
     "chai-as-promised": "^7.1.1",
