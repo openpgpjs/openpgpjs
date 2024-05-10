@@ -21,7 +21,7 @@
  * @fileoverview Provides tools for retrieving secure randomness from browsers or Node.js
  * @module crypto/random
  */
-import BigInteger from '../biginteger';
+import { byteLength, mod, uint8ArrayToBigInt } from './biginteger';
 import util from '../util';
 
 const nodeCrypto = util.getNodeCrypto();
@@ -45,23 +45,23 @@ export function getRandomBytes(length) {
 }
 
 /**
- * Create a secure random BigInteger that is greater than or equal to min and less than max.
- * @param {module:BigInteger} min - Lower bound, included
- * @param {module:BigInteger} max - Upper bound, excluded
- * @returns {Promise<module:BigInteger>} Random BigInteger.
+ * Create a secure random BigInt that is greater than or equal to min and less than max.
+ * @param {bigint} min - Lower bound, included
+ * @param {bigint} max - Upper bound, excluded
+ * @returns {bigint} Random BigInt.
  * @async
  */
-export async function getRandomBigInteger(min, max) {
-  if (max.lt(min)) {
+export function getRandomBigInteger(min, max) {
+  if (max < min) {
     throw new Error('Illegal parameter value: max <= min');
   }
 
-  const modulus = max.sub(min);
-  const bytes = modulus.byteLength();
+  const modulus = max - min;
+  const bytes = byteLength(modulus);
 
   // Using a while loop is necessary to avoid bias introduced by the mod operation.
   // However, we request 64 extra random bits so that the bias is negligible.
   // Section B.1.1 here: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.186-4.pdf
-  const r = new BigInteger(getRandomBytes(bytes + 8));
-  return r.mod(modulus).add(min);
+  const r = uint8ArrayToBigInt(getRandomBytes(bytes + 8));
+  return mod(r, modulus) + min;
 }

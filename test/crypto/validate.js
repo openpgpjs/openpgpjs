@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import BigInteger from '../../src/biginteger.ts';
+import { bigIntToUint8Array, modExp, uint8ArrayToBigInt } from '../../src/crypto/biginteger.ts';
 
 const armoredDSAKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -390,11 +390,12 @@ export default () => {
       const keyPacket = await cloneKeyPacket(egKey);
       const { p, g } = keyPacket.publicParams;
 
-      const pBN = new BigInteger(p);
-      const gBN = new BigInteger(g);
+      const _1n = BigInt(1);
+      const pBN = uint8ArrayToBigInt(p);
+      const gBN = uint8ArrayToBigInt(g);
       // g**(p-1)/2 has order 2
-      const gOrd2 = gBN.modExp(pBN.dec().irightShift(new BigInteger(1)), pBN);
-      keyPacket.publicParams.g = gOrd2.toUint8Array();
+      const gOrd2 = modExp(gBN, (pBN - _1n) >> _1n, pBN);
+      keyPacket.publicParams.g = bigIntToUint8Array(gOrd2);
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
   });
