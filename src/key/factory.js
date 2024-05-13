@@ -340,7 +340,12 @@ export async function readKey({ armoredKey, binaryKey, config, ...rest }) {
     input = binaryKey;
   }
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  return createKey(packetlist);
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+  if (keyIndex.length === 0) {
+    throw new Error('No key packet found');
+  }
+  const firstKeyPacketList = packetlist.slice(keyIndex[0], keyIndex[1]);
+  return createKey(firstKeyPacketList);
 }
 
 /**
@@ -377,7 +382,15 @@ export async function readPrivateKey({ armoredKey, binaryKey, config, ...rest })
     input = binaryKey;
   }
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  return new PrivateKey(packetlist);
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
+  for (let i = 0; i < keyIndex.length; i++) {
+    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) {
+      continue;
+    }
+    const firstPrivateKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
+    return new PrivateKey(firstPrivateKeyList);
+  }
+  throw new Error('No secret key packet found');
 }
 
 /**
