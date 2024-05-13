@@ -990,6 +990,62 @@ export default () => describe('OpenPGP.js public api tests', function() {
       });
     });
 
+    it('readPrivateKey and readPrivateKeys should have consistent results', async function() {
+      const privateAndPublicKeyBlock = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEZkI3VBYJKwYBBAHaRw8BAQdA7nW1t5qRdtIYzEVEEhRSDgTgbk2JHofY
+Ph8FuGsDqgwAAQDYVpZt1w6a+vxgb4M351aCpA2sCfx8kbFg23h8Irtm1xFY
+zQ88dGVzdEB0ZXN0LmNvbT7CwBMEEBYKAIUFgmZCN1QDCwkHCZDuyoEpQ/KE
+H0UUAAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdwanMub3JnzKJ8mXOC
+wnEp6lVJ/5+rRzR4UcwlL8EjhOS+rV0T8pAFFQgKDA4EFgACAQIZAQKbAwIe
+ARYhBECs3D9sMFn6oOxAqu7KgSlD8oQfAAAPbwD+NjyEHt1CRI+0XmgHdiwZ
+JN115IO+M37bOxgBnTbVoF0BAMGECXVQoSRVNy0TYf+AUUPQ6tSZ1zLXszwe
+FK3w+CoGxjMEZkI3VBYJKwYBBAHaRw8BAQdA7nW1t5qRdtIYzEVEEhRSDgTg
+bk2JHofYPh8FuGsDqgzNDzx0ZXN0QHRlc3QuY29tPsLAEwQQFgoAhQWCZkI3
+VAMLCQcJkO7KgSlD8oQfRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5w
+Z3Bqcy5vcmfMonyZc4LCcSnqVUn/n6tHNHhRzCUvwSOE5L6tXRPykAUVCAoM
+DgQWAAIBAhkBApsDAh4BFiEEQKzcP2wwWfqg7ECq7sqBKUPyhB8AAA9vAP42
+PIQe3UJEj7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh
+/4BRQ9Dq1JnXMtezPB4UrfD4KgY=
+-----END PGP PRIVATE KEY BLOCK-----`;
+      // readPrivateKey should read the first private key encountered in a key block
+      const key = await openpgp.readPrivateKey({ armoredKey: privateAndPublicKeyBlock });
+      const privateKeys = await openpgp.readPrivateKeys({ armoredKeys: privateAndPublicKeyBlock });
+      expect(privateKeys.length).to.equal(1);
+      expect(key.isPrivate()).to.be.true;
+      expect(privateKeys[0].isPrivate()).to.be.true;
+      expect(key.isDecrypted()).to.be.true;
+      expect(privateKeys[0].isDecrypted()).to.be.true;
+      expect(key.getKeyID().equals(privateKeys[0].getKeyID())).to.be.true;
+    });
+
+    it('readKey and readKeys should have consistent results', async function() {
+      const publicAndPrivateKeyBlock = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xjMEZkI3VBYJKwYBBAHaRw8BAQdA7nW1t5qRdtIYzEVEEhRSDgTgbk2JHofY
+Ph8FuGsDqgzNDzx0ZXN0QHRlc3QuY29tPsLAEwQQFgoAhQWCZkI3VAMLCQcJ
+kO7KgSlD8oQfRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5wZ3Bqcy5v
+cmfMonyZc4LCcSnqVUn/n6tHNHhRzCUvwSOE5L6tXRPykAUVCAoMDgQWAAIB
+AhkBApsDAh4BFiEEQKzcP2wwWfqg7ECq7sqBKUPyhB8AAA9vAP42PIQe3UJE
+j7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh/4BRQ9Dq
+1JnXMtezPB4UrfD4KgbFWARmQjdUFgkrBgEEAdpHDwEBB0DudbW3mpF20hjM
+RUQSFFIOBOBuTYkeh9g+HwW4awOqDAABANhWlm3XDpr6/GBvgzfnVoKkDawJ
+/HyRsWDbeHwiu2bXEVjNDzx0ZXN0QHRlc3QuY29tPsLAEwQQFgoAhQWCZkI3
+VAMLCQcJkO7KgSlD8oQfRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5w
+Z3Bqcy5vcmfMonyZc4LCcSnqVUn/n6tHNHhRzCUvwSOE5L6tXRPykAUVCAoM
+DgQWAAIBAhkBApsDAh4BFiEEQKzcP2wwWfqg7ECq7sqBKUPyhB8AAA9vAP42
+PIQe3UJEj7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh
+/4BRQ9Dq1JnXMtezPB4UrfD4KgY=
+-----END PGP PRIVATE KEY BLOCK-----`;
+      // readKey should read the first key encountered in a key block
+      const key = await openpgp.readKey({ armoredKey: publicAndPrivateKeyBlock });
+      const keys = await openpgp.readKeys({ armoredKeys: publicAndPrivateKeyBlock });
+      expect(keys.length).to.equal(2);
+      expect(key.isPrivate()).to.be.false;
+      expect(keys[0].isPrivate()).to.be.false;
+      expect(keys[1].isPrivate()).to.be.true;
+    });
+
     it('readPrivateKey should throw on armored public key', async function() {
       await expect(openpgp.readPrivateKey({ armoredKey: pub_key })).to.be.rejectedWith(/Armored text not of type private key/);
     });
