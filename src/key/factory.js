@@ -456,14 +456,17 @@ export async function readPrivateKeys({ armoredKeys, binaryKeys, config }) {
   }
   const keys = [];
   const packetlist = await PacketList.fromBinary(input, allowedKeyPackets, config);
-  const keyIndex = packetlist.indexOfTag(enums.packet.secretKey);
-  if (keyIndex.length === 0) {
-    throw new Error('No secret key packet found');
-  }
+  const keyIndex = packetlist.indexOfTag(enums.packet.publicKey, enums.packet.secretKey);
   for (let i = 0; i < keyIndex.length; i++) {
+    if (packetlist[keyIndex[i]].constructor.tag === enums.packet.publicKey) {
+      continue;
+    }
     const oneKeyList = packetlist.slice(keyIndex[i], keyIndex[i + 1]);
     const newKey = new PrivateKey(oneKeyList);
     keys.push(newKey);
+  }
+  if (keys.length === 0) {
+    throw new Error('No secret key packet found');
   }
   return keys;
 }
