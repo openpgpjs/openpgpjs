@@ -21,7 +21,7 @@
  */
 
 import nacl from '@openpgp/tweetnacl';
-import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams } from './oid_curves';
+import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves';
 import * as aesKW from '../../aes_kw';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
@@ -193,6 +193,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  */
 export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(oid, V);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
   const { keySize } = getCipherParams(kdfParams.cipher);

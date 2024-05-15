@@ -57,7 +57,8 @@ const curves = {
     node: nodeCurves[enums.curve.nistP256],
     web: webCurves[enums.curve.nistP256],
     payloadSize: 32,
-    sharedSize: 256
+    sharedSize: 256,
+    wireFormatLeadingByte: 0x04
   },
   [enums.curve.nistP384]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
@@ -67,7 +68,8 @@ const curves = {
     node: nodeCurves[enums.curve.nistP384],
     web: webCurves[enums.curve.nistP384],
     payloadSize: 48,
-    sharedSize: 384
+    sharedSize: 384,
+    wireFormatLeadingByte: 0x04
   },
   [enums.curve.nistP521]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23],
@@ -77,7 +79,8 @@ const curves = {
     node: nodeCurves[enums.curve.nistP521],
     web: webCurves[enums.curve.nistP521],
     payloadSize: 66,
-    sharedSize: 528
+    sharedSize: 528,
+    wireFormatLeadingByte: 0x04
   },
   [enums.curve.secp256k1]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x0A],
@@ -85,14 +88,16 @@ const curves = {
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: nodeCurves[enums.curve.secp256k1],
-    payloadSize: 32
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x04
   },
   [enums.curve.ed25519Legacy]: {
     oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
     keyType: enums.publicKey.eddsaLegacy,
     hash: enums.hash.sha512,
     node: false, // nodeCurves.ed25519 TODO
-    payloadSize: 32
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x40
   },
   [enums.curve.curve25519Legacy]: {
     oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
@@ -100,7 +105,8 @@ const curves = {
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: false, // nodeCurves.curve25519 TODO
-    payloadSize: 32
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x40
   },
   [enums.curve.brainpoolP256r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07],
@@ -108,7 +114,8 @@ const curves = {
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: nodeCurves[enums.curve.brainpoolP256r1],
-    payloadSize: 32
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x04
   },
   [enums.curve.brainpoolP384r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B],
@@ -116,7 +123,8 @@ const curves = {
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
     node: nodeCurves[enums.curve.brainpoolP384r1],
-    payloadSize: 48
+    payloadSize: 48,
+    wireFormatLeadingByte: 0x04
   },
   [enums.curve.brainpoolP512r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D],
@@ -124,7 +132,8 @@ const curves = {
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
     node: nodeCurves[enums.curve.brainpoolP512r1],
-    payloadSize: 64
+    payloadSize: 64,
+    wireFormatLeadingByte: 0x04
   }
 };
 
@@ -268,8 +277,23 @@ async function validateStandardParams(algo, oid, Q, d) {
   return true;
 }
 
+/**
+ * Check whether the public point has a valid encoding.
+ * NB: this function does not check e.g. whether the point belongs to the curve.
+ */
+function checkPublicPointEnconding(oid, V) {
+  const curveName = oid.getName();
+  const { payloadSize, wireFormatLeadingByte } = curves[curveName];
+
+  const pointSize = (curveName === enums.curve.curve25519Legacy || curveName === enums.curve.ed25519Legacy) ? payloadSize : payloadSize * 2;
+
+  if (V[0] !== wireFormatLeadingByte || V.length !== pointSize + 1) {
+    throw new Error('Invalid point encoding');
+  }
+}
+
 export {
-  CurveWithOID, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams
+  CurveWithOID, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding
 };
 
 //////////////////////////

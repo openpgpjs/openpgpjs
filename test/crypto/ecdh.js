@@ -72,14 +72,6 @@ export default () => describe('ECDH key exchange @lightweight', function () {
       '', 2, 7, [], [], [], [], []
     )).to.be.rejectedWith(Error, /Unknown curve/).notify(done);
   });
-  it('Invalid ephemeral key', function (done) {
-    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
-      this.skip();
-    }
-    expect(decrypt_message(
-      'secp256k1', 2, 7, [], [], [], [], []
-    )).to.be.rejectedWith(Error, /Private key is not valid for specified curve|second arg must be public key/).notify(done);
-  });
   it('Invalid elliptic public key', function (done) {
     if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip();
@@ -145,8 +137,8 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
     const data = random.getRandomBytes(16);
     await expect(
-      ecdh.encrypt(oid, kdfParams, data, Q1.subarray(1), fingerprint1)
-    ).to.be.rejectedWith(/Public key is not valid for specified curve|Failed to translate Buffer to a EC_POINT|second arg must be public key/);
+      ecdh.encrypt(oid, kdfParams, data, Q1, fingerprint1)
+    ).to.be.rejectedWith(/Invalid point encoding/);
   });
 
   it('Different keys', async function () {
@@ -211,6 +203,26 @@ export default () => describe('ECDH key exchange @lightweight', function () {
       const d = key_data[curveName].priv;
       const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
       expect(await ecdh.decrypt(oid, kdfParams, V, C, Q, d, fingerprint1)).to.deep.equal(data);
+    });
+
+    it(`${curveName} - Detect invalid PKESK public point encoding on decryption`, async function () {
+      const curve = new elliptic_curves.CurveWithOID(curveName);
+      const oid = new OID(curve.oid);
+      const kdfParams = new KDFParams({ hash: curve.hash, cipher: curve.cipher });
+      const data = random.getRandomBytes(16);
+      const Q = key_data[curveName].pub;
+      const d = key_data[curveName].priv;
+      const { publicKey: V, wrappedKey: C } = await ecdh.encrypt(oid, kdfParams, data, Q, fingerprint1);
+
+      const publicPointWithoutPrefixByte = V.subarray(1);
+      const publicPointWithUnexpectedPrefixByte = new Uint8Array([0x1, ...publicPointWithoutPrefixByte]);
+      const publicPointWithUnexpectedSize = V.subarray(0, V.length - 1);
+
+      const expectedError = /Invalid point encoding/;
+      await expect(ecdh.decrypt(oid, kdfParams, publicPointWithoutPrefixByte, C, Q, d, fingerprint1)).to.be.rejectedWith(expectedError);
+      await expect(ecdh.decrypt(oid, kdfParams, publicPointWithUnexpectedPrefixByte, C, Q, d, fingerprint1)).to.be.rejectedWith(expectedError);
+      await expect(ecdh.decrypt(oid, kdfParams, publicPointWithUnexpectedSize, C, Q, d, fingerprint1)).to.be.rejectedWith(expectedError);
+
     });
   });
 
