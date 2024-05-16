@@ -95,7 +95,7 @@ async function genPublicEphemeralKey(curve, Q) {
       const d = getRandomBytes(32);
       const { secretKey, sharedKey } = await genPrivateEphemeralKey(curve, Q, null, d);
       let { publicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
-      publicKey = util.concatUint8Array([new Uint8Array([0x40]), publicKey]);
+      publicKey = util.concatUint8Array([new Uint8Array([curve.wireFormatLeadingByte]), publicKey]);
       return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
     case 'web':
@@ -327,7 +327,7 @@ async function webPublicEphemeralKey(curve, Q) {
   );
   [s, p] = await Promise.all([s, p]);
   const sharedKey = new Uint8Array(s);
-  const publicKey = new Uint8Array(jwkToRawPublic(p));
+  const publicKey = new Uint8Array(jwkToRawPublic(p, curve.wireFormatLeadingByte));
   return { publicKey, sharedKey };
 }
 

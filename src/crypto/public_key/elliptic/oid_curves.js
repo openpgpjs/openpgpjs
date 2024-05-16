@@ -157,6 +157,7 @@ class CurveWithOID {
     this.web = params.web;
     this.payloadSize = params.payloadSize;
     this.sharedSize = params.sharedSize;
+    this.wireFormatLeadingByte = params.wireFormatLeadingByte;
     if (this.web && util.getWebCrypto()) {
       this.type = 'web';
     } else if (this.node && util.getNodeCrypto()) {
@@ -172,7 +173,7 @@ class CurveWithOID {
     switch (this.type) {
       case 'web':
         try {
-          return await webGenKeyPair(this.name);
+          return await webGenKeyPair(this.name, this.wireFormatLeadingByte);
         } catch (err) {
           util.printDebugError('Browser did not support generating ec key ' + err.message);
           return jsGenKeyPair(this.name);
@@ -185,13 +186,13 @@ class CurveWithOID {
         privateKey[31] &= 248;
         const secretKey = privateKey.slice().reverse();
         const { publicKey: rawPublicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
-        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), rawPublicKey]);
+        const publicKey = util.concatUint8Array([new Uint8Array([this.wireFormatLeadingByte]), rawPublicKey]);
         return { publicKey, privateKey };
       }
       case 'ed25519Legacy': {
         const privateKey = getRandomBytes(32);
         const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
-        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+        const publicKey = util.concatUint8Array([new Uint8Array([this.wireFormatLeadingByte]), keyPair.publicKey]);
         return { publicKey, privateKey };
       }
       default:
@@ -308,7 +309,7 @@ async function jsGenKeyPair(name) {
   return { publicKey, privateKey };
 }
 
-async function webGenKeyPair(name) {
+async function webGenKeyPair(name, wireFormatLeadingByte) {
   // Note: keys generated with ECDSA and ECDH are structurally equivalent
   const webCryptoKey = await webCrypto.generateKey({ name: 'ECDSA', namedCurve: webCurves[name] }, true, ['sign', 'verify']);
 
@@ -316,7 +317,7 @@ async function webGenKeyPair(name) {
   const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
 
   return {
-    publicKey: jwkToRawPublic(publicKey),
+    publicKey: jwkToRawPublic(publicKey, wireFormatLeadingByte),
     privateKey: b64ToUint8Array(privateKey.d, true)
   };
 }
@@ -342,11 +343,11 @@ async function nodeGenKeyPair(name) {
  *
  * @returns {Uint8Array} Raw public key.
  */
-function jwkToRawPublic(jwk) {
+function jwkToRawPublic(jwk, wireFormatLeadingByte) {
   const bufX = b64ToUint8Array(jwk.x);
   const bufY = b64ToUint8Array(jwk.y);
   const publicKey = new Uint8Array(bufX.length + bufY.length + 1);
-  publicKey[0] = 0x04;
+  publicKey[0] = wireFormatLeadingByte;
   publicKey.set(bufX, 1);
   publicKey.set(bufY, bufX.length + 1);
   return publicKey;
