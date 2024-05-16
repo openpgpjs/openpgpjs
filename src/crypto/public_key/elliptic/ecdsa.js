@@ -46,7 +46,7 @@ const nodeCrypto = util.getNodeCrypto();
  */
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
   const curve = new CurveWithOID(oid);
-  checkPublicPointEnconding(oid, publicKey);
+  checkPublicPointEnconding(curve, publicKey);
   if (message && !util.isStream(message)) {
     const keyPair = { publicKey, privateKey };
     switch (curve.type) {
@@ -93,7 +93,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  */
 export async function verify(oid, hashAlgo, signature, message, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
-  checkPublicPointEnconding(oid, publicKey);
+  checkPublicPointEnconding(curve, publicKey);
   // See https://github.com/openpgpjs/openpgpjs/pull/948.
   // NB: the impact was more likely limited to Brainpool curves, since thanks
   // to WebCrypto availability, NIST curve should not have been affected.

@@ -131,7 +131,7 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
   const m = pkcs5.encode(data);
 
   const curve = new CurveWithOID(oid);
-  checkPublicPointEnconding(oid, Q);
+  checkPublicPointEnconding(curve, Q);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
   const { keySize } = getCipherParams(kdfParams.cipher);
@@ -194,8 +194,8 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  */
 export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   const curve = new CurveWithOID(oid);
-  checkPublicPointEnconding(oid, Q);
-  checkPublicPointEnconding(oid, V);
+  checkPublicPointEnconding(curve, Q);
+  checkPublicPointEnconding(curve, V);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
   const { keySize } = getCipherParams(kdfParams.cipher);
