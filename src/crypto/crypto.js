@@ -171,6 +171,9 @@ export function parsePublicKeyParams(algo, bytes) {
     case enums.publicKey.eddsaLegacy: {
       const oid = new OID(); read += oid.read(bytes);
       checkSupportedCurve(oid);
+      if (oid.getName() !== enums.curve.ed25519Legacy) {
+        throw new Error('Unexpected OID for eddsaLegacy');
+      }
       let Q = util.readMPI(bytes.subarray(read)); read += Q.length + 2;
       Q = util.leftPad(Q, 33);
       return { read: read, publicParams: { oid, Q } };
@@ -227,6 +230,9 @@ export function parsePrivateKeyParams(algo, bytes, publicParams) {
     }
     case enums.publicKey.eddsaLegacy: {
       const payloadSize = getCurvePayloadSize(algo, publicParams.oid);
+      if (publicParams.oid.getName() !== enums.curve.ed25519Legacy) {
+        throw new Error('Unexpected OID for eddsaLegacy');
+      }
       let seed = util.readMPI(bytes.subarray(read)); read += seed.length + 2;
       seed = util.leftPad(seed, payloadSize);
       return { read, privateParams: { seed } };
