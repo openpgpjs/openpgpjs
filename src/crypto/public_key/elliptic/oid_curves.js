@@ -282,9 +282,8 @@ async function validateStandardParams(algo, oid, Q, d) {
  * Check whether the public point has a valid encoding.
  * NB: this function does not check e.g. whether the point belongs to the curve.
  */
-function checkPublicPointEnconding(oid, V) {
-  const curveName = oid.getName();
-  const { payloadSize, wireFormatLeadingByte } = curves[curveName];
+function checkPublicPointEnconding(curve, V) {
+  const { payloadSize, wireFormatLeadingByte, name: curveName } = curve;
 
   const pointSize = (curveName === enums.curve.curve25519Legacy || curveName === enums.curve.ed25519Legacy) ? payloadSize : payloadSize * 2;
 

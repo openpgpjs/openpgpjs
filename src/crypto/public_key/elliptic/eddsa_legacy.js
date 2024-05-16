@@ -25,7 +25,7 @@ import nacl from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
-import { checkPublicPointEnconding } from './oid_curves';
+import { CurveWithOID, checkPublicPointEnconding } from './oid_curves';
 
 /**
  * Sign a message using the provided legacy EdDSA key
@@ -42,7 +42,8 @@ import { checkPublicPointEnconding } from './oid_curves';
  * @async
  */
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
-  checkPublicPointEnconding(oid, publicKey);
+  const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, publicKey);
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
     throw new Error('Hash algorithm too weak for EdDSA.');
@@ -69,7 +70,8 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  * @async
  */
 export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
-  checkPublicPointEnconding(oid, publicKey);
+  const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, publicKey);
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
