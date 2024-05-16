@@ -10,6 +10,7 @@ import config from '../../src/config';
 import util from '../../src/util.js';
 
 import elliptic_data from './elliptic_data';
+import OID from '../../src/type/oid.js';
 
 const key_data = elliptic_data.key_data;
 /* eslint-disable no-invalid-this */
@@ -80,22 +81,25 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
         });
       }));
     });
-    it('Signature verification', function (done) {
-      expect(
-        elliptic_curves.ecdsa.verify('nistP256', 8, signature_data.signature, signature_data.message, signature_data.pub, signature_data.hashed)
-      ).to.eventually.be.true.notify(done);
+    it('Signature verification', async function () {
+      const curve = new elliptic_curves.CurveWithOID('nistP256');
+      await expect(
+        elliptic_curves.ecdsa.verify(new OID(curve.oid), 8, signature_data.signature, signature_data.message, signature_data.pub, signature_data.hashed)
+      ).to.eventually.be.true;
     });
-    it('Invalid signature', function (done) {
-      expect(
-        elliptic_curves.ecdsa.verify('nistP256', 8, signature_data.signature, signature_data.message, key_data.nistP256.pub, signature_data.hashed)
-      ).to.eventually.be.false.notify(done);
+    it('Invalid signature', async function () {
+      const curve = new elliptic_curves.CurveWithOID('nistP256');
+      await expect(
+        elliptic_curves.ecdsa.verify(new OID(curve.oid), 8, signature_data.signature, signature_data.message, key_data.nistP256.pub, signature_data.hashed)
+      ).to.eventually.be.false;
     });
-    it('Signature generation', function () {
-      return elliptic_curves.ecdsa.sign('nistP256', 8, signature_data.message, key_data.nistP256.pub, key_data.nistP256.priv, signature_data.hashed).then(async signature => {
-        await expect(
-          elliptic_curves.ecdsa.verify('nistP256', 8, signature, signature_data.message, key_data.nistP256.pub, signature_data.hashed)
-        ).to.eventually.be.true;
-      });
+    it('Signature generation', async function () {
+      const curve = new elliptic_curves.CurveWithOID('nistP256');
+      const oid = new OID(curve.oid);
+      const signature = await elliptic_curves.ecdsa.sign(oid, 8, signature_data.message, key_data.nistP256.pub, key_data.nistP256.priv, signature_data.hashed);
+      await expect(
+        elliptic_curves.ecdsa.verify(oid, 8, signature, signature_data.message, key_data.nistP256.pub, signature_data.hashed)
+      ).to.eventually.be.true;
     });
   });
   describe('ECDSA signature', function () {
@@ -137,13 +141,15 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       enableNative();
     };
 
-    const verify_signature = async function (oid, hash, r, s, message, pub) {
+    const verify_signature = async function (curveName, hash, r, s, message, pub) {
       if (util.isString(message)) {
         message = util.stringToUint8Array(message);
       } else if (!util.isUint8Array(message)) {
         message = new Uint8Array(message);
       }
       const ecdsa = elliptic_curves.ecdsa;
+      const curve = new elliptic_curves.CurveWithOID(curveName);
+      const oid = new OID(curve.oid);
       return ecdsa.verify(
         oid, hash, { r: new Uint8Array(r), s: new Uint8Array(s) }, message, new Uint8Array(pub), await hashMod.digest(hash, message)
       );
@@ -191,15 +197,10 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       }
       await expect(verify_signature(
         'secp256k1', 8, [], [], [], []
-      )).to.eventually.be.false;
+      )).to.be.rejectedWith(/Invalid point encoding/);
       await expect(verify_signature(
         'secp256k1', 8, [], [], [], secp256k1_invalid_point_format
-      )).to.eventually.be.false;
-    });
-    it('secp256k1 - Invalid point', async function () {
-      if (!config.useEllipticFallback && !util.getNodeCrypto()) {
-        this.skip(); // webcrypto does not implement secp256k1: JS fallback tested instead
-      }
+      )).to.be.rejectedWith(/Invalid point encoding/);
       await expect(verify_signature(
         'secp256k1', 8, [], [], [], secp256k1_invalid_point
       )).to.eventually.be.false;
@@ -241,6 +242,8 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
     });
     const curves = ['secp256k1' , 'nistP256', 'nistP384', 'nistP521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
     curves.forEach(curveName => it(`${curveName} - Sign and verify message`, async function () {
+      const curve = new elliptic_curves.CurveWithOID(curveName);
+      const oid = new OID(curve.oid);
       const { Q: keyPublic, secret: keyPrivate } = await elliptic_curves.generate(curveName);
       const message = new Uint8Array([
         0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
@@ -248,8 +251,8 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       ]);
       const messageDigest = await hashMod.digest(openpgp.enums.hash.sha512, message);
       await testNativeAndFallback(async () => {
-        const signature = await elliptic_curves.ecdsa.sign(curveName, openpgp.enums.hash.sha512, message, keyPublic, keyPrivate, messageDigest);
-        await expect(elliptic_curves.ecdsa.verify(curveName, openpgp.enums.hash.sha512, signature, message, keyPublic, messageDigest)).to.eventually.be.true;
+        const signature = await elliptic_curves.ecdsa.sign(oid, openpgp.enums.hash.sha512, message, keyPublic, keyPrivate, messageDigest);
+        await expect(elliptic_curves.ecdsa.verify(oid, openpgp.enums.hash.sha512, signature, message, keyPublic, messageDigest)).to.eventually.be.true;
       });
     }));
   });

@@ -24,7 +24,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
-import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves } from './oid_curves';
+import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves';
 import { bigIntToUint8Array } from '../../biginteger';
 
 const webCrypto = util.getWebCrypto();
@@ -46,6 +46,7 @@ const nodeCrypto = util.getNodeCrypto();
  */
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
   const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(oid, publicKey);
   if (message && !util.isStream(message)) {
     const keyPair = { publicKey, privateKey };
     switch (curve.type) {
@@ -92,6 +93,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  */
 export async function verify(oid, hashAlgo, signature, message, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(oid, publicKey);
   // See https://github.com/openpgpjs/openpgpjs/pull/948.
   // NB: the impact was more likely limited to Brainpool curves, since thanks
   // to WebCrypto availability, NIST curve should not have been affected.
