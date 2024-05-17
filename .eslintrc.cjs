@@ -25,6 +25,12 @@ module.exports = {
     'unicorn'
   ],
 
+  'settings': {
+    'import/resolver': {
+      'typescript': {}
+    }
+  },
+
   'globals': { // TODO are all these necessary?
     'globalThis': true,
     'console': true,
@@ -110,10 +116,7 @@ module.exports = {
     'import/first': 'off',
     'import/no-extraneous-dependencies': ['error', { 'devDependencies': true, 'optionalDependencies': false, 'peerDependencies': false }],
     'import/no-unassigned-import': 'error',
-    'import/no-unresolved': ['error', {
-      // esm exports not supported: https://github.com/import-js/eslint-plugin-import/issues/1810
-      ignore: ['openpgp', '@noble/hashes', '@openpgp/web-stream-tools', '@openpgp/asmcrypto.js']
-    }],
+    'import/no-unresolved': 'error',
     'import/prefer-default-export': 'off',
 
     // Custom silencers:
