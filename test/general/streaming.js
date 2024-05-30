@@ -653,6 +653,57 @@ function tests() {
     expect(i).to.be.lessThan(expectedType === 'web' ? 50 : 250);
   });
 
+  it('Detached sign/verify: support streamed input', async function() {
+    dataArrived();
+    const signed = await openpgp.sign({
+      message: await openpgp.createMessage({ binary: stream.clone(data) }),
+      signingKeys: privKey,
+      config: { minRSABits: 1024 },
+      detached: true
+    });
+    const armoredSignature = await stream.readToEnd(signed);
+
+    const message = await openpgp.createMessage({ binary: data });
+    const verified = await openpgp.verify({
+      message,
+      signature: await openpgp.readSignature({ armoredSignature }),
+      verificationKeys: pubKey,
+      format: 'binary',
+      config: { minRSABits: 1024 }
+    });
+    expect(await stream.readToEnd(verified.data)).to.deep.equal(util.concatUint8Array(plaintext));
+    expect(verified.signatures).to.exist.and.have.length(1);
+    expect(await verified.signatures[0].verified).to.be.true;
+  });
+
+  it('Detached verify: Input stream should be canceled when canceling verified stream', async function() {
+    const armoredSignature = await openpgp.sign({
+      message: await openpgp.createMessage({ binary: util.concatUint8Array(plaintext) }),
+      signingKeys: privKey,
+      config: { minRSABits: 1024 },
+      detached: true
+    });
+
+    const message = await openpgp.createMessage({ binary: data });
+    const verified = await openpgp.verify({
+      message,
+      signature: await openpgp.readSignature({ armoredSignature }),
+      verificationKeys: pubKey,
+      format: 'binary',
+      config: { minRSABits: 1024 }
+    });
+    expect(stream.isStream(verified.data)).to.equal(expectedType);
+    const reader = stream.getReader(verified.data);
+    expect(await reader.readBytes(1024)).to.deep.equal(plaintext[0]);
+    dataArrived();
+    reader.releaseLock();
+    await stream.cancel(verified.data, new Error('canceled by test'));
+    expect(canceled).to.be.true;
+    expect(verified.signatures).to.exist.and.have.length(1);
+    await expect(verified.signatures[0].verified).to.be.rejectedWith('canceled');
+  });
+
+
   it('Detached sign small message', async function() {
     dataArrived(); // Do not wait until data arrived.
     const data = global.ReadableStream ? new global.ReadableStream({

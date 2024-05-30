@@ -480,7 +480,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
       result.signatures = await message.verify(verificationKeys, date, config);
     }
     result.data = format === 'binary' ? message.getLiteralData() : message.getText();
-    if (message.fromStream) linkStreams(result, message);
+    if (message.fromStream && !signature) linkStreams(result, message);
     if (expectSigned) {
       if (result.signatures.length === 0) {
         throw new Error('Message is not signed');
