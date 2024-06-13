@@ -67,6 +67,7 @@ class SignaturePacket {
 
     this.signatureData = null;
     this.unhashedSubpackets = [];
+    this.unknownSubpackets = [];
     this.signedHashValue = null;
     this.salt = null;
 
@@ -595,14 +596,13 @@ class SignaturePacket {
           this.preferredCipherSuites.push([bytes[i], bytes[i + 1]]);
         }
         break;
-      default: {
-        const err = new Error(`Unknown signature subpacket type ${type}`);
-        if (critical) {
-          throw err;
-        } else {
-          util.printDebug(err);
-        }
-      }
+      default:
+        this.unknownSubpackets.push({
+          type,
+          critical,
+          body: bytes.subarray(mypos, bytes.length)
+        });
+        break;
     }
   }
 
@@ -801,6 +801,11 @@ class SignaturePacket {
       [enums.signature.binary, enums.signature.text].includes(this.signatureType)) {
       throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, this.hashAlgorithm).toUpperCase());
     }
+    this.unknownSubpackets.forEach(({ type, critical }) => {
+      if (critical) {
+        throw new Error(`Unknown signature subpacket type ${type}`);
+      }
+    });
     this.rawNotations.forEach(({ name, critical }) => {
       if (critical && (config.knownNotations.indexOf(name) < 0)) {
         throw new Error(`Unknown critical notation: ${name}`);
