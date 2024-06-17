@@ -2513,6 +2513,6 @@ nYhoNlUA/Ar+Ofx+vMf9oYcNjPEbYu/yu1AtKY44aZvDBLK2+OAI
 =YrJy
 -----END PGP PUBLIC KEY BLOCK-----`
     });
-    await expect(key.verifyPrimaryKey()).to.be.rejectedWith(/Unknown signature subpacket type 99/);
+    await expect(key.verifyPrimaryKey()).to.be.rejectedWith(/Unknown critical signature subpacket type 99/);
   });
 });

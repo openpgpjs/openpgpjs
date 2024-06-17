@@ -803,7 +803,7 @@ class SignaturePacket {
     }
     this.unknownSubpackets.forEach(({ type, critical }) => {
       if (critical) {
-        throw new Error(`Unknown signature subpacket type ${type}`);
+        throw new Error(`Unknown critical signature subpacket type ${type}`);
       }
     });
     this.rawNotations.forEach(({ name, critical }) => {
