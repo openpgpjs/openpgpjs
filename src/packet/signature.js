@@ -396,10 +396,8 @@ class SignaturePacket {
    * @returns {Uint8Array} Subpacket data.
    */
   writeUnhashedSubPackets() {
-    const arr = [];
-    this.unhashedSubpackets.forEach(data => {
-      arr.push(writeSimpleLength(data.length));
-      arr.push(data);
+    const arr = this.unhashedSubpackets.map(({ type, critical, body }) => {
+      return writeSubPacket(type, critical, body);
     });
 
     const result = util.concat(arr);
@@ -408,7 +406,7 @@ class SignaturePacket {
     return util.concat([length, result]);
   }
 
-  // V4 signature sub packets
+  // Signature subpackets
   readSubPacket(bytes, hashed = true) {
     let mypos = 0;
 
@@ -416,14 +414,18 @@ class SignaturePacket {
     const critical = !!(bytes[mypos] & 0x80);
     const type = bytes[mypos] & 0x7F;
 
+    mypos++;
+
     if (!hashed) {
-      this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
+      this.unhashedSubpackets.push({
+        type,
+        critical,
+        body: bytes.subarray(mypos, bytes.length)
+      });
       if (!allowedUnhashedSubpackets.has(type)) {
         return;
       }
     }
-
-    mypos++;
 
     // subpacket type
     switch (type) {

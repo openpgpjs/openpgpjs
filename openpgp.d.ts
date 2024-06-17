@@ -497,7 +497,8 @@ export class SignaturePacket extends BasePacket {
   public hashAlgorithm: enums.hash | null;
   public publicKeyAlgorithm: enums.publicKey | null;
   public signatureData: null | Uint8Array;
-  public unhashedSubpackets: null | Uint8Array;
+  public unhashedSubpackets: RawSubpacket[];
+  public unknownSubpackets: RawSubpacket[];
   public signedHashValue: null | Uint8Array;
   public created: Date | null;
   public signatureExpirationTime: null | number;
@@ -539,6 +540,12 @@ export class SignaturePacket extends BasePacket {
   public verify(key: AnyKeyPacket, signatureType: enums.signature, data: Uint8Array | object, date?: Date, detached?: boolean, config?: Config): Promise<void>; // throws on error
   public isExpired(date?: Date): boolean;
   public getExpirationTime(): Date | typeof Infinity;
+}
+
+export interface RawSubpacket {
+  type: number;
+  critical: boolean;
+  body: Uint8Array;
 }
 
 export interface RawNotation {
