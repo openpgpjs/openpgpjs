@@ -2493,4 +2493,26 @@ JImeZLY02MctIpGZULbqgcUGK0P/yqrPL8Pe4lQM
     const verified = await openpgp.verify({ verificationKeys: key, message });
     expect(await verified.signatures[0].verified).to.be.true;
   });
+
+  it('Should parse a signature with a critical unknown subpacket, but not verify it', async function() {
+    const key = await openpgp.readKey({
+      armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xjMEZmsxYRYJKwYBBAHaRw8BAQdAgPH3tbfVO4CNqRQevvYW6kYY0qpNQltw
+CegLonECw/vNBFRlc3TCwBgEEBYKAIoFgmZrMWEDCwkHCZAFbxb2+9/G3UUU
+AAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdwanMub3Jn1Bg/fpBZjM6n
+CMTgcCh7+NHCoTmgpPef1+7CO792jL4FFQgKDA4EFgACAQIZAQKbAwIeARYh
+BL/u0Jl6QJQVEZ0grQVvFvb738bdBOMBAgMAAMAYAQD25k4by+9P5WuOvirp
+MhKE441PBb1n3fhaVpLogoVgZwD/ST2+Y5G6NdJM+U45iwfZDfa3ix1/zUSf
+DF+cVdXVOwrOOARmazFhEgorBgEEAZdVAQUBAQdAGVw9vpajNPafAzshTmok
+O1ZCDuQN9KkV+qTxZ7JGoEIDAQgHwsADBBgWCgB1BYJmazFhCZAFbxb2+9/G
+3UUUAAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdwanMub3JnRIP2KWB1
+C8+8vpmscsPPBl+KYeNcCbCOJqo7G3A5ES0CmwwWIQS/7tCZekCUFRGdIK0F
+bxb2+9/G3QTjAQIDAABj9wEA2E/C98UXszf4TWH7/xBGICoDDNxceMhSDvtt
+nYhoNlUA/Ar+Ofx+vMf9oYcNjPEbYu/yu1AtKY44aZvDBLK2+OAI
+=YrJy
+-----END PGP PUBLIC KEY BLOCK-----`
+    });
+    await expect(key.verifyPrimaryKey()).to.be.rejectedWith(/Unknown critical signature subpacket type 99/);
+  });
 });
