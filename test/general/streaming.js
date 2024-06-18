@@ -654,16 +654,28 @@ function tests() {
   });
 
   it('Detached sign/verify: support streamed input', async function() {
-    dataArrived();
+    const getDataStream = () => (global.ReadableStream ? new global.ReadableStream({
+      start(controller) {
+        controller.enqueue(util.stringToUint8Array('hello '));
+        controller.enqueue(util.stringToUint8Array('world'));
+        controller.close();
+      }
+    }) : new NodeReadableStream({
+      read() {
+        this.push(util.stringToUint8Array('hello '));
+        this.push(util.stringToUint8Array('world'));
+        this.push(null);
+      }
+    }));
+
     const signed = await openpgp.sign({
-      message: await openpgp.createMessage({ binary: stream.clone(data) }),
+      message: await openpgp.createMessage({ binary: getDataStream() }),
       signingKeys: privKey,
       config: { minRSABits: 1024 },
       detached: true
     });
     const armoredSignature = await stream.readToEnd(signed);
-
-    const message = await openpgp.createMessage({ binary: data });
+    const message = await openpgp.createMessage({ binary: getDataStream() });
     const verified = await openpgp.verify({
       message,
       signature: await openpgp.readSignature({ armoredSignature }),
@@ -671,7 +683,7 @@ function tests() {
       format: 'binary',
       config: { minRSABits: 1024 }
     });
-    expect(await stream.readToEnd(verified.data)).to.deep.equal(util.concatUint8Array(plaintext));
+    expect(await stream.readToEnd(verified.data)).to.deep.equal(util.stringToUint8Array('hello world'));
     expect(verified.signatures).to.exist.and.have.length(1);
     expect(await verified.signatures[0].verified).to.be.true;
   });
