@@ -68,7 +68,7 @@
     "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/seek-bzip": "^1.0.5-git",
     "@openpgp/tweetnacl": "^1.0.4-1",
-    "@openpgp/web-stream-tools": "~0.1.1",
+    "@openpgp/web-stream-tools": "~0.1.2",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-node-resolve": "^15.2.3",
