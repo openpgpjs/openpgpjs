@@ -63,6 +63,7 @@
   },
   "devDependencies": {
     "@noble/curves": "^1.4.0",
+    "@noble/ed25519": "^1.7.3",
     "@noble/hashes": "^1.4.0",
     "@openpgp/asmcrypto.js": "^3.1.0",
     "@openpgp/jsdoc": "^3.6.11",

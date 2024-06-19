@@ -21,7 +21,8 @@
  * @module crypto/public_key/elliptic/eddsa_legacy
  */
 
-import nacl from '@openpgp/tweetnacl';
+import naclEd25519 from '@openpgp/tweetnacl'; // better constant-timeness as it uses Uint8Arrays over BigInts
+import { verify as nobleEd25519Verify } from '@noble/ed25519';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
@@ -49,7 +50,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
   const secretKey = util.concatUint8Array([privateKey, publicKey.subarray(1)]);
-  const signature = nacl.sign.detached(hashed, secretKey);
+  const signature = naclEd25519.sign.detached(hashed, secretKey);
   // EdDSA signature params are returned in little-endian format
   return {
     r: signature.subarray(0, 32),
@@ -76,7 +77,7 @@ export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
   const signature = util.concatUint8Array([r, s]);
-  return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
+  return nobleEd25519Verify(signature, hashed, publicKey.subarray(1));
 }
 /**
  * Validate legacy EdDSA parameters
@@ -96,7 +97,7 @@ export async function validateParams(oid, Q, k) {
    * Derive public point Q' = dG from private key
    * and expect Q == Q'
    */
-  const { publicKey } = nacl.sign.keyPair.fromSeed(k);
+  const { publicKey } = naclEd25519.sign.keyPair.fromSeed(k);
   const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
   return util.equalsUint8Array(Q, dG);
 

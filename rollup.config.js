@@ -71,6 +71,13 @@ export default Object.assign([
         ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
       replace({
+        include: 'node_modules/@noble/ed25519/**',
+        // Rollup ignores the `browser: { crypto: false }` directive in package.json, since `exports` are present,
+        // hence we need to manually drop it.
+        "import * as nodeCrypto from 'crypto'": 'const nodeCrypto = null',
+        delimiters: ['', '']
+      }),
+      replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
         "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
         delimiters: ['', '']
@@ -120,6 +127,13 @@ export default Object.assign([
         ignore: nodeBuiltinModules.concat(nodeDependencies)
       }),
       replace({
+        include: 'node_modules/@noble/ed25519/**',
+        // Rollup ignores the `browser: { crypto: false }` directive in package.json, since `exports` are present,
+        // hence we need to manually drop it.
+        "import * as nodeCrypto from 'crypto'": 'const nodeCrypto = null',
+        delimiters: ['', '']
+      }),
+      replace({
         'OpenPGP.js VERSION': `OpenPGP.js ${pkg.version}`,
         "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
         delimiters: ['', '']
@@ -148,6 +162,13 @@ export default Object.assign([
       commonjs({
         ignore: nodeBuiltinModules.concat(nodeDependencies),
         requireReturnsDefault: 'preferred'
+      }),
+      replace({
+        include: 'node_modules/@noble/ed25519/**',
+        // Rollup ignores the `browser: { crypto: false }` directive in package.json, since `exports` are present,
+        // hence we need to manually drop it.
+        "import * as nodeCrypto from 'crypto'": 'const nodeCrypto = null',
+        delimiters: ['', '']
       }),
       replace({
         "import { createRequire } from 'module';": 'const createRequire = () => () => {}',
