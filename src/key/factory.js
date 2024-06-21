@@ -257,7 +257,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       key: secretKeyPacket
     };
     const signatureProperties = secretKeyPacket.version !== 6 ? getKeySignatureProperties() : {};
-    signatureProperties.signatureType = enums.signature.certGeneric;
+    signatureProperties.signatureType = enums.signature.certPositive;
     if (index === 0) {
       signatureProperties.isPrimaryUserID = true;
     }

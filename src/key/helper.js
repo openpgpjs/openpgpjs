@@ -35,6 +35,8 @@ export async function generateSecretKey(options, config) {
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
  * @param {Array<SignaturePacket>} signatures - List of signatures
  * @param {PublicKeyPacket|PublicSubkeyPacket} publicKey - Public key packet to verify the signature
+ * @param {module:enums.signature} signatureType - Signature type to determine how to hash the data (NB: for userID signatures,
+ *                          `enums.signatures.certGeneric` should be given regardless of the actual trust level)
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} The latest valid signature.
