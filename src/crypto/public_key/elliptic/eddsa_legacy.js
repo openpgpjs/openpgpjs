@@ -21,7 +21,7 @@
  * @module crypto/public_key/elliptic/eddsa_legacy
  */
 
-import nacl from '@openpgp/tweetnacl';
+import naclEd25519 from '@openpgp/tweetnacl'; // better constant-timeness as it uses Uint8Arrays over BigInts
 import util from '../../../util';
 import enums from '../../../enums';
 import { getHashByteLength } from '../../hash';
@@ -101,7 +101,7 @@ export async function validateParams(oid, Q, k) {
    * Derive public point Q' = dG from private key
    * and expect Q == Q'
    */
-  const { publicKey } = nacl.sign.keyPair.fromSeed(k);
+  const { publicKey } = naclEd25519.sign.keyPair.fromSeed(k);
   const dG = new Uint8Array([0x40, ...publicKey]); // Add public key prefix
   return util.equalsUint8Array(Q, dG);
 

@@ -20,7 +20,9 @@
  * @module crypto/public_key/elliptic/eddsa
  */
 
-import ed25519 from '@openpgp/tweetnacl';
+import naclEd25519 from '@openpgp/tweetnacl'; // better constant-timeness as it uses Uint8Arrays over BigInts
+import { verify as nobleEd25519Verify } from '@noble/ed25519';
+
 import util from '../../../util';
 import enums from '../../../enums';
 import { getHashByteLength } from '../../hash';
@@ -52,7 +54,7 @@ export async function generate(algo) {
           throw err;
         }
         const seed = getRandomBytes(getPayloadSize(algo));
-        const { publicKey: A } = ed25519.sign.keyPair.fromSeed(seed);
+        const { publicKey: A } = naclEd25519.sign.keyPair.fromSeed(seed);
         return { A, seed };
       }
 
@@ -104,7 +106,7 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
           throw err;
         }
         const secretKey = util.concatUint8Array([privateKey, publicKey]);
-        const signature = ed25519.sign.detached(hashed, secretKey);
+        const signature = naclEd25519.sign.detached(hashed, secretKey);
         return { RS: signature };
       }
 
@@ -149,7 +151,7 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
         if (err.name !== 'NotSupportedError') {
           throw err;
         }
-        return ed25519.sign.detached.verify(hashed, RS, publicKey);
+        return nobleEd25519Verify(RS, hashed, publicKey);
       }
 
     case enums.publicKey.ed448: {
@@ -177,7 +179,7 @@ export async function validateParams(algo, A, seed) {
        * and expect A == A'
        * TODO: move to sign-verify using WebCrypto (same as ECDSA) when curve is more widely implemented
        */
-      const { publicKey } = ed25519.sign.keyPair.fromSeed(seed);
+      const { publicKey } = naclEd25519.sign.keyPair.fromSeed(seed);
       return util.equalsUint8Array(A, publicKey);
     }
 

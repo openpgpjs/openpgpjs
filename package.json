@@ -64,6 +64,7 @@
   "devDependencies": {
     "@noble/ciphers": "^1.0.0",
     "@noble/curves": "^1.6.0",
+    "@noble/ed25519": "^1.7.3",
     "@noble/hashes": "^1.5.0",
     "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/seek-bzip": "^1.0.5-git",
