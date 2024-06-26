@@ -1,8 +1,7 @@
-const { expect } = require('chai');
-const util = require('../../src/util');
+import { expect } from 'chai';
+import util from '../../src/util';
 
-
-module.exports = () => describe('Util unit tests', function() {
+export default () => describe('Util unit tests', function() {
 
   describe('isString', function() {
     it('should return true for type "string"', function() {
@@ -39,7 +38,7 @@ module.exports = () => describe('Util unit tests', function() {
       expect(util.isArray(data)).to.be.true;
     });
     it('should return true for type Array', function() {
-      const data = Array(); // eslint-disable-line no-array-constructor
+      const data = Array(); // eslint-disable-line @typescript-eslint/no-array-constructor
       expect(util.isArray(data)).to.be.true;
     });
     it('should return true for inherited type of Array', function() {
@@ -109,20 +108,40 @@ module.exports = () => describe('Util unit tests', function() {
       const data = 'test@example.com';
       expect(util.isEmailAddress(data)).to.be.true;
     });
-    it('should return true for valid email address', function() {
+    it('should return true for valid email address (internationalized domain name)', function() {
       const data = 'test@xn--wgv.xn--q9jyb4c';
       expect(util.isEmailAddress(data)).to.be.true;
     });
-    it('should return false for invalid email address', function() {
+    it('should return true for valid email address (trailing numbers in domain)', function() {
+      const data = 'test1@com.com09';
+      expect(util.isEmailAddress(data)).to.be.true;
+    });
+    it('should return true for valid email address (no . in domain part)', function() {
+      const data = 'test@localhost';
+      expect(util.isEmailAddress(data)).to.be.true;
+    });
+    it('should return true for valid email address (unicode chars)', function() {
+      const data = '🙂@localhost';
+      expect(util.isEmailAddress(data)).to.be.true;
+    });
+    it('should return false for invalid email address (full userID)', function() {
       const data = 'Test User <test@example.com>';
       expect(util.isEmailAddress(data)).to.be.false;
     });
-    it('should return false for invalid email address', function() {
-      const data = 'test@examplecom';
+    it('should return false for invalid email address (missing @)', function() {
+      const data = 'testexamplecom';
       expect(util.isEmailAddress(data)).to.be.false;
     });
-    it('should return false for invalid email address', function() {
-      const data = 'testexamplecom';
+    it('should return false for invalid email address (invisible unicode control char)', function() {
+      const data = 'test\u{feff}ctrl@email.it';
+      expect(util.isEmailAddress(data)).to.be.false;
+    });
+    it('should return false for invalid email address (trailing punctuation)', function() {
+      const data = 'test@localhost.';
+      expect(util.isEmailAddress(data)).to.be.false;
+    });
+    it('should return false for invalid email address (including whitespace)', function() {
+      const data = 'test space@email.it';
       expect(util.isEmailAddress(data)).to.be.false;
     });
     it('should return false for empty string', function() {

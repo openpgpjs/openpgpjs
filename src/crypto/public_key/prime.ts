@@ -18,25 +18,21 @@
 /**
  * @fileoverview Algorithms for probabilistic random prime generation
  * @module crypto/public_key/prime
- * @private
  */
-
-import util from '../../util';
+import { bigIntToNumber, bitLength, gcd, getBit, mod, modExp } from '../biginteger';
 import { getRandomBigInteger } from '../random';
+
+const _1n = BigInt(1);
 
 /**
  * Generate a probably prime random number
- * @param {Integer} bits - Bit length of the prime
- * @param {BigInteger} e - Optional RSA exponent to check against the prime
- * @param {Integer} k - Optional number of iterations of Miller-Rabin test
- * @returns BigInteger
- * @async
+ * @param bits - Bit length of the prime
+ * @param e - Optional RSA exponent to check against the prime
+ * @param k - Optional number of iterations of Miller-Rabin test
  */
-export async function randomProbablePrime(bits, e, k) {
-  const BigInteger = await util.getBigInteger();
-  const one = new BigInteger(1);
-  const min = one.leftShift(new BigInteger(bits - 1));
-  const thirty = new BigInteger(30);
+export function randomProbablePrime(bits: number, e: bigint, k: number) {
+  const _30n = BigInt(30);
+  const min = _1n << BigInt(bits - 1);
   /*
    * We can avoid any multiples of 3 and 5 by looking at n mod 30
    * n mod 30 = 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29
@@ -45,40 +41,38 @@ export async function randomProbablePrime(bits, e, k) {
    */
   const adds = [1, 6, 5, 4, 3, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 2, 1, 4, 3, 2, 1, 6, 5, 4, 3, 2, 1, 2];
 
-  const n = await getRandomBigInteger(min, min.leftShift(one));
-  let i = n.mod(thirty).toNumber();
+  let n = getRandomBigInteger(min, min << _1n);
+  let i = bigIntToNumber(mod(n, _30n));
 
   do {
-    n.iadd(new BigInteger(adds[i]));
+    n += BigInt(adds[i]);
     i = (i + adds[i]) % adds.length;
     // If reached the maximum, go back to the minimum.
-    if (n.bitLength() > bits) {
-      n.imod(min.leftShift(one)).iadd(min);
-      i = n.mod(thirty).toNumber();
+    if (bitLength(n) > bits) {
+      n = mod(n, min << _1n); n += min;
+      i = bigIntToNumber(mod(n, _30n));
     }
-  } while (!await isProbablePrime(n, e, k));
+  } while (!isProbablePrime(n, e, k));
   return n;
 }
 
 /**
  * Probabilistic primality testing
- * @param {BigInteger} n - Number to test
- * @param {BigInteger} e - Optional RSA exponent to check against the prime
- * @param {Integer} k - Optional number of iterations of Miller-Rabin test
- * @returns {boolean}
- * @async
+ * @param n - Number to test
+ * @param e - Optional RSA exponent to check against the prime
+ * @param k - Optional number of iterations of Miller-Rabin test
  */
-export async function isProbablePrime(n, e, k) {
-  if (e && !n.dec().gcd(e).isOne()) {
+export function isProbablePrime(n: bigint, e: bigint, k: number) {
+  if (e && gcd(n - _1n, e) !== _1n) {
     return false;
   }
-  if (!await divisionTest(n)) {
+  if (!divisionTest(n)) {
     return false;
   }
-  if (!await fermat(n)) {
+  if (!fermat(n)) {
     return false;
   }
-  if (!await millerRabin(n, k)) {
+  if (!millerRabin(n, k)) {
     return false;
   }
   // TODO implement the Lucas test
@@ -89,21 +83,16 @@ export async function isProbablePrime(n, e, k) {
 /**
  * Tests whether n is probably prime or not using Fermat's test with b = 2.
  * Fails if b^(n-1) mod n != 1.
- * @param {BigInteger} n - Number to test
- * @param {BigInteger} b - Optional Fermat test base
- * @returns {boolean}
+ * @param n - Number to test
+ * @param b - Optional Fermat test base
  */
-export async function fermat(n, b) {
-  const BigInteger = await util.getBigInteger();
-  b = b || new BigInteger(2);
-  return b.modExp(n.dec(), n).isOne();
+export function fermat(n: bigint, b = BigInt(2)) {
+  return modExp(b, n - _1n, n) === _1n;
 }
 
-export async function divisionTest(n) {
-  const BigInteger = await util.getBigInteger();
-  return smallPrimes.every(m => {
-    return n.mod(new BigInteger(m)) !== 0;
-  });
+export function divisionTest(n: bigint) {
+  const _0n = BigInt(0);
+  return smallPrimes.every(m => mod(n, m) !== _0n);
 }
 
 // https://github.com/gpg/libgcrypt/blob/master/cipher/primegen.c
@@ -187,7 +176,7 @@ const smallPrimes = [
   4801, 4813, 4817, 4831, 4861, 4871, 4877, 4889,
   4903, 4909, 4919, 4931, 4933, 4937, 4943, 4951,
   4957, 4967, 4969, 4973, 4987, 4993, 4999
-];
+].map(n => BigInt(n));
 
 
 // Miller-Rabin - Miller Rabin algorithm for primality test
@@ -222,43 +211,42 @@ const smallPrimes = [
 /**
  * Tests whether n is probably prime or not using the Miller-Rabin test.
  * See HAC Remark 4.28.
- * @param {BigInteger} n - Number to test
- * @param {Integer} k - Optional number of iterations of Miller-Rabin test
- * @param {Function} rand - Optional function to generate potential witnesses
+ * @param n - Number to test
+ * @param k - Optional number of iterations of Miller-Rabin test
+ * @param rand - Optional function to generate potential witnesses
  * @returns {boolean}
  * @async
  */
-export async function millerRabin(n, k, rand) {
-  const BigInteger = await util.getBigInteger();
-  const len = n.bitLength();
+export function millerRabin(n: bigint, k: number, rand?: () => bigint) {
+  const len = bitLength(n);
 
   if (!k) {
     k = Math.max(1, (len / 48) | 0);
   }
 
-  const n1 = n.dec(); // n - 1
+  const n1 = n - _1n; // n - 1
 
   // Find d and s, (n - 1) = (2 ^ s) * d;
   let s = 0;
-  while (!n1.getBit(s)) { s++; }
-  const d = n.rightShift(new BigInteger(s));
+  while (!getBit(n1, s)) { s++; }
+  const d = n >> BigInt(s);
 
   for (; k > 0; k--) {
-    const a = rand ? rand() : await getRandomBigInteger(new BigInteger(2), n1);
+    const a = rand ? rand() : getRandomBigInteger(BigInt(2), n1);
 
-    let x = a.modExp(d, n);
-    if (x.isOne() || x.equal(n1)) {
+    let x = modExp(a, d, n);
+    if (x === _1n || x === n1) {
       continue;
     }
 
     let i;
     for (i = 1; i < s; i++) {
-      x = x.mul(x).mod(n);
+      x = mod(x * x, n);
 
-      if (x.isOne()) {
+      if (x === _1n) {
         return false;
       }
-      if (x.equal(n1)) {
+      if (x === n1) {
         break;
       }
     }

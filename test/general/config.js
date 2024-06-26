@@ -1,8 +1,8 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+import openpgp from '../initOpenpgp.js';
 
-module.exports = () => describe('Custom configuration', function() {
+export default () => describe('Custom configuration', function() {
   it('openpgp.readMessage', async function() {
     const armoredMessage = await openpgp.encrypt({ message: await openpgp.createMessage({ text:'hello world' }), passwords: 'password' });
     const message = await openpgp.readMessage({ armoredMessage });
@@ -116,10 +116,10 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
   });
 
   it('openpgp.generateKey', async function() {
-    const v5KeysVal = openpgp.config.v5Keys;
+    const v6KeysVal = openpgp.config.v6Keys;
     const preferredHashAlgorithmVal = openpgp.config.preferredHashAlgorithm;
     const showCommentVal = openpgp.config.showComment;
-    openpgp.config.v5Keys = false;
+    openpgp.config.v6Keys = false;
     openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha256;
     openpgp.config.showComment = false;
 
@@ -134,7 +134,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       expect(key.users[0].selfCertifications[0].preferredHashAlgorithms[0]).to.equal(openpgp.config.preferredHashAlgorithm);
 
       const config = {
-        v5Keys: true,
+        v6Keys: true,
         showComment: true,
         preferredHashAlgorithm: openpgp.enums.hash.sha512
       };
@@ -144,11 +144,11 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       };
       const { privateKey: privateKeyArmored2 } = await openpgp.generateKey(opt2);
       const key2 = await openpgp.readKey({ armoredKey: privateKeyArmored2 });
-      expect(key2.keyPacket.version).to.equal(5);
+      expect(key2.keyPacket.version).to.equal(6);
       expect(privateKeyArmored2.indexOf(openpgp.config.commentString) > 0).to.be.true;
-      expect(key2.users[0].selfCertifications[0].preferredHashAlgorithms[0]).to.equal(config.preferredHashAlgorithm);
+      expect(key2.directSignatures[0].preferredHashAlgorithms[0]).to.equal(config.preferredHashAlgorithm);
     } finally {
-      openpgp.config.v5Keys = v5KeysVal;
+      openpgp.config.v6Keys = v6KeysVal;
       openpgp.config.preferredHashAlgorithm = preferredHashAlgorithmVal;
       openpgp.config.showComment = showCommentVal;
     }
@@ -272,19 +272,20 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       const { packets: [skesk, encData] } = encrypted;
       expect(skesk.version).to.equal(4); // cfb
       expect(encData.constructor.tag).to.equal(openpgp.enums.packet.symEncryptedIntegrityProtectedData);
+      expect(encData.version).to.equal(1);
       const { packets: [literal] } = await encrypted.decrypt(null, passwords, null, encrypted.fromStream, openpgp.config);
       expect(literal.constructor.tag).to.equal(openpgp.enums.packet.literalData);
 
       const config = {
         aeadProtect: true,
-        preferredCompressionAlgorithm: openpgp.enums.compression.zip,
-        deflateLevel: 1
+        preferredCompressionAlgorithm: openpgp.enums.compression.zip
       };
       const armored2 = await openpgp.encrypt({ message, passwords, config });
       const encrypted2 = await openpgp.readMessage({ armoredMessage: armored2 });
       const { packets: [skesk2, encData2] } = encrypted2;
-      expect(skesk2.version).to.equal(5);
-      expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.aeadEncryptedData);
+      expect(skesk2.version).to.equal(6);
+      expect(encData2.constructor.tag).to.equal(openpgp.enums.packet.symEncryptedIntegrityProtectedData);
+      expect(encData2.version).to.equal(2);
       const { packets: [compressed] } = await encrypted2.decrypt(null, passwords, null, encrypted2.fromStream, openpgp.config);
       expect(compressed.constructor.tag).to.equal(openpgp.enums.packet.compressedData);
       expect(compressed.algorithm).to.equal(openpgp.enums.compression.zip);
@@ -297,12 +298,27 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
 
       await expect(openpgp.encrypt({
         message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.curve25519Legacy]) }
-      })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519 is disabled/);
+      })).to.be.eventually.rejectedWith(/Support for ecdh keys using curve curve25519Legacy is disabled/);
 
-      const echdEncrypted = await openpgp.encrypt({
+      await expect(openpgp.encrypt({
         message, encryptionKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
-      });
-      expect(echdEncrypted).to.match(/---BEGIN PGP MESSAGE---/);
+      })).to.be.eventually.rejectedWith(/Could not verify primary key: Support for eddsaLegacy keys using curve ed25519Legacy is disabled/);
+
+      // RSA 512 bits primary key, ECC subkey
+      const weakPrimaryKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xk0EZbuUkQECAOVRTj4yGjMTk94lHaJGJZpwAnPJzSLr0lsqRzbsaeL+JeUr
+HtKQyv8wEnqN0o7j39DXdFBI8f2/T0DkC4gkbQsAEQEAAc0OPHRlc3RAdGVz
+dC5pdD7CiwQQAQgAPwWCZbuUkQMLCQcJkL/AJzZtSewrBRUICgwOBBYAAgEC
+GQECmwMCHgEWIQSUuxkscrvIncEIj8K/wCc2bUnsKwAABpYCAMsq3UDscj6W
+IVz8+VubCuJma95dgMXjqDGd2XGLUthYzKQ+k0USut3nwrt5aJOiQGse7W9O
+Mjr/KnRCNGrJdm7OOARlu5SREgorBgEEAZdVAQUBAQdAkDQHPjXorB969PXZ
+p09HqVCOqcOAzKi4KLL7I3QosmsDAQgHwnYEGAEIACoFgmW7lJEJkL/AJzZt
+SewrApsMFiEElLsZLHK7yJ3BCI/Cv8AnNm1J7CsAAJ6VAf9uBYUWIM2LFx1L
+c1HGHD56KA0Mu4eQksKNEugotEyBuWiZCVO+LBrDUFztC1IwXaNPL3bCjYaD
+5f5A+c8qOY1f
+-----END PGP PUBLIC KEY BLOCK-----` });
+      await expect(openpgp.encrypt({ message, encryptionKeys: weakPrimaryKey, config: { minRSABits: 2048 } })).to.be.rejectedWith(/Could not verify primary key: RSA keys shorter than 2048 bits are considered too weak./);
     } finally {
       openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredCompressionAlgorithm = preferredCompressionAlgorithmVal;
@@ -367,10 +383,10 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
 
     await expect(openpgp.sign({
       message, signingKeys: [key], config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) }
-    })).to.be.eventually.rejectedWith(/eddsa keys are considered too weak/);
+    })).to.be.eventually.rejectedWith(/eddsaLegacy keys are considered too weak/);
     await expect(openpgp.sign({
       message, signingKeys: [key], config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
-    })).to.be.eventually.rejectedWith(/Support for eddsa keys using curve ed25519 is disabled/);
+    })).to.be.eventually.rejectedWith(/Support for eddsaLegacy keys using curve ed25519Legacy is disabled/);
   });
 
   it('openpgp.verify', async function() {
@@ -414,7 +430,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       config: { rejectPublicKeyAlgorithms: new Set([openpgp.enums.publicKey.eddsaLegacy]) }
     };
     const { signatures: [sig4] } = await openpgp.verify(opt4);
-    await expect(sig4.verified).to.be.rejectedWith(/eddsa keys are considered too weak/);
+    await expect(sig4.verified).to.be.rejectedWith(/eddsaLegacy keys are considered too weak/);
 
     const opt5 = {
       message: await openpgp.readMessage({ armoredMessage: signed }),
@@ -422,7 +438,7 @@ n9/quqtmyOtYOA6gXNCw0Fal3iANKBmsPmYI
       config: { rejectCurves: new Set([openpgp.enums.curve.ed25519Legacy]) }
     };
     const { signatures: [sig5] } = await openpgp.verify(opt5);
-    await expect(sig5.verified).to.be.eventually.rejectedWith(/Support for eddsa keys using curve ed25519 is disabled/);
+    await expect(sig5.verified).to.be.eventually.rejectedWith(/Support for eddsaLegacy keys using curve ed25519Legacy is disabled/);
   });
 
   describe('detects unknown config property', async function() {

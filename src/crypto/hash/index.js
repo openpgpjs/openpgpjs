@@ -3,19 +3,11 @@
  * @see {@link https://github.com/asmcrypto/asmcrypto.js|asmCrypto}
  * @see {@link https://github.com/indutny/hash.js|hash.js}
  * @module crypto/hash
- * @private
  */
 
-import { Sha1 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha1/sha1';
-import { Sha256 } from '@openpgp/asmcrypto.js/dist_es8/hash/sha256/sha256';
-import sha224 from 'hash.js/lib/hash/sha/224';
-import sha384 from 'hash.js/lib/hash/sha/384';
-import sha512 from 'hash.js/lib/hash/sha/512';
-import { ripemd160 } from 'hash.js/lib/hash/ripemd';
 import * as stream from '@openpgp/web-stream-tools';
 import md5 from './md5';
 import util from '../../util';
-import defaultConfig from '../../config';
 import enums from '../../enums';
 
 const webCrypto = util.getWebCrypto();
@@ -34,65 +26,47 @@ function nodeHash(type) {
   };
 }
 
-function hashjsHash(hash, webCryptoHash) {
-  return async function(data, config = defaultConfig) {
-    if (stream.isArrayStream(data)) {
-      data = await stream.readToEnd(data);
-    }
-    if (!util.isStream(data) && webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
-      return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
-    }
-    const hashInstance = hash();
-    return stream.transform(data, value => {
-      hashInstance.update(value);
-    }, () => new Uint8Array(hashInstance.digest()));
+function nobleHash(nobleHashName, webCryptoHashName) {
+  const getNobleHash = async () => {
+    const { nobleHashes } = await import('./noble_hashes');
+    const hash = nobleHashes.get(nobleHashName);
+    if (!hash) throw new Error('Unsupported hash');
+    return hash;
   };
-}
 
-function asmcryptoHash(hash, webCryptoHash) {
-  return async function(data, config = defaultConfig) {
+  return async function(data) {
     if (stream.isArrayStream(data)) {
       data = await stream.readToEnd(data);
     }
     if (util.isStream(data)) {
-      const hashInstance = new hash();
+      const hash = await getNobleHash();
+
+      const hashInstance = hash.create();
       return stream.transform(data, value => {
-        hashInstance.process(value);
-      }, () => hashInstance.finish().result);
-    } else if (webCrypto && webCryptoHash && data.length >= config.minBytesForWebCrypto) {
-      return new Uint8Array(await webCrypto.digest(webCryptoHash, data));
+        hashInstance.update(value);
+      }, () => hashInstance.digest());
+    } else if (webCrypto && webCryptoHashName) {
+      return new Uint8Array(await webCrypto.digest(webCryptoHashName, data));
     } else {
-      return hash.bytes(data);
+      const hash = await getNobleHash();
+
+      return hash(data);
     }
   };
 }
 
-const hashFunctions = {
-  md5: nodeHash('md5') || md5,
-  sha1: nodeHash('sha1') || asmcryptoHash(Sha1, 'SHA-1'),
-  sha224: nodeHash('sha224') || hashjsHash(sha224),
-  sha256: nodeHash('sha256') || asmcryptoHash(Sha256, 'SHA-256'),
-  sha384: nodeHash('sha384') || hashjsHash(sha384, 'SHA-384'),
-  sha512: nodeHash('sha512') || hashjsHash(sha512, 'SHA-512'), // asmcrypto sha512 is huge.
-  ripemd: nodeHash('ripemd160') || hashjsHash(ripemd160)
-};
-
 export default {
 
   /** @see module:md5 */
-  md5: hashFunctions.md5,
-  /** @see asmCrypto */
-  sha1: hashFunctions.sha1,
-  /** @see hash.js */
-  sha224: hashFunctions.sha224,
-  /** @see asmCrypto */
-  sha256: hashFunctions.sha256,
-  /** @see hash.js */
-  sha384: hashFunctions.sha384,
-  /** @see asmCrypto */
-  sha512: hashFunctions.sha512,
-  /** @see hash.js */
-  ripemd: hashFunctions.ripemd,
+  md5: nodeHash('md5') || md5,
+  sha1: nodeHash('sha1') || nobleHash('sha1', 'SHA-1'),
+  sha224: nodeHash('sha224') || nobleHash('sha224'),
+  sha256: nodeHash('sha256') || nobleHash('sha256', 'SHA-256'),
+  sha384: nodeHash('sha384') || nobleHash('sha384', 'SHA-384'),
+  sha512: nodeHash('sha512') || nobleHash('sha512', 'SHA-512'),
+  ripemd: nodeHash('ripemd160') || nobleHash('ripemd160'),
+  sha3_256: nodeHash('sha3-256') || nobleHash('sha3_256'),
+  sha3_512: nodeHash('sha3-512') || nobleHash('sha3_512'),
 
   /**
    * Create a hash on the specified data using the specified algorithm
@@ -116,8 +90,12 @@ export default {
         return this.sha512(data);
       case enums.hash.sha224:
         return this.sha224(data);
+      case enums.hash.sha3_256:
+        return this.sha3_256(data);
+      case enums.hash.sha3_512:
+        return this.sha3_512(data);
       default:
-        throw new Error('Invalid hash function.');
+        throw new Error('Unsupported hash function');
     }
   },
 
@@ -141,6 +119,10 @@ export default {
         return 64;
       case enums.hash.sha224:
         return 28;
+      case enums.hash.sha3_256:
+        return 32;
+      case enums.hash.sha3_512:
+        return 64;
       default:
         throw new Error('Invalid hash algorithm.');
     }

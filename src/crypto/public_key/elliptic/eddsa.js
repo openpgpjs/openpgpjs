@@ -18,17 +18,14 @@
 /**
  * @fileoverview Implementation of EdDSA following RFC4880bis-03 for OpenPGP
  * @module crypto/public_key/elliptic/eddsa
- * @private
  */
 
-import sha512 from 'hash.js/lib/hash/sha/512';
-import nacl from '@openpgp/tweetnacl/nacl-fast-light';
+import ed25519 from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
 import { getRandomBytes } from '../../random';
 
-nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 
 /**
  * Generate (non-legacy) EdDSA key
@@ -38,8 +35,14 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
 export async function generate(algo) {
   switch (algo) {
     case enums.publicKey.ed25519: {
-      const seed = getRandomBytes(32);
-      const { publicKey: A } = nacl.sign.keyPair.fromSeed(seed);
+      const seed = getRandomBytes(getPayloadSize(algo));
+      const { publicKey: A } = ed25519.sign.keyPair.fromSeed(seed);
+      return { A, seed };
+    }
+    case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
+      const seed = ed448.utils.randomPrivateKey();
+      const A = ed448.getPublicKey(seed);
       return { A, seed };
     }
     default:
@@ -67,10 +70,14 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
   switch (algo) {
     case enums.publicKey.ed25519: {
       const secretKey = util.concatUint8Array([privateKey, publicKey]);
-      const signature = nacl.sign.detached(hashed, secretKey);
+      const signature = ed25519.sign.detached(hashed, secretKey);
       return { RS: signature };
     }
-    case enums.publicKey.ed448:
+    case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
+      const signature = ed448.sign(hashed, privateKey);
+      return { RS: signature };
+    }
     default:
       throw new Error('Unsupported EdDSA algorithm');
   }
@@ -93,10 +100,12 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
   switch (algo) {
-    case enums.publicKey.ed25519: {
-      return nacl.sign.detached.verify(hashed, RS, publicKey);
+    case enums.publicKey.ed25519:
+      return ed25519.sign.detached.verify(hashed, RS, publicKey);
+    case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
+      return ed448.verify(RS, hashed, publicKey);
     }
-    case enums.publicKey.ed448:
     default:
       throw new Error('Unsupported EdDSA algorithm');
   }
@@ -117,13 +126,31 @@ export async function validateParams(algo, A, seed) {
        * Derive public point A' from private key
        * and expect A == A'
        */
-      const { publicKey } = nacl.sign.keyPair.fromSeed(seed);
+      const { publicKey } = ed25519.sign.keyPair.fromSeed(seed);
       return util.equalsUint8Array(A, publicKey);
     }
 
-    case enums.publicKey.ed448: // unsupported
+    case enums.publicKey.ed448: {
+      const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
+
+      const publicKey = ed448.getPublicKey(seed);
+      return util.equalsUint8Array(A, publicKey);
+    }
     default:
       return false;
+  }
+}
+
+export function getPayloadSize(algo) {
+  switch (algo) {
+    case enums.publicKey.ed25519:
+      return 32;
+
+    case enums.publicKey.ed448:
+      return 57;
+
+    default:
+      throw new Error('Unsupported EdDSA algorithm');
   }
 }
 
@@ -131,6 +158,8 @@ export function getPreferredHashAlgo(algo) {
   switch (algo) {
     case enums.publicKey.ed25519:
       return enums.hash.sha256;
+    case enums.publicKey.ed448:
+      return enums.hash.sha512;
     default:
       throw new Error('Unknown EdDSA algo');
   }

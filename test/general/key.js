@@ -1,13 +1,14 @@
 /* eslint-disable max-lines */
-/* globals tryTests: true */
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+/* globals tryTests */
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const util = require('../../src/util');
-const { isAEADSupported, getPreferredAlgo } = require('../../src/key');
-const KeyID = require('../../src/type/keyid');
-
+import sinon from 'sinon';
+import openpgp from '../initOpenpgp.js';
+import util from '../../src/util.js';
+import { getPreferredCipherSuite } from '../../src/key';
+import KeyID from '../../src/type/keyid.js';
 
 const priv_key_arm2 =
   ['-----BEGIN PGP PRIVATE KEY BLOCK-----',
@@ -2239,32 +2240,36 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
 function versionSpecificTests() {
   it('Preferences of generated key', function() {
     const testPref = function(key) {
+      const selfSignature = openpgp.config.v6Keys ? key.directSignatures[0] : key.users[0].selfCertifications[0];
       // key flags
       const keyFlags = openpgp.enums.keyFlags;
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
+      expect(selfSignature.keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
+      expect(selfSignature.keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptCommunication).to.equal(keyFlags.encryptCommunication);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
-      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128, sym.aes192]);
+      expect(selfSignature.preferredSymmetricAlgorithms).to.eql([sym.aes256, sym.aes128]);
       if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
-        expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.eax, aead.ocb]);
+        expect(selfSignature.preferredCipherSuites).to.eql([
+          [sym.aes256, aead.gcm],
+          [sym.aes128, aead.gcm],
+          [sym.aes256, aead.eax],
+          [sym.aes128, aead.eax],
+          [sym.aes256, aead.ocb],
+          [sym.aes128, aead.ocb]
+        ]);
       }
       const hash = openpgp.enums.hash;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512]);
+      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha3_256, hash.sha3_512]);
       const compr = openpgp.enums.compression;
-      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.uncompressed, compr.zlib, compr.zip]);
+      expect(selfSignature.preferredCompressionAlgorithms).to.eql([compr.uncompressed, compr.zlib, compr.zip]);
 
-      let expectedFeatures;
-      if (openpgp.config.v5Keys) {
-        expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.aeadProtect) {
-        expectedFeatures = [3]; // aead + mdc
-      } else {
-        expectedFeatures = [1]; // mdc
+      let expectedFeatures = 0x01; // SEIPDv1
+      if (openpgp.config.aeadProtect) {
+        expectedFeatures |= 0x08; // SEIPDv2
       }
-      expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
+      expect(selfSignature.features).to.eql([expectedFeatures]);
     };
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: 'hello', format: 'object' };
     return openpgp.generateKey(opt).then(async function({ privateKey, publicKey }) {
@@ -2280,36 +2285,46 @@ function versionSpecificTests() {
     const preferredAEADAlgorithmVal = openpgp.config.preferredAEADAlgorithm;
     openpgp.config.preferredSymmetricAlgorithm = openpgp.enums.symmetric.aes192;
     openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
-    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zip;
+    openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib;
     openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM;
 
     const testPref = function(key) {
+      const selfSignature = openpgp.config.v6Keys ? key.directSignatures[0] : key.users[0].selfCertifications[0];
       // key flags
       const keyFlags = openpgp.enums.keyFlags;
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
-      expect(key.users[0].selfCertifications[0].keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
+      expect(selfSignature.keyFlags[0] & keyFlags.certifyKeys).to.equal(keyFlags.certifyKeys);
+      expect(selfSignature.keyFlags[0] & keyFlags.signData).to.equal(keyFlags.signData);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptCommunication).to.equal(keyFlags.encryptCommunication);
       expect(key.subkeys[0].bindingSignatures[0].keyFlags[0] & keyFlags.encryptStorage).to.equal(keyFlags.encryptStorage);
       const sym = openpgp.enums.symmetric;
-      expect(key.users[0].selfCertifications[0].preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128]);
+      expect(selfSignature.preferredSymmetricAlgorithms).to.eql([sym.aes192, sym.aes256, sym.aes128]);
       if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
-        expect(key.users[0].selfCertifications[0].preferredAEADAlgorithms).to.eql([aead.experimentalGCM, aead.eax, aead.ocb]);
+        expect(selfSignature.preferredCipherSuites).to.eql([
+          [sym.aes192, aead.experimentalGCM],
+          [sym.aes256, aead.experimentalGCM],
+          [sym.aes128, aead.experimentalGCM],
+          [sym.aes192, aead.gcm],
+          [sym.aes256, aead.gcm],
+          [sym.aes128, aead.gcm],
+          [sym.aes192, aead.eax],
+          [sym.aes256, aead.eax],
+          [sym.aes128, aead.eax],
+          [sym.aes192, aead.ocb],
+          [sym.aes256, aead.ocb],
+          [sym.aes128, aead.ocb]
+        ]);
       }
       const hash = openpgp.enums.hash;
-      expect(key.users[0].selfCertifications[0].preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512]);
+      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha224, hash.sha256, hash.sha512, hash.sha3_256, hash.sha3_512]);
       const compr = openpgp.enums.compression;
-      expect(key.users[0].selfCertifications[0].preferredCompressionAlgorithms).to.eql([compr.zip, compr.zlib, compr.uncompressed]);
+      expect(selfSignature.preferredCompressionAlgorithms).to.eql([compr.zlib, compr.uncompressed, compr.zip]);
 
-      let expectedFeatures;
-      if (openpgp.config.v5Keys) {
-        expectedFeatures = [7]; // v5 + aead + mdc
-      } else if (openpgp.config.aeadProtect) {
-        expectedFeatures = [3]; // aead + mdc
-      } else {
-        expectedFeatures = [1]; // mdc
+      let expectedFeatures = 0x01; // SEIPDv1
+      if (openpgp.config.aeadProtect) {
+        expectedFeatures |= 0x08; // SEIPDv2
       }
-      expect(key.users[0].selfCertifications[0].features).to.eql(expectedFeatures);
+      expect(selfSignature.features).to.eql([expectedFeatures]);
     };
     const opt = { userIDs: { name: 'test', email: 'a@b.com' }, passphrase: 'hello', format: 'object' };
     try {
@@ -2447,29 +2462,35 @@ function versionSpecificTests() {
   });
 
   it('Generate key - default values', function() {
+    const v6Key = openpgp.config.v6Keys;
+
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], format: 'object' };
     return openpgp.generateKey(opt).then(function({ privateKey: key }) {
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.isDecrypted()).to.be.true;
-      expect(key.getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(key.getAlgorithmInfo().algorithm).to.equal(v6Key ? 'ed25519' : 'eddsaLegacy');
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(1);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
     });
   });
 
   it('Generate key - two subkeys with default values', function() {
+    const v6Key = openpgp.config.v6Keys;
+
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{},{}] };
     return openpgp.generateKey(opt).then(function({ privateKey: key }) {
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(2);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
     });
   });
 
@@ -2493,35 +2514,88 @@ function versionSpecificTests() {
     }
   });
 
+  it('Generate Ed25519 key (new format) - default subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve25519', userIDs: [userID], passphrase: '123', format: 'object' };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed25519');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x25519');
+  });
+
+  it('Generate Ed25519 key (new format) - one signing subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve25519', userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ sign: true }] };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed25519');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ed25519');
+  });
+
+  it('Generate Ed448 key - default subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve448', userIDs: [userID], passphrase: '123', format: 'object' };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed448');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x448');
+  });
+
+  it('Generate Ed448 key - one signing subkey', async function() {
+    const userID = { name: 'test', email: 'a@b.com' };
+    const opt = { type: 'curve448', userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ sign: true }] };
+    const { privateKey: key } = await openpgp.generateKey(opt);
+    expect(key.users.length).to.equal(1);
+    expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
+    expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
+    expect(key.getAlgorithmInfo().algorithm).to.equal('ed448');
+    expect(key.subkeys).to.have.length(1);
+    expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ed448');
+  });
+
   it('Generate key - one signing subkey', function() {
+    const v6Key = openpgp.config.v6Keys;
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{}, { sign: true }] };
+
     return openpgp.generateKey(opt).then(async function({ privateKey: key }) {
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(2);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
       expect(await key.getEncryptionKey()).to.equal(key.subkeys[0]);
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'ed25519' : 'eddsaLegacy');
       expect(await key.getSigningKey()).to.equal(key.subkeys[1]);
     });
   });
 
   it('Reformat key - one signing subkey', async function() {
+    const v6Key = openpgp.config.v6Keys;
     const userID = { name: 'test', email: 'a@b.com' };
     const opt = { userIDs: [userID], format: 'object', subkeys:[{}, { sign: true }] };
     const { privateKey } = await openpgp.generateKey(opt);
 
     return openpgp.reformatKey({ privateKey, userIDs: [userID] }).then(async function({ privateKey: armoredKey }) {
       const key = await openpgp.readKey({ armoredKey });
+      expect(key.keyPacket.version).to.equal(v6Key ? 6 : 4);
       expect(key.users.length).to.equal(1);
       expect(key.users[0].userID.userID).to.equal('test <a@b.com>');
       expect(key.users[0].selfCertifications[0].isPrimaryUserID).to.be.true;
       expect(key.subkeys).to.have.length(2);
-      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'x25519' : 'ecdh');
       expect(await key.getEncryptionKey()).to.equal(key.subkeys[0]);
-      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal('eddsa');
+      expect(key.subkeys[1].getAlgorithmInfo().algorithm).to.equal(v6Key ? 'ed25519' : 'eddsaLegacy');
       expect(await key.getSigningKey()).to.equal(key.subkeys[1]);
     });
   });
@@ -2532,7 +2606,7 @@ function versionSpecificTests() {
     openpgp.config.minRSABits = rsaBits;
 
     const userID = { name: 'test', email: 'a@b.com' };
-    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ type: 'ecc', curve: 'curve25519' }] };
+    const opt = { type: 'rsa', rsaBits, userIDs: [userID], passphrase: '123', format: 'object', subkeys:[{ type: 'ecc', curve: 'nistP256' }] };
     try {
       const { privateKey: key } = await openpgp.generateKey(opt);
       expect(key.users.length).to.equal(1);
@@ -2892,31 +2966,31 @@ function versionSpecificTests() {
   });
 }
 
-module.exports = () => describe('Key', function() {
-  let v5KeysVal;
+export default () => describe('Key', function() {
+  let v6KeysVal;
   let aeadProtectVal;
 
   tryTests('V4', versionSpecificTests, {
-    if: !openpgp.config.ci,
+    if: true,
     beforeEach: function() {
-      v5KeysVal = openpgp.config.v5Keys;
-      openpgp.config.v5Keys = false;
+      v6KeysVal = openpgp.config.v6Keys;
+      openpgp.config.v6Keys = false;
     },
     afterEach: function() {
-      openpgp.config.v5Keys = v5KeysVal;
+      openpgp.config.v6Keys = v6KeysVal;
     }
   });
 
-  tryTests('V5', versionSpecificTests, {
-    if: !openpgp.config.ci,
+  tryTests('V6', versionSpecificTests, {
+    if: true,
     beforeEach: function() {
-      v5KeysVal = openpgp.config.v5Keys;
+      v6KeysVal = openpgp.config.v6Keys;
       aeadProtectVal = openpgp.config.aeadProtect;
-      openpgp.config.v5Keys = true;
+      openpgp.config.v6Keys = true;
       openpgp.config.aeadProtect = true;
     },
     afterEach: function() {
-      openpgp.config.v5Keys = v5KeysVal;
+      openpgp.config.v6Keys = v6KeysVal;
       openpgp.config.aeadProtect = aeadProtectVal;
     }
   });
@@ -2970,6 +3044,216 @@ module.exports = () => describe('Key', function() {
     const packetlist = await openpgp.PacketList.fromBinary(packetBytes, util.constructAllowedPackets([openpgp.PublicKeyPacket]), openpgp.config);
     const key = packetlist[0];
     expect(key).to.exist;
+  });
+
+  it('Parsing, decrypting, encrypting and serializing V5 key (AEAD-encrypted)', async function() {
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYwFZC7tvxYAAAAtCSsGAQQB2kcPAQEHQP/d1oBAqCKZYxb6k8foyX2Aa/VK
+dHFymZPGvHRk1ncs/R0JAQMIrDnS3Bany9EAF6dwQSfPSdObc4ROYIMAnwAA
+ADKV1OhGzwANnapimvODI6fK5F7/V0GxETY9WmnipnBzr4Fe9GZw4QD4Q4hd
+IJMawjUBrs0MdjVAYWVhZC50ZXN0wpIFEBYKAEQFgmQu7b8ECwkHCAMVCAoE
+FgACAQIZAQKbAwIeByKhBQ/Y89PNwfdXUdI/td5Q9rNrYP9mb7Dg6k/3nxTg
+ugQ5AyIBAgAAf0kBAJv0OQvd4u8R0f3HAsmQeqMnwNA4or75BOn/ieApNZUt
+AP9kQVmYEk4+MV57Us15l2kQEslLDr3qiH5+VCICdEprB8eRBWQu7b8SAAAA
+MgorBgEEAZdVAQUBAQdA4IgEkfze3eNKRz6DgzGSJxw/CV/5Rp5u4Imn47h7
+pyADAQgH/R0JAQMIwayD3R4E0ugAyszSmOIpaLJ40YGBp5uU7wAAADKmSv4W
+tio7GfZCVl8eJ7xX3J1b0iMvEm876tUeHANQlYYCWz+2ahmPVe79zzZA9OhN
+FcJ6BRgWCAAsBYJkLu2/ApsMIqEFD9jz083B91dR0j+13lD2s2tg/2ZvsODq
+T/efFOC6BDkAAHcjAPwIPNHnR9bKmkVop6cE05dCIpZ/W8zXDGnjKYrrC4Hb
+4gEAmISD1GRkNOmCV8aHwN5svO6HuwXR4cR3o3l7HlYeag8=
+=wpkQ
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const passphrase = 'password';
+    const encryptedKey = await openpgp.readKey({ armoredKey });
+    const decryptedKey = await openpgp.decryptKey({
+      privateKey: encryptedKey,
+      passphrase
+    });
+    const reecryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey,
+      passphrase,
+      config: { aeadProtect: true }
+    });
+    expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+    const redecryptedKey = await openpgp.decryptKey({
+      privateKey: reecryptedKey,
+      passphrase
+    });
+    expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+  });
+
+  it('Parsing, decrypting, encrypting and serializing V4 key (AEAD-encrypted, deprecated/legacy format from RFC4880bis)', async function() {
+    // v4 key from OpenPGP.js v5, generated with config.aeadProtect flag (https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-5.5.3-3.5)
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYMEZPXfehYJKwYBBAHaRw8BAQdAw/62MUaSzRSY5gR18DOlfeo/m8eKUkbr
+ZSRqS4wtss39CQEDCGHd70SYYYPkAAALGg1YptTjEuIk4wiBreDE9U/urf3J
+6Z8fP3oy+plzBRKs+8k+kzXY/643Ayesfy3qXA4zM6fqNrrlS6AqT8wDys0A
+wpAEEBYKAEIFgmT133oECwkHCAmQB4Z/qOo0isgDFQgKBBYAAgECGQECmwMC
+HgMWIQQm7YhFQvi0bx7ixrQHhn+o6jSKyAMiAQIAADQZAP9kECruRBva4izE
+9ZET1iQ6i1HiisUKrO6miHfjsxDycgD9EXvtbpi1AORIrYO/pPpGUHpUt25n
+JM+rgWhJwOHw1g3HiARk9d96EgorBgEEAZdVAQUBAQdAiVNiLZRC9wZG9/ef
+V9eu8VKEoHqAFjci3Lu2N+8hQQoDAQgH/QkBAwh+kYDhbTGARwBZRY0lR39D
+EriFZ1N5PKW1TAdxTMNecP3sOyUWRutHQgRrxuF0512fCnelgr2a3of5bQHC
+0XWFfbac2d91VEP2mqrCeAQYFggAKgWCZPXfegmQB4Z/qOo0isgCmwwWIQQm
+7YhFQvi0bx7ixrQHhn+o6jSKyAAAkN4A/31Hm3vy7FHFGJh+VYdqmeESo7mr
+18jzxSbxd71FGTw7AQDqfERTB7zZzk1EqNSAqfrg3hbI7+4XXgHz6qnA3vFm
+Cg==
+=mTGB
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const binaryKey = (await openpgp.unarmor(armoredKey)).data;
+    const passphrase = 'passphrase';
+    const encryptedKey = await openpgp.readKey({ armoredKey, config: { parseAEADEncryptedV4KeysAsLegacy: true } });
+    expect(encryptedKey.keyPacket.isLegacyAEAD).to.be.true;
+    expect(encryptedKey.keyPacket.usedModernAEAD).to.be.false; // legacy AEAD does not guarantee integrity of public key material
+    expect(encryptedKey.write()).to.deep.equal(binaryKey);
+
+    const decryptedKey = await openpgp.decryptKey({
+      privateKey: encryptedKey,
+      passphrase
+    });
+    const reecryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey,
+      passphrase,
+      config: { aeadProtect: true }
+    });
+    expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+    expect(reecryptedKey.keyPacket.isLegacyAEAD).to.be.false;
+    const redecryptedKey = await openpgp.decryptKey({
+      privateKey: reecryptedKey,
+      passphrase
+    });
+    expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+  });
+
+  it('Parsing, decrypting, encrypting and serializing V4 key (AEAD-encrypted)', async function() {
+    // key from gopenpgp
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+oZIvKIVq9Vqf8XJVjMDbRMNTmh3a5A==
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const passphrase = 'password';
+    const encryptedKey = await openpgp.readKey({ armoredKey });
+    const decryptedKey = await openpgp.decryptKey({
+      privateKey: encryptedKey,
+      passphrase
+    });
+    const reecryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey,
+      passphrase,
+      config: { aeadProtect: true }
+    });
+    expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+    const redecryptedKey = await openpgp.decryptKey({
+      privateKey: reecryptedKey,
+      passphrase
+    });
+    expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+  });
+
+  it('Parsing, decrypting, encrypting and serializing V6 key (AEAD-encrypted)', async function() {
+    // official test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.5
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYIGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laP9JgkC
+FARdb9ccngltHraRe25uHuyuAQQVtKipJ0+r5jL4dacGWSAheCWPpITYiyfyIOPS
+3gIDyg8f7strd1OB4+LZsUhcIjOMpVHgmiY/IutJkulneoBYwrEGHxsKAAAAQgWC
+Y4d/4wMLCQcFFQoOCAwCFgACmwMCHgkiIQbLGGxPBgmml+TVLfpscisMHx4nwYpW
+cI9lJewnutmsyQUnCQIHAgAAAACtKCAQPi19In7A5tfORHHbNr/JcIMlNpAnFJin
+7wV2wH+q4UWFs7kDsBJ+xP2i8CMEWi7Ha8tPlXGpZR4UruETeh1mhELIj5UeM8T/
+0z+5oX1RHu11j8bZzFDLX9eTsgOdWATHggZjh3/jGQAAACCGkySDZ/nlAV25Ivj0
+gJXdp4SYfy1ZhbEvutFsr15ENf0mCQIUBA5hhGgp2oaavg6mFUXcFMwBBBUuE8qf
+9Ock+xwusd+GAglBr5LVyr/lup3xxQvHXFSjjA2haXfoN6xUGRdDEHI6+uevKjVR
+v5oAxgu7eJpaXNjCmwYYGwoAAAAsBYJjh3/jApsMIiEGyxhsTwYJppfk1S36bHIr
+DB8eJ8GKVnCPZSXsJ7rZrMkAAAAABAEgpukYbZ1ZNfyP5WMUzbUnSGpaUSD5t2Ki
+Nacp8DkBClZRa2c3AMQzSDXa9jGhYzxjzVb5scHDzTkjyRZWRdTq8U6L4da+/+Kt
+ruh8m7Xo2ehSSFyWRSuTSZe5tm/KXgYG
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const passphrase = 'correct horse battery staple';
+    const encryptedKey = await openpgp.readKey({ armoredKey });
+
+    // avoid argon2's expensive computation
+    const stubArgon2PrimaryKey = sinon.stub(encryptedKey.keyPacket.s2k, 'produceKey').returns(
+      util.hexToUint8Array('832bd2662a5c2b251ee3fc82aec349a766ca539015880133002e5a21960b3bcf'));
+    const stubArgon2Subkey = sinon.stub(encryptedKey.subkeys[0].keyPacket.s2k, 'produceKey').returns(
+      util.hexToUint8Array('f74a6ce873a089ef13a3da9ac059777bb22340d15eaa6c9dc0f8ef09035c67cd'));
+
+    try {
+      const decryptedKey = await openpgp.decryptKey({
+        privateKey: encryptedKey,
+        passphrase
+      });
+
+      const reecryptedKey = await openpgp.encryptKey({
+        privateKey: decryptedKey,
+        passphrase,
+        config: { aeadProtect: true }
+      });
+      expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+      const redecryptedKey = await openpgp.decryptKey({
+        privateKey: reecryptedKey,
+        passphrase
+      });
+      expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+    } finally {
+      stubArgon2PrimaryKey.restore();
+      stubArgon2Subkey.restore();
+    }
   });
 
   it('Parsing ECDH key with unknown kdf param version', async function() {
@@ -3038,6 +3322,66 @@ aU71tdtNBQ==
     expect(encryptionKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'x25519' });
   });
 
+  it('Parsing V4 key using curve448 format', async function() {
+    const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA52IEq/TpKiPp6RofQaq4uhCruTtiG+qiVFnwsQgeh0ui34kHD
+Y1E04mBai0pCoDiFVokwsKt3F5sAAC8lDYfVP/p3atbXJDTJB2W9WmZxIS7pUGhS
+bjlWpZB/OVTBsoIfP/2J+Hi4ESwBRfDUDgwK4aJVKsLAIAYfHAoAAAA/BQJlGoti
+IqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwMCHgkCCwcDFQoI
+AhYABScHAwcCAAAAAPiGIG2qmhCULQ/+H4rKV0XEM1x0uVY3l878Pa6ijZLouZU/
+VRd5PnbGyLPL++q3LDViUUdZ1uusRc01f677Q6wpUU90k8MH/oULwI0+KPtqe1N4
+6nr1NTERsAmAaPjUdf4ZUXX/GWiTd/AlsS5JqGnAQxKRJkzCJacOTOElRMjzGUX7
+CGaAnhSC86YRZ68ocTPfZysAzRdVc2VyQiA8VXNlckJAdGVzdC50ZXN0PsLADQYT
+HAoAAAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUC
+GQEAAAAASKwgVzMoPb2Hbr3lbNI1CRWECokYLokL7F8MbYiMnlg+v6QXLdStvT13
+ZjxdrWQAx3MbihSOUSXbdAys90yMOAdtognj+x418J/TaYFMtIGBHwoHv8gQVnx9
+9ICv8ezx1T5VvGBYNuKZ5Ww0WPEpYMf1VA+Y9JxpohdcRenNBdSug4tLWla2y8NH
+aO28Fltpb4AuGQDHewZlGotiGgAAADjdabr1ohAOnbSUUkVhtUM/LVdnYgDLhmaj
+YZ1N7TWY0fqEpMk2LLo2165HOmhddRPeTB1TWbuwBwB8lKc3czFUzYcAgvZ08T5S
+UUHjfIhjeJeY4yd0OZDfzPw1vbegCc7t94bT+XGoIQbC/Bl7HCyAiMLADQYYHAoA
+AAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwwA
+AAAAHh0gf2kdqLoXdFX+aNVORr5VCVgcm2gBw8l68lDJ1ftA71bMllFi6Q5sLPUr
+6UCpJYYk3o3hYUYzIHmCIZGVYe1pxRgIUNqxydXEfzylJmN5NbiJNkjJizrI7oAR
+1mIcEEb/hmRMOUs1V2mcGuoeALBI/r/SyqDE2GRjH6d6g1RS7ZARPPHlZlY4CTqC
+4a7L+8odDwA=
+=chx0
+-----END PGP PRIVATE KEY BLOCK-----
+    ` });
+    // sanity checks
+    await expect(privateKey.validate()).to.be.fulfilled;
+    const signingKey = await privateKey.getSigningKey();
+    expect(signingKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.ed448);
+    expect(signingKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'ed448' });
+
+    const encryptionKey = await privateKey.getEncryptionKey();
+    expect(encryptionKey.keyPacket.algorithm).to.equal(openpgp.enums.publicKey.x448);
+    expect(encryptionKey.getAlgorithmInfo()).to.deep.equal({ algorithm: 'x448' });
+  });
+
+  it('Throw when parsing x448 key with unexpected secret param size', async function() {
+    // x448 subkey with secret seed of 57 bytes instead of 56
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZRwKeRx0854v253kTyH54UIFSy3dLbMLTSIGh+UeC6IWXvxt2551rUee
+wn9y5hJbJwm/f2eA3vkOUqhKbAAAy7hGpOu61AMTr6w9G9VLStDR9Int/vgi
+cNSl1LTvF8f5lqBrpMFFPUHwi4igNMqb7I/c7J2Uc+4uInvNAMK3BBAcCgA7
+BYJlHAp5AwsJBwmQ+2DdQup2xx8DFQgKAhYAAhkBApsDAh4BFiEE5NkqBdRy
+GYLB7cPm+2DdQup2xx8AAIuONFkN6wRtRJA9EJvwhj7DkzNRjFNw8OE/ENzj
+3XcN/WtZYCnLZ+ih9HSar9+CZzI+4mHtvOunq7sAjuvPbGndbbdg46DSy0Ac
+wIVxSeIMNpwpktMyUx/ugIZeu7VvcnW4SbQOEB5KPlja/qjapWwg4wIAx3oE
+ZRwKeRogjMz3j2jL4X1Zhk+i/EK09BTU/2zuYuB+Pl9Y+RKDaxuOmZ4zzx+S
+xa/RYWEVKkcIY9pBAxd4RgDZs0rJP9DRIe69vix1Wd/LxuSctG2SMfcjzyAl
+5mmCsb+sgubDduEBotTv3qFnNTYMUUHEFojWC4EfjcKmBBgcCgAqBYJlHAp5
+CZD7YN1C6nbHHwKbDBYhBOTZKgXUchmCwe3D5vtg3ULqdscfAAD/uWh1fZy7
+hMeb7552mWqB0eGXpOJR9K/rLDj8woLkXJMyyhfYU5PTwmRpowsGwbm7TMku
+gXxMryvfgBDKTN8tkgJ4BJUsDDwU7aJE1fzOZ5TP4iNHpPOY1qqpmaAtTh6Q
+PzIEeL7UH3trraFmi+Gq8u4kAA==
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+    await expect(openpgp.readKey({ armoredKey })).to.be.rejectedWith(/Error reading MPIs/);
+  });
+
   it('Testing key ID and fingerprint for V4 keys', async function() {
     const pubKeysV4 = await openpgp.readKeys({ armoredKeys: twoKeys });
     expect(pubKeysV4).to.exist;
@@ -3101,7 +3445,7 @@ aU71tdtNBQ==
       expect(selfCertification.valid).to.be.true;
 
       const certifyingKey = await openpgp.readKey({ armoredKey: certifying_key });
-      const certifyingSigningKey = await certifyingKey.getSigningKey();
+      const certifyingSigningKey = await certifyingKey.getSigningKey(undefined, undefined, undefined, { ...openpgp.config, allowMissingKeyFlags: true });
       const signatures = await pubKey.verifyPrimaryUser([certifyingKey]);
       expect(signatures.length).to.equal(2);
       expect(signatures[0].keyID.toHex()).to.equal(publicSigningKey.getKeyID().toHex());
@@ -3110,7 +3454,9 @@ aU71tdtNBQ==
       expect(signatures[1].valid).to.be.false;
 
       const { user } = await pubKey.getPrimaryUser();
-      await expect(user.verifyCertificate(user.otherCertifications[0], [certifyingKey], undefined, openpgp.config)).to.be.rejectedWith('User certificate is revoked');
+      await expect(
+        user.verifyCertificate(user.otherCertifications[0], [certifyingKey], undefined, { ...openpgp.config, allowMissingKeyFlags: true })
+      ).to.be.rejectedWith('User certificate is revoked');
     } finally {
       openpgp.config.rejectPublicKeyAlgorithms = rejectPublicKeyAlgorithms;
     }
@@ -3209,7 +3555,7 @@ aU71tdtNBQ==
   });
 
   it("validate() - don't throw if key parameters correspond", async function() {
-    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519', format: 'object' });
+    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519Legacy', format: 'object' });
     await expect(key.validate()).to.not.be.rejected;
   });
 
@@ -3233,9 +3579,72 @@ aU71tdtNBQ==
     await expect(key.validate()).to.be.rejectedWith('Key is invalid');
   });
 
+  it('validate() - should skip for AEAD-encrypted key (non-legacy)', async function() {
+    const v4KeyWithAEAD = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYMEZaAFFxYJKwYBBAHaRw8BAQdA/C3ybUC91HiWAGd/KtPtjmYwWk7VmB+X
+GXhQY9yyZkf9CQEDCBpqDPXSr+aPAGoAsXz/V2uY7EE0Xlutx3MVMEbqWz6m
+fRRUn3/mtGr+PCdj9bbl0rVK+fR62kTbwATUpNdL4rrt1cNgOTlDtq1ZCc0P
+PGFlYWRAdGVzdC5jb20+wpsEEBYKAE0FgmWgBRcDCwkHCZB2ZM+malVbdgUV
+CAoMDgQWAAIBAhkBApsDAh4JFiEE8e8z3IJRZ+bZze8ldmTPpmpVW3YNJwkD
+BwMJAQcBCQIHAgAAplYBALLKSm4Q0dPoX4mBgEuOMgtAEewfyUhp8MJdJvCa
+9KIMAP9f3Qxf4ykXQwgL/e1pn1nNQgiQ7x33LXQ2vHynPkOyDceIBGWgBRcS
+CisGAQQBl1UBBQEBB0Bfk/JMj2ONL/1hi31q3OePnDHLmo8IsafeG0RZY8wF
+OgMBCAf9CQEDCHS8bQidEDvkAP6LovPpHodzcF7F+zbKlJKTI3l6xK4t2Dj6
+BIgBQov9zJ4OK2xFbyraXSLqStQJOQV7XBfIYKHYdIBtxj6cfTYtBMJ4BBgW
+CgAqBYJloAUXCZB2ZM+malVbdgKbDBYhBPHvM9yCUWfm2c3vJXZkz6ZqVVt2
+AAA+gQD9EpMMjlBFvvyACsKwQRmIqUNTfCy4uHL1Ee1fJ4ur9ZQBAP2CiOSN
+CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
+-----END PGP PRIVATE KEY BLOCK-----` });
+    const passphrase = 'passphrase';
+    // sanity checks about key encryption mechanism
+    expect(v4KeyWithAEAD.keyPacket.aead).to.not.be.null;
+    expect(v4KeyWithAEAD.keyPacket.isLegacyAEAD).to.be.false;
+    expect(v4KeyWithAEAD.keyPacket.usedModernAEAD).to.be.true;
+
+    const decryptedKey = await openpgp.decryptKey({ privateKey: v4KeyWithAEAD, passphrase });
+    decryptedKey.keyPacket.privateParams.seed = new Uint8Array(1); // corrupt key to confirm that the actual validation is skipped
+    await expect(decryptedKey.validate()).to.be.fulfilled;
+  });
+
+  it('validate() - should be run if AEAD-encrypted key gets re-encrypted without AEAD', async function() {
+    const v4KeyWithAEAD = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYMEZaAFFxYJKwYBBAHaRw8BAQdA/C3ybUC91HiWAGd/KtPtjmYwWk7VmB+X
+GXhQY9yyZkf9CQEDCBpqDPXSr+aPAGoAsXz/V2uY7EE0Xlutx3MVMEbqWz6m
+fRRUn3/mtGr+PCdj9bbl0rVK+fR62kTbwATUpNdL4rrt1cNgOTlDtq1ZCc0P
+PGFlYWRAdGVzdC5jb20+wpsEEBYKAE0FgmWgBRcDCwkHCZB2ZM+malVbdgUV
+CAoMDgQWAAIBAhkBApsDAh4JFiEE8e8z3IJRZ+bZze8ldmTPpmpVW3YNJwkD
+BwMJAQcBCQIHAgAAplYBALLKSm4Q0dPoX4mBgEuOMgtAEewfyUhp8MJdJvCa
+9KIMAP9f3Qxf4ykXQwgL/e1pn1nNQgiQ7x33LXQ2vHynPkOyDceIBGWgBRcS
+CisGAQQBl1UBBQEBB0Bfk/JMj2ONL/1hi31q3OePnDHLmo8IsafeG0RZY8wF
+OgMBCAf9CQEDCHS8bQidEDvkAP6LovPpHodzcF7F+zbKlJKTI3l6xK4t2Dj6
+BIgBQov9zJ4OK2xFbyraXSLqStQJOQV7XBfIYKHYdIBtxj6cfTYtBMJ4BBgW
+CgAqBYJloAUXCZB2ZM+malVbdgKbDBYhBPHvM9yCUWfm2c3vJXZkz6ZqVVt2
+AAA+gQD9EpMMjlBFvvyACsKwQRmIqUNTfCy4uHL1Ee1fJ4ur9ZQBAP2CiOSN
+CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
+-----END PGP PRIVATE KEY BLOCK-----` });
+    const passphrase = 'passphrase';
+    // sanity checks about key encryption mechanism
+    expect(v4KeyWithAEAD.keyPacket.aead).to.not.be.null;
+    expect(v4KeyWithAEAD.keyPacket.isLegacyAEAD).to.be.false;
+    expect(v4KeyWithAEAD.keyPacket.usedModernAEAD).to.be.true;
+
+    const reEncryptedKey = await openpgp.encryptKey({
+      privateKey: await openpgp.decryptKey({ privateKey: v4KeyWithAEAD, passphrase }),
+      passphrase,
+      config: { aeadProtect: false }
+    });
+
+    expect(reEncryptedKey.keyPacket.usedModernAEAD).to.be.false;
+    const reDecryptedKey = await openpgp.decryptKey({ privateKey: reEncryptedKey, passphrase });
+    reDecryptedKey.keyPacket.privateParams.seed = new Uint8Array(1); // corrupt key to confirm that the actual validation is now run
+    await expect(reDecryptedKey.validate()).to.be.rejectedWith('Key is invalid');
+  });
+
   it('isDecrypted() - should reflect whether all (sub)keys are encrypted', async function() {
     const passphrase = '12345678';
-    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519', passphrase, format: 'object' });
+    const { privateKey: key } = await openpgp.generateKey({ userIDs: {}, curve: 'ed25519Legacy', passphrase, format: 'object' });
     expect(key.isDecrypted()).to.be.false;
     await key.subkeys[0].keyPacket.decrypt(passphrase);
     expect(key.isDecrypted()).to.be.true;
@@ -3615,7 +4024,7 @@ aU71tdtNBQ==
 
     const input = await openpgp.unarmor(revocation_certificate_arm4);
     const packetlist = await openpgp.PacketList.fromBinary(input.data, util.constructAllowedPackets([openpgp.SignaturePacket]), openpgp.config);
-    const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write());
+    const armored = openpgp.armor(openpgp.enums.armor.publicKey, packetlist.write(), undefined, undefined, undefined, true);
 
     expect(revocationCertificate.replace(/^Comment: .*$\n/mg, '')).to.equal(armored.replace(/^Comment: .*$\n/mg, ''));
   });
@@ -3628,76 +4037,85 @@ aU71tdtNBQ==
     expect(revKey.armor()).not.to.match(/Comment: This is a revocation certificate/);
   });
 
-  it("getPreferredAlgo('symmetric') - one key", async function() {
+  it('getPreferredCipherSuite - one key', async function() {
     const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
-    const prefAlgo = await getPreferredAlgo('symmetric', [key1], undefined, undefined, {
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1], undefined, undefined, {
       ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256
     });
-    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes256);
+    expect(symmetricAlgo).to.equal(openpgp.enums.symmetric.aes256);
+    expect(aeadAlgo).to.equal(undefined);
   });
 
-  it("getPreferredAlgo('symmetric') - two key", async function() {
+  it('getPreferredCipherSuite - two keys', async function() {
     const { aes128, aes192, cast5 } = openpgp.enums.symmetric;
     const [key1, key2] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = [6, aes192, cast5];
-    const prefAlgo = await getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1, key2], undefined, undefined, {
       ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes192
     });
-    expect(prefAlgo).to.equal(aes192);
-    const prefAlgo2 = await getPreferredAlgo('symmetric', [key1, key2], undefined, undefined, {
+    expect(symmetricAlgo).to.equal(aes192);
+    expect(aeadAlgo).to.equal(undefined);
+    const { symmetricAlgo: symmetricAlgo2, aeadAlgo: aeadAlgo2 } = await getPreferredCipherSuite([key1, key2], undefined, undefined, {
       ...openpgp.config, preferredSymmetricAlgorithm: openpgp.enums.symmetric.aes256
     });
-    expect(prefAlgo2).to.equal(aes128);
+    expect(symmetricAlgo2).to.equal(aes128);
+    expect(aeadAlgo2).to.equal(undefined);
   });
 
-  it("getPreferredAlgo('symmetric') - two key - one without pref", async function() {
+  it('getPreferredCipherSuite - two keys - one without pref', async function() {
     const [key1, key2] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key2.getPrimaryUser();
     primaryUser.selfCertification.preferredSymmetricAlgorithms = null;
-    const prefAlgo = await getPreferredAlgo('symmetric', [key1, key2]);
-    expect(prefAlgo).to.equal(openpgp.enums.symmetric.aes128);
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1, key2]);
+    expect(symmetricAlgo).to.equal(openpgp.enums.symmetric.aes128);
+    expect(aeadAlgo).to.equal(undefined);
   });
 
-  it("getPreferredAlgo('aead') - one key - OCB", async function() {
+  it('getPreferredCipherSuite with AEAD - one key - GCM', async function() {
     const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key1.getPrimaryUser();
-    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
-    const prefAlgo = await getPreferredAlgo('aead', [key1], undefined, undefined, {
-      ...openpgp.config, preferredAEADAlgorithm: openpgp.enums.aead.ocb
+    primaryUser.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
+    primaryUser.selfCertification.preferredCipherSuites = [[9, 3], [9, 2]];
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1], undefined, undefined, {
+      ...openpgp.config,
+      aeadProtect: true,
+      preferredAEADAlgorithm: openpgp.enums.aead.gcm
     });
-    expect(prefAlgo).to.equal(openpgp.enums.aead.ocb);
-    const supported = await isAEADSupported([key1]);
-    expect(supported).to.be.true;
+    expect(symmetricAlgo).to.equal(openpgp.enums.symmetric.aes256);
+    expect(aeadAlgo).to.equal(openpgp.enums.aead.gcm);
   });
 
-  it("getPreferredAlgo('aead') - two key - one without pref", async function() {
+  it('getPreferredCipherSuite with AEAD - two keys - one without pref', async function() {
     const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
-    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
+    primaryUser.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
+    primaryUser.selfCertification.preferredCipherSuites = [[9, 3], [9, 2]];
     const primaryUser2 = await key2.getPrimaryUser();
-    primaryUser2.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    const prefAlgo = await getPreferredAlgo('aead', [key1, key2]);
-    expect(prefAlgo).to.equal(openpgp.enums.aead.eax);
-    const supported = await isAEADSupported([key1, key2]);
-    expect(supported).to.be.true;
+    primaryUser2.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1, key2], undefined, undefined, {
+      ...openpgp.config,
+      aeadProtect: true
+    });
+    expect(symmetricAlgo).to.equal(openpgp.enums.symmetric.aes128);
+    expect(aeadAlgo).to.equal(openpgp.enums.aead.ocb);
   });
 
-  it("getPreferredAlgo('aead') - two key - one with no support", async function() {
+  it('getPreferredCipherSuite with AEAD - two keys - one with no support', async function() {
     const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     const key1 = keys[0];
     const key2 = keys[1];
     const primaryUser = await key1.getPrimaryUser();
-    primaryUser.selfCertification.features = [7]; // Monkey-patch AEAD feature flag
-    primaryUser.selfCertification.preferredAEADAlgorithms = [2,1];
-    const prefAlgo = await getPreferredAlgo('aead', [key1, key2]);
-    expect(prefAlgo).to.equal(openpgp.enums.aead.eax);
-    const supported = await isAEADSupported([key1, key2]);
-    expect(supported).to.be.false;
+    primaryUser.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
+    primaryUser.selfCertification.preferredCipherSuites = [[9, 3], [9, 2]];
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1, key2], undefined, undefined, {
+      ...openpgp.config,
+      aeadProtect: true
+    });
+    expect(symmetricAlgo).to.equal(openpgp.enums.symmetric.aes256);
+    expect(aeadAlgo).to.equal(undefined);
   });
 
   it('User attribute packet read & write', async function() {
@@ -3857,7 +4275,8 @@ VYGdb3eNlV8CfoEC
     const key = await openpgp.readKey({ armoredKey: pub_revoked_subkeys });
     key.revocationSignatures = [];
     key.users[0].revocationSignatures = [];
-    return openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }), date: new Date(1386842743000) }).then(() => {
+    const subkeyRevocationTime = key.subkeys[0].revocationSignatures[0].created;
+    return openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }), date: subkeyRevocationTime }).then(() => {
       throw new Error('encryptSessionKey should not encrypt with revoked public key');
     }).catch(error => {
       expect(error.message).to.equal('Error encrypting message: Could not find valid encryption key packet in key ' + key.getKeyID().toHex() + ': Subkey is revoked');
@@ -3866,11 +4285,9 @@ VYGdb3eNlV8CfoEC
 
   it('Reject encryption with key revoked with appended revocation cert', async function() {
     const key = await openpgp.readKey({ armoredKey: pub_revoked_with_cert });
-    return openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }) }).then(() => {
-      throw new Error('encryptSessionKey should not encrypt with revoked public key');
-    }).catch(function(error) {
-      expect(error.message).to.equal('Error encrypting message: Primary key is revoked');
-    });
+    await expect(
+      openpgp.encrypt({ encryptionKeys: [key], message: await openpgp.createMessage({ text: 'random data' }) })
+    ).to.be.rejectedWith(/Primary key is revoked/);
   });
 
   it('Merge key with another key with non-ID user attributes', async function() {
@@ -3942,7 +4359,29 @@ VYGdb3eNlV8CfoEC
       expect(key.subkeys).to.have.length(0);
       const newKey = await key.addSubkey();
       expect(newKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
-      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519Legacy');
+    });
+
+    it('Add a new default subkey to an Ed488 key', async function() {
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { type: 'curve448', userIDs: [userID], format: 'object', subkeys: [] };
+      const { privateKey: key } = await openpgp.generateKey(opt);
+      expect(key.subkeys).to.have.length(0);
+      const keyWithNewSubkey = await key.addSubkey();
+      const parsedNewKey = await openpgp.readKey({ armoredKey: keyWithNewSubkey.armor() });
+      expect(parsedNewKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x448');
+      expect(parsedNewKey.subkeys[0].getAlgorithmInfo().curve).to.be.undefined;
+    });
+
+    it('Add a new default subkey to a v6 key', async function() {
+      const userID = { name: 'test', email: 'a@b.com' };
+      const opt = { type: 'curve25519', userIDs: [userID], format: 'object', subkeys: [], config: { v6Keys: true } };
+      const { privateKey: key } = await openpgp.generateKey(opt);
+      expect(key.subkeys).to.have.length(0);
+      const newKey = await key.addSubkey();
+      expect(newKey.subkeys[0].keyPacket.version).to.equal(6);
+      expect(newKey.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x25519');
+      expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.be.undefined;
     });
 
     it('Add a new default subkey to a dsa key', async function() {
@@ -3982,6 +4421,26 @@ XvmoLueOOShu01X/kaylMqaT8w==
       expect(newKey.subkeys[0].getAlgorithmInfo().curve).to.equal('secp256k1');
     });
 
+    it('should throw when trying to add a curve25519Legacy key to a v6 key', async function() {
+      const v6Key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMA
+GXKBexK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJj
+h3/jAwsJBwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifB
+ilZwj2Ul7Ce62azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2
+kCcUmKfvBXbAf6rhRYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaE
+QsiPlR4zxP/TP7mhfVEe7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaT
+JINn+eUBXbki+PSAld2nhJh/LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u
+/tVY6a//1q0NWC1X+yui3O24wpsGGBsKAAAALAWCY4d/4wKbDCIhBssYbE8G
+CaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAAQBIKbpGG2dWTX8j+Vj
+FM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W+bHBw805
+I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+      expect(v6Key.subkeys).to.have.length(1);
+      await expect(v6Key.addSubkey({ type: 'ecc' })).to.be.rejectedWith(/Cannot generate v6 keys of type 'ecc' with curve curve25519Legacy/);
+      expect(v6Key.subkeys).to.have.length(1);
+    });
+
     it('should throw when trying to encrypt a subkey separately from key', async function() {
       const privateKey = await openpgp.decryptKey({
         privateKey: await openpgp.readKey({ armoredKey: priv_key_rsa }),
@@ -4017,10 +4476,10 @@ XvmoLueOOShu01X/kaylMqaT8w==
     it('create and add a new eddsa subkey to a eddsa key', async function() {
       const passphrase = '12345678';
       const userID = { name: 'test', email: 'a@b.com' };
-      const { privateKey } = await openpgp.generateKey({ curve: 'curve25519', userIDs: [userID], format: 'object', subkeys:[] });
+      const { privateKey } = await openpgp.generateKey({ curve: 'curve25519Legacy', userIDs: [userID], format: 'object', subkeys:[] });
       const total = privateKey.subkeys.length;
 
-      let newPrivateKey = await privateKey.addSubkey({ curve: 'curve25519', userIDs: [userID], sign: true });
+      let newPrivateKey = await privateKey.addSubkey({ curve: 'curve25519Legacy', userIDs: [userID], sign: true });
       const subkey1 = newPrivateKey.subkeys[total];
       const encNewPrivateKey = await openpgp.encryptKey({ privateKey: newPrivateKey, passphrase });
       newPrivateKey = await openpgp.decryptKey({
@@ -4035,22 +4494,22 @@ XvmoLueOOShu01X/kaylMqaT8w==
       const subkeyOid = subkey2.keyPacket.publicParams.oid;
       const pkOid = privateKey.keyPacket.publicParams.oid;
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
-      expect(subkey2.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
+      expect(subkey2.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       await subkey2.verify();
     });
 
     it('create and add a new ecdsa subkey to a eddsa key', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
-      const { privateKey } = await openpgp.generateKey({ curve: 'ed25519', userIDs: [userID], format: 'object', subkeys:[] });
+      const { privateKey } = await openpgp.generateKey({ curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys:[] });
       const total = privateKey.subkeys.length;
-      let newPrivateKey = await privateKey.addSubkey({ curve: 'p256', sign: true });
+      let newPrivateKey = await privateKey.addSubkey({ curve: 'nistP256', sign: true });
       newPrivateKey = await openpgp.readKey({ armoredKey: newPrivateKey.armor() });
       const subkey = newPrivateKey.subkeys[total];
       expect(subkey).to.exist;
       expect(newPrivateKey.subkeys.length).to.be.equal(total + 1);
-      expect(newPrivateKey.getAlgorithmInfo().curve).to.be.equal('ed25519');
-      expect(subkey.getAlgorithmInfo().curve).to.be.equal('p256');
-      expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
+      expect(newPrivateKey.getAlgorithmInfo().curve).to.be.equal('ed25519Legacy');
+      expect(subkey.getAlgorithmInfo().curve).to.be.equal('nistP256');
+      expect(newPrivateKey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('ecdsa');
 
       await subkey.verify();
@@ -4076,7 +4535,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
 
     it('create and add a new rsa subkey to a ecc key', async function() {
       const userID = { name: 'test', email: 'a@b.com' };
-      const opt = { curve: 'ed25519', userIDs: [userID], format: 'object', subkeys:[] };
+      const opt = { curve: 'ed25519Legacy', userIDs: [userID], format: 'object', subkeys:[] };
       const { privateKey } = await openpgp.generateKey(opt);
       const total = privateKey.subkeys.length;
       let newPrivateKey = await privateKey.addSubkey({ type: 'rsa' });
@@ -4118,7 +4577,7 @@ XvmoLueOOShu01X/kaylMqaT8w==
       const subkeyOid = subkey.keyPacket.publicParams.oid;
       const pkOid = newPrivateKey.keyPacket.publicParams.oid;
       expect(subkeyOid.getName()).to.be.equal(pkOid.getName());
-      expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('eddsa');
+      expect(subkey.getAlgorithmInfo().algorithm).to.be.equal('eddsaLegacy');
       await subkey.verify();
       expect(await newPrivateKey.getSigningKey()).to.be.equal(subkey);
       const signed = await openpgp.sign({ message: await openpgp.createMessage({ text: 'the data to signed' }), signingKeys: newPrivateKey, format: 'binary' });
@@ -4154,6 +4613,33 @@ XvmoLueOOShu01X/kaylMqaT8w==
       expect(decrypted).to.exist;
       expect(decrypted.data).to.be.equal(vData);
     });
+
+    ['curve25519', 'curve448'].forEach(keyType => (
+      it(`encrypt/decrypt data with the new subkey correctly using ${keyType}`, async function() {
+        const userID = { name: 'test', email: 'a@b.com' };
+        const vData = 'the data to encrypted!';
+        const opt = { type: keyType, userIDs: [userID], format: 'object', subkeys:[] };
+        const { privateKey } = await openpgp.generateKey(opt);
+        const total = privateKey.subkeys.length;
+        let newPrivateKey = await privateKey.addSubkey();
+        const armoredKey = newPrivateKey.armor();
+        newPrivateKey = await openpgp.readKey({ armoredKey: armoredKey });
+        const subkey = newPrivateKey.subkeys[total];
+        const publicKey = newPrivateKey.toPublic();
+        await subkey.verify();
+        expect(await newPrivateKey.getEncryptionKey()).to.be.equal(subkey);
+        const encrypted = await openpgp.encrypt({ message: await openpgp.createMessage({ text: vData }), encryptionKeys: publicKey, format: 'binary' });
+        expect(encrypted).to.be.exist;
+        const message = await openpgp.readMessage({ binaryMessage: encrypted });
+        const pkSessionKeys = message.packets.filterByTag(openpgp.enums.packet.publicKeyEncryptedSessionKey);
+        expect(pkSessionKeys).to.exist;
+        expect(pkSessionKeys.length).to.be.equal(1);
+        expect(pkSessionKeys[0].publicKeyID.toHex()).to.be.equals(subkey.keyPacket.getKeyID().toHex());
+        const decrypted = await openpgp.decrypt({ message, decryptionKeys: newPrivateKey });
+        expect(decrypted).to.exist;
+        expect(decrypted.data).to.be.equal(vData);
+      })
+    ));
 
     it('sign/verify data with the new subkey correctly using rsa', async function() {
       const privateKey = await openpgp.decryptKey({

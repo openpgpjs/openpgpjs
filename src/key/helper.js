@@ -1,7 +1,6 @@
 /**
  * @fileoverview Provides helpers methods for key module
  * @module key/helper
- * @private
  */
 
 import {
@@ -36,6 +35,8 @@ export async function generateSecretKey(options, config) {
  * Returns the valid and non-expired signature that has the latest creation date, while ignoring signatures created in the future.
  * @param {Array<SignaturePacket>} signatures - List of signatures
  * @param {PublicKeyPacket|PublicSubkeyPacket} publicKey - Public key packet to verify the signature
+ * @param {module:enums.signature} signatureType - Signature type to determine how to hash the data (NB: for userID signatures,
+ *                          `enums.signatures.certGeneric` should be given regardless of the actual trust level)
  * @param {Date} date - Use the given date instead of the current time
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} The latest valid signature.
@@ -117,9 +118,9 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
   let hashAlgo = config.preferredHashAlgorithm;
   let prefAlgo = hashAlgo;
   if (key) {
-    const primaryUser = await key.getPrimaryUser(date, userID, config);
-    if (primaryUser.selfCertification.preferredHashAlgorithms) {
-      [prefAlgo] = primaryUser.selfCertification.preferredHashAlgorithms;
+    const selfCertification = await key.getPrimarySelfSignature(date, userID, config);
+    if (selfCertification.preferredHashAlgorithms) {
+      [prefAlgo] = selfCertification.preferredHashAlgorithms;
       hashAlgo = crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
         prefAlgo : hashAlgo;
     }
@@ -128,48 +129,70 @@ export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), us
     case enums.publicKey.ecdsa:
     case enums.publicKey.eddsaLegacy:
     case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
       prefAlgo = crypto.getPreferredCurveHashAlgo(keyPacket.algorithm, keyPacket.publicParams.oid);
   }
+
   return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
     prefAlgo : hashAlgo;
 }
 
 /**
- * Returns the preferred symmetric/aead/compression algorithm for a set of keys
- * @param {'symmetric'|'aead'|'compression'} type - Type of preference to return
+ * Returns the preferred compression algorithm for a set of keys
  * @param {Array<Key>} [keys] - Set of keys
  * @param {Date} [date] - Use the given date for verification instead of the current time
  * @param {Array} [userIDs] - User IDs
  * @param {Object} [config] - Full configuration, defaults to openpgp.config
- * @returns {Promise<module:enums.symmetric|aead|compression>} Preferred algorithm
+ * @returns {Promise<module:enums.compression>} Preferred compression algorithm
  * @async
  */
-export async function getPreferredAlgo(type, keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
-  const defaultAlgo = { // these are all must-implement in rfc4880bis
-    'symmetric': enums.symmetric.aes128,
-    'aead': enums.aead.eax,
-    'compression': enums.compression.uncompressed
-  }[type];
-  const preferredSenderAlgo = {
-    'symmetric': config.preferredSymmetricAlgorithm,
-    'aead': config.preferredAEADAlgorithm,
-    'compression': config.preferredCompressionAlgorithm
-  }[type];
-  const prefPropertyName = {
-    'symmetric': 'preferredSymmetricAlgorithms',
-    'aead': 'preferredAEADAlgorithms',
-    'compression': 'preferredCompressionAlgorithms'
-  }[type];
+export async function getPreferredCompressionAlgo(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  const defaultAlgo = enums.compression.uncompressed;
+  const preferredSenderAlgo = config.preferredCompressionAlgorithm;
 
   // if preferredSenderAlgo appears in the prefs of all recipients, we pick it
   // otherwise we use the default algo
   // if no keys are available, preferredSenderAlgo is returned
   const senderAlgoSupport = await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
-    const recipientPrefs = primaryUser.selfCertification[prefPropertyName];
+    const selfCertification = await key.getPrimarySelfSignature(date, userIDs[i], config);
+    const recipientPrefs = selfCertification.preferredCompressionAlgorithms;
     return !!recipientPrefs && recipientPrefs.indexOf(preferredSenderAlgo) >= 0;
   }));
   return senderAlgoSupport.every(Boolean) ? preferredSenderAlgo : defaultAlgo;
+}
+
+/**
+ * Returns the preferred symmetric and AEAD algorithm (if any) for a set of keys
+ * @param {Array<Key>} [keys] - Set of keys
+ * @param {Date} [date] - Use the given date for verification instead of the current time
+ * @param {Array} [userIDs] - User IDs
+ * @param {Object} [config] - Full configuration, defaults to openpgp.config
+ * @returns {Promise<{ symmetricAlgo: module:enums.symmetric, aeadAlgo: module:enums.aead | undefined }>} Object containing the preferred symmetric algorithm, and the preferred AEAD algorithm, or undefined if CFB is preferred
+ * @async
+ */
+export async function getPreferredCipherSuite(keys = [], date = new Date(), userIDs = [], config = defaultConfig) {
+  const selfSigs = await Promise.all(keys.map((key, i) => key.getPrimarySelfSignature(date, userIDs[i], config)));
+  const withAEAD = keys.length ?
+    selfSigs.every(selfSig => selfSig.features && (selfSig.features[0] & enums.features.seipdv2)) :
+    config.aeadProtect;
+
+  if (withAEAD) {
+    const defaultCipherSuite = { symmetricAlgo: enums.symmetric.aes128, aeadAlgo: enums.aead.ocb };
+    const desiredCipherSuite = { symmetricAlgo: config.preferredSymmetricAlgorithm, aeadAlgo: config.preferredAEADAlgorithm };
+    return selfSigs.every(selfSig => selfSig.preferredCipherSuites && selfSig.preferredCipherSuites.some(
+      cipherSuite => cipherSuite[0] === desiredCipherSuite.symmetricAlgo && cipherSuite[1] === desiredCipherSuite.aeadAlgo
+    )) ?
+      desiredCipherSuite :
+      defaultCipherSuite;
+  }
+  const defaultSymAlgo = enums.symmetric.aes128;
+  const desiredSymAlgo = config.preferredSymmetricAlgorithm;
+  return {
+    symmetricAlgo: selfSigs.every(selfSig => selfSig.preferredSymmetricAlgorithms && selfSig.preferredSymmetricAlgorithms.includes(desiredSymAlgo)) ?
+      desiredSymAlgo :
+      defaultSymAlgo,
+    aeadAlgo: undefined
+  };
 }
 
 /**
@@ -197,8 +220,8 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
   signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
-  signaturePacket.rawNotations = notations;
-  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached);
+  signaturePacket.rawNotations = [...notations];
+  await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached, config);
   return signaturePacket;
 }
 
@@ -261,7 +284,7 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
         await revocationSignature.verify(
-          key, signatureType, dataToVerify, config.revocationsExpire ? date : null, false, config
+          key, signatureType, dataToVerify, date, false, config
         );
 
         // TODO get an identifier of the revoked object instead
@@ -294,28 +317,6 @@ export function getKeyExpirationTime(keyPacket, signature) {
   return expirationTime ? new Date(expirationTime) : Infinity;
 }
 
-/**
- * Returns whether aead is supported by all keys in the set
- * @param {Array<Key>} keys - Set of keys
- * @param {Date} [date] - Use the given date for verification instead of the current time
- * @param {Array} [userIDs] - User IDs
- * @param {Object} config - full configuration
- * @returns {Promise<Boolean>}
- * @async
- */
-export async function isAEADSupported(keys, date = new Date(), userIDs = [], config = defaultConfig) {
-  let supported = true;
-  // TODO replace when Promise.some or Promise.any are implemented
-  await Promise.all(keys.map(async function(key, i) {
-    const primaryUser = await key.getPrimaryUser(date, userIDs[i], config);
-    if (!primaryUser.selfCertification.features ||
-        !(primaryUser.selfCertification.features[0] & enums.features.aead)) {
-      supported = false;
-    }
-  }));
-  return supported;
-}
-
 export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.type = options.type || subkeyDefaults.type;
   options.curve = options.curve || subkeyDefaults.curve;
@@ -327,13 +328,14 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   options.sign = options.sign || false;
 
   switch (options.type) {
-    case 'ecc':
+    case 'ecc': // NB: this case also handles legacy eddsa and x25519 keys, based on `options.curve`
       try {
         options.curve = enums.write(enums.curve, options.curve);
       } catch (e) {
         throw new Error('Unknown curve');
       }
-      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.curve25519Legacy) {
+      if (options.curve === enums.curve.ed25519Legacy || options.curve === enums.curve.curve25519Legacy ||
+        options.curve === 'ed25519' || options.curve === 'curve25519') { // keep support for curve names without 'Legacy' addition, for now
         options.curve = options.sign ? enums.curve.ed25519Legacy : enums.curve.curve25519Legacy;
       }
       if (options.sign) {
@@ -341,6 +343,12 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
       } else {
         options.algorithm = enums.publicKey.ecdh;
       }
+      break;
+    case 'curve25519':
+      options.algorithm = options.sign ? enums.publicKey.ed25519 : enums.publicKey.x25519;
+      break;
+    case 'curve448':
+      options.algorithm = options.sign ? enums.publicKey.ed448 : enums.publicKey.x448;
       break;
     case 'rsa':
       options.algorithm = enums.publicKey.rsaEncryptSign;
@@ -351,37 +359,69 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   return options;
 }
 
-export function isValidSigningKeyPacket(keyPacket, signature) {
-  const keyAlgo = keyPacket.algorithm;
-  return keyAlgo !== enums.publicKey.rsaEncrypt &&
-    keyAlgo !== enums.publicKey.elgamal &&
-    keyAlgo !== enums.publicKey.ecdh &&
-    keyAlgo !== enums.publicKey.x25519 &&
-    (!signature.keyFlags ||
-      (signature.keyFlags[0] & enums.keyFlags.signData) !== 0);
+export function validateSigningKeyPacket(keyPacket, signature, config) {
+  switch (keyPacket.algorithm) {
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaSign:
+    case enums.publicKey.dsa:
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448:
+      if (!signature.keyFlags && !config.allowMissingKeyFlags) {
+        throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
+      }
+      return !signature.keyFlags ||
+        (signature.keyFlags[0] & enums.keyFlags.signData) !== 0;
+    default:
+      return false;
+  }
 }
 
-export function isValidEncryptionKeyPacket(keyPacket, signature) {
-  const keyAlgo = keyPacket.algorithm;
-  return keyAlgo !== enums.publicKey.dsa &&
-    keyAlgo !== enums.publicKey.rsaSign &&
-    keyAlgo !== enums.publicKey.ecdsa &&
-    keyAlgo !== enums.publicKey.eddsaLegacy &&
-    keyAlgo !== enums.publicKey.ed25519 &&
-    (!signature.keyFlags ||
-      (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
-      (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0);
+export function validateEncryptionKeyPacket(keyPacket, signature, config) {
+  switch (keyPacket.algorithm) {
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaEncrypt:
+    case enums.publicKey.elgamal:
+    case enums.publicKey.ecdh:
+    case enums.publicKey.x25519:
+    case enums.publicKey.x448:
+      if (!signature.keyFlags && !config.allowMissingKeyFlags) {
+        throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
+      }
+      return !signature.keyFlags ||
+        (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
+        (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
+    default:
+      return false;
+  }
 }
 
-export function isValidDecryptionKeyPacket(signature, config) {
-  if (config.allowInsecureDecryptionWithSigningKeys) {
-    // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
-    return true;
+export function validateDecryptionKeyPacket(keyPacket, signature, config) {
+  if (!signature.keyFlags && !config.allowMissingKeyFlags) {
+    throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
   }
 
-  return !signature.keyFlags ||
-    (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
-    (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
+  switch (keyPacket.algorithm) {
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaEncrypt:
+    case enums.publicKey.elgamal:
+    case enums.publicKey.ecdh:
+    case enums.publicKey.x25519:
+    case enums.publicKey.x448: {
+      const isValidSigningKeyPacket = !signature.keyFlags || (signature.keyFlags[0] & enums.keyFlags.signData) !== 0;
+      if (isValidSigningKeyPacket && config.allowInsecureDecryptionWithSigningKeys) {
+        // This is only relevant for RSA keys, all other signing algorithms cannot decrypt
+        return true;
+      }
+
+      return !signature.keyFlags ||
+      (signature.keyFlags[0] & enums.keyFlags.encryptCommunication) !== 0 ||
+      (signature.keyFlags[0] & enums.keyFlags.encryptStorage) !== 0;
+    }
+    default:
+      return false;
+  }
 }
 
 /**

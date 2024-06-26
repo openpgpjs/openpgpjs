@@ -1,8 +1,9 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import util from '../../src/util.js';
 
 const { readKey, readCleartextMessage, SignaturePacket } = openpgp;
 
@@ -101,4 +102,4 @@ async function fakeSignature() {
   expect(signatures).to.have.length(0);
 }
 
-module.exports = () => it('Does not accept non-binary/text signatures', fakeSignature);
+export default () => it('Does not accept non-binary/text signatures', fakeSignature);

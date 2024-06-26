@@ -61,7 +61,9 @@ class PublicKey extends Key {
    * @returns {ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
-    return armor(enums.armor.publicKey, this.toPacketList().write(), undefined, undefined, undefined, config);
+    // An ASCII-armored Transferable Public Key packet sequence of a v6 key MUST NOT contain a CRC24 footer.
+    const emitChecksum = this.keyPacket.version !== 6;
+    return armor(enums.armor.publicKey, this.toPacketList().write(), undefined, undefined, undefined, emitChecksum, config);
   }
 }
 

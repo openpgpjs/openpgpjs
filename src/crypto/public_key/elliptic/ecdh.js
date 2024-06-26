@@ -18,11 +18,10 @@
 /**
  * @fileoverview Key encryption and decryption for RFC 6637 ECDH
  * @module crypto/public_key/elliptic/ecdh
- * @private
  */
 
-import nacl from '@openpgp/tweetnacl/nacl-fast-light';
-import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams } from './oid_curves';
+import nacl from '@openpgp/tweetnacl';
+import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves';
 import * as aesKW from '../../aes_kw';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
@@ -30,8 +29,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import { b64ToUint8Array } from '../../../encoding/base64';
 import * as pkcs5 from '../../pkcs5';
-import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
-import getCipher from '../../cipher/getCipher';
+import { getCipherParams } from '../../cipher';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -93,11 +91,11 @@ async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTraili
  */
 async function genPublicEphemeralKey(curve, Q) {
   switch (curve.type) {
-    case 'curve25519': {
+    case 'curve25519Legacy': {
       const d = getRandomBytes(32);
       const { secretKey, sharedKey } = await genPrivateEphemeralKey(curve, Q, null, d);
       let { publicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
-      publicKey = util.concatUint8Array([new Uint8Array([0x40]), publicKey]);
+      publicKey = util.concatUint8Array([new Uint8Array([curve.wireFormatLeadingByte]), publicKey]);
       return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
     case 'web':
@@ -106,13 +104,16 @@ async function genPublicEphemeralKey(curve, Q) {
           return await webPublicEphemeralKey(curve, Q);
         } catch (err) {
           util.printDebugError(err);
+          return jsPublicEphemeralKey(curve, Q);
         }
       }
       break;
     case 'node':
       return nodePublicEphemeralKey(curve, Q);
+    default:
+      return jsPublicEphemeralKey(curve, Q);
+
   }
-  return ellipticPublicEphemeralKey(curve, Q);
 }
 
 /**
@@ -130,11 +131,12 @@ export async function encrypt(oid, kdfParams, data, Q, fingerprint) {
   const m = pkcs5.encode(data);
 
   const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, Q);
   const { publicKey, sharedKey } = await genPublicEphemeralKey(curve, Q);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
-  const { keySize } = getCipher(kdfParams.cipher);
+  const { keySize } = getCipherParams(kdfParams.cipher);
   const Z = await kdf(kdfParams.hash, sharedKey, keySize, param);
-  const wrappedKey = aesKW.wrap(Z, m);
+  const wrappedKey = await aesKW.wrap(kdfParams.cipher, Z, m);
   return { publicKey, wrappedKey };
 }
 
@@ -155,7 +157,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
     d = privateKey;
   }
   switch (curve.type) {
-    case 'curve25519': {
+    case 'curve25519Legacy': {
       const secretKey = d.slice().reverse();
       const sharedKey = nacl.scalarMult(secretKey, V.subarray(1));
       return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
@@ -166,13 +168,15 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
           return await webPrivateEphemeralKey(curve, V, Q, d);
         } catch (err) {
           util.printDebugError(err);
+          return jsPrivateEphemeralKey(curve, V, d);
         }
       }
       break;
     case 'node':
       return nodePrivateEphemeralKey(curve, V, d);
+    default:
+      return jsPrivateEphemeralKey(curve, V, d);
   }
-  return ellipticPrivateEphemeralKey(curve, V, d);
 }
 
 /**
@@ -190,20 +194,40 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  */
 export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
   const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, Q);
+  checkPublicPointEnconding(curve, V);
   const { sharedKey } = await genPrivateEphemeralKey(curve, V, Q, d);
   const param = buildEcdhParam(enums.publicKey.ecdh, oid, kdfParams, fingerprint);
-  const { keySize } = getCipher(kdfParams.cipher);
+  const { keySize } = getCipherParams(kdfParams.cipher);
   let err;
   for (let i = 0; i < 3; i++) {
     try {
       // Work around old go crypto bug and old OpenPGP.js bug, respectively.
       const Z = await kdf(kdfParams.hash, sharedKey, keySize, param, i === 1, i === 2);
-      return pkcs5.decode(aesKW.unwrap(Z, C));
+      return pkcs5.decode(await aesKW.unwrap(kdfParams.cipher, Z, C));
     } catch (e) {
       err = e;
     }
   }
   throw err;
+}
+
+async function jsPrivateEphemeralKey(curve, V, d) {
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdh, curve.name);
+  // The output includes parity byte
+  const sharedSecretWithParity = nobleCurve.getSharedSecret(d, V);
+  const sharedKey = sharedSecretWithParity.subarray(1);
+  return { secretKey: d, sharedKey };
+}
+
+async function jsPublicEphemeralKey(curve, Q) {
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdh, curve.name);
+  const { publicKey: V, privateKey: v } = await curve.genKeyPair();
+
+  // The output includes parity byte
+  const sharedSecretWithParity = nobleCurve.getSharedSecret(v, Q);
+  const sharedKey = sharedSecretWithParity.subarray(1);
+  return { publicKey: V, sharedKey };
 }
 
 /**
@@ -217,24 +241,24 @@ export async function decrypt(oid, kdfParams, V, C, Q, d, fingerprint) {
  * @async
  */
 async function webPrivateEphemeralKey(curve, V, Q, d) {
-  const recipient = privateToJWK(curve.payloadSize, curve.web.web, Q, d);
+  const recipient = privateToJWK(curve.payloadSize, curve.web, Q, d);
   let privateKey = webCrypto.importKey(
     'jwk',
     recipient,
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     true,
     ['deriveKey', 'deriveBits']
   );
-  const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, V);
+  const jwk = rawPublicToJWK(curve.payloadSize, curve.web, V);
   let sender = webCrypto.importKey(
     'jwk',
     jwk,
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     true,
     []
@@ -243,11 +267,11 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
   let S = webCrypto.deriveBits(
     {
       name: 'ECDH',
-      namedCurve: curve.web.web,
+      namedCurve: curve.web,
       public: sender
     },
     privateKey,
-    curve.web.sharedSize
+    curve.sharedSize
   );
   let secret = webCrypto.exportKey(
     'jwk',
@@ -268,11 +292,11 @@ async function webPrivateEphemeralKey(curve, V, Q, d) {
  * @async
  */
 async function webPublicEphemeralKey(curve, Q) {
-  const jwk = rawPublicToJWK(curve.payloadSize, curve.web.web, Q);
+  const jwk = rawPublicToJWK(curve.payloadSize, curve.web, Q);
   let keyPair = webCrypto.generateKey(
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     true,
     ['deriveKey', 'deriveBits']
@@ -282,7 +306,7 @@ async function webPublicEphemeralKey(curve, Q) {
     jwk,
     {
       name: 'ECDH',
-      namedCurve: curve.web.web
+      namedCurve: curve.web
     },
     false,
     []
@@ -291,11 +315,11 @@ async function webPublicEphemeralKey(curve, Q) {
   let s = webCrypto.deriveBits(
     {
       name: 'ECDH',
-      namedCurve: curve.web.web,
+      namedCurve: curve.web,
       public: recipient
     },
     keyPair.privateKey,
-    curve.web.sharedSize
+    curve.sharedSize
   );
   let p = webCrypto.exportKey(
     'jwk',
@@ -303,47 +327,7 @@ async function webPublicEphemeralKey(curve, Q) {
   );
   [s, p] = await Promise.all([s, p]);
   const sharedKey = new Uint8Array(s);
-  const publicKey = new Uint8Array(jwkToRawPublic(p));
-  return { publicKey, sharedKey };
-}
-
-/**
- * Generate ECDHE secret from private key and public part of ephemeral key using indutny/elliptic
- *
- * @param {CurveWithOID} curve - Elliptic curve object
- * @param {Uint8Array} V - Public part of ephemeral key
- * @param {Uint8Array} d - Recipient private key
- * @returns {Promise<{secretKey: Uint8Array, sharedKey: Uint8Array}>}
- * @async
- */
-async function ellipticPrivateEphemeralKey(curve, V, d) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  V = keyFromPublic(indutnyCurve, V);
-  d = keyFromPrivate(indutnyCurve, d);
-  const secretKey = new Uint8Array(d.getPrivate());
-  const S = d.derive(V.getPublic());
-  const len = indutnyCurve.curve.p.byteLength();
-  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
-  return { secretKey, sharedKey };
-}
-
-/**
- * Generate ECDHE ephemeral key and secret from public key using indutny/elliptic
- *
- * @param {CurveWithOID} curve - Elliptic curve object
- * @param {Uint8Array} Q - Recipient public key
- * @returns {Promise<{publicKey: Uint8Array, sharedKey: Uint8Array}>}
- * @async
- */
-async function ellipticPublicEphemeralKey(curve, Q) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  const v = await curve.genKeyPair();
-  Q = keyFromPublic(indutnyCurve, Q);
-  const V = keyFromPrivate(indutnyCurve, v.privateKey);
-  const publicKey = v.publicKey;
-  const S = V.derive(Q.getPublic());
-  const len = indutnyCurve.curve.p.byteLength();
-  const sharedKey = S.toArrayLike(Uint8Array, 'be', len);
+  const publicKey = new Uint8Array(jwkToRawPublic(p, curve.wireFormatLeadingByte));
   return { publicKey, sharedKey };
 }
 
@@ -357,7 +341,7 @@ async function ellipticPublicEphemeralKey(curve, Q) {
  * @async
  */
 async function nodePrivateEphemeralKey(curve, V, d) {
-  const recipient = nodeCrypto.createECDH(curve.node.node);
+  const recipient = nodeCrypto.createECDH(curve.node);
   recipient.setPrivateKey(d);
   const sharedKey = new Uint8Array(recipient.computeSecret(V));
   const secretKey = new Uint8Array(recipient.getPrivateKey());
@@ -373,7 +357,7 @@ async function nodePrivateEphemeralKey(curve, V, d) {
  * @async
  */
 async function nodePublicEphemeralKey(curve, Q) {
-  const sender = nodeCrypto.createECDH(curve.node.node);
+  const sender = nodeCrypto.createECDH(curve.node);
   sender.generateKeys();
   const sharedKey = new Uint8Array(sender.computeSecret(Q));
   const publicKey = new Uint8Array(sender.getPublicKey());

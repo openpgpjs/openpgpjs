@@ -18,7 +18,6 @@
 /**
  * @fileoverview Functions for reading and writing packets
  * @module packet/packet
- * @private
  */
 
 import * as stream from '@openpgp/web-stream-tools';
@@ -153,7 +152,7 @@ export async function readPackets(input, callback) {
         writer = stream.getWriter(arrayStream);
         packet = arrayStream;
       } else {
-        const transform = new stream.TransformStream();
+        const transform = new TransformStream();
         writer = stream.getWriter(transform.writable);
         packet = transform.readable;
       }
@@ -306,6 +305,19 @@ export class UnsupportedError extends Error {
     }
 
     this.name = 'UnsupportedError';
+  }
+}
+
+// unknown packet types are handled differently depending on the packet criticality
+export class UnknownPacketError extends UnsupportedError {
+  constructor(...params) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, UnsupportedError);
+    }
+
+    this.name = 'UnknownPacketError';
   }
 }
 
