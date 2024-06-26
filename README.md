@@ -33,9 +33,9 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
 
 ### Platform Support
 
-* The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 13+.
+* The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 14+.
 
-* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v16+: it is used by default when you `import ... from 'openpgp'` (resp. `require('openpgp')`).
+* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v18+: it is used by default when you `import ... from 'openpgp'` (resp. `require('openpgp')`).
 
 * Streaming support: the latest versions of Chrome, Firefox, Edge and Safari implement the
 [Streams specification](https://streams.spec.whatwg.org/), including `TransformStream`s.

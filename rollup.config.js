@@ -89,7 +89,7 @@ export default Object.assign([
     ].map(options => ({ ...options, inlineDynamicImports: true })),
     plugins: [
       resolve({
-        exportConditions: ['node'] // needed for resolution of noble-curves import of '@noble/crypto' in Node 16 and 18
+        exportConditions: ['node'] // needed for resolution of noble-curves import of '@noble/crypto' in Node 18
       }),
       typescript({
         compilerOptions: { outDir: './dist/tmp-ts' }

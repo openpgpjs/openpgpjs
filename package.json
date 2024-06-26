@@ -5,7 +5,7 @@
   "license": "LGPL-3.0+",
   "homepage": "https://openpgpjs.org/",
   "engines": {
-    "node": ">= 16.5.0"
+    "node": ">= 18.0.0"
   },
   "keywords": [
     "crypto",
@@ -68,7 +68,7 @@
     "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/seek-bzip": "^1.0.5-git",
     "@openpgp/tweetnacl": "^1.0.4-1",
-    "@openpgp/web-stream-tools": "~0.1.2",
+    "@openpgp/web-stream-tools": "~0.1.3",
     "@rollup/plugin-alias": "^5.1.0",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-node-resolve": "^15.2.3",
@@ -109,8 +109,8 @@
     "ts-node": "^10.9.2",
     "tslib": "^2.6.2",
     "tsx": "^4.10.4",
-    "typescript": "^5.4.5",
-    "web-streams-polyfill": "^3.3.3"
+    "typescript": "^5.5.2",
+    "web-streams-polyfill": "^4.0.0"
   },
   "repository": {
     "type": "git",
