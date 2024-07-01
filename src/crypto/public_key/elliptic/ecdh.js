@@ -53,7 +53,7 @@ function buildEcdhParam(public_algo, oid, kdfParams, fingerprint) {
     new Uint8Array([public_algo]),
     kdfParams.write(),
     util.stringToUint8Array('Anonymous Sender    '),
-    fingerprint.subarray(0, 20)
+    fingerprint
   ]);
 }
 
@@ -123,7 +123,7 @@ async function genPublicEphemeralKey(curve, Q) {
  * @param {module:type/kdf_params} kdfParams - KDF params including cipher and algorithm to use
  * @param {Uint8Array} data - Unpadded session key data
  * @param {Uint8Array} Q - Recipient public key
- * @param {Uint8Array} fingerprint - Recipient fingerprint
+ * @param {Uint8Array} fingerprint - Recipient fingerprint, already truncated depending on the key version
  * @returns {Promise<{publicKey: Uint8Array, wrappedKey: Uint8Array}>}
  * @async
  */
@@ -188,7 +188,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
  * @param {Uint8Array} C - Encrypted and wrapped value derived from session key
  * @param {Uint8Array} Q - Recipient public key
  * @param {Uint8Array} d - Recipient private key
- * @param {Uint8Array} fingerprint - Recipient fingerprint
+ * @param {Uint8Array} fingerprint - Recipient fingerprint, already truncated depending on the key version
  * @returns {Promise<Uint8Array>} Value derived from session key.
  * @async
  */
