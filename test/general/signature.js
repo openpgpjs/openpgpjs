@@ -2417,7 +2417,7 @@ oaBUyhCKt8tz6Q==
 -----END PGP PRIVATE KEY BLOCK-----`;
     const key = await openpgp.readKey({ armoredKey });
     const decrypted = await openpgp.decrypt({
-      message: await openpgp.readMessage({ armoredMessage: encrypted }),
+      message: await openpgp.readMessage({ armoredMessage: encrypted, config: { enableParsingV5Entities: true } }),
       verificationKeys: key,
       decryptionKeys: key,
       config: { minRSABits: 1024 }
@@ -2476,7 +2476,8 @@ EYaN9YdDOU2jF+HOaSNaJAsPF8J6BRgTCAAJBQJf0mstAhsMACMiIQUee6Tb
 AcvDfr9a0Cp4WAVzKDKLUzrRMgEAozi0VyjiBo1U2LcwTPJkA4PEQqQRVW1D
 KZTMSAH7JEo=
 =tqWy
------END PGP PRIVATE KEY BLOCK-----`
+-----END PGP PRIVATE KEY BLOCK-----`,
+      config: { enableParsingV5Entities: true }
     });
     const signed = `-----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA256
@@ -2489,7 +2490,7 @@ A3X6psihFkcA+Nuog2qpAq20Zc2lzVjDZzQosb8MLvKMg3UFCX12Oc0BAJwd
 JImeZLY02MctIpGZULbqgcUGK0P/yqrPL8Pe4lQM
 =Pacb
 -----END PGP SIGNATURE-----`;
-    const message = await openpgp.readCleartextMessage({ cleartextMessage: signed });
+    const message = await openpgp.readCleartextMessage({ cleartextMessage: signed, config: { enableParsingV5Entities: true } });
     const verified = await openpgp.verify({ verificationKeys: key, message });
     expect(await verified.signatures[0].verified).to.be.true;
   });

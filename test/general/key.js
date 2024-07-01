@@ -2951,19 +2951,6 @@ function versionSpecificTests() {
       await expect(privateKey.verifyPrimaryKey()).to.be.fulfilled;
     });
   });
-
-
-  it('Parses V5 sample key', async function() {
-    // sec   ed25519 2019-03-20 [SC]
-    //       19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54
-    // uid                      emma.goldman@example.net
-    // ssb   cv25519 2019-03-20 [E]
-    //       E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965
-    const key = await openpgp.readKey({ armoredKey: v5_sample_key });
-    expect(await key.keyPacket.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
-    expect(await key.subkeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
-    await key.verifyPrimaryKey();
-  });
 }
 
 export default () => describe('Key', function() {
@@ -3032,6 +3019,18 @@ export default () => describe('Key', function() {
     expect(key.write()).to.deep.equal(expectedSerializedKey.data);
   });
 
+  it('Parses V5 sample key', async function() {
+    // sec   ed25519 2019-03-20 [SC]
+    //       19347BC9872464025F99DF3EC2E0000ED9884892E1F7B3EA4C94009159569B54
+    // uid                      emma.goldman@example.net
+    // ssb   cv25519 2019-03-20 [E]
+    //       E4557C2B02FFBF4B04F87401EC336AF7133D0F85BE7FD09BAEFD9CAEB8C93965
+    const key = await openpgp.readKey({ armoredKey: v5_sample_key, config: { enableParsingV5Entities: true } });
+    expect(await key.keyPacket.getFingerprint()).to.equal('19347bc9872464025f99df3ec2e0000ed9884892e1f7b3ea4c94009159569b54');
+    expect(await key.subkeys[0].getFingerprint()).to.equal('e4557c2b02ffbf4b04f87401ec336af7133d0f85be7fd09baefd9caeb8c93965');
+    await key.verifyPrimaryKey();
+  });
+
   it('Parsing V5 public key packet', async function() {
     // Manually modified from https://gitlab.com/openpgp-wg/rfc4880bis/blob/00b2092/back.mkd#sample-eddsa-key
     const packetBytes = util.hexToUint8Array(`
@@ -3065,7 +3064,7 @@ T/efFOC6BDkAAHcjAPwIPNHnR9bKmkVop6cE05dCIpZ/W8zXDGnjKYrrC4Hb
 =wpkQ
 -----END PGP PRIVATE KEY BLOCK-----`;
     const passphrase = 'password';
-    const encryptedKey = await openpgp.readKey({ armoredKey });
+    const encryptedKey = await openpgp.readKey({ armoredKey, config: { enableParsingV5Entities: true } });
     const decryptedKey = await openpgp.decryptKey({
       privateKey: encryptedKey,
       passphrase
@@ -3485,7 +3484,7 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
   });
 
   it('should pad an ECDSA P-521 key with shorter secret key', async function() {
-    const key = await openpgp.readKey({ armoredKey: shortP521Key });
+    const key = await openpgp.readKey({ armoredKey: shortP521Key, config: { enableParsingV5Entities: true } });
     // secret key should be padded
     expect(key.keyPacket.privateParams.d.length === 66);
     // sanity check

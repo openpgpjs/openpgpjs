@@ -102,7 +102,7 @@ class SecretKeyPacket extends PublicKeyPacket {
    */
   async read(bytes, config = defaultConfig) {
     // - A Public-Key or Public-Subkey packet, as described above.
-    let i = await this.readPublicKey(bytes);
+    let i = await this.readPublicKey(bytes, config);
     const startOfSecretKeyData = i;
 
     // - One octet indicating string-to-key usage conventions.  Zero

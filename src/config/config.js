@@ -82,6 +82,15 @@ export default {
    */
   v6Keys: false,
   /**
+   * Enable parsing v5 keys, v5 signatures and AEAD-encrypted data packets
+   * (which is different from the AEAD-encrypted SEIPDv2 packet).
+   * These are non-standard entities, which in the crypto-refresh have been superseded
+   * by v6 keys, v6 signatures and SEIPDv2 encrypted data, respectively.
+   * However, generation of v5 entities was supported behind config flag in OpenPGP.js v5, and some other libraries,
+   * hence parsing them might be necessary in some cases.
+   */
+  enableParsingV5Entities: false,
+  /**
    * S2K (String to Key) type, used for key derivation in the context of secret key encryption
    * and password-encrypted data. Weaker s2k options are not allowed.
    * Note: Argon2 is the strongest option but not all OpenPGP implementations are compatible with it
