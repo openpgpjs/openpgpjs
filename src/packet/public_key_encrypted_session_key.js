@@ -180,9 +180,10 @@ class PublicKeyEncryptedSessionKeyPacket {
     // No symmetric encryption algorithm identifier is passed to the public-key algorithm for a
     // v6 PKESK packet, as it is included in the v2 SEIPD packet.
     const sessionKeyAlgorithm = this.version === 3 ? this.sessionKeyAlgorithm : null;
+    const fingerprint = key.version === 5 ? key.getFingerprintBytes().subarray(0, 20) : key.getFingerprintBytes();
     const encoded = encodeSessionKey(this.version, algo, sessionKeyAlgorithm, this.sessionKey);
     this.encrypted = await crypto.publicKeyEncrypt(
-      algo, sessionKeyAlgorithm, key.publicParams, encoded, key.getFingerprintBytes());
+      algo, sessionKeyAlgorithm, key.publicParams, encoded, fingerprint);
   }
 
   /**
@@ -202,7 +203,8 @@ class PublicKeyEncryptedSessionKeyPacket {
     const randomPayload = randomSessionKey ?
       encodeSessionKey(this.version, this.publicKeyAlgorithm, randomSessionKey.sessionKeyAlgorithm, randomSessionKey.sessionKey) :
       null;
-    const decryptedData = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, key.getFingerprintBytes(), randomPayload);
+    const fingerprint = key.version === 5 ? key.getFingerprintBytes().subarray(0, 20) : key.getFingerprintBytes();
+    const decryptedData = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, fingerprint, randomPayload);
 
     const { sessionKey, sessionKeyAlgorithm } = decodeSessionKey(this.version, this.publicKeyAlgorithm, decryptedData, randomSessionKey);
 
