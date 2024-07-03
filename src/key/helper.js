@@ -281,6 +281,13 @@ export async function isDataRevoked(primaryKey, signatureType, dataToVerify, rev
         // `verifyAllCertifications`.)
         !signature || revocationSignature.issuerKeyID.equals(signature.issuerKeyID)
       ) {
+        if (![
+          enums.reasonForRevocation.keyRetired,
+          enums.reasonForRevocation.keySuperseded,
+          enums.reasonForRevocation.userIDInvalid
+        ].includes(revocationSignature.reasonForRevocationFlag)) {
+          date = null; // Hard revocations apply at any time.
+        }
         await revocationSignature.verify(
           key, signatureType, dataToVerify, date, false, config
         );
