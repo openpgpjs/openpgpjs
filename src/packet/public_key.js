@@ -104,10 +104,13 @@ class PublicKeyPacket {
    * @returns {Object} This object with attributes set by the parser
    * @async
    */
-  async read(bytes) {
+  async read(bytes, config = defaultConfig) {
     let pos = 0;
     // A one-octet version number (4, 5 or 6).
     this.version = bytes[pos++];
+    if (this.version === 5 && !config.enableParsingV5Entities) {
+      throw new UnsupportedError('Support for parsing v5 entities is disabled; turn on `config.enableParsingV5Entities` if needed');
+    }
 
     if (this.version === 4 || this.version === 5 || this.version === 6) {
       // - A four-octet number denoting the time that the key was created.

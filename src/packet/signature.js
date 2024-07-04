@@ -117,9 +117,12 @@ class SignaturePacket {
    * @param {String} bytes - Payload of a tag 2 packet
    * @returns {SignaturePacket} Object representation.
    */
-  read(bytes) {
+  read(bytes, config = defaultConfig) {
     let i = 0;
     this.version = bytes[i++];
+    if (this.version === 5 && !config.enableParsingV5Entities) {
+      throw new UnsupportedError('Support for v5 entities is disabled; turn on `config.enableParsingV5Entities` if needed');
+    }
 
     if (this.version !== 4 && this.version !== 5 && this.version !== 6) {
       throw new UnsupportedError(`Version ${this.version} of the signature packet is unsupported.`);
