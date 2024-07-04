@@ -398,7 +398,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.usedModernAEAD = !this.isLegacyAEAD; // legacy AEAD does not guarantee integrity of public key material
 
       const serializedPacketTag = writeTag(this.constructor.tag);
-      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag);
+      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD);
 
       const modeInstance = await mode(this.symmetric, key);
       this.iv = this.isLegacyAEAD ? crypto.random.getRandomBytes(blockSize) : crypto.random.getRandomBytes(mode.ivLength);
