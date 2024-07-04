@@ -1416,7 +1416,10 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       const locked = await openpgp.encryptKey({
         privateKey: key,
         passphrase: passphrase,
-        config: { s2kType: openpgp.enums.s2k.argon2 }
+        config: {
+          s2kType: openpgp.enums.s2k.argon2,
+          aeadProtect: true
+        }
       });
       expect(key.isDecrypted()).to.be.true;
       expect(locked.isDecrypted()).to.be.false;
