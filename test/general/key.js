@@ -3126,6 +3126,50 @@ Cg==
     expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
   });
 
+  it('Parsing, decrypting, encrypting and serializing V5 key (AEAD-encrypted, deprecated/legacy format from RFC4880bis)', async function() {
+    // v5 key from OpenPGP.js v5, generated with config.aeadProtect flag (https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-5.5.3-3.5)
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xYwFZoaoyxYAAAAtCSsGAQQB2kcPAQEHQECiSN62X9PnTUoE9cx6aRxqh2aR
+piHEjy2dtbhOsC7X/R0JAQMI3R4vBY0cUVnglteNXGCjgMgSTO3VeB70tgAA
+ADIUlEIeqChwz1NRWl0WafC7vLrhIwgzW4dfRLqWU/tcDxhQji8oOdMihMVH
+gOT1M/58zs0EVGVzdMKSBRAWCgBEBYJmhqjLBAsJBwgDFQgKBBYAAgECGQEC
+mwMCHgcioQVBp/l8xtMGAhUT99DQhSQ8spB7ILxEALjWUfi5ODEQZgMiAQIA
+ABJ7AQDbdXScaIjOUmKjsX1pTeDPfIPEWJSBY5n4e9tKMoFLuAD+ISyssmch
+WjtxzfvElCc4/QL7P4yv7VBCHgVMfdBIggPHkQVmhqjLEgAAADIKKwYBBAGX
+VQEFAQEHQL5K5HBcf0/GTcajPc3xeNNQQhJfT0TsmcorbEWV73FZAwEIB/0d
+CQEDCJ2Wqcffz5cT4LmtIq4KlZUR8vlQrKcWF5MAAAAyiqtRwe6bSZ94e8Yt
+1O6D4oH37UnCkKEuDQJb3G4SvHw4lJdlehfRFxndhHTuTVNQW9zCegUYFgoA
+LAWCZoaoywKbDCKhBUGn+XzG0wYCFRP30NCFJDyykHsgvEQAuNZR+Lk4MRBm
+AADOyAEA0VMzgtpSnXOfPNvVjOOW3yW/DnHSnOWjLmUujTLYXf0A/0nHjVMI
+yrHaO8+1bQew7SIS9kYr1sh/z7LKooqYHBwH
+=Woga
+-----END PGP PRIVATE KEY BLOCK-----`;
+    const binaryKey = (await openpgp.unarmor(armoredKey)).data;
+    const passphrase = 'passphrase';
+    const encryptedKey = await openpgp.readKey({ armoredKey, config: { enableParsingV5Entities: true } });
+    expect(encryptedKey.keyPacket.isLegacyAEAD).to.be.true;
+    expect(encryptedKey.keyPacket.usedModernAEAD).to.be.false; // legacy AEAD does not guarantee integrity of public key material
+    expect(encryptedKey.write()).to.deep.equal(binaryKey);
+
+    const decryptedKey = await openpgp.decryptKey({
+      privateKey: encryptedKey,
+      passphrase
+    });
+    const reecryptedKey = await openpgp.encryptKey({
+      privateKey: decryptedKey,
+      passphrase,
+      config: { aeadProtect: true }
+    });
+    expect(reecryptedKey.keyPacket.s2kUsage).to.equal(253);
+    expect(reecryptedKey.keyPacket.isLegacyAEAD).to.be.true;
+    const redecryptedKey = await openpgp.decryptKey({
+      privateKey: reecryptedKey,
+      passphrase
+    });
+    expect(redecryptedKey.write()).to.deep.equal(decryptedKey.write());
+  });
+
   it('Parsing, decrypting, encrypting and serializing V4 key (AEAD-encrypted)', async function() {
     // key from gopenpgp
     const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
