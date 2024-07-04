@@ -30,7 +30,7 @@ globalThis.loadStreamsPolyfill = function() {
   // do not polyfill Node
   const detectNodeWebStreams = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object' && globalThis.ReadableStream;
 
-  return detectNodeWebStreams() || import('web-streams-polyfill');
+  return detectNodeWebStreams() || import('web-streams-polyfill/polyfill');
 };
 
 import runWorkerTests from './worker';
