@@ -89,7 +89,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L1">line 1</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L1">line 1</a>
     </li></ul></dd>
     
 
@@ -281,7 +281,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L432">line 432</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L440">line 440</a>
     </li></ul></dd>
     
 
@@ -518,7 +518,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L84">line 84</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L86">line 86</a>
     </li></ul></dd>
     
 
@@ -928,7 +928,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L210">line 210</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L212">line 212</a>
     </li></ul></dd>
     
 
@@ -1116,7 +1116,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L309">line 309</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L317">line 317</a>
     </li></ul></dd>
     
 
@@ -1177,7 +1177,7 @@ The expiration time of the signature is ignored.</p>
     
 
     
-    <h4 class="name" id=".getLatestValidSignature"><span class="type-signature">(async, static) </span>getLatestValidSignature<span class="signature">(signatures, publicKey, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="SignaturePacket.html">SignaturePacket</a>>}</span></h4>
+    <h4 class="name" id=".getLatestValidSignature"><span class="type-signature">(async, static) </span>getLatestValidSignature<span class="signature">(signatures, publicKey, signatureType, date, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="SignaturePacket.html">SignaturePacket</a>>}</span></h4>
     
 
     
@@ -1270,6 +1270,30 @@ The expiration time of the signature is ignored.</p>
 
         <tr>
             
+                <td class="name"><code>signatureType</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="module-enums.html#.signature">module:enums.signature</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Signature type to determine how to hash the data (NB: for userID signatures,
+<code>enums.signatures.certGeneric</code> should be given regardless of the actual trust level)</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
                 <td class="name"><code>date</code></td>
             
 
@@ -1352,7 +1376,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L43">line 43</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L45">line 45</a>
     </li></ul></dd>
     
 
@@ -1624,7 +1648,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L171">line 171</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L173">line 173</a>
     </li></ul></dd>
     
 
@@ -1896,7 +1920,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L147">line 147</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L149">line 149</a>
     </li></ul></dd>
     
 
@@ -2200,7 +2224,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L115">line 115</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L117">line 117</a>
     </li></ul></dd>
     
 
@@ -2507,7 +2531,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L268">line 268</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L270">line 270</a>
     </li></ul></dd>
     
 
@@ -2806,7 +2830,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.1/src/key/helper.js#L234">line 234</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.2/src/key/helper.js#L236">line 236</a>
     </li></ul></dd>
     
 
