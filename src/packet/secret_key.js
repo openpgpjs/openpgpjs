@@ -392,7 +392,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
-      this.aead = enums.aead.eax;
+      this.aead = config.preferredAEADAlgorithm;
       const mode = crypto.getAEADMode(this.aead);
       this.isLegacyAEAD = this.version === 5; // v4 is always re-encrypted with standard format instead.
       this.usedModernAEAD = !this.isLegacyAEAD; // legacy AEAD does not guarantee integrity of public key material
