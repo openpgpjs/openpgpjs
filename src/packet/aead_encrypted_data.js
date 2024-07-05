@@ -68,10 +68,7 @@ class AEADEncryptedDataPacket {
    * @param {Uint8Array | ReadableStream<Uint8Array>} bytes
    * @throws {Error} on parsing failure
    */
-  async read(bytes, config = defaultConfig) {
-    if (!config.enableParsingV5Entities) {
-      throw new UnsupportedError('Support for parsing v5 entities is disabled; turn on `config.enableParsingV5Entities` if needed');
-    }
+  async read(bytes) {
     await stream.parse(bytes, async reader => {
       const version = await reader.readByte();
       if (version !== VERSION) { // The only currently defined value is 1.

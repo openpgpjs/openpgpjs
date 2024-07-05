@@ -174,7 +174,7 @@ export default () => describe('Packet', function() {
       const msg2 = new openpgp.PacketList();
 
       return enc.encrypt(algo, key, undefined, openpgp.config).then(async function() {
-        await msg2.read(msg.write(), allAllowedPackets, { ...openpgp.config, enableParsingV5Entities: true });
+        await msg2.read(msg.write(), allAllowedPackets);
         return msg2[0].decrypt(algo, key);
       }).then(async function() {
         expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
@@ -229,7 +229,7 @@ export default () => describe('Packet', function() {
 
     try {
       await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 0 });
-      await msg2.read(msg.write(), allAllowedPackets, { ...openpgp.config, enableParsingV5Entities: true });
+      await msg2.read(msg.write(), allAllowedPackets);
       await msg2[0].decrypt(algo, key);
       expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
       expect(encryptStub.callCount > 1).to.be.true;
@@ -276,7 +276,7 @@ export default () => describe('Packet', function() {
       await enc.encrypt(algo, key, { ...openpgp.config, aeadChunkSizeByte: 14 });
       const data = msg.write();
       expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
-      await msg2.read(data, allAllowedPackets, { ...openpgp.config, enableParsingV5Entities: true });
+      await msg2.read(data, allAllowedPackets);
       await msg2[0].decrypt(algo, key);
       expect(await stream.readToEnd(msg2[0].packets[0].data)).to.deep.equal(literal.data);
     } finally {
@@ -706,7 +706,7 @@ export default () => describe('Packet', function() {
       await aeadEnc.encrypt(algo, key, undefined, openpgp.config);
 
       const msg2 = new openpgp.PacketList();
-      await msg2.read(msg.write(), allAllowedPackets, { ...openpgp.config, enableParsingV5Entities: true });
+      await msg2.read(msg.write(), allAllowedPackets);
 
       await msg2[0].decrypt(passphrase);
       const key2 = msg2[0].sessionKey;
@@ -744,7 +744,7 @@ export default () => describe('Packet', function() {
       await aeadEnc.encrypt(algo, key, undefined, openpgp.config);
 
       const msg2 = new openpgp.PacketList();
-      await msg2.read(msg.write(), allAllowedPackets, { ...openpgp.config, enableParsingV5Entities: true });
+      await msg2.read(msg.write(), allAllowedPackets);
 
       await msg2[0].decrypt(passphrase);
       const key2 = msg2[0].sessionKey;
@@ -820,7 +820,7 @@ export default () => describe('Packet', function() {
       expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
 
       const msg2 = new openpgp.PacketList();
-      await msg2.read(data, allAllowedPackets, { ...openpgp.config, enableParsingV5Entities: true });
+      await msg2.read(data, allAllowedPackets);
 
       await msg2[0].decrypt(passphrase);
       const key2 = msg2[0].sessionKey;
@@ -899,7 +899,7 @@ export default () => describe('Packet', function() {
       expect(await stream.readToEnd(stream.clone(data))).to.deep.equal(packetBytes);
 
       const msg2 = new openpgp.PacketList();
-      await msg2.read(data, allAllowedPackets, { ...openpgp.config, enableParsingV5Entities: true });
+      await msg2.read(data, allAllowedPackets);
 
       await msg2[0].decrypt(passphrase);
       const key2 = msg2[0].sessionKey;
