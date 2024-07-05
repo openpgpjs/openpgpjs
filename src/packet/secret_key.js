@@ -568,6 +568,12 @@ class SecretKeyPacket extends PublicKeyPacket {
  * @returns encryption key
  */
 async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag, isLegacyAEAD) {
+  if (s2k.type === 'argon2' && !aeadMode) {
+    throw new Error('Using Argon2 S2K without AEAD is not allowed');
+  }
+  if (s2k.type === 'simple' && keyVersion === 6) {
+    throw new Error('Using Simple S2K with version 6 keys is not allowed');
+  }
   const { keySize } = crypto.getCipherParams(cipherAlgo);
   const derivedKey = await s2k.produceKey(passphrase, keySize);
   if (!aeadMode || keyVersion === 5 || isLegacyAEAD) {
