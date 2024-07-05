@@ -82,10 +82,9 @@ export default {
    */
   v6Keys: false,
   /**
-   * Enable parsing v5 keys, v5 signatures and AEAD-encrypted data packets
-   * (which is different from the AEAD-encrypted SEIPDv2 packet).
+   * Enable parsing v5 keys and v5 signatures (which is different from the AEAD-encrypted SEIPDv2 packet).
    * These are non-standard entities, which in the crypto-refresh have been superseded
-   * by v6 keys, v6 signatures and SEIPDv2 encrypted data, respectively.
+   * by v6 keys and v6 signatures, respectively.
    * However, generation of v5 entities was supported behind config flag in OpenPGP.js v5, and some other libraries,
    * hence parsing them might be necessary in some cases.
    */
