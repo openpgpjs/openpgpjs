@@ -178,12 +178,19 @@ export async function getPreferredCipherSuite(keys = [], date = new Date(), user
 
   if (withAEAD) {
     const defaultCipherSuite = { symmetricAlgo: enums.symmetric.aes128, aeadAlgo: enums.aead.ocb };
-    const desiredCipherSuite = { symmetricAlgo: config.preferredSymmetricAlgorithm, aeadAlgo: config.preferredAEADAlgorithm };
-    return selfSigs.every(selfSig => selfSig.preferredCipherSuites && selfSig.preferredCipherSuites.some(
-      cipherSuite => cipherSuite[0] === desiredCipherSuite.symmetricAlgo && cipherSuite[1] === desiredCipherSuite.aeadAlgo
-    )) ?
-      desiredCipherSuite :
-      defaultCipherSuite;
+    const desiredCipherSuites = [
+      { symmetricAlgo: config.preferredSymmetricAlgorithm, aeadAlgo: config.preferredAEADAlgorithm },
+      { symmetricAlgo: config.preferredSymmetricAlgorithm, aeadAlgo: enums.aead.ocb },
+      { symmetricAlgo: enums.symmetric.aes128, aeadAlgo: config.preferredAEADAlgorithm }
+    ];
+    for (const desiredCipherSuite of desiredCipherSuites) {
+      if (selfSigs.every(selfSig => selfSig.preferredCipherSuites && selfSig.preferredCipherSuites.some(
+        cipherSuite => cipherSuite[0] === desiredCipherSuite.symmetricAlgo && cipherSuite[1] === desiredCipherSuite.aeadAlgo
+      ))) {
+        return desiredCipherSuite;
+      }
+    }
+    return defaultCipherSuite;
   }
   const defaultSymAlgo = enums.symmetric.aes128;
   const desiredSymAlgo = config.preferredSymmetricAlgorithm;
