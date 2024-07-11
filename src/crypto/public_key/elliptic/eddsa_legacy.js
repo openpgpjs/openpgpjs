@@ -26,6 +26,7 @@ import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
 import { CurveWithOID, checkPublicPointEnconding } from './oid_curves';
+import { sign as eddsaSign, verify as eddsaVerify } from './eddsa';
 
 /**
  * Sign a message using the provided legacy EdDSA key
@@ -48,8 +49,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
-  const secretKey = util.concatUint8Array([privateKey, publicKey.subarray(1)]);
-  const signature = nacl.sign.detached(hashed, secretKey);
+  const { RS: signature } = await eddsaSign(enums.publicKey.ed25519, hashAlgo, message, publicKey.subarray(1), privateKey, hashed);
   // EdDSA signature params are returned in little-endian format
   return {
     r: signature.subarray(0, 32),
@@ -75,8 +75,8 @@ export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
-  const signature = util.concatUint8Array([r, s]);
-  return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
+  const RS = util.concatUint8Array([r, s]);
+  return eddsaVerify(enums.publicKey.ed25519, hashAlgo, { RS }, m, publicKey.subarray(1), hashed);
 }
 /**
  * Validate legacy EdDSA parameters

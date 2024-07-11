@@ -26,6 +26,8 @@ import util from '../../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
 import { UnsupportedError } from '../../../packet/packet';
+import { generate as eddsaGenerate } from './eddsa';
+import { generate as ecdhXGenerate } from './ecdh_x';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -190,9 +192,8 @@ class CurveWithOID {
         return { publicKey, privateKey };
       }
       case 'ed25519Legacy': {
-        const privateKey = getRandomBytes(32);
-        const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
-        const publicKey = util.concatUint8Array([new Uint8Array([this.wireFormatLeadingByte]), keyPair.publicKey]);
+        const { seed: privateKey, A } = await eddsaGenerate(enums.publicKey.ed25519);
+        const publicKey = util.concatUint8Array([new Uint8Array([this.wireFormatLeadingByte]), A]);
         return { publicKey, privateKey };
       }
       default:

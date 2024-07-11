@@ -25,6 +25,7 @@ import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
 import { getRandomBytes } from '../../random';
+import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
 
 
 /**
@@ -34,11 +35,27 @@ import { getRandomBytes } from '../../random';
  */
 export async function generate(algo) {
   switch (algo) {
-    case enums.publicKey.ed25519: {
-      const seed = getRandomBytes(getPayloadSize(algo));
-      const { publicKey: A } = ed25519.sign.keyPair.fromSeed(seed);
-      return { A, seed };
-    }
+    case enums.publicKey.ed25519:
+      try {
+        const webCrypto = util.getWebCrypto();
+        const webCryptoKey = await webCrypto.generateKey('Ed25519', true, ['sign', 'verify']);
+
+        const privateKey = await webCrypto.exportKey('jwk', webCryptoKey.privateKey);
+        const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
+
+        return {
+          A: new Uint8Array(b64ToUint8Array(publicKey.x)),
+          seed: b64ToUint8Array(privateKey.d, true)
+        };
+      } catch (err) {
+        if (err.name !== 'NotSupportedError') {
+          throw err;
+        }
+        const seed = getRandomBytes(getPayloadSize(algo));
+        const { publicKey: A } = ed25519.sign.keyPair.fromSeed(seed);
+        return { A, seed };
+      }
+
     case enums.publicKey.ed448: {
       const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
       const seed = ed448.utils.randomPrivateKey();
@@ -68,11 +85,26 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
   switch (algo) {
-    case enums.publicKey.ed25519: {
-      const secretKey = util.concatUint8Array([privateKey, publicKey]);
-      const signature = ed25519.sign.detached(hashed, secretKey);
-      return { RS: signature };
-    }
+    case enums.publicKey.ed25519:
+      try {
+        const webCrypto = util.getWebCrypto();
+        const jwk = privateKeyToJWK(algo, publicKey, privateKey);
+        const key = await webCrypto.importKey('jwk', jwk, 'Ed25519', false, ['sign']);
+
+        const signature = new Uint8Array(
+          await webCrypto.sign('Ed25519', key, hashed)
+        );
+
+        return { RS: signature };
+      } catch (err) {
+        if (err.name !== 'NotSupportedError') {
+          throw err;
+        }
+        const secretKey = util.concatUint8Array([privateKey, publicKey]);
+        const signature = ed25519.sign.detached(hashed, secretKey);
+        return { RS: signature };
+      }
+
     case enums.publicKey.ed448: {
       const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
       const signature = ed448.sign(hashed, privateKey);
@@ -101,7 +133,19 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
   }
   switch (algo) {
     case enums.publicKey.ed25519:
-      return ed25519.sign.detached.verify(hashed, RS, publicKey);
+      try {
+        const webCrypto = util.getWebCrypto();
+        const jwk = publicKeyToJWK(algo, publicKey);
+        const key = await webCrypto.importKey('jwk', jwk, 'Ed25519', false, ['verify']);
+        const verified = await webCrypto.verify('Ed25519', key, RS, hashed);
+        return verified;
+      } catch (err) {
+        if (err.name !== 'NotSupportedError') {
+          throw err;
+        }
+        return ed25519.sign.detached.verify(hashed, RS, publicKey);
+      }
+
     case enums.publicKey.ed448: {
       const ed448 = await util.getNobleCurve(enums.publicKey.ed448);
       return ed448.verify(RS, hashed, publicKey);
@@ -125,6 +169,7 @@ export async function validateParams(algo, A, seed) {
       /**
        * Derive public point A' from private key
        * and expect A == A'
+       * TODO: move to sign-verify using WebCrypto (same as ECDSA) when curve is more widely implemented
        */
       const { publicKey } = ed25519.sign.keyPair.fromSeed(seed);
       return util.equalsUint8Array(A, publicKey);
@@ -164,3 +209,31 @@ export function getPreferredHashAlgo(algo) {
       throw new Error('Unknown EdDSA algo');
   }
 }
+
+const publicKeyToJWK = (algo, publicKey) => {
+  switch (algo) {
+    case enums.publicKey.ed25519: {
+      const jwk = {
+        kty: 'OKP',
+        crv: 'Ed25519',
+        x: uint8ArrayToB64(publicKey, true),
+        ext: true
+      };
+      return jwk;
+    }
+    default:
+      throw new Error('Unsupported EdDSA algorithm');
+  }
+};
+
+const privateKeyToJWK = (algo, publicKey, privateKey) => {
+  switch (algo) {
+    case enums.publicKey.ed25519: {
+      const jwk = publicKeyToJWK(algo, publicKey);
+      jwk.d = uint8ArrayToB64(privateKey, true);
+      return jwk;
+    }
+    default:
+      throw new Error('Unsupported EdDSA algorithm');
+  }
+};
