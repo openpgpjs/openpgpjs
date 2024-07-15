@@ -12,7 +12,9 @@ import util from '../../src/util';
 
 import * as input from './testInputs';
 
-export default () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography (legacy format)', function () {
+const isSafariOrHeadlessWebKit = () => typeof window !== 'undefined' && window.navigator.userAgent.match(/WebKit/) && !window.navigator.userAgent.match(/Chrome/);
+
+export default () => describe('X25519 Cryptography (legacy format)', function () {
   const data = {
     light: {
       id: '1ecdf026c0245830',
@@ -216,7 +218,9 @@ export default () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryp
     expect(await result.signatures[0].verified).to.be.true;
   });
 
-  describe('Ed25519 Test Vectors from RFC8032', function () {
+  // Safari implements the non-deterministic version of EdDSA (https://cfrg.github.io/draft-irtf-cfrg-det-sigs-with-noise/draft-irtf-cfrg-det-sigs-with-noise.html),
+  // hence these test vectors do not apply.
+  (isSafariOrHeadlessWebKit() ? describe.skip : describe)('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
     function testVector(vector) {
       const curve = new elliptic.CurveWithOID(openpgp.enums.curve.ed25519Legacy);
