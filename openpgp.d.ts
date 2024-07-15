@@ -340,6 +340,7 @@ interface Config {
   constantTimePKCS1Decryption: boolean;
   constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<enums.symmetric>;
   v6Keys: boolean;
+  enableParsingV5Entities: boolean;
   preferredAEADAlgorithm: enums.aead;
   aeadChunkSizeByte: number;
   s2kType: enums.s2k.iterated | enums.s2k.argon2;
