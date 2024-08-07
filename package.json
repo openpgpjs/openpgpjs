@@ -62,6 +62,7 @@
     "postversion": "git push && git push --tags && npm publish"
   },
   "devDependencies": {
+    "@noble/ciphers": "^0.6.0",
     "@noble/curves": "^1.4.0",
     "@noble/hashes": "^1.4.0",
     "@openpgp/asmcrypto.js": "^3.1.0",
