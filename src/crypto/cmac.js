@@ -4,7 +4,7 @@
  * @module crypto/cmac
  */
 
-import { AES_CBC } from '@openpgp/asmcrypto.js/aes/cbc.js';
+import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto();
@@ -97,8 +97,7 @@ async function CBC(key) {
     }
   }
 
-  // asm.js fallback
   return async function(pt) {
-    return AES_CBC.encrypt(pt, key, false, zeroBlock);
+    return nobleAesCbc(key, zeroBlock, { disablePadding: true }).encrypt(pt);
   };
 }

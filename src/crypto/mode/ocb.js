@@ -20,7 +20,7 @@
  * @module crypto/mode/ocb
  */
 
-import { AES_CBC } from '@openpgp/asmcrypto.js/aes/cbc.js';
+import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
 import { getCipherParams } from '../cipher';
 import util from '../../util';
 
@@ -73,8 +73,9 @@ async function OCB(cipher, key) {
   // `encipher` and `decipher` cannot be async, since `crypt` shares state across calls,
   // hence its execution cannot be broken up.
   // As a result, WebCrypto cannot currently be used for `encipher`.
-  const encipher = block => AES_CBC.encrypt(block, key, false);
-  const decipher = block => AES_CBC.decrypt(block, key, false);
+  const aes = nobleAesCbc(key, zeroBlock, { disablePadding: true });
+  const encipher = block => aes.encrypt(block);
+  const decipher = block => aes.decrypt(block);
   let mask;
 
   constructKeyVariables(cipher, key);

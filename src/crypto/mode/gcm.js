@@ -21,7 +21,7 @@
  * @module crypto/mode/gcm
  */
 
-import { AES_GCM } from '@openpgp/asmcrypto.js/aes/gcm.js';
+import { gcm as nobleAesGcm } from '@noble/ciphers/aes';
 import util from '../../util';
 import enums from '../../enums';
 
@@ -74,7 +74,7 @@ async function GCM(cipher, key) {
       return {
         encrypt: async function(pt, iv, adata = new Uint8Array()) {
           if (webcryptoEmptyMessagesUnsupported && !pt.length) {
-            return AES_GCM.encrypt(pt, key, iv, adata);
+            return nobleAesGcm(key, iv, adata).encrypt(pt);
           }
           const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, pt);
           return new Uint8Array(ct);
@@ -82,7 +82,7 @@ async function GCM(cipher, key) {
 
         decrypt: async function(ct, iv, adata = new Uint8Array()) {
           if (webcryptoEmptyMessagesUnsupported && ct.length === tagLength) {
-            return AES_GCM.decrypt(ct, key, iv, adata);
+            return nobleAesGcm(key, iv, adata).decrypt(ct);
           }
           try {
             const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, ct);
@@ -106,11 +106,11 @@ async function GCM(cipher, key) {
 
   return {
     encrypt: async function(pt, iv, adata) {
-      return AES_GCM.encrypt(pt, key, iv, adata);
+      return nobleAesGcm(key, iv, adata).encrypt(pt);
     },
 
     decrypt: async function(ct, iv, adata) {
-      return AES_GCM.decrypt(ct, key, iv, adata);
+      return nobleAesGcm(key, iv, adata).decrypt(ct);
     }
   };
 }

@@ -21,7 +21,7 @@
  * @module crypto/mode/eax
  */
 
-import { AES_CTR } from '@openpgp/asmcrypto.js/aes/ctr.js';
+import { ctr as nobleAesCtr } from '@noble/ciphers/aes';
 import CMAC from '../cmac';
 import util from '../../util';
 import enums from '../../enums';
@@ -72,9 +72,8 @@ async function CTR(key) {
     }
   }
 
-  // asm.js fallback
   return async function(pt, iv) {
-    return AES_CTR.encrypt(pt, key, iv);
+    return nobleAesCtr(key, iv).encrypt(pt);
   };
 }
 
