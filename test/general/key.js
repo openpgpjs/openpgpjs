@@ -4133,7 +4133,7 @@ CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
     const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
-    primaryUser.selfCertification.preferredCipherSuites = [[9, 2]];
+    primaryUser.selfCertification.preferredCipherSuites = [[openpgp.enums.symmetric.aes256, openpgp.enums.aead.ocb]];
     const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1], undefined, undefined, {
       ...openpgp.config,
       aeadProtect: true,
@@ -4147,7 +4147,7 @@ CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
     const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
     const primaryUser = await key1.getPrimaryUser();
     primaryUser.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
-    primaryUser.selfCertification.preferredCipherSuites = [[7, 3]];
+    primaryUser.selfCertification.preferredCipherSuites = [[openpgp.enums.symmetric.aes128, openpgp.enums.aead.gcm]];
     const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1], undefined, undefined, {
       ...openpgp.config,
       aeadProtect: true,
