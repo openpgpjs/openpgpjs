@@ -4129,6 +4129,34 @@ CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
     expect(aeadAlgo).to.equal(openpgp.enums.aead.gcm);
   });
 
+  it('getPreferredCipherSuite with AEAD - one key - AES256-OCB', async function() {
+    const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
+    primaryUser.selfCertification.preferredCipherSuites = [[openpgp.enums.symmetric.aes256, openpgp.enums.aead.ocb]];
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1], undefined, undefined, {
+      ...openpgp.config,
+      aeadProtect: true,
+      preferredAEADAlgorithm: openpgp.enums.aead.gcm
+    });
+    expect(symmetricAlgo).to.equal(openpgp.enums.symmetric.aes256);
+    expect(aeadAlgo).to.equal(openpgp.enums.aead.ocb);
+  });
+
+  it('getPreferredCipherSuite with AEAD - one key - AES128-GCM', async function() {
+    const [key1] = await openpgp.readKeys({ armoredKeys: twoKeys });
+    const primaryUser = await key1.getPrimaryUser();
+    primaryUser.selfCertification.features = [9]; // Monkey-patch SEIPDv2 feature flag
+    primaryUser.selfCertification.preferredCipherSuites = [[openpgp.enums.symmetric.aes128, openpgp.enums.aead.gcm]];
+    const { symmetricAlgo, aeadAlgo } = await getPreferredCipherSuite([key1], undefined, undefined, {
+      ...openpgp.config,
+      aeadProtect: true,
+      preferredAEADAlgorithm: openpgp.enums.aead.gcm
+    });
+    expect(symmetricAlgo).to.equal(openpgp.enums.symmetric.aes128);
+    expect(aeadAlgo).to.equal(openpgp.enums.aead.gcm);
+  });
+
   it('getPreferredCipherSuite with AEAD - two keys - one without pref', async function() {
     const keys = await openpgp.readKeys({ armoredKeys: twoKeys });
     const key1 = keys[0];
