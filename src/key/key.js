@@ -274,8 +274,8 @@ class Key {
       throw util.wrapError('Could not verify primary key', err);
     }
     const subkeys = this.subkeys.slice().sort((a, b) => {
-      const aIsPrivate = a.isDecrypted() !== null && !a.isDummy();
-      const bIsPrivate = b.isDecrypted() !== null && !b.isDummy();
+      const aIsPrivate = !helper.isPublicOrDummyKeyPacket(a.keyPacket);
+      const bIsPrivate = !helper.isPublicOrDummyKeyPacket(b.keyPacket);
       const diffIsPrivate = bIsPrivate - aIsPrivate;
       // return non-dummy private (sub)keys first
       return diffIsPrivate !== 0 ? diffIsPrivate : b.keyPacket.created - a.keyPacket.created;

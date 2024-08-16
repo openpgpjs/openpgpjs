@@ -83,8 +83,8 @@ class PrivateKey extends PublicKey {
     let exception = null;
     for (let i = 0; i < this.subkeys.length; i++) {
       if (!keyID || this.subkeys[i].getKeyID().equals(keyID, true)) {
-        if (this.subkeys[i].keyPacket.isDummy()) {
-          exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+        if (helper.isPublicOrDummyKeyPacket(this.subkeys[i].keyPacket)) {
+          exception = exception || new Error('Public or gnu-dummy key packets cannot be used for decryption');
           continue;
         }
 
@@ -103,8 +103,8 @@ class PrivateKey extends PublicKey {
     // evaluate primary key
     const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
     if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) && helper.validateDecryptionKeyPacket(primaryKey, selfCertification, config)) {
-      if (primaryKey.isDummy()) {
-        exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+      if (helper.isPublicOrDummyKeyPacket(primaryKey)) {
+        exception = exception || new Error('Public or gnu-dummy key packets cannot be used for decryption');
       } else {
         keys.push(this);
       }

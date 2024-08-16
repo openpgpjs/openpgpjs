@@ -383,7 +383,7 @@ declare abstract class BasePublicKeyPacket extends BasePacket {
   public hasSameFingerprintAs(other: BasePublicKeyPacket): boolean;
   public getCreationTime(): Date;
   public getKeyID(): KeyID;
-  public isDecrypted(): boolean;
+  public isDecrypted(): boolean | null;
   public publicParams: object;
   // `isSubkey` is a dummy method to ensure that Subkey packets are not accepted as Key one, and vice versa.
   // The key class hierarchy is already modelled to cover this, but the concrete key packet classes
@@ -394,11 +394,13 @@ declare abstract class BasePublicKeyPacket extends BasePacket {
 export class PublicKeyPacket extends BasePublicKeyPacket {
   static readonly tag: enums.packet.publicKey;
   protected isSubkey(): false;
+  public isDecrypted(): null;
 }
 
 export class PublicSubkeyPacket extends BasePublicKeyPacket {
   static readonly tag: enums.packet.publicSubkey;
   protected isSubkey(): true;
+  public isDecrypted(): null;
 }
 
 declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
@@ -406,6 +408,7 @@ declare abstract class BaseSecretKeyPacket extends BasePublicKeyPacket {
   public encrypt(passphrase: string, config?: Config): Promise<void>; // throws on error
   public decrypt(passphrase: string): Promise<void>; // throws on error
   public validate(): Promise<void>; // throws on error
+  public isDecrypted(): boolean;
   public isDummy(): boolean;
   public isMissingSecretKeyMaterial(): boolean;
   public makeDummy(config?: Config): void;
