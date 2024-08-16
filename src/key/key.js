@@ -274,9 +274,11 @@ class Key {
     } catch (err) {
       throw util.wrapError('Could not verify primary key', err);
     }
-    // Prefer the most recently created valid subkey, or the subkey with
-    // the highest algorithm ID in case of equal creation timestamps.
+    // Prefer the most recently created valid (and non-dummy) secret subkey,
+    // or the subkey with the highest algorithm ID in case of equal creation
+    // timestamps.
     const subkeys = this.subkeys.slice().sort((a, b) => (
+      (b.isDecrypted() !== null && !b.isDummy()) - (a.isDecrypted() !== null && !a.isDummy()) ||
       b.keyPacket.created - a.keyPacket.created ||
       b.keyPacket.algorithm - a.keyPacket.algorithm
     ));
