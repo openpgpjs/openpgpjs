@@ -49,13 +49,14 @@ class Key {
   /**
    * Transforms packetlist to structured key data
    * @param {PacketList} packetlist - The packets that form a key
-   * @param {Set<enums.packet>} disallowedPackets - disallowed packet tags
+   * @param {Boolean} expectPrivateKey - if a private key is expected, a SecretKeyPacket or SecretKeySubpacket must be present.
    */
-  packetListToStructure(packetlist, disallowedPackets = new Set()) {
+  packetListToStructure(packetlist, expectPrivateKey) {
     let user;
     let primaryKeyID;
     let subkey;
     let ignoreUntil;
+    let isPrivateKey;
 
     for (const packet of packetlist) {
 
@@ -78,7 +79,8 @@ class Key {
         if (!ignoreUntil.has(tag)) continue;
         ignoreUntil = null;
       }
-      if (disallowedPackets.has(tag)) {
+      isPrivateKey = isPrivateKey || tag === enums.packet.secretKey || tag === enums.packet.secretSubkey;
+      if (!expectPrivateKey && isPrivateKey) {
         throw new Error(`Unexpected packet type: ${tag}`);
       }
       switch (tag) {
@@ -150,6 +152,13 @@ class Key {
           }
           break;
       }
+    }
+
+    if (!this.keyPacket) {
+      throw new Error('Invalid key: missing primary key packet');
+    }
+    if (expectPrivateKey && !isPrivateKey) {
+      throw new Error('No secret key packet found');
     }
   }
 
