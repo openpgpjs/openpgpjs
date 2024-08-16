@@ -273,7 +273,13 @@ class Key {
     } catch (err) {
       throw util.wrapError('Could not verify primary key', err);
     }
-    const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
+    const subkeys = this.subkeys.slice().sort((a, b) => {
+      const aIsPrivate = a.isDecrypted() !== null && !a.isDummy();
+      const bIsPrivate = b.isDecrypted() !== null && !b.isDummy();
+      const diffIsPrivate = bIsPrivate - aIsPrivate;
+      // return non-dummy private (sub)keys first
+      return diffIsPrivate !== 0 ? diffIsPrivate : b.keyPacket.created - a.keyPacket.created;
+    });
     let exception;
     for (const subkey of subkeys) {
       if (!keyID || subkey.getKeyID().equals(keyID)) {
