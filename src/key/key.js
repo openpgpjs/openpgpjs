@@ -278,7 +278,7 @@ class Key {
     // or the subkey with the highest algorithm ID in case of equal creation
     // timestamps.
     const subkeys = this.subkeys.slice().sort((a, b) => (
-      (b.isDecrypted() !== null && !b.isDummy()) - (a.isDecrypted() !== null && !a.isDummy()) ||
+      !helper.isPublicOrDummyKeyPacket(b.keyPacket) - !helper.isPublicOrDummyKeyPacket(a.keyPacket) ||
       b.keyPacket.created - a.keyPacket.created ||
       b.keyPacket.algorithm - a.keyPacket.algorithm
     ));
