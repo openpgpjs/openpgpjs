@@ -1768,7 +1768,7 @@ aOU=
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         decryptionKeys: privateKeyRSA,
         config
-      })).to.be.rejectedWith(/Session key decryption failed/);
+      })).to.be.rejectedWith(/No decryption key packets found/);
       // decryption using ECC key should succeed (PKCS1 is not used, so constant time countermeasures are not applied)
       const { data } = await openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
@@ -2642,7 +2642,7 @@ XfA3pqV4mTzF
             }).then(() => {
               throw new Error('Should not decrypt with invalid key');
             }).catch(error => {
-              expect(error.message).to.match(/Error decrypting session keys: Session key decryption failed./);
+              expect(error.message).to.match(/Error decrypting session keys: Could not find valid subkey binding signature in key/);
             });
           });
         });
@@ -4174,7 +4174,7 @@ XfA3pqV4mTzF
           decryptionKeys: decryptedKeyDE
         };
         // binding signature is invalid
-        await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith(/Session key decryption failed/);
+        await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith(/Could not find valid subkey binding signature in key/);
       });
 
       it('RSA decryption with PKCS1 padding of wrong length should fail', async function() {

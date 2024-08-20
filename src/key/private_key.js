@@ -77,28 +77,45 @@ class PrivateKey extends PublicKey {
    * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<Key|Subkey>>} Array of decryption keys.
+   * @throws {Error} if no decryption key is found
    * @async
    */
   async getDecryptionKeys(keyID, date = new Date(), userID = {}, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const keys = [];
+    let exception = null;
     for (let i = 0; i < this.subkeys.length; i++) {
       if (!keyID || this.subkeys[i].getKeyID().equals(keyID, true)) {
+        if (this.subkeys[i].keyPacket.isDummy()) {
+          exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+          continue;
+        }
+
         try {
           const dataToVerify = { key: primaryKey, bind: this.subkeys[i].keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(this.subkeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
           if (helper.validateDecryptionKeyPacket(this.subkeys[i].keyPacket, bindingSignature, config)) {
             keys.push(this.subkeys[i]);
           }
-        } catch (e) {}
+        } catch (e) {
+          exception = e;
+        }
       }
     }
 
     // evaluate primary key
     const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
-    if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) &&
-        helper.validateDecryptionKeyPacket(primaryKey, selfCertification, config)) {
-      keys.push(this);
+    if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) && helper.validateDecryptionKeyPacket(primaryKey, selfCertification, config)) {
+      if (primaryKey.isDummy()) {
+        exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+      } else {
+        keys.push(this);
+      }
+    }
+
+    if (keys.length === 0) {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      throw exception || new Error('No decryption key packets found');
     }
 
     return keys;
