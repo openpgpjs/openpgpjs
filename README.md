@@ -57,19 +57,18 @@ library to convert back and forth between them.
 
     | Curve           | Encryption | Signature | NodeCrypto | WebCrypto | Constant-Time     |
     |:---------------:|:----------:|:---------:|:----------:|:---------:|:-----------------:|
-    | curve25519      | ECDH       | N/A       | No         | No        | Algorithmically** |
-    | ed25519         | N/A        | EdDSA     | No         | No        | Algorithmically** |
-    | nistP256        | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | nistP384        | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | nistP521        | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | brainpoolP256r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
-    | brainpoolP384r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
-    | brainpoolP512r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
-    | secp256k1       | ECDH       | ECDSA     | Yes*       | No        | If native***      |
+    | curve25519      | ECDH       | N/A       | No         | Yes*      | If native**      |
+    | ed25519         | N/A        | EdDSA     | No         | Yes*      | If native**      |
+    | nistP256        | ECDH       | ECDSA     | Yes*       | Yes*      | If native**      |
+    | nistP384        | ECDH       | ECDSA     | Yes*       | Yes*      | If native**      |
+    | nistP521        | ECDH       | ECDSA     | Yes*       | Yes*      | If native**      |
+    | brainpoolP256r1 | ECDH       | ECDSA     | Yes*       | No        | If native**      |
+    | brainpoolP384r1 | ECDH       | ECDSA     | Yes*       | No        | If native**      |
+    | brainpoolP512r1 | ECDH       | ECDSA     | Yes*       | No        | If native**      |
+    | secp256k1       | ECDH       | ECDSA     | Yes*       | No        | If native**      |
 
-   \* when available  
-   \** the curve25519 and ed25519 implementations are algorithmically constant-time, but may not be constant-time after optimizations of the JavaScript compiler  
-   \*** these curves are only constant-time if the underlying native implementation is available and constant-time
+   \* when available
+   \** these curves are only constant-time if the underlying native implementation is available and constant-time
 
 * If the user's browser supports [native WebCrypto](https://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` API, this will be used. Under Node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used.
 

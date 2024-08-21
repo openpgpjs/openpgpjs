@@ -20,16 +20,15 @@
  * @module crypto/public_key/elliptic/ecdh
  */
 
-import nacl from '@openpgp/tweetnacl';
 import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves';
 import * as aesKW from '../../aes_kw';
-import { getRandomBytes } from '../../random';
 import hash from '../../hash';
 import enums from '../../../enums';
 import util from '../../../util';
 import { b64ToUint8Array } from '../../../encoding/base64';
 import * as pkcs5 from '../../pkcs5';
 import { getCipherParams } from '../../cipher';
+import { generateEphemeralEncryptionMaterial as ecdhXGenerateEphemeralEncryptionMaterial, recomputeSharedSecret as ecdhXRecomputeSharedSecret } from './ecdh_x';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -92,10 +91,8 @@ async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTraili
 async function genPublicEphemeralKey(curve, Q) {
   switch (curve.type) {
     case 'curve25519Legacy': {
-      const d = getRandomBytes(32);
-      const { secretKey, sharedKey } = await genPrivateEphemeralKey(curve, Q, null, d);
-      let { publicKey } = nacl.box.keyPair.fromSecretKey(secretKey);
-      publicKey = util.concatUint8Array([new Uint8Array([curve.wireFormatLeadingByte]), publicKey]);
+      const { sharedSecret: sharedKey, ephemeralPublicKey } = await ecdhXGenerateEphemeralEncryptionMaterial(enums.publicKey.x25519, Q.subarray(1));
+      const publicKey = util.concatUint8Array([new Uint8Array([curve.wireFormatLeadingByte]), ephemeralPublicKey]);
       return { publicKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
     case 'web':
@@ -159,7 +156,7 @@ async function genPrivateEphemeralKey(curve, V, Q, d) {
   switch (curve.type) {
     case 'curve25519Legacy': {
       const secretKey = d.slice().reverse();
-      const sharedKey = nacl.scalarMult(secretKey, V.subarray(1));
+      const sharedKey = await ecdhXRecomputeSharedSecret(enums.publicKey.x25519, V.subarray(1), Q.subarray(1), secretKey);
       return { secretKey, sharedKey }; // Note: sharedKey is little-endian here, unlike below
     }
     case 'web':
