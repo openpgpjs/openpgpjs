@@ -222,9 +222,6 @@ export class Message {
           } catch (e) {}
 
           await Promise.all(decryptionKeyPackets.map(async function(decryptionKeyPacket) {
-            if (!decryptionKeyPacket || decryptionKeyPacket.isDummy()) {
-              return;
-            }
             if (!decryptionKeyPacket.isDecrypted()) {
               throw new Error('Decryption key is not decrypted.');
             }
