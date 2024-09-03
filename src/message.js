@@ -199,6 +199,15 @@ export class Message {
       }
       await Promise.all(pkeskPackets.map(async function(pkeskPacket) {
         await Promise.all(decryptionKeys.map(async function(decryptionKey) {
+          let decryptionKeyPackets;
+          try {
+            // do not check key expiration to allow decryption of old messages
+            decryptionKeyPackets = (await decryptionKey.getDecryptionKeys(pkeskPacket.publicKeyID, null, undefined, config)).map(key => key.keyPacket);
+          } catch (err) {
+            exception = err;
+            return;
+          }
+
           let algos = [
             enums.symmetric.aes256, // Old OpenPGP.js default fallback
             enums.symmetric.aes128, // RFC4880bis fallback
@@ -212,12 +221,7 @@ export class Message {
             }
           } catch (e) {}
 
-          // do not check key expiration to allow decryption of old messages
-          const decryptionKeyPackets = (await decryptionKey.getDecryptionKeys(pkeskPacket.publicKeyID, null, undefined, config)).map(key => key.keyPacket);
           await Promise.all(decryptionKeyPackets.map(async function(decryptionKeyPacket) {
-            if (!decryptionKeyPacket || decryptionKeyPacket.isDummy()) {
-              return;
-            }
             if (!decryptionKeyPacket.isDecrypted()) {
               throw new Error('Decryption key is not decrypted.');
             }

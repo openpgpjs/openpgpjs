@@ -3541,13 +3541,18 @@ PzIEeL7UH3trraFmi+Gq8u4kAA==
     await expect(openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
       decryptionKeys: key
-    })).to.be.rejectedWith(/Session key decryption failed/);
+    })).to.be.rejectedWith(/No decryption key packets found/);
 
     await expect(openpgp.decrypt({
       message: await openpgp.readMessage({ armoredMessage: encryptedRsaSignOnly }),
       decryptionKeys: key,
       config: { allowInsecureDecryptionWithSigningKeys: true }
     })).to.be.fulfilled;
+  });
+
+  it('PrivateKey.getDecryptionKeys() - should throw for sign-only key', async function() {
+    const key = await openpgp.readKey({ armoredKey: rsaSignOnly });
+    await expect(key.getDecryptionKeys()).to.be.rejectedWith(/No decryption key packets found/);
   });
 
   it('Key.getExpirationTime()', async function() {
