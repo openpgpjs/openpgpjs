@@ -48,7 +48,7 @@ export async function generate(algo) {
           seed: b64ToUint8Array(privateKey.d, true)
         };
       } catch (err) {
-        if (err.name !== 'NotSupportedError') {
+        if (err.name !== 'NotSupportedError' && err.name !== 'OperationError') { // Temporary (hopefully) fix for WebKit on Linux
           throw err;
         }
         const seed = getRandomBytes(getPayloadSize(algo));
