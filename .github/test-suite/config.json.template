@@ -27,6 +27,9 @@
       },
       {
         "path": "__RNP_SOP__"
+      },
+      {
+        "path": "__RSOP__"
       }
     ],
     "rlimits": {
