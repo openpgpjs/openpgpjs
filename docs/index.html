@@ -127,16 +127,16 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDH</td>
 <td style="text-align:center">N/A</td>
 <td style="text-align:center">No</td>
-<td style="text-align:center">No</td>
-<td style="text-align:center">Algorithmically**</td>
+<td style="text-align:center">Yes*</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">ed25519</td>
 <td style="text-align:center">N/A</td>
 <td style="text-align:center">EdDSA</td>
 <td style="text-align:center">No</td>
-<td style="text-align:center">No</td>
-<td style="text-align:center">Algorithmically**</td>
+<td style="text-align:center">Yes*</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">nistP256</td>
@@ -144,7 +144,7 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDSA</td>
 <td style="text-align:center">Yes*</td>
 <td style="text-align:center">Yes*</td>
-<td style="text-align:center">If native***</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">nistP384</td>
@@ -152,7 +152,7 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDSA</td>
 <td style="text-align:center">Yes*</td>
 <td style="text-align:center">Yes*</td>
-<td style="text-align:center">If native***</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">nistP521</td>
@@ -160,7 +160,7 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDSA</td>
 <td style="text-align:center">Yes*</td>
 <td style="text-align:center">Yes*</td>
-<td style="text-align:center">If native***</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">brainpoolP256r1</td>
@@ -168,7 +168,7 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDSA</td>
 <td style="text-align:center">Yes*</td>
 <td style="text-align:center">No</td>
-<td style="text-align:center">If native***</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">brainpoolP384r1</td>
@@ -176,7 +176,7 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDSA</td>
 <td style="text-align:center">Yes*</td>
 <td style="text-align:center">No</td>
-<td style="text-align:center">If native***</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">brainpoolP512r1</td>
@@ -184,7 +184,7 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDSA</td>
 <td style="text-align:center">Yes*</td>
 <td style="text-align:center">No</td>
-<td style="text-align:center">If native***</td>
+<td style="text-align:center">If native**</td>
 </tr>
 <tr>
 <td style="text-align:center">secp256k1</td>
@@ -192,13 +192,12 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDSA</td>
 <td style="text-align:center">Yes*</td>
 <td style="text-align:center">No</td>
-<td style="text-align:center">If native***</td>
+<td style="text-align:center">If native**</td>
 </tr>
 </tbody>
 </table>
-<p>* when available<br>
-** the curve25519 and ed25519 implementations are algorithmically constant-time, but may not be constant-time after optimizations of the JavaScript compiler<br>
-*** these curves are only constant-time if the underlying native implementation is available and constant-time</p>
+<p>* when available
+** these curves are only constant-time if the underlying native implementation is available and constant-time</p>
 </li>
 <li>
 <p>If the user's browser supports <a href="https://caniuse.com/#feat=cryptography">native WebCrypto</a> via the <code>window.crypto.subtle</code> API, this will be used. Under Node.js the native <a href="https://nodejs.org/api/crypto.html#crypto_crypto">crypto module</a> is used.</p>
