@@ -1,3 +1,4 @@
+import x25519 from '@openpgp/tweetnacl';
 import sinon from 'sinon';
 import { use as chaiUse, expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
@@ -67,6 +68,16 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   ]);
 
+  it('Generated legacy x25519 secret scalar is stored clamped', async function () {
+    const curve = new elliptic_curves.CurveWithOID(openpgp.enums.curve.curve25519Legacy);
+    const { privateKey, publicKey } = await curve.genKeyPair();
+    const clampedKey = privateKey.slice();
+    clampedKey[0] = (clampedKey[0] & 127) | 64;
+    clampedKey[31] &= 248;
+    expect(privateKey).to.deep.equal(clampedKey);
+    const { publicKey: expectedPublicKey } = x25519.box.keyPair.fromSecretKey(privateKey.slice().reverse());
+    expect(publicKey.subarray(1)).to.deep.equal(expectedPublicKey);
+  });
   it('Invalid curve oid', function (done) {
     expect(decrypt_message(
       '', 2, 7, [], [], [], [], []

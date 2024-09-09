@@ -182,8 +182,11 @@ class CurveWithOID {
       case 'node':
         return nodeGenKeyPair(this.name);
       case 'curve25519Legacy': {
+        // the private key must be stored in big endian and already clamped: https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#section-5.5.5.6.1.1-3
         const { k, A } = await ecdhXGenerate(enums.publicKey.x25519);
         const privateKey = k.slice().reverse();
+        privateKey[0] = (privateKey[0] & 127) | 64;
+        privateKey[31] &= 248;
         const publicKey = util.concatUint8Array([new Uint8Array([this.wireFormatLeadingByte]), A]);
         return { publicKey, privateKey };
       }
