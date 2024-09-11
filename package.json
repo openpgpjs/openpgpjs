@@ -103,7 +103,7 @@
     "karma-mocha-reporter": "^2.2.5",
     "karma-webkit-launcher": "^2.6.0",
     "mocha": "^10.7.3",
-    "playwright": "^1.46.1",
+    "playwright": "^1.47.0",
     "rollup": "^4.21.2",
     "sinon": "^17.0.1",
     "ts-node": "^10.9.2",
