@@ -33,13 +33,25 @@ class Argon2S2K {
     const { passes, parallelism, memoryExponent } = config.s2kArgon2Params;
 
     this.type = 'argon2';
-    /**  @type {Uint8Array} 16 bytes of salt */
+    /**
+     * 16 bytes of salt
+     * @type {Uint8Array}
+     */
     this.salt = null;
-    /** @type {Integer} number of passes */
+    /**
+     * number of passes
+     * @type {Integer}
+     */
     this.t = passes;
-    /** @type {Integer} degree of parallelism (lanes) */
+    /**
+     * degree of parallelism (lanes)
+     * @type {Integer}
+     */
     this.p = parallelism;
-    /** @type {Integer} exponent indicating memory size */
+    /**
+     * exponent indicating memory size
+     * @type {Integer}
+     */
     this.encodedM = memoryExponent;
   }
 
