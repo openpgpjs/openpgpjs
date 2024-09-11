@@ -7,3 +7,23 @@ updates:
     allow:
       - dependency-name: "playwright"
     versioning-strategy: increase
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    allow:
+      - dependency-name: "@noble*"
+      - dependency-name: "fflate"
+    versioning-strategy: increase
+    groups:
+      # Any packages matching the pattern @noble* where the highest resolvable
+      # version is minor or patch will be grouped together.
+      # Grouping rules apply to version updates only.
+      noble:
+        applies-to: version-updates
+        patterns:
+        - "@noble*"
+        update-types:
+        - "minor"
+        - "patch"
