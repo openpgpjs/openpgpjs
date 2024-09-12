@@ -174,14 +174,15 @@ export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
     case enums.publicKey.x25519: {
       const ephemeralSecretKey = getRandomBytes(getPayloadSize(algo));
       const sharedSecret = x25519.scalarMult(ephemeralSecretKey, recipientA);
+      assertNonZeroArray(sharedSecret);
       const { publicKey: ephemeralPublicKey } = x25519.box.keyPair.fromSecretKey(ephemeralSecretKey);
-
       return { ephemeralPublicKey, sharedSecret };
     }
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
       const ephemeralSecretKey = x448.utils.randomPrivateKey();
       const sharedSecret = x448.getSharedSecret(ephemeralSecretKey, recipientA);
+      assertNonZeroArray(sharedSecret);
       const ephemeralPublicKey = x448.getPublicKey(ephemeralSecretKey);
       return { ephemeralPublicKey, sharedSecret };
     }
@@ -192,14 +193,34 @@ export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
 
 export async function recomputeSharedSecret(algo, ephemeralPublicKey, A, k) {
   switch (algo) {
-    case enums.publicKey.x25519:
-      return x25519.scalarMult(k, ephemeralPublicKey);
+    case enums.publicKey.x25519: {
+      const sharedSecret = x25519.scalarMult(k, ephemeralPublicKey);
+      assertNonZeroArray(sharedSecret);
+      return sharedSecret;
+    }
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
       const sharedSecret = x448.getSharedSecret(k, ephemeralPublicKey);
+      assertNonZeroArray(sharedSecret);
       return sharedSecret;
     }
     default:
       throw new Error('Unsupported ECDH algorithm');
+  }
+}
+
+/**
+ * x25519 and x448 produce an all-zero value when given as input a point with small order.
+ * This does not lead to a security issue in the context of ECDH, but it is still unexpected,
+ * hence we throw.
+ * @param {Uint8Array} sharedSecret
+ */
+function assertNonZeroArray(sharedSecret) {
+  let acc = 0;
+  for (let i = 0; i < sharedSecret.length; i++) {
+    acc |= sharedSecret[i];
+  }
+  if (acc === 0) {
+    throw new Error('Unexpected low order point');
   }
 }

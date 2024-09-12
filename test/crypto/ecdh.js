@@ -203,6 +203,76 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     expect(await ecdhX.decrypt(openpgp.enums.publicKey.x448, ephemeralPublicKey, wrappedKey, K_B, b)).to.deep.equal(data);
   });
 
+  it('Detect small order points in x25519', async () => {
+    const vectors = [
+      {
+        'order': '0',
+        'vector': '0000000000000000000000000000000000000000000000000000000000000000'
+      },
+      {
+        'order': '1',
+        'vector': '0100000000000000000000000000000000000000000000000000000000000000'
+      },
+      {
+        'order': '8',
+        'vector': 'e0eb7a7c3b41b8ae1656e3faf19fc46ada098deb9c32b1fd866205165f49b800'
+      },
+      {
+        'order': 'p-1 (order 2)',
+        'vector': 'ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f'
+      },
+      {
+        'order': 'p (=0, order 4)',
+        'vector': 'edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f'
+      },
+      {
+        'order': 'p+1 (=1, order 1)',
+        'vector': 'eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f'
+      }
+    ];
+    const data = random.getRandomBytes(16);
+    for (const { vector } of vectors) {
+      const lowOrderPoint = util.hexToUint8Array(vector);
+      const { A: K_A, k: a } = await elliptic_curves.ecdhX.generate(openpgp.enums.publicKey.x25519);
+      await expect(elliptic_curves.ecdhX.encrypt(openpgp.enums.publicKey.x25519, data, lowOrderPoint)).to.be.rejectedWith(/low order point/);
+      const dummyWrappedKey = new Uint8Array(32); // expected to be unused
+      await expect(elliptic_curves.ecdhX.decrypt(openpgp.enums.publicKey.x25519, lowOrderPoint, dummyWrappedKey, K_A, a)).to.be.rejectedWith(/low order point/);
+    }
+  });
+
+  it('Detect small order points in x448', async () => {
+    const vectors = [
+      {
+        'order': '0',
+        'vector': '0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+      },
+      {
+        'order': '1',
+        'vector': '0100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+      },
+      {
+        'order': 'p-1 (order 2)',
+        'vector': 'fefffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      },
+      {
+        'order': 'p (=0, order 4)',
+        'vector': 'fffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      },
+      {
+        'order': 'p+1 (=1, order 1)',
+        'vector': '00000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+      }
+    ];
+    const data = random.getRandomBytes(16);
+    for (const { vector } of vectors) {
+      const lowOrderPoint = util.hexToUint8Array(vector);
+      const { A: K_A, k: a } = await elliptic_curves.ecdhX.generate(openpgp.enums.publicKey.x448);
+      await expect(elliptic_curves.ecdhX.encrypt(openpgp.enums.publicKey.x448, data, lowOrderPoint)).to.be.rejectedWith(/Invalid private or public key received|expected valid u|low order point/);
+      const dummyWrappedKey = new Uint8Array(32); // expected to be unused
+      await expect(elliptic_curves.ecdhX.decrypt(openpgp.enums.publicKey.x448, lowOrderPoint, dummyWrappedKey, K_A, a)).to.be.rejectedWith(/Invalid private or public key received|expected valid u|low order point/);
+    }
+  });
+
   const allCurves = ['secp256k1', 'nistP256', 'nistP384', 'nistP521', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
   allCurves.forEach(curveName => {
     it(`${curveName} - Successful exchange`, async function () {
