@@ -100,12 +100,12 @@ jobs:
         run: npx playwright install --with-deps webkit
 
       - name: Run browser tests
-        run: npm run test-browser
+        run: npm run test-browser -- --static-logging
 
       - name: Run browser tests (lightweight) # overwrite test/lib
         run: |
           npm run build-test --lightweight
-          npm run test-browser
+          npm run test-browser -- --static-logging
 
   test-browsers-compatibility:
     name: Browsers (older, on Browserstack)
@@ -139,12 +139,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run browserstack tests
-        run: npm run test-browserstack
+        run: npm run test-browserstack -- --static-logging
 
       - name: Run browserstack tests (lightweight) # overwrite test/lib
         run: |
           npm run build-test --lightweight
-          npm run test-browserstack
+          npm run test-browserstack -- --static-logging
         env:
           LIGHTWEIGHT: true
 

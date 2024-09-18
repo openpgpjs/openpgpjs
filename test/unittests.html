@@ -3,38 +3,31 @@
   <head>
     <meta charset="utf-8">
     <title>OpenPGPJS Unit Tests</title>
-    <link rel="stylesheet" href="../node_modules/mocha/mocha.css" />
-
-    <!-- libs -->
-    <script src="../node_modules/mocha/mocha.js"></script>
-    <script>
-      mocha.setup('bdd');
-      mocha.timeout(240000);
-    </script>
+    <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
   </head>
   <body>
     <div id="mocha"></div>
 
     <script type="module">
-      import './lib/unittests-bundle.js';
-      if (typeof openpgp !== 'undefined') {
-        const runner = mocha.run();
-        var wasScrolledDown = true;
-        function beforeTestReport() {
-          wasScrolledDown = document.documentElement.scrollHeight - document.documentElement.scrollTop - document.documentElement.clientHeight < 50;
-        }
-        function afterTestReport() {
-          if (wasScrolledDown || openpgp.config.ci) {
-            window.scrollTo(0, document.documentElement.scrollHeight);
-          }
-        }
-        runner._events['suite'].unshift(beforeTestReport);
-        runner._events['pass'].unshift(beforeTestReport);
-        runner._events['fail'].unshift(beforeTestReport);
-        runner._events['pending'].unshift(beforeTestReport);
-        document.addEventListener('scroll', beforeTestReport);
-        runner.on('suite', afterTestReport);
-        runner.on('test end', afterTestReport);
+      import { mocha, sessionFinished, sessionFailed } from '@web/test-runner-mocha';
+
+      try {
+        // setup mocha
+        mocha.setup({
+          ui: 'bdd',
+          timeout: 30000
+        });
+
+        await import('./lib/unittests-bundle.js');
+
+        // run the tests, and notify the test runner after finishing
+        mocha.run(() => {
+          sessionFinished();
+        });
+      } catch (error) {
+        console.error(error);
+        // notify the test runner about errors
+        sessionFailed(error);
       }
     </script>
   </body>
