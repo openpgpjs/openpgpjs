@@ -82,7 +82,7 @@ jobs:
       - name: Get Playwright version
         id: playwright-version
         run: |
-          PLAYWRIGHT_VERSION=$(npm ls playwright | grep playwright | sed 's/.*@//')
+          PLAYWRIGHT_VERSION=$(npm ls playwright --depth=0 | grep playwright | sed 's/.*@//')
           echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
       - name: Check for cached browsers
         id: cache-playwright-browsers
