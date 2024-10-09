@@ -52,7 +52,8 @@
     "prebrowsertest": "npm run build-test",
     "browsertest": "web-test-runner --config test/web-test-runner.config.js --group local --manual --open",
     "test-browser": "web-test-runner --config test/web-test-runner.config.js --group local --playwright --browsers chromium firefox webkit",
-    "test-browserstack": "web-test-runner --config test/web-test-runner.config.js --group browserstack",
+    "test-browser:ci": "web-test-runner --config test/web-test-runner.config.js --group headless:ci",
+    "test-browserstack": "web-test-runner --config test/web-test-runner.browserstack.config.js",
     "coverage": "c8 npm test",
     "lint": "eslint .",
     "docs": "jsdoc --configure .jsdocrc.cjs --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
@@ -107,6 +108,9 @@
     "tsx": "^4.19.0",
     "typescript": "^5.5.4",
     "web-streams-polyfill": "^4.0.0"
+  },
+  "overrides": {
+    "@web/dev-server-core": "npm:@openpgp/wtr-dev-server-core@0.7.3-patch.0"
   },
   "repository": {
     "type": "git",
