@@ -3341,7 +3341,7 @@ XLCBln+wdewpU4ChEffMUDRBfqfQco/YsMqWV7bHJHAO0eC/DMKCjyU90xdH7R/d
 QgqsfguR1PqPuJxpXV4bSr6CGAAAAA==
 =MSvh
 -----END PGP PRIVATE KEY BLOCK-----
-`
+`;
     await expect(openpgp.readKey({ armoredKey: armoredEdDSALegacyCurve448Key })).to.be.rejectedWith(/No key packet found/);
 
     await expect(openpgp.readKey({

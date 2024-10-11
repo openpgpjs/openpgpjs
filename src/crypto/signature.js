@@ -7,7 +7,6 @@ import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from '../packet/packet';
-import { CurveWithOID } from './public_key/elliptic';
 
 /**
  * Parse signature in binary form to get the parameters.
