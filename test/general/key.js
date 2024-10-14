@@ -3299,6 +3299,57 @@ ruh8m7Xo2ehSSFyWRSuTSZe5tm/KXgYG
     }
   });
 
+  it('Parsing EdDSALegacy key with unsupported OID (Curve448Legacy)', async function() {
+    // Key with unknown OID (corresponding to curve448) which is not supported for EdDSALegacy
+    const armoredEdDSALegacyCurve448Key = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+QgqsfguR1PqPuJxpXV4bSr6CGAAAAA==
+=MSvh
+-----END PGP PRIVATE KEY BLOCK-----
+`;
+    await expect(openpgp.readKey({ armoredKey: armoredEdDSALegacyCurve448Key })).to.be.rejectedWith(/No key packet found/);
+
+    await expect(openpgp.readKey({
+      armoredKey: armoredEdDSALegacyCurve448Key,
+      config: { ignoreUnsupportedPackets: false }
+    })).to.be.rejectedWith(/Unknown curve OID/);
+  });
+
   it('Parsing ECDH key with unknown kdf param version', async function() {
     // subkey with unknown kdfParam version 255. Parsing should not fail, the subkey should simply dropped
     const key = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
