@@ -56,7 +56,7 @@ class SymEncryptedSessionKeyPacket {
      * Algorithm to encrypt the message with
      * @type {enums.symmetric}
      */
-    this.sessionKeyAlgorithm = enums.symmetric.aes256;
+    this.sessionKeyAlgorithm = null;
     /**
      * AEAD mode to encrypt the session key with (if AEAD protection is enabled)
      * @type {enums.aead}
@@ -177,7 +177,11 @@ class SymEncryptedSessionKeyPacket {
 
       this.sessionKeyAlgorithm = enums.write(enums.symmetric, decrypted[0]);
       this.sessionKey = decrypted.subarray(1, decrypted.length);
+      if (this.sessionKey.length !== crypto.getCipherParams(this.sessionKeyAlgorithm).keySize) {
+        throw new Error('Unexpected session key size');
+      }
     } else {
+      // session key size is checked as part of SEIPDv2 decryption, where we know the expected symmetric algo
       this.sessionKey = key;
     }
   }
