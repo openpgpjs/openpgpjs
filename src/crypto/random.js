@@ -32,16 +32,13 @@ const nodeCrypto = util.getNodeCrypto();
  * @returns {Uint8Array} Random byte array.
  */
 export function getRandomBytes(length) {
-  const buf = new Uint8Array(length);
-  if (nodeCrypto) {
-    const bytes = nodeCrypto.randomBytes(buf.length);
-    buf.set(bytes);
-  } else if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(buf);
+  const webcrypto = typeof crypto !== 'undefined' ? crypto : nodeCrypto?.webcrypto;
+  if (webcrypto?.getRandomValues) {
+    const buf = new Uint8Array(length);
+    return webcrypto.getRandomValues(buf);
   } else {
     throw new Error('No secure random number generator available.');
   }
-  return buf;
 }
 
 /**
