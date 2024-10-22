@@ -208,11 +208,14 @@ class PublicKeyEncryptedSessionKeyPacket {
 
     const { sessionKey, sessionKeyAlgorithm } = decodeSessionKey(this.version, this.publicKeyAlgorithm, decryptedData, randomSessionKey);
 
-    // v3 Montgomery curves have cleartext cipher algo
-    if (this.version === 3 && (
-      this.publicKeyAlgorithm !== enums.publicKey.x25519 && this.publicKeyAlgorithm !== enums.publicKey.x448)
-    ) {
-      this.sessionKeyAlgorithm = sessionKeyAlgorithm;
+    if (this.version === 3) {
+      // v3 Montgomery curves have cleartext cipher algo
+      const hasEncryptedAlgo = this.publicKeyAlgorithm !== enums.publicKey.x25519 && this.publicKeyAlgorithm !== enums.publicKey.x448;
+      this.sessionKeyAlgorithm = hasEncryptedAlgo ? sessionKeyAlgorithm : this.sessionKeyAlgorithm;
+
+      if (sessionKey.length !== crypto.getCipherParams(this.sessionKeyAlgorithm).keySize) {
+        throw new Error('Unexpected session key size');
+      }
     }
     this.sessionKey = sessionKey;
   }

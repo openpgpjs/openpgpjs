@@ -2532,7 +2532,7 @@ XfA3pqV4mTzF
       }
     });
 
-    tryTests('CFB mode (asm.js)', tests, {
+    tryTests('CFB mode', tests, {
       if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = false;
@@ -2582,7 +2582,7 @@ XfA3pqV4mTzF
 
     function tests() {
       describe('encryptSessionKey, decryptSessionKeys', function() {
-        const sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
+        const sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
 
         let decryptedPrivateKey; // to avoid decrypting key before each test
         beforeEach(async function() {

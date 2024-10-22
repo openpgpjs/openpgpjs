@@ -128,6 +128,16 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @async
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
+    // We check that the session key size matches the one expected by the symmetric algorithm.
+    // This is especially important for SEIPDv2 session keys, as a key derivation step is run where the resulting key will always match the expected cipher size,
+    // but we want to ensure that the input key isn't e.g. too short.
+    // The check is done here, instead of on encrypted session key (ESK) encryption, because v6 ESK packets do not store the session key algorithm,
+    // which is instead included in the SEIPDv2 data.
+    const { blockSize, keySize } = crypto.getCipherParams(sessionKeyAlgorithm);
+    if (key.length !== keySize) {
+      throw new Error('Unexpected session key size');
+    }
+
     let bytes = this.packets.write();
     if (stream.isArrayStream(bytes)) bytes = await stream.readToEnd(bytes);
 
@@ -138,8 +148,6 @@ class SymEncryptedIntegrityProtectedDataPacket {
       this.chunkSizeByte = config.aeadChunkSizeByte;
       this.encrypted = await runAEAD(this, 'encrypt', key, bytes);
     } else {
-      const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
-
       const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
       const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
@@ -162,11 +170,24 @@ class SymEncryptedIntegrityProtectedDataPacket {
    * @async
    */
   async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
+    // We check that the session key size matches the one expected by the symmetric algorithm.
+    // This is especially important for SEIPDv2 session keys, as a key derivation step is run where the resulting key will always match the expected cipher size,
+    // but we want to ensure that the input key isn't e.g. too short.
+    // The check is done here, instead of on encrypted session key (ESK) decryption, because v6 ESK packets do not store the session key algorithm,
+    // which is instead included in the SEIPDv2 data.
+    if (key.length !== crypto.getCipherParams(sessionKeyAlgorithm).keySize) {
+      throw new Error('Unexpected session key size');
+    }
+
     let encrypted = stream.clone(this.encrypted);
     if (stream.isArrayStream(encrypted)) encrypted = await stream.readToEnd(encrypted);
 
     let packetbytes;
     if (this.version === 2) {
+      if (this.cipherAlgorithm !== sessionKeyAlgorithm) {
+        // sanity check
+        throw new Error('Unexpected session key algorithm');
+      }
       packetbytes = await runAEAD(this, 'decrypt', key, encrypted);
     } else {
       const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);

@@ -159,7 +159,7 @@ export default () => describe('Symmetric AES-EAX', function() {
     testAESEAX();
   });
 
-  describe('Symmetric AES-EAX (asm.js fallback)', function() {
+  describe('Symmetric AES-EAX (non-native fallback)', function() {
     beforeEach(function () {
       sinonSandbox = sinon.createSandbox();
       disableNative();

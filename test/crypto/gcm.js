@@ -77,11 +77,11 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
     testAESGCM('12345678901234567890123456789012345678901234567890', true, true);
   });
 
-  describe('Symmetric AES-GCM (asm.js fallback)', function() {
+  describe('Symmetric AES-GCM (non-native)', function() {
     testAESGCM('12345678901234567890123456789012345678901234567890', false, false);
   });
 
-  describe('Symmetric AES-GCM (native encrypt, asm.js decrypt)', function() {
+  describe('Symmetric AES-GCM (native encrypt, non-native decrypt)', function() {
     testAESGCM('12345678901234567890123456789012345678901234567890', true, false);
   });
 });
