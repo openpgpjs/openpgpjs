@@ -19,10 +19,9 @@
  * @fileoverview This module wraps native AES-GCM en/decryption for both
  * the WebCrypto api as well as node.js' crypto api.
  * @module crypto/mode/gcm
- * @private
  */
 
-import { AES_GCM } from '@openpgp/asmcrypto.js/dist_es8/aes/gcm';
+import { gcm as nobleAesGcm } from '@noble/ciphers/aes';
 import util from '../../util';
 import enums from '../../enums';
 
@@ -66,35 +65,52 @@ async function GCM(cipher, key) {
     };
   }
 
-  if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
+  if (util.getWebCrypto()) {
+    try {
+      const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt', 'decrypt']);
+      // Safari 13 and Safari iOS 14 does not support GCM-en/decrypting empty messages
+      const webcryptoEmptyMessagesUnsupported = navigator.userAgent.match(/Version\/13\.\d(\.\d)* Safari/) ||
+        navigator.userAgent.match(/Version\/(13|14)\.\d(\.\d)* Mobile\/\S* Safari/);
+      return {
+        encrypt: async function(pt, iv, adata = new Uint8Array()) {
+          if (webcryptoEmptyMessagesUnsupported && !pt.length) {
+            return nobleAesGcm(key, iv, adata).encrypt(pt);
+          }
+          const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, pt);
+          return new Uint8Array(ct);
+        },
 
-    return {
-      encrypt: async function(pt, iv, adata = new Uint8Array()) {
-        if (!pt.length) { // iOS does not support GCM-en/decrypting empty messages
-          return AES_GCM.encrypt(pt, key, iv, adata);
+        decrypt: async function(ct, iv, adata = new Uint8Array()) {
+          if (webcryptoEmptyMessagesUnsupported && ct.length === tagLength) {
+            return nobleAesGcm(key, iv, adata).decrypt(ct);
+          }
+          try {
+            const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, ct);
+            return new Uint8Array(pt);
+          } catch (e) {
+            if (e.name === 'OperationError') {
+              throw new Error('Authentication tag mismatch');
+            }
+          }
         }
-        const ct = await webCrypto.encrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, pt);
-        return new Uint8Array(ct);
-      },
-
-      decrypt: async function(ct, iv, adata = new Uint8Array()) {
-        if (ct.length === tagLength) { // iOS does not support GCM-en/decrypting empty messages
-          return AES_GCM.decrypt(ct, key, iv, adata);
-        }
-        const pt = await webCrypto.decrypt({ name: ALGO, iv, additionalData: adata, tagLength: tagLength * 8 }, _key, ct);
-        return new Uint8Array(pt);
+      };
+    } catch (err) {
+      // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+      if (err.name !== 'NotSupportedError' &&
+        !(key.length === 24 && err.name === 'OperationError')) {
+        throw err;
       }
-    };
+      util.printDebugError('Browser did not support operation: ' + err.message);
+    }
   }
 
   return {
     encrypt: async function(pt, iv, adata) {
-      return AES_GCM.encrypt(pt, key, iv, adata);
+      return nobleAesGcm(key, iv, adata).encrypt(pt);
     },
 
     decrypt: async function(ct, iv, adata) {
-      return AES_GCM.decrypt(ct, key, iv, adata);
+      return nobleAesGcm(key, iv, adata).decrypt(ct);
     }
   };
 }

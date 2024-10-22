@@ -4,7 +4,8 @@ import {
   writeTag, writeHeader,
   writePartialLength, writeSimpleLength,
   UnparseablePacket,
-  UnsupportedError
+  UnsupportedError,
+  UnknownPacketError
 } from './packet';
 import util from '../util';
 import enums from '../enums';
@@ -25,7 +26,7 @@ export function newPacketFromTag(tag, allowedPackets) {
     try {
       packetType = enums.read(enums.packet, tag);
     } catch (e) {
-      throw new UnsupportedError(`Unknown packet type with tag: ${tag}`);
+      throw new UnknownPacketError(`Unknown packet type with tag: ${tag}`);
     }
     throw new Error(`Packet not allowed in this context: ${packetType}`);
   }
@@ -74,10 +75,11 @@ class PacketList extends Array {
           await writer.ready;
           const done = await readPackets(readable, async parsed => {
             try {
-              if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust) {
+              if (parsed.tag === enums.packet.marker || parsed.tag === enums.packet.trust || parsed.tag === enums.packet.padding) {
                 // According to the spec, these packet types should be ignored and not cause parsing errors, even if not esplicitly allowed:
                 // - Marker packets MUST be ignored when received: https://github.com/openpgpjs/openpgpjs/issues/1145
                 // - Trust packets SHOULD be ignored outside of keyrings (unsupported): https://datatracker.ietf.org/doc/html/rfc4880#section-5.10
+                // - [Padding Packets] MUST be ignored when received: https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#name-padding-packet-tag-21
                 return;
               }
               const packet = newPacketFromTag(parsed.tag, allowedPackets);
@@ -86,6 +88,17 @@ class PacketList extends Array {
               await packet.read(parsed.packet, config);
               await writer.write(packet);
             } catch (e) {
+              // If an implementation encounters a critical packet where the packet type is unknown in a packet sequence,
+              // it MUST reject the whole packet sequence. On the other hand, an unknown non-critical packet MUST be ignored.
+              // Packet Tags from 0 to 39 are critical. Packet Tags from 40 to 63 are non-critical.
+              if (e instanceof UnknownPacketError) {
+                if (parsed.tag <= 39) {
+                  await writer.abort(e);
+                } else {
+                  return;
+                }
+              }
+
               const throwUnsupportedError = !config.ignoreUnsupportedPackets && e instanceof UnsupportedError;
               const throwMalformedError = !config.ignoreMalformedPackets && !(e instanceof UnsupportedError);
               if (throwUnsupportedError || throwMalformedError || supportsStreaming(parsed.tag)) {

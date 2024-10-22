@@ -1,18 +1,19 @@
-/* globals tryTests: true */
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+/* globals tryTests */
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import util from '../../src/util.js';
 
-const input = require('./testInputs');
+import * as input from './testInputs.js';
 
 
-module.exports = () => (openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
+export default () => (openpgp.config.ci ? describe.skip : describe)('Brainpool Cryptography @lightweight', function () {
   let rejectCurvesVal;
   before(function() {
     //only x25519 crypto is fully functional in lightbuild
-    if (!openpgp.config.useIndutnyElliptic && !util.getNodeCrypto()) {
+    if (!openpgp.config.useEllipticFallback && !util.getNodeCrypto()) {
       this.skip(); // eslint-disable-line no-invalid-this
     }
   });
@@ -255,10 +256,6 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
     expect(await result.signatures[0].verified).to.be.true;
   });
   it('Decrypt and verify message with leading zero in hash signed with old elliptic algorithm', async function () {
-    //this test would not work with nodeCrypto, since message is signed with leading zero stripped from the hash
-    if (util.getNodeCrypto()) {
-      this.skip(); // eslint-disable-line no-invalid-this
-    }
     const juliet = await load_priv_key('juliet');
     const romeo = await load_pub_key('romeo');
     const msg = await openpgp.readMessage({ armoredMessage: data.romeo.message_encrypted_with_leading_zero_in_hash_signed_by_elliptic_with_old_implementation });
@@ -286,7 +283,7 @@ EJ4QcD/oQ6x1M/8X/iKQCtxZP8RnlrbH7ExkNON5s5g=
   });
 
   tryTests('Brainpool Omnibus Tests @lightweight', omnibus, {
-    if: openpgp.config.useIndutnyElliptic || util.getNodeCrypto()
+    if: openpgp.config.useEllipticFallback || util.getNodeCrypto()
   });
 });
 
@@ -321,14 +318,13 @@ function omnibus() {
         signingKeys: [hi]
       });
       // Decrypting and verifying
-      return openpgp.decrypt({
+      const output = await openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         decryptionKeys: bye,
         verificationKeys: [pubHi]
-      }).then(async output => {
-        expect(output.data).to.equal(testData2);
-        await expect(output.signatures[0].verified).to.eventually.be.true;
       });
+      expect(output.data).to.equal(testData2);
+      await expect(output.signatures[0].verified).to.eventually.be.true;
     } finally {
       openpgp.config.rejectCurves = rejectCurves;
     }

@@ -102,12 +102,12 @@ module.exports = function(config) {
         os: 'OS X',
         os_version: 'Ventura'
       },
-      bs_safari_13_1: { // no BigInt support
+      bs_safari_14: {
         base: 'BrowserStack',
         browser: 'Safari',
-        browser_version: '13.1',
+        browser_version: '14',
         os: 'OS X',
-        os_version: 'Catalina'
+        os_version: 'Big Sur'
       },
       bs_ios_14: {
         base: 'BrowserStack',

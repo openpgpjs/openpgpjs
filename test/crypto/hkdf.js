@@ -1,13 +1,10 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const computeHKDF = require('../../src/crypto/hkdf');
-const enums = require('../../src/enums');
-const util = require('../../src/util');
+import computeHKDF from '../../src/crypto/hkdf';
+import enums from '../../src/enums';
+import util from '../../src/util';
 
-// WebCrypto implements HKDF natively, no need to test it
-const maybeDescribe = util.getNodeCrypto() ? describe : describe;
-
-module.exports = () => maybeDescribe('HKDF test vectors', function() {
+export default () => describe('HKDF test vectors', function() {
   // Vectors from https://www.rfc-editor.org/rfc/rfc5869#appendix-A
   it('Test Case 1', async function() {
     const inputKey = util.hexToUint8Array('0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b');

@@ -2,10 +2,9 @@
  * @fileoverview This module implements AES-CMAC on top of
  * native AES-CBC using either the WebCrypto API or Node.js' crypto API.
  * @module crypto/cmac
- * @private
  */
 
-import { AES_CBC } from '@openpgp/asmcrypto.js/dist_es8/aes/cbc';
+import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
 import util from '../util';
 
 const webCrypto = util.getWebCrypto();
@@ -73,13 +72,6 @@ export default async function CMAC(key) {
 }
 
 async function CBC(key) {
-  if (util.getWebCrypto() && key.length !== 24) { // WebCrypto (no 192 bit support) see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    key = await webCrypto.importKey('raw', key, { name: 'AES-CBC', length: key.length * 8 }, false, ['encrypt']);
-    return async function(pt) {
-      const ct = await webCrypto.encrypt({ name: 'AES-CBC', iv: zeroBlock, length: blockLength * 8 }, key, pt);
-      return new Uint8Array(ct).subarray(0, ct.byteLength - blockLength);
-    };
-  }
   if (util.getNodeCrypto()) { // Node crypto library
     return async function(pt) {
       const en = new nodeCrypto.createCipheriv('aes-' + (key.length * 8) + '-cbc', key, zeroBlock);
@@ -87,8 +79,25 @@ async function CBC(key) {
       return new Uint8Array(ct);
     };
   }
-  // asm.js fallback
+
+  if (util.getWebCrypto()) {
+    try {
+      key = await webCrypto.importKey('raw', key, { name: 'AES-CBC', length: key.length * 8 }, false, ['encrypt']);
+      return async function(pt) {
+        const ct = await webCrypto.encrypt({ name: 'AES-CBC', iv: zeroBlock, length: blockLength * 8 }, key, pt);
+        return new Uint8Array(ct).subarray(0, ct.byteLength - blockLength);
+      };
+    } catch (err) {
+      // no 192 bit support in Chromium, which throws `OperationError`, see: https://www.chromium.org/blink/webcrypto#TOC-AES-support
+      if (err.name !== 'NotSupportedError' &&
+        !(key.length === 24 && err.name === 'OperationError')) {
+        throw err;
+      }
+      util.printDebugError('Browser did not support operation: ' + err.message);
+    }
+  }
+
   return async function(pt) {
-    return AES_CBC.encrypt(pt, key, false, zeroBlock);
+    return nobleAesCbc(key, zeroBlock, { disablePadding: true }).encrypt(pt);
   };
 }

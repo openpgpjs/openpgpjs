@@ -26,11 +26,19 @@ import defaultConfig from '../config';
 // Symbol to store cryptographic validity of the signature, to avoid recomputing multiple times on verification.
 const verified = Symbol('verified');
 
+// A salt notation is used to randomize signatures.
+// This is to protect EdDSA signatures in particular, which are known to be vulnerable to fault attacks
+// leading to secret key extraction if two signatures over the same data can be collected (see https://github.com/jedisct1/libsodium/issues/170).
+// For simplicity, we add the salt to all algos, as it may also serve as protection in case of weaknesses in the hash algo, potentially hindering e.g.
+// some chosen-prefix attacks.
+// v6 signatures do not need to rely on this notation, as they already include a separate, built-in salt.
+const SALT_NOTATION_NAME = 'salt@notations.openpgpjs.org';
+
 // GPG puts the Issuer and Signature subpackets in the unhashed area.
 // Tampering with those invalidates the signature, so we still trust them and parse them.
 // All other unhashed subpackets are ignored.
 const allowedUnhashedSubpackets = new Set([
-  enums.signatureSubpacket.issuer,
+  enums.signatureSubpacket.issuerKeyID,
   enums.signatureSubpacket.issuerFingerprint,
   enums.signatureSubpacket.embeddedSignature
 ]);
@@ -59,7 +67,9 @@ class SignaturePacket {
 
     this.signatureData = null;
     this.unhashedSubpackets = [];
+    this.unknownSubpackets = [];
     this.signedHashValue = null;
+    this.salt = null;
 
     this.created = null;
     this.signatureExpirationTime = null;
@@ -96,6 +106,7 @@ class SignaturePacket {
     this.issuerKeyVersion = null;
     this.issuerFingerprint = null;
     this.preferredAEADAlgorithms = null;
+    this.preferredCipherSuites = null;
 
     this.revoked = null;
     this[verified] = null;
@@ -106,11 +117,14 @@ class SignaturePacket {
    * @param {String} bytes - Payload of a tag 2 packet
    * @returns {SignaturePacket} Object representation.
    */
-  read(bytes) {
+  read(bytes, config = defaultConfig) {
     let i = 0;
     this.version = bytes[i++];
+    if (this.version === 5 && !config.enableParsingV5Entities) {
+      throw new UnsupportedError('Support for v5 entities is disabled; turn on `config.enableParsingV5Entities` if needed');
+    }
 
-    if (this.version !== 4 && this.version !== 5) {
+    if (this.version !== 4 && this.version !== 5 && this.version !== 6) {
       throw new UnsupportedError(`Version ${this.version} of the signature packet is unsupported.`);
     }
 
@@ -139,7 +153,24 @@ class SignaturePacket {
     this.signedHashValue = bytes.subarray(i, i + 2);
     i += 2;
 
-    this.params = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, bytes.subarray(i, bytes.length));
+    // Only for v6 signatures, a variable-length field containing:
+    if (this.version === 6) {
+      // A one-octet salt size. The value MUST match the value defined
+      // for the hash algorithm as specified in Table 23 (Hash algorithm registry).
+      // To allow parsing unknown hash algos, we only check the expected salt length when verifying.
+      const saltLength = bytes[i++];
+
+      // The salt; a random value value of the specified size.
+      this.salt = bytes.subarray(i, i + saltLength);
+      i += saltLength;
+    }
+
+    const signatureMaterial = bytes.subarray(i, bytes.length);
+    const { read, signatureParams } = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, signatureMaterial);
+    if (read < signatureMaterial.length) {
+      throw new Error('Error reading MPIs');
+    }
+    this.params = signatureParams;
   }
 
   /**
@@ -159,6 +190,10 @@ class SignaturePacket {
     arr.push(this.signatureData);
     arr.push(this.writeUnhashedSubPackets());
     arr.push(this.signedHashValue);
+    if (this.version === 6) {
+      arr.push(new Uint8Array([this.salt.length]));
+      arr.push(this.salt);
+    }
     arr.push(this.writeParams());
     return util.concat(arr);
   }
@@ -172,18 +207,40 @@ class SignaturePacket {
    * @throws {Error} if signing failed
    * @async
    */
-  async sign(key, data, date = new Date(), detached = false) {
-    if (key.version === 5) {
-      this.version = 5;
-    } else {
-      this.version = 4;
-    }
-    const arr = [new Uint8Array([this.version, this.signatureType, this.publicKeyAlgorithm, this.hashAlgorithm])];
+  async sign(key, data, date = new Date(), detached = false, config) {
+    this.version = key.version;
 
     this.created = util.normalizeDate(date);
     this.issuerKeyVersion = key.version;
     this.issuerFingerprint = key.getFingerprintBytes();
     this.issuerKeyID = key.getKeyID();
+
+    const arr = [new Uint8Array([this.version, this.signatureType, this.publicKeyAlgorithm, this.hashAlgorithm])];
+
+    // add randomness to the signature
+    if (this.version === 6) {
+      const saltLength = saltLengthForHash(this.hashAlgorithm);
+      if (this.salt === null) {
+        this.salt = crypto.random.getRandomBytes(saltLength);
+      } else if (saltLength !== this.salt.length) {
+        throw new Error('Provided salt does not have the required length');
+      }
+    } else if (config.nonDeterministicSignaturesViaNotation) {
+      const saltNotations = this.rawNotations.filter(({ name }) => (name === SALT_NOTATION_NAME));
+      // since re-signing the same object is not supported, it's not expected to have multiple salt notations,
+      // but we guard against it as a sanity check
+      if (saltNotations.length === 0) {
+        const saltValue = crypto.random.getRandomBytes(saltLengthForHash(this.hashAlgorithm));
+        this.rawNotations.push({
+          name: SALT_NOTATION_NAME,
+          value: saltValue,
+          humanReadable: false,
+          critical: false
+        });
+      } else {
+        throw new Error('Unexpected existing salt notation');
+      }
+    }
 
     // Add hashed subpackets
     arr.push(this.writeHashedSubPackets());
@@ -255,10 +312,10 @@ class SignaturePacket {
       bytes = util.concat([bytes, this.revocationKeyFingerprint]);
       arr.push(writeSubPacket(sub.revocationKey, false, bytes));
     }
-    if (!this.issuerKeyID.isNull() && this.issuerKeyVersion !== 5) {
+    if (!this.issuerKeyID.isNull() && this.issuerKeyVersion < 5) {
       // If the version of [the] key is greater than 4, this subpacket
       // MUST NOT be included in the signature.
-      arr.push(writeSubPacket(sub.issuer, true, this.issuerKeyID.write()));
+      arr.push(writeSubPacket(sub.issuerKeyID, true, this.issuerKeyID.write()));
     }
     this.rawNotations.forEach(({ name, value, humanReadable, critical }) => {
       bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
@@ -320,15 +377,19 @@ class SignaturePacket {
     if (this.issuerFingerprint !== null) {
       bytes = [new Uint8Array([this.issuerKeyVersion]), this.issuerFingerprint];
       bytes = util.concat(bytes);
-      arr.push(writeSubPacket(sub.issuerFingerprint, this.version === 5, bytes));
+      arr.push(writeSubPacket(sub.issuerFingerprint, this.version >= 5, bytes));
     }
     if (this.preferredAEADAlgorithms !== null) {
       bytes = util.stringToUint8Array(util.uint8ArrayToString(this.preferredAEADAlgorithms));
       arr.push(writeSubPacket(sub.preferredAEADAlgorithms, false, bytes));
     }
+    if (this.preferredCipherSuites !== null) {
+      bytes = new Uint8Array([].concat(...this.preferredCipherSuites));
+      arr.push(writeSubPacket(sub.preferredCipherSuites, false, bytes));
+    }
 
     const result = util.concat(arr);
-    const length = util.writeNumber(result.length, 2);
+    const length = util.writeNumber(result.length, this.version === 6 ? 4 : 2);
 
     return util.concat([length, result]);
   }
@@ -338,19 +399,17 @@ class SignaturePacket {
    * @returns {Uint8Array} Subpacket data.
    */
   writeUnhashedSubPackets() {
-    const arr = [];
-    this.unhashedSubpackets.forEach(data => {
-      arr.push(writeSimpleLength(data.length));
-      arr.push(data);
+    const arr = this.unhashedSubpackets.map(({ type, critical, body }) => {
+      return writeSubPacket(type, critical, body);
     });
 
     const result = util.concat(arr);
-    const length = util.writeNumber(result.length, 2);
+    const length = util.writeNumber(result.length, this.version === 6 ? 4 : 2);
 
     return util.concat([length, result]);
   }
 
-  // V4 signature sub packets
+  // Signature subpackets
   readSubPacket(bytes, hashed = true) {
     let mypos = 0;
 
@@ -358,14 +417,18 @@ class SignaturePacket {
     const critical = !!(bytes[mypos] & 0x80);
     const type = bytes[mypos] & 0x7F;
 
+    mypos++;
+
     if (!hashed) {
-      this.unhashedSubpackets.push(bytes.subarray(mypos, bytes.length));
+      this.unhashedSubpackets.push({
+        type,
+        critical,
+        body: bytes.subarray(mypos, bytes.length)
+      });
       if (!allowedUnhashedSubpackets.has(type)) {
         return;
       }
     }
-
-    mypos++;
 
     // subpacket type
     switch (type) {
@@ -422,9 +485,21 @@ class SignaturePacket {
         this.revocationKeyFingerprint = bytes.subarray(mypos, mypos + 20);
         break;
 
-      case enums.signatureSubpacket.issuer:
+      case enums.signatureSubpacket.issuerKeyID:
         // Issuer
-        this.issuerKeyID.read(bytes.subarray(mypos, bytes.length));
+        if (this.version === 4) {
+          this.issuerKeyID.read(bytes.subarray(mypos, bytes.length));
+        } else if (hashed) {
+          // If the version of the key is greater than 4, this subpacket MUST NOT be included in the signature,
+          // since the Issuer Fingerprint subpacket is to be used instead.
+          // The `issuerKeyID` value will be set when reading the issuerFingerprint packet.
+          // For this reason, if the issuer Key ID packet is present but unhashed, we simply ignore it,
+          // to avoid situations where `.getSigningKeyIDs()` returns a keyID potentially different from the (signed)
+          // issuerFingerprint.
+          // If the packet is hashed, then we reject the signature, to avoid verifying data different from
+          // what was parsed.
+          throw new Error('Unexpected Issuer Key ID subpacket');
+        }
         break;
 
       case enums.signatureSubpacket.notationData: {
@@ -509,7 +584,7 @@ class SignaturePacket {
         // Issuer Fingerprint
         this.issuerKeyVersion = bytes[mypos++];
         this.issuerFingerprint = bytes.subarray(mypos, bytes.length);
-        if (this.issuerKeyVersion === 5) {
+        if (this.issuerKeyVersion >= 5) {
           this.issuerKeyID.read(this.issuerFingerprint);
         } else {
           this.issuerKeyID.read(this.issuerFingerprint.subarray(-8));
@@ -519,22 +594,30 @@ class SignaturePacket {
         // Preferred AEAD Algorithms
         this.preferredAEADAlgorithms = [...bytes.subarray(mypos, bytes.length)];
         break;
-      default: {
-        const err = new Error(`Unknown signature subpacket type ${type}`);
-        if (critical) {
-          throw err;
-        } else {
-          util.printDebug(err);
+      case enums.signatureSubpacket.preferredCipherSuites:
+        // Preferred AEAD Cipher Suites
+        this.preferredCipherSuites = [];
+        for (let i = mypos; i < bytes.length; i += 2) {
+          this.preferredCipherSuites.push([bytes[i], bytes[i + 1]]);
         }
-      }
+        break;
+      default:
+        this.unknownSubpackets.push({
+          type,
+          critical,
+          body: bytes.subarray(mypos, bytes.length)
+        });
+        break;
     }
   }
 
   readSubPackets(bytes, trusted = true, config) {
-    // Two-octet scalar octet count for following subpacket data.
-    const subpacketLength = util.readNumber(bytes.subarray(0, 2));
+    const subpacketLengthBytes = this.version === 6 ? 4 : 2;
 
-    let i = 2;
+    // Two-octet scalar octet count for following subpacket data.
+    const subpacketLength = util.readNumber(bytes.subarray(0, subpacketLengthBytes));
+
+    let i = subpacketLengthBytes;
 
     // subpacket data set (zero or more subpackets)
     while (i < 2 + subpacketLength) {
@@ -645,10 +728,15 @@ class SignaturePacket {
   toHash(signatureType, data, detached = false) {
     const bytes = this.toSign(signatureType, data);
 
-    return util.concat([bytes, this.signatureData, this.calculateTrailer(data, detached)]);
+    return util.concat([this.salt || new Uint8Array(), bytes, this.signatureData, this.calculateTrailer(data, detached)]);
   }
 
   async hash(signatureType, data, toHash, detached = false) {
+    if (this.version === 6 && this.salt.length !== saltLengthForHash(this.hashAlgorithm)) {
+      // avoid hashing unexpected salt size
+      throw new Error('Signature salt does not have the expected length');
+    }
+
     if (!toHash) toHash = this.toHash(signatureType, data, detached);
     return crypto.hash.digest(this.hashAlgorithm, toHash);
   }
@@ -718,6 +806,11 @@ class SignaturePacket {
       [enums.signature.binary, enums.signature.text].includes(this.signatureType)) {
       throw new Error('Insecure message hash algorithm: ' + enums.read(enums.hash, this.hashAlgorithm).toUpperCase());
     }
+    this.unknownSubpackets.forEach(({ type, critical }) => {
+      if (critical) {
+        throw new Error(`Unknown critical signature subpacket type ${type}`);
+      }
+    });
     this.rawNotations.forEach(({ name, critical }) => {
       if (critical && (config.knownNotations.indexOf(name) < 0)) {
         throw new Error(`Unknown critical notation: ${name}`);
@@ -768,4 +861,23 @@ function writeSubPacket(type, critical, data) {
   arr.push(new Uint8Array([(critical ? 0x80 : 0) | type]));
   arr.push(data);
   return util.concat(arr);
+}
+
+/**
+ * Select the required salt length for the given hash algorithm, as per Table 23 (Hash algorithm registry) of the crypto refresh.
+ * @see {@link https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-crypto-refresh#section-9.5|Crypto Refresh Section 9.5}
+ * @param {enums.hash} hashAlgorithm - Hash algorithm.
+ * @returns {Integer} Salt length.
+ * @private
+ */
+function saltLengthForHash(hashAlgorithm) {
+  switch (hashAlgorithm) {
+    case enums.hash.sha256: return 16;
+    case enums.hash.sha384: return 24;
+    case enums.hash.sha512: return 32;
+    case enums.hash.sha224: return 16;
+    case enums.hash.sha3_256: return 16;
+    case enums.hash.sha3_512: return 32;
+    default: throw new Error('Unsupported hash function');
+  }
 }

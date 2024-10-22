@@ -19,14 +19,14 @@
 
 /**
  * @module crypto/mode/cfb
- * @private
  */
 
-import { AES_CFB } from '@openpgp/asmcrypto.js/dist_es8/aes/cfb';
+import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes';
+
 import * as stream from '@openpgp/web-stream-tools';
-import getCipher from '../cipher/getCipher';
 import util from '../../util';
 import enums from '../../enums';
+import { getLegacyCipher, getCipherParams } from '../cipher';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -61,8 +61,8 @@ export async function encrypt(algo, key, plaintext, iv, config) {
     return aesEncrypt(algo, key, plaintext, iv, config);
   }
 
-  const Cipher = getCipher(algo);
-  const cipherfn = new Cipher(key);
+  const LegacyCipher = await getLegacyCipher(algo);
+  const cipherfn = new LegacyCipher(key);
   const block_size = cipherfn.blockSize;
 
   const blockc = iv.slice();
@@ -97,15 +97,15 @@ export async function encrypt(algo, key, plaintext, iv, config) {
  */
 export async function decrypt(algo, key, ciphertext, iv) {
   const algoName = enums.read(enums.symmetric, algo);
-  if (util.getNodeCrypto() && nodeAlgos[algoName]) { // Node crypto library.
+  if (nodeCrypto && nodeAlgos[algoName]) { // Node crypto library.
     return nodeDecrypt(algo, key, ciphertext, iv);
   }
   if (util.isAES(algo)) {
     return aesDecrypt(algo, key, ciphertext, iv);
   }
 
-  const Cipher = getCipher(algo);
-  const cipherfn = new Cipher(key);
+  const LegacyCipher = await getLegacyCipher(algo);
+  const cipherfn = new LegacyCipher(key);
   const block_size = cipherfn.blockSize;
 
   let blockp = iv;
@@ -130,43 +130,231 @@ export async function decrypt(algo, key, ciphertext, iv) {
   return stream.transform(ciphertext, process, process);
 }
 
-function aesEncrypt(algo, key, pt, iv, config) {
-  if (
-    util.getWebCrypto() &&
-    key.length !== 24 && // Chrome doesn't support 192 bit keys, see https://www.chromium.org/blink/webcrypto#TOC-AES-support
-    !util.isStream(pt) &&
-    pt.length >= 3000 * config.minBytesForWebCrypto // Default to a 3MB minimum. Chrome is pretty slow for small messages, see: https://bugs.chromium.org/p/chromium/issues/detail?id=701188#c2
-  ) { // Web Crypto
-    return webEncrypt(algo, key, pt, iv);
+class WebCryptoEncryptor {
+  constructor(algo, key, iv) {
+    const { blockSize } = getCipherParams(algo);
+    this.key = key;
+    this.prevBlock = iv;
+    this.nextBlock = new Uint8Array(blockSize);
+    this.i = 0; // pointer inside next block
+    this.blockSize = blockSize;
+    this.zeroBlock = new Uint8Array(this.blockSize);
   }
-  // asm.js fallback
-  const cfb = new AES_CFB(key, iv);
-  return stream.transform(pt, value => cfb.aes.AES_Encrypt_process(value), () => cfb.aes.AES_Encrypt_finish());
+
+  static async isSupported(algo) {
+    const { keySize } = getCipherParams(algo);
+    return webCrypto.importKey('raw', new Uint8Array(keySize), 'aes-cbc', false, ['encrypt'])
+      .then(() => true, () => false);
+  }
+
+  async _runCBC(plaintext, nonZeroIV) {
+    const mode = 'AES-CBC';
+    this.keyRef = this.keyRef || await webCrypto.importKey('raw', this.key, mode, false, ['encrypt']);
+    const ciphertext = await webCrypto.encrypt(
+      { name: mode, iv: nonZeroIV || this.zeroBlock },
+      this.keyRef,
+      plaintext
+    );
+    return new Uint8Array(ciphertext).subarray(0, plaintext.length);
+  }
+
+  async encryptChunk(value) {
+    const missing = this.nextBlock.length - this.i;
+    const added = value.subarray(0, missing);
+    this.nextBlock.set(added, this.i);
+    if ((this.i + value.length) >= (2 * this.blockSize)) {
+      const leftover = (value.length - missing) % this.blockSize;
+      const plaintext = util.concatUint8Array([
+        this.nextBlock,
+        value.subarray(missing, value.length - leftover)
+      ]);
+      const toEncrypt = util.concatUint8Array([
+        this.prevBlock,
+        plaintext.subarray(0, plaintext.length - this.blockSize) // stop one block "early", since we only need to xor the plaintext and pass it over as prevBlock
+      ]);
+
+      const encryptedBlocks = await this._runCBC(toEncrypt);
+      xorMut(encryptedBlocks, plaintext);
+      this.prevBlock = encryptedBlocks.slice(-this.blockSize);
+
+      // take care of leftover data
+      if (leftover > 0) this.nextBlock.set(value.subarray(-leftover));
+      this.i = leftover;
+
+      return encryptedBlocks;
+    }
+
+    this.i += added.length;
+    let encryptedBlock;
+    if (this.i === this.nextBlock.length) { // block ready to be encrypted
+      const curBlock = this.nextBlock;
+      encryptedBlock = await this._runCBC(this.prevBlock);
+      xorMut(encryptedBlock, curBlock);
+      this.prevBlock = encryptedBlock.slice();
+      this.i = 0;
+
+      const remaining = value.subarray(added.length);
+      this.nextBlock.set(remaining, this.i);
+      this.i += remaining.length;
+    } else {
+      encryptedBlock = new Uint8Array();
+    }
+
+    return encryptedBlock;
+  }
+
+  async finish() {
+    let result;
+    if (this.i === 0) { // nothing more to encrypt
+      result = new Uint8Array();
+    } else {
+      this.nextBlock = this.nextBlock.subarray(0, this.i);
+      const curBlock = this.nextBlock;
+      const encryptedBlock = await this._runCBC(this.prevBlock);
+      xorMut(encryptedBlock, curBlock);
+      result = encryptedBlock.subarray(0, curBlock.length);
+    }
+
+    this.clearSensitiveData();
+    return result;
+  }
+
+  clearSensitiveData() {
+    this.nextBlock.fill(0);
+    this.prevBlock.fill(0);
+    this.keyRef = null;
+    this.key = null;
+  }
+
+  async encrypt(plaintext) {
+    // plaintext is internally padded to block length before encryption
+    const encryptedWithPadding = await this._runCBC(
+      util.concatUint8Array([new Uint8Array(this.blockSize), plaintext]),
+      this.iv
+    );
+    // drop encrypted padding
+    const ct = encryptedWithPadding.subarray(0, plaintext.length);
+    xorMut(ct, plaintext);
+    this.clearSensitiveData();
+    return ct;
+  }
 }
 
-function aesDecrypt(algo, key, ct, iv) {
-  if (util.isStream(ct)) {
-    const cfb = new AES_CFB(key, iv);
-    return stream.transform(ct, value => cfb.aes.AES_Decrypt_process(value), () => cfb.aes.AES_Decrypt_finish());
+class NobleStreamProcessor {
+  constructor(forEncryption, algo, key, iv) {
+    this.forEncryption = forEncryption;
+    const { blockSize } = getCipherParams(algo);
+    this.key = nobleAesHelpers.expandKeyLE(key);
+
+    if (iv.byteOffset % 4 !== 0) iv = iv.slice(); // aligned arrays required by noble-ciphers
+    this.prevBlock = getUint32Array(iv);
+    this.nextBlock = new Uint8Array(blockSize);
+    this.i = 0; // pointer inside next block
+    this.blockSize = blockSize;
   }
-  return AES_CFB.decrypt(ct, key, iv);
+
+  _runCFB(src) {
+    const src32 = getUint32Array(src);
+    const dst = new Uint8Array(src.length);
+    const dst32 = getUint32Array(dst);
+    for (let i = 0; i + 4 <= dst32.length; i += 4) {
+      const { s0: e0, s1: e1, s2: e2, s3: e3 } = nobleAesHelpers.encrypt(this.key, this.prevBlock[0], this.prevBlock[1], this.prevBlock[2], this.prevBlock[3]);
+      dst32[i + 0] = src32[i + 0] ^ e0;
+      dst32[i + 1] = src32[i + 1] ^ e1;
+      dst32[i + 2] = src32[i + 2] ^ e2;
+      dst32[i + 3] = src32[i + 3] ^ e3;
+      this.prevBlock = (this.forEncryption ? dst32 : src32).slice(i, i + 4);
+    }
+    return dst;
+  }
+
+  async processChunk(value) {
+    const missing = this.nextBlock.length - this.i;
+    const added = value.subarray(0, missing);
+    this.nextBlock.set(added, this.i);
+
+    if ((this.i + value.length) >= (2 * this.blockSize)) {
+      const leftover = (value.length - missing) % this.blockSize;
+      const toProcess = util.concatUint8Array([
+        this.nextBlock,
+        value.subarray(missing, value.length - leftover)
+      ]);
+
+      const processedBlocks = this._runCFB(toProcess);
+
+      // take care of leftover data
+      if (leftover > 0) this.nextBlock.set(value.subarray(-leftover));
+      this.i = leftover;
+
+      return processedBlocks;
+    }
+
+    this.i += added.length;
+
+    let processedBlock;
+    if (this.i === this.nextBlock.length) { // block ready to be encrypted
+      processedBlock = this._runCFB(this.nextBlock);
+      this.i = 0;
+
+      const remaining = value.subarray(added.length);
+      this.nextBlock.set(remaining, this.i);
+      this.i += remaining.length;
+    } else {
+      processedBlock = new Uint8Array();
+    }
+
+    return processedBlock;
+  }
+
+  async finish() {
+    let result;
+    if (this.i === 0) { // nothing more to encrypt
+      result = new Uint8Array();
+    } else {
+      const processedBlock = this._runCFB(this.nextBlock);
+
+      result = processedBlock.subarray(0, this.i);
+    }
+
+    this.clearSensitiveData();
+    return result;
+  }
+
+  clearSensitiveData() {
+    this.nextBlock.fill(0);
+    this.prevBlock.fill(0);
+    this.key.fill(0);
+  }
+}
+
+
+async function aesEncrypt(algo, key, pt, iv) {
+  if (webCrypto && await WebCryptoEncryptor.isSupported(algo)) { // Chromium does not implement AES with 192-bit keys
+    const cfb = new WebCryptoEncryptor(algo, key, iv);
+    return util.isStream(pt) ? stream.transform(pt, value => cfb.encryptChunk(value), () => cfb.finish()) : cfb.encrypt(pt);
+  } else if (util.isStream(pt)) { // async callbacks are not accepted by stream.transform unless the input is a stream
+    const cfb = new NobleStreamProcessor(true, algo, key, iv);
+    return stream.transform(pt, value => cfb.processChunk(value), () => cfb.finish());
+  }
+  return nobleAesCfb(key, iv).encrypt(pt);
+}
+
+async function aesDecrypt(algo, key, ct, iv) {
+  if (util.isStream(ct)) {
+    const cfb = new NobleStreamProcessor(false, algo, key, iv);
+    return stream.transform(ct, value => cfb.processChunk(value), () => cfb.finish());
+  }
+  return nobleAesCfb(key, iv).decrypt(ct);
 }
 
 function xorMut(a, b) {
-  for (let i = 0; i < a.length; i++) {
+  const aLength = Math.min(a.length, b.length);
+  for (let i = 0; i < aLength; i++) {
     a[i] = a[i] ^ b[i];
   }
 }
 
-async function webEncrypt(algo, key, pt, iv) {
-  const ALGO = 'AES-CBC';
-  const _key = await webCrypto.importKey('raw', key, { name: ALGO }, false, ['encrypt']);
-  const { blockSize } = getCipher(algo);
-  const cbc_pt = util.concatUint8Array([new Uint8Array(blockSize), pt]);
-  const ct = new Uint8Array(await webCrypto.encrypt({ name: ALGO, iv }, _key, cbc_pt)).subarray(0, pt.length);
-  xorMut(ct, pt);
-  return ct;
-}
+const getUint32Array = arr => new Uint32Array(arr.buffer, arr.byteOffset, Math.floor(arr.byteLength / 4));
 
 function nodeEncrypt(algo, key, pt, iv) {
   const algoName = enums.read(enums.symmetric, algo);

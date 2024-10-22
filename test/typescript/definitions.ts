@@ -7,6 +7,7 @@
  */
 import { ReadableStream as WebReadableStream } from 'web-streams-polyfill';
 import { createReadStream } from 'fs';
+import { Readable as NodeNativeReadableStream } from 'stream';
 
 import { expect } from 'chai';
 import {
@@ -15,13 +16,13 @@ import {
   encrypt, decrypt, sign, verify, config, enums,
   generateSessionKey, encryptSessionKey, decryptSessionKeys,
   LiteralDataPacket, PacketList, CompressedDataPacket, PublicKeyPacket, PublicSubkeyPacket, SecretKeyPacket, SecretSubkeyPacket, CleartextMessage,
-  WebStream, NodeStream,
-} from '../..';
+  WebStream, NodeWebStream,
+} from 'openpgp';
 
 (async () => {
 
   // Generate keys
-  const keyOptions = { userIDs: [{ email: 'user@corp.co' }], config: { v5Keys: true } };
+  const keyOptions = { userIDs: [{ email: 'user@corp.co' }], config: { v6Keys: true } };
   const { privateKey: privateKeyArmored, publicKey: publicKeyArmored } = await generateKey(keyOptions);
   const { privateKey: privateKeyBinary } = await generateKey({ ...keyOptions, format: 'binary' });
   const { privateKey, publicKey, revocationCertificate } = await generateKey({ ...keyOptions, format: 'object' });
@@ -207,9 +208,9 @@ import {
   
   // Streaming - encrypt text message (armored output)
   try {
-    const nodeTextStream = createReadStream('non-existent-file', { encoding: 'utf8' });
+    const nodeTextStream = NodeNativeReadableStream.toWeb(createReadStream('non-existent-file', { encoding: 'utf8' }));
     const messageFromNodeTextStream = await createMessage({ text: nodeTextStream });
-    (await encrypt({ message: messageFromNodeTextStream, passwords: 'password', format: 'armored' })) as NodeStream<string>;
+    (await encrypt({ message: messageFromNodeTextStream, passwords: 'password', format: 'armored' })) as NodeWebStream<string>;
   } catch (err) {}
   const webTextStream = new WebReadableStream<string>();
   const messageFromWebTextStream = await createMessage({ text: webTextStream });
@@ -219,9 +220,9 @@ import {
 
   // Streaming - encrypt binary message (binary output)
   try {
-    const nodeBinaryStream = createReadStream('non-existent-file');
+    const nodeBinaryStream = NodeNativeReadableStream.toWeb(createReadStream('non-existent-file'));
     const messageFromNodeBinaryStream = await createMessage({ binary: nodeBinaryStream });
-    (await encrypt({ message: messageFromNodeBinaryStream, passwords: 'password', format: 'binary' })) as NodeStream<Uint8Array>;
+    (await encrypt({ message: messageFromNodeBinaryStream, passwords: 'password', format: 'binary' })) as NodeWebStream<Uint8Array>;
   } catch (err) {}
   const webBinaryStream = new WebReadableStream<Uint8Array>();
   const messageFromWebBinaryStream = await createMessage({ binary: webBinaryStream });

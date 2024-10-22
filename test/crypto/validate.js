@@ -1,8 +1,9 @@
-const BN = require('bn.js');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+import openpgp from '../initOpenpgp.js';
+import { bigIntToUint8Array, modExp, uint8ArrayToBigInt } from '../../src/crypto/biginteger.ts';
 
 const armoredDSAKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -86,11 +87,11 @@ async function generatePrivateKeyObject(options) {
 }
 
 /* eslint-disable no-invalid-this */
-module.exports = () => {
+export default () => {
   describe('EdDSA parameter validation (legacy format)', function() {
     let eddsaKey;
     before(async () => {
-      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519' });
+      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
     });
 
     it('EdDSA params should be valid', async function() {
@@ -114,9 +115,9 @@ module.exports = () => {
     let ecdhKey;
     let ecdsaKey;
     before(async () => {
-      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519' });
+      eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
       ecdhKey = eddsaKey.subkeys[0];
-      ecdsaKey = await generatePrivateKeyObject({ curve: 'p256' });
+      ecdsaKey = await generatePrivateKeyObject({ curve: 'nistP256' });
     });
 
     it('EdDSA params are not valid for ECDH', async function() {
@@ -192,17 +193,17 @@ module.exports = () => {
     });
   });
 
-  const curves = ['curve25519', 'p256', 'p384', 'p521', 'secp256k1', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+  const curves = ['curve25519Legacy', 'nistP256', 'nistP384', 'nistP521', 'secp256k1', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
   curves.forEach(curve => {
     describe(`ECC ${curve} parameter validation`, () => {
       let ecdsaKey;
       let ecdhKey;
       before(async () => {
-        if (curve !== 'curve25519') {
+        if (curve !== 'curve25519Legacy') {
           ecdsaKey = await generatePrivateKeyObject({ curve });
           ecdhKey = ecdsaKey.subkeys[0];
         } else {
-          const eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519' });
+          const eddsaKey = await generatePrivateKeyObject({ curve: 'ed25519Legacy' });
           ecdhKey = eddsaKey.subkeys[0];
         }
       });
@@ -242,6 +243,48 @@ module.exports = () => {
         keyPacket.publicParams.Q = infQ;
         infQ[0] = 4;
         await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
+      });
+    });
+  });
+
+  // new EdDSA/XECDH algos
+  ['25519', '448'].forEach(curveID => {
+    describe(`Ed${curveID}/X${curveID} parameter validation`, function() {
+      let eddsaKey;
+      let ecdhXKey;
+      before(async () => {
+        eddsaKey = await generatePrivateKeyObject({ type: `curve${curveID}` });
+        ecdhXKey = eddsaKey.subkeys[0];
+      });
+
+      it(`Ed${curveID} params should be valid`, async function() {
+        await expect(eddsaKey.keyPacket.validate()).to.not.be.rejected;
+      });
+
+      it(`detect invalid Ed${curveID} public point`, async function() {
+        const eddsaKeyPacket = await cloneKeyPacket(eddsaKey);
+        const A = eddsaKeyPacket.publicParams.A;
+        A[0]++;
+        await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
+
+        const infA = new Uint8Array(A.length);
+        eddsaKeyPacket.publicParams.A = infA;
+        await expect(eddsaKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
+      });
+
+      it(`X${curveID} params should be valid`, async function() {
+        await expect(ecdhXKey.keyPacket.validate()).to.not.be.rejected;
+      });
+
+      it(`detect invalid X${curveID} public point`, async function() {
+        const ecdhXKeyPacket = await cloneKeyPacket(ecdhXKey);
+        const A = ecdhXKeyPacket.publicParams.A;
+        A[0]++;
+        await expect(ecdhXKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
+
+        const infA = new Uint8Array(A.length);
+        ecdhXKeyPacket.publicParams.A = infA;
+        await expect(ecdhXKeyPacket.validate()).to.be.rejectedWith('Key is invalid');
       });
     });
   });
@@ -345,14 +388,14 @@ module.exports = () => {
 
     it('detect g with small order', async function() {
       const keyPacket = await cloneKeyPacket(egKey);
-      const p = keyPacket.publicParams.p;
-      const g = keyPacket.publicParams.g;
+      const { p, g } = keyPacket.publicParams;
 
-      const pBN = new BN(p);
-      const gModP = new BN(g).toRed(new BN.red(pBN));
+      const _1n = BigInt(1);
+      const pBN = uint8ArrayToBigInt(p);
+      const gBN = uint8ArrayToBigInt(g);
       // g**(p-1)/2 has order 2
-      const gOrd2 = gModP.redPow(pBN.subn(1).shrn(1));
-      keyPacket.publicParams.g = gOrd2.toArrayLike(Uint8Array, 'be');
+      const gOrd2 = modExp(gBN, (pBN - _1n) >> _1n, pBN);
+      keyPacket.publicParams.g = bigIntToUint8Array(gOrd2);
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
   });

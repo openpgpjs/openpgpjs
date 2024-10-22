@@ -30,11 +30,22 @@
  * is constructed by omitting the first two octets.  Only the truncated
  * sequence of octets is the valid representation of a curve OID.
  * @module type/oid
- * @private
  */
 
 import util from '../util';
 import enums from '../enums';
+
+const knownOIDs = {
+  '2a8648ce3d030107': enums.curve.nistP256,
+  '2b81040022': enums.curve.nistP384,
+  '2b81040023': enums.curve.nistP521,
+  '2b8104000a': enums.curve.secp256k1,
+  '2b06010401da470f01': enums.curve.ed25519Legacy,
+  '2b060104019755010501': enums.curve.curve25519Legacy,
+  '2b2403030208010107': enums.curve.brainpoolP256r1,
+  '2b240303020801010b': enums.curve.brainpoolP384r1,
+  '2b240303020801010d': enums.curve.brainpoolP512r1
+};
 
 class OID {
   constructor(oid) {
@@ -89,15 +100,16 @@ class OID {
 
   /**
    * If a known curve object identifier, return the canonical name of the curve
-   * @returns {string} String with the canonical name of the curve.
+   * @returns {enums.curve} String with the canonical name of the curve
+   * @throws if unknown
    */
   getName() {
-    const hex = this.toHex();
-    if (enums.curve[hex]) {
-      return enums.write(enums.curve, hex);
-    } else {
+    const name = knownOIDs[this.toHex()];
+    if (!name) {
       throw new Error('Unknown curve object identifier.');
     }
+
+    return name;
   }
 }
 
