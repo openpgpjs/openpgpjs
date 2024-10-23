@@ -28,6 +28,10 @@ export default {
         playwrightLauncher({
           ...sharedPlaywrightCIOptions,
           product: 'firefox'
+        }),
+        playwrightLauncher({
+          ...sharedPlaywrightCIOptions,
+          product: 'webkit'
         })
       ]
     }
