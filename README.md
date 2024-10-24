@@ -667,7 +667,7 @@ To create your own build of the library, just run the following command after cl
 
     npm install && npm test
 
-For debugging browser errors, you can run `npm start` and open [`http://localhost:8080/test/unittests.html`](http://localhost:8080/test/unittests.html) in a browser, or run the following command:
+For debugging browser errors, run the following command:
 
     npm run browsertest
 
