@@ -57,8 +57,15 @@ jobs:
 
   test-browsers-latest:
     name: Browsers (latest)
-    runs-on: ubuntu-latest
     needs: build
+    strategy:
+      fail-fast: false # if tests for one version fail, continue with the rest
+      matrix:
+        # run on all main platforms to test platform-specific code, if present
+        # (e.g. webkit's WebCrypto API implementation is different in macOS vs Linux)
+        # TODO: windows-latest fails to fetch resources from the wtr server; investigate if the problem is with path declaration or permissions
+        runner: ['ubuntu-latest', 'macos-latest']
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - uses: actions/checkout@v4
@@ -79,17 +86,19 @@ jobs:
           npm pkg delete scripts.prepare
           npm ci
 
-      - name: Get Playwright version
+      - name: Get Playwright version and cache location
         id: playwright-version
         run: |
           PLAYWRIGHT_VERSION=$(npm ls playwright --depth=0 | grep playwright | sed 's/.*@//')
           echo "version=$PLAYWRIGHT_VERSION" >> $GITHUB_OUTPUT
+          PLAYWRIGHT_CACHE=${{ fromJSON('{"ubuntu-latest": "~/.cache/ms-playwright", "macos-latest": "~/Library/Caches/ms-playwright"}')[matrix.runner] }}
+          echo "playwright_cache=$PLAYWRIGHT_CACHE" >> $GITHUB_OUTPUT
       - name: Check for cached browsers
         id: cache-playwright-browsers
         uses: actions/cache@v4
         with:
-          path: ~/.cache/ms-playwright
-          key: playwright-browsers-${{ steps.playwright-version.outputs.version }}
+          path: ${{ steps.playwright-version.outputs.playwright_cache }}
+          key: playwright-browsers-${{ matrix.runner }}-${{ steps.playwright-version.outputs.version }}
       - name: Install browsers
         if: steps.cache-playwright-browsers.outputs.cache-hit != 'true'
         run: |
