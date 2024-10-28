@@ -16,7 +16,6 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
-import { decode as BunzipDecode } from '@openpgp/seek-bzip';
 import * as stream from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
@@ -108,12 +107,12 @@ class CompressedDataPacket {
    */
   async decompress(config = defaultConfig) {
     const compressionName = enums.read(enums.compression, this.algorithm);
-    const decompressionFn = decompress_fns[compressionName];
+    const decompressionFn = decompress_fns[compressionName]; // bzip decompression is async
     if (!decompressionFn) {
       throw new Error(`${compressionName} decompression not supported`);
     }
 
-    this.packets = await PacketList.fromBinary(decompressionFn(this.compressed), allowedPackets, config);
+    this.packets = await PacketList.fromBinary(await decompressionFn(this.compressed), allowedPackets, config);
   }
 
   /**
@@ -202,9 +201,10 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
   };
 }
 
-function bzip2(func) {
-  return function(data) {
-    return stream.fromAsync(async () => func(await stream.readToEnd(data)));
+function bzip2Decompress() {
+  return async function(data) {
+    const { decode: bunzipDecode } = await import('@openpgp/seek-bzip');
+    return stream.fromAsync(async () => bunzipDecode(await stream.readToEnd(data)));
   };
 }
 
@@ -229,6 +229,6 @@ const decompress_fns = {
   uncompressed: data => data,
   zip: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate-raw').decompressor, Inflate),
   zlib: /*#__PURE__*/ zlib(getCompressionStreamInstantiators('deflate').decompressor, Unzlib),
-  bzip2: /*#__PURE__*/ bzip2(BunzipDecode)
+  bzip2: /*#__PURE__*/ bzip2Decompress() // NB: async due to dynamic lib import
 };
 
