@@ -5,7 +5,7 @@ const sharedBrowserstackCapabilities = {
   'browserstack.user': process.env.BROWSERSTACK_USERNAME,
   'browserstack.key': process.env.BROWSERSTACK_ACCESS_KEY,
 
-  project: `openpgpjs/${process.env.GITHUB_EVENT_NAME || 'push'}${process.env.LIGHTWEIGHT ? '/lightweight' : ''}`,
+  project: `openpgpjs/${process.env.GITHUB_EVENT_NAME || 'push'}${process.env.LIGHTWEIGHT ? '/lightweight' : ''}@${process.env.GITHUB_REF_NAME}`,
   name: process.env.GITHUB_WORKFLOW || 'local',
   build: process.env.GITHUB_SHA || 'local',
   'browserstack.acceptInsecureCerts': true
