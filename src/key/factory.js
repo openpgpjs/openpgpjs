@@ -246,7 +246,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
     const signatureProperties = getKeySignatureProperties();
     signatureProperties.signatureType = enums.signature.key;
 
-    const signaturePacket = await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
+    const signaturePacket = await helper.createSignaturePacket(dataToSign, [], secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
     packetlist.push(signaturePacket);
   }
 
@@ -262,7 +262,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       signatureProperties.isPrimaryUserID = true;
     }
 
-    const signaturePacket = await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
+    const signaturePacket = await helper.createSignaturePacket(dataToSign, [], secretKeyPacket, signatureProperties, options.date, undefined, undefined, undefined, config);
 
     return { userIDPacket, signaturePacket };
   })).then(list => {
@@ -286,7 +286,7 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
   // Add revocation signature packet for creating a revocation certificate.
   // This packet should be removed before returning the key.
   const dataToSign = { key: secretKeyPacket };
-  packetlist.push(await helper.createSignaturePacket(dataToSign, null, secretKeyPacket, {
+  packetlist.push(await helper.createSignaturePacket(dataToSign, [], secretKeyPacket, {
     signatureType: enums.signature.keyRevocation,
     reasonForRevocationFlag: enums.reasonForRevocation.noReason,
     reasonForRevocationString: ''

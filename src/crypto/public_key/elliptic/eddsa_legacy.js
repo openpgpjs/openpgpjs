@@ -46,7 +46,9 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
   const curve = new CurveWithOID(oid);
   checkPublicPointEnconding(curve, publicKey);
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
+    // Enforce digest sizes, since the constraint was already present in RFC4880bis:
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
+    // and https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.3-3
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
   const { RS: signature } = await eddsaSign(enums.publicKey.ed25519, hashAlgo, message, publicKey.subarray(1), privateKey, hashed);
@@ -73,6 +75,9 @@ export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
   checkPublicPointEnconding(curve, publicKey);
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
+    // Enforce digest sizes, since the constraint was already present in RFC4880bis:
+    // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
+    // and https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.3-3
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
   const RS = util.concatUint8Array([r, s]);

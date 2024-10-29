@@ -290,7 +290,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
 
   try {
     if (signingKeys.length || signature) { // sign the message only if signing keys or signature is specified
-      message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      message = await message.sign(signingKeys, encryptionKeys, signature, signingKeyIDs, date, signingUserIDs, encryptionKeyIDs, signatureNotations, config);
     }
     message = message.compress(
       await getPreferredCompressionAlgo(encryptionKeys, date, encryptionUserIDs, config),
@@ -422,9 +422,9 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
   try {
     let signature;
     if (detached) {
-      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      signature = await message.signDetached(signingKeys, [], undefined, signingKeyIDs, date, signingUserIDs, undefined, signatureNotations, config);
     } else {
-      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      signature = await message.sign(signingKeys, [], undefined, signingKeyIDs, date, signingUserIDs, undefined, signatureNotations, config);
     }
     if (format === 'object') return signature;
 

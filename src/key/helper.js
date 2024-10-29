@@ -90,7 +90,7 @@ export async function createBindingSignature(subkey, primaryKey, options, config
   const signatureProperties = { signatureType: enums.signature.subkeyBinding };
   if (options.sign) {
     signatureProperties.keyFlags = [enums.keyFlags.signData];
-    signatureProperties.embeddedSignature = await createSignaturePacket(dataToSign, null, subkey, {
+    signatureProperties.embeddedSignature = await createSignaturePacket(dataToSign, [], subkey, {
       signatureType: enums.signature.keyBinding
     }, options.date, undefined, undefined, undefined, config);
   } else {
@@ -100,41 +100,95 @@ export async function createBindingSignature(subkey, primaryKey, options, config
     signatureProperties.keyExpirationTime = options.keyExpirationTime;
     signatureProperties.keyNeverExpires = false;
   }
-  const subkeySignaturePacket = await createSignaturePacket(dataToSign, null, primaryKey, signatureProperties, options.date, undefined, undefined, undefined, config);
+  const subkeySignaturePacket = await createSignaturePacket(dataToSign, [], primaryKey, signatureProperties, options.date, undefined, undefined, undefined, config);
   return subkeySignaturePacket;
 }
 
 /**
- * Returns the preferred signature hash algorithm of a key
- * @param {Key} [key] - The key to get preferences from
- * @param {SecretKeyPacket|SecretSubkeyPacket} keyPacket - key packet used for signing
+ * Returns the preferred signature hash algorithm for a set of keys.
+ * @param {Array<Key>} [targetKeys] - The keys to get preferences from
+ * @param {SecretKeyPacket|SecretSubkeyPacket} signingKeyPacket - key packet used for signing
  * @param {Date} [date] - Use the given date for verification instead of the current time
- * @param {Object} [userID] - User ID
+ * @param {Object} [targetUserID] - User IDs corresponding to `targetKeys` to get preferences from
  * @param {Object} config - full configuration
  * @returns {Promise<enums.hash>}
  * @async
  */
-export async function getPreferredHashAlgo(key, keyPacket, date = new Date(), userID = {}, config) {
-  let hashAlgo = config.preferredHashAlgorithm;
-  let prefAlgo = hashAlgo;
-  if (key) {
-    const selfCertification = await key.getPrimarySelfSignature(date, userID, config);
-    if (selfCertification.preferredHashAlgorithms) {
-      [prefAlgo] = selfCertification.preferredHashAlgorithms;
-      hashAlgo = crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
-        prefAlgo : hashAlgo;
+export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = new Date(), targetUserIDs = [], config) {
+  /**
+   * If `preferredSenderAlgo` appears in the prefs of all recipients, we pick it; otherwise, we use the
+   * strongest supported algo (`defaultAlgo` is always implicitly supported by all keys).
+   * if no keys are available, `preferredSenderAlgo` is returned.
+   * For ECC signing key, the curve preferred hash is taken into account as well (see logic below).
+   */
+  const defaultAlgo = enums.hash.sha256; // MUST implement
+  const preferredSenderAlgo = config.preferredHashAlgorithm;
+
+  const supportedAlgosPerTarget = await Promise.all(targetKeys.map(async (key, i) => {
+    const selfCertification = await key.getPrimarySelfSignature(date, targetUserIDs[i], config);
+    const targetPrefs = selfCertification.preferredHashAlgorithms;
+    return targetPrefs;
+  }));
+  const supportedAlgosMap = new Map(); // use Map over object to preserve numeric keys
+  for (const supportedAlgos of supportedAlgosPerTarget) {
+    for (const hashAlgo of supportedAlgos) {
+      try {
+        // ensure that `hashAlgo` is recognized/implemented by us, otherwise e.g. `getHashByteLength` will throw later on
+        const supportedAlgo = enums.write(enums.hash, hashAlgo);
+        supportedAlgosMap.set(
+          supportedAlgo,
+          supportedAlgosMap.has(supportedAlgo) ? supportedAlgosMap.get(supportedAlgo) + 1 : 1
+        );
+      } catch {}
     }
   }
-  switch (keyPacket.algorithm) {
-    case enums.publicKey.ecdsa:
-    case enums.publicKey.eddsaLegacy:
-    case enums.publicKey.ed25519:
-    case enums.publicKey.ed448:
-      prefAlgo = crypto.getPreferredCurveHashAlgo(keyPacket.algorithm, keyPacket.publicParams.oid);
+  const isSupportedHashAlgo = hashAlgo => targetKeys.length === 0 || supportedAlgosMap.get(hashAlgo) === targetKeys.length || hashAlgo === defaultAlgo;
+  const getStrongestSupportedHashAlgo = () => {
+    if (supportedAlgosMap.size === 0) {
+      return defaultAlgo;
+    }
+    const sortedHashAlgos = Array.from(supportedAlgosMap.keys())
+      .filter(hashAlgo => isSupportedHashAlgo(hashAlgo))
+      .sort((algoA, algoB) => crypto.hash.getHashByteLength(algoA) - crypto.hash.getHashByteLength(algoB));
+    const strongestHashAlgo = sortedHashAlgos[0];
+    // defaultAlgo is always implicilty supported, and might be stronger than the rest
+    return crypto.hash.getHashByteLength(strongestHashAlgo) >= crypto.hash.getHashByteLength(defaultAlgo) ? strongestHashAlgo : defaultAlgo;
+  };
+
+  const eccAlgos = new Set([
+    enums.publicKey.ecdsa,
+    enums.publicKey.eddsaLegacy,
+    enums.publicKey.ed25519,
+    enums.publicKey.ed448
+  ]);
+
+  if (eccAlgos.has(signingKeyPacket.algorithm)) {
+    // For ECC, the returned hash algo MUST be at least as strong as `preferredCurveHashAlgo`, see:
+    // - ECDSA: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.2-5
+    // - EdDSALegacy: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.3-3
+    // - Ed25519: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.4-4
+    // - Ed448: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.5-4
+    // Hence, we return the `preferredHashAlgo` as long as it's supported and strong enough;
+    // Otherwise, we look at the strongest supported algo, and ultimately fallback to the curve
+    // preferred algo, even if not supported by all targets.
+    const preferredCurveAlgo = crypto.getPreferredCurveHashAlgo(signingKeyPacket.algorithm, signingKeyPacket.publicParams.oid);
+
+    const preferredSenderAlgoIsSupported = isSupportedHashAlgo(preferredSenderAlgo);
+    const preferredSenderAlgoStrongerThanCurveAlgo = crypto.hash.getHashByteLength(preferredSenderAlgo) >= crypto.hash.getHashByteLength(preferredCurveAlgo);
+
+    if (preferredSenderAlgoIsSupported && preferredSenderAlgoStrongerThanCurveAlgo) {
+      return preferredSenderAlgo;
+    } else {
+      const strongestSupportedAlgo = getStrongestSupportedHashAlgo();
+      return crypto.hash.getHashByteLength(strongestSupportedAlgo) >= crypto.hash.getHashByteLength(preferredCurveAlgo) ?
+        strongestSupportedAlgo :
+        preferredCurveAlgo;
+    }
   }
 
-  return crypto.hash.getHashByteLength(hashAlgo) <= crypto.hash.getHashByteLength(prefAlgo) ?
-    prefAlgo : hashAlgo;
+  // `preferredSenderAlgo` may be weaker than the default, but we do not guard against this,
+  // since it was manually set by the sender.
+  return isSupportedHashAlgo(preferredSenderAlgo) ? preferredSenderAlgo : getStrongestSupportedHashAlgo();
 }
 
 /**
@@ -205,7 +259,7 @@ export async function getPreferredCipherSuite(keys = [], date = new Date(), user
 /**
  * Create signature packet
  * @param {Object} dataToSign - Contains packets to be signed
- * @param {PrivateKey} privateKey - key to get preferences from
+ * @param {Array<Key>} recipientKeys - keys to get preferences from
  * @param  {SecretKeyPacket|
  *          SecretSubkeyPacket}              signingKeyPacket secret key packet for signing
  * @param {Object} [signatureProperties] - Properties to write on the signature packet before signing
@@ -216,7 +270,7 @@ export async function getPreferredCipherSuite(keys = [], date = new Date(), user
  * @param {Object} config - full configuration
  * @returns {Promise<SignaturePacket>} Signature packet.
  */
-export async function createSignaturePacket(dataToSign, privateKey, signingKeyPacket, signatureProperties, date, userID, notations = [], detached = false, config) {
+export async function createSignaturePacket(dataToSign, recipientKeys, signingKeyPacket, signatureProperties, date, recipientUserIDs, notations = [], detached = false, config) {
   if (signingKeyPacket.isDummy()) {
     throw new Error('Cannot sign with a gnu-dummy key.');
   }
@@ -226,7 +280,7 @@ export async function createSignaturePacket(dataToSign, privateKey, signingKeyPa
   const signaturePacket = new SignaturePacket();
   Object.assign(signaturePacket, signatureProperties);
   signaturePacket.publicKeyAlgorithm = signingKeyPacket.algorithm;
-  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(privateKey, signingKeyPacket, date, userID, config);
+  signaturePacket.hashAlgorithm = await getPreferredHashAlgo(recipientKeys, signingKeyPacket, date, recipientUserIDs, config);
   signaturePacket.rawNotations = [...notations];
   await signaturePacket.sign(signingKeyPacket, dataToSign, date, detached, config);
   return signaturePacket;

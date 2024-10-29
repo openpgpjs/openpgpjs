@@ -206,7 +206,7 @@ class PrivateKey extends PublicKey {
     }
     const dataToSign = { key: this.keyPacket };
     const key = this.clone();
-    key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, this.keyPacket, {
+    key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, [], this.keyPacket, {
       signatureType: enums.signature.keyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
