@@ -290,7 +290,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
 
   try {
     if (signingKeys.length || signature) { // sign the message only if signing keys or signature is specified
-      message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      message = await message.sign(signingKeys, encryptionKeys, signature, signingKeyIDs, date, signingUserIDs, encryptionKeyIDs, signatureNotations, config);
     }
     message = message.compress(
       await getPreferredCompressionAlgo(encryptionKeys, date, encryptionUserIDs, config),
@@ -392,21 +392,23 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {Object} options
  * @param {CleartextMessage|Message} options.message - (cleartext) message to be signed
  * @param {PrivateKey|PrivateKey[]} options.signingKeys - Array of keys or single key with decrypted secret key data to sign cleartext
+ * @param {Key|Key[]} options.recipientKeys - Array of keys or single to get the signing preferences from
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - Format of the returned message
  * @param {Boolean} [options.detached=false] - If the return value should contain a detached signature
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
+ * @param {Object|Object[]} [options.recipientUserIDs=primary user IDs] - Array of user IDs to get the signing preferences from, one per key in `recipientKeys`
  * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String|Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
-export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], signatureNotations = [], config, ...rest }) {
+export async function sign({ message, signingKeys, recipientKeys = [], format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], recipientUserIDs = [], signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkCleartextOrMessage(message); checkOutputMessageFormat(format);
-  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs); signatureNotations = toArray(signatureNotations);
+  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs); recipientKeys = toArray(recipientKeys); recipientUserIDs = toArray(recipientUserIDs); signatureNotations = toArray(signatureNotations);
 
   if (rest.privateKeys) throw new Error('The `privateKeys` option has been removed from openpgp.sign, pass `signingKeys` instead');
   if (rest.armor !== undefined) throw new Error('The `armor` option has been removed from openpgp.sign, pass `format` instead.');
@@ -422,9 +424,9 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
   try {
     let signature;
     if (detached) {
-      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      signature = await message.signDetached(signingKeys, recipientKeys, undefined, signingKeyIDs, date, signingUserIDs, recipientUserIDs, signatureNotations, config);
     } else {
-      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      signature = await message.sign(signingKeys, recipientKeys, undefined, signingKeyIDs, date, signingUserIDs, recipientUserIDs, signatureNotations, config);
     }
     if (format === 'object') return signature;
 

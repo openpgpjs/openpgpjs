@@ -297,7 +297,7 @@ DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
 =/7PI
 -----END PGP PRIVATE KEY BLOCK-----`;
 
-const priv_key_sha3 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+const priv_key_sha3_512 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xUsGZN8edBsAAAAgdUMlFMFCVKNo7sdUd6FVBos6NNjpUpSdrodk6BfPb/kA+3bu
 A2+WY2LwyxlX5o07WR2VSn+wuegC3v28yO0tClHCtwYfGw4AAABIBYJk3x50BAsJ
@@ -1957,8 +1957,8 @@ aOU=
       })).to.be.rejectedWith(/No signing keys provided/);
     });
 
-    it('Signing with key which uses sha3 should generate a valid sha3 signature', async function() {
-      const privKey = await openpgp.readKey({ armoredKey: priv_key_sha3 });
+    it('Signing with key which uses sha3 should generate a valid sha3 signature if `config.preferredHashAlgorithm` has been set accordingly', async function() {
+      const privKey = await openpgp.readKey({ armoredKey: priv_key_sha3_512 });
       const pubKey = privKey.toPublic();
       const text = 'Hello, world.';
       const message = await openpgp.createCleartextMessage({ text });
@@ -1968,10 +1968,18 @@ aOU=
       expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
       expect(
         parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
+      ).to.equal(openpgp.config.preferredHashAlgorithm);
+      const cleartextMessageWithSHA3 = await openpgp.sign({ message, signingKeys: privKey, format: 'armored', config: { preferredHashAlgorithm: openpgp.enums.hash.sha3_512 } });
+      const parsedArmoredSHA3 = await openpgp.readCleartextMessage({ cleartextMessage: cleartextMessageWithSHA3 });
+      expect(parsedArmoredSHA3.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      expect(
+        parsedArmoredSHA3.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
       ).to.equal(openpgp.enums.hash.sha3_512);
 
       const verified = await openpgp.verify({ message: parsedArmored, verificationKeys: pubKey, expectSigned: true });
+      const verifiedSHA3 = await openpgp.verify({ message: parsedArmoredSHA3, verificationKeys: pubKey, expectSigned: true });
       expect(verified.data).to.equal(text);
+      expect(verifiedSHA3.data).to.equal(text);
     });
 
     it('should output cleartext message of expected format', async function() {
@@ -2153,6 +2161,47 @@ aOU=
         config
       });
       expect(await stream.readToEnd(streamedData)).to.equal(text);
+    });
+
+    it('should sign using hash algorithm preferred by `recipientKeys` if given', async function() {
+      const signingKeyWithoutSHA3Pref = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEZyID/RYJKwYBBAHaRw8BAQdAcdaUl/UXEQaT6rKNSEPmyKypikz9rIsf
+BlFAQYjtsF8AAQDiW9ls2uBBRa3vA1Odl0NNNguRBolWhR9XGpdXnVBF3w5E
+zQ48dGVzdEB0ZXN0Lml0PsLAEQQTFgoAgwWCZyID/QMLCQcJkJuH6wXn78D5
+RRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5wZ3Bqcy5vcmcNolfauRaj
+NnItFJ0TOsiyZZhd6bMWVR4032v64tYRywMVCAoEFgACAQIZAQKbAwIeARYh
+BGsOUiBRfu57iwuxh5uH6wXn78D5AACEQQEAz4YXoEKgOElvxRrIrkglUlpb
+ilLZVU6mXqLxRSEtZi0BAK5xooNiLYbjF42eJuCDWUWriXufI9acT/vnruFr
+p34Px10EZyID/RIKKwYBBAGXVQEFAQEHQOC8KcmOQ9+qEgoWBzc8xNgPUvoe
+IVNw+mHbljD9eFBfAwEIBwAA/3iHMqnBfuM/c9tOIWKI4advW92aMYnjexrU
+HdzPS2IoEU3CvgQYFgoAcAWCZyID/QmQm4frBefvwPlFFAAAAAAAHAAgc2Fs
+dEBub3RhdGlvbnMub3BlbnBncGpzLm9yZ5M4VuJhTqDkHF/14D0i/wL8GTtM
+fm9AIukMoYWXjGSGApsMFiEEaw5SIFF+7nuLC7GHm4frBefvwPkAAL0QAP9Z
+oR7Vxyfuje3vAyEbef1gyfMN/RkIVbMKSiwy3A2W9AEA6QcBF5zUvwmHPpA4
++SkLLMuq/yUGT6WhAq6kASQ8vgM=
+=lluz
+-----END PGP PRIVATE KEY BLOCK-----` });
+      const recipientKeyWithSHA3Pref = await openpgp.readKey({ armoredKey: priv_key_sha3_512 });
+
+      const text = 'Hello, world.';
+      const message = await openpgp.createCleartextMessage({ text });
+
+      // SHA3-512 is first preference of recipient key, and should be picked,
+      // even if not declared in the signing key prefs
+      const cleartextMessage = await openpgp.sign({
+        message,
+        signingKeys: signingKeyWithoutSHA3Pref,
+        recipientKeys: recipientKeyWithSHA3Pref,
+        format: 'armored',
+        // the preferred hash algo is expected to picked when supported by the recipient keys
+        config: { preferredHashAlgorithm: openpgp.enums.hash.sha3_512 }
+      });
+      const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
+      expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      expect(
+        parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
+      ).to.equal(openpgp.enums.hash.sha3_512);
     });
   });
 

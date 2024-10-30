@@ -72,7 +72,7 @@ class User {
         throw new Error("The user's own key can only be used for self-certifications");
       }
       const signingKey = await privateKey.getSigningKey(undefined, date, undefined, config);
-      return createSignaturePacket(dataToSign, privateKey, signingKey.keyPacket, {
+      return createSignaturePacket(dataToSign, [privateKey], signingKey.keyPacket, {
         // Most OpenPGP implementations use generic certification (0x10)
         signatureType: enums.signature.certGeneric,
         keyFlags: [enums.keyFlags.certifyKeys | enums.keyFlags.signData]
@@ -260,7 +260,7 @@ class User {
       key: primaryKey
     };
     const user = new User(dataToSign.userID || dataToSign.userAttribute, this.mainKey);
-    user.revocationSignatures.push(await createSignaturePacket(dataToSign, null, primaryKey, {
+    user.revocationSignatures.push(await createSignaturePacket(dataToSign, [], primaryKey, {
       signatureType: enums.signature.certRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
