@@ -1457,7 +1457,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
 
     beforeEach(async function() {
       minRSABitsVal = openpgp.config.minRSABits;
-      openpgp.config.minRSABits = 512;
+      openpgp.config.minRSABits = 1024;
     });
 
     afterEach(function() {
@@ -3894,7 +3894,9 @@ XfA3pqV4mTzF
           signingKeys: privateKey_1337,
           detached: true,
           date: past,
-          format: 'binary'
+          format: 'binary',
+          // SHA-512 cannot be used with a 512-bit RSA key (digest too long)
+          config: { minRSABits: 512, preferredHashAlgorithm: openpgp.enums.hash.sha256 }
         };
         const verifyOpt = {
           message,

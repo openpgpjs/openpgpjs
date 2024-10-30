@@ -2261,7 +2261,7 @@ function versionSpecificTests() {
         ]);
       }
       const hash = openpgp.enums.hash;
-      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha256, hash.sha512, hash.sha3_256, hash.sha3_512]);
+      expect(selfSignature.preferredHashAlgorithms).to.eql([hash.sha512, hash.sha256, hash.sha3_256, hash.sha3_512]);
       const compr = openpgp.enums.compression;
       expect(selfSignature.preferredCompressionAlgorithms).to.eql([compr.uncompressed, compr.zlib, compr.zip]);
 
@@ -2495,7 +2495,7 @@ function versionSpecificTests() {
   });
 
   it('Generate RSA key - two subkeys with default values', async function() {
-    const rsaBits = 512;
+    const rsaBits = 1024;
     const minRSABits = openpgp.config.minRSABits;
     openpgp.config.minRSABits = rsaBits;
 
@@ -2601,7 +2601,7 @@ function versionSpecificTests() {
   });
 
   it('Generate key - override main RSA key options for subkey', async function() {
-    const rsaBits = 512;
+    const rsaBits = 1024;
     const minRSABits = openpgp.config.minRSABits;
     openpgp.config.minRSABits = rsaBits;
 
