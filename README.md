@@ -1,7 +1,7 @@
 OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openpgpjs/openpgpjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ==========
 
-[OpenPGP.js](https://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. It implements [RFC9580](https://datatracker.ietf.org/doc/rfc9580/) (superseding [RFC4880](https://tools.ietf.org/html/rfc4880) and [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10)).
+[OpenPGP.js](https://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. It implements [RFC 9580](https://datatracker.ietf.org/doc/rfc9580/) (superseding [RFC 4880](https://tools.ietf.org/html/rfc4880) and [RFC 4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10)).
 
 **Table of Contents**
 
@@ -78,14 +78,14 @@ OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)
 
 * The platform's [native Web Crypto API](https://w3c.github.io/webcrypto/) is used for performance. On Node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is also used, in cases where it offers additional functionality.
 
-* The library implements authenticated encryption (AEAD) as per [RFC9580](https://datatracker.ietf.org/doc/rfc9580/) using AES-GCM, OCB, or EAX. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.** You can enable it by setting `openpgp.config.aeadProtect = true`.
-  Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in RFC9580.
+* The library implements authenticated encryption (AEAD) as per [RFC 9580](https://datatracker.ietf.org/doc/rfc9580/) using AES-GCM, OCB, or EAX. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.** You can enable it by setting `openpgp.config.aeadProtect = true`.
+  Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from [RFC 4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in RFC 9580.
 
   You can change the AEAD mode by setting one of the following options:
 
   ```
   openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.gcm; // Default, native in WebCrypto and Node.js
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb; // Non-native, but supported across RFC9580 implementations
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb; // Non-native, but supported across RFC 9580 implementations
   openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax; // Native in Node.js
   ```
 
