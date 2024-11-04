@@ -35,23 +35,26 @@ OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)
 
 * The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 14+.
 
-* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v18+: it is used by default when you `import ... from 'openpgp'` (resp. `require('openpgp')`).
+* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v18+: it is used by default when you `import ... from 'openpgp'` (or `require('openpgp')`, respectively).
 
-* Streaming support:
-  * in browsers: the latest versions of Chrome, Firefox, Edge and Safari implement the
-[Streams specification](https://streams.spec.whatwg.org/), including `TransformStream`s.
-These are needed if you use the library with streamed inputs.
-In previous versions of OpenPGP.js, WebStreams were automatically polyfilled by the library,
-but from v6 this task is left up to the library user, due to the more extensive browser support, and the
-polyfilling side-effects. If you're working with [older browsers versions which do not implement e.g. TransformStreams](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream), you can manually
-load [WebStream polyfill](https://github.com/MattiasBuelens/web-streams-polyfills).
-Please note that when you load the polyfills, the global `ReadableStream` property (if it exists) gets overwritten with the polyfill version.
-In some edge cases, you might need to use the native
-`ReadableStream` (for example when using it to create a `Response`
-object), in which case you should store a reference to it before loading
-the polyfills. There is also the [web-streams-adapter](https://github.com/MattiasBuelens/web-streams-adapter)
-library to convert back and forth between them.
-  * in Node.js: OpenPGP.js v6 no longer supports native Node `Readable` streams in input, and instead expects (and outputs) [Node's WebStreams](https://nodejs.org/api/webstreams.html#class-readablestream). [Node v17+ includes utilities to convert from and to Web Streams](https://nodejs.org/api/stream.html#streamreadabletowebstreamreadable-options).
+* Support for the [Web Cryptography API](https://w3c.github.io/webcrypto/)'s `SubtleCrypto` is required.
+  * In browsers, `SubtleCrypto` is only available in [secure contexts](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
+  * In supported versions of Node.js, `SubtleCrypto` is always available.
+
+* Support for the [Web Streams API](https://streams.spec.whatwg.org/) is required.
+  * In browsers: the latest versions of Chrome, Firefox, Edge and Safari support Streams, including `TransformStream`s.
+    These are needed if you use the library with stream inputs.
+    In previous versions of OpenPGP.js, Web Streams were automatically polyfilled by the library,
+    but from v6 this task is left up to the library user, due to the more extensive browser support, and the
+    polyfilling side-effects. If you're working with [older browsers versions which do not implement e.g. TransformStreams](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream#browser_compatibility), you can manually
+    load the [Web Streams polyfill](https://github.com/MattiasBuelens/web-streams-polyfills).
+    Please note that when you load the polyfills, the global `ReadableStream` property (if it exists) gets overwritten with the polyfill version.
+    In some edge cases, you might need to use the native
+    `ReadableStream` (for example when using it to create a `Response`
+    object), in which case you should store a reference to it before loading
+    the polyfills. There is also the [web-streams-adapter](https://github.com/MattiasBuelens/web-streams-adapter)
+    library to convert back and forth between them.
+  * In Node.js: OpenPGP.js v6 no longer supports native Node `Readable` streams in inputs, and instead expects (and outputs) [Node's Web Streams](https://nodejs.org/api/webstreams.html#class-readablestream). [Node v17+ includes utilities to convert from and to Web Streams](https://nodejs.org/api/stream.html#streamreadabletowebstreamreadable-options).
 
 
 ### Performance
@@ -70,13 +73,13 @@ library to convert back and forth between them.
     | brainpoolP512r1 | ECDH       | ECDSA     | Yes*       | No        | If native**      |
     | secp256k1       | ECDH       | ECDSA     | Yes*       | No        | If native**      |
 
-   \* when available
+   \* when available  
    \** these curves are only constant-time if the underlying native implementation is available and constant-time
 
-* If the user's browser supports [native WebCrypto](https://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` API, this will be used. Under Node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used.
+* The platform's [native Web Crypto API](https://w3c.github.io/webcrypto/) is used for performance. On Node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is also used, in cases where it offers additional functionality.
 
 * The library implements authenticated encryption (AEAD) as per [RFC9580](https://datatracker.ietf.org/doc/rfc9580/) using AES-GCM, OCB, or EAX. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.** You can enable it by setting `openpgp.config.aeadProtect = true`.
-Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in RFC9580.
+  Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in RFC9580.
 
   You can change the AEAD mode by setting one of the following options:
 
