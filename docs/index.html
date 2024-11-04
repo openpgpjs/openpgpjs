@@ -43,8 +43,8 @@
 
 
     <section>
-        <article><h1 id="openpgp.js">OpenPGP.js <a href="https://automate.browserstack.com/public-build/N1l2eHFOanVBMU9wYWxJM3ZnWERnc1lidkt5UkRqa3BralV3SWVhOGpGTT0tLVljSjE4Z3dzVmdiQjl6RWgxb2c3T2c9PQ==--5864052cd523f751b6b907d547ac9c4c5f88c8a3"><img src="https://automate.browserstack.com/badge.svg?badge_key=N1l2eHFOanVBMU9wYWxJM3ZnWERnc1lidkt5UkRqa3BralV3SWVhOGpGTT0tLVljSjE4Z3dzVmdiQjl6RWgxb2c3T2c9PQ==--5864052cd523f751b6b907d547ac9c4c5f88c8a3" alt="BrowserStack Status"></a> <a href="https://gitter.im/openpgpjs/openpgpjs?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/Join%20Chat.svg" alt="Join the chat on Gitter"></a></h1>
-<p><a href="https://openpgpjs.org/">OpenPGP.js</a> is a JavaScript implementation of the OpenPGP protocol. It implements the <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh">crypto-refresh</a> (superseding <a href="https://tools.ietf.org/html/rfc4880">RFC4880</a> and <a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10">RFC4880bis</a>).</p>
+        <article><h1 id="openpgp.js">OpenPGP.js <a href="https://gitter.im/openpgpjs/openpgpjs?utm_source=badge&amp;utm_medium=badge&amp;utm_campaign=pr-badge&amp;utm_content=badge"><img src="https://badges.gitter.im/Join%20Chat.svg" alt="Join the chat on Gitter"></a></h1>
+<p><a href="https://openpgpjs.org/">OpenPGP.js</a> is a JavaScript implementation of the OpenPGP protocol. It implements <a href="https://datatracker.ietf.org/doc/rfc9580/">RFC 9580</a> (superseding <a href="https://tools.ietf.org/html/rfc4880">RFC 4880</a> and <a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10">RFC 4880bis</a>).</p>
 <p><strong>Table of Contents</strong></p>
 <ul>
 <li><a href="#openpgpjs">OpenPGP.js</a>
@@ -88,28 +88,38 @@
 <p>The <code>dist/openpgp.min.js</code> (or <code>.mjs</code>) bundle works with recent versions of Chrome, Firefox, Edge and Safari 14+.</p>
 </li>
 <li>
-<p>The <code>dist/node/openpgp.min.mjs</code> (or <code>.cjs</code>) bundle works in Node.js v18+: it is used by default when you <code>import ... from 'openpgp'</code> (resp. <code>require('openpgp')</code>).</p>
+<p>The <code>dist/node/openpgp.min.mjs</code> (or <code>.cjs</code>) bundle works in Node.js v18+: it is used by default when you <code>import ... from 'openpgp'</code> (or <code>require('openpgp')</code>, respectively).</p>
 </li>
 <li>
-<p>Streaming support: the latest versions of Chrome, Firefox, Edge and Safari implement the
-<a href="https://streams.spec.whatwg.org/">Streams specification</a>, including <code>TransformStream</code>s.
-These are needed if you use the library with streamed inputs.
-In previous versions of OpenPGP.js, WebStreams were automatically polyfilled by the library,
+<p>Support for the <a href="https://w3c.github.io/webcrypto/">Web Cryptography API</a>'s <code>SubtleCrypto</code> is required.</p>
+<ul>
+<li>In browsers, <code>SubtleCrypto</code> is only available in <a href="https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts">secure contexts</a>.</li>
+<li>In supported versions of Node.js, <code>SubtleCrypto</code> is always available.</li>
+</ul>
+</li>
+<li>
+<p>Support for the <a href="https://streams.spec.whatwg.org/">Web Streams API</a> is required.</p>
+<ul>
+<li>In browsers: the latest versions of Chrome, Firefox, Edge and Safari support Streams, including <code>TransformStream</code>s.
+These are needed if you use the library with stream inputs.
+In previous versions of OpenPGP.js, Web Streams were automatically polyfilled by the library,
 but from v6 this task is left up to the library user, due to the more extensive browser support, and the
-polyfilling side-effects. If you're working with <a href="https://developer.mozilla.org/en-US/docs/Web/API/TransformStream">older browsers versions which do not implement e.g. TransformStreams</a>, you can manually
-load <a href="https://github.com/MattiasBuelens/web-streams-polyfills">WebStream polyfill</a>.
+polyfilling side-effects. If you're working with <a href="https://developer.mozilla.org/en-US/docs/Web/API/TransformStream#browser_compatibility">older browsers versions which do not implement e.g. TransformStreams</a>, you can manually
+load the <a href="https://github.com/MattiasBuelens/web-streams-polyfills">Web Streams polyfill</a>.
 Please note that when you load the polyfills, the global <code>ReadableStream</code> property (if it exists) gets overwritten with the polyfill version.
 In some edge cases, you might need to use the native
 <code>ReadableStream</code> (for example when using it to create a <code>Response</code>
 object), in which case you should store a reference to it before loading
 the polyfills. There is also the <a href="https://github.com/MattiasBuelens/web-streams-adapter">web-streams-adapter</a>
-library to convert back and forth between them.</p>
+library to convert back and forth between them.</li>
+<li>In Node.js: OpenPGP.js v6 no longer supports native Node <code>Readable</code> streams in inputs, and instead expects (and outputs) <a href="https://nodejs.org/api/webstreams.html#class-readablestream">Node's Web Streams</a>. <a href="https://nodejs.org/api/stream.html#streamreadabletowebstreamreadable-options">Node v17+ includes utilities to convert from and to Web Streams</a>.</li>
+</ul>
 </li>
 </ul>
 <h3 id="performance">Performance</h3>
 <ul>
 <li>
-<p>Version 3.0.0 of the library introduces support for public-key cryptography using <a href="https://wiki.gnupg.org/ECC">elliptic curves</a>. We use native implementations on browsers and Node.js when available. Elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported:</p>
+<p>Version 3.0.0 of the library introduced support for public-key cryptography using <a href="https://wiki.gnupg.org/ECC">elliptic curves</a>. We use native implementations on browsers and Node.js when available. Compared to RSA, elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported:</p>
 <table>
 <thead>
 <tr>
@@ -127,8 +137,8 @@ library to convert back and forth between them.</p>
 <td style="text-align:center">ECDH</td>
 <td style="text-align:center">N/A</td>
 <td style="text-align:center">No</td>
-<td style="text-align:center">Yes*</td>
-<td style="text-align:center">If native**</td>
+<td style="text-align:center">No</td>
+<td style="text-align:center">Algorithmically</td>
 </tr>
 <tr>
 <td style="text-align:center">ed25519</td>
@@ -196,23 +206,20 @@ library to convert back and forth between them.</p>
 </tr>
 </tbody>
 </table>
-<p>* when available
+<p>* when available<br>
 ** these curves are only constant-time if the underlying native implementation is available and constant-time</p>
 </li>
 <li>
-<p>If the user's browser supports <a href="https://caniuse.com/#feat=cryptography">native WebCrypto</a> via the <code>window.crypto.subtle</code> API, this will be used. Under Node.js the native <a href="https://nodejs.org/api/crypto.html#crypto_crypto">crypto module</a> is used.</p>
+<p>The platform's <a href="https://w3c.github.io/webcrypto/">native Web Crypto API</a> is used for performance. On Node.js the native <a href="https://nodejs.org/api/crypto.html#crypto_crypto">crypto module</a> is also used, in cases where it offers additional functionality.</p>
 </li>
 <li>
-<p>The library implements authenticated encryption (AEAD) as per the <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-crypto-refresh">&quot;crypto refresh&quot; draft standard</a> using AES-OCB, EAX, or GCM. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. <strong>Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.</strong> You can enable it by setting <code>openpgp.config.aeadProtect = true</code>.
-Note that this setting has a different effect from the one in OpenPGP.js v6, which implemented support for a provisional version of AEAD from <a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10">RFC4880bis</a>, which was modified in a later draft of the crypto refresh.</p>
+<p>The library implements authenticated encryption (AEAD) as per <a href="https://datatracker.ietf.org/doc/rfc9580/">RFC 9580</a> using AES-GCM, OCB, or EAX. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. <strong>Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.</strong> You can enable it by setting <code>openpgp.config.aeadProtect = true</code>.
+Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from <a href="https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10">RFC 4880bis</a>, which was modified in RFC 9580.</p>
 <p>You can change the AEAD mode by setting one of the following options:</p>
-<pre class="prettyprint source"><code>openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb; // Default (widest ecosystem support), non-native
-openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.gcm; // Native in WebCrypto and Node.js
+<pre class="prettyprint source"><code>openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.gcm; // Default, native in WebCrypto and Node.js
+openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb; // Non-native, but supported across RFC 9580 implementations
 openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax; // Native in Node.js
 </code></pre>
-</li>
-<li>
-<p>For environments that don't provide native crypto, the library falls back to <a href="https://caniuse.com/#feat=asmjs">asm.js</a> AES and AEAD implementations.</p>
 </li>
 </ul>
 <h3 id="getting-started">Getting started</h3>
@@ -445,12 +452,8 @@ It's possible to change that behaviour by enabling compression through the confi
     }
 })();
 </code></pre>
-<p>For more information on using ReadableStreams, see <a href="https://developer.mozilla.org/en-US/docs/Web/API/Streams_API">the MDN Documentation on the
-Streams API</a>.</p>
-<p>You can also pass a <a href="https://nodejs.org/api/stream.html#stream_class_stream_readable">Node.js <code>Readable</code>
-stream</a>, in
-which case OpenPGP.js will return a Node.js <code>Readable</code> stream as well, which you
-can <code>.pipe()</code> to a <code>Writable</code> stream, for example.</p>
+<p>For more information on using ReadableStreams (both in browsers and Node.js), see <a href="https://developer.mozilla.org/en-US/docs/Web/API/Streams_API">the MDN Documentation on the
+Streams API</a> .</p>
 <h4 id="streaming-encrypt-and-decrypt-string-data-with-pgp-keys">Streaming encrypt and decrypt <em>String</em> data with PGP keys</h4>
 <pre class="prettyprint source lang-js"><code>(async () => {
     const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -688,7 +691,7 @@ and a subkey for encryption using Curve25519.</p>
 <p>To create your own build of the library, just run the following command after cloning the git repo. This will download all dependencies, run the tests and create a minified bundle under <code>dist/openpgp.min.js</code> to use in your project:</p>
 <pre><code>npm install &amp;&amp; npm test
 </code></pre>
-<p>For debugging browser errors, you can run <code>npm start</code> and open <a href="http://localhost:8080/test/unittests.html"><code>http://localhost:8080/test/unittests.html</code></a> in a browser, or run the following command:</p>
+<p>For debugging browser errors, run the following command:</p>
 <pre><code>npm run browsertest
 </code></pre>
 <h3 id="how-do-i-get-involved%3F">How do I get involved?</h3>

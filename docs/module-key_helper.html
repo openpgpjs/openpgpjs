@@ -89,7 +89,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L1">line 1</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L1">line 1</a>
     </li></ul></dd>
     
 
@@ -281,7 +281,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L447">line 447</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L501">line 501</a>
     </li></ul></dd>
     
 
@@ -518,7 +518,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L86">line 86</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L86">line 86</a>
     </li></ul></dd>
     
 
@@ -554,7 +554,7 @@
     
 
     
-    <h4 class="name" id=".createSignaturePacket"><span class="type-signature">(static) </span>createSignaturePacket<span class="signature">(dataToSign, privateKey, signingKeyPacket, signatureProperties<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userID<span class="signature-attributes">opt</span>, notations<span class="signature-attributes">opt</span>, detached<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="SignaturePacket.html">SignaturePacket</a>>}</span></h4>
+    <h4 class="name" id=".createSignaturePacket"><span class="type-signature">(static) </span>createSignaturePacket<span class="signature">(dataToSign, recipientKeys, signingKeyPacket, signatureProperties<span class="signature-attributes">opt</span>, date<span class="signature-attributes">opt</span>, userID<span class="signature-attributes">opt</span>, notations<span class="signature-attributes">opt</span>, detached<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;<a href="SignaturePacket.html">SignaturePacket</a>>}</span></h4>
     
 
     
@@ -631,13 +631,13 @@
 
         <tr>
             
-                <td class="name"><code>privateKey</code></td>
+                <td class="name"><code>recipientKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="PrivateKey.html">PrivateKey</a></span>
+<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
 
 
             
@@ -655,7 +655,7 @@
 
             
 
-            <td class="description last"><p>key to get preferences from</p></td>
+            <td class="description last"><p>keys to get preferences from</p></td>
         </tr>
 
     
@@ -928,7 +928,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L219">line 219</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L273">line 273</a>
     </li></ul></dd>
     
 
@@ -1116,7 +1116,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L324">line 324</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L378">line 378</a>
     </li></ul></dd>
     
 
@@ -1376,7 +1376,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L45">line 45</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L45">line 45</a>
     </li></ul></dd>
     
 
@@ -1648,7 +1648,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L173">line 173</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L227">line 227</a>
     </li></ul></dd>
     
 
@@ -1920,7 +1920,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L149">line 149</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L203">line 203</a>
     </li></ul></dd>
     
 
@@ -1978,7 +1978,7 @@ The expiration time of the signature is ignored.</p>
     
 
     
-    <h4 class="name" id=".getPreferredHashAlgo"><span class="type-signature">(async, static) </span>getPreferredHashAlgo<span class="signature">(key<span class="signature-attributes">opt</span>, keyPacket, date<span class="signature-attributes">opt</span>, userID<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;enums.hash>}</span></h4>
+    <h4 class="name" id=".getPreferredHashAlgo"><span class="type-signature">(async, static) </span>getPreferredHashAlgo<span class="signature">(targetKeys<span class="signature-attributes">opt</span>, signingKeyPacket, date<span class="signature-attributes">opt</span>, targetUserID<span class="signature-attributes">opt</span>, config)</span><span class="type-signature"> &rarr; {Promise.&lt;enums.hash>}</span></h4>
     
 
     
@@ -1986,7 +1986,7 @@ The expiration time of the signature is ignored.</p>
 
 
 <div class="description">
-    <p>Returns the preferred signature hash algorithm of a key</p>
+    <p>Returns the preferred signature hash algorithm for a set of keys.</p>
 </div>
 
 
@@ -2024,13 +2024,13 @@ The expiration time of the signature is ignored.</p>
 
         <tr>
             
-                <td class="name"><code>key</code></td>
+                <td class="name"><code>targetKeys</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type"><a href="Key.html">Key</a></span>
+<span class="param-type">Array.&lt;<a href="Key.html">Key</a>></span>
 
 
             
@@ -2050,14 +2050,14 @@ The expiration time of the signature is ignored.</p>
 
             
 
-            <td class="description last"><p>The key to get preferences from</p></td>
+            <td class="description last"><p>The keys to get preferences from</p></td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>keyPacket</code></td>
+                <td class="name"><code>signingKeyPacket</code></td>
             
 
             <td class="type">
@@ -2124,7 +2124,7 @@ The expiration time of the signature is ignored.</p>
 
         <tr>
             
-                <td class="name"><code>userID</code></td>
+                <td class="name"><code>targetUserID</code></td>
             
 
             <td class="type">
@@ -2150,7 +2150,7 @@ The expiration time of the signature is ignored.</p>
 
             
 
-            <td class="description last"><p>User ID</p></td>
+            <td class="description last"><p>User IDs corresponding to <code>targetKeys</code> to get preferences from</p></td>
         </tr>
 
     
@@ -2224,7 +2224,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L117">line 117</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L117">line 117</a>
     </li></ul></dd>
     
 
@@ -2531,7 +2531,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L277">line 277</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L331">line 331</a>
     </li></ul></dd>
     
 
@@ -2830,7 +2830,7 @@ The expiration time of the signature is ignored.</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0-beta.3.patch.1/src/key/helper.js#L243">line 243</a>
+        <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js">key/helper.js</a>, <a href="https://github.com/openpgpjs/openpgpjs/blob/v6.0.0/src/key/helper.js#L297">line 297</a>
     </li></ul></dd>
     
 
