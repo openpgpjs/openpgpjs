@@ -1,17 +1,20 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const nacl = require('@openpgp/tweetnacl');
+import nacl from '@openpgp/tweetnacl';
+import openpgp from '../initOpenpgp.js';
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const elliptic = require('../../src/crypto/public_key/elliptic');
-const signature = require('../../src/crypto/signature');
-const OID = require('../../src/type/oid');
-const util = require('../../src/util');
+import * as elliptic from '../../src/crypto/public_key/elliptic';
+import * as signature from '../../src/crypto/signature';
+import OID from '../../src/type/oid';
+import util from '../../src/util';
 
-const input = require('./testInputs');
+import * as input from './testInputs';
 
-module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cryptography (legacy format)', function () {
+const isSafariOrHeadlessWebKit = () => typeof window !== 'undefined' && window.navigator.userAgent.match(/WebKit/) && !window.navigator.userAgent.match(/Chrome/);
+
+export default () => describe('X25519 Cryptography (legacy format)', function () {
   const data = {
     light: {
       id: '1ecdf026c0245830',
@@ -215,10 +218,12 @@ module.exports = () => (openpgp.config.ci ? describe.skip : describe)('X25519 Cr
     expect(await result.signatures[0].verified).to.be.true;
   });
 
-  describe('Ed25519 Test Vectors from RFC8032', function () {
+  // Safari implements the non-deterministic version of EdDSA (https://cfrg.github.io/draft-irtf-cfrg-det-sigs-with-noise/draft-irtf-cfrg-det-sigs-with-noise.html),
+  // hence these test vectors do not apply.
+  (isSafariOrHeadlessWebKit() ? describe.skip : describe)('Ed25519 Test Vectors from RFC8032', function () {
     // https://tools.ietf.org/html/rfc8032#section-7.1
     function testVector(vector) {
-      const curve = new elliptic.CurveWithOID('ed25519');
+      const curve = new elliptic.CurveWithOID(openpgp.enums.curve.ed25519Legacy);
       const { publicKey } = nacl.sign.keyPair.fromSeed(util.hexToUint8Array(vector.SECRET_KEY));
       expect(publicKey).to.deep.equal(util.hexToUint8Array(vector.PUBLIC_KEY));
       const data = vector.MESSAGE;
@@ -381,7 +386,7 @@ function omnibus() {
   it('Omnibus Ed25519/Curve25519 Test', function() {
     const options = {
       userIDs: { name: 'Hi', email: 'hi@hel.lo' },
-      curve: 'ed25519',
+      curve: 'ed25519Legacy',
       format: 'object'
     };
     return openpgp.generateKey(options).then(async function({ privateKey, publicKey }) {
@@ -394,10 +399,10 @@ function omnibus() {
       const hi = privateKey;
       const primaryKey = hi.keyPacket;
       const subkey = hi.subkeys[0];
-      expect(hi.getAlgorithmInfo().curve).to.equal('ed25519');
-      expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsa');
-      expect(subkey.getAlgorithmInfo().curve).to.equal('curve25519');
+      expect(hi.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
+      expect(hi.getAlgorithmInfo().curve).to.equal('ed25519Legacy');
       expect(subkey.getAlgorithmInfo().algorithm).to.equal('ecdh');
+      expect(subkey.getAlgorithmInfo().curve).to.equal('curve25519Legacy');
 
       // Verify that self Certificate is valid
       const user = hi.users[0];
@@ -409,15 +414,15 @@ function omnibus() {
 
       const options = {
         userIDs: { name: 'Bye', email: 'bye@good.bye' },
-        curve: 'curve25519',
+        curve: 'curve25519Legacy',
         format: 'object'
       };
 
       return openpgp.generateKey(options).then(async function({ privateKey: bye }) {
-        expect(bye.getAlgorithmInfo().curve).to.equal('ed25519');
-        expect(bye.getAlgorithmInfo().algorithm).to.equal('eddsa');
-        expect(bye.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+        expect(bye.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
+        expect(bye.getAlgorithmInfo().curve).to.equal('ed25519Legacy');
         expect(bye.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+        expect(bye.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519Legacy');
 
         // Verify that self Certificate is valid
         const user = bye.users[0];

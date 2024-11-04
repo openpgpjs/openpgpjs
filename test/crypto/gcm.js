@@ -1,19 +1,20 @@
-const sandbox = require('sinon/lib/sinon/sandbox');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import sinon from 'sinon';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const crypto = require('../../src/crypto');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import crypto from '../../src/crypto';
+import util from '../../src/util.js';
 
 
-module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
+export default () => describe('Symmetric AES-GCM (experimental)', function() {
   let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;
 
   beforeEach(function () {
-    sinonSandbox = sandbox.create();
+    sinonSandbox = sinon.createSandbox();
     enableNative();
   });
 
@@ -76,11 +77,11 @@ module.exports = () => describe('Symmetric AES-GCM (experimental)', function() {
     testAESGCM('12345678901234567890123456789012345678901234567890', true, true);
   });
 
-  describe('Symmetric AES-GCM (asm.js fallback)', function() {
+  describe('Symmetric AES-GCM (non-native)', function() {
     testAESGCM('12345678901234567890123456789012345678901234567890', false, false);
   });
 
-  describe('Symmetric AES-GCM (native encrypt, asm.js decrypt)', function() {
+  describe('Symmetric AES-GCM (native encrypt, non-native decrypt)', function() {
     testAESGCM('12345678901234567890123456789012345678901234567890', true, false);
   });
 });

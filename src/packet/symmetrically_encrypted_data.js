@@ -86,7 +86,7 @@ class SymmetricallyEncryptedDataPacket {
       throw new Error('Message is not authenticated.');
     }
 
-    const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
+    const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
     const encrypted = await stream.readToEnd(stream.clone(this.encrypted));
     const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key,
       encrypted.subarray(blockSize + 2),
@@ -107,7 +107,7 @@ class SymmetricallyEncryptedDataPacket {
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     const data = this.packets.write();
-    const { blockSize } = crypto.getCipher(sessionKeyAlgorithm);
+    const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
 
     const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
     const FRE = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, prefix, new Uint8Array(blockSize), config);

@@ -1,11 +1,11 @@
 {
   "name": "openpgp",
   "description": "OpenPGP.js is a Javascript implementation of the OpenPGP protocol. This is defined in RFC 4880.",
-  "version": "5.11.2",
+  "version": "6.0.0-beta.3.patch.1",
   "license": "LGPL-3.0+",
   "homepage": "https://openpgpjs.org/",
   "engines": {
-    "node": ">= 8.0.0"
+    "node": ">= 18.0.0"
   },
   "keywords": [
     "crypto",
@@ -13,13 +13,26 @@
     "gpg",
     "openpgp"
   ],
-  "main": "dist/node/openpgp.min.js",
+  "main": "dist/node/openpgp.min.cjs",
   "module": "dist/node/openpgp.min.mjs",
   "browser": {
-    "./dist/node/openpgp.min.js": "./dist/openpgp.min.js",
+    "./dist/node/openpgp.min.cjs": "./dist/openpgp.min.js",
     "./dist/node/openpgp.min.mjs": "./dist/openpgp.min.mjs"
   },
+  "exports": {
+    ".": {
+      "types": "./openpgp.d.ts",
+      "import": "./dist/node/openpgp.mjs",
+      "require": "./dist/node/openpgp.min.cjs",
+      "browser": "./dist/openpgp.min.mjs"
+    },
+    "./lightweight": {
+      "types": "./openpgp.d.ts",
+      "browser": "./dist/lightweight/openpgp.min.mjs"
+    }
+  },
   "types": "openpgp.d.ts",
+  "type": "module",
   "directories": {
     "lib": "src"
   },
@@ -28,74 +41,76 @@
     "lightweight/",
     "openpgp.d.ts"
   ],
-  "esm": {
-    "cjs": {
-      "dedefault": true
-    }
-  },
   "scripts": {
     "build": "rollup --config",
     "build-test": "npm run build --build-only=test",
     "prepare": "npm run build",
-    "test": "mocha --require esm --timeout 120000 test/unittests.js",
-    "test-type-definitions": "tsc test/typescript/definitions.ts && node test/typescript/definitions.js",
+    "test": "mocha --timeout 120000 test/unittests.js",
+    "test-type-definitions": "tsx test/typescript/definitions.ts",
     "benchmark-time": "node test/benchmarks/time.js",
-    "benchmark-memory-usage": "node --require esm test/benchmarks/memory_usage.js",
-    "start": "http-server",
+    "benchmark-memory-usage": "node test/benchmarks/memory_usage.js",
     "prebrowsertest": "npm run build-test",
-    "browsertest": "npm start -- -o test/unittests.html",
-    "test-browser": "karma start test/karma.conf.js",
-    "test-browserstack": "karma start test/karma.conf.js --browsers bs_safari_latest,bs_ios_14,bs_safari_13_1",
-    "coverage": "nyc npm test",
+    "browsertest": "web-test-runner --config test/web-test-runner.config.js --group local --manual --open",
+    "test-browser": "web-test-runner --config test/web-test-runner.config.js --group local --playwright --browsers chromium firefox webkit",
+    "test-browser:ci": "web-test-runner --config test/web-test-runner.config.js --group headless:ci",
+    "test-browserstack": "web-test-runner --config test/web-test-runner.browserstack.config.js",
+    "coverage": "c8 npm test",
     "lint": "eslint .",
-    "docs": "jsdoc --configure .jsdocrc.js --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
+    "docs": "jsdoc --configure .jsdocrc.cjs --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
     "preversion": "rm -rf dist docs node_modules && npm ci && npm test",
     "version": "npm run docs && git add -A docs",
     "postversion": "git push && git push --tags && npm publish"
   },
   "devDependencies": {
-    "@openpgp/asmcrypto.js": "^2.3.2",
-    "@openpgp/elliptic": "^6.5.1",
-    "@openpgp/jsdoc": "^3.6.4",
-    "@openpgp/pako": "^1.0.12",
+    "@noble/ciphers": "^1.0.0",
+    "@noble/curves": "^1.6.0",
+    "@noble/hashes": "^1.5.0",
+    "@openpgp/jsdoc": "^3.6.11",
     "@openpgp/seek-bzip": "^1.0.5-git",
-    "@openpgp/tweetnacl": "^1.0.3",
-    "@openpgp/web-stream-tools": "0.0.11-patch-1",
-    "@rollup/plugin-commonjs": "^11.1.0",
-    "@rollup/plugin-node-resolve": "^7.1.3",
-    "@rollup/plugin-replace": "^2.3.2",
-    "@types/chai": "^4.2.14",
+    "@openpgp/tweetnacl": "^1.0.4-1",
+    "@openpgp/web-stream-tools": "~0.1.3",
+    "@rollup/plugin-alias": "^5.1.1",
+    "@rollup/plugin-commonjs": "^25.0.8",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-replace": "^5.0.7",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@rollup/plugin-wasm": "^6.2.2",
+    "@types/chai": "^4.3.19",
+    "@types/sinon": "^17.0.3",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@web/test-runner": "^0.19.0",
+    "@web/test-runner-browserstack": "^0.7.2",
+    "@web/test-runner-mocha": "^0.9.0",
+    "@web/test-runner-playwright": "^0.11.0",
+    "argon2id": "^1.0.1",
     "benchmark": "^2.1.4",
-    "bn.js": "^4.11.8",
-    "chai": "^4.3.6",
-    "chai-as-promised": "^7.1.1",
-    "email-addresses": "3.1.0",
-    "eslint": "^8.34.0",
+    "bn.js": "^5.2.1",
+    "c8": "^8.0.1",
+    "chai": "^4.4.1",
+    "chai-as-promised": "^7.1.2",
+    "eckey-utils": "^0.7.14",
+    "eslint": "^8.57.1",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-chai-friendly": "^0.7.2",
-    "eslint-plugin-import": "^2.27.5",
-    "esm": "^3.2.25",
-    "hash.js": "^1.1.3",
-    "http-server": "^14.1.1",
-    "karma": "^6.4.0",
-    "karma-browserstack-launcher": "^1.6.0",
-    "karma-chrome-launcher": "^3.1.1",
-    "karma-firefox-launcher": "^2.1.2",
-    "karma-mocha": "^2.0.1",
-    "karma-mocha-reporter": "^2.2.5",
-    "karma-webkit-launcher": "^2.1.0",
-    "mocha": "^8.4.0",
-    "nyc": "^14.1.1",
-    "playwright": "^1.30.0",
-    "rollup": "^2.38.5",
-    "rollup-plugin-terser": "^7.0.2",
-    "sinon": "^4.3.0",
-    "typescript": "^4.1.2",
-    "web-streams-polyfill": "^3.2.0"
+    "eslint-config-airbnb-typescript": "^18.0.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "eslint-plugin-chai-friendly": "^0.7.4",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-unicorn": "^48.0.1",
+    "fflate": "^0.7.4",
+    "mocha": "^10.7.3",
+    "playwright": "^1.48.2",
+    "rollup": "^4.24.2",
+    "sinon": "^18.0.1",
+    "ts-node": "^10.9.2",
+    "tslib": "^2.8.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3",
+    "web-streams-polyfill": "^4.0.0"
   },
-  "dependencies": {
-    "asn1.js": "^5.0.0"
+  "overrides": {
+    "@web/dev-server-core": "npm:@openpgp/wtr-dev-server-core@0.7.3-patch.1"
   },
   "repository": {
     "type": "git",

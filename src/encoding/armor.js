@@ -47,33 +47,33 @@ function getType(text) {
   // parts, and this is the Xth part out of Y.
   if (/MESSAGE, PART \d+\/\d+/.test(header[1])) {
     return enums.armor.multipartSection;
-  } else
+  }
   // BEGIN PGP MESSAGE, PART X
   // Used for multi-part messages, where this is the Xth part of an
   // unspecified number of parts. Requires the MESSAGE-ID Armor
   // Header to be used.
   if (/MESSAGE, PART \d+/.test(header[1])) {
     return enums.armor.multipartLast;
-  } else
+  }
   // BEGIN PGP SIGNED MESSAGE
   if (/SIGNED MESSAGE/.test(header[1])) {
     return enums.armor.signed;
-  } else
+  }
   // BEGIN PGP MESSAGE
   // Used for signed, encrypted, or compressed files.
   if (/MESSAGE/.test(header[1])) {
     return enums.armor.message;
-  } else
+  }
   // BEGIN PGP PUBLIC KEY BLOCK
   // Used for armoring public keys.
   if (/PUBLIC KEY BLOCK/.test(header[1])) {
     return enums.armor.publicKey;
-  } else
+  }
   // BEGIN PGP PRIVATE KEY BLOCK
   // Used for armoring private keys.
   if (/PRIVATE KEY BLOCK/.test(header[1])) {
     return enums.armor.privateKey;
-  } else
+  }
   // BEGIN PGP SIGNATURE
   // Used for detached signatures, OpenPGP/MIME signatures, and
   // cleartext signatures. Note that PGP 2.x uses BEGIN PGP MESSAGE
@@ -106,7 +106,6 @@ function addheader(customComment, config) {
   result += '\n';
   return result;
 }
-
 
 /**
  * Calculates a checksum over the given data and returns it base64 encoded
@@ -201,24 +200,21 @@ function verifyHeaders(headers) {
 }
 
 /**
- * Splits a message into two parts, the body and the checksum. This is an internal function
- * @param {String} text - OpenPGP armored message part
- * @returns {Object} An object with attribute "body" containing the body.
- * and an attribute "checksum" containing the checksum.
+ * Remove the (optional) checksum from an armored message.
+ * @param {String} text - OpenPGP armored message
+ * @returns {String} The body of the armored message.
  * @private
  */
-function splitChecksum(text) {
+function removeChecksum(text) {
   let body = text;
-  let checksum = '';
 
   const lastEquals = text.lastIndexOf('=');
 
   if (lastEquals >= 0 && lastEquals !== text.length - 1) { // '=' as the last char means no checksum
     body = text.slice(0, lastEquals);
-    checksum = text.slice(lastEquals + 1).substr(0, 4);
   }
 
-  return { body: body, checksum: checksum };
+  return body;
 }
 
 /**
@@ -230,7 +226,7 @@ function splitChecksum(text) {
  * @async
  * @static
  */
-export function unarmor(input, config = defaultConfig) {
+export function unarmor(input) {
   // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve, reject) => {
     try {
@@ -243,8 +239,7 @@ export function unarmor(input, config = defaultConfig) {
       let headersDone;
       let text = [];
       let textDone;
-      let checksum;
-      let data = base64.decode(stream.transformPair(input, async (readable, writable) => {
+      const data = base64.decode(stream.transformPair(input, async (readable, writable) => {
         const reader = stream.getReader(readable);
         try {
           while (true) {
@@ -267,12 +262,12 @@ export function unarmor(input, config = defaultConfig) {
               } else {
                 verifyHeaders(lastHeaders);
                 headersDone = true;
-                if (textDone || type !== 2) {
+                if (textDone || type !== enums.armor.signed) {
                   resolve({ text, data, headers, type });
                   break;
                 }
               }
-            } else if (!textDone && type === 2) {
+            } else if (!textDone && type === enums.armor.signed) {
               if (!reSplit.test(line)) {
                 // Reverse dash-escaping for msg
                 text.push(line.replace(/^- /, ''));
@@ -309,9 +304,8 @@ export function unarmor(input, config = defaultConfig) {
               if (parts.length === 1) {
                 throw new Error('Misformed armored text');
               }
-              const split = splitChecksum(parts[0].slice(0, -1));
-              checksum = split.checksum;
-              await writer.write(split.body);
+              const body = removeChecksum(parts[0].slice(0, -1));
+              await writer.write(body);
               break;
             }
           }
@@ -321,24 +315,6 @@ export function unarmor(input, config = defaultConfig) {
           await writer.abort(e);
         }
       }));
-      data = stream.transformPair(data, async (readable, writable) => {
-        const checksumVerified = stream.readToEnd(getCheckSum(stream.passiveClone(readable)));
-        checksumVerified.catch(() => {});
-        await stream.pipe(readable, writable, {
-          preventClose: true
-        });
-        const writer = stream.getWriter(writable);
-        try {
-          const checksumVerifiedString = (await checksumVerified).replace('\n', '');
-          if (checksum !== checksumVerifiedString && (checksum || config.checksumRequired)) {
-            throw new Error('Ascii armor integrity check failed');
-          }
-          await writer.ready;
-          await writer.close();
-        } catch (e) {
-          await writer.abort(e);
-        }
-      });
     } catch (e) {
       reject(e);
     }
@@ -358,10 +334,13 @@ export function unarmor(input, config = defaultConfig) {
  * @param {Integer} [partIndex]
  * @param {Integer} [partTotal]
  * @param {String} [customComment] - Additional comment to add to the armored string
+ * @param {Boolean} [emitChecksum] - Whether to compute and include the CRC checksum
+ *  (NB: some types of data must not include it, but compliance is left as responsibility of the caller: this function does not carry out any checks)
+ * @param {Object} [config] - Full configuration, defaults to openpgp.config
  * @returns {String | ReadableStream<String>} Armored text.
  * @static
  */
-export function armor(messageType, body, partIndex, partTotal, customComment, config = defaultConfig) {
+export function armor(messageType, body, partIndex, partTotal, customComment, emitChecksum = false, config = defaultConfig) {
   let text;
   let hash;
   if (messageType === enums.armor.signed) {
@@ -369,59 +348,62 @@ export function armor(messageType, body, partIndex, partTotal, customComment, co
     hash = body.hash;
     body = body.data;
   }
-  const bodyClone = stream.passiveClone(body);
+  // unless explicitly forbidden by the spec, we need to include the checksum to work around a GnuPG bug
+  // where data fails to be decoded if the base64 ends with no padding chars (=) (see https://dev.gnupg.org/T7071)
+  const maybeBodyClone = emitChecksum && stream.passiveClone(body);
+
   const result = [];
   switch (messageType) {
     case enums.armor.multipartSection:
       result.push('-----BEGIN PGP MESSAGE, PART ' + partIndex + '/' + partTotal + '-----\n');
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
-      result.push('=', getCheckSum(bodyClone));
+      maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP MESSAGE, PART ' + partIndex + '/' + partTotal + '-----\n');
       break;
     case enums.armor.multipartLast:
       result.push('-----BEGIN PGP MESSAGE, PART ' + partIndex + '-----\n');
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
-      result.push('=', getCheckSum(bodyClone));
+      maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP MESSAGE, PART ' + partIndex + '-----\n');
       break;
     case enums.armor.signed:
       result.push('-----BEGIN PGP SIGNED MESSAGE-----\n');
-      result.push('Hash: ' + hash + '\n\n');
+      result.push(hash ? `Hash: ${hash}\n\n` : '\n');
       result.push(text.replace(/^-/mg, '- -'));
       result.push('\n-----BEGIN PGP SIGNATURE-----\n');
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
-      result.push('=', getCheckSum(bodyClone));
+      maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP SIGNATURE-----\n');
       break;
     case enums.armor.message:
       result.push('-----BEGIN PGP MESSAGE-----\n');
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
-      result.push('=', getCheckSum(bodyClone));
+      maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP MESSAGE-----\n');
       break;
     case enums.armor.publicKey:
       result.push('-----BEGIN PGP PUBLIC KEY BLOCK-----\n');
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
-      result.push('=', getCheckSum(bodyClone));
+      maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP PUBLIC KEY BLOCK-----\n');
       break;
     case enums.armor.privateKey:
       result.push('-----BEGIN PGP PRIVATE KEY BLOCK-----\n');
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
-      result.push('=', getCheckSum(bodyClone));
+      maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP PRIVATE KEY BLOCK-----\n');
       break;
     case enums.armor.signature:
       result.push('-----BEGIN PGP SIGNATURE-----\n');
       result.push(addheader(customComment, config));
       result.push(base64.encode(body));
-      result.push('=', getCheckSum(bodyClone));
+      maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP SIGNATURE-----\n');
       break;
   }

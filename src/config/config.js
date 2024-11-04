@@ -26,7 +26,7 @@ export default {
    * @memberof module:config
    * @property {Integer} preferredHashAlgorithm Default hash algorithm {@link module:enums.hash}
    */
-  preferredHashAlgorithm: enums.hash.sha256,
+  preferredHashAlgorithm: enums.hash.sha512,
   /**
    * @memberof module:config
    * @property {Integer} preferredSymmetricAlgorithm Default encryption cipher {@link module:enums.symmetric}
@@ -38,27 +38,33 @@ export default {
    */
   preferredCompressionAlgorithm: enums.compression.uncompressed,
   /**
-   * @memberof module:config
-   * @property {Integer} deflateLevel Default zip/zlib compression level, between 1 and 9
-   */
-  deflateLevel: 6,
-
-  /**
    * Use Authenticated Encryption with Additional Data (AEAD) protection for symmetric encryption.
+   * This option is applicable to:
+   * - key generation (encryption key preferences),
+   * - password-based message encryption, and
+   * - private key encryption.
+   * In the case of message encryption using public keys, the encryption key preferences are respected instead.
    * Note: not all OpenPGP implementations are compatible with this option.
-   * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
-   * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-07|RFC4880bis-07}
+   * @see {@link https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-10.html|draft-crypto-refresh-10}
    * @memberof module:config
    * @property {Boolean} aeadProtect
    */
   aeadProtect: false,
+  /**
+   * When reading OpenPGP v4 private keys (e.g. those generated in OpenPGP.js when not setting `config.v5Keys = true`)
+   * which were encrypted by OpenPGP.js v5 (or older) using `config.aeadProtect = true`,
+   * this option must be set, otherwise key parsing and/or key decryption will fail.
+   * Note: only set this flag if you know that the keys are of the legacy type, as non-legacy keys
+   * will be processed incorrectly.
+   */
+  parseAEADEncryptedV4KeysAsLegacy: false,
   /**
    * Default Authenticated Encryption with Additional Data (AEAD) encryption mode
    * Only has an effect when aeadProtect is set to true.
    * @memberof module:config
    * @property {Integer} preferredAEADAlgorithm Default AEAD mode {@link module:enums.aead}
    */
-  preferredAEADAlgorithm: enums.aead.eax,
+  preferredAEADAlgorithm: enums.aead.gcm,
   /**
    * Chunk Size Byte for Authenticated Encryption with Additional Data (AEAD) mode
    * Only has an effect when aeadProtect is set to true.
@@ -68,20 +74,57 @@ export default {
    */
   aeadChunkSizeByte: 12,
   /**
-   * Use V5 keys.
+   * Use v6 keys.
    * Note: not all OpenPGP implementations are compatible with this option.
    * **FUTURE OPENPGP.JS VERSIONS MAY BREAK COMPATIBILITY WHEN USING THIS OPTION**
    * @memberof module:config
-   * @property {Boolean} v5Keys
+   * @property {Boolean} v6Keys
    */
-  v5Keys: false,
+  v6Keys: false,
   /**
-   * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3|RFC4880 3.7.1.3}:
-   * Iteration Count Byte for S2K (String to Key)
+   * Enable parsing v5 keys and v5 signatures (which is different from the AEAD-encrypted SEIPDv2 packet).
+   * These are non-standard entities, which in the crypto-refresh have been superseded
+   * by v6 keys and v6 signatures, respectively.
+   * However, generation of v5 entities was supported behind config flag in OpenPGP.js v5, and some other libraries,
+   * hence parsing them might be necessary in some cases.
+   */
+  enableParsingV5Entities: false,
+  /**
+   * S2K (String to Key) type, used for key derivation in the context of secret key encryption
+   * and password-encrypted data. Weaker s2k options are not allowed.
+   * Note: Argon2 is the strongest option but not all OpenPGP implementations are compatible with it
+   * (pending standardisation).
+   * @memberof module:config
+   * @property {enums.s2k.argon2|enums.s2k.iterated} s2kType {@link module:enums.s2k}
+   */
+  s2kType: enums.s2k.iterated,
+  /**
+   * {@link https://tools.ietf.org/html/rfc4880#section-3.7.1.3| RFC4880 3.7.1.3}:
+   * Iteration Count Byte for Iterated and Salted S2K (String to Key).
+   * Only relevant if `config.s2kType` is set to `enums.s2k.iterated`.
+   * Note: this is the exponent value, not the final number of iterations (refer to specs for more details).
    * @memberof module:config
    * @property {Integer} s2kIterationCountByte
    */
   s2kIterationCountByte: 224,
+  /**
+   * {@link https://tools.ietf.org/html/draft-ietf-openpgp-crypto-refresh-07.html#section-3.7.1.4| draft-crypto-refresh 3.7.1.4}:
+   * Argon2 parameters for S2K (String to Key).
+   * Only relevant if `config.s2kType` is set to `enums.s2k.argon2`.
+   * Default settings correspond to the second recommendation from RFC9106 ("uniformly safe option"),
+   * to ensure compatibility with memory-constrained environments.
+   * For more details on the choice of parameters, see https://tools.ietf.org/html/rfc9106#section-4.
+   * @memberof module:config
+   * @property {Object} params
+   * @property {Integer} params.passes - number of iterations t
+   * @property {Integer} params.parallelism - degree of parallelism p
+   * @property {Integer} params.memoryExponent - one-octet exponent indicating the memory size, which will be: 2**memoryExponent kibibytes.
+   */
+  s2kArgon2Params: {
+    passes: 3,
+    parallelism: 4, // lanes
+    memoryExponent: 16 // 64 MiB of RAM
+  },
   /**
    * Allow decryption of messages without integrity protection.
    * This is an **insecure** setting:
@@ -96,16 +139,16 @@ export default {
    * process large streams while limiting memory usage by releasing the decrypted chunks as soon as possible
    * and deferring checking their integrity until the decrypted stream has been read in full.
    *
-   * This setting is **insecure** if the partially decrypted message is processed further or displayed to the user.
+   * This setting is **insecure** if the encrypted data has been corrupted by a malicious entity:
+   * - if the partially decrypted message is processed further or displayed to the user, it opens up the possibility of attacks such as EFAIL
+   *    (see https://efail.de/).
+   * - an attacker with access to traces or timing info of internal processing errors could learn some info about the data.
+   *
+   * NB: this setting does not apply to AEAD-encrypted data, where the AEAD data chunk is never released until integrity is confirmed.
    * @memberof module:config
    * @property {Boolean} allowUnauthenticatedStream
    */
   allowUnauthenticatedStream: false,
-  /**
-   * @memberof module:config
-   * @property {Boolean} checksumRequired Do not throw error when armor is missing a checksum
-   */
-  checksumRequired: false,
   /**
    * Minimum RSA key size allowed for key generation and message signing, verification and encryption.
    * The default is 2047 since due to a bug, previous versions of OpenPGP.js could generate 2047-bit keys instead of 2048-bit ones.
@@ -120,11 +163,6 @@ export default {
    * @property {Boolean} passwordCollisionCheck
    */
   passwordCollisionCheck: false,
-  /**
-   * @memberof module:config
-   * @property {Boolean} revocationsExpire If true, expired revocation signatures are ignored
-   */
-  revocationsExpire: false,
   /**
    * Allow decryption using RSA keys without `encrypt` flag.
    * This setting is potentially insecure, but it is needed to get around an old openpgpjs bug
@@ -142,7 +180,14 @@ export default {
    * @property {Boolean} allowInsecureDecryptionWithSigningKeys
    */
   allowInsecureVerificationWithReformattedKeys: false,
-
+  /**
+   * Allow using keys that do not have any key flags set.
+   * Key flags are needed to restrict key usage to specific purposes: for instance, a signing key could only be allowed to certify other keys, and not sign messages
+   * (see https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#section-5.2.3.29).
+   * Some older keys do not declare any key flags, which means they are not allowed to be used for any operation.
+   * This setting allows using such keys for any operation for which they are compatible, based on their public key algorithm.
+   */
+  allowMissingKeyFlags: false,
   /**
    * Enable constant-time decryption of RSA- and ElGamal-encrypted session keys, to hinder Bleichenbacher-like attacks (https://link.springer.com/chapter/10.1007/BFb0055716).
    * This setting has measurable performance impact and it is only helpful in application scenarios where both of the following conditions apply:
@@ -161,12 +206,6 @@ export default {
    * @property {Set<Integer>} constantTimePKCS1DecryptionSupportedSymmetricAlgorithms {@link module:enums.symmetric}
    */
   constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: new Set([enums.symmetric.aes128, enums.symmetric.aes192, enums.symmetric.aes256]),
-
-  /**
-   * @memberof module:config
-   * @property {Integer} minBytesForWebCrypto The minimum amount of bytes for which to use native WebCrypto APIs when available
-   */
-  minBytesForWebCrypto: 1000,
   /**
    * @memberof module:config
    * @property {Boolean} ignoreUnsupportedPackets Ignore unsupported/unrecognizable packets on parsing instead of throwing an error
@@ -220,13 +259,20 @@ export default {
    */
   knownNotations: [],
   /**
-   * Whether to use the indutny/elliptic library for curves (other than Curve25519) that are not supported by the available native crypto API.
-   * When false, certain standard curves will not be supported (depending on the platform).
-   * Note: the indutny/elliptic curve library is not designed to be constant time.
-   * @memberof module:config
-   * @property {Boolean} useIndutnyElliptic
+   * If true, a salt notation is used to randomize signatures generated by v4 and v5 keys (v6 signatures are always non-deterministic, by design).
+   * This protects EdDSA signatures from potentially leaking the secret key in case of faults (i.e. bitflips) which, in principle, could occur
+   * during the signing computation. It is added to signatures of any algo for simplicity, and as it may also serve as protection in case of
+   * weaknesses in the hash algo, potentially hindering e.g. some chosen-prefix attacks.
+   * NOTE: the notation is interoperable, but will reveal that the signature has been generated using OpenPGP.js, which may not be desirable in some cases.
    */
-  useIndutnyElliptic: true,
+  nonDeterministicSignaturesViaNotation: true,
+  /**
+   * Whether to use the the noble-curves library for curves (other than Curve25519) that are not supported by the available native crypto API.
+   * When false, certain standard curves will not be supported (depending on the platform).
+   * @memberof module:config
+   * @property {Boolean} useEllipticFallback
+   */
+  useEllipticFallback: true,
   /**
    * Reject insecure hash algorithms
    * @memberof module:config

@@ -18,7 +18,7 @@
 import * as stream from '@openpgp/web-stream-tools';
 import { Message } from './message';
 import { CleartextMessage } from './cleartext';
-import { generate, reformat, getPreferredAlgo } from './key';
+import { generate, reformat, getPreferredCompressionAlgo } from './key';
 import defaultConfig from './config';
 import util from './util';
 import { checkKeyRequirements } from './key/helper';
@@ -32,15 +32,17 @@ import { checkKeyRequirements } from './key/helper';
 
 
 /**
- * Generates a new OpenPGP key pair. Supports RSA and ECC keys. By default, primary and subkeys will be of same type.
+ * Generates a new OpenPGP key pair. Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519 keys.
+ * By default, primary and subkeys will be of same type.
  * The generated primary key will have signing capabilities. By default, one subkey with encryption capabilities is also generated.
  * @param {Object} options
  * @param {Object|Array<Object>} options.userIDs - User IDs as objects: `{ name: 'Jo Doe', email: 'info@jo.com' }`
- * @param {'ecc'|'rsa'} [options.type='ecc'] - The primary key algorithm type: ECC (default) or RSA
+ * @param {'ecc'|'rsa'|'curve448'|'curve25519'} [options.type='ecc'] - The primary key algorithm type: ECC (default for v4 keys), RSA, Curve448 or Curve25519 (new format, default for v6 keys).
+ *                                                                     Note: Curve448 and Curve25519 (new format) are not widely supported yet.
  * @param {String} [options.passphrase=(not protected)] - The passphrase used to encrypt the generated private key. If omitted or empty, the key won't be encrypted.
  * @param {Number} [options.rsaBits=4096] - Number of bits for RSA keys
- * @param {String} [options.curve='curve25519'] - Elliptic curve for ECC keys:
- *                                             curve25519 (default), p256, p384, p521, secp256k1,
+ * @param {String} [options.curve='curve25519Legacy'] - Elliptic curve for ECC keys:
+ *                                             curve25519Legacy (default), nistP256, nistP384, nistP521, secp256k1,
  *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
@@ -53,13 +55,20 @@ import { checkKeyRequirements } from './key/helper';
  * @async
  * @static
  */
-export async function generateKey({ userIDs = [], passphrase, type = 'ecc', rsaBits = 4096, curve = 'curve25519', keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
+export async function generateKey({ userIDs = [], passphrase, type, curve, rsaBits = 4096, keyExpirationTime = 0, date = new Date(), subkeys = [{}], format = 'armored', config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
+  if (!type && !curve) {
+    type = config.v6Keys ? 'curve25519' : 'ecc'; // default to new curve25519 for v6 keys (legacy curve25519 cannot be used with them)
+    curve = 'curve25519Legacy'; // unused with type != 'ecc'
+  } else {
+    type = type || 'ecc';
+    curve = curve || 'curve25519Legacy';
+  }
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  if (userIDs.length === 0) {
-    throw new Error('UserIDs are required for key generation');
+  if (userIDs.length === 0 && !config.v6Keys) {
+    throw new Error('UserIDs are required for V4 keys');
   }
   if (type === 'rsa' && rsaBits < config.minRSABits) {
     throw new Error(`rsaBits should be at least ${config.minRSABits}, got: ${rsaBits}`);
@@ -102,8 +111,8 @@ export async function reformatKey({ privateKey, userIDs = [], passphrase, keyExp
   userIDs = toArray(userIDs);
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
-  if (userIDs.length === 0) {
-    throw new Error('UserIDs are required for key reformat');
+  if (userIDs.length === 0 && privateKey.keyPacket.version !== 6) {
+    throw new Error('UserIDs are required for V4 keys');
   }
   const options = { privateKey, userIDs, passphrase, keyExpirationTime, date };
 
@@ -278,13 +287,13 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
   if (!signingKeys) {
     signingKeys = [];
   }
-  const streaming = message.fromStream;
+
   try {
     if (signingKeys.length || signature) { // sign the message only if signing keys or signature is specified
-      message = await message.sign(signingKeys, signature, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      message = await message.sign(signingKeys, encryptionKeys, signature, signingKeyIDs, date, signingUserIDs, encryptionKeyIDs, signatureNotations, config);
     }
     message = message.compress(
-      await getPreferredAlgo('compression', encryptionKeys, date, encryptionUserIDs, config),
+      await getPreferredCompressionAlgo(encryptionKeys, date, encryptionUserIDs, config),
       config
     );
     message = await message.encrypt(encryptionKeys, passwords, sessionKey, wildcard, encryptionKeyIDs, date, encryptionUserIDs, config);
@@ -292,7 +301,7 @@ export async function encrypt({ message, encryptionKeys, signingKeys, passwords,
     // serialize data
     const armor = format === 'armored';
     const data = armor ? message.armor(config) : message.write();
-    return convertStream(data, streaming, armor ? 'utf8' : 'binary');
+    return await convertStream(data);
   } catch (err) {
     throw util.wrapError('Error encrypting message', err);
   }
@@ -363,7 +372,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
         })
       ]);
     }
-    result.data = await convertStream(result.data, message.fromStream, format);
+    result.data = await convertStream(result.data);
     return result;
   } catch (err) {
     throw util.wrapError('Error decrypting message', err);
@@ -383,21 +392,23 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
  * @param {Object} options
  * @param {CleartextMessage|Message} options.message - (cleartext) message to be signed
  * @param {PrivateKey|PrivateKey[]} options.signingKeys - Array of keys or single key with decrypted secret key data to sign cleartext
+ * @param {Key|Key[]} options.recipientKeys - Array of keys or single to get the signing preferences from
  * @param {'armored'|'binary'|'object'} [options.format='armored'] - Format of the returned message
  * @param {Boolean} [options.detached=false] - If the return value should contain a detached signature
  * @param {KeyID|KeyID[]} [options.signingKeyIDs=latest-created valid signing (sub)keys] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to signingKeys[i]
  * @param {Date} [options.date=current date] - Override the creation date of the signature
  * @param {Object|Object[]} [options.signingUserIDs=primary user IDs] - Array of user IDs to sign with, one per key in `signingKeys`, e.g. `[{ name: 'Steve Sender', email: 'steve@openpgp.org' }]`
+ * @param {Object|Object[]} [options.recipientUserIDs=primary user IDs] - Array of user IDs to get the signing preferences from, one per key in `recipientKeys`
  * @param {Object|Object[]} [options.signatureNotations=[]] - Array of notations to add to the signatures, e.g. `[{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]`
  * @param {Object} [options.config] - Custom configuration settings to overwrite those in [config]{@link module:config}
  * @returns {Promise<MaybeStream<String|Uint8Array>>} Signed message (string if `armor` was true, the default; Uint8Array if `armor` was false).
  * @async
  * @static
  */
-export async function sign({ message, signingKeys, format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], signatureNotations = [], config, ...rest }) {
+export async function sign({ message, signingKeys, recipientKeys = [], format = 'armored', detached = false, signingKeyIDs = [], date = new Date(), signingUserIDs = [], recipientUserIDs = [], signatureNotations = [], config, ...rest }) {
   config = { ...defaultConfig, ...config }; checkConfig(config);
   checkCleartextOrMessage(message); checkOutputMessageFormat(format);
-  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs); signatureNotations = toArray(signatureNotations);
+  signingKeys = toArray(signingKeys); signingKeyIDs = toArray(signingKeyIDs); signingUserIDs = toArray(signingUserIDs); recipientKeys = toArray(recipientKeys); recipientUserIDs = toArray(recipientUserIDs); signatureNotations = toArray(signatureNotations);
 
   if (rest.privateKeys) throw new Error('The `privateKeys` option has been removed from openpgp.sign, pass `signingKeys` instead');
   if (rest.armor !== undefined) throw new Error('The `armor` option has been removed from openpgp.sign, pass `format` instead.');
@@ -413,9 +424,9 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
   try {
     let signature;
     if (detached) {
-      signature = await message.signDetached(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      signature = await message.signDetached(signingKeys, recipientKeys, undefined, signingKeyIDs, date, signingUserIDs, recipientUserIDs, signatureNotations, config);
     } else {
-      signature = await message.sign(signingKeys, undefined, signingKeyIDs, date, signingUserIDs, signatureNotations, config);
+      signature = await message.sign(signingKeys, recipientKeys, undefined, signingKeyIDs, date, signingUserIDs, recipientUserIDs, signatureNotations, config);
     }
     if (format === 'object') return signature;
 
@@ -429,7 +440,7 @@ export async function sign({ message, signingKeys, format = 'armored', detached 
         ]);
       });
     }
-    return convertStream(signature, message.fromStream, armor ? 'utf8' : 'binary');
+    return await convertStream(signature);
   } catch (err) {
     throw util.wrapError('Error signing message', err);
   }
@@ -492,7 +503,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
         })
       ]);
     }
-    result.data = await convertStream(result.data, message.fromStream, format);
+    result.data = await convertStream(result.data);
     return result;
   } catch (err) {
     throw util.wrapError('Error verifying signed message', err);
@@ -591,7 +602,7 @@ export async function decryptSessionKeys({ message, decryptionKeys, passwords, d
   const unknownOptions = Object.keys(rest); if (unknownOptions.length > 0) throw new Error(`Unknown option: ${unknownOptions.join(', ')}`);
 
   try {
-    const sessionKeys = await message.decryptSessionKeys(decryptionKeys, passwords, date, config);
+    const sessionKeys = await message.decryptSessionKeys(decryptionKeys, passwords, undefined, date, config);
     return sessionKeys;
   } catch (err) {
     throw util.wrapError('Error decrypting session keys', err);
@@ -663,24 +674,14 @@ function toArray(param) {
 /**
  * Convert data to or from Stream
  * @param {Object} data - the data to convert
- * @param {'web'|'ponyfill'|'node'|false} streaming - Whether to return a ReadableStream, and of what type
- * @param {'utf8'|'binary'} [encoding] - How to return data in Node Readable streams
  * @returns {Promise<Object>} The data in the respective format.
  * @async
  * @private
  */
-async function convertStream(data, streaming, encoding = 'utf8') {
+async function convertStream(data) {
   const streamType = util.isStream(data);
   if (streamType === 'array') {
     return stream.readToEnd(data);
-  }
-  if (streaming === 'node') {
-    data = stream.webToNode(data);
-    if (encoding !== 'binary') data.setEncoding(encoding);
-    return data;
-  }
-  if (streaming === 'web' && streamType === 'ponyfill') {
-    return stream.toNativeReadable(data);
   }
   return data;
 }

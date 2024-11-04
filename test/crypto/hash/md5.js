@@ -1,9 +1,9 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const md5 = require('../../../src/crypto/hash/md5');
-const util = require('../../../src/util');
+import md5 from '../../../src/crypto/hash/md5.js';
+import util from '../../../src/util.js';
 
-module.exports = () => it('MD5 with test vectors from RFC 1321', async function() {
+export default () => it('MD5 with test vectors from RFC 1321', async function() {
   expect(util.uint8ArrayToHex(await md5(util.stringToUint8Array('')), 'MD5("") = d41d8cd98f00b204e9800998ecf8427e')).to.equal('d41d8cd98f00b204e9800998ecf8427e');
   expect(util.uint8ArrayToHex(await md5(util.stringToUint8Array('abc')), 'MD5("a") = 0cc175b9c0f1b6a831c399e269772661')).to.equal('900150983cd24fb0d6963f7d28e17f72');
   expect(util.uint8ArrayToHex(await md5(util.stringToUint8Array('message digest')), 'MD5("message digest") = f96b697d7cb7938d525a2f31aaf161d0')).to.equal('f96b697d7cb7938d525a2f31aaf161d0');

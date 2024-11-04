@@ -1,6 +1,5 @@
 /**
  * @module key/Subkey
- * @private
  */
 
 import enums from '../enums';
@@ -186,7 +185,7 @@ class Subkey {
   ) {
     const dataToSign = { key: primaryKey, bind: this.keyPacket };
     const subkey = new Subkey(this.keyPacket, this.mainKey);
-    subkey.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, primaryKey, {
+    subkey.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, [], primaryKey, {
       signatureType: enums.signature.subkeyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString

@@ -1,12 +1,12 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const sandbox = require('sinon/lib/sinon/sandbox');
-const crypto = require('../../src/crypto');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import crypto from '../../src/crypto';
+import util from '../../src/util.js';
 
-module.exports = () => describe('API functional testing', function() {
+export default () => describe('API functional testing', function() {
   const RSAPublicKeyMaterial = util.concatUint8Array([
     new Uint8Array([0x08,0x00,0xac,0x15,0xb3,0xd6,0xd2,0x0f,0xf0,0x7a,0xdd,0x21,0xb7,
       0xbf,0x61,0xfa,0xca,0x93,0x86,0xc8,0x55,0x5a,0x4b,0xa6,0xa4,0x1a,
@@ -229,6 +229,21 @@ module.exports = () => describe('API functional testing', function() {
 
       return expect(success).to.be.true;
     });
+
+    it('Ed448', async function () {
+      // key data from https://www.rfc-editor.org/rfc/rfc8032#section-7.4
+      const seed = util.hexToUint8Array('d65df341ad13e008567688baedda8e9dcdc17dc024974ea5b4227b6530e339bff21f99e68ca6968f3cca6dfe0fb9f4fab4fa135d5542ea3f01');
+      const A = util.hexToUint8Array('df9705f58edbab802c7f8363cfe5560ab1c6132c20a9f1dd163483a26f8ac53a39d6808bf4a1dfbd261b099bb03b3fb50906cb28bd8a081f00');
+      const toSign = await crypto.hash.digest(openpgp.enums.hash.sha512, data);
+      const signedData = await crypto.signature.sign(
+        openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, { A }, { seed }, data, toSign
+      );
+      const success = await crypto.signature.verify(
+        openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, signedData, { A }, data, toSign
+      );
+
+      return expect(success).to.be.true;
+    });
   });
 
   describe('Encrypt and decrypt', function () {
@@ -239,7 +254,7 @@ module.exports = () => describe('API functional testing', function() {
     async function testCFB(plaintext, config = openpgp.config) {
       await Promise.all(symmAlgoNames.map(async function(algoName) {
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
-        const { blockSize } = crypto.getCipher(algo);
+        const { blockSize } = crypto.getCipherParams(algo);
         const symmKey = crypto.generateSessionKey(algo);
         const IV = new Uint8Array(blockSize);
         const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, config);
@@ -252,19 +267,6 @@ module.exports = () => describe('API functional testing', function() {
       await testCFB('1234567');
       await testCFB('foobarfoobar1234567890');
       await testCFB('12345678901234567890123456789012345678901234567890');
-      // test using webCrypto
-      const sinonSandbox = sandbox.create();
-      const webCrypto = util.getWebCrypto();
-      if (webCrypto && !util.getNodeCrypto()) {
-        const webCryptoSpy = sinonSandbox.spy(webCrypto, 'encrypt');
-        try {
-          await testCFB('12345678901234567890123456789012345678901234567890', { ...openpgp.config, minBytesForWebCrypto: 0 });
-        } finally {
-          expect(webCryptoSpy.called).to.be.true;
-          sinonSandbox.restore();
-        }
-      }
-
     });
 
     it('Asymmetric using RSA with eme_pkcs1 padding', function () {

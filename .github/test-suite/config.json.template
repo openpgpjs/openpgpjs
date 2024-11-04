@@ -11,7 +11,8 @@
         "id": "sop-openpgpjs-main",
         "path": "__SOP_OPENPGPJS__",
         "env": {
-          "OPENPGPJS_PATH": "__OPENPGPJS_MAIN__"
+          "OPENPGPJS_PATH": "__OPENPGPJS_MAIN__",
+          "DISABLE_PROFILES": "true"
         }
       },
       {
@@ -21,10 +22,14 @@
         "path": "__GPGME_SOP__"
       },
       {
-        "path": "__GOSOP__"
+        "id": "gosop-v2",
+        "path": "__GOSOP_V2__"
       },
       {
         "path": "__RNP_SOP__"
+      },
+      {
+        "path": "__RSOP__"
       }
     ],
     "rlimits": {

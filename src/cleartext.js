@@ -59,20 +59,22 @@ export class CleartextMessage {
 
   /**
    * Sign the cleartext message
-   * @param {Array<Key>} privateKeys - private keys with decrypted secret key data for signing
+   * @param {Array<Key>} signingKeys - private keys with decrypted secret key data for signing
+   * @param {Array<Key>} recipientKeys - recipient keys to get the signing preferences from
    * @param {Signature} [signature] - Any existing detached signature
    * @param {Array<module:type/keyid~KeyID>} [signingKeyIDs] - Array of key IDs to use for signing. Each signingKeyIDs[i] corresponds to privateKeys[i]
    * @param {Date} [date] - The creation time of the signature that should be created
-   * @param {Array} [userIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param {Array} [signingKeyIDs] - User IDs to sign with, e.g. [{ name:'Steve Sender', email:'steve@openpgp.org' }]
+   * @param {Array} [recipientUserIDs] - User IDs associated with `recipientKeys` to get the signing preferences from
    * @param {Array} [notations] - Notation Data to add to the signatures, e.g. [{ name: 'test@example.org', value: new TextEncoder().encode('test'), humanReadable: true, critical: false }]
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<CleartextMessage>} New cleartext message with signed content.
    * @async
    */
-  async sign(privateKeys, signature = null, signingKeyIDs = [], date = new Date(), userIDs = [], notations = [], config = defaultConfig) {
+  async sign(signingKeys, recipientKeys = [], signature = null, signingKeyIDs = [], date = new Date(), signingUserIDs = [], recipientUserIDs = [], notations = [], config = defaultConfig) {
     const literalDataPacket = new LiteralDataPacket();
     literalDataPacket.setText(this.text);
-    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, privateKeys, signature, signingKeyIDs, date, userIDs, notations, true, config));
+    const newSignature = new Signature(await createSignaturePackets(literalDataPacket, signingKeys, recipientKeys, signature, signingKeyIDs, date, signingUserIDs, recipientUserIDs, notations, true, config));
     return new CleartextMessage(this.text, newSignature);
   }
 
@@ -111,16 +113,22 @@ export class CleartextMessage {
    * @returns {String | ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
-    let hashes = this.signature.packets.map(function(packet) {
-      return enums.read(enums.hash, packet.hashAlgorithm).toUpperCase();
-    });
-    hashes = hashes.filter(function(item, i, ar) { return ar.indexOf(item) === i; });
+    // emit header and checksum if one of the signatures has a version not 6
+    const emitHeaderAndChecksum = this.signature.packets.some(packet => packet.version !== 6);
+    const hash = emitHeaderAndChecksum ?
+      Array.from(new Set(this.signature.packets.map(
+        packet => enums.read(enums.hash, packet.hashAlgorithm).toUpperCase()
+      ))).join() :
+      null;
+
     const body = {
-      hash: hashes.join(),
+      hash,
       text: this.text,
       data: this.signature.packets.write()
     };
-    return armor(enums.armor.signed, body, undefined, undefined, undefined, config);
+
+    // An ASCII-armored sequence of Signature packets that only includes v6 Signature packets MUST NOT contain a CRC24 footer.
+    return armor(enums.armor.signed, body, undefined, undefined, undefined, emitHeaderAndChecksum, config);
   }
 }
 
@@ -171,30 +179,27 @@ function verifyHeaders(headers, packetlist) {
     return true;
   };
 
-  let oneHeader = null;
-  let hashAlgos = [];
-  headers.forEach(function(header) {
-    oneHeader = header.match(/^Hash: (.+)$/); // get header value
-    if (oneHeader) {
-      oneHeader = oneHeader[1].replace(/\s/g, ''); // remove whitespace
-      oneHeader = oneHeader.split(',');
-      oneHeader = oneHeader.map(function(hash) {
-        hash = hash.toLowerCase();
-        try {
-          return enums.write(enums.hash, hash);
-        } catch (e) {
-          throw new Error('Unknown hash algorithm in armor header: ' + hash);
-        }
-      });
-      hashAlgos = hashAlgos.concat(oneHeader);
+  const hashAlgos = [];
+  headers.forEach(header => {
+    const hashHeader = header.match(/^Hash: (.+)$/); // get header value
+    if (hashHeader) {
+      const parsedHashIDs = hashHeader[1]
+        .replace(/\s/g, '') // remove whitespace
+        .split(',')
+        .map(hashName => {
+          try {
+            return enums.write(enums.hash, hashName.toLowerCase());
+          } catch (e) {
+            throw new Error('Unknown hash algorithm in armor header: ' + hashName.toLowerCase());
+          }
+        });
+      hashAlgos.push(...parsedHashIDs);
     } else {
       throw new Error('Only "Hash" header allowed in cleartext signed message');
     }
   });
 
-  if (!hashAlgos.length && !checkHashAlgos([enums.hash.md5])) {
-    throw new Error('If no "Hash" header in cleartext signed message, then only MD5 signatures allowed');
-  } else if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
+  if (hashAlgos.length && !checkHashAlgos(hashAlgos)) {
     throw new Error('Hash algorithm mismatch in armor header and signature');
   }
 }

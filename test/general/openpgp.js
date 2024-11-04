@@ -1,20 +1,21 @@
 /* eslint-disable max-lines */
-/* globals tryTests: true */
-const spy = require('sinon/lib/sinon/spy');
-const stream = require('@openpgp/web-stream-tools');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+/* globals tryTests, loadStreamsPolyfill */
+import sinon from 'sinon';
+import * as stream from '@openpgp/web-stream-tools';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const crypto = require('../../src/crypto');
-const random = require('../../src/crypto/random');
-const util = require('../../src/util');
-const keyIDType = require('../../src/type/keyid');
-const { isAEADSupported } = require('../../src/key');
+import openpgp from '../initOpenpgp.js';
+import crypto from '../../src/crypto';
+import * as random from '../../src/crypto/random.js';
+import util from '../../src/util.js';
+import keyIDType from '../../src/type/keyid.js';
+import { getPreferredCipherSuite } from '../../src/key';
 
-const input = require('./testInputs');
+import * as input from './testInputs.js';
 
-const detectNode = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object';
+const detectBrowser = () => typeof navigator === 'object';
 
 const pub_key = [
   '-----BEGIN PGP PUBLIC KEY BLOCK-----',
@@ -294,6 +295,25 @@ BBABCAAvBQIAAAABBQMAAAU5BgsJBwgDAgkQzcF99nGrkAkEFQgKAgMWAgEC
 GQECGwMCHgEAABAlAfwPehmLZs+gOhOTTaSslqQ50bl/REjmv42Nyr1ZBlQS
 DECl1Qu4QyeXin29uEXWiekMpNlZVsEuc8icCw6ABhIZ
 =/7PI
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+const priv_key_sha3_512 = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGZN8edBsAAAAgdUMlFMFCVKNo7sdUd6FVBos6NNjpUpSdrodk6BfPb/kA+3bu
+A2+WY2LwyxlX5o07WR2VSn+wuegC3v28yO0tClHCtwYfGw4AAABIBYJk3x50BAsJ
+CAcHFQ4MCgkICwIWAAIXgAKbAwIeCSIhBpbSe0QWuaCNSSLaePhXEP3BxQ2VHX3W
+pW1U6svHvCUiBScJAgcCAAAAACMZIP8aHixoyC9wS3q/TNV/IfOQa81f+U5Ucz6H
+4I+c5bWRYUzH/piBB4n5FoYlld+/SViCQIBCQ+fynLmaj5wlf22+mISTt/9je1Zf
+YWlJ+WSJyi5gY5EH9DubfuIU3VaqCM0aQmVybmFkZXR0ZSA8YkBleGFtcGxlLm9y
+Zz7CugYTGw4AAABLBYJk3x50BAsJCAcHFQ4MCgkICwIWAAIXgAIZAQKbAwIeCSIh
+BpbSe0QWuaCNSSLaePhXEP3BxQ2VHX3WpW1U6svHvCUiBScJAgcCAAAAAMMGIJEi
+9+yqkFKsNwX1H5II0riPudFpwBx2ypVjNk4aNb7Exl56Aac4tXEhz4fH41q0dAzF
+ww2erZaiUqmohQ4AFSw1jN/WOiDfb1DkjT/HJ8vXMGpwWdgFPoqsWzTNhd5VCcdL
+BmTfHnQZAAAAIAGMcsqVCXLclRhVamWciSxmnYF1FFs80W7dNUH07HUOAHh/S601
+If+/eZKDIj3jq7oOe2PzHSYEK+mpQD1hBpF2wpsGGBsOAAAALAWCZN8edAKbDCIh
+BpbSe0QWuaCNSSLaePhXEP3BxQ2VHX3WpW1U6svHvCUiAAAAANj3IBknZTPsMpWA
+we0Jl5gw/Dj4lWAGoJfWfk+6s3Q86Hag3Hu8VBsapzmul+vzy0KJa+ZRcZz2n8aj
+0vTl4sOZ0EcCdFDfkh/tR//gKkT6BiSBG86WoFq3f6U/RC+z0Ym7Dw==
 -----END PGP PRIVATE KEY BLOCK-----`;
 
 const passphrase = 'hello world';
@@ -848,6 +868,56 @@ MbVkSnU2Z+vhSmYubDCldNOSVwE=
 =bTUQ
 -----END PGP PRIVATE KEY BLOCK-----`;
 
+const rsaKeyWithNoFeaturesFromRNP = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xcLYBGX9lyEBCADMOR1JW9yPhMxeMmrUWf2MqKtX9WHvS+EFkPaVwWmYIM/bjcrngPgKEG5wTND9
+S1QJ/Op9mzN36kwAzX0bLx2R+HlyvNQOzOA05uY3uhbZePvkE2o76z9//w07DEYtMG8aLvLdpVLW
+U7YwMMdlI8zSwi2Q5/QAUOfCJCylxndj/U7AF+9sqrSoSJmwtzu+AS3pnHDgqcHpum7KTL7sOgwa
+8713qGb05YgXCtUkh2hT0t7Kz5OsQrM01yJJlVkgxw6BZXiRCLSCGCepZiUvtWO53cwZ2GgIZZKx
+piAEo8AjMHGUxyiMBR5DvzDLADVexLf/DB5BTz9KywRu2zTGUtYlABEBAAEAB/4ifoUlVmhHL4GL
+aY2kx3xtjTG/vhkoH5Nm6sjTm6MXyHcDWQxMFPsQTB0zR65HEjmkJD2BML09RGxI+GxosokWljcB
+O8a/pzg5h0ScZgik++vj5qmbbE1B89UKw7R4voUNkZ+A84Mt417S/fI38ZePg6/JmXwbr46tuol2
+CLMyxpFVNvGgqj7/U3co/BygukHMqfpC/K4QTVWUFCLkzgpAzk+LekSLWNrVD2soVQGmUn68OOLY
+Dnwxe7mP/4GAmmnAH4nfg9Uf+z1tHVoaL7sUHKFXXBIjopcimWBjLIzWm0ZvKzmvmOE49Fswuoyt
+Q2oLWYCXd/lrDr4u/VN+/uKhBADTpPm6+eNJ9CDOsIHTlNWrKD6/iubsLXWju5uyOW8rWDkE5m8+
+Ik+l4Eq8b0iAHGSS/6QayeRupeUCCkHnmA956qAFvHzkeE2S5YUg/mtnV+qPZrHG4UfD3KU0gv/Y
+3x3HcqOYU7Ph6kq4mcF7UO83+8E8gJWyJwWwqpKXrgDZtQQA9wX5T11+bOwWh37SDWd20mqxTwZM
+pSuClCUwVs8Z2p/Fo+Kq/+uoNRQW38O1J2QM37fMaKOePeYN15cIM3ilZQ0mU3UwvKC1B3zxd0f9
+28cZ4fxlGDE3qzZygbB/BxiXnlcPezO2r03X9PJnjCP2y5Wi+PMR5ciFY1w5qaI9ELEEAL6Wvdl4
+zSwkT4qxM7rWzrpVPisdHRiwFT6E+vTmNpA+qXvwlbLEXrYmFVY7CphWjyJQEvqxaa0MtdJniwef
+cZtSi2CirquB0R3RJtloMZkbobRJFV43URIc9qUhSgarZ+Pco80mG06hjY2pxFot49oJZp2FNm5d
+wPOB/kCvczK3QRHNGkJlcm5hZGV0dGUgPGJAZXhhbXBsZS5vcmc+wsCNBBMBCAA3FiEEKUdMEpbT
+txHSmeOgwAeWcPHMimkFAmX9lyEFCQPCZwACGwMECwkIBwUVCAkKCwUWAgMBAAAKCRDAB5Zw8cyK
+aUZHB/9j2vE9niEiQS9tNczxrXFde2Kg8U+PzoSU83QvkkWM2D4FBukCZDHj7cppIzYcDcH0Gaox
+Y2eUgJx/q/Nq8svsk2Z4X3dGsEut+EqQpsjWny4kUHKUBemSh3JGJoH5ongxXXNwNTe31zNa1CRA
+nmc5KXnOmD2FX17ax5Xu2SaJ11eiKcmKXMtZBVzzLL41LwUd2RPizIw1TT2zckHIstwaLdO4y5If
+ZEnTiiBqrex8HYf/Vta8GF8uvJVQvn+Du5m/FmdeSFxTBeDvf1Sj6k8XBS9QQHbjpH/K4ePz9Twh
+ayLuvrvWmyN5edo6Xf1LRh/R6dskKbUOreAfS8pTWWp0x8LYBGX9lyEBCAC43ooLMCLT0QYslVWZ
+suDNNrQ0LYY24i3vRfnHFM9rRUthWrcIKzpKFvq9jntETYWkNM7LIJ2YhHueVMuLyaF2Evrkn89q
+dCbA+ICS4uJ5RlhXv5ZfQT+H9fQL/JBTk9vQpBoZHr8foPc2YNonOuZjmeLSa1ZcR6BumUQqTjuk
+CEgWxebnRUz6aL6+Mdl/emU7+G6IINC15q3RWUIlkmx5gQwsmIaztxVF9LniRIkB+Fjwf7U7AqfL
+Y87/F1LHqeaIzc6oZNfIIXX57A4im3lqJQAQq1n/omyYHwWO+lWqbCwCj8ri4OXcgGZOdkbMOHff
+hGsxKy8YK7qyvBxYiINPABEBAAEAB/sFu2CsWCG8T47Rcw/kZBd0RW3w8DhpGzoxYQoNkiecO9nK
+evWR20VDZtL/bZuE0qKCJOEEi05XnEP49Mga3XWUI6KD1DCqLE/HS+0woLhE6lly3w3ahjtiC841
+UO9op/z4yx3ECaADawo/NWGONdVO4UaXH5zd35qp0za52RMgUtPqwJBZ9cKfXkFmfu9QDpiW1J4N
+8S76Hgol4ThESRTm80d82L2UMVbFgXZOgpMgq+A1NXSbloSJ3ZMI2hR21PbQt/uAdwCP/E+EQOe+
+s6HN/9+0XjzsE0wcu7DJa/3QTWGTnn5Jg/SufHnABWTqYymfDH74TTPlkkWNJB65Cz0BBADUMLdg
+jfDgmlw2CtKHuMYvMDe//a+KgrV2Q89QRnQk8agwXkiY/NxtRehOj35yzzUs/AdEfmVT6jaC/dQD
+tEqeY1B9LI4nL4ZiE+qLnSKVPeeWtOVNUsNJUFRX6oSvChTlWj90UWvYtQUUS0zAQrI+tcJsypTE
+fiSBG8DOzefi1wQA3wnGkyIidc7N8u/NdCvBO2jUOU4Q6A1E1k2eVfcjK05gHEtChUgf03v80iFG
+42VIGa00rxfv9RdWAJzWy+/qqjPAUGtlrbM0VljZsvLnsZLU4cTaC2A+3Lm00UgkHAGzw4IBe9vB
+4IAHYpRnZEwIveyDwVLpioEP5wShHYVXTEkEAILWuum7EgK70yYoC4HUvmUufpj7aTfpC4vYqi+4
+Xw0n8PLPPRZ3AjJE2O41kicip/Y30B3HVIxwbwYMBIjqRTpTyYer6jkRHc17xau8vzyWKLETC+7A
+WPrljucvjEJXpkrDYlV5fmpsMvqVHJiSQrJDMFX1SHF8UUnqelGg6Fv8QLvCwHwEGAEIACYWIQQp
+R0wSltO3EdKZ46DAB5Zw8cyKaQUCZf2XIgUJA8JnAAIbDAAKCRDAB5Zw8cyKaY7PB/9qOmlz84mu
+wNrHo00TdXefBykwoJxtDLjNzQE/8HGnzuFWJgHvRDD8FLaaevRwD1AGf6B3YySxBwICoRqbsYGr
+wg9ng3wIUBPeAeS61e/ATkFEqknQnj2rIscaztxz56b1Sy6YEjW6dD7QngoinDViAmNT/zY2diK8
+85iB+47tNXrUOHD1FKs8XKr05FwWWjFmmqGSxC+LSdNeuDtP1UKZaoYROyZ+R3zKdguNOhtDHX6o
+me8oJym/ILMHRGIc4JvY9+2wE5U1FBYTsze3WnVH5dP5mfA2Uk83TR5KewKANsb4kl/OEPlADWdR
+8wENR68u88WrKOGN359vq/DKwd3A
+=c2mQ
+-----END PGP PRIVATE KEY BLOCK-----`;
+
 function withCompression(tests) {
   const compressionTypes = Object.values(openpgp.enums.compression);
 
@@ -863,8 +933,8 @@ function withCompression(tests) {
       let decompressSpy;
 
       beforeEach(function () {
-        compressSpy = spy(openpgp.CompressedDataPacket.prototype, 'compress');
-        decompressSpy = spy(openpgp.CompressedDataPacket.prototype, 'decompress');
+        compressSpy = sinon.spy(openpgp.CompressedDataPacket.prototype, 'compress');
+        decompressSpy = sinon.spy(openpgp.CompressedDataPacket.prototype, 'decompress');
       });
 
       afterEach(function () {
@@ -894,7 +964,7 @@ function withCompression(tests) {
   });
 }
 
-module.exports = () => describe('OpenPGP.js public api tests', function() {
+export default () => describe('OpenPGP.js public api tests', function() {
   describe('readKey(s) and readPrivateKey(s) - unit tests', function() {
     it('readKey and readPrivateKey should create equal private keys', async function() {
       const key = await openpgp.readKey({ armoredKey: priv_key });
@@ -920,6 +990,62 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       });
     });
 
+    it('readPrivateKey and readPrivateKeys should have consistent results', async function() {
+      const privateAndPublicKeyBlock = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEZkI3VBYJKwYBBAHaRw8BAQdA7nW1t5qRdtIYzEVEEhRSDgTgbk2JHofY
+Ph8FuGsDqgwAAQDYVpZt1w6a+vxgb4M351aCpA2sCfx8kbFg23h8Irtm1xFY
+zQ88dGVzdEB0ZXN0LmNvbT7CwBMEEBYKAIUFgmZCN1QDCwkHCZDuyoEpQ/KE
+H0UUAAAAAAAcACBzYWx0QG5vdGF0aW9ucy5vcGVucGdwanMub3JnzKJ8mXOC
+wnEp6lVJ/5+rRzR4UcwlL8EjhOS+rV0T8pAFFQgKDA4EFgACAQIZAQKbAwIe
+ARYhBECs3D9sMFn6oOxAqu7KgSlD8oQfAAAPbwD+NjyEHt1CRI+0XmgHdiwZ
+JN115IO+M37bOxgBnTbVoF0BAMGECXVQoSRVNy0TYf+AUUPQ6tSZ1zLXszwe
+FK3w+CoGxjMEZkI3VBYJKwYBBAHaRw8BAQdA7nW1t5qRdtIYzEVEEhRSDgTg
+bk2JHofYPh8FuGsDqgzNDzx0ZXN0QHRlc3QuY29tPsLAEwQQFgoAhQWCZkI3
+VAMLCQcJkO7KgSlD8oQfRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5w
+Z3Bqcy5vcmfMonyZc4LCcSnqVUn/n6tHNHhRzCUvwSOE5L6tXRPykAUVCAoM
+DgQWAAIBAhkBApsDAh4BFiEEQKzcP2wwWfqg7ECq7sqBKUPyhB8AAA9vAP42
+PIQe3UJEj7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh
+/4BRQ9Dq1JnXMtezPB4UrfD4KgY=
+-----END PGP PRIVATE KEY BLOCK-----`;
+      // readPrivateKey should read the first private key encountered in a key block
+      const key = await openpgp.readPrivateKey({ armoredKey: privateAndPublicKeyBlock });
+      const privateKeys = await openpgp.readPrivateKeys({ armoredKeys: privateAndPublicKeyBlock });
+      expect(privateKeys.length).to.equal(1);
+      expect(key.isPrivate()).to.be.true;
+      expect(privateKeys[0].isPrivate()).to.be.true;
+      expect(key.isDecrypted()).to.be.true;
+      expect(privateKeys[0].isDecrypted()).to.be.true;
+      expect(key.getKeyID().equals(privateKeys[0].getKeyID())).to.be.true;
+    });
+
+    it('readKey and readKeys should have consistent results', async function() {
+      const publicAndPrivateKeyBlock = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xjMEZkI3VBYJKwYBBAHaRw8BAQdA7nW1t5qRdtIYzEVEEhRSDgTgbk2JHofY
+Ph8FuGsDqgzNDzx0ZXN0QHRlc3QuY29tPsLAEwQQFgoAhQWCZkI3VAMLCQcJ
+kO7KgSlD8oQfRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5wZ3Bqcy5v
+cmfMonyZc4LCcSnqVUn/n6tHNHhRzCUvwSOE5L6tXRPykAUVCAoMDgQWAAIB
+AhkBApsDAh4BFiEEQKzcP2wwWfqg7ECq7sqBKUPyhB8AAA9vAP42PIQe3UJE
+j7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh/4BRQ9Dq
+1JnXMtezPB4UrfD4KgbFWARmQjdUFgkrBgEEAdpHDwEBB0DudbW3mpF20hjM
+RUQSFFIOBOBuTYkeh9g+HwW4awOqDAABANhWlm3XDpr6/GBvgzfnVoKkDawJ
+/HyRsWDbeHwiu2bXEVjNDzx0ZXN0QHRlc3QuY29tPsLAEwQQFgoAhQWCZkI3
+VAMLCQcJkO7KgSlD8oQfRRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5w
+Z3Bqcy5vcmfMonyZc4LCcSnqVUn/n6tHNHhRzCUvwSOE5L6tXRPykAUVCAoM
+DgQWAAIBAhkBApsDAh4BFiEEQKzcP2wwWfqg7ECq7sqBKUPyhB8AAA9vAP42
+PIQe3UJEj7ReaAd2LBkk3XXkg74zfts7GAGdNtWgXQEAwYQJdVChJFU3LRNh
+/4BRQ9Dq1JnXMtezPB4UrfD4KgY=
+-----END PGP PRIVATE KEY BLOCK-----`;
+      // readKey should read the first key encountered in a key block
+      const key = await openpgp.readKey({ armoredKey: publicAndPrivateKeyBlock });
+      const keys = await openpgp.readKeys({ armoredKeys: publicAndPrivateKeyBlock });
+      expect(keys.length).to.equal(2);
+      expect(key.isPrivate()).to.be.false;
+      expect(keys[0].isPrivate()).to.be.false;
+      expect(keys[1].isPrivate()).to.be.true;
+    });
+
     it('readPrivateKey should throw on armored public key', async function() {
       await expect(openpgp.readPrivateKey({ armoredKey: pub_key })).to.be.rejectedWith(/Armored text not of type private key/);
     });
@@ -938,17 +1064,9 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
     });
 
-    it('should fail for invalid user email address', async function() {
+    it('should fail for invalid user email address (missing @)', async function() {
       const opt = {
         userIDs: [{ name: 'Test User', email: 'textexample.com' }]
-      };
-      const test = openpgp.generateKey(opt);
-      await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
-    });
-
-    it('should fail for invalid user email address', async function() {
-      const opt = {
-        userIDs: [{ name: 'Test User', email: 'text@examplecom' }]
       };
       const test = openpgp.generateKey(opt);
       await expect(test).to.eventually.be.rejectedWith(/Invalid user ID format/);
@@ -992,7 +1110,25 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
   });
 
   describe('generateKey - unit tests', function() {
-    it('should have default params set', function() {
+    it('should still support curve="curve25519" for ECC key type (v4 key)', function() {
+      const opt = {
+        userIDs: { name: 'Test User', email: 'text@example.com' },
+        type: 'ecc',
+        curve: 'curve25519',
+        format: 'object'
+      };
+      return openpgp.generateKey(opt).then(async function({ privateKey: key }) {
+        expect(key).to.exist;
+        expect(key.getAlgorithmInfo().rsaBits).to.equal(undefined);
+        expect(key.getAlgorithmInfo().algorithm).to.equal('eddsaLegacy');
+        expect(key.getAlgorithmInfo().curve).to.equal('ed25519Legacy');
+        expect(key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
+        expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('ecdh');
+        expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519Legacy');
+      });
+    });
+
+    it('should have default params set (v4 key)', function() {
       const now = util.normalizeDate(new Date());
       const opt = {
         userIDs: { name: 'Test User', email: 'text@example.com' },
@@ -1003,16 +1139,48 @@ module.exports = () => describe('OpenPGP.js public api tests', function() {
       return openpgp.generateKey(opt).then(async function({ privateKey, publicKey }) {
         for (const key of [publicKey, privateKey]) {
           expect(key).to.exist;
+          expect(key.keyPacket.version).to.equal(4);
           expect(key.users.length).to.equal(1);
           expect(key.users[0].userID.name).to.equal('Test User');
           expect(key.users[0].userID.email).to.equal('text@example.com');
           expect(key.getAlgorithmInfo().rsaBits).to.equal(undefined);
-          expect(key.getAlgorithmInfo().curve).to.equal('ed25519');
+          expect(key.getAlgorithmInfo().curve).to.equal('ed25519Legacy');
           expect(+key.getCreationTime()).to.equal(+now);
           expect(await key.getExpirationTime()).to.equal(Infinity);
           expect(key.subkeys.length).to.equal(1);
           expect(key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
-          expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519');
+          expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal('curve25519Legacy');
+          expect(+key.subkeys[0].getCreationTime()).to.equal(+now);
+          expect(await key.subkeys[0].getExpirationTime()).to.equal(Infinity);
+        }
+      });
+    });
+
+    it('should have default params set (v6 key)', function() {
+      const now = util.normalizeDate(new Date());
+      const opt = {
+        userIDs: { name: 'Test User', email: 'text@example.com' },
+        passphrase: 'secret',
+        date: now,
+        format: 'object',
+        config: { v6Keys: true }
+      };
+      return openpgp.generateKey(opt).then(async function({ privateKey, publicKey }) {
+        for (const key of [publicKey, privateKey]) {
+          expect(key).to.exist;
+          expect(key.keyPacket.version).to.equal(6);
+          expect(key.users.length).to.equal(1);
+          expect(key.users[0].userID.name).to.equal('Test User');
+          expect(key.users[0].userID.email).to.equal('text@example.com');
+          expect(key.getAlgorithmInfo().algorithm).to.equal('ed25519');
+          expect(key.getAlgorithmInfo().rsaBits).to.equal(undefined);
+          expect(key.getAlgorithmInfo().curve).to.equal(undefined);
+          expect(+key.getCreationTime()).to.equal(+now);
+          expect(await key.getExpirationTime()).to.equal(Infinity);
+          expect(key.subkeys.length).to.equal(1);
+          expect(key.subkeys[0].getAlgorithmInfo().algorithm).to.equal('x25519');
+          expect(key.subkeys[0].getAlgorithmInfo().rsaBits).to.equal(undefined);
+          expect(key.subkeys[0].getAlgorithmInfo().curve).to.equal(undefined);
           expect(+key.subkeys[0].getCreationTime()).to.equal(+now);
           expect(await key.subkeys[0].getExpirationTime()).to.equal(Infinity);
         }
@@ -1243,6 +1411,28 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       expect(unlocked.isDecrypted()).to.be.true;
     });
 
+    it('should support encrypting with argon2 s2k', async function() {
+      const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
+      const locked = await openpgp.encryptKey({
+        privateKey: key,
+        passphrase: passphrase,
+        config: {
+          s2kType: openpgp.enums.s2k.argon2,
+          aeadProtect: true
+        }
+      });
+      expect(key.isDecrypted()).to.be.true;
+      expect(locked.isDecrypted()).to.be.false;
+      expect(locked.keyPacket.isDummy()).to.be.true;
+      const unlocked = await openpgp.decryptKey({
+        privateKey: locked,
+        passphrase: passphrase
+      });
+      expect(key.isDecrypted()).to.be.true;
+      expect(unlocked.isDecrypted()).to.be.true;
+      expect(unlocked.keyPacket.isDummy()).to.be.true;
+    });
+
     it('should encrypt gnu-dummy key', async function() {
       const key = await openpgp.readKey({ armoredKey: gnuDummyKeySigningSubkey });
       const locked = await openpgp.encryptKey({
@@ -1267,7 +1457,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
 
     beforeEach(async function() {
       minRSABitsVal = openpgp.config.minRSABits;
-      openpgp.config.minRSABits = 512;
+      openpgp.config.minRSABits = 1024;
     });
 
     afterEach(function() {
@@ -1578,7 +1768,7 @@ aOU=
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
         decryptionKeys: privateKeyRSA,
         config
-      })).to.be.rejectedWith(/Session key decryption failed/);
+      })).to.be.rejectedWith(/No decryption key packets found/);
       // decryption using ECC key should succeed (PKCS1 is not used, so constant time countermeasures are not applied)
       const { data } = await openpgp.decrypt({
         message: await openpgp.readMessage({ armoredMessage: encrypted }),
@@ -1767,6 +1957,31 @@ aOU=
       })).to.be.rejectedWith(/No signing keys provided/);
     });
 
+    it('Signing with key which uses sha3 should generate a valid sha3 signature if `config.preferredHashAlgorithm` has been set accordingly', async function() {
+      const privKey = await openpgp.readKey({ armoredKey: priv_key_sha3_512 });
+      const pubKey = privKey.toPublic();
+      const text = 'Hello, world.';
+      const message = await openpgp.createCleartextMessage({ text });
+
+      const cleartextMessage = await openpgp.sign({ message, signingKeys: privKey, format: 'armored' });
+      const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
+      expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      expect(
+        parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
+      ).to.equal(openpgp.config.preferredHashAlgorithm);
+      const cleartextMessageWithSHA3 = await openpgp.sign({ message, signingKeys: privKey, format: 'armored', config: { preferredHashAlgorithm: openpgp.enums.hash.sha3_512 } });
+      const parsedArmoredSHA3 = await openpgp.readCleartextMessage({ cleartextMessage: cleartextMessageWithSHA3 });
+      expect(parsedArmoredSHA3.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      expect(
+        parsedArmoredSHA3.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
+      ).to.equal(openpgp.enums.hash.sha3_512);
+
+      const verified = await openpgp.verify({ message: parsedArmored, verificationKeys: pubKey, expectSigned: true });
+      const verifiedSHA3 = await openpgp.verify({ message: parsedArmoredSHA3, verificationKeys: pubKey, expectSigned: true });
+      expect(verified.data).to.equal(text);
+      expect(verifiedSHA3.data).to.equal(text);
+    });
+
     it('should output cleartext message of expected format', async function() {
       const text = 'test';
       const message = await openpgp.createCleartextMessage({ text });
@@ -1947,16 +2162,50 @@ aOU=
       });
       expect(await stream.readToEnd(streamedData)).to.equal(text);
     });
+
+    it('should sign using hash algorithm preferred by `recipientKeys` if given', async function() {
+      const signingKeyWithoutSHA3Pref = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xVgEZyID/RYJKwYBBAHaRw8BAQdAcdaUl/UXEQaT6rKNSEPmyKypikz9rIsf
+BlFAQYjtsF8AAQDiW9ls2uBBRa3vA1Odl0NNNguRBolWhR9XGpdXnVBF3w5E
+zQ48dGVzdEB0ZXN0Lml0PsLAEQQTFgoAgwWCZyID/QMLCQcJkJuH6wXn78D5
+RRQAAAAAABwAIHNhbHRAbm90YXRpb25zLm9wZW5wZ3Bqcy5vcmcNolfauRaj
+NnItFJ0TOsiyZZhd6bMWVR4032v64tYRywMVCAoEFgACAQIZAQKbAwIeARYh
+BGsOUiBRfu57iwuxh5uH6wXn78D5AACEQQEAz4YXoEKgOElvxRrIrkglUlpb
+ilLZVU6mXqLxRSEtZi0BAK5xooNiLYbjF42eJuCDWUWriXufI9acT/vnruFr
+p34Px10EZyID/RIKKwYBBAGXVQEFAQEHQOC8KcmOQ9+qEgoWBzc8xNgPUvoe
+IVNw+mHbljD9eFBfAwEIBwAA/3iHMqnBfuM/c9tOIWKI4advW92aMYnjexrU
+HdzPS2IoEU3CvgQYFgoAcAWCZyID/QmQm4frBefvwPlFFAAAAAAAHAAgc2Fs
+dEBub3RhdGlvbnMub3BlbnBncGpzLm9yZ5M4VuJhTqDkHF/14D0i/wL8GTtM
+fm9AIukMoYWXjGSGApsMFiEEaw5SIFF+7nuLC7GHm4frBefvwPkAAL0QAP9Z
+oR7Vxyfuje3vAyEbef1gyfMN/RkIVbMKSiwy3A2W9AEA6QcBF5zUvwmHPpA4
++SkLLMuq/yUGT6WhAq6kASQ8vgM=
+=lluz
+-----END PGP PRIVATE KEY BLOCK-----` });
+      const recipientKeyWithSHA3Pref = await openpgp.readKey({ armoredKey: priv_key_sha3_512 });
+
+      const text = 'Hello, world.';
+      const message = await openpgp.createCleartextMessage({ text });
+
+      // SHA3-512 is first preference of recipient key, and should be picked,
+      // even if not declared in the signing key prefs
+      const cleartextMessage = await openpgp.sign({
+        message,
+        signingKeys: signingKeyWithoutSHA3Pref,
+        recipientKeys: recipientKeyWithSHA3Pref,
+        format: 'armored',
+        // the preferred hash algo is expected to picked when supported by the recipient keys
+        config: { preferredHashAlgorithm: openpgp.enums.hash.sha3_512 }
+      });
+      const parsedArmored = await openpgp.readCleartextMessage({ cleartextMessage });
+      expect(parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)).to.have.length(1);
+      expect(
+        parsedArmored.signature.packets.filterByTag(openpgp.enums.packet.signature)[0].hashAlgorithm
+      ).to.equal(openpgp.enums.hash.sha3_512);
+    });
   });
 
   describe('encrypt - unit tests', function() {
-    it('Does not encrypt to expired key (expiration time subpacket on a direct-key signature)', async function() {
-      const expiredKey = await openpgp.readKey({ armoredKey: expiredPublicKeyThroughDirectSignature });
-      await expect(
-        openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: expiredKey })
-      ).to.be.rejectedWith(/Primary key is expired/);
-    });
-
     it('should output message of expected format', async function() {
       const passwords = 'password';
       const text = 'test';
@@ -2018,65 +2267,6 @@ aOU=
       expect(await stream.readToEnd(streamedData)).to.equal(text);
     });
 
-    it('supports decrypting new x25519 format', async function () {
-      // v4 key
-      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
-GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
-dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
-iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
-BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
-0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
-nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
-BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
-yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
-=bJqd
------END PGP PRIVATE KEY BLOCK-----` });
-
-      const messageToDecrypt = `-----BEGIN PGP MESSAGE-----
-
-wUQDYc6clYlCdtoZ3rAsvBDIwvoLmvM0zwViG8Ec0PgFfN5R6C4BqEZD53UZB1WM
-J68hXSj1Sa235XAUYE1pZerTKhglvdI9Aeve8+L0w5RDMjmBBA50Yv/YT8liqhNi
-mNwbfFbSNhZYWjFada77EKBn60j8QT/xCQzLR1clci7ieW2knw==
-=NKye
------END PGP MESSAGE-----`;
-      const { data } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: messageToDecrypt }),
-        decryptionKeys: privateKey
-      });
-      expect(data).to.equal('Hello World!');
-    });
-
-    it('supports encrypting new x25519 format', async function () {
-      // v4 key
-      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
-
-xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
-GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
-dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
-iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
-BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
-0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
-nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
-BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
-yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
-=bJqd
------END PGP PRIVATE KEY BLOCK-----` });
-      const plaintext = 'plaintext';
-
-      const signed = await openpgp.encrypt({
-        message: await openpgp.createMessage({ text: plaintext }),
-        encryptionKeys: privateKey
-      });
-
-      const { data } = await openpgp.decrypt({
-        message: await openpgp.readMessage({ armoredMessage: signed }),
-        decryptionKeys: privateKey
-      });
-      expect(data).to.equal(plaintext);
-    });
-
     it('should support encrypting with encrypted key with unknown s2k (unparseableKeyMaterial)', async function() {
       const originalDecryptedKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
@@ -2123,6 +2313,68 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       });
       expect(decrypted.data).to.equal('test');
     });
+
+    it('does not encrypt to expired key (expiration time subpacket on a direct-key signature)', async function() {
+      const expiredKey = await openpgp.readKey({ armoredKey: expiredPublicKeyThroughDirectSignature });
+      await expect(
+        openpgp.encrypt({ message: await openpgp.createMessage({ text: 'test' }), encryptionKeys: expiredKey })
+      ).to.be.rejectedWith(/Primary key is expired/);
+    });
+
+    it('uses AEAD when the encryption key prefs support it (SEIPDv2', async function() {
+      const v4PrivateKeyWithOCBPref = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+      const v6PrivateKeyWithOCBPref = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: [v4PrivateKeyWithOCBPref, v6PrivateKeyWithOCBPref],
+        format: 'object'
+      });
+
+      const seipd = encrypted.packets[2];
+      expect(seipd).to.be.instanceOf(openpgp.SymEncryptedIntegrityProtectedDataPacket);
+      expect(seipd.version).to.equal(2);
+      expect(seipd.aeadAlgorithm).to.equal(openpgp.enums.aead.ocb);
+    });
+
+    it('should support encrypting to a key without features (missing SEIPDv1 feature)', async function () {
+      const key = await openpgp.readKey({ armoredKey: rsaKeyWithNoFeaturesFromRNP });
+      const encrypted = await openpgp.encrypt({
+        message: await openpgp.createMessage({ text: 'test' }),
+        encryptionKeys: key
+      });
+      const decrypted = await openpgp.decrypt({
+        message: await openpgp.readMessage({ armoredMessage: encrypted }),
+        decryptionKeys: key
+      });
+      expect(decrypted.data).to.equal('test');
+    });
   });
 
   describe('encryptSessionKey - unit tests', function() {
@@ -2150,6 +2402,114 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
         data: util.hexToUint8Array('3e99c1bb485e70a1fcef09a7ad8d38d171015243bbdd853e1a2b0e334d122ff3')
       })).to.be.rejectedWith(/No encryption keys or passwords provided/);
     });
+
+    // keep this after the 'memory-heavy' test to confirm that the Wasm module was successfully reloaded
+    it('supports encrypting with argon2 s2k', async function() {
+      const config = { s2kType: openpgp.enums.s2k.argon2 };
+      const passwords = 'password';
+      const sessionKey = {
+        algorithm: 'aes128',
+        data: util.hexToUint8Array('01FE16BBACFD1E7B78EF3B865187374F')
+      };
+      const encrypted = await openpgp.encryptSessionKey({ ...sessionKey, passwords, config, format: 'object' });
+      expect(encrypted.packets).to.have.length(1);
+      const skesk = encrypted.packets[0];
+      expect(skesk.s2k.type).to.equal('argon2');
+      const [decryptedSessionKey] = await openpgp.decryptSessionKeys({ message: encrypted, passwords });
+      expect(decryptedSessionKey).to.deep.equal(sessionKey);
+    });
+  });
+
+  describe('decryptSessionKeys - unit tests', function() {
+    it('should decrypt message with two SKESKs where the wrong password returns a symmetric algo equal to 0', async function () {
+      // SKESK packets do not have an intrisic integrity check, and the session key must be used to check its validity.
+      // This message is such that when the password is used to try and decrypt the first (mismatching) SKESK, the result returns a '0' byte for
+      // the session key algo. This corresponds to the 'plaintext' algo identifier (https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#section-12.2.1),
+      // now removed from OpenPGP.js .
+      // This test guards against regressions caused by mishandling this value on SKESK decryption.
+      const message = await openpgp.readMessage({ armoredMessage:`-----BEGIN PGP MESSAGE-----
+
+wy4ECQMIf6HA/a6XkOAAlaU1z+uVfU5kmHmqNqahQH859nAMresQ6w1uIjsL
+ZE5bwy4ECQMIKVfCf+GWBesA5KFPuIDa6kLLn/AvEgbCi5DOg2xdIf73SNSN
+Tqy7nfex0sANAVtHHRkHVTRVTVa3MFjjiWeBEDtnfyVMntWJ21ihrIU9eb9p
+qS7UljZZ0u++xSWclU2IGBXCIdO0wLuS6hYk3q5OFexWj8OIoYJX88nkA2iW
+5xyGd9EFRWVsR4CREt8lwrIE2t/h8XpRlhJmY6Iefg8+2DeN8vDdhNs/B02o
+0zAE0hF+3xvwZTLi4hDrhBZEgBedPaeX4jlmDc3qzh2wlgV/Mq/FUakYfSLl
+bc1PCpfqkLZSuCfv4eoTrWohWi9lS/pRXY9hzzHtlnjo6w==
+-----END PGP MESSAGE-----` });
+      const sessionKeys = await openpgp.decryptSessionKeys({ message, passwords: 'I am another password' });
+      expect(sessionKeys).to.have.length(1); // first SKESK dropped due to '0' being treated as invalid algo identifier
+      expect(sessionKeys[0].algorithm).to.equal('aes256');
+
+      // decrypt() used to fail on this type of input
+      const decrypted = await openpgp.decrypt({ message, passwords: 'I am another password', format: 'binary' });
+      expect(decrypted.data).to.deep.equal(
+        util.hexToUint8Array('e280872009d699e0b5bae18ba1e28c86d280d184e1b888e1a8b3e28ab7e0afa8e0b98be283bde28db5e1b1afd48de1b5b2e280a7e199b0e1a487e185afd3a1e18ca5e0bfb4e28892e19e98e29bb8e29594e0baaae0b681e1929af09f9882f09f9897f09f9882f09f98abf09f988ff09f98b6f09f98bcf09f98bcf09f9981f09f9982e2808720090d0aed959ceab5adec96b42feca1b0ec84a0eba790')
+      );
+      expect(decrypted.signatures.length).to.equal(0);
+    });
+
+    it('should decrypt PKESK v6 and return a null symmetric algorithm', async function() {
+      // test vector https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.8
+      const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wV0GIQYSyD8ecG9jCP4VGkF3Q6HwM3kOk+mXhIjR2zeNqZMIhRmHzxjV8bU/gXzO
+WgBM85PMiVi93AZfJfhK9QmxfdNnZBjeo1VDeVZheQHgaVf7yopqR6W1FT6NOrfS
+aQIHAgZhZBZTW+CwcW1g4FKlbExAf56zaw76/prQoN+bAzxpohup69LA7JW/Vp0l
+yZnuSj3hcFj0DfqLTGgr4/u717J+sPWbtQBfgMfG9AOIwwrUBqsFE9zW+f1zdlYo
+bhF30A+IitsxxA==
+-----END PGP MESSAGE-----`;
+
+      const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+      const sessionKeys = await openpgp.decryptSessionKeys({
+        message: await openpgp.readMessage({ armoredMessage }),
+        decryptionKeys: privateKey
+      });
+
+      expect(sessionKeys).to.have.length(1);
+      expect(sessionKeys[0].algorithm).to.equal(null); // PKESK v6 does not include the algo info
+    });
+
+    it('supports decrypting with argon2 s2k (memory-heavy params)', async function() {
+      const passwords = 'password';
+      // Test vector from https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-07.html#appendix-A.8.1
+      const armoredMessage = `-----BEGIN PGP MESSAGE-----
+Comment: Encrypted using AES with 128-bit key
+Comment: Session key: 01FE16BBACFD1E7B78EF3B865187374F
+
+wycEBwScUvg8J/leUNU1RA7N/zE2AQQVnlL8rSLPP5VlQsunlO+ECxHSPgGYGKY+
+YJz4u6F+DDlDBOr5NRQXt/KJIf4m4mOlKyC/uqLbpnLJZMnTq3o79GxBTdIdOzhH
+XfA3pqV4mTzF
+-----END PGP MESSAGE-----`;
+      const expectedSessionKey = util.hexToUint8Array('01FE16BBACFD1E7B78EF3B865187374F');
+
+      try {
+        const [decryptedSessionKey] = await openpgp.decryptSessionKeys({
+          message: await openpgp.readMessage({ armoredMessage }),
+          passwords
+        });
+        expect(decryptedSessionKey.data).to.deep.equal(expectedSessionKey);
+        expect(decryptedSessionKey.algorithm).to.equal('aes128');
+      } catch (err) {
+        if (detectBrowser()) { // Expected to fail in the CI, especially in Browserstack
+          expect(err.message).to.match(/Could not allocate required memory/);
+        }
+      }
+    });
   });
 
   describe('encrypt, decrypt, sign, verify - integration tests', function() {
@@ -2166,7 +2526,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
     let aeadProtectVal;
     let preferredAEADAlgorithmVal;
     let aeadChunkSizeByteVal;
-    let v5KeysVal;
+    let v6KeysVal;
     let minRSABitsVal;
 
     beforeEach(async function() {
@@ -2183,7 +2543,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       aeadProtectVal = openpgp.config.aeadProtect;
       preferredAEADAlgorithmVal = openpgp.config.preferredAEADAlgorithm;
       aeadChunkSizeByteVal = openpgp.config.aeadChunkSizeByte;
-      v5KeysVal = openpgp.config.v5Keys;
+      v6KeysVal = openpgp.config.v6Keys;
       minRSABitsVal = openpgp.config.minRSABits;
 
       openpgp.config.minRSABits = 512;
@@ -2193,7 +2553,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       openpgp.config.aeadProtect = aeadProtectVal;
       openpgp.config.preferredAEADAlgorithm = preferredAEADAlgorithmVal;
       openpgp.config.aeadChunkSizeByte = aeadChunkSizeByteVal;
-      openpgp.config.v5Keys = v5KeysVal;
+      openpgp.config.v6Keys = v6KeysVal;
       openpgp.config.minRSABits = minRSABitsVal;
     });
 
@@ -2221,24 +2581,24 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       }
     });
 
-    tryTests('CFB mode (asm.js)', tests, {
+    tryTests('CFB mode', tests, {
       if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = false;
       }
     });
 
-    tryTests('GCM mode (V5 keys)', tests, {
+    tryTests('GCM mode (V6 keys)', tests, {
       if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
-        openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM;
-        openpgp.config.v5Keys = true;
+        openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.gcm;
+        openpgp.config.v6Keys = true;
 
-        // Monkey-patch AEAD feature flag
-        publicKey.users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.users[0].selfCertifications[0].features = [7];
+        // Monkey-patch SEIPD V2 feature flag
+        publicKey.users[0].selfCertifications[0].features = [9];
+        publicKey_2000_2008.users[0].selfCertifications[0].features = [9];
+        publicKey_2038_2045.users[0].selfCertifications[0].features = [9];
       }
     });
 
@@ -2247,30 +2607,31 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
         openpgp.config.aeadChunkSizeByte = 0;
+        openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax;
 
-        // Monkey-patch AEAD feature flag
-        publicKey.users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.users[0].selfCertifications[0].features = [7];
+        // Monkey-patch SEIPD V2 feature flag
+        publicKey.users[0].selfCertifications[0].features = [9];
+        publicKey_2000_2008.users[0].selfCertifications[0].features = [9];
+        publicKey_2038_2045.users[0].selfCertifications[0].features = [9];
       }
     });
 
     tryTests('OCB mode', tests, {
-      if: !openpgp.config.ci,
+      if: true,
       beforeEach: function() {
         openpgp.config.aeadProtect = true;
         openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb;
 
-        // Monkey-patch AEAD feature flag
-        publicKey.users[0].selfCertifications[0].features = [7];
-        publicKey_2000_2008.users[0].selfCertifications[0].features = [7];
-        publicKey_2038_2045.users[0].selfCertifications[0].features = [7];
+        // Monkey-patch SEIPD V2 feature flag
+        publicKey.users[0].selfCertifications[0].features = [9];
+        publicKey_2000_2008.users[0].selfCertifications[0].features = [9];
+        publicKey_2038_2045.users[0].selfCertifications[0].features = [9];
       }
     });
 
     function tests() {
       describe('encryptSessionKey, decryptSessionKeys', function() {
-        const sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
+        const sk = new Uint8Array([0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01]);
 
         let decryptedPrivateKey; // to avoid decrypting key before each test
         beforeEach(async function() {
@@ -2330,7 +2691,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
             }).then(() => {
               throw new Error('Should not decrypt with invalid key');
             }).catch(error => {
-              expect(error.message).to.match(/Error decrypting session keys: Session key decryption failed./);
+              expect(error.message).to.match(/Error decrypting session keys: Could not find valid subkey binding signature in key/);
             });
           });
         });
@@ -2482,27 +2843,30 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           });
         });
 
-        it('should encrypt then decrypt with wildcard', async function () {
-          const encOpt = {
+        it('should encrypt then decrypt with wildcard (anonymous recipient)', async function () {
+          const { privateKey: privateKeyV4orV6 } = await openpgp.generateKey({ userIDs: { email: 'test@test.it' }, format: 'object' });
+          const plaintext = 'hello world';
+
+          const encryptedMessage = await openpgp.encrypt({
             message: await openpgp.createMessage({ text: plaintext }),
-            encryptionKeys: publicKey,
-            wildcard: true
-          };
-          const decOpt = {
-            decryptionKeys: privateKey
-          };
-          return openpgp.encrypt(encOpt).then(async function (encrypted) {
-            expect(encrypted).to.match(/^-----BEGIN PGP MESSAGE/);
-            decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            return openpgp.decrypt(decOpt);
-          }).then(function (decrypted) {
-            expect(decrypted.data).to.equal(plaintext);
-            expect(decrypted.signatures).to.exist;
-            expect(decrypted.signatures.length).to.equal(0);
+            encryptionKeys: privateKeyV4orV6,
+            wildcard: true,
+            format: 'object'
           });
+
+          expect(encryptedMessage.getEncryptionKeyIDs().every(keyID => keyID.isWildcard())).to.be.true;
+          const armoredMessage = encryptedMessage.armor();
+
+          const parsedEncryptedMessage = await openpgp.readMessage({ armoredMessage });
+          expect(parsedEncryptedMessage.getEncryptionKeyIDs().every(keyID => keyID.isWildcard())).to.be.true;
+
+          const decrypted = await openpgp.decrypt({ message: parsedEncryptedMessage, decryptionKeys: privateKeyV4orV6 });
+          expect(decrypted.data).to.equal(plaintext);
+          expect(decrypted.signatures).to.exist;
+          expect(decrypted.signatures.length).to.equal(0);
         });
 
-        it('should encrypt then decrypt with wildcard with multiple private keys', async function () {
+        it('should encrypt then decrypt with wildcard with multiple private keys (anonymous recipient)', async function () {
           const privKeyDE = await openpgp.decryptKey({
             privateKey: await openpgp.readKey({ armoredKey: priv_key_de }),
             passphrase
@@ -2561,7 +2925,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             expect(encrypted).to.match(/^-----BEGIN PGP MESSAGE/);
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(false);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2584,7 +2948,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             expect(encrypted).to.match(/^-----BEGIN PGP MESSAGE/);
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(false);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version === 2).to.equal(false);
             return openpgp.decrypt(decOpt);
           }).then(function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2603,7 +2967,8 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+            const supportsSEIPDv2 = !!(publicKey.users[0].selfCertifications[0].features?.[0] & openpgp.enums.features.seipdv2);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2627,7 +2992,8 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+            const supportsSEIPDv2 = !!(publicKey.users[0].selfCertifications[0].features?.[0] & openpgp.enums.features.seipdv2);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2650,7 +3016,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           };
           return openpgp.encrypt(encOpt).then(async function (encrypted) {
             decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-            expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(false);
+            expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(1);
             return openpgp.decrypt(decOpt);
           }).then(async function (decrypted) {
             expect(decrypted.data).to.equal(plaintext);
@@ -2667,6 +3033,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           };
 
           return openpgp.generateKey(genOpt).then(async function(newKey) {
+            const supportsSEIPDv2 = openpgp.config.aeadProtect;
             const newPublicKey = await openpgp.readKey({ armoredKey: newKey.publicKey });
             const newPrivateKey = await openpgp.readKey({ armoredKey: newKey.privateKey });
 
@@ -2681,7 +3048,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
             };
             return openpgp.encrypt(encOpt).then(async function (encrypted) {
               decOpt.message = await openpgp.readMessage({ armoredMessage: encrypted });
-              expect(!!decOpt.message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+              expect(decOpt.message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
               return openpgp.decrypt(decOpt);
             }).then(async function (decrypted) {
               expect(decrypted.data).to.equal(plaintext);
@@ -2697,6 +3064,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           const newKey = await openpgp.generateKey({
             userIDs: [{ name: 'Test User', email: 'text@example.com' }]
           });
+          const supportsSEIPDv2 = openpgp.config.aeadProtect;
           const newPublicKey = await openpgp.readKey({ armoredKey: newKey.publicKey });
           const newPrivateKey = await openpgp.readKey({ armoredKey: newKey.privateKey });
 
@@ -2710,7 +3078,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
             detached: true
           });
           const message = await openpgp.readMessage({ armoredMessage: encrypted });
-          expect(!!message.packets.findPacket(openpgp.enums.packet.aeadEncryptedData)).to.equal(openpgp.config.aeadProtect);
+          expect(message.packets.findPacket(openpgp.enums.packet.symEncryptedIntegrityProtectedData).version).to.equal(supportsSEIPDv2 ? 2 : 1);
           const decrypted = await openpgp.decrypt({
             message,
             signature: await openpgp.readSignature({ armoredSignature: signed }),
@@ -2987,68 +3355,92 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
         });
 
         it('should fail to decrypt modified message', async function() {
-          const allowUnauthenticatedStream = openpgp.config.allowUnauthenticatedStream;
-          const { privateKey: key } = await openpgp.generateKey({ userIDs: [{ email: 'test@email.com' }], format: 'object' });
-          expect(await isAEADSupported([key])).to.equal(openpgp.config.aeadProtect);
+          await loadStreamsPolyfill();
+          // need to generate new key with AEAD support
+          const { privateKey } = await openpgp.generateKey({ userIDs: [{ email: 'test@email.com' }], type: 'rsa', format: 'object' });
+          const { aeadAlgo } = await getPreferredCipherSuite([privateKey], undefined, undefined, openpgp.config);
+          // sanity check
+          expect(aeadAlgo).to.equal(openpgp.config.aeadProtect ? openpgp.config.preferredAEADAlgorithm : undefined);
 
-          const data = await openpgp.encrypt({ message: await openpgp.createMessage({ binary: new Uint8Array(500) }), encryptionKeys: [key.toPublic()] });
-          let badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=aaaa');
-          if (badSumEncrypted === data) { // checksum was already =aaaa
-            badSumEncrypted = data.replace(/\n=[a-zA-Z0-9/+]{4}/, '\n=bbbb');
+          const encrypted = await openpgp.encrypt({
+            message: await openpgp.createMessage({ binary: new Uint8Array(500) }),
+            encryptionKeys: privateKey
+          });
+          // corrupt the SEIPD packet
+          const encryptedCorrupted = encrypted.substr(0, 1000) + (encrypted[1000] === 'a' ? 'b' : 'a') + encrypted.substr(1001);
+
+          const generateSingleChunkStream = () => (
+            new ReadableStream({
+              start(controller) {
+                controller.enqueue(encryptedCorrupted);
+                controller.close();
+              }
+            })
+          );
+          const generateMultiChunkStream = () => (
+            new ReadableStream({
+              start() {
+                this.remaining = encryptedCorrupted.split('\n');
+              },
+              async pull(controller) {
+                if (this.remaining.length) {
+                  // sleep to slow down enqeueing
+                  await new Promise(resolve => { setTimeout(resolve); });
+                  controller.enqueue(this.remaining.shift() + '\n');
+                } else {
+                  controller.close();
+                }
+              }
+            })
+          );
+
+          if (openpgp.config.aeadProtect) {
+            const expectedError = /Authentication tag mismatch|Unsupported state or unable to authenticate data/;
+            // AEAD fails either on AEAD chunk decryption or when reading the decrypted stream:
+            // if the corruption is in the first AEAD chunk, then `openpgp.decrypt` will throw
+            // when reading the decrypted stream to parse the packet list.
+            await Promise.all([
+              testStreamingDecryption(encryptedCorrupted, true, expectedError, true),
+              testStreamingDecryption(encryptedCorrupted, false, expectedError, true),
+              // `config.allowUnauthenticatedStream` does not apply to AEAD
+              testStreamingDecryption(generateSingleChunkStream(), true, expectedError, openpgp.config.aeadChunkSizeByte > 0),
+              testStreamingDecryption(generateSingleChunkStream(), false, expectedError, openpgp.config.aeadChunkSizeByte > 0),
+              // Increasing number of streaming chunks should not affect the result
+              testStreamingDecryption(generateMultiChunkStream(), true, expectedError, openpgp.config.aeadChunkSizeByte > 0),
+              testStreamingDecryption(generateMultiChunkStream(), false, expectedError, openpgp.config.aeadChunkSizeByte > 0)
+            ]);
+          } else {
+            const expectedError = /Modification detected/;
+            await Promise.all([
+              testStreamingDecryption(encryptedCorrupted, true, expectedError, true),
+              testStreamingDecryption(encryptedCorrupted, false, expectedError, true),
+              testStreamingDecryption(generateSingleChunkStream(), true, expectedError, false),
+              testStreamingDecryption(generateSingleChunkStream(), false, expectedError, true),
+              // Increasing number of streaming chunks should not affect the result
+              testStreamingDecryption(generateMultiChunkStream(), true, expectedError, false),
+              testStreamingDecryption(generateMultiChunkStream(), false, expectedError, true)
+            ]);
           }
-          if (badSumEncrypted === data) {
-            throw new Error('Was not able to successfully modify checksum');
-          }
-          const badBodyEncrypted = data.replace(/\n=([a-zA-Z0-9/+]{4})/, 'aaa\n=$1');
-          await stream.loadStreamsPonyfill();
-          try {
-            for (const allowStreaming of [true, false]) {
-              openpgp.config.allowUnauthenticatedStream = allowStreaming;
-              await Promise.all([badSumEncrypted, badBodyEncrypted].map(async (encrypted, i) => {
-                await Promise.all([
-                  encrypted,
-                  new stream.ReadableStream({
-                    start(controller) {
-                      controller.enqueue(encrypted);
-                      controller.close();
-                    }
-                  }),
-                  new stream.ReadableStream({
-                    start() {
-                      this.remaining = encrypted.split('\n');
-                    },
-                    async pull(controller) {
-                      if (this.remaining.length) {
-                        await new Promise(res => { setTimeout(res); });
-                        controller.enqueue(this.remaining.shift() + '\n');
-                      } else {
-                        controller.close();
-                      }
-                    }
-                  })
-                ].map(async (encrypted, j) => {
-                  let stepReached = 0;
-                  try {
-                    const message = await openpgp.readMessage({ armoredMessage: encrypted });
-                    stepReached = 1;
-                    const { data: decrypted } = await openpgp.decrypt({ message: message, decryptionKeys: [key] });
-                    stepReached = 2;
-                    await stream.readToEnd(decrypted);
-                  } catch (e) {
-                    expect(e.message).to.match(/Ascii armor integrity check failed/);
-                    expect(stepReached).to.equal(
-                      j === 0 ? 0 :
-                        (openpgp.config.aeadChunkSizeByte === 0 && (j === 2 || detectNode() || util.getHardwareConcurrency() < 8)) || (!openpgp.config.aeadProtect && openpgp.config.allowUnauthenticatedStream) ? 2 :
-                          1
-                    );
-                    return;
-                  }
-                  throw new Error(`Expected "Ascii armor integrity check failed" error in subtest ${i}.${j}`);
-                }));
-              }));
+
+          async function testStreamingDecryption(encryptedDataOrStream, allowUnauthenticatedStream, expectedErrorMessage, expectedFailureOnDecrypt = null) {
+            // parsing the message won't fail since armor checksum is ignored
+            const message = await openpgp.readMessage({ armoredMessage: encryptedDataOrStream });
+            let didFailOnDecrypt = true;
+
+            try {
+              const { data: decrypted } = await openpgp.decrypt({
+                message,
+                decryptionKeys: [privateKey],
+                config: { allowUnauthenticatedStream }
+              });
+              didFailOnDecrypt = false;
+              await stream.readToEnd(decrypted);
+              // expected to have thrown
+              throw new Error(`Expected decryption to fail with error ${expectedErrorMessage}`);
+            } catch (e) {
+              expect(e.message).to.match(expectedErrorMessage);
+              expect(didFailOnDecrypt).to.equal(expectedFailureOnDecrypt);
             }
-          } finally {
-            openpgp.config.allowUnauthenticatedStream = allowUnauthenticatedStream;
           }
         });
 
@@ -3264,10 +3656,8 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           it('Streaming encrypt and decrypt small message roundtrip', async function() {
             const plaintext = [];
             let i = 0;
-            const useNativeStream = (() => { try { new global.ReadableStream(); return true; } catch (e) { return false; } })(); // eslint-disable-line no-new
-            await stream.loadStreamsPonyfill();
-            const ReadableStream = useNativeStream ? global.ReadableStream : stream.ReadableStream;
-            const data = new ReadableStream({
+            await loadStreamsPolyfill();
+            const data = new globalThis.ReadableStream({
               pull(controller) {
                 if (i++ < 4) {
                   const randomBytes = random.getRandomBytes(10);
@@ -3282,7 +3672,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
               message: await openpgp.createMessage({ binary: data }),
               passwords: ['test']
             }));
-            expect(stream.isStream(encrypted)).to.equal(useNativeStream ? 'web' : 'web-like');
+            expect(stream.isStream(encrypted)).to.equal('web');
 
             const message = await openpgp.readMessage({ armoredMessage: encrypted });
             const decrypted = await openpgp.decrypt({
@@ -3290,7 +3680,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
               message,
               format: 'binary'
             });
-            expect(stream.isStream(decrypted.data)).to.equal(useNativeStream ? 'web' : 'web-like');
+            expect(stream.isStream(decrypted.data)).to.equal('web');
             expect(await stream.readToEnd(decrypted.data)).to.deep.equal(util.concatUint8Array(plaintext));
           });
         });
@@ -3504,7 +3894,9 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           signingKeys: privateKey_1337,
           detached: true,
           date: past,
-          format: 'binary'
+          format: 'binary',
+          // SHA-512 cannot be used with a 512-bit RSA key (digest too long)
+          config: { minRSABits: 512, preferredHashAlgorithm: openpgp.enums.hash.sha256 }
         };
         const verifyOpt = {
           message,
@@ -3593,17 +3985,13 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
 
       it('should streaming sign and verify binary data without one-pass signature', async function () {
         const data = new Uint8Array([3, 14, 15, 92, 65, 35, 59]);
-        const dataStream = global.ReadableStream ? new global.ReadableStream({
+        const dataStream = new globalThis.ReadableStream({
           start(controller) {
             controller.enqueue(data);
             controller.close();
           }
-        }) : new (require('stream').Readable)({
-          read() {
-            this.push(data);
-            this.push(null);
-          }
         });
+
         const signOpt = {
           message: await openpgp.createMessage({ binary: dataStream }),
           signingKeys: privateKey,
@@ -3614,20 +4002,18 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           format: 'binary'
         };
         return openpgp.sign(signOpt).then(async function (signed) {
-          expect(stream.isStream(signed)).to.equal(global.ReadableStream ? 'web' : 'node');
+          expect(stream.isStream(signed)).to.equal('web');
           const message = await openpgp.readMessage({ binaryMessage: signed });
           message.packets.push(...await stream.readToEnd(message.packets.stream, _ => _));
           const packets = new openpgp.PacketList();
           packets.push(message.packets.findPacket(openpgp.enums.packet.signature));
           packets.push(message.packets.findPacket(openpgp.enums.packet.literalData));
           verifyOpt.message = await openpgp.readMessage({
-            binaryMessage: stream[
-              global.ReadableStream ? (global.ReadableStream === stream.ReadableStream ? 'toStream' : 'toNativeReadable') : 'webToNode'
-            ](packets.write())
+            binaryMessage: stream.toStream(packets.write())
           });
           return openpgp.verify(verifyOpt);
         }).then(async function (verified) {
-          expect(stream.isStream(verified.data)).to.equal(global.ReadableStream ? 'web' : 'node');
+          expect(stream.isStream(verified.data)).to.equal('web');
           expect([].slice.call(await stream.readToEnd(verified.data))).to.deep.equal([].slice.call(data));
           expect(await verified.signatures[0].verified).to.be.true;
           expect(await privateKey.getSigningKey(verified.signatures[0].keyID))
@@ -3773,7 +4159,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           }).then(function() {
             throw new Error('Should not encrypt with revoked key');
           }).catch(function(error) {
-            expect(error.message).to.match(/Error encrypting message: Primary key is revoked/);
+            expect(error.message).to.match(/Primary key is revoked/);
           });
         });
       });
@@ -3839,7 +4225,7 @@ VFBLG8uc9IiaKann/DYBAJcZNZHRSfpDoV2pUA5EAEi2MdjxkRysFQnYPRAu
           decryptionKeys: decryptedKeyDE
         };
         // binding signature is invalid
-        await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith(/Session key decryption failed/);
+        await expect(openpgp.decrypt(decOpt)).to.be.rejectedWith(/Could not find valid subkey binding signature in key/);
       });
 
       it('RSA decryption with PKCS1 padding of wrong length should fail', async function() {
@@ -4082,9 +4468,10 @@ bsZgJWVlAa5eil6J9ePX2xbo1vVAkLQdzE9+1jL+l7PRIZuVBQ==
       expect(data).to.equal('test');
     });
 
-    it('should enforce using AES session keys with x25519 keys (new format)', async function () {
-      // x25519 key (v4) with cast5 as preferred cipher
-      const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+    describe('X25519/Ed25519 (new format)', async function () {
+      it('should enforce using AES session keys with x25519 keys (v4 key)', async function () {
+        // x25519 key (v4) with cast5 as preferred cipher
+        const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
 
 xUkEZK8BixuMghYwdEgHl+3ASI4VZkn048KG4DVuugT1bMe4QTtFtQCoKBOG
 JxrZh8E+7I5nK7McXP2U9gyC0+RFcD46AxSmRA46zQDCiAQQGwgAPgWCZK8B
@@ -4099,30 +4486,483 @@ kl0L
 =SYJZ
 -----END PGP PRIVATE KEY BLOCK-----` });
 
-      await expect(openpgp.generateSessionKey({
-        encryptionKeys: privateKeyCast5,
-        config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
-      })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
+        await expect(openpgp.generateSessionKey({
+          encryptionKeys: privateKeyCast5,
+          config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
+        })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
 
-      await expect(openpgp.encrypt({
-        message: await openpgp.createMessage({ text: plaintext }),
-        encryptionKeys: privateKeyCast5,
-        sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
-      })).to.be.rejectedWith(/X25519 keys can only encrypt AES session keys/);
+        await expect(openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKeyCast5,
+          sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
+        })).to.be.rejectedWith(/X25519 and X448 keys can only encrypt AES session keys/);
 
-      await expect(openpgp.decryptSessionKeys({
-        message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
-
+        await expect(openpgp.decryptSessionKeys({
+          message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+  
 wUQD66NYAXF0vfYZNWpc7s9eihtgj7EhHBeLOq2Ktw79artbhN5JMs+9aCIZ
 A7sB7uYCTVCLIMfPFwVZH+c29gpCzPxSXQ==
 =Dr02
 -----END PGP MESSAGE-----` }),
-        decryptionKeys: privateKeyCast5
-      })).to.be.rejectedWith(/AES session key expected/);
+          decryptionKeys: privateKeyCast5
+        })).to.be.rejectedWith(/AES session key expected/);
+      });
+
+      it('supports decrypting new x25519 format (v4 key)', async function () {
+        // v4 key
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
+GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
+dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
+iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
+BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
+0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
+nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
+BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
+yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
+=bJqd
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const messageToDecrypt = `-----BEGIN PGP MESSAGE-----
+
+wUQDYc6clYlCdtoZ3rAsvBDIwvoLmvM0zwViG8Ec0PgFfN5R6C4BqEZD53UZB1WM
+J68hXSj1Sa235XAUYE1pZerTKhglvdI9Aeve8+L0w5RDMjmBBA50Yv/YT8liqhNi
+mNwbfFbSNhZYWjFada77EKBn60j8QT/xCQzLR1clci7ieW2knw==
+=NKye
+-----END PGP MESSAGE-----`;
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: messageToDecrypt }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal('Hello World!');
+      });
+
+      it('supports encrypting/decrypting new x25519 format (v4 key)', async function () {
+        // v4 key
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUkEZIbSkxsHknQrXGfb+kM2iOsOvin8yE05ff5hF8KE6k+saspAZQCy/kfFUYc2
+GkpOHc42BI+MsysKzk4ofjBAfqM+bb7goQ3hzRV1c2VyIDx1c2VyQHRlc3QudGVz
+dD7ChwQTGwgAPQUCZIbSkwmQQezK2iB2tIkWIQRqZza9wQZcwxpjGYNB7MraIHa0
+iQIbAwIeAQIZAQILBwIVCAIWAAMnBwIAAFOeZ7jrKZsCzRfu1ffFa77074st0zRo
+BTJXoXBQ1ZzLjsh+ZO6fB2odnYJtQYstv45H/3JyLVogcMnFeYmHeSP3AMdJBGSG
+0pMZfpd7TiOQv7uKSK+k4HT9lKr5+dmvb7vox/8ids6unEkAF1v8fCKogIrtBWVT
+nVbwnovjM3LLexpXFZSgTKRcNMgPRMJ0BBgbCAAqBQJkhtKTCZBB7MraIHa0iRYh
+BGpnNr3BBlzDGmMZg0HsytogdrSJAhsMAADCYs2I9wBakIu9Hhxs4R3Jq9F8J7AH
+yxsNL0GomZ+hxiE0MOZwRr10DxfVaRabF1fcf9PHSHX2SwEFXUKMIHgbMQs=
+=bJqd
+-----END PGP PRIVATE KEY BLOCK-----` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKey
+        });
+
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+      });
+
+      it('should decrypt test vector X25519-AEAD-OCB (PKESK v6, SEIPD v2)', async function() {
+        // test vector https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-10.html#appendix-A.8
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wV0GIQYSyD8ecG9jCP4VGkF3Q6HwM3kOk+mXhIjR2zeNqZMIhRmHzxjV8bU/gXzO
+WgBM85PMiVi93AZfJfhK9QmxfdNnZBjeo1VDeVZheQHgaVf7yopqR6W1FT6NOrfS
+aQIHAgZhZBZTW+CwcW1g4FKlbExAf56zaw76/prQoN+bAzxpohup69LA7JW/Vp0l
+yZnuSj3hcFj0DfqLTGgr4/u717J+sPWbtQBfgMfG9AOIwwrUBqsFE9zW+f1zdlYo
+bhF30A+IitsxxA==
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xUsGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laMAGXKB
+exK+cH6NX1hs5hNhIB00TrJmosgv3mg1ditlsLfCsQYfGwoAAABCBYJjh3/jAwsJ
+BwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2v8lwgyU2kCcUmKfvBXbAf6rh
+RYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6HWaEQsiPlR4zxP/TP7mhfVEe
+7XWPxtnMUMtf15OyA51YBMdLBmOHf+MZAAAAIIaTJINn+eUBXbki+PSAld2nhJh/
+LVmFsS+60WyvXkQ1AE1gCk95TUR3XFeibg/u/tVY6a//1q0NWC1X+yui3O24wpsG
+GBsKAAAALAWCY4d/4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce6
+2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE
+M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr
+k0mXubZvyl4GBg==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const { data: decryptedData } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey
+        });
+
+        expect(decryptedData).to.equal('Hello, world!');
+      });
+    });
+
+    describe('X448/Ed448', async function () {
+      it('should enforce using AES session keys with x448 keys (v4 key)', async function () {
+        // X448 key (v4) with cast5 as preferred cipher
+        const privateKeyCast5 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZRrtaRyScvyNjK0o5ccICztnWhA1MSij7WdzPfuNy7ryUzB+kqzpziBR
+IIKp5PN0NW3mOYRDnUyo7QHBl4AA30tR5ED8u5v/rNIzKz/mKsD6XeYy+d0Q
+5utwuR8BUxx9mcIUGdS65z9H6PUMGnfCwqAGVCTzBrSCHgTNAMK3BBAcCgA7
+BYJlGu1pAwsDBwmQkFi4G9HqQDwDFQgKAhYAAhkBApsDAh4BFiEE7kZAI1Dd
+SVlLtf4QkFi4G9HqQDwAAPA7E+p0vwVLtUCfT0aBFzapFn8xjoow6jrUNTo3
+8EtaN0fqP2vaeQwW/vv26wobD+hbL2RwyFtAEV6AeeDsPVhbx7WA7yKHPzvl
+GOYEGw0h57DuhvSxGciuyt0Y5PR2Vrz/2/wHGcEHzsrhTNysUetluxEAx3kE
+ZRrtaRrySCLAqKQSATJOXdoRoNKVasJHlKrG3qgMbt1U6uSdctHBitTiHHTf
+GU/Jg0ADA3Eg0bCyDupWNACmHJGu7q0o7O7BTAm0AsMbHxoIkNN9JsijwAp5
+FLtdXK9cAOkNaXPMkEGQkt1hmoW50lUq0iWcGBpzwqYEGBwKACoFgmUa7WkJ
+kJBYuBvR6kA8ApsMFiEE7kZAI1DdSVlLtf4QkFi4G9HqQDwAAD3uf3qdwHY8
+65W22GR17PbqF+9uvkPpXLBi32FVPFkxJqYvIN5/LAQ33xdEE0mzO4As4+Oi
+x8fsFb2AEXLEwlSnL+Eo0O+iUQd3/94yMbMFRlNxrdaqZ3+7CehbnieI/vby
+LIEnN38XBi0HE70uoU5prxUA
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        await expect(openpgp.generateSessionKey({
+          encryptionKeys: privateKeyCast5,
+          config: { preferredSymmetricAlgorithm: openpgp.enums.symmetric.cast5 }
+        })).to.be.rejectedWith(/Could not generate a session key compatible with the given `encryptionKeys`/);
+
+        await expect(openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKeyCast5,
+          sessionKey: { data: new Uint8Array(16).fill(1), algorithm: 'cast5' }
+        })).to.be.rejectedWith(/X25519 and X448 keys can only encrypt AES session keys/);
+
+        await expect(openpgp.decryptSessionKeys({
+          message: await openpgp.readMessage({ armoredMessage: `-----BEGIN PGP MESSAGE-----
+  
+wVwD2k7TUuqJwZkaXvEGk7B3pklJ5uRcRdKwwDJ40yKT0m5ic1e/2F+Se3xQ
+zDE+N2DZ0B37pu4NUzTGBRo0oLD9EwwZA9+oJpBBOOry3cGmBYWvQHbvBpNE
+5X5l8A==
+-----END PGP MESSAGE-----` }),
+          decryptionKeys: privateKeyCast5
+        })).to.be.rejectedWith(/AES session key expected/);
+      });
+
+      it('should enforce using 512-bit signature digest', async function () {
+        // X448 key using sha256 for self signatures
+        const privateKeySHA256 = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZCWHXBwwtqciq6ZFU13s+dyhkWR5tOEmF1oX8OiP1B5ypfqyGVM8DkQh
+5eTIMwB1oqJCROANoyA0q2dSigAAbDA5xr74DeClPPXC4ZXJ9uzuJWKvQvE8
+x3EflhgoQCGBM7JfvH5zwdrJvPt8RKDvm0QkZzhPvnFoHnzNBHRlc3TCugQQ
+HAgAPgWCZCWHXAQLCQcICZDsN6h/ys3ppwMVCAoEFgACAQIZAQKbAwIeARYh
+BOJyE9P2eIcU2N2Ne+w3qH/KzemnAAAh1hTFCcEU77bU3YelrJTCNIOQnvt7
+Hs6yZz2053CQTOC+wHkUQLaYYBEXSNyLZxoyv+NuGTiwbuYtAOlbE2erM7Cx
+8B2Qz7M29UkFLMBUfb+yi+gTYYUWCXVQ7Um7MGjjgUG8+9p452i6f28mhRD8
+tTgNAMd5BGQlh1wavTIFgILtbzrqQCiwDGx0YcFNzu9+FZ8vK5Mmm7UEZj0a
+y7FWQtZw8tTaU6mY+RrSa52RjzkGLtQAQO++tgYqc+BnCFdCZ3ZYPRvD3mof
+ffoo3l4xmto+iyvJZbQ4wQPXttg7VjCpEfOsL9TW9Xs09aIbysKmBBgcCAAq
+BYJkJYdcCZDsN6h/ys3ppwKbDBYhBOJyE9P2eIcU2N2Ne+w3qH/KzemnAAC0
+6/eZhh/Oj2gRdab2JeFGWACGIRDKxPXsWRCXR4YrSxcvCKK6rOvsyxQsgIsJ
+JyPYkRPfmbKcseUDAEkSBLAfeizDGh7ea0GOdIMhwE/CW4f/H8ULbwi36y13
+x3oMNVaYsI9dZ588Gpi8XYy2jOtqIPQ1AA==
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        await expect(privateKeySHA256.getSigningKey()).to.be.rejectedWith(/Hash algorithm too weak for EdDSA/);
+      });
+
+      it('supports encrypting/decrypting with x448 (v4 key)', async function () {
+        // v4 key
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZRqJ5BwHESfKnw5YJly5WobjigVm0kKY84NxrP6JKeIvIWiFqqSlozGpKZyR
+50YbVTHmxpUCuJ7YNwX0UoAAoSO8IXmMM/XMd4ph00ju+fbSHdtQfyNhfFTi3UoM
+V5DiFT+uOYDP+zwAwLWCR86csxmCWn6O10DNHcDNF1VzZXJBIDxVc2VyQUB0ZXN0
+LnRlc3Q+wroEExwKAD4FAmUaieQJEC8lwIrxSM+5FiEEGR2s5Bj5WVDN0Px6LyXA
+ivFIz7kCGwMCHgkCGQECCwcDFQoIAhYAAycHAgAA21/PqAuGDL5+3qrf3YoVOP+5
+0BoJ+ZMhzcgax+cQTyndmOZYBfOqV/SJ8mf6CRhbB76JhGIvmRMtyYDQgDMVvcoA
+yojVNs6e/Jco16bVJxM85wKDXJuq6AhtPQ8w/0WaCJtEf1uxqeQPEbOM+KtT/xY2
+KgDHeQRlGonkGuOtAhogSIU3z/+gFzF8U7JQe7QDRYr9VWfi2WXFFarzg/3DMRur
+oIB7mqkaaSatrvVuud1ZmRCWAMM4f57dvSdCKsVqSe+tlS225OmdWmnGLqyErBb6
+44E2oENhDUom9OUGUPm8dXUjQbrmw6ec9hNLHWXCpgQYHAoAKgUCZRqJ5AkQLyXA
+ivFIz7kWIQQZHazkGPlZUM3Q/HovJcCK8UjPuQIbDAAAZka10c8KlmwftJuboIV5
+DalGWrZhbywJpEZRfoikcebSYi5++w1SbpXZGu27sl+BznGyyyqAfxyJjoCZaqCs
+ewbKh04DNAg4v4v0W0a8UvD3j/CuciEMXjK9nUErt91zEwxNZy43yrQY2aAayDs8
+94FqMAA=
+=GBh1
+-----END PGP PRIVATE KEY BLOCK-----` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKey
+        });
+
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+      });
+
+      it('supports encrypting/decrypting with x448 (v6 key)', async function () {
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA52IEq/TpKiPp6RofQaq4uhCruTtiG+qiVFnwsQgeh0ui34kHD
+Y1E04mBai0pCoDiFVokwsKt3F5sAAC8lDYfVP/p3atbXJDTJB2W9WmZxIS7pUGhS
+bjlWpZB/OVTBsoIfP/2J+Hi4ESwBRfDUDgwK4aJVKsLAIAYfHAoAAAA/BQJlGoti
+IqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwMCHgkCCwcDFQoI
+AhYABScHAwcCAAAAAPiGIG2qmhCULQ/+H4rKV0XEM1x0uVY3l878Pa6ijZLouZU/
+VRd5PnbGyLPL++q3LDViUUdZ1uusRc01f677Q6wpUU90k8MH/oULwI0+KPtqe1N4
+6nr1NTERsAmAaPjUdf4ZUXX/GWiTd/AlsS5JqGnAQxKRJkzCJacOTOElRMjzGUX7
+CGaAnhSC86YRZ68ocTPfZysAzRdVc2VyQiA8VXNlckJAdGVzdC50ZXN0PsLADQYT
+HAoAAAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUC
+GQEAAAAASKwgVzMoPb2Hbr3lbNI1CRWECokYLokL7F8MbYiMnlg+v6QXLdStvT13
+ZjxdrWQAx3MbihSOUSXbdAys90yMOAdtognj+x418J/TaYFMtIGBHwoHv8gQVnx9
+9ICv8ezx1T5VvGBYNuKZ5Ww0WPEpYMf1VA+Y9JxpohdcRenNBdSug4tLWla2y8NH
+aO28Fltpb4AuGQDHewZlGotiGgAAADjdabr1ohAOnbSUUkVhtUM/LVdnYgDLhmaj
+YZ1N7TWY0fqEpMk2LLo2165HOmhddRPeTB1TWbuwBwB8lKc3czFUzYcAgvZ08T5S
+UUHjfIhjeJeY4yd0OZDfzPw1vbegCc7t94bT+XGoIQbC/Bl7HCyAiMLADQYYHAoA
+AAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwwA
+AAAAHh0gf2kdqLoXdFX+aNVORr5VCVgcm2gBw8l68lDJ1ftA71bMllFi6Q5sLPUr
+6UCpJYYk3o3hYUYzIHmCIZGVYe1pxRgIUNqxydXEfzylJmN5NbiJNkjJizrI7oAR
+1mIcEEb/hmRMOUs1V2mcGuoeALBI/r/SyqDE2GRjH6d6g1RS7ZARPPHlZlY4CTqC
+4a7L+8odDwA=
+=chx0
+-----END PGP PRIVATE KEY BLOCK-----` });
+        const plaintext = 'plaintext';
+
+        const signed = await openpgp.encrypt({
+          message: await openpgp.createMessage({ text: plaintext }),
+          encryptionKeys: privateKey
+        });
+
+        const { data } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          decryptionKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+      });
+
+      it('decrypt/verify should succeed using X448/Ed448 (PKESK v4, SEIPD v2, GCM)', async function() {
+        // data generated by gopenpgp
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wWkGFQQ70agVm6o5r3tEzY5mrYaOV8yHChpUetZ33zrKGtw1F4PeFrE4bYkcTMQM
+IcGoXcZj/0GJDCkOLLleSwrvuAuUwZV11bHBZ6eNTyj+XxhLdVflV/zqPmBhTHY9
+SMn0YYHwgiQFk6PSwGICBwMMRYkTpsy0dE4YKasf6b4Oh9cn6HYY5rjnrtvrwD+F
+LrsELfudYwpwHBA5jnO11Hl5mUyXhhWSdPoLGdeiYP5R/vZjqoZr3P6FL4dCdVni
+fGChUUSYmpO4HIFrRBt2gAxl+f0Q8GCOG8c7EQ7c5600kJOlHM7SuoLqsxd482V1
+H/1Rxd3cPwTDfOjH26KuDv60p0XjdCGyQXcDQMCPV+ZTs0TQl4wTFogZGaRMd9GC
+5D5t/guKzR+H1ipXSFjFdWWTEehx8m0RKKKT3Bl81awKZb8ulR6YKI5x39nwOySN
+azDRR3gn9xlKjcpa83k5sSZbUTxC8lzTeuMP0PkDrU2IpZUZOlzOhGYOGrtTFATK
+PSoZU33h2h3hJqiX9aKrnw==
+=Is5l
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xXsEZRqJ5BxV/xdxR4KvPofk3EzKaIZqM0Wlw904q+2S6Z84OmXN6Q1xCYurcwN1
+wLOlGJ/CO2QhByEdGlUldwAAIQSMnMITcmXQU3EWK5S81FS+u1IZFP55j51bA5mS
+HZ/A7MOpyN40ybW8mhMIXXUYB7kC/bOTmwVHGt3NF1VzZXJCIDxVc2VyQkB0ZXN0
+LnRlc3Q+wrwEExwKAEAFAmUaieQJEP3WralmOT0PFiEEq4zuQzIBSh+Nk6G9/dat
+qWY5PQ8CGwMCHgkCGQECCwcDFQoIAhYABScHAwcCAADAvnnhLp0DJYk7E0GfksCg
+pUnnCjEePMVvRPVY3dwr9wLpdL/7T70fz541XVE8giYiZD7eiKvfc/nMgOhu1eqK
+uXGUtDGBeabitJcrbquy2Tp/ENuW6rRHP7sAbu0mj6XxYEeCzKjGRT5Iq25AMevm
+yeoIAMd5BGUaieQaqj/dF+uZGt9QLuji2eOlDC0/quq/sAtdJTbI1xj04aF0X7kJ
+lVhEKeWZeAEpD4rVOCsrhMvr21gAu/BaFVKGUOuf0+ZE5jGcFcBvEP7OGyO296ry
+zV7ONWS/FuoZ/NZmgWo9m9ftPtwqKDsgOWxiIj4cesKmBBgcCgAqBQJlGonkCRD9
+1q2pZjk9DxYhBKuM7kMyAUofjZOhvf3WralmOT0PAhsMAADWb+0aY+NblShwsym/
+2geh6XaqQUCJgdRfEl8xYLau/o8QQAzRp0ZBA+KeK3uwhRW3RizuqIw5iribAK3+
+30Si5nvv0TivalPK2C9yAqzh9rkNNUQa9b17IHYs/WwQrvP3F5EZ3V+StqdveAEo
+FecSL/wTAA==
+=FANS
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const senderKey = await openpgp.readKey({
+          armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xj8EZRqJ5BwHESfKnw5YJly5WobjigVm0kKY84NxrP6JKeIvIWiFqqSlozGpKZyR
+50YbVTHmxpUCuJ7YNwX0UoDNF1VzZXJBIDxVc2VyQUB0ZXN0LnRlc3Q+wroEExwK
+AD4FAmUaieQJEC8lwIrxSM+5FiEEGR2s5Bj5WVDN0Px6LyXAivFIz7kCGwMCHgkC
+GQECCwcDFQoIAhYAAycHAgAA21/PqAuGDL5+3qrf3YoVOP+50BoJ+ZMhzcgax+cQ
+TyndmOZYBfOqV/SJ8mf6CRhbB76JhGIvmRMtyYDQgDMVvcoAyojVNs6e/Jco16bV
+JxM85wKDXJuq6AhtPQ8w/0WaCJtEf1uxqeQPEbOM+KtT/xY2KgDOPgRlGonkGuOt
+AhogSIU3z/+gFzF8U7JQe7QDRYr9VWfi2WXFFarzg/3DMRuroIB7mqkaaSatrvVu
+ud1ZmRCWwqYEGBwKACoFAmUaieQJEC8lwIrxSM+5FiEEGR2s5Bj5WVDN0Px6LyXA
+ivFIz7kCGwwAAGZGtdHPCpZsH7Sbm6CFeQ2pRlq2YW8sCaRGUX6IpHHm0mIufvsN
+Um6V2Rrtu7Jfgc5xsssqgH8ciY6AmWqgrHsGyodOAzQIOL+L9FtGvFLw94/wrnIh
+DF4yvZ1BK7fdcxMMTWcuN8q0GNmgGsg7PPeBajAA
+=VA/P
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+        const { data: decryptedData, signatures } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderKey
+        });
+
+        expect(decryptedData).to.equal('Hello there');
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
+
+
+      it('decrypt/verify should succeed using X448/Ed448 (PKESK v6, SEIPD v2, GCM)', async function() {
+        // data generated by gopenpgp
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wXUGIQZh4qTsn8glFgGNbIdCTl8gH2OtkI/PAGCQ0gi9s9k/rhrDhXo7kUKDJ39F
+fNp3kmAaM24Ce3bcYXwLy0gF2i6rxfL20D+g3cxv0i3CuXQCgcbojTN/8KY8ExiV
+Xdfo+OWIZ5XndtyMpJW28BiLHru+n9bSwM8CBwMMENh7cT8lILXteh885FrUUD1Q
+JMtD7xJUn2y78cVGgFSIkLbvFPDerB37xuhtMRkykuWgbUoJH/kcgBPdeCoYzJmf
+LV9FyATv0/AYq0yWpQ0VUfNLTFyeHIGxz7NHvrzJSrOy1Gm31PXqWvb4sBROjnOX
+oAk12JdPudz3l1QZT/DX947f4h6hwkVv7RRT0oOS2pMaz/mekRuD6utUcpsjFQ/M
+EDphnhOsB4RH0il8YPVc9DCnf3GhSs66h+Z699MXHBaUmdtiN1IgoEgLfb/900U2
+TfI6dvrvC56WIMA8EA1COvLGc9Ge4owW0UE8jIuqWLzA2nVg5belbzhNnOEh9b1c
+OcDUh8CfBuXqHEi/ANMUOMmaIGfcHfQFVu5v/UMcLxcH/fSVF6DvtOxEoUxASWBS
+mp6yC4A778BFuDFXb+/T8FjuJBaUj9rCSkYqt1TYVKG1XZPI4OdIvGtneo+vH/Cq
+F6bxlLWU6oskZ5SE+xJblmmO01ObM9JRi9D8jZnXedTHExAnXHXIb8I=
+=5RQw
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA52IEq/TpKiPp6RofQaq4uhCruTtiG+qiVFnwsQgeh0ui34kHD
+Y1E04mBai0pCoDiFVokwsKt3F5sAAC8lDYfVP/p3atbXJDTJB2W9WmZxIS7pUGhS
+bjlWpZB/OVTBsoIfP/2J+Hi4ESwBRfDUDgwK4aJVKsLAIAYfHAoAAAA/BQJlGoti
+IqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwMCHgkCCwcDFQoI
+AhYABScHAwcCAAAAAPiGIG2qmhCULQ/+H4rKV0XEM1x0uVY3l878Pa6ijZLouZU/
+VRd5PnbGyLPL++q3LDViUUdZ1uusRc01f677Q6wpUU90k8MH/oULwI0+KPtqe1N4
+6nr1NTERsAmAaPjUdf4ZUXX/GWiTd/AlsS5JqGnAQxKRJkzCJacOTOElRMjzGUX7
+CGaAnhSC86YRZ68ocTPfZysAzRdVc2VyQiA8VXNlckJAdGVzdC50ZXN0PsLADQYT
+HAoAAAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUC
+GQEAAAAASKwgVzMoPb2Hbr3lbNI1CRWECokYLokL7F8MbYiMnlg+v6QXLdStvT13
+ZjxdrWQAx3MbihSOUSXbdAys90yMOAdtognj+x418J/TaYFMtIGBHwoHv8gQVnx9
+9ICv8ezx1T5VvGBYNuKZ5Ww0WPEpYMf1VA+Y9JxpohdcRenNBdSug4tLWla2y8NH
+aO28Fltpb4AuGQDHewZlGotiGgAAADjdabr1ohAOnbSUUkVhtUM/LVdnYgDLhmaj
+YZ1N7TWY0fqEpMk2LLo2165HOmhddRPeTB1TWbuwBwB8lKc3czFUzYcAgvZ08T5S
+UUHjfIhjeJeY4yd0OZDfzPw1vbegCc7t94bT+XGoIQbC/Bl7HCyAiMLADQYYHAoA
+AAAsBQJlGotiIqEGobsxt8WKsMuJWANyTXpWMdC1QN/7EyJClfcs+nBgqdUCGwwA
+AAAAHh0gf2kdqLoXdFX+aNVORr5VCVgcm2gBw8l68lDJ1ftA71bMllFi6Q5sLPUr
+6UCpJYYk3o3hYUYzIHmCIZGVYe1pxRgIUNqxydXEfzylJmN5NbiJNkjJizrI7oAR
+1mIcEEb/hmRMOUs1V2mcGuoeALBI/r/SyqDE2GRjH6d6g1RS7ZARPPHlZlY4CTqC
+4a7L+8odDwA=
+=chx0
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const senderKey = await openpgp.readKey({
+          armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xkMGZRqLYhwAAAA5U/IaIOge/FoLzCetXKx029bdJHCz2hMFBRMuzq4msjaT+hLe
+V6puyC/PeSEfaanqTuo31vvsti2AwsAeBh8cCgAAAD0FAmUai2IioQYDGJ2wdEcO
+zIVPDVDs6gYQASdGfG2EozBUGqEgvaj4dQIbAwIeCQILBwMVCggCFgADJwcCAAAA
+ADYqIL5j5+FD/jwKRP1atdNf1IKfe8fPjdZv74CSalYvUdCaskTdLiAaW17NkrYT
+2i9qDPErFWsvXi4LqGzqQnQkiJZBJ4x57EJPL4Z2vqPTBvgWEU2egi7fK7YAGZmk
+Vf/n/X3Vh5ZSvIoUMChRmYqBBNI7MkS/I7QAJHkvi9XcANx44B0bz+yqETz2tNJ6
+8VeeDgkAzRdVc2VyQSA8VXNlckFAdGVzdC50ZXN0PsLADQYTHAoAAAAsBQJlGoti
+IqEGAxidsHRHDsyFTw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUCGQEAAAAAXD8gfvYz
+WLLMxaFuC3C/RJH9fG84hb9mtPgjH3bfqW+g4Ti1ov8PjoJtk6ObtUB45J9J3G3X
+FIqegAtGwI1Dy1U+M9dyXOqvpHwxs8iAFbEpwxLZ5K1ikFsbmoCZz4rmN0DbFyX2
+JbltaV5nUtNqHiUXqoKIPvch98ANe3PDyIAxNf7TAzk3W0lQQa+Cp7TSiFEqJADO
+QgZlGotiGgAAADjKb5lwMEt0ubSvwydaAF89wsn6H8NJO7kox5ioWW2Grn88CUZD
+YaRBZj3ZH8HMdaih5kN4hJAeCMLADQYYHAoAAAAsBQJlGotiIqEGAxidsHRHDsyF
+Tw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUCGwwAAAAAFIQgGYYweuBej4XHAgZrcez8
+8VoTbIZDjMv6Qbj9g6jjW16Fyp10DKda10FFmbY+YjbNvQNYksF9bN/KFSS/PTYt
+AVaOZDfW4fiN5s1QaYmA/xCT/zLHEYGryYCJLoLd7KLw28LS1KAWrC9h5cY6+fZE
+05cavO/D/WqBLVPuA+5bftXnDvGcVS1p7buaMtQjKz4hAwA=
+=GUIG
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+        const { data: decryptedData, signatures } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderKey
+        });
+
+        expect(decryptedData).to.equal('Hello there');
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
+
+      it('decrypt/verify should succeed using X448/Ed448 (PKESK v6, SEIPD v2, OCB)', async function() {
+        // data generated by gopenpgp
+        const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wXUGIQaYemlYu2ObOZ2IjFbL77NygqexwaCgtb0COZ0EnXfXlBri0wADNxbvwCnJ
+GDlRX9VhIy46oPAvVJjm2d7ZC6wqxNfFuzQEB8KzwYBkExmZuAfO5KJ8la6+DRhc
+OUH3A9cBGzq0eiKaKRqjHkiLHY5pFNPSwNoCBwIM98RL63I8iMyxcXpXQlBrYlBx
+5uegrENlleNg6UJFr7rBT4eJH+Qeksb//V87eZymzqXZBsrTYmUjsFgYd5kL8NlU
+wovy+qQnZmEaUKieDx3w+orR8b32ub5CNjHJa5lCdNWsIK825S5JUifZDd3hR6lC
+EgtZRwxY/1CyQU94LR9j6w/YVF0W31+LxGGkL+uJEx0khJUzpxUM9QSEREOY7Frs
+EegHNwDvxvxEwWpfkJOPIDME6Y7UcpsNp6xgiZ/XF06IRsliCRbeYaH1IWW+y0OS
+CmPvvTFUzjwTxWogDccHz8YLHU0y6TKxf14YMvVLg2tf2P/BVVZSg0ejz6pfDKA5
+AP+Q/eXBAH272SpBjKo7YcVpTsz0KpWyhB6Jra4xaUFkt6pg39ydR3RJMvxbQVlR
+aZqV/+1rwIiIauyHKiJFdCiXYPDU3xibVkFIFhuk5JwHm29XvOV1r8FFx7d78X5P
+yJnXcXsl+GxwOojcLXSL0CEIU/iRqyAIyyhvUyyss3glehhgx0fENV2P/Ygi/naN
+nJUJgg==
+=m19C
+-----END PGP MESSAGE-----`;
+
+        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+xX0GZRqLYhwAAAA5U/IaIOge/FoLzCetXKx029bdJHCz2hMFBRMuzq4msjaT+hLe
+V6puyC/PeSEfaanqTuo31vvsti2AAIttr4GDGXF4vfPzbzkWV9dT4VVsIU7QqLv1
+hzwZ+k7pHroRyXnUiYxRYHuzlg7Vw4CrAtN/8T65OMLAHgYfHAoAAAA9BQJlGoti
+IqEGAxidsHRHDsyFTw1Q7OoGEAEnRnxthKMwVBqhIL2o+HUCGwMCHgkCCwcDFQoI
+AhYAAycHAgAAAAA2KiC+Y+fhQ/48CkT9WrXTX9SCn3vHz43Wb++AkmpWL1HQmrJE
+3S4gGltezZK2E9ovagzxKxVrL14uC6hs6kJ0JIiWQSeMeexCTy+Gdr6j0wb4FhFN
+noIu3yu2ABmZpFX/5/191YeWUryKFDAoUZmKgQTSOzJEvyO0ACR5L4vV3ADceOAd
+G8/sqhE89rTSevFXng4JAM0XVXNlckEgPFVzZXJBQHRlc3QudGVzdD7CwA0GExwK
+AAAALAUCZRqLYiKhBgMYnbB0Rw7MhU8NUOzqBhABJ0Z8bYSjMFQaoSC9qPh1AhkB
+AAAAAFw/IH72M1iyzMWhbgtwv0SR/XxvOIW/ZrT4Ix9236lvoOE4taL/D46CbZOj
+m7VAeOSfSdxt1xSKnoALRsCNQ8tVPjPXclzqr6R8MbPIgBWxKcMS2eStYpBbG5qA
+mc+K5jdA2xcl9iW5bWleZ1LTah4lF6qCiD73IffADXtzw8iAMTX+0wM5N1tJUEGv
+gqe00ohRKiQAx3sGZRqLYhoAAAA4ym+ZcDBLdLm0r8MnWgBfPcLJ+h/DSTu5KMeY
+qFlthq5/PAlGQ2GkQWY92R/BzHWooeZDeISQHggAuraV/u+CE642fcbcq90OY+qg
+n739wkHcBps/s/MgMI+Q2H13vEsFpYZ/kuBIIYP39xkdU48/1GbCwA0GGBwKAAAA
+LAUCZRqLYiKhBgMYnbB0Rw7MhU8NUOzqBhABJ0Z8bYSjMFQaoSC9qPh1AhsMAAAA
+ABSEIBmGMHrgXo+FxwIGa3Hs/PFaE2yGQ4zL+kG4/YOo41tehcqddAynWtdBRZm2
+PmI2zb0DWJLBfWzfyhUkvz02LQFWjmQ31uH4jebNUGmJgP8Qk/8yxxGBq8mAiS6C
+3eyi8NvC0tSgFqwvYeXGOvn2RNOXGrzvw/1qgS1T7gPuW37V5w7xnFUtae27mjLU
+Iys+IQMA
+=iwhO
+-----END PGP PRIVATE KEY BLOCK-----` });
+
+        const senderKey = await openpgp.readKey({
+          armoredKey: `-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+xkMGZRqLYhwAAAA52IEq/TpKiPp6RofQaq4uhCruTtiG+qiVFnwsQgeh0ui34kHD
+Y1E04mBai0pCoDiFVokwsKt3F5sAwsAgBh8cCgAAAD8FAmUai2IioQahuzG3xYqw
+y4lYA3JNelYx0LVA3/sTIkKV9yz6cGCp1QIbAwIeCQILBwMVCggCFgAFJwcDBwIA
+AAAA+IYgbaqaEJQtD/4fispXRcQzXHS5VjeXzvw9rqKNkui5lT9VF3k+dsbIs8v7
+6rcsNWJRR1nW66xFzTV/rvtDrClRT3STwwf+hQvAjT4o+2p7U3jqevU1MRGwCYBo
++NR1/hlRdf8ZaJN38CWxLkmoacBDEpEmTMIlpw5M4SVEyPMZRfsIZoCeFILzphFn
+ryhxM99nKwDNF1VzZXJCIDxVc2VyQkB0ZXN0LnRlc3Q+wsANBhMcCgAAACwFAmUa
+i2IioQahuzG3xYqwy4lYA3JNelYx0LVA3/sTIkKV9yz6cGCp1QIZAQAAAABIrCBX
+Myg9vYduveVs0jUJFYQKiRguiQvsXwxtiIyeWD6/pBct1K29PXdmPF2tZADHcxuK
+FI5RJdt0DKz3TIw4B22iCeP7HjXwn9NpgUy0gYEfCge/yBBWfH30gK/x7PHVPlW8
+YFg24pnlbDRY8Slgx/VUD5j0nGmiF1xF6c0F1K6Di0taVrbLw0do7bwWW2lvgC4Z
+AM5CBmUai2IaAAAAON1puvWiEA6dtJRSRWG1Qz8tV2diAMuGZqNhnU3tNZjR+oSk
+yTYsujbXrkc6aF11E95MHVNZu7AHwsANBhgcCgAAACwFAmUai2IioQahuzG3xYqw
+y4lYA3JNelYx0LVA3/sTIkKV9yz6cGCp1QIbDAAAAAAeHSB/aR2ouhd0Vf5o1U5G
+vlUJWBybaAHDyXryUMnV+0DvVsyWUWLpDmws9SvpQKklhiTejeFhRjMgeYIhkZVh
+7WnFGAhQ2rHJ1cR/PKUmY3k1uIk2SMmLOsjugBHWYhwQRv+GZEw5SzVXaZwa6h4A
+sEj+v9LKoMTYZGMfp3qDVFLtkBE88eVmVjgJOoLhrsv7yh0PAA==
+=2Usy
+-----END PGP PUBLIC KEY BLOCK-----` });
+
+        const { data: decryptedData, signatures } = await openpgp.decrypt({
+          message: await openpgp.readMessage({ armoredMessage }),
+          decryptionKeys: privateKey,
+          verificationKeys: senderKey
+        });
+
+        expect(decryptedData).to.equal('Hello nice to meet you');
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
     });
 
     describe('Sign and verify with each curve', function() {
-      const curves = ['secp256k1' , 'p256', 'p384', 'p521', 'curve25519', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
+      const curves = ['secp256k1' , 'nistP256', 'nistP384', 'nistP521', 'curve25519Legacy', 'brainpoolP256r1', 'brainpoolP384r1', 'brainpoolP512r1'];
       curves.forEach(curve => {
         it(`sign/verify with ${curve}`, async function() {
           const config = { rejectCurves: new Set() };
@@ -4135,17 +4975,27 @@ A7sB7uYCTVCLIMfPFwVZH+c29gpCzPxSXQ==
       });
 
       it('sign/verify with new Ed25519 format', async function () {
-        // v4 key, which we do not support generating
-        const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+        const userIDs = { name: 'Alice', email: 'info@alice.com' };
+        const { privateKey } = await openpgp.generateKey({ type: 'curve25519', userIDs, format: 'object' });
+        const plaintext = 'plaintext';
 
-xUkEZBw5PBscroGar9fsilA0q9AX979pBhTNkGQ69vQGGW7kxRxNuABB+eAw
-JrQ9A3o1gUJg28ORTQd72+kFo87184qR97a6rRGFzQR0ZXN0wogEEBsIAD4F
-gmQcOTwECwkHCAmQT/m+Rl22Ps8DFQgKBBYAAgECGQECmwMCHgEWIQSUlOfm
-G7MWJd2909ZP+b5GXbY+zwAAVs/4pWH4l7pWcTATBavVqSATMKi4A+usp89G
-J/qaHc+qmcEpIMmPNvLQ7n4F4kEXk8Zwz+OXovVWLQ+Njl5gzooF
-=wYg1
------END PGP PRIVATE KEY BLOCK-----
-  ` });
+        const signed = await openpgp.sign({
+          message: await openpgp.createMessage({ text: plaintext }),
+          signingKeys: privateKey
+        });
+
+        const { signatures, data } = await openpgp.verify({
+          message: await openpgp.readMessage({ armoredMessage: signed }),
+          verificationKeys: privateKey
+        });
+        expect(data).to.equal(plaintext);
+        expect(signatures).to.have.length(1);
+        expect(await signatures[0].verified).to.be.true;
+      });
+
+      it('sign/verify with Ed448', async function () {
+        const userIDs = { name: 'Alice', email: 'info@alice.com' };
+        const { privateKey } = await openpgp.generateKey({ type: 'curve448', userIDs, format: 'object' });
         const plaintext = 'plaintext';
 
         const signed = await openpgp.sign({

@@ -18,12 +18,11 @@
 /**
  * @fileoverview This module implements AES-OCB en/decryption.
  * @module crypto/mode/ocb
- * @private
  */
 
-import * as ciphers from '../cipher';
+import { cbc as nobleAesCbc } from '@noble/ciphers/aes';
+import { getCipherParams } from '../cipher';
 import util from '../../util';
-import enums from '../../enums';
 
 const blockLength = 16;
 const ivLength = 15;
@@ -63,20 +62,25 @@ const one = new Uint8Array([1]);
  * @param {Uint8Array} key - The encryption key
  */
 async function OCB(cipher, key) {
+  const { keySize } = getCipherParams(cipher);
+  // sanity checks
+  if (!util.isAES(cipher) || key.length !== keySize) {
+    throw new Error('Unexpected algorithm or key size');
+  }
 
   let maxNtz = 0;
-  let encipher;
-  let decipher;
+
+  // `encipher` and `decipher` cannot be async, since `crypt` shares state across calls,
+  // hence its execution cannot be broken up.
+  // As a result, WebCrypto cannot currently be used for `encipher`.
+  const aes = nobleAesCbc(key, zeroBlock, { disablePadding: true });
+  const encipher = block => aes.encrypt(block);
+  const decipher = block => aes.decrypt(block);
   let mask;
 
   constructKeyVariables(cipher, key);
 
-  function constructKeyVariables(cipher, key) {
-    const cipherName = enums.read(enums.symmetric, cipher);
-    const aes = new ciphers[cipherName](key);
-    encipher = aes.encrypt.bind(aes);
-    decipher = aes.decrypt.bind(aes);
-
+  function constructKeyVariables() {
     const mask_x = encipher(zeroBlock);
     const mask_$ = util.double(mask_x);
     mask = [];

@@ -18,206 +18,199 @@
 /**
  * @fileoverview Wrapper of an instance of an Elliptic Curve
  * @module crypto/public_key/elliptic/curve
- * @private
  */
-
-import nacl from '@openpgp/tweetnacl/nacl-fast-light';
-import { getRandomBytes } from '../../random';
+import nacl from '@openpgp/tweetnacl';
 import enums from '../../../enums';
 import util from '../../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../../encoding/base64';
 import OID from '../../../type/oid';
-import { keyFromPublic, keyFromPrivate, getIndutnyCurve } from './indutnyKey';
 import { UnsupportedError } from '../../../packet/packet';
+import { generate as eddsaGenerate } from './eddsa';
+import { generate as ecdhXGenerate } from './ecdh_x';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
 
 const webCurves = {
-  'p256': 'P-256',
-  'p384': 'P-384',
-  'p521': 'P-521'
+  [enums.curve.nistP256]: 'P-256',
+  [enums.curve.nistP384]: 'P-384',
+  [enums.curve.nistP521]: 'P-521'
 };
 const knownCurves = nodeCrypto ? nodeCrypto.getCurves() : [];
 const nodeCurves = nodeCrypto ? {
-  secp256k1: knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
-  p256: knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
-  p384: knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
-  p521: knownCurves.includes('secp521r1') ? 'secp521r1' : undefined,
-  ed25519: knownCurves.includes('ED25519') ? 'ED25519' : undefined,
-  curve25519: knownCurves.includes('X25519') ? 'X25519' : undefined,
-  brainpoolP256r1: knownCurves.includes('brainpoolP256r1') ? 'brainpoolP256r1' : undefined,
-  brainpoolP384r1: knownCurves.includes('brainpoolP384r1') ? 'brainpoolP384r1' : undefined,
-  brainpoolP512r1: knownCurves.includes('brainpoolP512r1') ? 'brainpoolP512r1' : undefined
+  [enums.curve.secp256k1]: knownCurves.includes('secp256k1') ? 'secp256k1' : undefined,
+  [enums.curve.nistP256]: knownCurves.includes('prime256v1') ? 'prime256v1' : undefined,
+  [enums.curve.nistP384]: knownCurves.includes('secp384r1') ? 'secp384r1' : undefined,
+  [enums.curve.nistP521]: knownCurves.includes('secp521r1') ? 'secp521r1' : undefined,
+  [enums.curve.ed25519Legacy]: knownCurves.includes('ED25519') ? 'ED25519' : undefined,
+  [enums.curve.curve25519Legacy]: knownCurves.includes('X25519') ? 'X25519' : undefined,
+  [enums.curve.brainpoolP256r1]: knownCurves.includes('brainpoolP256r1') ? 'brainpoolP256r1' : undefined,
+  [enums.curve.brainpoolP384r1]: knownCurves.includes('brainpoolP384r1') ? 'brainpoolP384r1' : undefined,
+  [enums.curve.brainpoolP512r1]: knownCurves.includes('brainpoolP512r1') ? 'brainpoolP512r1' : undefined
 } : {};
 
 const curves = {
-  p256: {
+  [enums.curve.nistP256]: {
     oid: [0x06, 0x08, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.p256,
-    web: webCurves.p256,
+    node: nodeCurves[enums.curve.nistP256],
+    web: webCurves[enums.curve.nistP256],
     payloadSize: 32,
-    sharedSize: 256
+    sharedSize: 256,
+    wireFormatLeadingByte: 0x04
   },
-  p384: {
+  [enums.curve.nistP384]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x22],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    node: nodeCurves.p384,
-    web: webCurves.p384,
+    node: nodeCurves[enums.curve.nistP384],
+    web: webCurves[enums.curve.nistP384],
     payloadSize: 48,
-    sharedSize: 384
+    sharedSize: 384,
+    wireFormatLeadingByte: 0x04
   },
-  p521: {
+  [enums.curve.nistP521]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x23],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    node: nodeCurves.p521,
-    web: webCurves.p521,
+    node: nodeCurves[enums.curve.nistP521],
+    web: webCurves[enums.curve.nistP521],
     payloadSize: 66,
-    sharedSize: 528
+    sharedSize: 528,
+    wireFormatLeadingByte: 0x04
   },
-  secp256k1: {
+  [enums.curve.secp256k1]: {
     oid: [0x06, 0x05, 0x2B, 0x81, 0x04, 0x00, 0x0A],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.secp256k1,
-    payloadSize: 32
+    node: nodeCurves[enums.curve.secp256k1],
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x04
   },
-  ed25519: {
+  [enums.curve.ed25519Legacy]: {
     oid: [0x06, 0x09, 0x2B, 0x06, 0x01, 0x04, 0x01, 0xDA, 0x47, 0x0F, 0x01],
     keyType: enums.publicKey.eddsaLegacy,
     hash: enums.hash.sha512,
     node: false, // nodeCurves.ed25519 TODO
-    payloadSize: 32
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x40
   },
-  curve25519: {
+  [enums.curve.curve25519Legacy]: {
     oid: [0x06, 0x0A, 0x2B, 0x06, 0x01, 0x04, 0x01, 0x97, 0x55, 0x01, 0x05, 0x01],
     keyType: enums.publicKey.ecdh,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
     node: false, // nodeCurves.curve25519 TODO
-    payloadSize: 32
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x40
   },
-  brainpoolP256r1: {
+  [enums.curve.brainpoolP256r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha256,
     cipher: enums.symmetric.aes128,
-    node: nodeCurves.brainpoolP256r1,
-    payloadSize: 32
+    node: nodeCurves[enums.curve.brainpoolP256r1],
+    payloadSize: 32,
+    wireFormatLeadingByte: 0x04
   },
-  brainpoolP384r1: {
+  [enums.curve.brainpoolP384r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0B],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha384,
     cipher: enums.symmetric.aes192,
-    node: nodeCurves.brainpoolP384r1,
-    payloadSize: 48
+    node: nodeCurves[enums.curve.brainpoolP384r1],
+    payloadSize: 48,
+    wireFormatLeadingByte: 0x04
   },
-  brainpoolP512r1: {
+  [enums.curve.brainpoolP512r1]: {
     oid: [0x06, 0x09, 0x2B, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x0D],
     keyType: enums.publicKey.ecdsa,
     hash: enums.hash.sha512,
     cipher: enums.symmetric.aes256,
-    node: nodeCurves.brainpoolP512r1,
-    payloadSize: 64
+    node: nodeCurves[enums.curve.brainpoolP512r1],
+    payloadSize: 64,
+    wireFormatLeadingByte: 0x04
   }
 };
 
 class CurveWithOID {
-  constructor(oidOrName, params) {
+  constructor(oidOrName) {
     try {
-      if (util.isArray(oidOrName) ||
-          util.isUint8Array(oidOrName)) {
-        // by oid byte array
-        oidOrName = new OID(oidOrName);
-      }
-      if (oidOrName instanceof OID) {
-        // by curve OID
-        oidOrName = oidOrName.getName();
-      }
-      // by curve name or oid string
-      this.name = enums.write(enums.curve, oidOrName);
+      this.name = oidOrName instanceof OID ?
+        oidOrName.getName() :
+        enums.write(enums.curve,oidOrName);
     } catch (err) {
       throw new UnsupportedError('Unknown curve');
     }
-    params = params || curves[this.name];
+    const params = curves[this.name];
 
     this.keyType = params.keyType;
 
     this.oid = params.oid;
     this.hash = params.hash;
     this.cipher = params.cipher;
-    this.node = params.node && curves[this.name];
-    this.web = params.web && curves[this.name];
+    this.node = params.node;
+    this.web = params.web;
     this.payloadSize = params.payloadSize;
+    this.sharedSize = params.sharedSize;
+    this.wireFormatLeadingByte = params.wireFormatLeadingByte;
     if (this.web && util.getWebCrypto()) {
       this.type = 'web';
     } else if (this.node && util.getNodeCrypto()) {
       this.type = 'node';
-    } else if (this.name === 'curve25519') {
-      this.type = 'curve25519';
-    } else if (this.name === 'ed25519') {
-      this.type = 'ed25519';
+    } else if (this.name === enums.curve.curve25519Legacy) {
+      this.type = 'curve25519Legacy';
+    } else if (this.name === enums.curve.ed25519Legacy) {
+      this.type = 'ed25519Legacy';
     }
   }
 
   async genKeyPair() {
-    let keyPair;
     switch (this.type) {
       case 'web':
         try {
-          return await webGenKeyPair(this.name);
+          return await webGenKeyPair(this.name, this.wireFormatLeadingByte);
         } catch (err) {
           util.printDebugError('Browser did not support generating ec key ' + err.message);
-          break;
+          return jsGenKeyPair(this.name);
         }
       case 'node':
         return nodeGenKeyPair(this.name);
-      case 'curve25519': {
-        const privateKey = getRandomBytes(32);
+      case 'curve25519Legacy': {
+        // the private key must be stored in big endian and already clamped: https://www.ietf.org/archive/id/draft-ietf-openpgp-crypto-refresh-13.html#section-5.5.5.6.1.1-3
+        const { k, A } = await ecdhXGenerate(enums.publicKey.x25519);
+        const privateKey = k.slice().reverse();
         privateKey[0] = (privateKey[0] & 127) | 64;
         privateKey[31] &= 248;
-        const secretKey = privateKey.slice().reverse();
-        keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
-        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+        const publicKey = util.concatUint8Array([new Uint8Array([this.wireFormatLeadingByte]), A]);
         return { publicKey, privateKey };
       }
-      case 'ed25519': {
-        const privateKey = getRandomBytes(32);
-        const keyPair = nacl.sign.keyPair.fromSeed(privateKey);
-        const publicKey = util.concatUint8Array([new Uint8Array([0x40]), keyPair.publicKey]);
+      case 'ed25519Legacy': {
+        const { seed: privateKey, A } = await eddsaGenerate(enums.publicKey.ed25519);
+        const publicKey = util.concatUint8Array([new Uint8Array([this.wireFormatLeadingByte]), A]);
         return { publicKey, privateKey };
       }
+      default:
+        return jsGenKeyPair(this.name);
     }
-    const indutnyCurve = await getIndutnyCurve(this.name);
-    keyPair = await indutnyCurve.genKeyPair({
-      entropy: util.uint8ArrayToString(getRandomBytes(32))
-    });
-    return { publicKey: new Uint8Array(keyPair.getPublic('array', false)), privateKey: keyPair.getPrivate().toArrayLike(Uint8Array) };
   }
 }
 
-async function generate(curve) {
-  const BigInteger = await util.getBigInteger();
-
-  curve = new CurveWithOID(curve);
+async function generate(curveName) {
+  const curve = new CurveWithOID(curveName);
+  const { oid, hash, cipher } = curve;
   const keyPair = await curve.genKeyPair();
-  const Q = new BigInteger(keyPair.publicKey).toUint8Array();
-  const secret = new BigInteger(keyPair.privateKey).toUint8Array('be', curve.payloadSize);
   return {
-    oid: curve.oid,
-    Q,
-    secret,
-    hash: curve.hash,
-    cipher: curve.cipher
+    oid,
+    Q: keyPair.publicKey,
+    secret: util.leftPad(keyPair.privateKey, curve.payloadSize),
+    hash,
+    cipher
   };
 }
 
@@ -227,7 +220,7 @@ async function generate(curve) {
  * @returns {enums.hash} hash algorithm
  */
 function getPreferredHashAlgo(oid) {
-  return curves[enums.write(enums.curve, oid.toHex())].hash;
+  return curves[oid.getName()].hash;
 }
 
 /**
@@ -242,14 +235,14 @@ function getPreferredHashAlgo(oid) {
  */
 async function validateStandardParams(algo, oid, Q, d) {
   const supportedCurves = {
-    p256: true,
-    p384: true,
-    p521: true,
-    secp256k1: true,
-    curve25519: algo === enums.publicKey.ecdh,
-    brainpoolP256r1: true,
-    brainpoolP384r1: true,
-    brainpoolP512r1: true
+    [enums.curve.nistP256]: true,
+    [enums.curve.nistP384]: true,
+    [enums.curve.nistP521]: true,
+    [enums.curve.secp256k1]: true,
+    [enums.curve.curve25519Legacy]: algo === enums.publicKey.ecdh,
+    [enums.curve.brainpoolP256r1]: true,
+    [enums.curve.brainpoolP384r1]: true,
+    [enums.curve.brainpoolP512r1]: true
   };
 
   // Check whether the given curve is supported
@@ -258,7 +251,7 @@ async function validateStandardParams(algo, oid, Q, d) {
     return false;
   }
 
-  if (curveName === 'curve25519') {
+  if (curveName === enums.curve.curve25519Legacy) {
     d = d.slice().reverse();
     // Re-derive public point Q'
     const { publicKey } = nacl.box.keyPair.fromSecretKey(d);
@@ -272,28 +265,35 @@ async function validateStandardParams(algo, oid, Q, d) {
     return true;
   }
 
-  const curve = await getIndutnyCurve(curveName);
-  try {
-    // Parse Q and check that it is on the curve but not at infinity
-    Q = keyFromPublic(curve, Q).getPublic();
-  } catch (validationErrors) {
-    return false;
-  }
-
-  /**
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curveName); // excluding curve25519Legacy, ecdh and ecdsa use the same curves
+  /*
    * Re-derive public point Q' = dG from private key
    * Expect Q == Q'
    */
-  const dG = keyFromPrivate(curve, d).getPublic();
-  if (!dG.eq(Q)) {
+  const dG = nobleCurve.getPublicKey(d, false);
+  if (!util.equalsUint8Array(dG, Q)) {
     return false;
   }
 
   return true;
 }
 
+/**
+ * Check whether the public point has a valid encoding.
+ * NB: this function does not check e.g. whether the point belongs to the curve.
+ */
+function checkPublicPointEnconding(curve, V) {
+  const { payloadSize, wireFormatLeadingByte, name: curveName } = curve;
+
+  const pointSize = (curveName === enums.curve.curve25519Legacy || curveName === enums.curve.ed25519Legacy) ? payloadSize : payloadSize * 2;
+
+  if (V[0] !== wireFormatLeadingByte || V.length !== pointSize + 1) {
+    throw new Error('Invalid point encoding');
+  }
+}
+
 export {
-  CurveWithOID, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams
+  CurveWithOID, curves, webCurves, nodeCurves, generate, getPreferredHashAlgo, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding
 };
 
 //////////////////////////
@@ -301,9 +301,14 @@ export {
 //   Helper functions   //
 //                      //
 //////////////////////////
+async function jsGenKeyPair(name) {
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, name); // excluding curve25519Legacy, ecdh and ecdsa use the same curves
+  const privateKey = nobleCurve.utils.randomPrivateKey();
+  const publicKey = nobleCurve.getPublicKey(privateKey, false);
+  return { publicKey, privateKey };
+}
 
-
-async function webGenKeyPair(name) {
+async function webGenKeyPair(name, wireFormatLeadingByte) {
   // Note: keys generated with ECDSA and ECDH are structurally equivalent
   const webCryptoKey = await webCrypto.generateKey({ name: 'ECDSA', namedCurve: webCurves[name] }, true, ['sign', 'verify']);
 
@@ -311,7 +316,7 @@ async function webGenKeyPair(name) {
   const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
 
   return {
-    publicKey: jwkToRawPublic(publicKey),
+    publicKey: jwkToRawPublic(publicKey, wireFormatLeadingByte),
     privateKey: b64ToUint8Array(privateKey.d, true)
   };
 }
@@ -337,11 +342,11 @@ async function nodeGenKeyPair(name) {
  *
  * @returns {Uint8Array} Raw public key.
  */
-function jwkToRawPublic(jwk) {
+function jwkToRawPublic(jwk, wireFormatLeadingByte) {
   const bufX = b64ToUint8Array(jwk.x);
   const bufY = b64ToUint8Array(jwk.y);
   const publicKey = new Uint8Array(bufX.length + bufY.length + 1);
-  publicKey[0] = 0x04;
+  publicKey[0] = wireFormatLeadingByte;
   publicKey.set(bufX, 1);
   publicKey.set(bufY, bufX.length + 1);
   return publicKey;

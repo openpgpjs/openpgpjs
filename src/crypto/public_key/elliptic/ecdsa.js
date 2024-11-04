@@ -18,15 +18,14 @@
 /**
  * @fileoverview Implementation of ECDSA following RFC6637 for Openpgpjs
  * @module crypto/public_key/elliptic/ecdsa
- * @private
  */
 
 import enums from '../../../enums';
 import util from '../../../util';
 import { getRandomBytes } from '../../random';
 import hash from '../../hash';
-import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams } from './oid_curves';
-import { getIndutnyCurve, keyFromPrivate, keyFromPublic } from './indutnyKey';
+import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves';
+import { bigIntToUint8Array } from '../../biginteger';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -47,35 +46,37 @@ const nodeCrypto = util.getNodeCrypto();
  */
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
   const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, publicKey);
   if (message && !util.isStream(message)) {
     const keyPair = { publicKey, privateKey };
     switch (curve.type) {
-      case 'web': {
+      case 'web':
         // If browser doesn't support a curve, we'll catch it
         try {
           // Need to await to make sure browser succeeds
           return await webSign(curve, hashAlgo, message, keyPair);
         } catch (err) {
           // We do not fallback if the error is related to key integrity
-          // Unfortunaley Safari does not support p521 and throws a DataError when using it
+          // Unfortunaley Safari does not support nistP521 and throws a DataError when using it
           // So we need to always fallback for that curve
-          if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+          if (curve.name !== 'nistP521' && (err.name === 'DataError' || err.name === 'OperationError')) {
             throw err;
           }
           util.printDebugError('Browser did not support signing: ' + err.message);
         }
         break;
-      }
-      case 'node': {
-        const signature = await nodeSign(curve, hashAlgo, message, keyPair);
-        return {
-          r: signature.r.toArrayLike(Uint8Array),
-          s: signature.s.toArrayLike(Uint8Array)
-        };
-      }
+      case 'node':
+        return nodeSign(curve, hashAlgo, message, privateKey);
     }
   }
-  return ellipticSign(curve, hashed, privateKey);
+
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curve.name);
+  // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
+  const signature = nobleCurve.sign(hashed, privateKey, { lowS: false });
+  return {
+    r: bigIntToUint8Array(signature.r, 'be', curve.payloadSize),
+    s: bigIntToUint8Array(signature.s, 'be', curve.payloadSize)
+  };
 }
 
 /**
@@ -92,28 +93,45 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  */
 export async function verify(oid, hashAlgo, signature, message, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, publicKey);
+  // See https://github.com/openpgpjs/openpgpjs/pull/948.
+  // NB: the impact was more likely limited to Brainpool curves, since thanks
+  // to WebCrypto availability, NIST curve should not have been affected.
+  // Similarly, secp256k1 should have been used rarely enough.
+  // However, we implement the fix for all curves, since it's only needed in case of
+  // verification failure, which is unexpected, hence a minor slowdown is acceptable.
+  const tryFallbackVerificationForOldBug = async () => (
+    hashed[0] === 0 ?
+      jsVerify(curve, signature, hashed.subarray(1), publicKey) :
+      false
+  );
+
   if (message && !util.isStream(message)) {
     switch (curve.type) {
       case 'web':
         try {
           // Need to await to make sure browser succeeds
-          return await webVerify(curve, hashAlgo, signature, message, publicKey);
+          const verified = await webVerify(curve, hashAlgo, signature, message, publicKey);
+          return verified || tryFallbackVerificationForOldBug();
         } catch (err) {
           // We do not fallback if the error is related to key integrity
-          // Unfortunately Safari does not support p521 and throws a DataError when using it
+          // Unfortunately Safari does not support nistP521 and throws a DataError when using it
           // So we need to always fallback for that curve
-          if (curve.name !== 'p521' && (err.name === 'DataError' || err.name === 'OperationError')) {
+          if (curve.name !== 'nistP521' && (err.name === 'DataError' || err.name === 'OperationError')) {
             throw err;
           }
           util.printDebugError('Browser did not support verifying: ' + err.message);
         }
         break;
-      case 'node':
-        return nodeVerify(curve, hashAlgo, signature, message, publicKey);
+      case 'node': {
+        const verified = await nodeVerify(curve, hashAlgo, signature, message, publicKey);
+        return verified || tryFallbackVerificationForOldBug();
+      }
     }
   }
-  const digest = (typeof hashAlgo === 'undefined') ? message : hashed;
-  return ellipticVerify(curve, signature, digest, publicKey);
+
+  const verified = await jsVerify(curve, signature, hashed, publicKey);
+  return verified || tryFallbackVerificationForOldBug();
 }
 
 /**
@@ -141,6 +159,7 @@ export async function validateParams(oid, Q, d) {
       const hashed = await hash.digest(hashAlgo, message);
       try {
         const signature = await sign(oid, hashAlgo, message, Q, d, hashed);
+        // eslint-disable-next-line @typescript-eslint/return-await
         return await verify(oid, hashAlgo, signature, message, Q, hashed);
       } catch (err) {
         return false;
@@ -158,20 +177,14 @@ export async function validateParams(oid, Q, d) {
 //                      //
 //////////////////////////
 
-async function ellipticSign(curve, hashed, privateKey) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  const key = keyFromPrivate(indutnyCurve, privateKey);
-  const signature = key.sign(hashed);
-  return {
-    r: signature.r.toArrayLike(Uint8Array),
-    s: signature.s.toArrayLike(Uint8Array)
-  };
-}
-
-async function ellipticVerify(curve, signature, digest, publicKey) {
-  const indutnyCurve = await getIndutnyCurve(curve.name);
-  const key = keyFromPublic(indutnyCurve, publicKey);
-  return key.verify(digest, signature);
+/**
+ * Fallback javascript implementation of ECDSA verification.
+ * To be used if no native implementation is available for the given curve/operation.
+ */
+async function jsVerify(curve, signature, hashed, publicKey) {
+  const nobleCurve = await util.getNobleCurve(enums.publicKey.ecdsa, curve.name);
+  // lowS: non-canonical sig: https://stackoverflow.com/questions/74338846/ecdsa-signature-verification-mismatch
+  return nobleCurve.verify(util.concatUint8Array([signature.r, signature.s]), hashed, publicKey, { lowS: false });
 }
 
 async function webSign(curve, hashAlgo, message, keyPair) {
@@ -233,85 +246,45 @@ async function webVerify(curve, hashAlgo, { r, s }, message, publicKey) {
   );
 }
 
-async function nodeSign(curve, hashAlgo, message, keyPair) {
+async function nodeSign(curve, hashAlgo, message, privateKey) {
+  // JWT encoding cannot be used for now, as Brainpool curves are not supported
+  const ecKeyUtils = util.nodeRequire('eckey-utils');
+  const nodeBuffer = util.getNodeBuffer();
+  const { privateKey: derPrivateKey } = ecKeyUtils.generateDer({
+    curveName: nodeCurves[curve.name],
+    privateKey: nodeBuffer.from(privateKey)
+  });
+
   const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
   sign.write(message);
   sign.end();
-  const key = ECPrivateKey.encode({
-    version: 1,
-    parameters: curve.oid,
-    privateKey: Array.from(keyPair.privateKey),
-    publicKey: { unused: 0, data: Array.from(keyPair.publicKey) }
-  }, 'pem', {
-    label: 'EC PRIVATE KEY'
-  });
 
-  return ECDSASignature.decode(sign.sign(key), 'der');
+  const signature = new Uint8Array(sign.sign({ key: derPrivateKey, format: 'der', type: 'sec1', dsaEncoding: 'ieee-p1363' }));
+  const len = curve.payloadSize;
+
+  return {
+    r: signature.subarray(0, len),
+    s: signature.subarray(len, len << 1)
+  };
 }
 
 async function nodeVerify(curve, hashAlgo, { r, s }, message, publicKey) {
-  const { default: BN } = await import('bn.js');
+  const ecKeyUtils = util.nodeRequire('eckey-utils');
+  const nodeBuffer = util.getNodeBuffer();
+  const { publicKey: derPublicKey } = ecKeyUtils.generateDer({
+    curveName: nodeCurves[curve.name],
+    publicKey: nodeBuffer.from(publicKey)
+  });
 
   const verify = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
   verify.write(message);
   verify.end();
-  const key = SubjectPublicKeyInfo.encode({
-    algorithm: {
-      algorithm: [1, 2, 840, 10045, 2, 1],
-      parameters: curve.oid
-    },
-    subjectPublicKey: { unused: 0, data: Array.from(publicKey) }
-  }, 'pem', {
-    label: 'PUBLIC KEY'
-  });
-  const signature = ECDSASignature.encode({
-    r: new BN(r), s: new BN(s)
-  }, 'der');
+
+  const signature = util.concatUint8Array([r, s]);
 
   try {
-    return verify.verify(key, signature);
+    return verify.verify({ key: derPublicKey, format: 'der', type: 'spki', dsaEncoding: 'ieee-p1363' }, signature);
   } catch (err) {
     return false;
   }
 }
-
-// Originally written by Owen Smith https://github.com/omsmith
-// Adapted on Feb 2018 from https://github.com/Brightspace/node-jwk-to-pem/
-
-/* eslint-disable no-invalid-this */
-
-const asn1 = nodeCrypto ? require('asn1.js') : undefined;
-
-const ECDSASignature = nodeCrypto ?
-  asn1.define('ECDSASignature', function() {
-    this.seq().obj(
-      this.key('r').int(),
-      this.key('s').int()
-    );
-  }) : undefined;
-
-const ECPrivateKey = nodeCrypto ?
-  asn1.define('ECPrivateKey', function() {
-    this.seq().obj(
-      this.key('version').int(),
-      this.key('privateKey').octstr(),
-      this.key('parameters').explicit(0).optional().any(),
-      this.key('publicKey').explicit(1).optional().bitstr()
-    );
-  }) : undefined;
-
-const AlgorithmIdentifier = nodeCrypto ?
-  asn1.define('AlgorithmIdentifier', function() {
-    this.seq().obj(
-      this.key('algorithm').objid(),
-      this.key('parameters').optional().any()
-    );
-  }) : undefined;
-
-const SubjectPublicKeyInfo = nodeCrypto ?
-  asn1.define('SubjectPublicKeyInfo', function() {
-    this.seq().obj(
-      this.key('algorithm').use(AlgorithmIdentifier),
-      this.key('subjectPublicKey').bitstr()
-    );
-  }) : undefined;

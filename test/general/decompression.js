@@ -1,7 +1,8 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+import openpgp from '../initOpenpgp.js';
 
 const password = 'I am a password';
 
@@ -38,7 +39,7 @@ Xg==
   }
 };
 
-module.exports = () => describe('Decrypt and decompress message tests', function () {
+export default () => describe('Decrypt and decompress message tests', function () {
 
   function runTest(key, test) {
     it(`Decrypts message compressed with ${key}`, async function () {

@@ -18,42 +18,19 @@
 /**
  * @fileoverview RSA implementation
  * @module crypto/public_key/rsa
- * @private
  */
-
 import { randomProbablePrime } from './prime';
 import { getRandomBigInteger } from '../random';
 import util from '../../util';
 import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64';
 import { emsaEncode, emeEncode, emeDecode } from '../pkcs1';
 import enums from '../../enums';
+import { bigIntToNumber, bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger';
+import hash from '../hash';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
-const asn1 = nodeCrypto ? require('asn1.js') : undefined;
-
-/* eslint-disable no-invalid-this */
-const RSAPrivateKey = nodeCrypto ? asn1.define('RSAPrivateKey', function () {
-  this.seq().obj( // used for native NodeJS crypto
-    this.key('version').int(), // 0
-    this.key('modulus').int(), // n
-    this.key('publicExponent').int(), // e
-    this.key('privateExponent').int(), // d
-    this.key('prime1').int(), // p
-    this.key('prime2').int(), // q
-    this.key('exponent1').int(), // dp
-    this.key('exponent2').int(), // dq
-    this.key('coefficient').int() // u
-  );
-}) : undefined;
-
-const RSAPublicKey = nodeCrypto ? asn1.define('RSAPubliceKey', function () {
-  this.seq().obj( // used for native NodeJS crypto
-    this.key('modulus').int(), // n
-    this.key('publicExponent').int() // e
-  );
-}) : undefined;
-/* eslint-enable no-invalid-this */
+const _1n = BigInt(1);
 
 /** Create signature
  * @param {module:enums.hash} hashAlgo - Hash algorithm
@@ -69,6 +46,14 @@ const RSAPublicKey = nodeCrypto ? asn1.define('RSAPubliceKey', function () {
  * @async
  */
 export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
+  if (hash.getHashByteLength(hashAlgo) >= n.length) {
+    // Throw here instead of `emsaEncode` below, to provide a clearer and consistent error
+    // e.g. if a 512-bit RSA key is used with a SHA-512 digest.
+    // The size limit is actually slightly different but here we only care about throwing
+    // on common key sizes.
+    throw new Error('Digest size cannot exceed key modulus size');
+  }
+
   if (data && !util.isStream(data)) {
     if (util.getWebCrypto()) {
       try {
@@ -167,16 +152,14 @@ export async function decrypt(data, n, e, d, p, q, u, randomPayload) {
  * @async
  */
 export async function generate(bits, e) {
-  const BigInteger = await util.getBigInteger();
-
-  e = new BigInteger(e);
+  e = BigInt(e);
 
   // Native RSA keygen using Web Crypto
   if (util.getWebCrypto()) {
     const keyGenOpt = {
       name: 'RSASSA-PKCS1-v1_5',
       modulusLength: bits, // the specified keysize in bits
-      publicExponent: e.toUint8Array(), // take three bytes (max 65537) for exponent
+      publicExponent: bigIntToUint8Array(e), // take three bytes (max 65537) for exponent
       hash: {
         name: 'SHA-1' // not required for actual RSA keys, but for crypto api 'sign' and 'verify'
       }
@@ -187,47 +170,24 @@ export async function generate(bits, e) {
     // https://tools.ietf.org/html/draft-ietf-jose-json-web-key-33
     const jwk = await webCrypto.exportKey('jwk', keyPair.privateKey);
     // map JWK parameters to corresponding OpenPGP names
-    return {
-      n: b64ToUint8Array(jwk.n),
-      e: e.toUint8Array(),
-      d: b64ToUint8Array(jwk.d),
-      // switch p and q
-      p: b64ToUint8Array(jwk.q),
-      q: b64ToUint8Array(jwk.p),
-      // Since p and q are switched in places, u is the inverse of jwk.q
-      u: b64ToUint8Array(jwk.qi)
-    };
-  } else if (util.getNodeCrypto() && nodeCrypto.generateKeyPair && RSAPrivateKey) {
+    return jwkToPrivate(jwk, e);
+  } else if (util.getNodeCrypto()) {
     const opts = {
       modulusLength: bits,
-      publicExponent: e.toNumber(),
-      publicKeyEncoding: { type: 'pkcs1', format: 'der' },
-      privateKeyEncoding: { type: 'pkcs1', format: 'der' }
+      publicExponent: bigIntToNumber(e),
+      publicKeyEncoding: { type: 'pkcs1', format: 'jwk' },
+      privateKeyEncoding: { type: 'pkcs1', format: 'jwk' }
     };
-    const prv = await new Promise((resolve, reject) => {
-      nodeCrypto.generateKeyPair('rsa', opts, (err, _, der) => {
+    const jwk = await new Promise((resolve, reject) => {
+      nodeCrypto.generateKeyPair('rsa', opts, (err, _, jwkPrivateKey) => {
         if (err) {
           reject(err);
         } else {
-          resolve(RSAPrivateKey.decode(der, 'der'));
+          resolve(jwkPrivateKey);
         }
       });
     });
-    /**
-     * OpenPGP spec differs from DER spec, DER: `u = (inverse of q) mod p`, OpenPGP: `u = (inverse of p) mod q`.
-     * @link https://tools.ietf.org/html/rfc3447#section-3.2
-     * @link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-08#section-5.6.1
-     */
-    return {
-      n: prv.modulus.toArrayLike(Uint8Array),
-      e: prv.publicExponent.toArrayLike(Uint8Array),
-      d: prv.privateExponent.toArrayLike(Uint8Array),
-      // switch p and q
-      p: prv.prime2.toArrayLike(Uint8Array),
-      q: prv.prime1.toArrayLike(Uint8Array),
-      // Since p and q are switched in places, we can keep u as defined by DER
-      u: prv.coefficient.toArrayLike(Uint8Array)
-    };
+    return jwkToPrivate(jwk, e);
   }
 
   // RSA keygen fallback using 40 iterations of the Miller-Rabin test
@@ -237,26 +197,26 @@ export async function generate(bits, e) {
   let q;
   let n;
   do {
-    q = await randomProbablePrime(bits - (bits >> 1), e, 40);
-    p = await randomProbablePrime(bits >> 1, e, 40);
-    n = p.mul(q);
-  } while (n.bitLength() !== bits);
+    q = randomProbablePrime(bits - (bits >> 1), e, 40);
+    p = randomProbablePrime(bits >> 1, e, 40);
+    n = p * q;
+  } while (bitLength(n) !== bits);
 
-  const phi = p.dec().imul(q.dec());
+  const phi = (p - _1n) * (q - _1n);
 
-  if (q.lt(p)) {
+  if (q < p) {
     [p, q] = [q, p];
   }
 
   return {
-    n: n.toUint8Array(),
-    e: e.toUint8Array(),
-    d: e.modInv(phi).toUint8Array(),
-    p: p.toUint8Array(),
-    q: q.toUint8Array(),
+    n: bigIntToUint8Array(n),
+    e: bigIntToUint8Array(e),
+    d: bigIntToUint8Array(modInv(e, phi)),
+    p: bigIntToUint8Array(p),
+    q: bigIntToUint8Array(q),
     // dp: d.mod(p.subn(1)),
     // dq: d.mod(q.subn(1)),
-    u: p.modInv(q).toUint8Array()
+    u: bigIntToUint8Array(modInv(p, q))
   };
 }
 
@@ -272,25 +232,24 @@ export async function generate(bits, e) {
  * @async
  */
 export async function validateParams(n, e, d, p, q, u) {
-  const BigInteger = await util.getBigInteger();
-  n = new BigInteger(n);
-  p = new BigInteger(p);
-  q = new BigInteger(q);
+  n = uint8ArrayToBigInt(n);
+  p = uint8ArrayToBigInt(p);
+  q = uint8ArrayToBigInt(q);
 
   // expect pq = n
-  if (!p.mul(q).equal(n)) {
+  if ((p * q) !== n) {
     return false;
   }
 
-  const two = new BigInteger(2);
+  const _2n = BigInt(2);
   // expect p*u = 1 mod q
-  u = new BigInteger(u);
-  if (!p.mul(u).mod(q).isOne()) {
+  u = uint8ArrayToBigInt(u);
+  if (mod(p * u, q) !== BigInt(1)) {
     return false;
   }
 
-  e = new BigInteger(e);
-  d = new BigInteger(d);
+  e = uint8ArrayToBigInt(e);
+  d = uint8ArrayToBigInt(d);
   /**
    * In RSA pkcs#1 the exponents (d, e) are inverses modulo lcm(p-1, q-1)
    * We check that [de = 1 mod (p-1)] and [de = 1 mod (q-1)]
@@ -298,11 +257,11 @@ export async function validateParams(n, e, d, p, q, u) {
    *
    * We blind the multiplication with r, and check that rde = r mod lcm(p-1, q-1)
    */
-  const nSizeOver3 = new BigInteger(Math.floor(n.bitLength() / 3));
-  const r = await getRandomBigInteger(two, two.leftShift(nSizeOver3)); // r in [ 2, 2^{|n|/3} ) < p and q
-  const rde = r.mul(d).mul(e);
+  const nSizeOver3 = BigInt(Math.floor(bitLength(n) / 3));
+  const r = getRandomBigInteger(_2n, _2n << nSizeOver3); // r in [ 2, 2^{|n|/3} ) < p and q
+  const rde = r * d * e;
 
-  const areInverses = rde.mod(p.dec()).equal(r) && rde.mod(q.dec()).equal(r);
+  const areInverses = mod(rde, p - _1n) === r && mod(rde, q - _1n) === r;
   if (!areInverses) {
     return false;
   }
@@ -311,14 +270,10 @@ export async function validateParams(n, e, d, p, q, u) {
 }
 
 async function bnSign(hashAlgo, n, d, hashed) {
-  const BigInteger = await util.getBigInteger();
-  n = new BigInteger(n);
-  const m = new BigInteger(await emsaEncode(hashAlgo, hashed, n.byteLength()));
-  d = new BigInteger(d);
-  if (m.gte(n)) {
-    throw new Error('Message size cannot exceed modulus size');
-  }
-  return m.modExp(d, n).toUint8Array('be', n.byteLength());
+  n = uint8ArrayToBigInt(n);
+  const m = uint8ArrayToBigInt(emsaEncode(hashAlgo, hashed, byteLength(n)));
+  d = uint8ArrayToBigInt(d);
+  return bigIntToUint8Array(modExp(m, d, n), 'be', byteLength(n));
 }
 
 async function webSign(hashName, data, n, e, d, p, q, u) {
@@ -339,48 +294,23 @@ async function webSign(hashName, data, n, e, d, p, q, u) {
 }
 
 async function nodeSign(hashAlgo, data, n, e, d, p, q, u) {
-  const { default: BN } = await import('bn.js');
-  const pBNum = new BN(p);
-  const qBNum = new BN(q);
-  const dBNum = new BN(d);
-  const dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
-  const dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
   const sign = nodeCrypto.createSign(enums.read(enums.hash, hashAlgo));
   sign.write(data);
   sign.end();
-  const keyObject = {
-    version: 0,
-    modulus: new BN(n),
-    publicExponent: new BN(e),
-    privateExponent: new BN(d),
-    // switch p and q
-    prime1: new BN(q),
-    prime2: new BN(p),
-    // switch dp and dq
-    exponent1: dq,
-    exponent2: dp,
-    coefficient: new BN(u)
-  };
-  if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
-    const der = RSAPrivateKey.encode(keyObject, 'der');
-    return new Uint8Array(sign.sign({ key: der, format: 'der', type: 'pkcs1' }));
-  }
-  const pem = RSAPrivateKey.encode(keyObject, 'pem', {
-    label: 'RSA PRIVATE KEY'
-  });
-  return new Uint8Array(sign.sign(pem));
+
+  const jwk = await privateToJWK(n, e, d, p, q, u);
+  return new Uint8Array(sign.sign({ key: jwk, format: 'jwk', type: 'pkcs1' }));
 }
 
 async function bnVerify(hashAlgo, s, n, e, hashed) {
-  const BigInteger = await util.getBigInteger();
-  n = new BigInteger(n);
-  s = new BigInteger(s);
-  e = new BigInteger(e);
-  if (s.gte(n)) {
+  n = uint8ArrayToBigInt(n);
+  s = uint8ArrayToBigInt(s);
+  e = uint8ArrayToBigInt(e);
+  if (s >= n) {
     throw new Error('Signature size cannot exceed modulus size');
   }
-  const EM1 = s.modExp(e, n).toUint8Array('be', n.byteLength());
-  const EM2 = await emsaEncode(hashAlgo, hashed, n.byteLength());
+  const EM1 = bigIntToUint8Array(modExp(s, e, n), 'be', byteLength(n));
+  const EM2 = emsaEncode(hashAlgo, hashed, byteLength(n));
   return util.equalsUint8Array(EM1, EM2);
 }
 
@@ -394,93 +324,41 @@ async function webVerify(hashName, data, s, n, e) {
 }
 
 async function nodeVerify(hashAlgo, data, s, n, e) {
-  const { default: BN } = await import('bn.js');
+  const jwk = publicToJWK(n, e);
+  const key = { key: jwk, format: 'jwk', type: 'pkcs1' };
 
   const verify = nodeCrypto.createVerify(enums.read(enums.hash, hashAlgo));
   verify.write(data);
   verify.end();
-  const keyObject = {
-    modulus: new BN(n),
-    publicExponent: new BN(e)
-  };
-  let key;
-  if (typeof nodeCrypto.createPrivateKey !== 'undefined') { //from version 11.6.0 Node supports der encoded key objects
-    const der = RSAPublicKey.encode(keyObject, 'der');
-    key = { key: der, format: 'der', type: 'pkcs1' };
-  } else {
-    key = RSAPublicKey.encode(keyObject, 'pem', {
-      label: 'RSA PUBLIC KEY'
-    });
-  }
+
   try {
-    return await verify.verify(key, s);
+    return verify.verify(key, s);
   } catch (err) {
     return false;
   }
 }
 
 async function nodeEncrypt(data, n, e) {
-  const { default: BN } = await import('bn.js');
+  const jwk = publicToJWK(n, e);
+  const key = { key: jwk, format: 'jwk', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
 
-  const keyObject = {
-    modulus: new BN(n),
-    publicExponent: new BN(e)
-  };
-  let key;
-  if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
-    const der = RSAPublicKey.encode(keyObject, 'der');
-    key = { key: der, format: 'der', type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
-  } else {
-    const pem = RSAPublicKey.encode(keyObject, 'pem', {
-      label: 'RSA PUBLIC KEY'
-    });
-    key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
-  }
   return new Uint8Array(nodeCrypto.publicEncrypt(key, data));
 }
 
 async function bnEncrypt(data, n, e) {
-  const BigInteger = await util.getBigInteger();
-  n = new BigInteger(n);
-  data = new BigInteger(emeEncode(data, n.byteLength()));
-  e = new BigInteger(e);
-  if (data.gte(n)) {
+  n = uint8ArrayToBigInt(n);
+  data = uint8ArrayToBigInt(emeEncode(data, byteLength(n)));
+  e = uint8ArrayToBigInt(e);
+  if (data >= n) {
     throw new Error('Message size cannot exceed modulus size');
   }
-  return data.modExp(e, n).toUint8Array('be', n.byteLength());
+  return bigIntToUint8Array(modExp(data, e, n), 'be', byteLength(n));
 }
 
 async function nodeDecrypt(data, n, e, d, p, q, u) {
-  const { default: BN } = await import('bn.js');
+  const jwk = await privateToJWK(n, e, d, p, q, u);
+  const key = { key: jwk, format: 'jwk' , type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
 
-  const pBNum = new BN(p);
-  const qBNum = new BN(q);
-  const dBNum = new BN(d);
-  const dq = dBNum.mod(qBNum.subn(1)); // d mod (q-1)
-  const dp = dBNum.mod(pBNum.subn(1)); // d mod (p-1)
-  const keyObject = {
-    version: 0,
-    modulus: new BN(n),
-    publicExponent: new BN(e),
-    privateExponent: new BN(d),
-    // switch p and q
-    prime1: new BN(q),
-    prime2: new BN(p),
-    // switch dp and dq
-    exponent1: dq,
-    exponent2: dp,
-    coefficient: new BN(u)
-  };
-  let key;
-  if (typeof nodeCrypto.createPrivateKey !== 'undefined') {
-    const der = RSAPrivateKey.encode(keyObject, 'der');
-    key = { key: der, format: 'der' , type: 'pkcs1', padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
-  } else {
-    const pem = RSAPrivateKey.encode(keyObject, 'pem', {
-      label: 'RSA PRIVATE KEY'
-    });
-    key = { key: pem, padding: nodeCrypto.constants.RSA_PKCS1_PADDING };
-  }
   try {
     return new Uint8Array(nodeCrypto.privateDecrypt(key, data));
   } catch (err) {
@@ -489,35 +367,32 @@ async function nodeDecrypt(data, n, e, d, p, q, u) {
 }
 
 async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
-  const BigInteger = await util.getBigInteger();
-  data = new BigInteger(data);
-  n = new BigInteger(n);
-  e = new BigInteger(e);
-  d = new BigInteger(d);
-  p = new BigInteger(p);
-  q = new BigInteger(q);
-  u = new BigInteger(u);
-  if (data.gte(n)) {
+  data = uint8ArrayToBigInt(data);
+  n = uint8ArrayToBigInt(n);
+  e = uint8ArrayToBigInt(e);
+  d = uint8ArrayToBigInt(d);
+  p = uint8ArrayToBigInt(p);
+  q = uint8ArrayToBigInt(q);
+  u = uint8ArrayToBigInt(u);
+  if (data >= n) {
     throw new Error('Data too large.');
   }
-  const dq = d.mod(q.dec()); // d mod (q-1)
-  const dp = d.mod(p.dec()); // d mod (p-1)
+  const dq = mod(d, q - _1n); // d mod (q-1)
+  const dp = mod(d, p - _1n); // d mod (p-1)
 
-  const unblinder = (await getRandomBigInteger(new BigInteger(2), n)).mod(n);
-  const blinder = unblinder.modInv(n).modExp(e, n);
-  data = data.mul(blinder).mod(n);
+  const unblinder = getRandomBigInteger(BigInt(2), n);
+  const blinder = modExp(modInv(unblinder, n), e, n);
+  data = mod(data * blinder, n);
 
+  const mp = modExp(data, dp, p); // data**{d mod (q-1)} mod p
+  const mq = modExp(data, dq, q); // data**{d mod (p-1)} mod q
+  const h = mod(u * (mq - mp), q); // u * (mq-mp) mod q (operands already < q)
 
-  const mp = data.modExp(dp, p); // data**{d mod (q-1)} mod p
-  const mq = data.modExp(dq, q); // data**{d mod (p-1)} mod q
-  const h = u.mul(mq.sub(mp)).mod(q); // u * (mq-mp) mod q (operands already < q)
+  let result = h * p + mp; // result < n due to relations above
 
-  let result = h.mul(p).add(mp); // result < n due to relations above
+  result = mod(result * unblinder, n);
 
-  result = result.mul(unblinder).mod(n);
-
-
-  return emeDecode(result.toUint8Array('be', n.byteLength()), randomPayload);
+  return emeDecode(bigIntToUint8Array(result, 'be', byteLength(n)), randomPayload);
 }
 
 /** Convert Openpgp private key params to jwk key according to
@@ -531,15 +406,14 @@ async function bnDecrypt(data, n, e, d, p, q, u, randomPayload) {
  * @param {Uint8Array} u
  */
 async function privateToJWK(n, e, d, p, q, u) {
-  const BigInteger = await util.getBigInteger();
-  const pNum = new BigInteger(p);
-  const qNum = new BigInteger(q);
-  const dNum = new BigInteger(d);
+  const pNum = uint8ArrayToBigInt(p);
+  const qNum = uint8ArrayToBigInt(q);
+  const dNum = uint8ArrayToBigInt(d);
 
-  let dq = dNum.mod(qNum.dec()); // d mod (q-1)
-  let dp = dNum.mod(pNum.dec()); // d mod (p-1)
-  dp = dp.toUint8Array();
-  dq = dq.toUint8Array();
+  let dq = mod(dNum, qNum - _1n); // d mod (q-1)
+  let dp = mod(dNum, pNum - _1n); // d mod (p-1)
+  dp = bigIntToUint8Array(dp);
+  dq = bigIntToUint8Array(dq);
   return {
     kty: 'RSA',
     n: uint8ArrayToB64(n, true),
@@ -568,5 +442,19 @@ function publicToJWK(n, e) {
     n: uint8ArrayToB64(n, true),
     e: uint8ArrayToB64(e, true),
     ext: true
+  };
+}
+
+/** Convert JWK private key to OpenPGP private key params */
+function jwkToPrivate(jwk, e) {
+  return {
+    n: b64ToUint8Array(jwk.n),
+    e: bigIntToUint8Array(e),
+    d: b64ToUint8Array(jwk.d),
+    // switch p and q
+    p: b64ToUint8Array(jwk.q),
+    q: b64ToUint8Array(jwk.p),
+    // Since p and q are switched in places, u is the inverse of jwk.q
+    u: b64ToUint8Array(jwk.qi)
   };
 }

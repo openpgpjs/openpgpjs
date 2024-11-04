@@ -64,7 +64,9 @@ class PrivateKey extends PublicKey {
    * @returns {ReadableStream<String>} ASCII armor.
    */
   armor(config = defaultConfig) {
-    return armor(enums.armor.privateKey, this.toPacketList().write(), undefined, undefined, undefined, config);
+    // An ASCII-armored Transferable Public Key packet sequence of a v6 key MUST NOT contain a CRC24 footer.
+    const emitChecksum = this.keyPacket.version !== 6;
+    return armor(enums.armor.privateKey, this.toPacketList().write(), undefined, undefined, undefined, emitChecksum, config);
   }
 
   /**
@@ -75,28 +77,45 @@ class PrivateKey extends PublicKey {
    * @param  {String}            userID, optional
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    * @returns {Promise<Array<Key|Subkey>>} Array of decryption keys.
+   * @throws {Error} if no decryption key is found
    * @async
    */
   async getDecryptionKeys(keyID, date = new Date(), userID = {}, config = defaultConfig) {
     const primaryKey = this.keyPacket;
     const keys = [];
+    let exception = null;
     for (let i = 0; i < this.subkeys.length; i++) {
       if (!keyID || this.subkeys[i].getKeyID().equals(keyID, true)) {
+        if (this.subkeys[i].keyPacket.isDummy()) {
+          exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+          continue;
+        }
+
         try {
           const dataToVerify = { key: primaryKey, bind: this.subkeys[i].keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(this.subkeys[i].bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (helper.isValidDecryptionKeyPacket(bindingSignature, config)) {
+          if (helper.validateDecryptionKeyPacket(this.subkeys[i].keyPacket, bindingSignature, config)) {
             keys.push(this.subkeys[i]);
           }
-        } catch (e) {}
+        } catch (e) {
+          exception = e;
+        }
       }
     }
 
     // evaluate primary key
-    const primaryUser = await this.getPrimaryUser(date, userID, config);
-    if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) &&
-        helper.isValidDecryptionKeyPacket(primaryUser.selfCertification, config)) {
-      keys.push(this);
+    const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
+    if ((!keyID || primaryKey.getKeyID().equals(keyID, true)) && helper.validateDecryptionKeyPacket(primaryKey, selfCertification, config)) {
+      if (primaryKey.isDummy()) {
+        exception = exception || new Error('Gnu-dummy key packets cannot be used for decryption');
+      } else {
+        keys.push(this);
+      }
+    }
+
+    if (keys.length === 0) {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
+      throw exception || new Error('No decryption key packets found');
     }
 
     return keys;
@@ -187,7 +206,7 @@ class PrivateKey extends PublicKey {
     }
     const dataToSign = { key: this.keyPacket };
     const key = this.clone();
-    key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, null, this.keyPacket, {
+    key.revocationSignatures.push(await helper.createSignaturePacket(dataToSign, [], this.keyPacket, {
       signatureType: enums.signature.keyRevocation,
       reasonForRevocationFlag: enums.write(enums.reasonForRevocation, reasonForRevocationFlag),
       reasonForRevocationString
@@ -198,8 +217,10 @@ class PrivateKey extends PublicKey {
 
   /**
    * Generates a new OpenPGP subkey, and returns a clone of the Key object with the new subkey added.
-   * Supports RSA and ECC keys. Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
-   * @param {ecc|rsa} options.type       The subkey algorithm: ECC or RSA
+   * Supports RSA and ECC keys, as well as the newer Curve448 and Curve25519.
+   * Defaults to the algorithm and bit size/curve of the primary key. DSA primary keys default to RSA subkeys.
+   * @param {ecc|rsa|curve25519|curve448} options.type The subkey algorithm: ECC, RSA, Curve448 or Curve25519 (new format).
+   *                                                   Note: Curve448 and Curve25519 are not widely supported yet.
    * @param {String}  options.curve      (optional) Elliptic curve for ECC keys
    * @param {Integer} options.rsaBits    (optional) Number of bits for RSA subkeys
    * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
@@ -225,16 +246,41 @@ class PrivateKey extends PublicKey {
       throw new Error('Key is not decrypted');
     }
     const defaultOptions = secretKeyPacket.getAlgorithmInfo();
-    defaultOptions.type = defaultOptions.curve ? 'ecc' : 'rsa'; // DSA keys default to RSA
+    defaultOptions.type = getDefaultSubkeyType(defaultOptions.algorithm);
     defaultOptions.rsaBits = defaultOptions.bits || 4096;
-    defaultOptions.curve = defaultOptions.curve || 'curve25519';
+    defaultOptions.curve = defaultOptions.curve || 'curve25519Legacy';
     options = helper.sanitizeKeyOptions(options, defaultOptions);
-    const keyPacket = await helper.generateSecretSubkey(options);
+    // Every subkey for a v4 primary key MUST be a v4 subkey.
+    // Every subkey for a v6 primary key MUST be a v6 subkey.
+    // For v5 keys, since we dropped generation support, a v4 subkey is added.
+    // The config is always overwritten since we cannot tell if the defaultConfig was changed by the user.
+    const keyPacket = await helper.generateSecretSubkey(options, { ...config, v6Keys: this.keyPacket.version === 6 });
     helper.checkKeyRequirements(keyPacket, config);
     const bindingSignature = await helper.createBindingSignature(keyPacket, secretKeyPacket, options, config);
     const packetList = this.toPacketList();
     packetList.push(keyPacket, bindingSignature);
     return new PrivateKey(packetList);
+  }
+}
+
+function getDefaultSubkeyType(algoName) {
+  const algo = enums.write(enums.publicKey, algoName);
+  // NB: no encryption-only algos, since they cannot be in primary keys
+  switch (algo) {
+    case enums.publicKey.rsaEncrypt:
+    case enums.publicKey.rsaEncryptSign:
+    case enums.publicKey.rsaSign:
+    case enums.publicKey.dsa:
+      return 'rsa';
+    case enums.publicKey.ecdsa:
+    case enums.publicKey.eddsaLegacy:
+      return 'ecc';
+    case enums.publicKey.ed25519:
+      return 'curve25519';
+    case enums.publicKey.ed448:
+      return 'curve448';
+    default:
+      throw new Error('Unsupported algorithm');
   }
 }
 

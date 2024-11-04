@@ -1,16 +1,16 @@
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('..');
+import openpgp from './initOpenpgp.js';
 
 (typeof window !== 'undefined' ? window : global).globalThis = (typeof window !== 'undefined' ? window : global);
 
-(typeof window !== 'undefined' ? window : global).resolves = function(val) {
+globalThis.resolves = function(val) {
   return new Promise(function(res) { res(val); });
 };
 
-(typeof window !== 'undefined' ? window : global).rejects = function(val) {
+globalThis.rejects = function(val) {
   return new Promise(function(res, rej) { rej(val); });
 };
 
-(typeof window !== 'undefined' ? window : global).tryTests = function(name, tests, options) {
+globalThis.tryTests = function(name, tests, options) {
   if (options.if) {
     describe(name, function() {
       if (options.before) { before(options.before); }
@@ -26,10 +26,19 @@ const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp
   }
 };
 
+globalThis.loadStreamsPolyfill = function() {
+  // do not polyfill Node
+  const detectNodeWebStreams = () => typeof globalThis.process === 'object' && typeof globalThis.process.versions === 'object' && globalThis.ReadableStream;
+
+  return detectNodeWebStreams() || import('web-streams-polyfill/polyfill');
+};
+
+import runWorkerTests from './worker';
+import runCryptoTests from './crypto';
+import runGeneralTests from './general';
+import runSecurityTests from './security';
+
 describe('Unit Tests', function () {
-
-  openpgp.config.s2kIterationCountByte = 0;
-
   if (typeof window !== 'undefined') {
     // Safari 14.1.*, 15.* and 16.* seem to have issues handling rejections when their native TransformStream implementation is involved,
     // so for now we ignore unhandled rejections for those browser versions.
@@ -55,8 +64,8 @@ describe('Unit Tests', function () {
     });
   }
 
-  require('./worker')();
-  require('./crypto')();
-  require('./general')();
-  require('./security')();
+  runWorkerTests();
+  runCryptoTests();
+  runGeneralTests();
+  runSecurityTests();
 });

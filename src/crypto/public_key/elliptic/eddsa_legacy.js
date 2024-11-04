@@ -19,16 +19,14 @@
  * @fileoverview Implementation of legacy EdDSA following RFC4880bis-03 for OpenPGP.
  * This key type has been deprecated by the crypto-refresh RFC.
  * @module crypto/public_key/elliptic/eddsa_legacy
- * @private
  */
 
-import sha512 from 'hash.js/lib/hash/sha/512';
-import nacl from '@openpgp/tweetnacl/nacl-fast-light';
+import nacl from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
 import hash from '../../hash';
-
-nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
+import { CurveWithOID, checkPublicPointEnconding } from './oid_curves';
+import { sign as eddsaSign, verify as eddsaVerify } from './eddsa';
 
 /**
  * Sign a message using the provided legacy EdDSA key
@@ -45,12 +43,15 @@ nacl.hash = bytes => new Uint8Array(sha512().update(bytes).digest());
  * @async
  */
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
+  const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, publicKey);
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
+    // Enforce digest sizes, since the constraint was already present in RFC4880bis:
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
+    // and https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.3-3
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
-  const secretKey = util.concatUint8Array([privateKey, publicKey.subarray(1)]);
-  const signature = nacl.sign.detached(hashed, secretKey);
+  const { RS: signature } = await eddsaSign(enums.publicKey.ed25519, hashAlgo, message, publicKey.subarray(1), privateKey, hashed);
   // EdDSA signature params are returned in little-endian format
   return {
     r: signature.subarray(0, 32),
@@ -71,11 +72,16 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
  * @async
  */
 export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
+  const curve = new CurveWithOID(oid);
+  checkPublicPointEnconding(curve, publicKey);
   if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
+    // Enforce digest sizes, since the constraint was already present in RFC4880bis:
+    // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
+    // and https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.3-3
     throw new Error('Hash algorithm too weak for EdDSA.');
   }
-  const signature = util.concatUint8Array([r, s]);
-  return nacl.sign.detached.verify(hashed, signature, publicKey.subarray(1));
+  const RS = util.concatUint8Array([r, s]);
+  return eddsaVerify(enums.publicKey.ed25519, hashAlgo, { RS }, m, publicKey.subarray(1), hashed);
 }
 /**
  * Validate legacy EdDSA parameters
@@ -87,7 +93,7 @@ export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
  */
 export async function validateParams(oid, Q, k) {
   // Check whether the given curve is supported
-  if (oid.getName() !== 'ed25519') {
+  if (oid.getName() !== enums.curve.ed25519Legacy) {
     return false;
   }
 

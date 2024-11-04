@@ -16,12 +16,13 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import PublicKeyPacket from './public_key';
-import S2K from '../type/s2k';
+import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
 import crypto from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
-import { UnsupportedError } from './packet';
+import { UnsupportedError, writeTag } from './packet';
+import computeHKDF from '../crypto/hkdf';
 
 /**
  * A Secret-Key packet contains all the information that is found in a
@@ -69,10 +70,26 @@ class SecretKeyPacket extends PublicKeyPacket {
      */
     this.aead = null;
     /**
+     * Whether the key is encrypted using the legacy AEAD format proposal from RFC4880bis
+     * (i.e. it was encrypted with the flag `config.aeadProtect` in OpenPGP.js v5 or older).
+     * This value is only relevant to know how to decrypt the key:
+     * if AEAD is enabled, a v4 key is always re-encrypted using the standard AEAD mechanism.
+     * @type {Boolean}
+     * @private
+     */
+    this.isLegacyAEAD = null;
+    /**
      * Decrypted private parameters, referenced by name
      * @type {Object}
      */
     this.privateParams = null;
+    /**
+     * `true` for keys whose integrity is already confirmed, based on
+     * the AEAD encryption mechanism
+     * @type {Boolean}
+     * @private
+     */
+    this.usedModernAEAD = null;
   }
 
   // 5.5.3.  Secret-Key Packet Formats
@@ -83,9 +100,9 @@ class SecretKeyPacket extends PublicKeyPacket {
    * @param {Uint8Array} bytes - Input string to read the packet from
    * @async
    */
-  async read(bytes) {
+  async read(bytes, config = defaultConfig) {
     // - A Public-Key or Public-Subkey packet, as described above.
-    let i = await this.readPublicKey(bytes);
+    let i = await this.readPublicKey(bytes, config);
     const startOfSecretKeyData = i;
 
     // - One octet indicating string-to-key usage conventions.  Zero
@@ -97,6 +114,14 @@ class SecretKeyPacket extends PublicKeyPacket {
     // - Only for a version 5 packet, a one-octet scalar octet count of
     //   the next 4 optional fields.
     if (this.version === 5) {
+      i++;
+    }
+
+    // - Only for a version 6 packet where the secret key material is
+    //   encrypted (that is, where the previous octet is not zero), a one-
+    //   octet scalar octet count of the cumulative length of all the
+    //   following optional string-to-key parameter fields.
+    if (this.version === 6 && this.s2kUsage) {
       i++;
     }
 
@@ -112,10 +137,17 @@ class SecretKeyPacket extends PublicKeyPacket {
           this.aead = bytes[i++];
         }
 
+        // - [Optional] Only for a version 6 packet, and if string-to-key usage
+        //   octet was 255, 254, or 253, an one-octet count of the following field.
+        if (this.version === 6) {
+          i++;
+        }
+
         // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
         //   string-to-key specifier.  The length of the string-to-key
         //   specifier is implied by its type, as described above.
-        this.s2k = new S2K();
+        const s2kType = bytes[i++];
+        this.s2k = newS2KFromType(s2kType);
         i += this.s2k.read(bytes.subarray(i, bytes.length));
 
         if (this.s2k.type === 'gnu-dummy') {
@@ -125,14 +157,37 @@ class SecretKeyPacket extends PublicKeyPacket {
         this.symmetric = this.s2kUsage;
       }
 
-      // - [Optional] If secret data is encrypted (string-to-key usage octet
-      //   not zero), an Initial Vector (IV) of the same length as the
-      //   cipher's block size.
+
       if (this.s2kUsage) {
-        this.iv = bytes.subarray(
-          i,
-          i + crypto.getCipher(this.symmetric).blockSize
-        );
+        // OpenPGP.js up to v5 used to support encrypting v4 keys using AEAD as specified by draft RFC4880bis (https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-5.5.3-3.5).
+        // This legacy format is incompatible, but fundamentally indistinguishable, from that of the crypto-refresh for v4 keys (v5 keys are always in legacy format).
+        // While parsing the key may succeed (if IV and AES block sizes match), key decryption will always
+        // fail if the key was parsed according to the wrong format, since the keys are processed differently.
+        // Thus, for v4 keys, we rely on the caller to instruct us to process the key as legacy, via config flag.
+        this.isLegacyAEAD = this.s2kUsage === 253 && (
+          this.version === 5 || (this.version === 4 && config.parseAEADEncryptedV4KeysAsLegacy));
+        // - crypto-refresh: If string-to-key usage octet was 255, 254 [..], an initialization vector (IV)
+        // of the same length as the cipher's block size.
+        // - RFC4880bis (v5 keys, regardless of AEAD): an Initial Vector (IV) of the same length as the
+        //   cipher's block size. If string-to-key usage octet was 253 the IV is used as the nonce for the AEAD algorithm.
+        // If the AEAD algorithm requires a shorter nonce, the high-order bits of the IV are used and the remaining bits MUST be zero
+        if (this.s2kUsage !== 253 || this.isLegacyAEAD) {
+          this.iv = bytes.subarray(
+            i,
+            i + crypto.getCipherParams(this.symmetric).blockSize
+          );
+          this.usedModernAEAD = false;
+        } else {
+          // crypto-refresh: If string-to-key usage octet was 253 (that is, the secret data is AEAD-encrypted),
+          // an initialization vector (IV) of size specified by the AEAD algorithm (see Section 5.13.2), which
+          // is used as the nonce for the AEAD algorithm.
+          this.iv = bytes.subarray(
+            i,
+            i + crypto.getAEADMode(this.aead).ivLength
+          );
+          // the non-legacy AEAD encryption mechanism also authenticates public key params; no need for manual validation.
+          this.usedModernAEAD = true;
+        }
 
         i += this.iv.length;
       }
@@ -156,12 +211,20 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = !!this.s2kUsage;
 
     if (!this.isEncrypted) {
-      const cleartext = this.keyMaterial.subarray(0, -2);
-      if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
-        throw new Error('Key checksum mismatch');
+      let cleartext;
+      if (this.version === 6) {
+        cleartext = this.keyMaterial;
+      } else {
+        cleartext = this.keyMaterial.subarray(0, -2);
+        if (!util.equalsUint8Array(util.writeChecksum(cleartext), this.keyMaterial.subarray(-2))) {
+          throw new Error('Key checksum mismatch');
+        }
       }
       try {
-        const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+        const { read, privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+        if (read < cleartext.length) {
+          throw new Error('Error reading MPIs');
+        }
         this.privateParams = privateParams;
       } catch (err) {
         if (err instanceof UnsupportedError) throw err;
@@ -199,10 +262,18 @@ class SecretKeyPacket extends PublicKeyPacket {
         optionalFieldsArr.push(this.aead);
       }
 
+      const s2k = this.s2k.write();
+
+      // - [Optional] Only for a version 6 packet, and if string-to-key usage
+      //   octet was 255, 254, or 253, an one-octet count of the following field.
+      if (this.version === 6) {
+        optionalFieldsArr.push(s2k.length);
+      }
+
       // - [Optional] If string-to-key usage octet was 255, 254, or 253, a
       //   string-to-key specifier.  The length of the string-to-key
       //   specifier is implied by its type, as described above.
-      optionalFieldsArr.push(...this.s2k.write());
+      optionalFieldsArr.push(...s2k);
     }
 
     // - [Optional] If secret data is encrypted (string-to-key usage octet
@@ -212,7 +283,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       optionalFieldsArr.push(...this.iv);
     }
 
-    if (this.version === 5) {
+    if (this.version === 5 || (this.version === 6 && this.s2kUsage)) {
       arr.push(new Uint8Array([optionalFieldsArr.length]));
     }
     arr.push(new Uint8Array(optionalFieldsArr));
@@ -227,7 +298,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       }
       arr.push(this.keyMaterial);
 
-      if (!this.s2kUsage) {
+      if (!this.s2kUsage && this.version !== 6) {
         arr.push(util.writeChecksum(this.keyMaterial));
       }
     }
@@ -279,12 +350,14 @@ class SecretKeyPacket extends PublicKeyPacket {
     delete this.unparseableKeyMaterial;
     this.isEncrypted = null;
     this.keyMaterial = null;
-    this.s2k = new S2K(config);
+    this.s2k = newS2KFromType(enums.s2k.gnu, config);
     this.s2k.algorithm = 0;
     this.s2k.c = 0;
     this.s2k.type = 'gnu-dummy';
     this.s2kUsage = 254;
     this.symmetric = enums.symmetric.aes256;
+    this.isLegacyAEAD = null;
+    this.usedModernAEAD = null;
   }
 
   /**
@@ -310,23 +383,35 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('A non-empty passphrase is required for key encryption.');
     }
 
-    this.s2k = new S2K(config);
-    this.s2k.salt = crypto.random.getRandomBytes(8);
+    this.s2k = newS2KFromConfig(config);
+    this.s2k.generateSalt();
     const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;
-    const key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
 
-    const { blockSize } = crypto.getCipher(this.symmetric);
-    this.iv = crypto.random.getRandomBytes(blockSize);
+    const { blockSize } = crypto.getCipherParams(this.symmetric);
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
-      this.aead = enums.aead.eax;
+      this.aead = config.preferredAEADAlgorithm;
       const mode = crypto.getAEADMode(this.aead);
+      this.isLegacyAEAD = this.version === 5; // v4 is always re-encrypted with standard format instead.
+      this.usedModernAEAD = !this.isLegacyAEAD; // legacy AEAD does not guarantee integrity of public key material
+
+      const serializedPacketTag = writeTag(this.constructor.tag);
+      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD);
+
       const modeInstance = await mode(this.symmetric, key);
-      this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), new Uint8Array());
+      this.iv = this.isLegacyAEAD ? crypto.random.getRandomBytes(blockSize) : crypto.random.getRandomBytes(mode.ivLength);
+      const associateData = this.isLegacyAEAD ?
+        new Uint8Array() :
+        util.concatUint8Array([serializedPacketTag, this.writePublicKey()]);
+
+      this.keyMaterial = await modeInstance.encrypt(cleartext, this.iv.subarray(0, mode.ivLength), associateData);
     } else {
       this.s2kUsage = 254;
+      this.usedModernAEAD = false;
+      const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric);
+      this.iv = crypto.random.getRandomBytes(blockSize);
       this.keyMaterial = await crypto.mode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
         cleartext,
         await crypto.hash.sha1(cleartext, config)
@@ -357,8 +442,10 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     let key;
+    const serializedPacketTag = writeTag(this.constructor.tag); // relevant for AEAD only
     if (this.s2kUsage === 254 || this.s2kUsage === 253) {
-      key = await produceEncryptionKey(this.s2k, passphrase, this.symmetric);
+      key = await produceEncryptionKey(
+        this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD);
     } else if (this.s2kUsage === 255) {
       throw new Error('Encrypted private key is authenticated using an insecure two-byte hash');
     } else {
@@ -370,7 +457,10 @@ class SecretKeyPacket extends PublicKeyPacket {
       const mode = crypto.getAEADMode(this.aead);
       const modeInstance = await mode(this.symmetric, key);
       try {
-        cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), new Uint8Array());
+        const associateData = this.isLegacyAEAD ?
+          new Uint8Array() :
+          util.concatUint8Array([serializedPacketTag, this.writePublicKey()]);
+        cleartext = await modeInstance.decrypt(this.keyMaterial, this.iv.subarray(0, mode.ivLength), associateData);
       } catch (err) {
         if (err.message === 'Authentication tag mismatch') {
           throw new Error('Incorrect key passphrase: ' + err.message);
@@ -397,6 +487,9 @@ class SecretKeyPacket extends PublicKeyPacket {
     this.isEncrypted = false;
     this.keyMaterial = null;
     this.s2kUsage = 0;
+    this.aead = null;
+    this.symmetric = null;
+    this.isLegacyAEAD = null;
   }
 
   /**
@@ -413,6 +506,11 @@ class SecretKeyPacket extends PublicKeyPacket {
       throw new Error('Key is not decrypted');
     }
 
+    if (this.usedModernAEAD) {
+      // key integrity confirmed by successful AEAD decryption
+      return;
+    }
+
     let validParams;
     try {
       // this can throw if some parameters are undefined
@@ -426,6 +524,14 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 
   async generate(bits, curve) {
+    // The deprecated OIDs for Ed25519Legacy and Curve25519Legacy are used in legacy version 4 keys and signatures.
+    // Implementations MUST NOT accept or generate v6 key material using the deprecated OIDs.
+    if (this.version === 6 && (
+      (this.algorithm === enums.publicKey.ecdh && curve === enums.curve.curve25519Legacy) ||
+      this.algorithm === enums.publicKey.eddsaLegacy
+    )) {
+      throw new Error(`Cannot generate v6 keys of type 'ecc' with curve ${curve}. Generate a key of type 'curve25519' instead`);
+    }
     const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve);
     this.privateParams = privateParams;
     this.publicParams = publicParams;
@@ -450,9 +556,34 @@ class SecretKeyPacket extends PublicKeyPacket {
   }
 }
 
-async function produceEncryptionKey(s2k, passphrase, algorithm) {
-  const { keySize } = crypto.getCipher(algorithm);
-  return s2k.produceKey(passphrase, keySize);
+/**
+ * Derive encryption key
+ * @param {Number} keyVersion - key derivation differs for v5 keys
+ * @param {module:type/s2k} s2k
+ * @param {String} passphrase
+ * @param {module:enums.symmetric} cipherAlgo
+ * @param {module:enums.aead} [aeadMode] - for AEAD-encrypted keys only (excluding v5)
+ * @param {Uint8Array} [serializedPacketTag] - for AEAD-encrypted keys only (excluding v5)
+ * @param {Boolean} [isLegacyAEAD] - for AEAD-encrypted keys from RFC4880bis (v4 and v5 only)
+ * @returns encryption key
+ */
+async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aeadMode, serializedPacketTag, isLegacyAEAD) {
+  if (s2k.type === 'argon2' && !aeadMode) {
+    throw new Error('Using Argon2 S2K without AEAD is not allowed');
+  }
+  if (s2k.type === 'simple' && keyVersion === 6) {
+    throw new Error('Using Simple S2K with version 6 keys is not allowed');
+  }
+  const { keySize } = crypto.getCipherParams(cipherAlgo);
+  const derivedKey = await s2k.produceKey(passphrase, keySize);
+  if (!aeadMode || keyVersion === 5 || isLegacyAEAD) {
+    return derivedKey;
+  }
+  const info = util.concatUint8Array([
+    serializedPacketTag,
+    new Uint8Array([keyVersion, cipherAlgo, aeadMode])
+  ]);
+  return computeHKDF(enums.hash.sha256, derivedKey, new Uint8Array(), info, keySize);
 }
 
 export default SecretKeyPacket;

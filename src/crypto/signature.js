@@ -1,7 +1,6 @@
 /**
  * @fileoverview Provides functions for asymmetric signing and signature verification
  * @module crypto/signature
- * @private
  */
 
 import publicKey from './public_key';
@@ -28,10 +27,10 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaSign: {
-      const s = util.readMPI(signature.subarray(read));
+      const s = util.readMPI(signature.subarray(read)); read += s.length + 2;
       // The signature needs to be the same length as the public key modulo n.
       // We pad s on signature verification, where we have access to n.
-      return { s };
+      return { read, signatureParams: { s } };
     }
     // Algorithm-Specific Fields for DSA or ECDSA signatures:
     // -  MPI of DSA or ECDSA value r.
@@ -39,28 +38,34 @@ export function parseSignatureParams(algo, signature) {
     case enums.publicKey.dsa:
     case enums.publicKey.ecdsa:
     {
+      // If the signature payload sizes are unexpected, we will throw on verification,
+      // where we also have access to the OID curve from the key.
       const r = util.readMPI(signature.subarray(read)); read += r.length + 2;
-      const s = util.readMPI(signature.subarray(read));
-      return { r, s };
+      const s = util.readMPI(signature.subarray(read)); read += s.length + 2;
+      return { read, signatureParams: { r, s } };
     }
     // Algorithm-Specific Fields for legacy EdDSA signatures:
     // -  MPI of an EC point r.
     // -  EdDSA value s, in MPI, in the little endian representation
     case enums.publicKey.eddsaLegacy: {
-      // When parsing little-endian MPI data, we always need to left-pad it, as done with big-endian values:
-      // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
-      let r = util.readMPI(signature.subarray(read)); read += r.length + 2;
-      r = util.leftPad(r, 32);
-      let s = util.readMPI(signature.subarray(read));
-      s = util.leftPad(s, 32);
-      return { r, s };
+      // Only Curve25519Legacy is supported (no Curve448Legacy), but the relevant checks are done on key parsing and signature
+      // verification: if the signature payload sizes are unexpected, we will throw on verification,
+      // where we also have access to the OID curve from the key.
+      const r = util.readMPI(signature.subarray(read)); read += r.length + 2;
+      const s = util.readMPI(signature.subarray(read)); read += s.length + 2;
+      return { read, signatureParams: { r, s } };
     }
     // Algorithm-Specific Fields for Ed25519 signatures:
     // - 64 octets of the native signature
-    case enums.publicKey.ed25519: {
-      const RS = signature.subarray(read, read + 64); read += RS.length;
-      return { RS };
+    // Algorithm-Specific Fields for Ed448 signatures:
+    // - 114 octets of the native signature
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
+      const rsSize = 2 * publicKey.elliptic.eddsa.getPayloadSize(algo);
+      const RS = util.readExactSubarray(signature, read, read + rsSize); read += RS.length;
+      return { read, signatureParams: { RS } };
     }
+
     default:
       throw new UnsupportedError('Unknown signature algorithm.');
   }
@@ -104,10 +109,15 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     }
     case enums.publicKey.eddsaLegacy: {
       const { oid, Q } = publicParams;
-      // signature already padded on parsing
-      return publicKey.elliptic.eddsaLegacy.verify(oid, hashAlgo, signature, data, Q, hashed);
+      const curveSize = new publicKey.elliptic.CurveWithOID(oid).payloadSize;
+      // When dealing little-endian MPI data, we always need to left-pad it, as done with big-endian values:
+      // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
+      const r = util.leftPad(signature.r, curveSize);
+      const s = util.leftPad(signature.s, curveSize);
+      return publicKey.elliptic.eddsaLegacy.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
     }
-    case enums.publicKey.ed25519: {
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
       const { A } = publicParams;
       return publicKey.elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
     }
@@ -148,9 +158,8 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { x } = privateKeyParams;
       return publicKey.dsa.sign(hashAlgo, hashed, g, p, q, x);
     }
-    case enums.publicKey.elgamal: {
+    case enums.publicKey.elgamal:
       throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
-    }
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicKeyParams;
       const { d } = privateKeyParams;
@@ -161,7 +170,8 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { seed } = privateKeyParams;
       return publicKey.elliptic.eddsaLegacy.sign(oid, hashAlgo, data, Q, seed, hashed);
     }
-    case enums.publicKey.ed25519: {
+    case enums.publicKey.ed25519:
+    case enums.publicKey.ed448: {
       const { A } = publicKeyParams;
       const { seed } = privateKeyParams;
       return publicKey.elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);

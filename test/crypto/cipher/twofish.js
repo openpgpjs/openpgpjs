@@ -1,9 +1,9 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const TF = require('../../../src/crypto/cipher/twofish');
-const util = require('../../../src/util');
+import TF from '../../../src/crypto/cipher/twofish.js';
+import util from '../../../src/util.js';
 
-module.exports = () => it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', function(done) {
+export default () => it('Twofish with test vectors from https://www.schneier.com/code/ecb_ival.txt', function(done) {
   function tfencrypt(block, key) {
     const tf = new TF(util.stringToUint8Array(key));
 

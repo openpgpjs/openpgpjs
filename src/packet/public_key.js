@@ -47,7 +47,7 @@ class PublicKeyPacket {
      * Packet version
      * @type {Integer}
      */
-    this.version = config.v5Keys ? 5 : 4;
+    this.version = config.v6Keys ? 6 : 4;
     /**
      * Key creation date.
      * @type {Date}
@@ -104,12 +104,15 @@ class PublicKeyPacket {
    * @returns {Object} This object with attributes set by the parser
    * @async
    */
-  async read(bytes) {
+  async read(bytes, config = defaultConfig) {
     let pos = 0;
-    // A one-octet version number (3, 4 or 5).
+    // A one-octet version number (4, 5 or 6).
     this.version = bytes[pos++];
+    if (this.version === 5 && !config.enableParsingV5Entities) {
+      throw new UnsupportedError('Support for parsing v5 entities is disabled; turn on `config.enableParsingV5Entities` if needed');
+    }
 
-    if (this.version === 4 || this.version === 5) {
+    if (this.version === 4 || this.version === 5 || this.version === 6) {
       // - A four-octet number denoting the time that the key was created.
       this.created = util.readDate(bytes.subarray(pos, pos + 4));
       pos += 4;
@@ -117,13 +120,24 @@ class PublicKeyPacket {
       // - A one-octet number denoting the public-key algorithm of this key.
       this.algorithm = bytes[pos++];
 
-      if (this.version === 5) {
+      if (this.version >= 5) {
         // - A four-octet scalar octet count for the following key material.
         pos += 4;
       }
 
       // - A series of values comprising the key material.
       const { read, publicParams } = crypto.parsePublicKeyParams(this.algorithm, bytes.subarray(pos));
+      // The deprecated OIDs for Ed25519Legacy and Curve25519Legacy are used in legacy version 4 keys and signatures.
+      // Implementations MUST NOT accept or generate v6 key material using the deprecated OIDs.
+      if (
+        this.version === 6 &&
+        publicParams.oid && (
+          publicParams.oid.getName() === enums.curve.curve25519Legacy ||
+          publicParams.oid.getName() === enums.curve.ed25519Legacy
+        )
+      ) {
+        throw new Error('Legacy curve25519 cannot be used with v6 keys');
+      }
       this.publicParams = publicParams;
       pos += read;
 
@@ -147,7 +161,7 @@ class PublicKeyPacket {
     arr.push(new Uint8Array([this.algorithm]));
 
     const params = crypto.serializeParams(this.algorithm, this.publicParams);
-    if (this.version === 5) {
+    if (this.version >= 5) {
       // A four-octet scalar octet count for the following key material
       arr.push(util.writeNumber(params.length, 4));
     }
@@ -163,10 +177,9 @@ class PublicKeyPacket {
   writeForHash(version) {
     const bytes = this.writePublicKey();
 
-    if (version === 5) {
-      return util.concatUint8Array([new Uint8Array([0x9A]), util.writeNumber(bytes.length, 4), bytes]);
-    }
-    return util.concatUint8Array([new Uint8Array([0x99]), util.writeNumber(bytes.length, 2), bytes]);
+    const versionOctet = 0x95 + version;
+    const lengthOctets = version >= 5 ? 4 : 2;
+    return util.concatUint8Array([new Uint8Array([versionOctet]), util.writeNumber(bytes.length, lengthOctets), bytes]);
   }
 
   /**
@@ -201,7 +214,7 @@ class PublicKeyPacket {
     await this.computeFingerprint();
     this.keyID = new KeyID();
 
-    if (this.version === 5) {
+    if (this.version >= 5) {
       this.keyID.read(this.fingerprint.subarray(0, 8));
     } else if (this.version === 4) {
       this.keyID.read(this.fingerprint.subarray(12, 20));
@@ -216,7 +229,7 @@ class PublicKeyPacket {
   async computeFingerprint() {
     const toHash = this.writeForHash(this.version);
 
-    if (this.version === 5) {
+    if (this.version >= 5) {
       this.fingerprint = await crypto.hash.sha256(toHash);
     } else if (this.version === 4) {
       this.fingerprint = await crypto.hash.sha1(toHash);

@@ -1,6 +1,8 @@
+import util from '../../src/util.js';
+
 const elliptic_data = {
   key_data: {
-    p256: {
+    nistP256: {
       priv: new Uint8Array([
         0x2B, 0x48, 0x2B, 0xE9, 0x88, 0x74, 0xE9, 0x49,
         0x1F, 0x89, 0xCC, 0xFF, 0x0A, 0x26, 0x05, 0xA2,
@@ -19,7 +21,7 @@ const elliptic_data = {
         0x67, 0xC2, 0x09, 0xF9, 0xEF, 0xE7, 0x9E, 0x56
       ])
     },
-    p384: {
+    nistP384: {
       priv: new Uint8Array([
         0xB5, 0x38, 0xDA, 0xF3, 0x77, 0x58, 0x3F, 0x94,
         0x5B, 0xC2, 0xCA, 0xC6, 0xA9, 0xFC, 0xAA, 0x3F,
@@ -44,7 +46,7 @@ const elliptic_data = {
         0xFA, 0x85, 0x8A, 0x4B, 0x58, 0x7C, 0x61, 0x39
       ])
     },
-    p521: {
+    nistP521: {
       priv: new Uint8Array([
         0x00, 0xBB, 0x35, 0x27, 0xBC, 0xD6, 0x7E, 0x35,
         0xD5, 0xC5, 0x99, 0xC9, 0xB4, 0x6C, 0xEE, 0xDE,
@@ -95,8 +97,20 @@ const elliptic_data = {
         0xB8, 0xFD, 0x0B, 0xDF, 0x76, 0xCE, 0xBC, 0x95,
         0x4B, 0x92, 0x26, 0xFC, 0xAA, 0x7A, 0x7C, 0x3F
       ])
+    },
+    brainpoolP256r1: {
+      priv: util.hexToUint8Array('8b426897130e1e5e70a4d6320c4002bb1642a5e57ade066e060464137dfd5e05'),
+      pub: util.hexToUint8Array('042a43d8cc20e5a3fbd75d3a5a9b17d867bba80f11334d0665f0c641d13460a52aa3373a4ccfaa7d76765a689bd9fe15a4fd107ef1ec9ac980234c31647170c81a')
+    },
+    brainpoolP384r1: {
+      priv: util.hexToUint8Array('7ccc97acdf4b775606c5c994a37a8b28086167046ac0d55664ede4097d8de79dec56e69dfff5776d53fcbd2147bbae9f'),
+      pub: util.hexToUint8Array('043809fa0c74ec9817cb73eba67db71e01663528fb9fbe6a123f8339346c37efc9ff7cd116074a80684448e44ee9204c795c88ad634ad272585c0b4e3093b11e6c99a6c0ca9c278f83ef57e2ed802502aee76f4529bcb873eef754bec894a5032f')
+    },
+    brainpoolP512r1: {
+      priv: util.hexToUint8Array('0a32459d1ecf8815397a66f6cdb18692c6f79a3c6059b4c344d0162416c7603a82a9a938568edafb132c7433ffeeab4cf201d9542209eb28070bea56ab6b8938'),
+      pub: util.hexToUint8Array('040f64473d9b3597752e3a87095c0b219dd85f56a79c3b2dc8fb2b0c95b60f4be45c41a8a7ea31d60e15fea6275eb7db93856bc2eb30cc8876513335d43812bd2c4e195e05679ac667a2f7fb05c5842779d18fa411500e43e2f291ea8348f061db15382d4db1cfcf106a29f46e1c00e7d63e635c51293f69c0dd4f6a61da589b2a')
     }
   }
 };
 
-module.exports = elliptic_data;
+export default elliptic_data;

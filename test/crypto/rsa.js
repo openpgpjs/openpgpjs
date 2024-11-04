@@ -1,20 +1,21 @@
-const sandbox = require('sinon/lib/sinon/sandbox');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import sinon from 'sinon';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const crypto = require('../../src/crypto');
-const random = require('../../src/crypto/random');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import crypto from '../../src/crypto';
+import * as random from '../../src/crypto/random.js';
+import util from '../../src/util.js';
 
 /* eslint-disable no-invalid-this */
-module.exports = () => describe('basic RSA cryptography', function () {
+export default () => describe('basic RSA cryptography', function () {
   let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;
 
   beforeEach(function () {
-    sinonSandbox = sandbox.create();
+    sinonSandbox = sinon.createSandbox();
     enableNative();
   });
 
@@ -118,6 +119,22 @@ module.exports = () => describe('basic RSA cryptography', function () {
     disableNative();
     const signatureBN = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
     expect(util.uint8ArrayToHex(signatureNative)).to.be.equal(util.uint8ArrayToHex(signatureBN));
+  });
+
+  it('compare native crypto and bnSign: throw on key size shorter than digest size', async function() {
+    if (!detectNative()) { this.skip(); }
+
+    const bits = 512;
+    const hashName = 'sha512'; // digest too long for a 512-bit key
+    const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
+    const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
+    const message = random.getRandomBytes(64);
+    const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
+    const hashed = await crypto.hash.digest(hashAlgo, message);
+    enableNative();
+    await expect(crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed)).to.be.rejectedWith(/Digest size cannot exceed key modulus size/);
+    disableNative();
+    await expect(crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed)).to.be.rejectedWith(/Digest size cannot exceed key modulus size/);
   });
 
   it('compare native crypto and bnVerify', async function() {

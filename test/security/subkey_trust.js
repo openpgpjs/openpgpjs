@@ -1,7 +1,8 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+import openpgp from '../initOpenpgp.js';
 
 const { readKey, PublicKey, readCleartextMessage, createCleartextMessage, enums, PacketList, SignaturePacket } = openpgp;
 
@@ -33,7 +34,7 @@ async function generateTestData() {
   };
 }
 
-module.exports = () => it('Does not trust subkeys without Primary Key Binding Signature', async function() {
+export default () => it('Does not trust subkeys without Primary Key Binding Signature', async function() {
   // attacker only has his own private key,
   // the victim's public key and a signed message
   const { victimPubKey, attackerPrivKey, signed } = await generateTestData();
@@ -49,7 +50,7 @@ module.exports = () => it('Does not trust subkeys without Primary Key Binding Si
   fakeBindingSignature.publicKeyAlgorithm = attackerPrivKey.keyPacket.algorithm;
   fakeBindingSignature.hashAlgorithm = enums.hash.sha256;
   fakeBindingSignature.keyFlags = [enums.keyFlags.signData];
-  await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign);
+  await fakeBindingSignature.sign(attackerPrivKey.keyPacket, dataToSign, undefined, undefined, openpgp.config);
   const newList = new PacketList();
   newList.push(
     pktPubAttacker[0], // attacker private key

@@ -20,12 +20,12 @@
 /**
  * This object contains utility functions
  * @module util
- * @private
  */
 
 import * as stream from '@openpgp/web-stream-tools';
-import { getBigInteger } from './biginteger';
+import { createRequire } from 'module'; // Must be stripped in browser built
 import enums from './enums';
+import defaultConfig from './config';
 
 const debugMode = (() => {
   try {
@@ -39,6 +39,8 @@ const util = {
     return typeof data === 'string' || data instanceof String;
   },
 
+  nodeRequire: createRequire(import.meta.url),
+
   isArray: function(data) {
     return data instanceof Array;
   },
@@ -46,6 +48,35 @@ const util = {
   isUint8Array: stream.isUint8Array,
 
   isStream: stream.isStream,
+
+  /**
+   * Load noble-curves lib on demand and return the requested curve function
+   * @param {enums.publicKey} publicKeyAlgo
+   * @param {enums.curve} [curveName] - for algos supporting different curves (e.g. ECDSA)
+   * @returns curve implementation
+   * @throws on unrecognized curve, or curve not implemented by noble-curve
+   */
+  getNobleCurve: async (publicKeyAlgo, curveName) => {
+    if (!defaultConfig.useEllipticFallback) {
+      throw new Error('This curve is only supported in the full build of OpenPGP.js');
+    }
+
+    const { nobleCurves } = await import('./crypto/public_key/elliptic/noble_curves');
+    switch (publicKeyAlgo) {
+      case enums.publicKey.ecdh:
+      case enums.publicKey.ecdsa: {
+        const curve = nobleCurves.get(curveName);
+        if (!curve) throw new Error('Unsupported curve');
+        return curve;
+      }
+      case enums.publicKey.x448:
+        return nobleCurves.get('x448');
+      case enums.publicKey.ed448:
+        return nobleCurves.get('ed448');
+      default:
+        throw new Error('Unsupported curve');
+    }
+  },
 
   readNumber: function (bytes) {
     let n = 0;
@@ -88,7 +119,26 @@ const util = {
   readMPI: function (bytes) {
     const bits = (bytes[0] << 8) | bytes[1];
     const bytelen = (bits + 7) >>> 3;
-    return bytes.subarray(2, 2 + bytelen);
+    // There is a decryption oracle risk here by enforcing the MPI length using `readExactSubarray` in the context of SEIPDv1 encrypted signatures,
+    // where unauthenticated streamed decryption is done (via `config.allowUnauthenticatedStream`), since the decrypted signature data being processed
+    // has not been authenticated (yet).
+    // However, such config setting is known to be insecure, and there are other packet parsing errors that can cause similar issues.
+    // Also, AEAD is also not affected.
+    return util.readExactSubarray(bytes, 2, 2 + bytelen);
+  },
+
+  /**
+   * Read exactly `end - start` bytes from input.
+   * This is a stricter version of `.subarray`.
+   * @param {Uint8Array} input - Input data to parse
+   * @returns {Uint8Array} subarray of size always equal to `end - start`
+   * @throws if the input array is too short.
+   */
+  readExactSubarray: function (input, start, end) {
+    if (input.length < (end - start)) {
+      throw new Error('Input array too short');
+    }
+    return input.subarray(start, end);
   },
 
   /**
@@ -98,6 +148,9 @@ const util = {
    * @returns {Uint8Array} Padded bytes.
    */
   leftPad(bytes, length) {
+    if (bytes.length > length) {
+      throw new Error('Input array too long');
+    }
     const padded = new Uint8Array(length);
     const offset = length - bytes.length;
     padded.set(bytes, offset);
@@ -153,18 +206,10 @@ const util = {
    * @returns {String} Hexadecimal representation of the array.
    */
   uint8ArrayToHex: function (bytes) {
-    const r = [];
-    const e = bytes.length;
-    let c = 0;
-    let h;
-    while (c < e) {
-      h = bytes[c++].toString(16);
-      while (h.length < 2) {
-        h = '0' + h;
-      }
-      r.push('' + h);
-    }
-    return r.join('');
+    const hexAlphabet = '0123456789abcdef';
+    let s = '';
+    bytes.forEach(v => { s += hexAlphabet[v >> 4] + hexAlphabet[v & 15]; });
+    return s;
   },
 
   /**
@@ -375,32 +420,30 @@ const util = {
   },
 
   /**
-   * Get native Web Cryptography api, only the current version of the spec.
-   * @returns {Object} The SubtleCrypto api or 'undefined'.
+   * Get native Web Cryptography API.
+   * @returns {Object} The SubtleCrypto API
+   * @throws if the API is not available
    */
   getWebCrypto: function() {
-    return typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
+    const globalWebCrypto = typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.subtle;
+    // Fallback for Node 16, which does not expose WebCrypto as a global
+    const webCrypto = globalWebCrypto || this.getNodeCrypto()?.webcrypto.subtle;
+    if (!webCrypto) {
+      throw new Error('The WebCrypto API is not available');
+    }
+    return webCrypto;
   },
-
-  /**
-   * Get BigInteger class
-   * It wraps the native BigInt type if it's available
-   * Otherwise it relies on bn.js
-   * @returns {BigInteger}
-   * @async
-   */
-  getBigInteger,
 
   /**
    * Get native Node.js crypto api.
    * @returns {Object} The crypto module or 'undefined'.
    */
   getNodeCrypto: function() {
-    return require('crypto');
+    return this.nodeRequire('crypto');
   },
 
   getNodeZlib: function() {
-    return require('zlib');
+    return this.nodeRequire('zlib');
   },
 
   /**
@@ -409,7 +452,7 @@ const util = {
    * @returns {Function} The Buffer constructor or 'undefined'.
    */
   getNodeBuffer: function() {
-    return (require('buffer') || {}).Buffer;
+    return (this.nodeRequire('buffer') || {}).Buffer;
   },
 
   getHardwareConcurrency: function() {
@@ -417,15 +460,24 @@ const util = {
       return navigator.hardwareConcurrency || 1;
     }
 
-    const os = require('os'); // Assume we're on Node.js.
+    const os = this.nodeRequire('os'); // Assume we're on Node.js.
     return os.cpus().length;
   },
 
+  /**
+   * Test email format to ensure basic compliance:
+   * - must include a single @
+   * - no control or space unicode chars allowed
+   * - no backslash and square brackets (as the latter can mess with the userID parsing)
+   * - cannot end with a punctuation char
+   * These checks are not meant to be exhaustive; applications are strongly encouraged to implement stricter validation,
+   * e.g. based on the W3C HTML spec (https://html.spec.whatwg.org/multipage/input.html#email-state-(type=email)).
+   */
   isEmailAddress: function(data) {
     if (!util.isString(data)) {
       return false;
     }
-    const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+([a-zA-Z]{2,}[0-9]*|xn--[a-zA-Z\-0-9]+)))$/;
+    const re = /^[^\p{C}\p{Z}@<>\\]+@[^\p{C}\p{Z}@<>\\]+[^\p{C}\p{Z}\p{P}]$/u;
     return re.test(data);
   },
 

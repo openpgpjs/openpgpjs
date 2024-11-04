@@ -259,6 +259,11 @@ class Key {
   async getSigningKey(keyID = null, date = new Date(), userID = {}, config = defaultConfig) {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
+    try {
+      helper.checkKeyRequirements(primaryKey, config);
+    } catch (err) {
+      throw util.wrapError('Could not verify primary key', err);
+    }
     const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
     for (const subkey of subkeys) {
@@ -269,7 +274,7 @@ class Key {
           const bindingSignature = await helper.getLatestValidSignature(
             subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config
           );
-          if (!helper.isValidSigningKeyPacket(subkey.keyPacket, bindingSignature)) {
+          if (!helper.validateSigningKeyPacket(subkey.keyPacket, bindingSignature, config)) {
             continue;
           }
           if (!bindingSignature.embeddedSignature) {
@@ -288,9 +293,9 @@ class Key {
     }
 
     try {
-      const primaryUser = await this.getPrimaryUser(date, userID, config);
+      const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
-          helper.isValidSigningKeyPacket(primaryKey, primaryUser.selfCertification, config)) {
+          helper.validateSigningKeyPacket(primaryKey, selfCertification, config)) {
         helper.checkKeyRequirements(primaryKey, config);
         return this;
       }
@@ -313,6 +318,11 @@ class Key {
   async getEncryptionKey(keyID, date = new Date(), userID = {}, config = defaultConfig) {
     await this.verifyPrimaryKey(date, userID, config);
     const primaryKey = this.keyPacket;
+    try {
+      helper.checkKeyRequirements(primaryKey, config);
+    } catch (err) {
+      throw util.wrapError('Could not verify primary key', err);
+    }
     // V4: by convention subkeys are preferred for encryption service
     const subkeys = this.subkeys.slice().sort((a, b) => b.keyPacket.created - a.keyPacket.created);
     let exception;
@@ -322,7 +332,7 @@ class Key {
           await subkey.verify(date, config);
           const dataToVerify = { key: primaryKey, bind: subkey.keyPacket };
           const bindingSignature = await helper.getLatestValidSignature(subkey.bindingSignatures, primaryKey, enums.signature.subkeyBinding, dataToVerify, date, config);
-          if (helper.isValidEncryptionKeyPacket(subkey.keyPacket, bindingSignature)) {
+          if (helper.validateEncryptionKeyPacket(subkey.keyPacket, bindingSignature, config)) {
             helper.checkKeyRequirements(subkey.keyPacket, config);
             return subkey;
           }
@@ -334,9 +344,9 @@ class Key {
 
     try {
       // if no valid subkey for encryption, evaluate primary key
-      const primaryUser = await this.getPrimaryUser(date, userID, config);
+      const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
       if ((!keyID || primaryKey.getKeyID().equals(keyID)) &&
-          helper.isValidEncryptionKeyPacket(primaryKey, primaryUser.selfCertification)) {
+          helper.validateEncryptionKeyPacket(primaryKey, selfCertification, config)) {
         helper.checkKeyRequirements(primaryKey, config);
         return this;
       }
@@ -380,18 +390,20 @@ class Key {
       throw new Error('Primary key is revoked');
     }
     // check for valid, unrevoked, unexpired self signature
-    const { selfCertification } = await this.getPrimaryUser(date, userID, config);
+    const selfCertification = await this.getPrimarySelfSignature(date, userID, config);
     // check for expiration time in binding signatures
     if (helper.isDataExpired(primaryKey, selfCertification, date)) {
       throw new Error('Primary key is expired');
     }
-    // check for expiration time in direct signatures
-    const directSignature = await helper.getLatestValidSignature(
-      this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
-    ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
+    if (primaryKey.version !== 6) {
+      // check for expiration time in direct signatures (for V6 keys, the above already did so)
+      const directSignature = await helper.getLatestValidSignature(
+        this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
+      ).catch(() => {}); // invalid signatures are discarded, to avoid breaking the key
 
-    if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
-      throw new Error('Primary key is expired');
+      if (directSignature && helper.isDataExpired(primaryKey, directSignature, date)) {
+        throw new Error('Primary key is expired');
+      }
     }
   }
 
@@ -406,12 +418,13 @@ class Key {
   async getExpirationTime(userID, config = defaultConfig) {
     let primaryKeyExpiry;
     try {
-      const { selfCertification } = await this.getPrimaryUser(null, userID, config);
+      const selfCertification = await this.getPrimarySelfSignature(null, userID, config);
       const selfSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, selfCertification);
       const selfSigExpiry = selfCertification.getExpirationTime();
-      const directSignature = await helper.getLatestValidSignature(
-        this.directSignatures, this.keyPacket, enums.signature.key, { key: this.keyPacket }, null, config
-      ).catch(() => {});
+      const directSignature = this.keyPacket.version !== 6 && // For V6 keys, the above already returns the direct-key signature.
+        await helper.getLatestValidSignature(
+          this.directSignatures, this.keyPacket, enums.signature.key, { key: this.keyPacket }, null, config
+        ).catch(() => {});
       if (directSignature) {
         const directSigKeyExpiry = helper.getKeyExpirationTime(this.keyPacket, directSignature);
         // We do not support the edge case where the direct signature expires, since it would invalidate the corresponding key expiration,
@@ -427,6 +440,28 @@ class Key {
     return util.normalizeDate(primaryKeyExpiry);
   }
 
+
+  /**
+   * For V4 keys, returns the self-signature of the primary user.
+   * For V5 keys, returns the latest valid direct-key self-signature.
+   * This self-signature is to be used to check the key expiration,
+   * algorithm preferences, and so on.
+   * @param {Date} [date] - Use the given date for verification instead of the current time
+   * @param {Object} [userID] - User ID to get instead of the primary user for V4 keys, if it exists
+   * @param {Object} [config] - Full configuration, defaults to openpgp.config
+   * @returns {Promise<SignaturePacket>} The primary self-signature
+   * @async
+   */
+  async getPrimarySelfSignature(date = new Date(), userID = {}, config = defaultConfig) {
+    const primaryKey = this.keyPacket;
+    if (primaryKey.version === 6) {
+      return helper.getLatestValidSignature(
+        this.directSignatures, primaryKey, enums.signature.key, { key: primaryKey }, date, config
+      );
+    }
+    const { selfCertification } = await this.getPrimaryUser(date, userID, config);
+    return selfCertification;
+  }
 
   /**
    * Returns primary user and most significant (latest valid) self signature
@@ -466,6 +501,7 @@ class Key {
       }
     }
     if (!users.length) {
+      // eslint-disable-next-line @typescript-eslint/no-throw-literal
       throw exception || new Error('Could not find primary user');
     }
     await Promise.all(users.map(async function (a) {
@@ -577,7 +613,9 @@ class Key {
     const revocationSignature = await helper.getLatestValidSignature(this.revocationSignatures, this.keyPacket, enums.signature.keyRevocation, dataToVerify, date, config);
     const packetlist = new PacketList();
     packetlist.push(revocationSignature);
-    return armor(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate');
+    // An ASCII-armored Transferable Public Key packet sequence of a v6 key MUST NOT contain a CRC24 footer.
+    const emitChecksum = this.keyPacket.version !== 6;
+    return armor(enums.armor.publicKey, packetlist.write(), null, null, 'This is a revocation certificate', emitChecksum, config);
   }
 
   /**

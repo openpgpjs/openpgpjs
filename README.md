@@ -1,7 +1,7 @@
-OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?badge_key=N1l2eHFOanVBMU9wYWxJM3ZnWERnc1lidkt5UkRqa3BralV3SWVhOGpGTT0tLVljSjE4Z3dzVmdiQjl6RWgxb2c3T2c9PQ==--5864052cd523f751b6b907d547ac9c4c5f88c8a3)](https://automate.browserstack.com/public-build/N1l2eHFOanVBMU9wYWxJM3ZnWERnc1lidkt5UkRqa3BralV3SWVhOGpGTT0tLVljSjE4Z3dzVmdiQjl6RWgxb2c3T2c9PQ==--5864052cd523f751b6b907d547ac9c4c5f88c8a3) [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openpgpjs/openpgpjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+OpenPGP.js [![Join the chat on Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/openpgpjs/openpgpjs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 ==========
 
-[OpenPGP.js](https://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. It implements [RFC4880](https://tools.ietf.org/html/rfc4880) and parts of [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10).
+[OpenPGP.js](https://openpgpjs.org/) is a JavaScript implementation of the OpenPGP protocol. It implements [RFC9580](https://datatracker.ietf.org/doc/rfc9580/) (superseding [RFC4880](https://tools.ietf.org/html/rfc4880) and [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10)).
 
 **Table of Contents**
 
@@ -33,60 +33,58 @@ OpenPGP.js [![BrowserStack Status](https://automate.browserstack.com/badge.svg?b
 
 ### Platform Support
 
-* The `dist/openpgp.min.js` bundle works well with recent versions of Chrome, Firefox, Safari and Edge.
+* The `dist/openpgp.min.js` (or `.mjs`) bundle works with recent versions of Chrome, Firefox, Edge and Safari 14+.
 
-* The `dist/node/openpgp.min.js` bundle works well in Node.js. It is used by default when you `require('openpgp')` in Node.js.
+* The `dist/node/openpgp.min.mjs` (or `.cjs`) bundle works in Node.js v18+: it is used by default when you `import ... from 'openpgp'` (resp. `require('openpgp')`).
 
-* Currently, Chrome, Safari and Edge have partial implementations of the
-[Streams specification](https://streams.spec.whatwg.org/), and Firefox
-has a partial implementation behind feature flags. Chrome is the only
-browser that implements `TransformStream`s, which we need, so we include
-a [polyfill](https://github.com/MattiasBuelens/web-streams-polyfill) for
-all other browsers. Please note that in those browsers, the global
-`ReadableStream` property gets overwritten with the polyfill version if
-it exists. In some edge cases, you might need to use the native
+* Streaming support:
+  * in browsers: the latest versions of Chrome, Firefox, Edge and Safari implement the
+[Streams specification](https://streams.spec.whatwg.org/), including `TransformStream`s.
+These are needed if you use the library with streamed inputs.
+In previous versions of OpenPGP.js, WebStreams were automatically polyfilled by the library,
+but from v6 this task is left up to the library user, due to the more extensive browser support, and the
+polyfilling side-effects. If you're working with [older browsers versions which do not implement e.g. TransformStreams](https://developer.mozilla.org/en-US/docs/Web/API/TransformStream), you can manually
+load [WebStream polyfill](https://github.com/MattiasBuelens/web-streams-polyfills).
+Please note that when you load the polyfills, the global `ReadableStream` property (if it exists) gets overwritten with the polyfill version.
+In some edge cases, you might need to use the native
 `ReadableStream` (for example when using it to create a `Response`
 object), in which case you should store a reference to it before loading
-OpenPGP.js. There is also the
-[web-streams-adapter](https://github.com/MattiasBuelens/web-streams-adapter)
+the polyfills. There is also the [web-streams-adapter](https://github.com/MattiasBuelens/web-streams-adapter)
 library to convert back and forth between them.
+  * in Node.js: OpenPGP.js v6 no longer supports native Node `Readable` streams in input, and instead expects (and outputs) [Node's WebStreams](https://nodejs.org/api/webstreams.html#class-readablestream). [Node v17+ includes utilities to convert from and to Web Streams](https://nodejs.org/api/stream.html#streamreadabletowebstreamreadable-options).
+
 
 ### Performance
 
-* Version 3.0.0 of the library introduces support for public-key cryptography using [elliptic curves](https://wiki.gnupg.org/ECC). We use native implementations on browsers and Node.js when available. Elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported:
+* Version 3.0.0 of the library introduced support for public-key cryptography using [elliptic curves](https://wiki.gnupg.org/ECC). We use native implementations on browsers and Node.js when available. Compared to RSA, elliptic curve cryptography provides stronger security per bits of key, which allows for much faster operations. Currently the following curves are supported:
 
     | Curve           | Encryption | Signature | NodeCrypto | WebCrypto | Constant-Time     |
     |:---------------:|:----------:|:---------:|:----------:|:---------:|:-----------------:|
-    | curve25519      | ECDH       | N/A       | No         | No        | Algorithmically** |
-    | ed25519         | N/A        | EdDSA     | No         | No        | Algorithmically** |
-    | p256            | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | p384            | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | p521            | ECDH       | ECDSA     | Yes*       | Yes*      | If native***      |
-    | brainpoolP256r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
-    | brainpoolP384r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
-    | brainpoolP512r1 | ECDH       | ECDSA     | Yes*       | No        | If native***      |
-    | secp256k1       | ECDH       | ECDSA     | Yes*       | No        | If native***      |
+    | curve25519      | ECDH       | N/A       | No         | No        | Algorithmically  |
+    | ed25519         | N/A        | EdDSA     | No         | Yes*      | If native**      |
+    | nistP256        | ECDH       | ECDSA     | Yes*       | Yes*      | If native**      |
+    | nistP384        | ECDH       | ECDSA     | Yes*       | Yes*      | If native**      |
+    | nistP521        | ECDH       | ECDSA     | Yes*       | Yes*      | If native**      |
+    | brainpoolP256r1 | ECDH       | ECDSA     | Yes*       | No        | If native**      |
+    | brainpoolP384r1 | ECDH       | ECDSA     | Yes*       | No        | If native**      |
+    | brainpoolP512r1 | ECDH       | ECDSA     | Yes*       | No        | If native**      |
+    | secp256k1       | ECDH       | ECDSA     | Yes*       | No        | If native**      |
 
-   \* when available  
-   \** the curve25519 and ed25519 implementations are algorithmically constant-time, but may not be constant-time after optimizations of the JavaScript compiler  
-   \*** these curves are only constant-time if the underlying native implementation is available and constant-time
-
-* Version 2.x of the library has been built from the ground up with Uint8Arrays. This allows for much better performance and memory usage than strings.
+   \* when available
+   \** these curves are only constant-time if the underlying native implementation is available and constant-time
 
 * If the user's browser supports [native WebCrypto](https://caniuse.com/#feat=cryptography) via the `window.crypto.subtle` API, this will be used. Under Node.js the native [crypto module](https://nodejs.org/api/crypto.html#crypto_crypto) is used.
 
-* The library implements the [RFC4880bis proposal](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10) for authenticated encryption using native AES-EAX, OCB, or GCM. This makes symmetric encryption up to 30x faster on supported platforms. Since the specification has not been finalized and other OpenPGP implementations haven't adopted it yet, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations, and also with future versions of OpenPGP.js. Don't use it with messages you want to store on disk or in a database.** You can enable it by setting `openpgp.config.aeadProtect = true`.
+* The library implements authenticated encryption (AEAD) as per [RFC9580](https://datatracker.ietf.org/doc/rfc9580/) using AES-GCM, OCB, or EAX. This makes symmetric encryption faster on platforms with native implementations. However, since the specification is very recent and other OpenPGP implementations are in the process of adopting it, the feature is currently behind a flag. **Note: activating this setting can break compatibility with other OpenPGP implementations which have yet to implement the feature.** You can enable it by setting `openpgp.config.aeadProtect = true`.
+Note that this setting has a different effect from the one in OpenPGP.js v5, which implemented support for a provisional version of AEAD from [RFC4880bis](https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-10), which was modified in RFC9580.
 
   You can change the AEAD mode by setting one of the following options:
 
   ```
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax // Default, native
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb // Non-native
-  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM // **Non-standard**, fastest
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.gcm; // Default, native in WebCrypto and Node.js
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.ocb; // Non-native, but supported across RFC9580 implementations
+  openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax; // Native in Node.js
   ```
-
-* For environments that don't provide native crypto, the library falls back to [asm.js](https://caniuse.com/#feat=asmjs) implementations of AES, SHA-1, and SHA-256.
-
 
 ### Getting started
 
@@ -98,16 +96,15 @@ Install OpenPGP.js using npm and save it in your dependencies:
 npm install --save openpgp
 ```
 
-And import it as a CommonJS module:
+And import it as an ES module, from a .mjs file:
+```js
+import * as openpgp from 'openpgp';
+```
+
+Or as a CommonJS module:
 
 ```js
 const openpgp = require('openpgp');
-```
-
-Or as an ES6 module, from an .mjs file:
-
-```js
-import * as openpgp from 'openpgp';
 ```
 
 #### Deno (experimental)
@@ -174,17 +171,17 @@ To offload cryptographic operations off the main thread, you can implement a Web
 
 #### TypeScript
 
-Since TS is not fully integrated in the library, TS-only dependencies are currently listed as `devDependencies`, so to compile the project you’ll need to add `@openpgp/web-stream-tools` manually (NB: only versions below v0.12 are compatible with OpenPGP.js v5):
+Since TS is not fully integrated in the library, TS-only dependencies are currently listed as `devDependencies`, so to compile the project you’ll need to add `@openpgp/web-stream-tools` manually:
 
 ```sh
-npm install --save-dev @openpgp/web-stream-tools@0.0.11-patch-0
+npm install --save-dev @openpgp/web-stream-tools
 ```
 
 If you notice missing or incorrect type definitions, feel free to open a PR.
 
 ### Examples
 
-Here are some examples of how to use OpenPGP.js v5. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js). If you're upgrading from v4 it might help to check out the [changelog](https://github.com/openpgpjs/openpgpjs/wiki/V5-Changelog) and [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
+Here are some examples of how to use OpenPGP.js v6. For more elaborate examples and working code, please check out the [public API unit tests](https://github.com/openpgpjs/openpgpjs/blob/main/test/general/openpgp.js). If you're upgrading from v4 it might help to check out the [changelog](https://github.com/openpgpjs/openpgpjs/wiki/v6-Changelog) and [documentation](https://github.com/openpgpjs/openpgpjs#documentation).
 
 #### Encrypt and decrypt *Uint8Array* data with a password
 
@@ -389,14 +386,8 @@ Where the value can be any of:
 })();
 ```
 
-For more information on using ReadableStreams, see [the MDN Documentation on the
-Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API).
-
-You can also pass a [Node.js `Readable`
-stream](https://nodejs.org/api/stream.html#stream_class_stream_readable), in
-which case OpenPGP.js will return a Node.js `Readable` stream as well, which you
-can `.pipe()` to a `Writable` stream, for example.
-
+For more information on using ReadableStreams (both in browsers and Node.js), see [the MDN Documentation on the
+Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Streams_API) .
 
 #### Streaming encrypt and decrypt *String* data with PGP keys
 
@@ -453,7 +444,7 @@ can `.pipe()` to a `Writable` stream, for example.
 
 ECC keys (smaller and faster to generate):
 
-Possible values for `curve` are: `curve25519`, `ed25519`, `p256`, `p384`, `p521`,
+Possible values for `curve` are: `curve25519`, `ed25519`, `nistP256`, `nistP384`, `nistP521`,
 `brainpoolP256r1`, `brainpoolP384r1`, `brainpoolP512r1`, and `secp256k1`.
 Note that both the `curve25519` and `ed25519` options generate a primary key for signing using Ed25519
 and a subkey for encryption using Curve25519.
@@ -670,7 +661,7 @@ To create your own build of the library, just run the following command after cl
 
     npm install && npm test
 
-For debugging browser errors, you can run `npm start` and open [`http://localhost:8080/test/unittests.html`](http://localhost:8080/test/unittests.html) in a browser, or run the following command:
+For debugging browser errors, run the following command:
 
     npm run browsertest
 

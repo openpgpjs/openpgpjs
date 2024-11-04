@@ -1,7 +1,8 @@
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
+import openpgp from '../initOpenpgp.js';
 
 const armoredMessage = `-----BEGIN PGP MESSAGE-----
 Version: OpenPGP.js VERSION
@@ -38,7 +39,7 @@ EnxUPL95HuMKoVkf4w==
 =oopr
 -----END PGP PRIVATE KEY BLOCK-----`;
 
-module.exports = () => it('Does not accept message encrypted with algo not mentioned in preferred algorithms', async function() {
+export default () => it('Does not accept message encrypted with algo not mentioned in preferred algorithms', async function() {
   const message = await openpgp.readMessage({ armoredMessage });
   const privKey = await openpgp.readKey({ armoredKey: privateKeyArmor });
   await expect(openpgp.decrypt({ message, decryptionKeys: [privKey] })).to.be.rejectedWith('A non-preferred symmetric algorithm was used.');

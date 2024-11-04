@@ -1,9 +1,9 @@
-const { expect } = require('chai');
+import { expect } from 'chai';
 
-const BF = require('../../../src/crypto/cipher/blowfish');
-const util = require('../../../src/util');
+import BF from '../../../src/crypto/cipher/blowfish';
+import util from '../../../src/util.js';
 
-module.exports = () => it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
+export default () => it('Blowfish cipher test with test vectors from https://www.schneier.com/code/vectors.txt', function(done) {
   function test_bf(input, key, output) {
     const blowfish = new BF(util.uint8ArrayToString(key));
     const result = blowfish.encrypt(input);

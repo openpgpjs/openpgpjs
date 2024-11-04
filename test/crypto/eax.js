@@ -1,13 +1,14 @@
 // Modified by ProtonTech AG
 
 // Adapted from https://github.com/artjomb/cryptojs-extension/blob/8c61d159/test/eax.js
-const sandbox = require('sinon/lib/sinon/sandbox');
-const { use: chaiUse, expect } = require('chai');
-chaiUse(require('chai-as-promised'));
+import sinon from 'sinon';
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
 
-const openpgp = typeof window !== 'undefined' && window.openpgp ? window.openpgp : require('../..');
-const EAX = require('../../src/crypto/mode/eax');
-const util = require('../../src/util');
+import openpgp from '../initOpenpgp.js';
+import EAX from '../../src/crypto/mode/eax.js';
+import util from '../../src/util.js';
 
 function testAESEAX() {
   it('Passes all test vectors', async function() {
@@ -124,7 +125,7 @@ function testAESEAX() {
 }
 
 /* eslint-disable no-invalid-this */
-module.exports = () => describe('Symmetric AES-EAX', function() {
+export default () => describe('Symmetric AES-EAX', function() {
   let sinonSandbox;
   let getWebCryptoStub;
   let getNodeCryptoStub;
@@ -147,7 +148,7 @@ module.exports = () => describe('Symmetric AES-EAX', function() {
     });
 
     beforeEach(function () {
-      sinonSandbox = sandbox.create();
+      sinonSandbox = sinon.createSandbox();
       enableNative();
     });
 
@@ -158,9 +159,9 @@ module.exports = () => describe('Symmetric AES-EAX', function() {
     testAESEAX();
   });
 
-  describe('Symmetric AES-EAX (asm.js fallback)', function() {
+  describe('Symmetric AES-EAX (non-native fallback)', function() {
     beforeEach(function () {
-      sinonSandbox = sandbox.create();
+      sinonSandbox = sinon.createSandbox();
       disableNative();
     });
 
