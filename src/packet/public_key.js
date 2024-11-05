@@ -283,8 +283,11 @@ class PublicKeyPacket {
       result.bits = util.uint8ArrayBitLength(modulo);
     } else if (this.publicParams.oid) {
       result.curve = this.publicParams.oid.getName();
-    } else if (this.publicParams.cipher) {
-      result.symmetric = this.publicParams.cipher.getName();
+    } else if (this.publicParams.symAlgo) {
+      result.symmetric = this.publicParams.symAlgo.getName();
+      result.aeadMode = this.publicParams.aeadMode.getName();
+    } else if (this.publicParams.hashAlgo) {
+      result.symmetric = this.publicParams.hashAlgo.getName();
     }
     return result;
   }

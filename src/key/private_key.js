@@ -50,7 +50,7 @@ class PrivateKey extends PublicKey {
       switch (keyPacket.constructor.tag) {
         case enums.packet.secretKey: {
           if (keyPacket.algorithm === enums.publicKey.aead || keyPacket.algorithm === enums.publicKey.hmac) {
-            throw new Error('Cannot create public key from symmetric private');
+            throw new Error('Cannot create public key from symmetric private key');
           }
           const pubKeyPacket = PublicKeyPacket.fromSecretKeyPacket(keyPacket);
           packetlist.push(pubKeyPacket);
@@ -238,7 +238,7 @@ class PrivateKey extends PublicKey {
    * @param {String}  options.curve      (optional) Elliptic curve for ECC keys
    * @param {Integer} options.rsaBits    (optional) Number of bits for RSA subkeys
    * @param {String}  options.symmetricCipher   (optional) Symmetric algorithm for persistent symmetric aead keys
-   * @param {String}  options.symmetricHash     (optional)Hash lgorithm for persistent symmetric hmac keys
+   * @param {String}  options.symmetricHash     (optional) Hash algorithm for persistent symmetric hmac keys
    * @param {Number}  options.keyExpirationTime (optional) Number of seconds from the key creation time after which the key expires
    * @param {Date}    options.date       (optional) Override the creation date of the key and the key signatures
    * @param {Boolean} options.sign       (optional) Indicates whether the subkey should sign rather than encrypt. Defaults to false

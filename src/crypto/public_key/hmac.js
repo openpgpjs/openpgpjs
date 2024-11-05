@@ -1,5 +1,6 @@
 import enums from '../../enums';
 import util from '../../util';
+import hash from '../hash';
 
 const supportedHashAlgos = new Set([enums.hash.sha1, enums.hash.sha256, enums.hash.sha512]);
 
@@ -11,12 +12,14 @@ export async function generate(hashAlgo) {
     throw new Error('Unsupported hash algorithm.');
   }
   const hashName = enums.read(enums.webHash, hashAlgo);
+  const keySize = hash.getHashByteLength(hashAlgo);
 
   const crypto = webCrypto || nodeCrypto.webcrypto.subtle;
   const key = await crypto.generateKey(
     {
       name: 'HMAC',
-      hash: { name: hashName }
+      hash: { name: hashName },
+      length: keySize * 8
     },
     true,
     ['sign', 'verify']

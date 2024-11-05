@@ -45,7 +45,7 @@ import { checkKeyRequirements } from './key/helper';
  *                                             curve25519Legacy (default), nistP256, nistP384, nistP521, secp256k1,
  *                                             brainpoolP256r1, brainpoolP384r1, or brainpoolP512r1
 * @param {String}  options.symmetricCipher   (optional) Symmetric algorithm for persistent symmetric aead keys
-* @param {String}  options.symmetricHash     (optional)Hash lgorithm for persistent symmetric hmac keys
+* @param {String}  options.symmetricHash     (optional) Hash algorithm for persistent symmetric hmac keys
  * @param {Date} [options.date=current date] - Override the creation date of the key and the key signatures
  * @param {Number} [options.keyExpirationTime=0 (never expires)] - Number of seconds from the key creation time after which the key expires
  * @param {Array<Object>} [options.subkeys=a single encryption subkey] - Options for each subkey e.g. `[{sign: true, passphrase: '123'}]`

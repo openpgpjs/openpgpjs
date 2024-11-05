@@ -4757,7 +4757,7 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(subKey).to.exist;
       expect(newPrivateKey.getSubkeys().length).to.be.equal(total + 1);
       expect(subKey.getAlgorithmInfo().symmetric).to.be.equal('aes256');
-      expect(subKey.keyPacket.publicParams.digest).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.publicParams.fpSeed).to.exist.and.to.have.length(32);
       expect(subKey.keyPacket.privateParams.keyMaterial).to.exist.and.to.have.length(32);
       await subKey.verify(privateKey.primaryKey);
     });
@@ -4773,9 +4773,9 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(newKey.getSubkeys().length).to.be.equal(1);
       expect(subKey).to.exist;
       expect(subKey.getAlgorithmInfo().symmetric).to.be.equal('aes256');
-      expect(subKey.keyPacket.publicParams.cipher).to.exist;
-      expect(subKey.keyPacket.publicParams.cipher.getValue()).to.be.equal(openpgp.enums.symmetric.aes256);
-      expect(subKey.keyPacket.publicParams.digest).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.publicParams.symAlgo).to.exist;
+      expect(subKey.keyPacket.publicParams.symAlgo.getValue()).to.be.equal(openpgp.enums.symmetric.aes256);
+      expect(subKey.keyPacket.publicParams.fpSeed).to.exist.and.to.have.length(32);
       expect(subKey.keyPacket.privateParams.keyMaterial).to.exist.and.to.have.length(32);
       await subKey.verify(newKey.primaryKey);
     });
@@ -4789,9 +4789,9 @@ I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==
       expect(privateKey.getSubkeys().length).to.be.equal(1);
       expect(subKey).to.exist;
       expect(subKey.getAlgorithmInfo().symmetric).to.be.equal('aes256');
-      expect(subKey.keyPacket.publicParams.cipher).to.exist;
-      expect(subKey.keyPacket.publicParams.cipher.getValue()).to.be.equal(openpgp.enums.symmetric.aes256);
-      expect(subKey.keyPacket.publicParams.digest).to.exist.and.to.have.length(32);
+      expect(subKey.keyPacket.publicParams.symAlgo).to.exist;
+      expect(subKey.keyPacket.publicParams.symAlgo.getValue()).to.be.equal(openpgp.enums.symmetric.aes256);
+      expect(subKey.keyPacket.publicParams.fpSeed).to.exist.and.to.have.length(32);
       expect(subKey.keyPacket.privateParams.keyMaterial).to.exist.and.to.have.length(32);
       await subKey.verify(privateKey.primaryKey);
     });

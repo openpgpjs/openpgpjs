@@ -6,7 +6,6 @@
 import publicKey from './public_key';
 import enums from '../enums';
 import util from '../util';
-import ShortByteString from '../type/short_byte_string';
 import { UnsupportedError } from '../packet/packet';
 
 /**
@@ -67,7 +66,7 @@ export function parseSignatureParams(algo, signature) {
       return { read, signatureParams: { RS } };
     }
     case enums.publicKey.hmac: {
-      const mac = new ShortByteString(); read += mac.read(signature.subarray(read));
+      const mac = signature; read += signature.length;
       return { read, signatureParams: { mac } };
     }
     case enums.publicKey.pqc_mldsa_ed25519: {
@@ -136,9 +135,9 @@ export async function verify(algo, hashAlgo, signature, publicParams, privatePar
       if (!privateParams) {
         throw new Error('Cannot verify HMAC signature with symmetric key missing private parameters');
       }
-      const { cipher: algo } = publicParams;
+      const { hashAlgo } = publicParams;
       const { keyMaterial } = privateParams;
-      return publicKey.hmac.verify(algo.getValue(), keyMaterial, signature.mac.data, hashed);
+      return publicKey.hmac.verify(hashAlgo.getValue(), keyMaterial, signature.mac, hashed);
     }
     case enums.publicKey.pqc_mldsa_ed25519: {
       const { eccPublicKey, mldsaPublicKey } = publicParams;
@@ -200,10 +199,10 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       return publicKey.elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);
     }
     case enums.publicKey.hmac: {
-      const { cipher: algo } = publicKeyParams;
+      const { hashAlgo } = publicKeyParams;
       const { keyMaterial } = privateKeyParams;
-      const mac = await publicKey.hmac.sign(algo.getValue(), keyMaterial, hashed);
-      return { mac: new ShortByteString(mac) };
+      const mac = await publicKey.hmac.sign(hashAlgo.getValue(), keyMaterial, hashed);
+      return { mac };
     }
     case enums.publicKey.pqc_mldsa_ed25519: {
       const { eccPublicKey } = publicKeyParams;

@@ -17,7 +17,7 @@ export async function generateSecretSubkey(options, config) {
   const secretSubkeyPacket = new SecretSubkeyPacket(options.date, config);
   secretSubkeyPacket.packets = null;
   secretSubkeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretSubkeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
+  await secretSubkeyPacket.generate(options.rsaBits, options.curve, options.symmetric, config.preferredAEADAlgorithm);
   await secretSubkeyPacket.computeFingerprintAndKeyID();
   return secretSubkeyPacket;
 }
@@ -26,7 +26,7 @@ export async function generateSecretKey(options, config) {
   const secretKeyPacket = new SecretKeyPacket(options.date, config);
   secretKeyPacket.packets = null;
   secretKeyPacket.algorithm = enums.write(enums.publicKey, options.algorithm);
-  await secretKeyPacket.generate(options.rsaBits, options.curve, options.symmetric);
+  await secretKeyPacket.generate(options.rsaBits, options.curve, options.symmetric, config.preferredAEADAlgorithm);
   await secretKeyPacket.computeFingerprintAndKeyID();
   return secretKeyPacket;
 }
@@ -506,6 +506,7 @@ export function validateDecryptionKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ecdh:
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
+    case enums.publicKey.aead:
     case enums.publicKey.pqc_mlkem_x25519: {
       const isValidSigningKeyPacket = !signature.keyFlags || (signature.keyFlags[0] & enums.keyFlags.signData) !== 0;
       if (isValidSigningKeyPacket && config.allowInsecureDecryptionWithSigningKeys) {

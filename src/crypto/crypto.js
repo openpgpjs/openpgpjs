@@ -28,9 +28,7 @@ import mode from './mode';
 import { getRandomBytes } from './random';
 import { getCipherParams } from './cipher';
 import ECDHSymkey from '../type/ecdh_symkey';
-import ShortByteString from '../type/short_byte_string';
 import hash from './hash';
-import config from '../config';
 import KDFParams from '../type/kdf_params';
 import { SymAlgoEnum, AEADEnum, HashEnum } from '../type/enum';
 import enums from '../enums';
@@ -85,16 +83,16 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, pri
       if (!privateParams) {
         throw new Error('Cannot encrypt with symmetric key missing private parameters');
       }
-      const { cipher: algo } = publicParams;
-      const algoValue = algo.getValue();
+      const { symAlgo, aeadMode } = publicParams;
       const { keyMaterial } = privateParams;
-      const aeadMode = config.preferredAEADAlgorithm;
-      const mode = getAEADMode(config.preferredAEADAlgorithm);
+
+      const mode = getAEADMode(aeadMode.getValue());
       const { ivLength } = mode;
       const iv = getRandomBytes(ivLength);
-      const modeInstance = await mode(algoValue, keyMaterial);
-      const c = await modeInstance.encrypt(data, iv, new Uint8Array());
-      return { aeadMode: new AEADEnum(aeadMode), iv, c: new ShortByteString(c) };
+      const modeInstance = await mode(symAlgo.getValue(), keyMaterial);
+      const ciphertext = await modeInstance.encrypt(data, iv, new Uint8Array());
+      const ivAndCiphertext = util.concatUint8Array([iv, ciphertext]);
+      return { ivAndCiphertext };
     }
     case enums.publicKey.pqc_mlkem_x25519: {
       const { eccPublicKey, mlkemPublicKey } = publicParams;
@@ -155,15 +153,17 @@ export async function publicKeyDecrypt(keyAlgo, publicKeyParams, privateKeyParam
         keyAlgo, ephemeralPublicKey, C.wrappedKey, A, k);
     }
     case enums.publicKey.aead: {
-      const { cipher: algo } = publicKeyParams;
-      const algoValue = algo.getValue();
+      const { symAlgo, aeadMode } = publicKeyParams;
       const { keyMaterial } = privateKeyParams;
 
-      const { aeadMode, iv, c } = sessionKeyParams;
+      const { ivAndCiphertext } = sessionKeyParams;
 
       const mode = getAEADMode(aeadMode.getValue());
-      const modeInstance = await mode(algoValue, keyMaterial);
-      return modeInstance.decrypt(c.data, iv, new Uint8Array());
+      const { ivLength } = mode;
+      const modeInstance = await mode(symAlgo.getValue(), keyMaterial);
+      const iv = ivAndCiphertext.subarray(0, ivLength);
+      const ciphertext = ivAndCiphertext.subarray(ivLength);
+      return modeInstance.decrypt(ciphertext, iv, new Uint8Array());
     }
     case enums.publicKey.pqc_mlkem_x25519: {
       const { eccSecretKey, mlkemSecretKey } = privateKeyParams;
@@ -235,12 +235,16 @@ export function parsePublicKeyParams(algo, bytes) {
       const A = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(algo)); read += A.length;
       return { read, publicParams: { A } };
     }
-    case enums.publicKey.hmac:
+    case enums.publicKey.hmac: {
+      const hashAlgo = new HashEnum(); read += hashAlgo.read(bytes);
+      const fpSeed = bytes.subarray(read, read + 32); read += 32;
+      return { read: read, publicParams: { hashAlgo, fpSeed } };
+    }
     case enums.publicKey.aead: {
-      const algo = new SymAlgoEnum(); read += algo.read(bytes);
-      const digestLength = hash.getHashByteLength(enums.hash.sha256);
-      const digest = bytes.subarray(read, read + digestLength); read += digestLength;
-      return { read: read, publicParams: { cipher: algo, digest } };
+      const symAlgo = new SymAlgoEnum(); read += symAlgo.read(bytes);
+      const aeadMode = new AEADEnum(); read += aeadMode.read(bytes.subarray(read));
+      const fpSeed = bytes.subarray(read, read + 32); read += 32;
+      return { read: read, publicParams: { symAlgo, aeadMode, fpSeed } };
     }
     case enums.publicKey.pqc_mlkem_x25519: {
       const eccPublicKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccPublicKey.length;
@@ -310,18 +314,16 @@ export async function parsePrivateKeyParams(algo, bytes, publicParams) {
       return { read, privateParams: { k } };
     }
     case enums.publicKey.hmac: {
-      const { cipher: algo } = publicParams;
-      const keySize = hash.getHashByteLength(algo.getValue());
-      const hashSeed = bytes.subarray(read, read + 32); read += 32;
+      const { hashAlgo } = publicParams;
+      const keySize = hash.getHashByteLength(hashAlgo.getValue());
       const keyMaterial = bytes.subarray(read, read + keySize); read += keySize;
-      return { read, privateParams: { hashSeed, keyMaterial } };
+      return { read, privateParams: { keyMaterial } };
     }
     case enums.publicKey.aead: {
-      const { cipher: algo } = publicParams;
-      const hashSeed = bytes.subarray(read, read + 32); read += 32;
-      const { keySize } = getCipherParams(algo.getValue());
+      const { symAlgo } = publicParams;
+      const { keySize } = getCipherParams(symAlgo.getValue());
       const keyMaterial = bytes.subarray(read, read + keySize); read += keySize;
-      return { read, privateParams: { hashSeed, keyMaterial } };
+      return { read, privateParams: { keyMaterial } };
     }
     case enums.publicKey.pqc_mlkem_x25519: {
       const eccSecretKey = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccSecretKey.length;
@@ -385,18 +387,13 @@ export function parseEncSessionKeyParams(algo, bytes) {
       return { ephemeralPublicKey, C };
     }
     //   Algorithm-Specific Fields for symmetric AEAD encryption:
-    //       - AEAD algorithm
     //       - Starting initialization vector
-    //       - Symmetric key encryption of "m" dependent on cipher and AEAD mode prefixed with a one-octet length
+    //       - Symmetric key encryption of "m" using cipher and AEAD mode
     //       - An authentication tag generated by the AEAD mode.
     case enums.publicKey.aead: {
-      const aeadMode = new AEADEnum(); read += aeadMode.read(bytes.subarray(read));
-      const { ivLength } = getAEADMode(aeadMode.getValue());
+      const ivAndCiphertext = bytes;
 
-      const iv = bytes.subarray(read, read + ivLength); read += ivLength;
-      const c = new ShortByteString(); read += c.read(bytes.subarray(read));
-
-      return { aeadMode, iv, c };
+      return { ivAndCiphertext };
     }
     case enums.publicKey.pqc_mlkem_x25519: {
       const eccCipherText = util.readExactSubarray(bytes, read, read + getCurvePayloadSize(enums.publicKey.x25519)); read += eccCipherText.length;
@@ -451,10 +448,11 @@ export function serializeParams(algo, params) {
  * @param {Integer} bits - Bit length for RSA keys
  * @param {module:type/oid} oid - Object identifier for ECC keys
  * @param {module:enums.symmetric|enums.hash} symmetric - Hash or cipher algorithm for symmetric keys
+ * @param {module:enums.aead} aeadMode - AEAD mode for AEAD keys
  * @returns {Promise<{ publicParams: {Object}, privateParams: {Object} }>} The parameters referenced by name.
  * @async
  */
-export async function generateParams(algo, bits, oid, symmetric) {
+export async function generateParams(algo, bits, oid, symmetric, aeadMode) {
   switch (algo) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
@@ -496,11 +494,30 @@ export async function generateParams(algo, bits, oid, symmetric) {
       }));
     case enums.publicKey.hmac: {
       const keyMaterial = await publicKey.hmac.generate(symmetric);
-      return createSymmetricParams(keyMaterial, new HashEnum(symmetric));
+      const fpSeed = getRandomBytes(32);
+      return {
+        privateParams: {
+          keyMaterial
+        },
+        publicParams: {
+          hashAlgo: new HashEnum(symmetric),
+          fpSeed
+        }
+      };
     }
     case enums.publicKey.aead: {
       const keyMaterial = generateSessionKey(symmetric);
-      return createSymmetricParams(keyMaterial, new SymAlgoEnum(symmetric));
+      const fpSeed = getRandomBytes(32);
+      return {
+        privateParams: {
+          keyMaterial
+        },
+        publicParams: {
+          symAlgo: new SymAlgoEnum(symmetric),
+          aeadMode: new AEADEnum(aeadMode),
+          fpSeed
+        }
+      };
     }
     case enums.publicKey.pqc_mlkem_x25519:
       return publicKey.postQuantum.kem.generate(algo).then(({ eccSecretKey, eccPublicKey, mlkemSeed, mlkemSecretKey, mlkemPublicKey }) => ({
@@ -518,21 +535,6 @@ export async function generateParams(algo, bits, oid, symmetric) {
     default:
       throw new Error('Unknown public key algorithm.');
   }
-}
-
-async function createSymmetricParams(key, algo) {
-  const seed = getRandomBytes(32);
-  const bindingHash = await hash.sha256(seed);
-  return {
-    privateParams: {
-      hashSeed: seed,
-      keyMaterial: key
-    },
-    publicParams: {
-      cipher: algo,
-      digest: bindingHash
-    }
-  };
 }
 
 /**
@@ -589,20 +591,9 @@ export async function validateParams(algo, publicParams, privateParams) {
       const { k } = privateParams;
       return publicKey.elliptic.ecdhX.validateParams(algo, A, k);
     }
-    case enums.publicKey.hmac: {
-      const { cipher: algo, digest } = publicParams;
-      const { hashSeed, keyMaterial } = privateParams;
-      const keySize = hash.getHashByteLength(algo.getValue());
-      return keySize === keyMaterial.length &&
-        util.equalsUint8Array(digest, await hash.sha256(hashSeed));
-    }
-    case enums.publicKey.aead: {
-      const { cipher: algo, digest } = publicParams;
-      const { hashSeed, keyMaterial } = privateParams;
-      const { keySize } = getCipherParams(algo.getValue());
-      return keySize === keyMaterial.length &&
-        util.equalsUint8Array(digest, await hash.sha256(hashSeed));
-    }
+    case enums.publicKey.hmac:
+    case enums.publicKey.aead:
+      throw new Error('Persistent symmetric keys must be encrypted using AEAD');
     case enums.publicKey.pqc_mlkem_x25519: {
       const { eccSecretKey, mlkemSeed } = privateParams;
       const { eccPublicKey, mlkemPublicKey } = publicParams;

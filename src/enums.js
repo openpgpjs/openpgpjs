@@ -102,9 +102,9 @@ export default {
     pqc_mldsa_ed25519: 107,
 
     /** Persistent symmetric keys: encryption algorithm */
-    aead: 100,
+    aead: 128,
     /** Persistent symmetric keys: authentication algorithm */
-    hmac: 101
+    hmac: 129
   },
 
   /** {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC4880, section 9.2}
