@@ -698,5 +698,13 @@ export function getPreferredCurveHashAlgo(algo, oid) {
   }
 }
 
+export function getPQCHashAlgo(algo) {
+  switch (algo) {
+    case enums.publicKey.pqc_mldsa_ed25519:
+      return enums.hash.sha3_256;
+    default:
+      throw new Error('Unknown PQC signing algo');
+  }
+}
 
 export { getCipherParams };

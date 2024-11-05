@@ -115,6 +115,15 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @async
  */
 export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = new Date(), targetUserIDs = [], config) {
+  const pqcAlgos = new Set([
+    enums.publicKey.pqc_mldsa_ed25519
+  ]);
+  if (pqcAlgos.has(signingKeyPacket.algorithm)) {
+    // For PQC, the returned hash algo MUST be set to the specified algorithm, see
+    // https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-pqc#section-5.2.1.
+    return crypto.getPQCHashAlgo(signingKeyPacket.algorithm);
+  }
+
   /**
    * If `preferredSenderAlgo` appears in the prefs of all recipients, we pick it; otherwise, we use the
    * strongest supported algo (`defaultAlgo` is always implicitly supported by all keys).
@@ -161,7 +170,6 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
     enums.publicKey.ed25519,
     enums.publicKey.ed448
   ]);
-
   if (eccAlgos.has(signingKeyPacket.algorithm)) {
     // For ECC, the returned hash algo MUST be at least as strong as `preferredCurveHashAlgo`, see:
     // - ECDSA: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.2-5
