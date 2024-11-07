@@ -214,11 +214,10 @@ async function wrapKeyObject(secretKeyPacket, secretSubkeyPackets, options, conf
       });
     }
     signatureProperties.preferredHashAlgorithms = createPreferredAlgos([
-      // prefer fast asm.js implementations (SHA-256)
-      enums.hash.sha256,
       enums.hash.sha512,
-      enums.hash.sha3_256,
-      enums.hash.sha3_512
+      enums.hash.sha256,
+      enums.hash.sha3_512,
+      enums.hash.sha3_256
     ], config.preferredHashAlgorithm);
     signatureProperties.preferredCompressionAlgorithms = createPreferredAlgos([
       enums.compression.uncompressed,
