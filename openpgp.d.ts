@@ -94,7 +94,7 @@ export class PrivateKey extends PublicKey {
   public revoke(reason?: ReasonForRevocation, date?: Date, config?: Config): Promise<PrivateKey>;
   public isDecrypted(): boolean;
   public addSubkey(options: SubkeyOptions): Promise<PrivateKey>;
-  public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<PrivateKey | Subkey>;
+  public getDecryptionKeys(keyID?: KeyID, date?: Date | null, userID?: UserID, config?: Config): Promise<(PrivateKey | Subkey)[]>;
   public update(sourceKey: PublicKey, date?: Date, config?: Config): Promise<PrivateKey>;
 }
 
