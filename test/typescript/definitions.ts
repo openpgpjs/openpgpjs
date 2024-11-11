@@ -22,7 +22,12 @@ import {
 (async () => {
 
   // Generate keys
-  const keyOptions = { userIDs: [{ email: 'user@corp.co' }], config: { v6Keys: true } };
+  const keyOptions = {
+    type: 'curve25519' as const,
+    userIDs: [{ email: 'user@corp.co' }],
+    subkeys: [{ type: 'rsa' as const, sign: false }],
+    config: { v6Keys: true }
+  };
   const { privateKey: privateKeyArmored, publicKey: publicKeyArmored } = await generateKey(keyOptions);
   const { privateKey: privateKeyBinary } = await generateKey({ ...keyOptions, format: 'binary' });
   const { privateKey, publicKey, revocationCertificate } = await generateKey({ ...keyOptions, format: 'object' });
