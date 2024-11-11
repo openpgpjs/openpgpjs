@@ -702,7 +702,7 @@ export type EllipticCurveName = 'ed25519Legacy' | 'curve25519Legacy' | 'nistP256
 interface GenerateKeyOptions {
   userIDs: MaybeArray<UserID>;
   passphrase?: string;
-  type?: 'ecc' | 'rsa';
+  type?: 'ecc' | 'rsa' | 'curve25519' | 'curve448';
   curve?: EllipticCurveName;
   rsaBits?: number;
   keyExpirationTime?: number;
@@ -713,14 +713,8 @@ interface GenerateKeyOptions {
 }
 export type KeyOptions = GenerateKeyOptions;
 
-export interface SubkeyOptions {
-  type?: 'ecc' | 'rsa';
-  curve?: EllipticCurveName;
-  rsaBits?: number;
-  keyExpirationTime?: number;
-  date?: Date;
+export interface SubkeyOptions extends Pick<GenerateKeyOptions, 'type' | 'curve' | 'rsaBits' | 'keyExpirationTime' | 'date' | 'config'> {
   sign?: boolean;
-  config?: PartialConfig;
 }
 
 export declare class KeyID {
