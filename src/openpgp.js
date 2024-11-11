@@ -369,6 +369,7 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
         result.data,
         stream.fromAsync(async () => {
           await util.anyPromise(result.signatures.map(sig => sig.verified));
+          return format === 'binary' ? new Uint8Array() : '';
         })
       ]);
     }
@@ -500,6 +501,7 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
         result.data,
         stream.fromAsync(async () => {
           await util.anyPromise(result.signatures.map(sig => sig.verified));
+          return format === 'binary' ? new Uint8Array() : '';
         })
       ]);
     }
