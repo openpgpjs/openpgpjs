@@ -3806,7 +3806,7 @@ CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
     const passphrase = 'hello world';
     const key = await openpgp.readKey({ armoredKey: priv_key_rsa });
     expect(key.keyPacket.isDummy()).to.be.false;
-    expect(key.keyPacket.makeDummy()).to.not.throw;
+    key.keyPacket.makeDummy();
     expect(key.keyPacket.isDummy()).to.be.true;
     // dummy primary key should always be marked as not decrypted
     const decryptedKey = await openpgp.decryptKey({ privateKey: key, passphrase });
@@ -3825,7 +3825,7 @@ CNa5yq6lyexhsn2Vs8DsX+SOSUyNJiy5FyIJ
   it('makeDummy() - should work for encrypted keys with unknown s2k (unparseableKeyMaterial)', async function() {
     const key = await openpgp.readKey({ armoredKey: encryptedKeyUnknownS2K });
     expect(key.keyPacket.isDummy()).to.be.false;
-    expect(key.keyPacket.makeDummy()).to.not.throw;
+    key.keyPacket.makeDummy();
     expect(key.keyPacket.isDummy()).to.be.true;
     expect(key.keyPacket.unparseableKeyMaterial).to.not.exist;
   });
