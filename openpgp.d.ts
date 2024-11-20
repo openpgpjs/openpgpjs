@@ -916,6 +916,8 @@ export namespace enums {
   export enum aead {
     eax = 1,
     ocb = 2,
+    gcm = 3,
+    /** @deprecated use `gcm` instead */
     experimentalGCM = 100 // Private algorithm
   }
 

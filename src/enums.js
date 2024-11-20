@@ -154,7 +154,7 @@ export default {
     'SHA-512': 10
   },
 
-  /** {@link https://tools.ietf.org/html/draft-ietf-openpgp-rfc4880bis-04#section-9.6|RFC4880bis-04, section 9.6}
+  /** {@link https://www.rfc-editor.org/rfc/rfc9580.html#name-aead-algorithms}
    * @enum {Integer}
    * @readonly
    */
@@ -162,6 +162,7 @@ export default {
     eax: 1,
     ocb: 2,
     gcm: 3,
+    /** @deprecated used by OpenPGP.js v5 for legacy AEAD support; use `gcm` instead for the RFC9580-standardized ID */
     experimentalGCM: 100 // Private algorithm
   },
 
