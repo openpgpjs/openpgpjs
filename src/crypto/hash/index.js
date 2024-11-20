@@ -6,7 +6,7 @@
  */
 
 import * as stream from '@openpgp/web-stream-tools';
-import md5 from './md5';
+import computeMd5 from './md5';
 import util from '../../util';
 import enums from '../../enums';
 
@@ -55,76 +55,72 @@ function nobleHash(nobleHashName, webCryptoHashName) {
   };
 }
 
-export default {
+const md5 = nodeHash('md5') || computeMd5;
+const sha1 = nodeHash('sha1') || nobleHash('sha1', 'SHA-1');
+const sha224 = nodeHash('sha224') || nobleHash('sha224');
+const sha256 = nodeHash('sha256') || nobleHash('sha256', 'SHA-256');
+const sha384 = nodeHash('sha384') || nobleHash('sha384', 'SHA-384');
+const sha512 = nodeHash('sha512') || nobleHash('sha512', 'SHA-512');
+const ripemd = nodeHash('ripemd160') || nobleHash('ripemd160');
+const sha3_256 = nodeHash('sha3-256') || nobleHash('sha3_256');
+const sha3_512 = nodeHash('sha3-512') || nobleHash('sha3_512');
 
-  /** @see module:md5 */
-  md5: nodeHash('md5') || md5,
-  sha1: nodeHash('sha1') || nobleHash('sha1', 'SHA-1'),
-  sha224: nodeHash('sha224') || nobleHash('sha224'),
-  sha256: nodeHash('sha256') || nobleHash('sha256', 'SHA-256'),
-  sha384: nodeHash('sha384') || nobleHash('sha384', 'SHA-384'),
-  sha512: nodeHash('sha512') || nobleHash('sha512', 'SHA-512'),
-  ripemd: nodeHash('ripemd160') || nobleHash('ripemd160'),
-  sha3_256: nodeHash('sha3-256') || nobleHash('sha3_256'),
-  sha3_512: nodeHash('sha3-512') || nobleHash('sha3_512'),
-
-  /**
-   * Create a hash on the specified data using the specified algorithm
-   * @param {module:enums.hash} algo - Hash algorithm type (see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
-   * @param {Uint8Array} data - Data to be hashed
-   * @returns {Promise<Uint8Array>} Hash value.
-   */
-  digest: function(algo, data) {
-    switch (algo) {
-      case enums.hash.md5:
-        return this.md5(data);
-      case enums.hash.sha1:
-        return this.sha1(data);
-      case enums.hash.ripemd:
-        return this.ripemd(data);
-      case enums.hash.sha256:
-        return this.sha256(data);
-      case enums.hash.sha384:
-        return this.sha384(data);
-      case enums.hash.sha512:
-        return this.sha512(data);
-      case enums.hash.sha224:
-        return this.sha224(data);
-      case enums.hash.sha3_256:
-        return this.sha3_256(data);
-      case enums.hash.sha3_512:
-        return this.sha3_512(data);
-      default:
-        throw new Error('Unsupported hash function');
-    }
-  },
-
-  /**
-   * Returns the hash size in bytes of the specified hash algorithm type
-   * @param {module:enums.hash} algo - Hash algorithm type (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
-   * @returns {Integer} Size in bytes of the resulting hash.
-   */
-  getHashByteLength: function(algo) {
-    switch (algo) {
-      case enums.hash.md5:
-        return 16;
-      case enums.hash.sha1:
-      case enums.hash.ripemd:
-        return 20;
-      case enums.hash.sha256:
-        return 32;
-      case enums.hash.sha384:
-        return 48;
-      case enums.hash.sha512:
-        return 64;
-      case enums.hash.sha224:
-        return 28;
-      case enums.hash.sha3_256:
-        return 32;
-      case enums.hash.sha3_512:
-        return 64;
-      default:
-        throw new Error('Invalid hash algorithm.');
-    }
+/**
+ * Create a hash on the specified data using the specified algorithm
+ * @param {module:enums.hash} algo - Hash algorithm type (see {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
+ * @param {Uint8Array} data - Data to be hashed
+ * @returns {Promise<Uint8Array>} Hash value.
+ */
+export function computeDigest(algo, data) {
+  switch (algo) {
+    case enums.hash.md5:
+      return md5(data);
+    case enums.hash.sha1:
+      return sha1(data);
+    case enums.hash.ripemd:
+      return ripemd(data);
+    case enums.hash.sha256:
+      return sha256(data);
+    case enums.hash.sha384:
+      return sha384(data);
+    case enums.hash.sha512:
+      return sha512(data);
+    case enums.hash.sha224:
+      return sha224(data);
+    case enums.hash.sha3_256:
+      return sha3_256(data);
+    case enums.hash.sha3_512:
+      return sha3_512(data);
+    default:
+      throw new Error('Unsupported hash function');
   }
-};
+}
+
+/**
+ * Returns the hash size in bytes of the specified hash algorithm type
+ * @param {module:enums.hash} algo - Hash algorithm type (See {@link https://tools.ietf.org/html/rfc4880#section-9.4|RFC 4880 9.4})
+ * @returns {Integer} Size in bytes of the resulting hash.
+ */
+export function getHashByteLength(algo) {
+  switch (algo) {
+    case enums.hash.md5:
+      return 16;
+    case enums.hash.sha1:
+    case enums.hash.ripemd:
+      return 20;
+    case enums.hash.sha256:
+      return 32;
+    case enums.hash.sha384:
+      return 48;
+    case enums.hash.sha512:
+      return 64;
+    case enums.hash.sha224:
+      return 28;
+    case enums.hash.sha3_256:
+      return 32;
+    case enums.hash.sha3_512:
+      return 64;
+    default:
+      throw new Error('Invalid hash algorithm.');
+  }
+}

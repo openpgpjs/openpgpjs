@@ -19,7 +19,7 @@ import * as stream from '@openpgp/web-stream-tools';
 import { armor, unarmor } from './encoding/armor';
 import { Argon2OutOfMemoryError } from './type/s2k';
 import defaultConfig from './config';
-import crypto from './crypto';
+import { generateSessionKey } from './crypto';
 import enums from './enums';
 import util from './util';
 import { Signature } from './signature';
@@ -255,7 +255,7 @@ export class Message {
                 pkeskPacketCopy.read(serialisedPKESK);
                 const randomSessionKey = {
                   sessionKeyAlgorithm,
-                  sessionKey: crypto.generateSessionKey(sessionKeyAlgorithm)
+                  sessionKey: generateSessionKey(sessionKeyAlgorithm)
                 };
                 try {
                   await pkeskPacketCopy.decrypt(decryptionKeyPacket, randomSessionKey);
@@ -368,7 +368,7 @@ export class Message {
       })
     ));
 
-    const sessionKeyData = crypto.generateSessionKey(symmetricAlgo);
+    const sessionKeyData = generateSessionKey(symmetricAlgo);
     return { data: sessionKeyData, algorithm: symmetricAlgoName, aeadAlgorithm: aeadAlgoName };
   }
 

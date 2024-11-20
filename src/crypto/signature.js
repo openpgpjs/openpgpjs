@@ -3,7 +3,7 @@
  * @module crypto/signature
  */
 
-import publicKey from './public_key';
+import { elliptic, rsa, dsa } from './public_key';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from '../packet/packet';
@@ -61,7 +61,7 @@ export function parseSignatureParams(algo, signature) {
     // - 114 octets of the native signature
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448: {
-      const rsSize = 2 * publicKey.elliptic.eddsa.getPayloadSize(algo);
+      const rsSize = 2 * elliptic.eddsa.getPayloadSize(algo);
       const RS = util.readExactSubarray(signature, read, read + rsSize); read += RS.length;
       return { read, signatureParams: { RS } };
     }
@@ -92,34 +92,34 @@ export async function verify(algo, hashAlgo, signature, publicParams, data, hash
     case enums.publicKey.rsaSign: {
       const { n, e } = publicParams;
       const s = util.leftPad(signature.s, n.length); // padding needed for webcrypto and node crypto
-      return publicKey.rsa.verify(hashAlgo, data, s, n, e, hashed);
+      return rsa.verify(hashAlgo, data, s, n, e, hashed);
     }
     case enums.publicKey.dsa: {
       const { g, p, q, y } = publicParams;
       const { r, s } = signature; // no need to pad, since we always handle them as BigIntegers
-      return publicKey.dsa.verify(hashAlgo, r, s, hashed, g, p, q, y);
+      return dsa.verify(hashAlgo, r, s, hashed, g, p, q, y);
     }
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicParams;
-      const curveSize = new publicKey.elliptic.CurveWithOID(oid).payloadSize;
+      const curveSize = new elliptic.CurveWithOID(oid).payloadSize;
       // padding needed for webcrypto
       const r = util.leftPad(signature.r, curveSize);
       const s = util.leftPad(signature.s, curveSize);
-      return publicKey.elliptic.ecdsa.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
+      return elliptic.ecdsa.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
     }
     case enums.publicKey.eddsaLegacy: {
       const { oid, Q } = publicParams;
-      const curveSize = new publicKey.elliptic.CurveWithOID(oid).payloadSize;
+      const curveSize = new elliptic.CurveWithOID(oid).payloadSize;
       // When dealing little-endian MPI data, we always need to left-pad it, as done with big-endian values:
       // https://www.ietf.org/archive/id/draft-ietf-openpgp-rfc4880bis-10.html#section-3.2-9
       const r = util.leftPad(signature.r, curveSize);
       const s = util.leftPad(signature.s, curveSize);
-      return publicKey.elliptic.eddsaLegacy.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
+      return elliptic.eddsaLegacy.verify(oid, hashAlgo, { r, s }, data, Q, hashed);
     }
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448: {
       const { A } = publicParams;
-      return publicKey.elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
+      return elliptic.eddsa.verify(algo, hashAlgo, signature, data, A, hashed);
     }
     default:
       throw new Error('Unknown signature algorithm.');
@@ -150,31 +150,31 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
     case enums.publicKey.rsaSign: {
       const { n, e } = publicKeyParams;
       const { d, p, q, u } = privateKeyParams;
-      const s = await publicKey.rsa.sign(hashAlgo, data, n, e, d, p, q, u, hashed);
+      const s = await rsa.sign(hashAlgo, data, n, e, d, p, q, u, hashed);
       return { s };
     }
     case enums.publicKey.dsa: {
       const { g, p, q } = publicKeyParams;
       const { x } = privateKeyParams;
-      return publicKey.dsa.sign(hashAlgo, hashed, g, p, q, x);
+      return dsa.sign(hashAlgo, hashed, g, p, q, x);
     }
     case enums.publicKey.elgamal:
       throw new Error('Signing with Elgamal is not defined in the OpenPGP standard.');
     case enums.publicKey.ecdsa: {
       const { oid, Q } = publicKeyParams;
       const { d } = privateKeyParams;
-      return publicKey.elliptic.ecdsa.sign(oid, hashAlgo, data, Q, d, hashed);
+      return elliptic.ecdsa.sign(oid, hashAlgo, data, Q, d, hashed);
     }
     case enums.publicKey.eddsaLegacy: {
       const { oid, Q } = publicKeyParams;
       const { seed } = privateKeyParams;
-      return publicKey.elliptic.eddsaLegacy.sign(oid, hashAlgo, data, Q, seed, hashed);
+      return elliptic.eddsaLegacy.sign(oid, hashAlgo, data, Q, seed, hashed);
     }
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448: {
       const { A } = publicKeyParams;
       const { seed } = privateKeyParams;
-      return publicKey.elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);
+      return elliptic.eddsa.sign(algo, hashAlgo, data, A, seed, hashed);
     }
     default:
       throw new Error('Unknown signature algorithm.');

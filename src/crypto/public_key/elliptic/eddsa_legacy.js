@@ -24,7 +24,7 @@
 import nacl from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
-import hash from '../../hash';
+import { getHashByteLength } from '../../hash';
 import { CurveWithOID, checkPublicPointEnconding } from './oid_curves';
 import { sign as eddsaSign, verify as eddsaVerify } from './eddsa';
 
@@ -45,7 +45,7 @@ import { sign as eddsaSign, verify as eddsaVerify } from './eddsa';
 export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed) {
   const curve = new CurveWithOID(oid);
   checkPublicPointEnconding(curve, publicKey);
-  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
+  if (getHashByteLength(hashAlgo) < getHashByteLength(enums.hash.sha256)) {
     // Enforce digest sizes, since the constraint was already present in RFC4880bis:
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
     // and https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.3-3
@@ -74,7 +74,7 @@ export async function sign(oid, hashAlgo, message, publicKey, privateKey, hashed
 export async function verify(oid, hashAlgo, { r, s }, m, publicKey, hashed) {
   const curve = new CurveWithOID(oid);
   checkPublicPointEnconding(curve, publicKey);
-  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(enums.hash.sha256)) {
+  if (getHashByteLength(hashAlgo) < getHashByteLength(enums.hash.sha256)) {
     // Enforce digest sizes, since the constraint was already present in RFC4880bis:
     // see https://tools.ietf.org/id/draft-ietf-openpgp-rfc4880bis-10.html#section-15-7.2
     // and https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.3-3

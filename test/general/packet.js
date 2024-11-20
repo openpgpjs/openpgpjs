@@ -6,7 +6,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import crypto from '../../src/crypto';
+import * as crypto from '../../src/crypto';
 import util from '../../src/util.js';
 import * as packet from '../../src/packet';
 import * as random from '../../src/crypto/random';

@@ -23,7 +23,7 @@
 import enums from '../../../enums';
 import util from '../../../util';
 import { getRandomBytes } from '../../random';
-import hash from '../../hash';
+import { computeDigest } from '../../hash';
 import { CurveWithOID, webCurves, privateToJWK, rawPublicToJWK, validateStandardParams, nodeCurves, checkPublicPointEnconding } from './oid_curves';
 import { bigIntToUint8Array } from '../../biginteger';
 
@@ -156,7 +156,7 @@ export async function validateParams(oid, Q, d) {
     case 'node': {
       const message = getRandomBytes(8);
       const hashAlgo = enums.hash.sha256;
-      const hashed = await hash.digest(hashAlgo, message);
+      const hashed = await computeDigest(hashAlgo, message);
       try {
         const signature = await sign(oid, hashAlgo, message, Q, d, hashed);
         // eslint-disable-next-line @typescript-eslint/return-await

@@ -5,7 +5,7 @@ chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
 import * as elliptic_curves from '../../src/crypto/public_key/elliptic';
-import hashMod from '../../src/crypto/hash';
+import { computeDigest } from '../../src/crypto/hash';
 import config from '../../src/config';
 import util from '../../src/util.js';
 
@@ -151,7 +151,7 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
       const curve = new elliptic_curves.CurveWithOID(curveName);
       const oid = new OID(curve.oid);
       return ecdsa.verify(
-        oid, hash, { r: new Uint8Array(r), s: new Uint8Array(s) }, message, new Uint8Array(pub), await hashMod.digest(hash, message)
+        oid, hash, { r: new Uint8Array(r), s: new Uint8Array(s) }, message, new Uint8Array(pub), await computeDigest(hash, message)
       );
     };
     const secp256k1_point = new Uint8Array([
@@ -249,7 +249,7 @@ export default () => describe('Elliptic Curve Cryptography @lightweight', functi
         0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
         0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF
       ]);
-      const messageDigest = await hashMod.digest(openpgp.enums.hash.sha512, message);
+      const messageDigest = await computeDigest(openpgp.enums.hash.sha512, message);
       await testNativeAndFallback(async () => {
         const signature = await elliptic_curves.ecdsa.sign(oid, openpgp.enums.hash.sha512, message, keyPublic, keyPrivate, messageDigest);
         await expect(elliptic_curves.ecdsa.verify(oid, openpgp.enums.hash.sha512, signature, message, keyPublic, messageDigest)).to.eventually.be.true;

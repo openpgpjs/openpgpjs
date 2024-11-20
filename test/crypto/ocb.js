@@ -6,7 +6,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import OCB from '../../src/crypto/mode/ocb.js';
+import { cipherMode } from '../../src/crypto';
 import util from '../../src/util.js';
 
 export default () => describe('Symmetric AES-OCB', function() {
@@ -122,7 +122,8 @@ export default () => describe('Symmetric AES-OCB', function() {
       const headerBytes = util.hexToUint8Array(vec.A);
       const ctBytes = util.hexToUint8Array(vec.C);
 
-      const ocb = await OCB(cipher, keyBytes);
+      const ocbMode = cipherMode.getAEADMode(openpgp.enums.aead.ocb);
+      const ocb = await ocbMode(cipher, keyBytes);
 
       // encryption test
       let ct = await ocb.encrypt(msgBytes, nonceBytes, headerBytes);
@@ -163,7 +164,8 @@ export default () => describe('Symmetric AES-OCB', function() {
       k[k.length - 1] = taglen;
 
       const algo = openpgp.enums.write(openpgp.enums.symmetric, 'aes' + keylen);
-      const ocb = await OCB(algo, k);
+      const ocbMode = cipherMode.getAEADMode(openpgp.enums.aead.ocb);
+      const ocb = await ocbMode(algo, k);
 
       const c = [];
       let n;

@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import KeyID from '../type/keyid';
-import crypto from '../crypto';
+import { parseEncSessionKeyParams, publicKeyEncrypt, publicKeyDecrypt, getCipherParams, serializeParams } from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
@@ -127,7 +127,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       offset += this.publicKeyID.read(bytes.subarray(offset, offset + 8));
     }
     this.publicKeyAlgorithm = bytes[offset++];
-    this.encrypted = crypto.parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(offset));
+    this.encrypted = parseEncSessionKeyParams(this.publicKeyAlgorithm, bytes.subarray(offset));
     if (this.publicKeyAlgorithm === enums.publicKey.x25519 || this.publicKeyAlgorithm === enums.publicKey.x448) {
       if (this.version === 3) {
         this.sessionKeyAlgorithm = enums.write(enums.symmetric, this.encrypted.C.algorithm);
@@ -163,7 +163,7 @@ class PublicKeyEncryptedSessionKeyPacket {
 
     arr.push(
       new Uint8Array([this.publicKeyAlgorithm]),
-      crypto.serializeParams(this.publicKeyAlgorithm, this.encrypted)
+      serializeParams(this.publicKeyAlgorithm, this.encrypted)
     );
 
     return util.concatUint8Array(arr);
@@ -182,7 +182,7 @@ class PublicKeyEncryptedSessionKeyPacket {
     const sessionKeyAlgorithm = this.version === 3 ? this.sessionKeyAlgorithm : null;
     const fingerprint = key.version === 5 ? key.getFingerprintBytes().subarray(0, 20) : key.getFingerprintBytes();
     const encoded = encodeSessionKey(this.version, algo, sessionKeyAlgorithm, this.sessionKey);
-    this.encrypted = await crypto.publicKeyEncrypt(
+    this.encrypted = await publicKeyEncrypt(
       algo, sessionKeyAlgorithm, key.publicParams, encoded, fingerprint);
   }
 
@@ -204,7 +204,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       encodeSessionKey(this.version, this.publicKeyAlgorithm, randomSessionKey.sessionKeyAlgorithm, randomSessionKey.sessionKey) :
       null;
     const fingerprint = key.version === 5 ? key.getFingerprintBytes().subarray(0, 20) : key.getFingerprintBytes();
-    const decryptedData = await crypto.publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, fingerprint, randomPayload);
+    const decryptedData = await publicKeyDecrypt(this.publicKeyAlgorithm, key.publicParams, key.privateParams, this.encrypted, fingerprint, randomPayload);
 
     const { sessionKey, sessionKeyAlgorithm } = decodeSessionKey(this.version, this.publicKeyAlgorithm, decryptedData, randomSessionKey);
 
@@ -213,7 +213,7 @@ class PublicKeyEncryptedSessionKeyPacket {
       const hasEncryptedAlgo = this.publicKeyAlgorithm !== enums.publicKey.x25519 && this.publicKeyAlgorithm !== enums.publicKey.x448;
       this.sessionKeyAlgorithm = hasEncryptedAlgo ? sessionKeyAlgorithm : this.sessionKeyAlgorithm;
 
-      if (sessionKey.length !== crypto.getCipherParams(this.sessionKeyAlgorithm).keySize) {
+      if (sessionKey.length !== getCipherParams(this.sessionKeyAlgorithm).keySize) {
         throw new Error('Unexpected session key size');
       }
     }

@@ -24,7 +24,7 @@
  */
 
 import { getRandomBytes } from './random';
-import hash from './hash';
+import { getHashByteLength } from './hash';
 import util from '../util';
 
 /**
@@ -134,7 +134,7 @@ export function emeDecode(encoded, randomPayload) {
  */
 export function emsaEncode(algo, hashed, emLen) {
   let i;
-  if (hashed.length !== hash.getHashByteLength(algo)) {
+  if (hashed.length !== getHashByteLength(algo)) {
     throw new Error('Invalid hash length');
   }
   // produce an ASN.1 DER value for the hash function used.

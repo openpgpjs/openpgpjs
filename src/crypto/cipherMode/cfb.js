@@ -27,6 +27,7 @@ import * as stream from '@openpgp/web-stream-tools';
 import util from '../../util';
 import enums from '../../enums';
 import { getLegacyCipher, getCipherParams } from '../cipher';
+import { getRandomBytes } from '../random';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -42,6 +43,20 @@ const nodeAlgos = {
   aes256: knownAlgos.includes('aes-256-cfb') ? 'aes-256-cfb' : undefined
   /* twofish is not implemented in OpenSSL */
 };
+
+/**
+ * Generates a random byte prefix for the specified algorithm
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} algo - Symmetric encryption algorithm
+ * @returns {Promise<Uint8Array>} Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
+ * @async
+ */
+export async function getPrefixRandom(algo) {
+  const { blockSize } = getCipherParams(algo);
+  const prefixrandom = await getRandomBytes(blockSize);
+  const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
+  return util.concat([prefixrandom, repeat]);
+}
 
 /**
  * CFB encryption

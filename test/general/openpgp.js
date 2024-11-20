@@ -7,8 +7,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import crypto from '../../src/crypto';
-import * as random from '../../src/crypto/random.js';
+import * as crypto from '../../src/crypto';
 import util from '../../src/util.js';
 import keyIDType from '../../src/type/keyid.js';
 import { getPreferredCipherSuite } from '../../src/key';
@@ -3706,7 +3705,7 @@ XfA3pqV4mTzF
             const data = new globalThis.ReadableStream({
               pull(controller) {
                 if (i++ < 4) {
-                  const randomBytes = random.getRandomBytes(10);
+                  const randomBytes = crypto.getRandomBytes(10);
                   controller.enqueue(randomBytes);
                   plaintext.push(randomBytes.slice());
                 } else {

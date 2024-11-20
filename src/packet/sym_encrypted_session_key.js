@@ -17,7 +17,7 @@
 
 import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
 import defaultConfig from '../config';
-import crypto from '../crypto';
+import { cipherMode, generateSessionKey, getCipherParams, getRandomBytes } from '../crypto';
 import computeHKDF from '../crypto/hkdf';
 import enums from '../enums';
 import util from '../util';
@@ -105,7 +105,7 @@ class SymEncryptedSessionKeyPacket {
     offset += this.s2k.read(bytes.subarray(offset, bytes.length));
 
     if (this.version >= 5) {
-      const mode = crypto.getAEADMode(this.aeadAlgorithm, true);
+      const mode = cipherMode.getAEADMode(this.aeadAlgorithm, true);
 
       // A starting initialization vector of size specified by the AEAD
       // algorithm.
@@ -163,21 +163,21 @@ class SymEncryptedSessionKeyPacket {
       this.sessionKeyEncryptionAlgorithm :
       this.sessionKeyAlgorithm;
 
-    const { blockSize, keySize } = crypto.getCipherParams(algo);
+    const { blockSize, keySize } = getCipherParams(algo);
     const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.version >= 5) {
-      const mode = crypto.getAEADMode(this.aeadAlgorithm, true);
+      const mode = cipherMode.getAEADMode(this.aeadAlgorithm, true);
       const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
       const encryptionKey = this.version === 6 ? await computeHKDF(enums.hash.sha256, key, new Uint8Array(), adata, keySize) : key;
       const modeInstance = await mode(algo, encryptionKey);
       this.sessionKey = await modeInstance.decrypt(this.encrypted, this.iv, adata);
     } else if (this.encrypted !== null) {
-      const decrypted = await crypto.mode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(blockSize));
+      const decrypted = await cipherMode.cfb.decrypt(algo, key, this.encrypted, new Uint8Array(blockSize));
 
       this.sessionKeyAlgorithm = enums.write(enums.symmetric, decrypted[0]);
       this.sessionKey = decrypted.subarray(1, decrypted.length);
-      if (this.sessionKey.length !== crypto.getCipherParams(this.sessionKeyAlgorithm).keySize) {
+      if (this.sessionKey.length !== getCipherParams(this.sessionKeyAlgorithm).keySize) {
         throw new Error('Unexpected session key size');
       }
     } else {
@@ -203,16 +203,16 @@ class SymEncryptedSessionKeyPacket {
     this.s2k = newS2KFromConfig(config);
     this.s2k.generateSalt();
 
-    const { blockSize, keySize } = crypto.getCipherParams(algo);
+    const { blockSize, keySize } = getCipherParams(algo);
     const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.sessionKey === null) {
-      this.sessionKey = crypto.generateSessionKey(this.sessionKeyAlgorithm);
+      this.sessionKey = generateSessionKey(this.sessionKeyAlgorithm);
     }
 
     if (this.version >= 5) {
-      const mode = crypto.getAEADMode(this.aeadAlgorithm);
-      this.iv = crypto.random.getRandomBytes(mode.ivLength); // generate new random IV
+      const mode = cipherMode.getAEADMode(this.aeadAlgorithm);
+      this.iv = getRandomBytes(mode.ivLength); // generate new random IV
       const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
       const encryptionKey = this.version === 6 ? await computeHKDF(enums.hash.sha256, key, new Uint8Array(), adata, keySize) : key;
       const modeInstance = await mode(algo, encryptionKey);
@@ -222,7 +222,7 @@ class SymEncryptedSessionKeyPacket {
         new Uint8Array([this.sessionKeyAlgorithm]),
         this.sessionKey
       ]);
-      this.encrypted = await crypto.mode.cfb.encrypt(algo, key, toEncrypt, new Uint8Array(blockSize), config);
+      this.encrypted = await cipherMode.cfb.encrypt(algo, key, toEncrypt, new Uint8Array(blockSize), config);
     }
   }
 }

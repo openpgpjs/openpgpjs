@@ -1,7 +1,7 @@
 import defaultConfig from '../../config';
 import enums from '../../enums';
 import util from '../../util';
-import crypto from '../../crypto';
+import { getRandomBytes } from '../../crypto';
 
 const ARGON2_TYPE = 0x02; // id
 const ARGON2_VERSION = 0x13;
@@ -56,7 +56,7 @@ class Argon2S2K {
   }
 
   generateSalt() {
-    this.salt = crypto.random.getRandomBytes(ARGON2_SALT_SIZE);
+    this.salt = getRandomBytes(ARGON2_SALT_SIZE);
   }
 
   /**

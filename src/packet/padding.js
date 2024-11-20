@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import crypto from '../crypto';
+import { getRandomBytes } from '../crypto';
 import enums from '../enums';
 
 /**
@@ -56,7 +56,7 @@ class PaddingPacket {
    * @async
    */
   async createPadding(length) {
-    this.padding = await crypto.random.getRandomBytes(length);
+    this.padding = await getRandomBytes(length);
   }
 }
 

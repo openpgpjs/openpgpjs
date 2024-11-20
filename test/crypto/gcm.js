@@ -4,9 +4,8 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import crypto from '../../src/crypto';
+import * as crypto from '../../src/crypto';
 import util from '../../src/util.js';
-
 
 export default () => describe('Symmetric AES-GCM (experimental)', function() {
   let sinonSandbox;
@@ -46,18 +45,19 @@ export default () => describe('Symmetric AES-GCM (experimental)', function() {
         }
         const algo = openpgp.enums.write(openpgp.enums.symmetric, algoName);
         const key = crypto.generateSessionKey(algo);
-        const iv = crypto.random.getRandomBytes(crypto.mode.gcm.ivLength);
+        const gcmMode = crypto.cipherMode.getAEADMode(openpgp.enums.aead.gcm);
+        const iv = crypto.getRandomBytes(gcmMode.ivLength);
 
         const nativeEncryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createCipheriv') : sinonSandbox.spy(webCrypto, 'encrypt');
         const nativeDecryptSpy = nodeCrypto ? sinonSandbox.spy(nodeCrypto, 'createDecipheriv') : sinonSandbox.spy(webCrypto, 'decrypt');
 
         nativeEncrypt || disableNative();
-        let modeInstance = await crypto.mode.gcm(algo, key);
+        let modeInstance = await gcmMode(algo, key);
         const ciphertext = await modeInstance.encrypt(util.stringToUint8Array(plaintext), iv);
         enableNative();
 
         nativeDecrypt || disableNative();
-        modeInstance = await crypto.mode.gcm(algo, key);
+        modeInstance = await gcmMode(algo, key);
         const decrypted = await modeInstance.decrypt(util.stringToUint8Array(util.uint8ArrayToString(ciphertext)), iv);
         enableNative();
 

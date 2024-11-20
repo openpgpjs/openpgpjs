@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import * as stream from '@openpgp/web-stream-tools';
-import crypto from '../crypto';
+import { cipherMode, getRandomBytes, getCipherParams, computeDigest } from '../crypto';
 import computeHKDF from '../crypto/hkdf';
 import enums from '../enums';
 import util from '../util';
@@ -133,7 +133,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     // but we want to ensure that the input key isn't e.g. too short.
     // The check is done here, instead of on encrypted session key (ESK) encryption, because v6 ESK packets do not store the session key algorithm,
     // which is instead included in the SEIPDv2 data.
-    const { blockSize, keySize } = crypto.getCipherParams(sessionKeyAlgorithm);
+    const { blockSize, keySize } = getCipherParams(sessionKeyAlgorithm);
     if (key.length !== keySize) {
       throw new Error('Unexpected session key size');
     }
@@ -144,18 +144,18 @@ class SymEncryptedIntegrityProtectedDataPacket {
     if (this.version === 2) {
       this.cipherAlgorithm = sessionKeyAlgorithm;
 
-      this.salt = crypto.random.getRandomBytes(32);
+      this.salt = getRandomBytes(32);
       this.chunkSizeByte = config.aeadChunkSizeByte;
       this.encrypted = await runAEAD(this, 'encrypt', key, bytes);
     } else {
-      const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
+      const prefix = await cipherMode.cfb.getPrefixRandom(sessionKeyAlgorithm);
       const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
       const tohash = util.concat([prefix, bytes, mdc]);
-      const hash = await crypto.hash.sha1(stream.passiveClone(tohash));
+      const hash = await computeDigest(enums.hash.sha1, stream.passiveClone(tohash));
       const plaintext = util.concat([tohash, hash]);
 
-      this.encrypted = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(blockSize), config);
+      this.encrypted = await cipherMode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(blockSize), config);
     }
     return true;
   }
@@ -175,7 +175,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     // but we want to ensure that the input key isn't e.g. too short.
     // The check is done here, instead of on encrypted session key (ESK) decryption, because v6 ESK packets do not store the session key algorithm,
     // which is instead included in the SEIPDv2 data.
-    if (key.length !== crypto.getCipherParams(sessionKeyAlgorithm).keySize) {
+    if (key.length !== getCipherParams(sessionKeyAlgorithm).keySize) {
       throw new Error('Unexpected session key size');
     }
 
@@ -190,15 +190,15 @@ class SymEncryptedIntegrityProtectedDataPacket {
       }
       packetbytes = await runAEAD(this, 'decrypt', key, encrypted);
     } else {
-      const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
-      const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(blockSize));
+      const { blockSize } = getCipherParams(sessionKeyAlgorithm);
+      const decrypted = await cipherMode.cfb.decrypt(sessionKeyAlgorithm, key, encrypted, new Uint8Array(blockSize));
 
       // there must be a modification detection code packet as the
       // last packet and everything gets hashed except the hash itself
       const realHash = stream.slice(stream.passiveClone(decrypted), -20);
       const tohash = stream.slice(decrypted, 0, -20);
       const verifyHash = Promise.all([
-        stream.readToEnd(await crypto.hash.sha1(stream.passiveClone(tohash))),
+        stream.readToEnd(await computeDigest(enums.hash.sha1, stream.passiveClone(tohash))),
         stream.readToEnd(realHash)
       ]).then(([hash, mdc]) => {
         if (!util.equalsUint8Array(hash, mdc)) {
@@ -237,7 +237,7 @@ export async function runAEAD(packet, fn, key, data) {
   // we allow `experimentalGCM` for AEADP for backwards compatibility, since v5 keys from OpenPGP.js v5 might be declaring
   // that preference, as the `gcm` ID had not been standardized at the time.
   // NB: AEADP are never automatically generate as part of message encryption by OpenPGP.js, the packet must be manually created.
-  const mode = crypto.getAEADMode(packet.aeadAlgorithm, isAEADP);
+  const mode = cipherMode.getAEADMode(packet.aeadAlgorithm, isAEADP);
   const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
   const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;
   const chunkSize = 2 ** (packet.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))
@@ -255,7 +255,7 @@ export async function runAEAD(packet, fn, key, data) {
   let iv;
   let ivView;
   if (isSEIPDv2) {
-    const { keySize } = crypto.getCipherParams(packet.cipherAlgorithm);
+    const { keySize } = getCipherParams(packet.cipherAlgorithm);
     const { ivLength } = mode;
     const info = new Uint8Array(adataBuffer, 0, 5);
     const derived = await computeHKDF(enums.hash.sha256, key, packet.salt, info, keySize + ivLength);

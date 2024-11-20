@@ -22,7 +22,7 @@
 
 import { CurveWithOID, jwkToRawPublic, rawPublicToJWK, privateToJWK, validateStandardParams, checkPublicPointEnconding } from './oid_curves';
 import * as aesKW from '../../aes_kw';
-import hash from '../../hash';
+import { computeDigest } from '../../hash';
 import enums from '../../../enums';
 import util from '../../../util';
 import { b64ToUint8Array } from '../../../encoding/base64';
@@ -72,7 +72,7 @@ async function kdf(hashAlgo, X, length, param, stripLeading = false, stripTraili
     for (i = X.length - 1; i >= 0 && X[i] === 0; i--);
     X = X.subarray(0, i + 1);
   }
-  const digest = await hash.digest(hashAlgo, util.concatUint8Array([
+  const digest = await computeDigest(hashAlgo, util.concatUint8Array([
     new Uint8Array([0, 0, 0, 1]),
     X,
     param
