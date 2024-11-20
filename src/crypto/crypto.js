@@ -472,8 +472,17 @@ export function generateSessionKey(algo) {
  * @throws {Error} on invalid algo
  */
 export function getAEADMode(algo) {
-  const algoName = enums.read(enums.aead, algo);
-  return mode[algoName];
+  switch (algo) {
+    case enums.aead.eax:
+      return mode.eax;
+    case enums.aead.ocb:
+      return mode.ocb;
+    case enums.aead.gcm:
+    case enums.aead.experimentalGCM:
+      return mode.gcm;
+    default:
+      throw new Error('Unsupported AEAD mode');
+  }
 }
 
 /**

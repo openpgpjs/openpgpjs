@@ -1716,6 +1716,29 @@ aOU=
       }
     });
 
+    it('supports decrypting a legacy AEAD message encrypted by OpenPGP.js v5 with `experimentalGCM` (AEADEncryptedDataPacket)', async () => {
+      const plaintext = 'test';
+      const passphrase = 'passphrase';
+      const messageLegacyAEAD = await openpgp.readMessage({
+        armoredMessage: `-----BEGIN PGP MESSAGE-----
+
+w0oFCWQDCMbFipDX5vyLAFXhzn5i6iGJY/4BhPed85Yl62F1j8JWGT/8Mw3/
+s7f058pohmXCztkTnrSo5+LUmRX8YwlGC5+5LbczD9Q8AQlkDHfOCyGb8NSF
+mnk1YJIgLeTgPF4F1TK1ead1VfPqvUHK2Z/FzlaY94wK9f8QcA9RUSvjoKGH
+BdPq
+=+vdf
+-----END PGP MESSAGE-----`,
+        config: { enableParsingV5Entities: true }
+      });
+
+      const { data: decryptedData } = await openpgp.decrypt({
+        message: messageLegacyAEAD,
+        passwords: passphrase
+      });
+
+      expect(decryptedData).to.equal(plaintext);
+    });
+
     it('decrypt with `config.constantTimePKCS1Decryption` option should succeed', async function () {
       const publicKey = await openpgp.readKey({ armoredKey: pub_key });
       const publicKey2 = await openpgp.readKey({ armoredKey: eccPrivateKey });
