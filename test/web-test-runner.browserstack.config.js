@@ -17,10 +17,10 @@ export default {
   http2: true,
   sslKey: './127.0.0.1-key.pem',
   sslCert: './127.0.0.1.pem',
-  testsStartTimeout: 45000,
+  testsStartTimeout: 25000,
   browserStartTimeout: 120000,
   testsFinishTimeout: 450000,
-  concurrentBrowsers: 3,
+  concurrentBrowsers: 1,
   concurrency: 1, // see https://github.com/modernweb-dev/web/issues/2706
   coverage: false,
   groups: [], // overwrite the field coming from `wrtConfig`
