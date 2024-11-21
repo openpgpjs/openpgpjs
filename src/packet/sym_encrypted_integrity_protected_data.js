@@ -234,7 +234,10 @@ export async function runAEAD(packet, fn, key, data) {
   const isAEADP = !isSEIPDv2 && packet.constructor.tag === enums.packet.aeadEncryptedData; // no `instanceof` to avoid importing the corresponding class (circular import)
   if (!isSEIPDv2 && !isAEADP) throw new Error('Unexpected packet type');
 
-  const mode = crypto.getAEADMode(packet.aeadAlgorithm);
+  // we allow `experimentalGCM` for AEADP for backwards compatibility, since v5 keys from OpenPGP.js v5 might be declaring
+  // that preference, as the `gcm` ID had not been standardized at the time.
+  // NB: AEADP are never automatically generate as part of message encryption by OpenPGP.js, the packet must be manually created.
+  const mode = crypto.getAEADMode(packet.aeadAlgorithm, isAEADP);
   const tagLengthIfDecrypting = fn === 'decrypt' ? mode.tagLength : 0;
   const tagLengthIfEncrypting = fn === 'encrypt' ? mode.tagLength : 0;
   const chunkSize = 2 ** (packet.chunkSizeByte + 6) + tagLengthIfDecrypting; // ((uint64_t)1 << (c + 6))

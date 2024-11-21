@@ -78,7 +78,7 @@ class AEADEncryptedDataPacket {
       this.aeadAlgorithm = await reader.readByte();
       this.chunkSizeByte = await reader.readByte();
 
-      const mode = crypto.getAEADMode(this.aeadAlgorithm);
+      const mode = crypto.getAEADMode(this.aeadAlgorithm, true);
       this.iv = await reader.readBytes(mode.ivLength);
       this.encrypted = reader.remainder();
     });
@@ -119,7 +119,7 @@ class AEADEncryptedDataPacket {
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     this.cipherAlgorithm = sessionKeyAlgorithm;
 
-    const { ivLength } = crypto.getAEADMode(this.aeadAlgorithm);
+    const { ivLength } = crypto.getAEADMode(this.aeadAlgorithm, true);
     this.iv = crypto.random.getRandomBytes(ivLength); // generate new random IV
     this.chunkSizeByte = config.aeadChunkSizeByte;
     const data = this.packets.write();

@@ -468,17 +468,22 @@ export function generateSessionKey(algo) {
 /**
  * Get implementation of the given AEAD mode
  * @param {enums.aead} algo
+ * @param {Boolean} [acceptExperimentalGCM] - whether to allow the non-standard, legacy `experimentalGCM` algo
  * @returns {Object}
  * @throws {Error} on invalid algo
  */
-export function getAEADMode(algo) {
+export function getAEADMode(algo, acceptExperimentalGCM = false) {
   switch (algo) {
     case enums.aead.eax:
       return mode.eax;
     case enums.aead.ocb:
       return mode.ocb;
     case enums.aead.gcm:
+      return mode.gcm;
     case enums.aead.experimentalGCM:
+      if (!acceptExperimentalGCM) {
+        throw new Error('Unexpected non-standard `experimentalGCM` AEAD algorithm provided in `config.preferredAEADAlgorithm`: use `gcm` instead');
+      }
       return mode.gcm;
     default:
       throw new Error('Unsupported AEAD mode');

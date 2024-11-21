@@ -454,7 +454,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     let cleartext;
     if (this.s2kUsage === 253) {
-      const mode = crypto.getAEADMode(this.aead);
+      const mode = crypto.getAEADMode(this.aead, true);
       const modeInstance = await mode(this.symmetric, key);
       try {
         const associateData = this.isLegacyAEAD ?

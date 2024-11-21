@@ -2286,7 +2286,7 @@ function versionSpecificTests() {
     openpgp.config.preferredSymmetricAlgorithm = openpgp.enums.symmetric.aes192;
     openpgp.config.preferredHashAlgorithm = openpgp.enums.hash.sha224;
     openpgp.config.preferredCompressionAlgorithm = openpgp.enums.compression.zlib;
-    openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.experimentalGCM;
+    openpgp.config.preferredAEADAlgorithm = openpgp.enums.aead.eax;
 
     const testPref = function(key) {
       const selfSignature = openpgp.config.v6Keys ? key.directSignatures[0] : key.users[0].selfCertifications[0];
@@ -2301,15 +2301,12 @@ function versionSpecificTests() {
       if (openpgp.config.aeadProtect) {
         const aead = openpgp.enums.aead;
         expect(selfSignature.preferredCipherSuites).to.eql([
-          [sym.aes192, aead.experimentalGCM],
-          [sym.aes256, aead.experimentalGCM],
-          [sym.aes128, aead.experimentalGCM],
-          [sym.aes192, aead.gcm],
-          [sym.aes256, aead.gcm],
-          [sym.aes128, aead.gcm],
           [sym.aes192, aead.eax],
           [sym.aes256, aead.eax],
           [sym.aes128, aead.eax],
+          [sym.aes192, aead.gcm],
+          [sym.aes256, aead.gcm],
+          [sym.aes128, aead.gcm],
           [sym.aes192, aead.ocb],
           [sym.aes256, aead.ocb],
           [sym.aes128, aead.ocb]
