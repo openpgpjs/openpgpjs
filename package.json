@@ -22,9 +22,9 @@
   "exports": {
     ".": {
       "types": "./openpgp.d.ts",
+      "browser": "./dist/openpgp.min.mjs",
       "import": "./dist/node/openpgp.mjs",
-      "require": "./dist/node/openpgp.min.cjs",
-      "browser": "./dist/openpgp.min.mjs"
+      "require": "./dist/node/openpgp.min.cjs"
     },
     "./lightweight": {
       "types": "./openpgp.d.ts",
