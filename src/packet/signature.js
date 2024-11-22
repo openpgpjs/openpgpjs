@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { fromAsync as streamFromAsync, slice as streamSlice, readToEnd as streamReadToEnd, clone as streamClone, transform as streamTransform } from '@openpgp/web-stream-tools';
 import { readSimpleLength, UnsupportedError, writeSimpleLength } from './packet';
 import KeyID from '../type/keyid';
 import { signature, serializeParams, getRandomBytes, getHashByteLength, computeDigest } from '../crypto';
@@ -178,7 +178,7 @@ class SignaturePacket {
    */
   writeParams() {
     if (this.params instanceof Promise) {
-      return stream.fromAsync(
+      return streamFromAsync(
         async () => serializeParams(this.publicKeyAlgorithm, await this.params)
       );
     }
@@ -255,9 +255,9 @@ class SignaturePacket {
     const toHash = this.toHash(this.signatureType, data, detached);
     const hash = await this.hash(this.signatureType, data, toHash, detached);
 
-    this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
+    this.signedHashValue = streamSlice(streamClone(hash), 0, 2);
     const signed = async () => signature.sign(
-      this.publicKeyAlgorithm, this.hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
+      this.publicKeyAlgorithm, this.hashAlgorithm, key.publicParams, key.privateParams, toHash, await streamReadToEnd(hash)
     );
     if (util.isStream(hash)) {
       this.params = signed();
@@ -703,7 +703,7 @@ class SignaturePacket {
 
   calculateTrailer(data, detached) {
     let length = 0;
-    return stream.transform(stream.clone(this.signatureData), value => {
+    return streamTransform(streamClone(this.signatureData), value => {
       length += value.length;
     }, () => {
       const arr = [];
@@ -774,7 +774,7 @@ class SignaturePacket {
         toHash = this.toHash(signatureType, data, detached);
         hash = await this.hash(signatureType, data, toHash);
       }
-      hash = await stream.readToEnd(hash);
+      hash = await streamReadToEnd(hash);
       if (this.signedHashValue[0] !== hash[0] ||
           this.signedHashValue[1] !== hash[1]) {
         throw new Error('Signed digest did not match');

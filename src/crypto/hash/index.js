@@ -5,7 +5,7 @@
  * @module crypto/hash
  */
 
-import * as stream from '@openpgp/web-stream-tools';
+import { transform as streamTransform, isArrayStream, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import util from '../../util';
 import enums from '../../enums';
 
@@ -19,7 +19,7 @@ function nodeHash(type) {
   }
   return async function (data) {
     const shasum = nodeCrypto.createHash(type);
-    return stream.transform(data, value => {
+    return streamTransform(data, value => {
       shasum.update(value);
     }, () => new Uint8Array(shasum.digest()));
   };
@@ -34,14 +34,14 @@ function nobleHash(nobleHashName, webCryptoHashName) {
   };
 
   return async function(data) {
-    if (stream.isArrayStream(data)) {
-      data = await stream.readToEnd(data);
+    if (isArrayStream(data)) {
+      data = await streamReadToEnd(data);
     }
     if (util.isStream(data)) {
       const hash = await getNobleHash();
 
       const hashInstance = hash.create();
-      return stream.transform(data, value => {
+      return streamTransform(data, value => {
         hashInstance.update(value);
       }, () => hashInstance.digest());
     } else if (webCrypto && webCryptoHashName) {

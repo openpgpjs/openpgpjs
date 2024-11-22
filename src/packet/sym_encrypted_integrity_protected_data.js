@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { slice as streamSlice, passiveClone as streamPassiveClone, readToEnd as streamReadToEnd, concat as streamConcat, fromAsync as streamFromAsync, getReader as streamGetReader, getWriter as streamGetWriter, clone as streamClone, pipe as streamPipe, transformPair as streamTransformPair, isArrayStream, parse as streamParse } from '@openpgp/web-stream-tools';
 import { cipherMode, getRandomBytes, getCipherParams, computeDigest } from '../crypto';
 import computeHKDF from '../crypto/hkdf';
 import enums from '../enums';
@@ -82,7 +82,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
   }
 
   async read(bytes) {
-    await stream.parse(bytes, async reader => {
+    await streamParse(bytes, async reader => {
       this.version = await reader.readByte();
       // - A one-octet version number with value 1 or 2.
       if (this.version !== 1 && this.version !== 2) {
@@ -139,7 +139,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
     }
 
     let bytes = this.packets.write();
-    if (stream.isArrayStream(bytes)) bytes = await stream.readToEnd(bytes);
+    if (isArrayStream(bytes)) bytes = await streamReadToEnd(bytes);
 
     if (this.version === 2) {
       this.cipherAlgorithm = sessionKeyAlgorithm;
@@ -152,7 +152,7 @@ class SymEncryptedIntegrityProtectedDataPacket {
       const mdc = new Uint8Array([0xD3, 0x14]); // modification detection code packet
 
       const tohash = util.concat([prefix, bytes, mdc]);
-      const hash = await computeDigest(enums.hash.sha1, stream.passiveClone(tohash));
+      const hash = await computeDigest(enums.hash.sha1, streamPassiveClone(tohash));
       const plaintext = util.concat([tohash, hash]);
 
       this.encrypted = await cipherMode.cfb.encrypt(sessionKeyAlgorithm, key, plaintext, new Uint8Array(blockSize), config);
@@ -179,8 +179,8 @@ class SymEncryptedIntegrityProtectedDataPacket {
       throw new Error('Unexpected session key size');
     }
 
-    let encrypted = stream.clone(this.encrypted);
-    if (stream.isArrayStream(encrypted)) encrypted = await stream.readToEnd(encrypted);
+    let encrypted = streamClone(this.encrypted);
+    if (isArrayStream(encrypted)) encrypted = await streamReadToEnd(encrypted);
 
     let packetbytes;
     if (this.version === 2) {
@@ -195,22 +195,22 @@ class SymEncryptedIntegrityProtectedDataPacket {
 
       // there must be a modification detection code packet as the
       // last packet and everything gets hashed except the hash itself
-      const realHash = stream.slice(stream.passiveClone(decrypted), -20);
-      const tohash = stream.slice(decrypted, 0, -20);
+      const realHash = streamSlice(streamPassiveClone(decrypted), -20);
+      const tohash = streamSlice(decrypted, 0, -20);
       const verifyHash = Promise.all([
-        stream.readToEnd(await computeDigest(enums.hash.sha1, stream.passiveClone(tohash))),
-        stream.readToEnd(realHash)
+        streamReadToEnd(await computeDigest(enums.hash.sha1, streamPassiveClone(tohash))),
+        streamReadToEnd(realHash)
       ]).then(([hash, mdc]) => {
         if (!util.equalsUint8Array(hash, mdc)) {
           throw new Error('Modification detected.');
         }
         return new Uint8Array();
       });
-      const bytes = stream.slice(tohash, blockSize + 2); // Remove random prefix
-      packetbytes = stream.slice(bytes, 0, -2); // Remove MDC packet
-      packetbytes = stream.concat([packetbytes, stream.fromAsync(() => verifyHash)]);
+      const bytes = streamSlice(tohash, blockSize + 2); // Remove random prefix
+      packetbytes = streamSlice(bytes, 0, -2); // Remove MDC packet
+      packetbytes = streamConcat([packetbytes, streamFromAsync(() => verifyHash)]);
       if (!util.isStream(encrypted) || !config.allowUnauthenticatedStream) {
-        packetbytes = await stream.readToEnd(packetbytes);
+        packetbytes = await streamReadToEnd(packetbytes);
       }
     }
 
@@ -268,17 +268,17 @@ export async function runAEAD(packet, fn, key, data) {
     // ivView is unused in this case
   }
   const modeInstance = await mode(packet.cipherAlgorithm, key);
-  return stream.transformPair(data, async (readable, writable) => {
+  return streamTransformPair(data, async (readable, writable) => {
     if (util.isStream(readable) !== 'array') {
       const buffer = new TransformStream({}, {
         highWaterMark: util.getHardwareConcurrency() * 2 ** (packet.chunkSizeByte + 6),
         size: array => array.length
       });
-      stream.pipe(buffer.readable, writable);
+      streamPipe(buffer.readable, writable);
       writable = buffer.writable;
     }
-    const reader = stream.getReader(readable);
-    const writer = stream.getWriter(writable);
+    const reader = streamGetReader(readable);
+    const writer = streamGetWriter(writable);
     try {
       while (true) {
         let chunk = await reader.readBytes(chunkSize + tagLengthIfDecrypting) || new Uint8Array();

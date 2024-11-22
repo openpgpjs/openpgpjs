@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { fromAsync as streamFromAsync, concat as streamConcat, transformPair as streamTransformPair, pipe as streamPipe, readToEnd as streamReadToEnd, getWriter as streamGetWriter } from '@openpgp/web-stream-tools';
 import { Message } from './message';
 import { CleartextMessage } from './cleartext';
 import { generate, reformat, getPreferredCompressionAlgo } from './key';
@@ -365,9 +365,9 @@ export async function decrypt({ message, decryptionKeys, passwords, sessionKeys,
       if (result.signatures.length === 0) {
         throw new Error('Message is not signed');
       }
-      result.data = stream.concat([
+      result.data = streamConcat([
         result.data,
-        stream.fromAsync(async () => {
+        streamFromAsync(async () => {
           await util.anyPromise(result.signatures.map(sig => sig.verified));
           return format === 'binary' ? new Uint8Array() : '';
         })
@@ -434,10 +434,10 @@ export async function sign({ message, signingKeys, recipientKeys = [], format = 
     const armor = format === 'armored';
     signature = armor ? signature.armor(config) : signature.write();
     if (detached) {
-      signature = stream.transformPair(message.packets.write(), async (readable, writable) => {
+      signature = streamTransformPair(message.packets.write(), async (readable, writable) => {
         await Promise.all([
-          stream.pipe(signature, writable),
-          stream.readToEnd(readable).catch(() => {})
+          streamPipe(signature, writable),
+          streamReadToEnd(readable).catch(() => {})
         ]);
       });
     }
@@ -497,9 +497,9 @@ export async function verify({ message, verificationKeys, expectSigned = false, 
       if (result.signatures.length === 0) {
         throw new Error('Message is not signed');
       }
-      result.data = stream.concat([
+      result.data = streamConcat([
         result.data,
-        stream.fromAsync(async () => {
+        streamFromAsync(async () => {
           await util.anyPromise(result.signatures.map(sig => sig.verified));
           return format === 'binary' ? new Uint8Array() : '';
         })
@@ -683,7 +683,7 @@ function toArray(param) {
 async function convertStream(data) {
   const streamType = util.isStream(data);
   if (streamType === 'array') {
-    return stream.readToEnd(data);
+    return streamReadToEnd(data);
   }
   return data;
 }
@@ -697,14 +697,14 @@ async function convertStream(data) {
  * @private
  */
 function linkStreams(result, message) {
-  result.data = stream.transformPair(message.packets.stream, async (readable, writable) => {
-    await stream.pipe(result.data, writable, {
+  result.data = streamTransformPair(message.packets.stream, async (readable, writable) => {
+    await streamPipe(result.data, writable, {
       preventClose: true
     });
-    const writer = stream.getWriter(writable);
+    const writer = streamGetWriter(writable);
     try {
       // Forward errors in the message stream to result.data.
-      await stream.readToEnd(readable, _ => _);
+      await streamReadToEnd(readable, _ => _);
       await writer.close();
     } catch (e) {
       await writer.abort(e);

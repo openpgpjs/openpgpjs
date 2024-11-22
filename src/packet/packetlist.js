@@ -1,4 +1,4 @@
-import * as stream from '@openpgp/web-stream-tools';
+import { transformPair as streamTransformPair, transform as streamTransform, getWriter as streamGetWriter, getReader as streamGetReader, clone as streamClone } from '@openpgp/web-stream-tools';
 import {
   readPackets, supportsStreaming,
   writeTag, writeHeader,
@@ -68,8 +68,8 @@ class PacketList extends Array {
     if (config.additionalAllowedPackets.length) {
       allowedPackets = { ...allowedPackets, ...util.constructAllowedPackets(config.additionalAllowedPackets) };
     }
-    this.stream = stream.transformPair(bytes, async (readable, writable) => {
-      const writer = stream.getWriter(writable);
+    this.stream = streamTransformPair(bytes, async (readable, writable) => {
+      const writer = streamGetWriter(writable);
       try {
         while (true) {
           await writer.ready;
@@ -125,7 +125,7 @@ class PacketList extends Array {
     });
 
     // Wait until first few packets have been read
-    const reader = stream.getReader(this.stream);
+    const reader = streamGetReader(this.stream);
     while (true) {
       const { done, value } = await reader.read();
       if (!done) {
@@ -156,7 +156,7 @@ class PacketList extends Array {
         let bufferLength = 0;
         const minLength = 512;
         arr.push(writeTag(tag));
-        arr.push(stream.transform(packetbytes, value => {
+        arr.push(streamTransform(packetbytes, value => {
           buffer.push(value);
           bufferLength += value.length;
           if (bufferLength >= minLength) {
@@ -171,7 +171,7 @@ class PacketList extends Array {
       } else {
         if (util.isStream(packetbytes)) {
           let length = 0;
-          arr.push(stream.transform(stream.clone(packetbytes), value => {
+          arr.push(streamTransform(streamClone(packetbytes), value => {
             length += value.length;
           }, () => writeHeader(tag, length)));
         } else {

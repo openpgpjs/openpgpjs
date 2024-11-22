@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { transform as streamTransform, transformPair as streamTransformPair, getReader as streamGetReader, getWriter as streamGetWriter, isArrayStream, readToEnd as streamReadToEnd, passiveClone as streamPassiveClone } from '@openpgp/web-stream-tools';
 import * as base64 from './base64';
 import enums from '../enums';
 import util from '../util';
@@ -163,7 +163,7 @@ const isLittleEndian = (function() {
  */
 function createcrc24(input) {
   let crc = 0xCE04B7;
-  return stream.transform(input, value => {
+  return streamTransform(input, value => {
     const len32 = isLittleEndian ? Math.floor(value.length / 4) : 0;
     const arr32 = new Uint32Array(value.buffer, value.byteOffset, len32);
     for (let i = 0; i < len32; i++) {
@@ -239,8 +239,8 @@ export function unarmor(input) {
       let headersDone;
       let text = [];
       let textDone;
-      const data = base64.decode(stream.transformPair(input, async (readable, writable) => {
-        const reader = stream.getReader(readable);
+      const data = base64.decode(streamTransformPair(input, async (readable, writable) => {
+        const reader = streamGetReader(readable);
         try {
           while (true) {
             let line = await reader.readLine();
@@ -284,7 +284,7 @@ export function unarmor(input) {
           reject(e);
           return;
         }
-        const writer = stream.getWriter(writable);
+        const writer = streamGetWriter(writable);
         try {
           while (true) {
             await writer.ready;
@@ -319,8 +319,8 @@ export function unarmor(input) {
       reject(e);
     }
   }).then(async result => {
-    if (stream.isArrayStream(result.data)) {
-      result.data = await stream.readToEnd(result.data);
+    if (isArrayStream(result.data)) {
+      result.data = await streamReadToEnd(result.data);
     }
     return result;
   });
@@ -350,7 +350,7 @@ export function armor(messageType, body, partIndex, partTotal, customComment, em
   }
   // unless explicitly forbidden by the spec, we need to include the checksum to work around a GnuPG bug
   // where data fails to be decoded if the base64 ends with no padding chars (=) (see https://dev.gnupg.org/T7071)
-  const maybeBodyClone = emitChecksum && stream.passiveClone(body);
+  const maybeBodyClone = emitChecksum && streamPassiveClone(body);
 
   const result = [];
   switch (messageType) {

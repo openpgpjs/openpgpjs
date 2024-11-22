@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { readToEnd as streamReadToEnd, clone as streamClone } from '@openpgp/web-stream-tools';
 import { cipherMode, getCipherParams } from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -87,7 +87,7 @@ class SymmetricallyEncryptedDataPacket {
     }
 
     const { blockSize } = getCipherParams(sessionKeyAlgorithm);
-    const encrypted = await stream.readToEnd(stream.clone(this.encrypted));
+    const encrypted = await streamReadToEnd(streamClone(this.encrypted));
     const decrypted = await cipherMode.cfb.decrypt(sessionKeyAlgorithm, key,
       encrypted.subarray(blockSize + 2),
       encrypted.subarray(2, blockSize + 2)

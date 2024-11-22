@@ -22,7 +22,7 @@
  * @module util
  */
 
-import * as stream from '@openpgp/web-stream-tools';
+import { concat as streamConcat, transform as streamTransform, concatUint8Array, isStream, isUint8Array } from '@openpgp/web-stream-tools';
 import { createRequire } from 'module'; // Must be stripped in browser built
 import enums from './enums';
 import defaultConfig from './config';
@@ -45,9 +45,9 @@ const util = {
     return data instanceof Array;
   },
 
-  isUint8Array: stream.isUint8Array,
+  isUint8Array: isUint8Array,
 
-  isStream: stream.isStream,
+  isStream: isStream,
 
   /**
    * Load noble-curves lib on demand and return the requested curve function
@@ -218,7 +218,7 @@ const util = {
    * @returns {Uint8Array} An array of 8-bit integers.
    */
   stringToUint8Array: function (str) {
-    return stream.transform(str, str => {
+    return streamTransform(str, str => {
       if (!util.isString(str)) {
         throw new Error('stringToUint8Array: Data must be in the form of a string');
       }
@@ -259,7 +259,7 @@ const util = {
     function process(value, lastChunk = false) {
       return encoder.encode(value, { stream: !lastChunk });
     }
-    return stream.transform(str, process, () => process('', true));
+    return streamTransform(str, process, () => process('', true));
   },
 
   /**
@@ -273,7 +273,7 @@ const util = {
     function process(value, lastChunk = false) {
       return decoder.decode(value, { stream: !lastChunk });
     }
-    return stream.transform(utf8, process, () => process(new Uint8Array(), true));
+    return streamTransform(utf8, process, () => process(new Uint8Array(), true));
   },
 
   /**
@@ -282,14 +282,14 @@ const util = {
    * @param {Array<Uint8Array|String|ReadableStream>} Array - Of Uint8Arrays/Strings/Streams to concatenate
    * @returns {Uint8Array|String|ReadableStream} Concatenated array.
    */
-  concat: stream.concat,
+  concat: streamConcat,
 
   /**
    * Concat Uint8Arrays
    * @param {Array<Uint8Array>} Array - Of Uint8Arrays to concatenate
    * @returns {Uint8Array} Concatenated array.
    */
-  concatUint8Array: stream.concatUint8Array,
+  concatUint8Array: concatUint8Array,
 
   /**
    * Check Uint8Array equality
@@ -490,7 +490,7 @@ const util = {
     const LF = 10;
     let carryOverCR = false;
 
-    return stream.transform(data, bytes => {
+    return streamTransform(data, bytes => {
       if (carryOverCR) {
         bytes = util.concatUint8Array([new Uint8Array([CR]), bytes]);
       }
@@ -540,7 +540,7 @@ const util = {
     const LF = 10;
     let carryOverCR = false;
 
-    return stream.transform(data, bytes => {
+    return streamTransform(data, bytes => {
       if (carryOverCR && bytes[0] !== LF) {
         bytes = util.concatUint8Array([new Uint8Array([CR]), bytes]);
       } else {

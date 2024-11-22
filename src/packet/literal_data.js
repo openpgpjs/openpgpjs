@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { isArrayStream, passiveClone as streamPassiveClone, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 
@@ -90,7 +90,7 @@ class LiteralDataPacket {
       this.data = util.canonicalizeEOL(util.encodeUTF8(this.text));
     }
     if (clone) {
-      return stream.passiveClone(this.data);
+      return streamPassiveClone(this.data);
     }
     return this.data;
   }
@@ -121,7 +121,7 @@ class LiteralDataPacket {
    * @async
    */
   async read(bytes) {
-    await stream.parse(bytes, async reader => {
+    await streamParse(bytes, async reader => {
       // - A one-octet field that describes how the data is formatted.
       const format = await reader.readByte(); // enums.literal
 
@@ -131,7 +131,7 @@ class LiteralDataPacket {
       this.date = util.readDate(await reader.readBytes(4));
 
       let data = reader.remainder();
-      if (stream.isArrayStream(data)) data = await stream.readToEnd(data);
+      if (isArrayStream(data)) data = await streamReadToEnd(data);
       this.setBytes(data, format);
     });
   }

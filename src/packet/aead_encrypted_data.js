@@ -15,7 +15,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { clone as streamClone, parse as streamParse } from '@openpgp/web-stream-tools';
 import { cipherMode, getRandomBytes } from '../crypto';
 import enums from '../enums';
 import util from '../util';
@@ -69,7 +69,7 @@ class AEADEncryptedDataPacket {
    * @throws {Error} on parsing failure
    */
   async read(bytes) {
-    await stream.parse(bytes, async reader => {
+    await streamParse(bytes, async reader => {
       const version = await reader.readByte();
       if (version !== VERSION) { // The only currently defined value is 1.
         throw new UnsupportedError(`Version ${version} of the AEAD-encrypted data packet is not supported.`);
@@ -102,7 +102,7 @@ class AEADEncryptedDataPacket {
    */
   async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     this.packets = await PacketList.fromBinary(
-      await runAEAD(this, 'decrypt', key, stream.clone(this.encrypted)),
+      await runAEAD(this, 'decrypt', key, streamClone(this.encrypted)),
       allowedPackets,
       config
     );
