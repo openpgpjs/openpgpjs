@@ -3,15 +3,16 @@
  * Separate dynamic imports are not convenient as they result in multiple chunks.
  */
 
-import { TripleDES } from './des';
-import CAST5 from './cast5';
-import TwoFish from './twofish';
-import BlowFish from './blowfish';
-import enums from '../../enums';
+import { TripleDES as tripledes } from './des';
+import cast5 from './cast5';
+import twofish from './twofish';
+import blowfish from './blowfish';
 
-export const legacyCiphers = new Map([
-  [enums.symmetric.tripledes, TripleDES],
-  [enums.symmetric.cast5, CAST5],
-  [enums.symmetric.blowfish, BlowFish],
-  [enums.symmetric.twofish, TwoFish]
-]);
+// We avoid importing 'enums' as this module is lazy loaded, and doing so could mess up
+// chunking for the lightweight build
+export const legacyCiphers = new Map(Object.entries({
+  tripledes,
+  cast5,
+  twofish,
+  blowfish
+}));
