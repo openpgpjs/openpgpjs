@@ -105,7 +105,7 @@ class SymEncryptedSessionKeyPacket {
     offset += this.s2k.read(bytes.subarray(offset, bytes.length));
 
     if (this.version >= 5) {
-      const mode = crypto.getAEADMode(this.aeadAlgorithm);
+      const mode = crypto.getAEADMode(this.aeadAlgorithm, true);
 
       // A starting initialization vector of size specified by the AEAD
       // algorithm.
@@ -167,7 +167,7 @@ class SymEncryptedSessionKeyPacket {
     const key = await this.s2k.produceKey(passphrase, keySize);
 
     if (this.version >= 5) {
-      const mode = crypto.getAEADMode(this.aeadAlgorithm);
+      const mode = crypto.getAEADMode(this.aeadAlgorithm, true);
       const adata = new Uint8Array([0xC0 | SymEncryptedSessionKeyPacket.tag, this.version, this.sessionKeyEncryptionAlgorithm, this.aeadAlgorithm]);
       const encryptionKey = this.version === 6 ? await computeHKDF(enums.hash.sha256, key, new Uint8Array(), adata, keySize) : key;
       const modeInstance = await mode(algo, encryptionKey);
