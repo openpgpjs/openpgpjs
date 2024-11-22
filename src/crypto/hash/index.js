@@ -6,7 +6,6 @@
  */
 
 import * as stream from '@openpgp/web-stream-tools';
-import computeMd5 from './md5';
 import util from '../../util';
 import enums from '../../enums';
 
@@ -55,7 +54,11 @@ function nobleHash(nobleHashName, webCryptoHashName) {
   };
 }
 
-const md5 = nodeHash('md5') || computeMd5;
+function webHashMD5() {
+  return (data) => import('./md5').then(({ default: computeMD5 }) => computeMD5(data));
+}
+
+const md5 = nodeHash('md5') || webHashMD5();
 const sha1 = nodeHash('sha1') || nobleHash('sha1', 'SHA-1');
 const sha224 = nodeHash('sha224') || nobleHash('sha224');
 const sha256 = nodeHash('sha256') || nobleHash('sha256', 'SHA-256');
