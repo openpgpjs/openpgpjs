@@ -138,6 +138,10 @@ class PublicKeyPacket {
       ) {
         throw new Error('Legacy curve25519 cannot be used with v6 keys');
       }
+      // The composite ML-KEM + ECDH schemes MUST be used only with v6 keys.
+      if (this.version !== 6 && this.algorithm === enums.publicKey.pqc_mlkem_x25519) {
+        throw new Error('Unexpected key version: ML-KEM algorithms can only be used with v6 keys');
+      }
       this.publicParams = publicParams;
       pos += read;
 

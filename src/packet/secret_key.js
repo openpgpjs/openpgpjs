@@ -221,7 +221,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         }
       }
       try {
-        const { read, privateParams } = parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+        const { read, privateParams } = await parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
         if (read < cleartext.length) {
           throw new Error('Error reading MPIs');
         }
@@ -479,7 +479,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     try {
-      const { privateParams } = parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+      const { privateParams } = await parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
       this.privateParams = privateParams;
     } catch (err) {
       throw new Error('Error reading MPIs');
@@ -531,6 +531,9 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.algorithm === enums.publicKey.eddsaLegacy
     )) {
       throw new Error(`Cannot generate v6 keys of type 'ecc' with curve ${curve}. Generate a key of type 'curve25519' instead`);
+    }
+    if (this.version !== 6 && this.algorithm === enums.publicKey.pqc_mlkem_x25519) {
+      throw new Error(`Cannot generate v${this.version} keys of type 'pqc'. Generate a v6 key instead`);
     }
     const { privateParams, publicParams } = await generateParams(this.algorithm, bits, curve, symmetric);
     this.privateParams = privateParams;

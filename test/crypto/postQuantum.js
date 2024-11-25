@@ -1,0 +1,158 @@
+import { use as chaiUse, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/newline-after-import
+chaiUse(chaiAsPromised);
+
+import openpgp from '../initOpenpgp.js';
+import { generateParams, publicKeyEncrypt, publicKeyDecrypt } from '../../src/crypto/crypto.js';
+
+export default () => describe('PQC', function () {
+  it('ML-KEM + X25519 - Generate/encrypt/decrypt', async function () {
+    const sessionKey = { data: new Uint8Array(16).fill(1), algorithm: 'aes128' };
+
+    const { privateParams, publicParams } = await generateParams(openpgp.enums.publicKey.pqc_mlkem_x25519);
+    const encryptedSessionKeyParams = await publicKeyEncrypt(openpgp.enums.publicKey.pqc_mlkem_x25519, undefined, publicParams, null, sessionKey.data);
+    const decryptedSessionKey = await publicKeyDecrypt(openpgp.enums.publicKey.pqc_mlkem_x25519, publicParams, privateParams, encryptedSessionKeyParams);
+    expect(decryptedSessionKey).to.deep.equal(sessionKey.data);
+  });
+
+  it('ML-KEM + X25519 - private key is correctly serialized using the seed instead of the expanded secret key material', async function () {
+    const armoredKey = `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+zdmQk3zZBuwE/KAXTAY=
+-----END PGP PRIVATE KEY BLOCK-----`;
+
+    const { data: expectedBinaryKey } = await openpgp.unarmor(armoredKey);
+
+    const privateKey = await openpgp.readKey({ armoredKey });
+    expect(privateKey.write()).to.deep.equal(expectedBinaryKey);
+  });
+
+  it('ML-KEM + X25519 - Test vector', async function () {
+    const armoredMessage = `-----BEGIN PGP MESSAGE-----
+
+wcPUA7w9P/Y4tvvTaUZQqpafFZ6WRHDl5y8FJcqxWgQ8kK3P++vG3p2aW0Vb
+BuxUbAzplFMVjybzf8n0qa/92R6IeFKWMilaM+iAf81VyTIBv12lfQy27RFx
+itM0v/CAWrEvPf1RkB0ZnEX9lKhIfBp7QRSVEp2QOh3pWtYQ6AkS0JtOGeiI
+befPigAVtmDlnYHYYEFbrKlE8pvLF2bMCJkHredQue7AmsGLpnXZpna19rvG
+3kB38YiM6777jxW8yb7h77jOZgnclJXYkSHly7LKa6z6omOYqn6rA5izbE0e
+s/yqucighBVnjiwNEwrPlQbogh6EtRsGXkYLPGRSVSM2MCSsigl2Xs2cgWJV
+7outF2Qr8BauBRqHW5ScJF/yAmVP7NfQ9PfoUPMiHFJE8U6ffow6lnNWzhn2
+Wqp8GkBccTmzwD/6XXf23yKGO6AIc1xvNpE99QBzTkPslPuXDiocMHfAXpbW
+HzVyOwXu/tQmRNe+ISNpQsMmQDUM05kq0diazBXOiZGRMRFndEpa1Qhhgj7V
+4GgLyr/HdylNbzbiUGFjovN8/pUwO6APu1jU/CmFEUrjjOFpXaOLZ6svt5mW
+iNlVNfWVq35CrJdWVFInLjD/GmsQNSiPe34LcDS3TVRzAhS5HehTVrkFDOD+
+e7wBnHFKDquYTzc3pqP3gHmzCLueUfo3Z6cTgXz6T3+RlRfZDNQzLZ7XHC3W
+VWuwjViv0mQncau6bCnhhCK4VwAqXCvjy9m598cqKQZ5Sf3DAGY1+ZGqbID+
+0zCdVKC0v4eUEGg2D9K1f1XiTfaJv6AO0sS5RqjAZxBpw2/m5ruxMyJxqTE1
+h0GZLEY1ZQKxe9E0bDvTi0ogbYicLEokgRyKN/ojZE+hwpA7msjLVV7E0tDg
+rz8jxp4AwQ8O/FXX/X0Dp04QsZgJhdwEYt4HPTogSff/NaC8KNSTzxEvJIMa
+N+dPAp3Ypz7pGU6y73odwBCJ58nAPaI06f3Ev4gWJai8sUxeHe6amQX+SYqL
+jbTP838PgbRbNCwBUiH2I5WX2bdIeRbEiQerVr7f76Kpdo2FC93A8VlW/wyK
+VYWINPBfB/ktLAzmohR9wq+E+uMCOnyz6+vE1Bf2fbljGBSBjyUwED07tlDd
+B9EvUlLgr7TAiideveSXHAx0G0qK5NBzfoY3Ca3WETiqkDTWpBSPDQUsbXrF
+u2QUJKIcXcQptuiC+nKFFbDoFvCJzgcuRS/H1ZyOcI0dgmx9T1GGrID65R0z
+FqdpenxdaHncrMmOlYI/cwyrfhHV0wZB6Y0XAv5Ujwsfg0fdCxJclkAI1k/x
+N2xIhjwFdh62sKZqCJgfgKlrkSv4DDUVAooR/yHIIKpeJQgC2ZUfL3XLNycJ
+eBf5V5ZmyRhIVgAThhb4cGVtNahP0IuIHk7eMdALC5Yhl+PTlSlhqVkbyi05
+Ae7dcaTW/KAEzZw2mqvVQX2MABaShv49reFhsCfI7EWbdI0CpTQbrCxp9mTI
+Lw2nVxF5SGApCQtVJ+cajQ48p2MNwYMbsnMU9oEjy89nXZfU0G3CBRnAnhUP
+Sw5WYSDSOgGTtzkIxvyRfaLftZRNfT/5XmvtpCqVWwBKHJ1/qcLEIRWfenqT
+M/UQCkZrgB2Ry+4Oc1hgibIUzOM=
+=8HM/
+-----END PGP MESSAGE-----`;
+
+    const privateKey = await openpgp.readKey({ armoredKey: `-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+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
+zdmQk3zZBuwE/KAXTAY=
+-----END PGP PRIVATE KEY BLOCK-----`
+    });
+
+    const { data: decryptedData } = await openpgp.decrypt({
+      message: await openpgp.readMessage({ armoredMessage }),
+      decryptionKeys: privateKey
+    });
+    expect(decryptedData).to.equal('Testing\n');
+  });
+});

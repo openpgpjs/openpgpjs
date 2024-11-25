@@ -6,7 +6,7 @@ import openpgp from '../initOpenpgp.js';
 import * as crypto from '../../src/crypto';
 import util from '../../src/util.js';
 
-export default () => describe('API functional testing', function() {
+export default () => describe('API functional testing', async function() {
   const RSAPublicKeyMaterial = util.concatUint8Array([
     new Uint8Array([0x08,0x00,0xac,0x15,0xb3,0xd6,0xd2,0x0f,0xf0,0x7a,0xdd,0x21,0xb7,
       0xbf,0x61,0xfa,0xca,0x93,0x86,0xc8,0x55,0x5a,0x4b,0xa6,0xa4,0x1a,
@@ -196,15 +196,15 @@ export default () => describe('API functional testing', function() {
 
   const algoRSA = openpgp.enums.publicKey.rsaEncryptSign;
   const RSAPublicParams = crypto.parsePublicKeyParams(algoRSA, RSAPublicKeyMaterial).publicParams;
-  const RSAPrivateParams = crypto.parsePrivateKeyParams(algoRSA, RSAPrivateKeyMaterial).privateParams;
+  const RSAPrivateParams = (await crypto.parsePrivateKeyParams(algoRSA, RSAPrivateKeyMaterial)).privateParams;
 
   const algoDSA = openpgp.enums.publicKey.dsa;
   const DSAPublicParams = crypto.parsePublicKeyParams(algoDSA, DSAPublicKeyMaterial).publicParams;
-  const DSAPrivateParams = crypto.parsePrivateKeyParams(algoDSA, DSAPrivateKeyMaterial).privateParams;
+  const DSAPrivateParams = (await crypto.parsePrivateKeyParams(algoDSA, DSAPrivateKeyMaterial)).privateParams;
 
   const algoElGamal = openpgp.enums.publicKey.elgamal;
   const elGamalPublicParams = crypto.parsePublicKeyParams(algoElGamal, elGamalPublicKeyMaterial).publicParams;
-  const elGamalPrivateParams = crypto.parsePrivateKeyParams(algoElGamal, elGamalPrivateKeyMaterial).privateParams;
+  const elGamalPrivateParams = (await crypto.parsePrivateKeyParams(algoElGamal, elGamalPrivateKeyMaterial)).privateParams;
 
   const data = util.stringToUint8Array('foobar');
 
