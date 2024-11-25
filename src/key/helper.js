@@ -9,7 +9,7 @@ import {
   SignaturePacket
 } from '../packet';
 import enums from '../enums';
-import crypto from '../crypto';
+import { getPreferredCurveHashAlgo, getHashByteLength } from '../crypto';
 import util from '../util';
 import defaultConfig from '../config';
 
@@ -149,10 +149,10 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
     }
     const sortedHashAlgos = Array.from(supportedAlgosMap.keys())
       .filter(hashAlgo => isSupportedHashAlgo(hashAlgo))
-      .sort((algoA, algoB) => crypto.hash.getHashByteLength(algoA) - crypto.hash.getHashByteLength(algoB));
+      .sort((algoA, algoB) => getHashByteLength(algoA) - getHashByteLength(algoB));
     const strongestHashAlgo = sortedHashAlgos[0];
     // defaultAlgo is always implicilty supported, and might be stronger than the rest
-    return crypto.hash.getHashByteLength(strongestHashAlgo) >= crypto.hash.getHashByteLength(defaultAlgo) ? strongestHashAlgo : defaultAlgo;
+    return getHashByteLength(strongestHashAlgo) >= getHashByteLength(defaultAlgo) ? strongestHashAlgo : defaultAlgo;
   };
 
   const eccAlgos = new Set([
@@ -171,16 +171,16 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
     // Hence, we return the `preferredHashAlgo` as long as it's supported and strong enough;
     // Otherwise, we look at the strongest supported algo, and ultimately fallback to the curve
     // preferred algo, even if not supported by all targets.
-    const preferredCurveAlgo = crypto.getPreferredCurveHashAlgo(signingKeyPacket.algorithm, signingKeyPacket.publicParams.oid);
+    const preferredCurveAlgo = getPreferredCurveHashAlgo(signingKeyPacket.algorithm, signingKeyPacket.publicParams.oid);
 
     const preferredSenderAlgoIsSupported = isSupportedHashAlgo(preferredSenderAlgo);
-    const preferredSenderAlgoStrongerThanCurveAlgo = crypto.hash.getHashByteLength(preferredSenderAlgo) >= crypto.hash.getHashByteLength(preferredCurveAlgo);
+    const preferredSenderAlgoStrongerThanCurveAlgo = getHashByteLength(preferredSenderAlgo) >= getHashByteLength(preferredCurveAlgo);
 
     if (preferredSenderAlgoIsSupported && preferredSenderAlgoStrongerThanCurveAlgo) {
       return preferredSenderAlgo;
     } else {
       const strongestSupportedAlgo = getStrongestSupportedHashAlgo();
-      return crypto.hash.getHashByteLength(strongestSupportedAlgo) >= crypto.hash.getHashByteLength(preferredCurveAlgo) ?
+      return getHashByteLength(strongestSupportedAlgo) >= getHashByteLength(preferredCurveAlgo) ?
         strongestSupportedAlgo :
         preferredCurveAlgo;
     }

@@ -15,11 +15,11 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { isArrayStream, cancel as streamCancel, readToEnd as streamReadToEnd, fromAsync as streamFromAsync, transformPair as streamTransformPair, getWriter as streamGetWriter, getReader as streamGetReader } from '@openpgp/web-stream-tools';
 import { armor, unarmor } from './encoding/armor';
 import { Argon2OutOfMemoryError } from './type/s2k';
 import defaultConfig from './config';
-import crypto from './crypto';
+import { generateSessionKey } from './crypto';
 import enums from './enums';
 import util from './util';
 import { Signature } from './signature';
@@ -137,7 +137,7 @@ export class Message {
       }
     }));
     // We don't await stream.cancel here because it only returns when the other copy is canceled too.
-    stream.cancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
+    streamCancel(symEncryptedPacket.encrypted); // Don't keep copy of encrypted data in memory.
     symEncryptedPacket.encrypted = null;
     await decryptedPromise;
 
@@ -255,7 +255,7 @@ export class Message {
                 pkeskPacketCopy.read(serialisedPKESK);
                 const randomSessionKey = {
                   sessionKeyAlgorithm,
-                  sessionKey: crypto.generateSessionKey(sessionKeyAlgorithm)
+                  sessionKey: generateSessionKey(sessionKeyAlgorithm)
                 };
                 try {
                   await pkeskPacketCopy.decrypt(decryptionKeyPacket, randomSessionKey);
@@ -282,7 +282,7 @@ export class Message {
             }
           }));
         }));
-        stream.cancel(pkeskPacket.encrypted); // Don't keep copy of encrypted data in memory.
+        streamCancel(pkeskPacket.encrypted); // Don't keep copy of encrypted data in memory.
         pkeskPacket.encrypted = null;
       }));
     } else {
@@ -368,7 +368,7 @@ export class Message {
       })
     ));
 
-    const sessionKeyData = crypto.generateSessionKey(symmetricAlgo);
+    const sessionKeyData = generateSessionKey(symmetricAlgo);
     return { data: sessionKeyData, algorithm: symmetricAlgoName, aeadAlgorithm: aeadAlgoName };
   }
 
@@ -588,24 +588,24 @@ export class Message {
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
-    if (stream.isArrayStream(msg.packets.stream)) {
-      msg.packets.push(...await stream.readToEnd(msg.packets.stream, _ => _ || []));
+    if (isArrayStream(msg.packets.stream)) {
+      msg.packets.push(...await streamReadToEnd(msg.packets.stream, _ => _ || []));
     }
     const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
     const signatureList = msg.packets.filterByTag(enums.packet.signature);
-    if (onePassSigList.length && !signatureList.length && util.isStream(msg.packets.stream) && !stream.isArrayStream(msg.packets.stream)) {
+    if (onePassSigList.length && !signatureList.length && util.isStream(msg.packets.stream) && !isArrayStream(msg.packets.stream)) {
       await Promise.all(onePassSigList.map(async onePassSig => {
         onePassSig.correspondingSig = new Promise((resolve, reject) => {
           onePassSig.correspondingSigResolve = resolve;
           onePassSig.correspondingSigReject = reject;
         });
-        onePassSig.signatureData = stream.fromAsync(async () => (await onePassSig.correspondingSig).signatureData);
-        onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false));
+        onePassSig.signatureData = streamFromAsync(async () => (await onePassSig.correspondingSig).signatureData);
+        onePassSig.hashed = streamReadToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false));
         onePassSig.hashed.catch(() => {});
       }));
-      msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
-        const reader = stream.getReader(readable);
-        const writer = stream.getWriter(writable);
+      msg.packets.stream = streamTransformPair(msg.packets.stream, async (readable, writable) => {
+        const reader = streamGetReader(readable);
+        const writer = streamGetWriter(writable);
         try {
           for (let i = 0; i < onePassSigList.length; i++) {
             const { value: signature } = await reader.read();

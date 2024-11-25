@@ -17,7 +17,7 @@
 
 import KeyID from '../type/keyid';
 import defaultConfig from '../config';
-import crypto from '../crypto';
+import { computeDigest, parsePublicKeyParams, serializeParams } from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import { UnsupportedError } from './packet';
@@ -126,7 +126,7 @@ class PublicKeyPacket {
       }
 
       // - A series of values comprising the key material.
-      const { read, publicParams } = crypto.parsePublicKeyParams(this.algorithm, bytes.subarray(pos));
+      const { read, publicParams } = parsePublicKeyParams(this.algorithm, bytes.subarray(pos));
       // The deprecated OIDs for Ed25519Legacy and Curve25519Legacy are used in legacy version 4 keys and signatures.
       // Implementations MUST NOT accept or generate v6 key material using the deprecated OIDs.
       if (
@@ -160,7 +160,7 @@ class PublicKeyPacket {
     // A one-octet number denoting the public-key algorithm of this key
     arr.push(new Uint8Array([this.algorithm]));
 
-    const params = crypto.serializeParams(this.algorithm, this.publicParams);
+    const params = serializeParams(this.algorithm, this.publicParams);
     if (this.version >= 5) {
       // A four-octet scalar octet count for the following key material
       arr.push(util.writeNumber(params.length, 4));
@@ -230,9 +230,9 @@ class PublicKeyPacket {
     const toHash = this.writeForHash(this.version);
 
     if (this.version >= 5) {
-      this.fingerprint = await crypto.hash.sha256(toHash);
+      this.fingerprint = await computeDigest(enums.hash.sha256, toHash);
     } else if (this.version === 4) {
-      this.fingerprint = await crypto.hash.sha1(toHash);
+      this.fingerprint = await computeDigest(enums.hash.sha1, toHash);
     } else {
       throw new Error('Unsupported key version');
     }

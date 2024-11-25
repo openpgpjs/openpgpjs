@@ -15,7 +15,7 @@
  * @module encoding/base64
  */
 
-import * as stream from '@openpgp/web-stream-tools';
+import { transform as streamTransform } from '@openpgp/web-stream-tools';
 import util from '../util';
 
 const Buffer = util.getNodeBuffer();
@@ -41,7 +41,7 @@ if (Buffer) {
  */
 export function encode(data) {
   let buf = new Uint8Array();
-  return stream.transform(data, value => {
+  return streamTransform(data, value => {
     buf = util.concatUint8Array([buf, value]);
     const r = [];
     const bytesPerLine = 45; // 60 chars per line * (3 bytes / 4 chars of base64).
@@ -65,7 +65,7 @@ export function encode(data) {
  */
 export function decode(data) {
   let buf = '';
-  return stream.transform(data, value => {
+  return streamTransform(data, value => {
     buf += value;
 
     // Count how many whitespace characters there are in buf

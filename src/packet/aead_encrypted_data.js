@@ -15,8 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
-import crypto from '../crypto';
+import { clone as streamClone, parse as streamParse } from '@openpgp/web-stream-tools';
+import { cipherMode, getRandomBytes } from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -69,7 +69,7 @@ class AEADEncryptedDataPacket {
    * @throws {Error} on parsing failure
    */
   async read(bytes) {
-    await stream.parse(bytes, async reader => {
+    await streamParse(bytes, async reader => {
       const version = await reader.readByte();
       if (version !== VERSION) { // The only currently defined value is 1.
         throw new UnsupportedError(`Version ${version} of the AEAD-encrypted data packet is not supported.`);
@@ -78,7 +78,7 @@ class AEADEncryptedDataPacket {
       this.aeadAlgorithm = await reader.readByte();
       this.chunkSizeByte = await reader.readByte();
 
-      const mode = crypto.getAEADMode(this.aeadAlgorithm, true);
+      const mode = cipherMode.getAEADMode(this.aeadAlgorithm, true);
       this.iv = await reader.readBytes(mode.ivLength);
       this.encrypted = reader.remainder();
     });
@@ -102,7 +102,7 @@ class AEADEncryptedDataPacket {
    */
   async decrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     this.packets = await PacketList.fromBinary(
-      await runAEAD(this, 'decrypt', key, stream.clone(this.encrypted)),
+      await runAEAD(this, 'decrypt', key, streamClone(this.encrypted)),
       allowedPackets,
       config
     );
@@ -119,8 +119,8 @@ class AEADEncryptedDataPacket {
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     this.cipherAlgorithm = sessionKeyAlgorithm;
 
-    const { ivLength } = crypto.getAEADMode(this.aeadAlgorithm, true);
-    this.iv = crypto.random.getRandomBytes(ivLength); // generate new random IV
+    const { ivLength } = cipherMode.getAEADMode(this.aeadAlgorithm, true);
+    this.iv = getRandomBytes(ivLength); // generate new random IV
     this.chunkSizeByte = config.aeadChunkSizeByte;
     const data = this.packets.write();
     this.encrypted = await runAEAD(this, 'encrypt', key, data);

@@ -23,8 +23,7 @@
  * @module crypto/crypto
  */
 
-import publicKey from './public_key';
-import mode from './mode';
+import { rsa, elliptic, elgamal, dsa } from './public_key';
 import { getRandomBytes } from './random';
 import { getCipherParams } from './cipher';
 import ECDHSymkey from '../type/ecdh_symkey';
@@ -51,16 +50,16 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign: {
       const { n, e } = publicParams;
-      const c = await publicKey.rsa.encrypt(data, n, e);
+      const c = await rsa.encrypt(data, n, e);
       return { c };
     }
     case enums.publicKey.elgamal: {
       const { p, g, y } = publicParams;
-      return publicKey.elgamal.encrypt(data, p, g, y);
+      return elgamal.encrypt(data, p, g, y);
     }
     case enums.publicKey.ecdh: {
       const { oid, Q, kdfParams } = publicParams;
-      const { publicKey: V, wrappedKey: C } = await publicKey.elliptic.ecdh.encrypt(
+      const { publicKey: V, wrappedKey: C } = await elliptic.ecdh.encrypt(
         oid, kdfParams, data, Q, fingerprint);
       return { V, C: new ECDHSymkey(C) };
     }
@@ -71,7 +70,7 @@ export async function publicKeyEncrypt(keyAlgo, symmetricAlgo, publicParams, dat
         throw new Error('X25519 and X448 keys can only encrypt AES session keys');
       }
       const { A } = publicParams;
-      const { ephemeralPublicKey, wrappedKey } = await publicKey.elliptic.ecdhX.encrypt(
+      const { ephemeralPublicKey, wrappedKey } = await elliptic.ecdhX.encrypt(
         keyAlgo, data, A);
       const C = ECDHXSymmetricKey.fromObject({ algorithm: symmetricAlgo, wrappedKey });
       return { ephemeralPublicKey, C };
@@ -102,19 +101,19 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       const { c } = sessionKeyParams;
       const { n, e } = publicKeyParams;
       const { d, p, q, u } = privateKeyParams;
-      return publicKey.rsa.decrypt(c, n, e, d, p, q, u, randomPayload);
+      return rsa.decrypt(c, n, e, d, p, q, u, randomPayload);
     }
     case enums.publicKey.elgamal: {
       const { c1, c2 } = sessionKeyParams;
       const p = publicKeyParams.p;
       const x = privateKeyParams.x;
-      return publicKey.elgamal.decrypt(c1, c2, p, x, randomPayload);
+      return elgamal.decrypt(c1, c2, p, x, randomPayload);
     }
     case enums.publicKey.ecdh: {
       const { oid, Q, kdfParams } = publicKeyParams;
       const { d } = privateKeyParams;
       const { V, C } = sessionKeyParams;
-      return publicKey.elliptic.ecdh.decrypt(
+      return elliptic.ecdh.decrypt(
         oid, kdfParams, V, C.data, Q, d, fingerprint);
     }
     case enums.publicKey.x25519:
@@ -125,7 +124,7 @@ export async function publicKeyDecrypt(algo, publicKeyParams, privateKeyParams, 
       if (C.algorithm !== null && !util.isAES(C.algorithm)) {
         throw new Error('AES session key expected');
       }
-      return publicKey.elliptic.ecdhX.decrypt(
+      return elliptic.ecdhX.decrypt(
         algo, ephemeralPublicKey, C.wrappedKey, A, k);
     }
     default:
@@ -338,22 +337,22 @@ export function generateParams(algo, bits, oid) {
     case enums.publicKey.rsaEncrypt:
     case enums.publicKey.rsaEncryptSign:
     case enums.publicKey.rsaSign:
-      return publicKey.rsa.generate(bits, 65537).then(({ n, e, d, p, q, u }) => ({
+      return rsa.generate(bits, 65537).then(({ n, e, d, p, q, u }) => ({
         privateParams: { d, p, q, u },
         publicParams: { n, e }
       }));
     case enums.publicKey.ecdsa:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+      return elliptic.generate(oid).then(({ oid, Q, secret }) => ({
         privateParams: { d: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.eddsaLegacy:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret }) => ({
+      return elliptic.generate(oid).then(({ oid, Q, secret }) => ({
         privateParams: { seed: secret },
         publicParams: { oid: new OID(oid), Q }
       }));
     case enums.publicKey.ecdh:
-      return publicKey.elliptic.generate(oid).then(({ oid, Q, secret, hash, cipher }) => ({
+      return elliptic.generate(oid).then(({ oid, Q, secret, hash, cipher }) => ({
         privateParams: { d: secret },
         publicParams: {
           oid: new OID(oid),
@@ -363,13 +362,13 @@ export function generateParams(algo, bits, oid) {
       }));
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448:
-      return publicKey.elliptic.eddsa.generate(algo).then(({ A, seed }) => ({
+      return elliptic.eddsa.generate(algo).then(({ A, seed }) => ({
         privateParams: { seed },
         publicParams: { A }
       }));
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
-      return publicKey.elliptic.ecdhX.generate(algo).then(({ A, k }) => ({
+      return elliptic.ecdhX.generate(algo).then(({ A, k }) => ({
         privateParams: { k },
         publicParams: { A }
       }));
@@ -399,21 +398,21 @@ export async function validateParams(algo, publicParams, privateParams) {
     case enums.publicKey.rsaSign: {
       const { n, e } = publicParams;
       const { d, p, q, u } = privateParams;
-      return publicKey.rsa.validateParams(n, e, d, p, q, u);
+      return rsa.validateParams(n, e, d, p, q, u);
     }
     case enums.publicKey.dsa: {
       const { p, q, g, y } = publicParams;
       const { x } = privateParams;
-      return publicKey.dsa.validateParams(p, q, g, y, x);
+      return dsa.validateParams(p, q, g, y, x);
     }
     case enums.publicKey.elgamal: {
       const { p, g, y } = publicParams;
       const { x } = privateParams;
-      return publicKey.elgamal.validateParams(p, g, y, x);
+      return elgamal.validateParams(p, g, y, x);
     }
     case enums.publicKey.ecdsa:
     case enums.publicKey.ecdh: {
-      const algoModule = publicKey.elliptic[enums.read(enums.publicKey, algo)];
+      const algoModule = elliptic[enums.read(enums.publicKey, algo)];
       const { oid, Q } = publicParams;
       const { d } = privateParams;
       return algoModule.validateParams(oid, Q, d);
@@ -421,37 +420,23 @@ export async function validateParams(algo, publicParams, privateParams) {
     case enums.publicKey.eddsaLegacy: {
       const { Q, oid } = publicParams;
       const { seed } = privateParams;
-      return publicKey.elliptic.eddsaLegacy.validateParams(oid, Q, seed);
+      return elliptic.eddsaLegacy.validateParams(oid, Q, seed);
     }
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448: {
       const { A } = publicParams;
       const { seed } = privateParams;
-      return publicKey.elliptic.eddsa.validateParams(algo, A, seed);
+      return elliptic.eddsa.validateParams(algo, A, seed);
     }
     case enums.publicKey.x25519:
     case enums.publicKey.x448: {
       const { A } = publicParams;
       const { k } = privateParams;
-      return publicKey.elliptic.ecdhX.validateParams(algo, A, k);
+      return elliptic.ecdhX.validateParams(algo, A, k);
     }
     default:
       throw new Error('Unknown public key algorithm.');
   }
-}
-
-/**
- * Generates a random byte prefix for the specified algorithm
- * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
- * @param {module:enums.symmetric} algo - Symmetric encryption algorithm
- * @returns {Promise<Uint8Array>} Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
- * @async
- */
-export async function getPrefixRandom(algo) {
-  const { blockSize } = getCipherParams(algo);
-  const prefixrandom = await getRandomBytes(blockSize);
-  const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
-  return util.concat([prefixrandom, repeat]);
 }
 
 /**
@@ -463,31 +448,6 @@ export async function getPrefixRandom(algo) {
 export function generateSessionKey(algo) {
   const { keySize } = getCipherParams(algo);
   return getRandomBytes(keySize);
-}
-
-/**
- * Get implementation of the given AEAD mode
- * @param {enums.aead} algo
- * @param {Boolean} [acceptExperimentalGCM] - whether to allow the non-standard, legacy `experimentalGCM` algo
- * @returns {Object}
- * @throws {Error} on invalid algo
- */
-export function getAEADMode(algo, acceptExperimentalGCM = false) {
-  switch (algo) {
-    case enums.aead.eax:
-      return mode.eax;
-    case enums.aead.ocb:
-      return mode.ocb;
-    case enums.aead.gcm:
-      return mode.gcm;
-    case enums.aead.experimentalGCM:
-      if (!acceptExperimentalGCM) {
-        throw new Error('Unexpected non-standard `experimentalGCM` AEAD algorithm provided in `config.preferredAEADAlgorithm`: use `gcm` instead');
-      }
-      return mode.gcm;
-    default:
-      throw new Error('Unsupported AEAD mode');
-  }
 }
 
 /**
@@ -513,13 +473,13 @@ export function getCurvePayloadSize(algo, oid) {
     case enums.publicKey.ecdsa:
     case enums.publicKey.ecdh:
     case enums.publicKey.eddsaLegacy:
-      return new publicKey.elliptic.CurveWithOID(oid).payloadSize;
+      return new elliptic.CurveWithOID(oid).payloadSize;
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448:
-      return publicKey.elliptic.eddsa.getPayloadSize(algo);
+      return elliptic.eddsa.getPayloadSize(algo);
     case enums.publicKey.x25519:
     case enums.publicKey.x448:
-      return publicKey.elliptic.ecdhX.getPayloadSize(algo);
+      return elliptic.ecdhX.getPayloadSize(algo);
     default:
       throw new Error('Unknown elliptic algo');
   }
@@ -534,14 +494,12 @@ export function getPreferredCurveHashAlgo(algo, oid) {
   switch (algo) {
     case enums.publicKey.ecdsa:
     case enums.publicKey.eddsaLegacy:
-      return publicKey.elliptic.getPreferredHashAlgo(oid);
+      return elliptic.getPreferredHashAlgo(oid);
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448:
-      return publicKey.elliptic.eddsa.getPreferredHashAlgo(algo);
+      return elliptic.eddsa.getPreferredHashAlgo(algo);
     default:
       throw new Error('Unknown elliptic signing algo');
   }
 }
 
-
-export { getCipherParams };

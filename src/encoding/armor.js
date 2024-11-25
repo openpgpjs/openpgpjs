@@ -15,8 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
-import * as base64 from './base64';
+import { transform as streamTransform, transformPair as streamTransformPair, getReader as streamGetReader, getWriter as streamGetWriter, isArrayStream, readToEnd as streamReadToEnd, passiveClone as streamPassiveClone } from '@openpgp/web-stream-tools';
+import { encode as encodeBase64, decode as decodeBase64 } from './base64';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -115,7 +115,7 @@ function addheader(customComment, config) {
  */
 function getCheckSum(data) {
   const crc = createcrc24(data);
-  return base64.encode(crc);
+  return encodeBase64(crc);
 }
 
 // https://create.stephan-brumme.com/crc32/#slicing-by-8-overview
@@ -163,7 +163,7 @@ const isLittleEndian = (function() {
  */
 function createcrc24(input) {
   let crc = 0xCE04B7;
-  return stream.transform(input, value => {
+  return streamTransform(input, value => {
     const len32 = isLittleEndian ? Math.floor(value.length / 4) : 0;
     const arr32 = new Uint32Array(value.buffer, value.byteOffset, len32);
     for (let i = 0; i < len32; i++) {
@@ -239,8 +239,8 @@ export function unarmor(input) {
       let headersDone;
       let text = [];
       let textDone;
-      const data = base64.decode(stream.transformPair(input, async (readable, writable) => {
-        const reader = stream.getReader(readable);
+      const data = decodeBase64(streamTransformPair(input, async (readable, writable) => {
+        const reader = streamGetReader(readable);
         try {
           while (true) {
             let line = await reader.readLine();
@@ -284,7 +284,7 @@ export function unarmor(input) {
           reject(e);
           return;
         }
-        const writer = stream.getWriter(writable);
+        const writer = streamGetWriter(writable);
         try {
           while (true) {
             await writer.ready;
@@ -319,8 +319,8 @@ export function unarmor(input) {
       reject(e);
     }
   }).then(async result => {
-    if (stream.isArrayStream(result.data)) {
-      result.data = await stream.readToEnd(result.data);
+    if (isArrayStream(result.data)) {
+      result.data = await streamReadToEnd(result.data);
     }
     return result;
   });
@@ -350,21 +350,21 @@ export function armor(messageType, body, partIndex, partTotal, customComment, em
   }
   // unless explicitly forbidden by the spec, we need to include the checksum to work around a GnuPG bug
   // where data fails to be decoded if the base64 ends with no padding chars (=) (see https://dev.gnupg.org/T7071)
-  const maybeBodyClone = emitChecksum && stream.passiveClone(body);
+  const maybeBodyClone = emitChecksum && streamPassiveClone(body);
 
   const result = [];
   switch (messageType) {
     case enums.armor.multipartSection:
       result.push('-----BEGIN PGP MESSAGE, PART ' + partIndex + '/' + partTotal + '-----\n');
       result.push(addheader(customComment, config));
-      result.push(base64.encode(body));
+      result.push(encodeBase64(body));
       maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP MESSAGE, PART ' + partIndex + '/' + partTotal + '-----\n');
       break;
     case enums.armor.multipartLast:
       result.push('-----BEGIN PGP MESSAGE, PART ' + partIndex + '-----\n');
       result.push(addheader(customComment, config));
-      result.push(base64.encode(body));
+      result.push(encodeBase64(body));
       maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP MESSAGE, PART ' + partIndex + '-----\n');
       break;
@@ -374,35 +374,35 @@ export function armor(messageType, body, partIndex, partTotal, customComment, em
       result.push(text.replace(/^-/mg, '- -'));
       result.push('\n-----BEGIN PGP SIGNATURE-----\n');
       result.push(addheader(customComment, config));
-      result.push(base64.encode(body));
+      result.push(encodeBase64(body));
       maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP SIGNATURE-----\n');
       break;
     case enums.armor.message:
       result.push('-----BEGIN PGP MESSAGE-----\n');
       result.push(addheader(customComment, config));
-      result.push(base64.encode(body));
+      result.push(encodeBase64(body));
       maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP MESSAGE-----\n');
       break;
     case enums.armor.publicKey:
       result.push('-----BEGIN PGP PUBLIC KEY BLOCK-----\n');
       result.push(addheader(customComment, config));
-      result.push(base64.encode(body));
+      result.push(encodeBase64(body));
       maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP PUBLIC KEY BLOCK-----\n');
       break;
     case enums.armor.privateKey:
       result.push('-----BEGIN PGP PRIVATE KEY BLOCK-----\n');
       result.push(addheader(customComment, config));
-      result.push(base64.encode(body));
+      result.push(encodeBase64(body));
       maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP PRIVATE KEY BLOCK-----\n');
       break;
     case enums.armor.signature:
       result.push('-----BEGIN PGP SIGNATURE-----\n');
       result.push(addheader(customComment, config));
-      result.push(base64.encode(body));
+      result.push(encodeBase64(body));
       maybeBodyClone && result.push('=', getCheckSum(maybeBodyClone));
       result.push('-----END PGP SIGNATURE-----\n');
       break;

@@ -4,7 +4,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import crypto from '../../src/crypto';
+import * as crypto from '../../src/crypto';
 import * as random from '../../src/crypto/random.js';
 import util from '../../src/util.js';
 
@@ -67,7 +67,7 @@ export default () => describe('basic RSA cryptography', function () {
     const { publicParams, privateParams } = await crypto.generateParams(openpgp.enums.publicKey.rsaSign, bits);
     const message = random.getRandomBytes(64);
     const hashAlgo = openpgp.enums.write(openpgp.enums.hash, 'sha256');
-    const hashed = await crypto.hash.digest(hashAlgo, message);
+    const hashed = await crypto.computeDigest(hashAlgo, message);
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const signature = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
     expect(signature).to.exist;
@@ -113,7 +113,7 @@ export default () => describe('basic RSA cryptography', function () {
     const message = random.getRandomBytes(64);
     const hashName = 'sha256';
     const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
-    const hashed = await crypto.hash.digest(hashAlgo, message);
+    const hashed = await crypto.computeDigest(hashAlgo, message);
     enableNative();
     const signatureNative = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
     disableNative();
@@ -130,7 +130,7 @@ export default () => describe('basic RSA cryptography', function () {
     const { n, e, d, p, q, u } = { ...publicParams, ...privateParams };
     const message = random.getRandomBytes(64);
     const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
-    const hashed = await crypto.hash.digest(hashAlgo, message);
+    const hashed = await crypto.computeDigest(hashAlgo, message);
     enableNative();
     await expect(crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed)).to.be.rejectedWith(/Digest size cannot exceed key modulus size/);
     disableNative();
@@ -146,7 +146,7 @@ export default () => describe('basic RSA cryptography', function () {
     const message = random.getRandomBytes(64);
     const hashName = 'sha256';
     const hashAlgo = openpgp.enums.write(openpgp.enums.hash, hashName);
-    const hashed = await crypto.hash.digest(hashAlgo, message);
+    const hashed = await crypto.computeDigest(hashAlgo, message);
     enableNative();
     const signatureNative = await crypto.publicKey.rsa.sign(hashAlgo, message, n, e, d, p, q, u, hashed);
     const verifyNative = await crypto.publicKey.rsa.verify(hashAlgo, message, signatureNative, n, e);

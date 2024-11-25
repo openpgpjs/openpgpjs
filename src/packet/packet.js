@@ -20,7 +20,7 @@
  * @module packet/packet
  */
 
-import * as stream from '@openpgp/web-stream-tools';
+import { ArrayStream, getWriter as streamGetWriter, getReader as streamGetReader } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 
@@ -115,7 +115,7 @@ export function supportsStreaming(tag) {
  * @returns {Boolean} Returns false if the stream was empty and parsing is done, and true otherwise.
  */
 export async function readPackets(input, callback) {
-  const reader = stream.getReader(input);
+  const reader = streamGetReader(input);
   let writer;
   let callbackReturned;
   try {
@@ -148,12 +148,12 @@ export async function readPackets(input, callback) {
     let packet = null;
     if (packetSupportsStreaming) {
       if (util.isStream(input) === 'array') {
-        const arrayStream = new stream.ArrayStream();
-        writer = stream.getWriter(arrayStream);
+        const arrayStream = new ArrayStream();
+        writer = streamGetWriter(arrayStream);
         packet = arrayStream;
       } else {
         const transform = new TransformStream();
-        writer = stream.getWriter(transform.writable);
+        writer = streamGetWriter(transform.writable);
         packet = transform.readable;
       }
       // eslint-disable-next-line callback-return

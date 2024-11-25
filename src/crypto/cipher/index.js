@@ -11,7 +11,8 @@ export async function getLegacyCipher(algo) {
     case enums.symmetric.twofish:
     case enums.symmetric.tripledes: {
       const { legacyCiphers } = await import('./legacy_ciphers');
-      const cipher = legacyCiphers.get(algo);
+      const algoName = enums.read(enums.symmetric, algo);
+      const cipher = legacyCiphers.get(algoName);
       if (!cipher) {
         throw new Error('Unsupported cipher algorithm');
       }

@@ -15,10 +15,10 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
+import { fromAsync as streamFromAsync, slice as streamSlice, readToEnd as streamReadToEnd, clone as streamClone, transform as streamTransform } from '@openpgp/web-stream-tools';
 import { readSimpleLength, UnsupportedError, writeSimpleLength } from './packet';
 import KeyID from '../type/keyid';
-import crypto from '../crypto';
+import { signature, serializeParams, getRandomBytes, getHashByteLength, computeDigest } from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -166,7 +166,7 @@ class SignaturePacket {
     }
 
     const signatureMaterial = bytes.subarray(i, bytes.length);
-    const { read, signatureParams } = crypto.signature.parseSignatureParams(this.publicKeyAlgorithm, signatureMaterial);
+    const { read, signatureParams } = signature.parseSignatureParams(this.publicKeyAlgorithm, signatureMaterial);
     if (read < signatureMaterial.length) {
       throw new Error('Error reading MPIs');
     }
@@ -178,11 +178,11 @@ class SignaturePacket {
    */
   writeParams() {
     if (this.params instanceof Promise) {
-      return stream.fromAsync(
-        async () => crypto.serializeParams(this.publicKeyAlgorithm, await this.params)
+      return streamFromAsync(
+        async () => serializeParams(this.publicKeyAlgorithm, await this.params)
       );
     }
-    return crypto.serializeParams(this.publicKeyAlgorithm, this.params);
+    return serializeParams(this.publicKeyAlgorithm, this.params);
   }
 
   write() {
@@ -221,7 +221,7 @@ class SignaturePacket {
     if (this.version === 6) {
       const saltLength = saltLengthForHash(this.hashAlgorithm);
       if (this.salt === null) {
-        this.salt = crypto.random.getRandomBytes(saltLength);
+        this.salt = getRandomBytes(saltLength);
       } else if (saltLength !== this.salt.length) {
         throw new Error('Provided salt does not have the required length');
       }
@@ -230,7 +230,7 @@ class SignaturePacket {
       // since re-signing the same object is not supported, it's not expected to have multiple salt notations,
       // but we guard against it as a sanity check
       if (saltNotations.length === 0) {
-        const saltValue = crypto.random.getRandomBytes(saltLengthForHash(this.hashAlgorithm));
+        const saltValue = getRandomBytes(saltLengthForHash(this.hashAlgorithm));
         this.rawNotations.push({
           name: SALT_NOTATION_NAME,
           value: saltValue,
@@ -255,9 +255,9 @@ class SignaturePacket {
     const toHash = this.toHash(this.signatureType, data, detached);
     const hash = await this.hash(this.signatureType, data, toHash, detached);
 
-    this.signedHashValue = stream.slice(stream.clone(hash), 0, 2);
-    const signed = async () => crypto.signature.sign(
-      this.publicKeyAlgorithm, this.hashAlgorithm, key.publicParams, key.privateParams, toHash, await stream.readToEnd(hash)
+    this.signedHashValue = streamSlice(streamClone(hash), 0, 2);
+    const signed = async () => signature.sign(
+      this.publicKeyAlgorithm, this.hashAlgorithm, key.publicParams, key.privateParams, toHash, await streamReadToEnd(hash)
     );
     if (util.isStream(hash)) {
       this.params = signed();
@@ -570,7 +570,7 @@ class SignaturePacket {
         this.signatureTargetPublicKeyAlgorithm = bytes[mypos++];
         this.signatureTargetHashAlgorithm = bytes[mypos++];
 
-        const len = crypto.getHashByteLength(this.signatureTargetHashAlgorithm);
+        const len = getHashByteLength(this.signatureTargetHashAlgorithm);
 
         this.signatureTargetHash = util.uint8ArrayToString(bytes.subarray(mypos, mypos + len));
         break;
@@ -703,7 +703,7 @@ class SignaturePacket {
 
   calculateTrailer(data, detached) {
     let length = 0;
-    return stream.transform(stream.clone(this.signatureData), value => {
+    return streamTransform(streamClone(this.signatureData), value => {
       length += value.length;
     }, () => {
       const arr = [];
@@ -738,7 +738,7 @@ class SignaturePacket {
     }
 
     if (!toHash) toHash = this.toHash(signatureType, data, detached);
-    return crypto.hash.digest(this.hashAlgorithm, toHash);
+    return computeDigest(this.hashAlgorithm, toHash);
   }
 
   /**
@@ -774,7 +774,7 @@ class SignaturePacket {
         toHash = this.toHash(signatureType, data, detached);
         hash = await this.hash(signatureType, data, toHash);
       }
-      hash = await stream.readToEnd(hash);
+      hash = await streamReadToEnd(hash);
       if (this.signedHashValue[0] !== hash[0] ||
           this.signedHashValue[1] !== hash[1]) {
         throw new Error('Signed digest did not match');
@@ -782,7 +782,7 @@ class SignaturePacket {
 
       this.params = await this.params;
 
-      this[verified] = await crypto.signature.verify(
+      this[verified] = await signature.verify(
         this.publicKeyAlgorithm, this.hashAlgorithm, this.params, key.publicParams,
         toHash, hash
       );

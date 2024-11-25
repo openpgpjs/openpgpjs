@@ -26,7 +26,7 @@ import { uint8ArrayToB64, b64ToUint8Array } from '../../encoding/base64';
 import { emsaEncode, emeEncode, emeDecode } from '../pkcs1';
 import enums from '../../enums';
 import { bigIntToNumber, bigIntToUint8Array, bitLength, byteLength, mod, modExp, modInv, uint8ArrayToBigInt } from '../biginteger';
-import hash from '../hash';
+import { getHashByteLength } from '../hash';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -46,7 +46,7 @@ const _1n = BigInt(1);
  * @async
  */
 export async function sign(hashAlgo, data, n, e, d, p, q, u, hashed) {
-  if (hash.getHashByteLength(hashAlgo) >= n.length) {
+  if (getHashByteLength(hashAlgo) >= n.length) {
     // Throw here instead of `emsaEncode` below, to provide a clearer and consistent error
     // e.g. if a 512-bit RSA key is used with a SHA-512 digest.
     // The size limit is actually slightly different but here we only care about throwing

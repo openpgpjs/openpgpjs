@@ -7,7 +7,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import EAX from '../../src/crypto/mode/eax.js';
+import { cipherMode } from '../../src/crypto';
 import util from '../../src/util.js';
 
 function testAESEAX() {
@@ -95,7 +95,8 @@ function testAESEAX() {
       const headerBytes = util.hexToUint8Array(vec.header);
       const ctBytes = util.hexToUint8Array(vec.ct);
 
-      const eax = await EAX(cipher, keyBytes);
+      const eaxMode = cipherMode.getAEADMode(openpgp.enums.aead.eax);
+      const eax = await eaxMode(cipher, keyBytes);
 
       // encryption test
       let ct = await eax.encrypt(msgBytes, nonceBytes, headerBytes);

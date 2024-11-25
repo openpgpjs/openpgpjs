@@ -23,7 +23,7 @@
 import ed25519 from '@openpgp/tweetnacl';
 import util from '../../../util';
 import enums from '../../../enums';
-import hash from '../../hash';
+import { getHashByteLength } from '../../hash';
 import { getRandomBytes } from '../../random';
 import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
 
@@ -81,7 +81,7 @@ export async function generate(algo) {
  * @async
  */
 export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashed) {
-  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(getPreferredHashAlgo(algo))) {
+  if (getHashByteLength(hashAlgo) < getHashByteLength(getPreferredHashAlgo(algo))) {
     // Enforce digest sizes:
     // - Ed25519: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.4-4
     // - Ed448: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.5-4
@@ -131,7 +131,7 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
  * @async
  */
 export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
-  if (hash.getHashByteLength(hashAlgo) < hash.getHashByteLength(getPreferredHashAlgo(algo))) {
+  if (getHashByteLength(hashAlgo) < getHashByteLength(getPreferredHashAlgo(algo))) {
     // Enforce digest sizes:
     // - Ed25519: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.4-4
     // - Ed448: https://www.rfc-editor.org/rfc/rfc9580.html#section-5.2.3.5-4

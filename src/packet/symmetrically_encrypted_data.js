@@ -15,8 +15,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-import * as stream from '@openpgp/web-stream-tools';
-import crypto from '../crypto';
+import { readToEnd as streamReadToEnd, clone as streamClone } from '@openpgp/web-stream-tools';
+import { cipherMode, getCipherParams } from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -86,9 +86,9 @@ class SymmetricallyEncryptedDataPacket {
       throw new Error('Message is not authenticated.');
     }
 
-    const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
-    const encrypted = await stream.readToEnd(stream.clone(this.encrypted));
-    const decrypted = await crypto.mode.cfb.decrypt(sessionKeyAlgorithm, key,
+    const { blockSize } = getCipherParams(sessionKeyAlgorithm);
+    const encrypted = await streamReadToEnd(streamClone(this.encrypted));
+    const decrypted = await cipherMode.cfb.decrypt(sessionKeyAlgorithm, key,
       encrypted.subarray(blockSize + 2),
       encrypted.subarray(2, blockSize + 2)
     );
@@ -107,11 +107,11 @@ class SymmetricallyEncryptedDataPacket {
    */
   async encrypt(sessionKeyAlgorithm, key, config = defaultConfig) {
     const data = this.packets.write();
-    const { blockSize } = crypto.getCipherParams(sessionKeyAlgorithm);
+    const { blockSize } = getCipherParams(sessionKeyAlgorithm);
 
-    const prefix = await crypto.getPrefixRandom(sessionKeyAlgorithm);
-    const FRE = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, prefix, new Uint8Array(blockSize), config);
-    const ciphertext = await crypto.mode.cfb.encrypt(sessionKeyAlgorithm, key, data, FRE.subarray(2), config);
+    const prefix = await cipherMode.cfb.getPrefixRandom(sessionKeyAlgorithm);
+    const FRE = await cipherMode.cfb.encrypt(sessionKeyAlgorithm, key, prefix, new Uint8Array(blockSize), config);
+    const ciphertext = await cipherMode.cfb.encrypt(sessionKeyAlgorithm, key, data, FRE.subarray(2), config);
     this.encrypted = util.concat([FRE, ciphertext]);
   }
 }

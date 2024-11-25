@@ -3,18 +3,7 @@
  * @module crypto/public_key
  */
 
-import * as rsa from './rsa';
-import * as elgamal from './elgamal';
-import * as elliptic from './elliptic';
-import * as dsa from './dsa';
-
-export default {
-  /** @see module:crypto/public_key/rsa */
-  rsa: rsa,
-  /** @see module:crypto/public_key/elgamal */
-  elgamal: elgamal,
-  /** @see module:crypto/public_key/elliptic */
-  elliptic: elliptic,
-  /** @see module:crypto/public_key/dsa */
-  dsa: dsa
-};
+export * as rsa from './rsa';
+export * as elgamal from './elgamal';
+export * as elliptic from './elliptic';
+export * as dsa from './dsa';

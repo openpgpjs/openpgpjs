@@ -23,10 +23,11 @@
 
 import { cfb as nobleAesCfb, unsafe as nobleAesHelpers } from '@noble/ciphers/aes';
 
-import * as stream from '@openpgp/web-stream-tools';
+import { transform as streamTransform } from '@openpgp/web-stream-tools';
 import util from '../../util';
 import enums from '../../enums';
 import { getLegacyCipher, getCipherParams } from '../cipher';
+import { getRandomBytes } from '../random';
 
 const webCrypto = util.getWebCrypto();
 const nodeCrypto = util.getNodeCrypto();
@@ -42,6 +43,20 @@ const nodeAlgos = {
   aes256: knownAlgos.includes('aes-256-cfb') ? 'aes-256-cfb' : undefined
   /* twofish is not implemented in OpenSSL */
 };
+
+/**
+ * Generates a random byte prefix for the specified algorithm
+ * See {@link https://tools.ietf.org/html/rfc4880#section-9.2|RFC 4880 9.2} for algorithms.
+ * @param {module:enums.symmetric} algo - Symmetric encryption algorithm
+ * @returns {Promise<Uint8Array>} Random bytes with length equal to the block size of the cipher, plus the last two bytes repeated.
+ * @async
+ */
+export async function getPrefixRandom(algo) {
+  const { blockSize } = getCipherParams(algo);
+  const prefixrandom = await getRandomBytes(blockSize);
+  const repeat = new Uint8Array([prefixrandom[prefixrandom.length - 2], prefixrandom[prefixrandom.length - 1]]);
+  return util.concat([prefixrandom, repeat]);
+}
 
 /**
  * CFB encryption
@@ -84,7 +99,7 @@ export async function encrypt(algo, key, plaintext, iv, config) {
     }
     return ciphertext.subarray(0, j);
   };
-  return stream.transform(plaintext, process, process);
+  return streamTransform(plaintext, process, process);
 }
 
 /**
@@ -127,7 +142,7 @@ export async function decrypt(algo, key, ciphertext, iv) {
     }
     return plaintext.subarray(0, j);
   };
-  return stream.transform(ciphertext, process, process);
+  return streamTransform(ciphertext, process, process);
 }
 
 class WebCryptoEncryptor {
@@ -331,10 +346,10 @@ class NobleStreamProcessor {
 async function aesEncrypt(algo, key, pt, iv) {
   if (webCrypto && await WebCryptoEncryptor.isSupported(algo)) { // Chromium does not implement AES with 192-bit keys
     const cfb = new WebCryptoEncryptor(algo, key, iv);
-    return util.isStream(pt) ? stream.transform(pt, value => cfb.encryptChunk(value), () => cfb.finish()) : cfb.encrypt(pt);
-  } else if (util.isStream(pt)) { // async callbacks are not accepted by stream.transform unless the input is a stream
+    return util.isStream(pt) ? streamTransform(pt, value => cfb.encryptChunk(value), () => cfb.finish()) : cfb.encrypt(pt);
+  } else if (util.isStream(pt)) { // async callbacks are not accepted by streamTransform unless the input is a stream
     const cfb = new NobleStreamProcessor(true, algo, key, iv);
-    return stream.transform(pt, value => cfb.processChunk(value), () => cfb.finish());
+    return streamTransform(pt, value => cfb.processChunk(value), () => cfb.finish());
   }
   return nobleAesCfb(key, iv).encrypt(pt);
 }
@@ -342,7 +357,7 @@ async function aesEncrypt(algo, key, pt, iv) {
 async function aesDecrypt(algo, key, ct, iv) {
   if (util.isStream(ct)) {
     const cfb = new NobleStreamProcessor(false, algo, key, iv);
-    return stream.transform(ct, value => cfb.processChunk(value), () => cfb.finish());
+    return streamTransform(ct, value => cfb.processChunk(value), () => cfb.finish());
   }
   return nobleAesCfb(key, iv).decrypt(ct);
 }
@@ -359,11 +374,11 @@ const getUint32Array = arr => new Uint32Array(arr.buffer, arr.byteOffset, Math.f
 function nodeEncrypt(algo, key, pt, iv) {
   const algoName = enums.read(enums.symmetric, algo);
   const cipherObj = new nodeCrypto.createCipheriv(nodeAlgos[algoName], key, iv);
-  return stream.transform(pt, value => new Uint8Array(cipherObj.update(value)));
+  return streamTransform(pt, value => new Uint8Array(cipherObj.update(value)));
 }
 
 function nodeDecrypt(algo, key, ct, iv) {
   const algoName = enums.read(enums.symmetric, algo);
   const decipherObj = new nodeCrypto.createDecipheriv(nodeAlgos[algoName], key, iv);
-  return stream.transform(ct, value => new Uint8Array(decipherObj.update(value)));
+  return streamTransform(ct, value => new Uint8Array(decipherObj.update(value)));
 }

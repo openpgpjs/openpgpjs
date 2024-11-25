@@ -17,7 +17,7 @@
 
 import PublicKeyPacket from './public_key';
 import { newS2KFromConfig, newS2KFromType } from '../type/s2k';
-import crypto from '../crypto';
+import { computeDigest, getCipherParams, parsePrivateKeyParams, serializeParams, generateParams, validateParams, getRandomBytes, cipherMode } from '../crypto';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -174,7 +174,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         if (this.s2kUsage !== 253 || this.isLegacyAEAD) {
           this.iv = bytes.subarray(
             i,
-            i + crypto.getCipherParams(this.symmetric).blockSize
+            i + getCipherParams(this.symmetric).blockSize
           );
           this.usedModernAEAD = false;
         } else {
@@ -183,7 +183,7 @@ class SecretKeyPacket extends PublicKeyPacket {
           // is used as the nonce for the AEAD algorithm.
           this.iv = bytes.subarray(
             i,
-            i + crypto.getAEADMode(this.aead).ivLength
+            i + cipherMode.getAEADMode(this.aead).ivLength
           );
           // the non-legacy AEAD encryption mechanism also authenticates public key params; no need for manual validation.
           this.usedModernAEAD = true;
@@ -221,7 +221,7 @@ class SecretKeyPacket extends PublicKeyPacket {
         }
       }
       try {
-        const { read, privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+        const { read, privateParams } = parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
         if (read < cleartext.length) {
           throw new Error('Error reading MPIs');
         }
@@ -290,7 +290,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     if (!this.isDummy()) {
       if (!this.s2kUsage) {
-        this.keyMaterial = crypto.serializeParams(this.algorithm, this.privateParams);
+        this.keyMaterial = serializeParams(this.algorithm, this.privateParams);
       }
 
       if (this.version === 5) {
@@ -385,15 +385,15 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     this.s2k = newS2KFromConfig(config);
     this.s2k.generateSalt();
-    const cleartext = crypto.serializeParams(this.algorithm, this.privateParams);
+    const cleartext = serializeParams(this.algorithm, this.privateParams);
     this.symmetric = enums.symmetric.aes256;
 
-    const { blockSize } = crypto.getCipherParams(this.symmetric);
+    const { blockSize } = getCipherParams(this.symmetric);
 
     if (config.aeadProtect) {
       this.s2kUsage = 253;
       this.aead = config.preferredAEADAlgorithm;
-      const mode = crypto.getAEADMode(this.aead);
+      const mode = cipherMode.getAEADMode(this.aead);
       this.isLegacyAEAD = this.version === 5; // v4 is always re-encrypted with standard format instead.
       this.usedModernAEAD = !this.isLegacyAEAD; // legacy AEAD does not guarantee integrity of public key material
 
@@ -401,7 +401,7 @@ class SecretKeyPacket extends PublicKeyPacket {
       const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric, this.aead, serializedPacketTag, this.isLegacyAEAD);
 
       const modeInstance = await mode(this.symmetric, key);
-      this.iv = this.isLegacyAEAD ? crypto.random.getRandomBytes(blockSize) : crypto.random.getRandomBytes(mode.ivLength);
+      this.iv = this.isLegacyAEAD ? getRandomBytes(blockSize) : getRandomBytes(mode.ivLength);
       const associateData = this.isLegacyAEAD ?
         new Uint8Array() :
         util.concatUint8Array([serializedPacketTag, this.writePublicKey()]);
@@ -411,10 +411,10 @@ class SecretKeyPacket extends PublicKeyPacket {
       this.s2kUsage = 254;
       this.usedModernAEAD = false;
       const key = await produceEncryptionKey(this.version, this.s2k, passphrase, this.symmetric);
-      this.iv = crypto.random.getRandomBytes(blockSize);
-      this.keyMaterial = await crypto.mode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
+      this.iv = getRandomBytes(blockSize);
+      this.keyMaterial = await cipherMode.cfb.encrypt(this.symmetric, key, util.concatUint8Array([
         cleartext,
-        await crypto.hash.sha1(cleartext, config)
+        await computeDigest(enums.hash.sha1, cleartext, config)
       ]), this.iv, config);
     }
   }
@@ -454,7 +454,7 @@ class SecretKeyPacket extends PublicKeyPacket {
 
     let cleartext;
     if (this.s2kUsage === 253) {
-      const mode = crypto.getAEADMode(this.aead, true);
+      const mode = cipherMode.getAEADMode(this.aead, true);
       const modeInstance = await mode(this.symmetric, key);
       try {
         const associateData = this.isLegacyAEAD ?
@@ -468,10 +468,10 @@ class SecretKeyPacket extends PublicKeyPacket {
         throw err;
       }
     } else {
-      const cleartextWithHash = await crypto.mode.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
+      const cleartextWithHash = await cipherMode.cfb.decrypt(this.symmetric, key, this.keyMaterial, this.iv);
 
       cleartext = cleartextWithHash.subarray(0, -20);
-      const hash = await crypto.hash.sha1(cleartext);
+      const hash = await computeDigest(enums.hash.sha1, cleartext);
 
       if (!util.equalsUint8Array(hash, cleartextWithHash.subarray(-20))) {
         throw new Error('Incorrect key passphrase');
@@ -479,7 +479,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     }
 
     try {
-      const { privateParams } = crypto.parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
+      const { privateParams } = parsePrivateKeyParams(this.algorithm, cleartext, this.publicParams);
       this.privateParams = privateParams;
     } catch (err) {
       throw new Error('Error reading MPIs');
@@ -514,7 +514,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     let validParams;
     try {
       // this can throw if some parameters are undefined
-      validParams = await crypto.validateParams(this.algorithm, this.publicParams, this.privateParams);
+      validParams = await validateParams(this.algorithm, this.publicParams, this.privateParams);
     } catch (_) {
       validParams = false;
     }
@@ -532,7 +532,7 @@ class SecretKeyPacket extends PublicKeyPacket {
     )) {
       throw new Error(`Cannot generate v6 keys of type 'ecc' with curve ${curve}. Generate a key of type 'curve25519' instead`);
     }
-    const { privateParams, publicParams } = await crypto.generateParams(this.algorithm, bits, curve);
+    const { privateParams, publicParams } = await generateParams(this.algorithm, bits, curve);
     this.privateParams = privateParams;
     this.publicParams = publicParams;
     this.isEncrypted = false;
@@ -574,7 +574,7 @@ async function produceEncryptionKey(keyVersion, s2k, passphrase, cipherAlgo, aea
   if (s2k.type === 'simple' && keyVersion === 6) {
     throw new Error('Using Simple S2K with version 6 keys is not allowed');
   }
-  const { keySize } = crypto.getCipherParams(cipherAlgo);
+  const { keySize } = getCipherParams(cipherAlgo);
   const derivedKey = await s2k.produceKey(passphrase, keySize);
   if (!aeadMode || keyVersion === 5 || isLegacyAEAD) {
     return derivedKey;

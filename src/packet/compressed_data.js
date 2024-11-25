@@ -16,7 +16,7 @@
 // Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 import { Inflate, Deflate, Zlib, Unzlib } from 'fflate';
-import * as stream from '@openpgp/web-stream-tools';
+import { isArrayStream, fromAsync as streamFromAsync, parse as streamParse, readToEnd as streamReadToEnd } from '@openpgp/web-stream-tools';
 import enums from '../enums';
 import util from '../util';
 import defaultConfig from '../config';
@@ -74,7 +74,7 @@ class CompressedDataPacket {
    * @param {Object} [config] - Full configuration, defaults to openpgp.config
    */
   async read(bytes, config = defaultConfig) {
-    await stream.parse(bytes, async reader => {
+    await streamParse(bytes, async reader => {
 
       // One octet that gives the algorithm used to compress the packet.
       this.algorithm = await reader.readByte();
@@ -145,8 +145,8 @@ export default CompressedDataPacket;
  */
 function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
   return data => {
-    if (!util.isStream(data) || stream.isArrayStream(data)) {
-      return stream.fromAsync(() => stream.readToEnd(data).then(inputData => {
+    if (!util.isStream(data) || isArrayStream(data)) {
+      return streamFromAsync(() => streamReadToEnd(data).then(inputData => {
         return new Promise((resolve, reject) => {
           const zlibStream = new ZlibStreamedConstructor();
           zlibStream.ondata = processedData => {
@@ -204,7 +204,7 @@ function zlib(compressionStreamInstantiator, ZlibStreamedConstructor) {
 function bzip2Decompress() {
   return async function(data) {
     const { decode: bunzipDecode } = await import('@openpgp/seek-bzip');
-    return stream.fromAsync(async () => bunzipDecode(await stream.readToEnd(data)));
+    return streamFromAsync(async () => bunzipDecode(await streamReadToEnd(data)));
   };
 }
 

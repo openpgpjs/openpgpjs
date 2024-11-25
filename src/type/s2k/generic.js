@@ -28,7 +28,7 @@
  */
 
 import defaultConfig from '../../config';
-import crypto from '../../crypto';
+import { getRandomBytes, computeDigest } from '../../crypto';
 import enums from '../../enums';
 import { UnsupportedError } from '../../packet/packet';
 import util from '../../util';
@@ -60,7 +60,7 @@ class GenericS2K {
     switch (this.type) {
       case 'salted':
       case 'iterated':
-        this.salt = crypto.random.getRandomBytes(8);
+        this.salt = getRandomBytes(8);
     }
   }
 
@@ -188,7 +188,7 @@ class GenericS2K {
         default:
           throw new Error('Unknown s2k type.');
       }
-      const result = await crypto.hash.digest(this.algorithm, toHash);
+      const result = await computeDigest(this.algorithm, toHash);
       arr.push(result);
       rlength += result.length;
       prefixlen++;

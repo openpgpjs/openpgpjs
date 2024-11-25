@@ -3,7 +3,7 @@ import chaiAsPromised from 'chai-as-promised'; // eslint-disable-line import/new
 chaiUse(chaiAsPromised);
 
 import openpgp from '../initOpenpgp.js';
-import crypto from '../../src/crypto';
+import * as crypto from '../../src/crypto';
 import util from '../../src/util.js';
 
 export default () => describe('API functional testing', function() {
@@ -211,20 +211,20 @@ export default () => describe('API functional testing', function() {
   describe('Sign and verify', function () {
     it('RSA', async function () {
       const RSAsignedData = await crypto.signature.sign(
-        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAPublicParams, RSAPrivateParams, data, await crypto.hash.digest(2, data)
+        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAPublicParams, RSAPrivateParams, data, await crypto.computeDigest(2, data)
       );
       const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, data, await crypto.hash.digest(2, data)
+        openpgp.enums.publicKey.rsaEncryptSign, openpgp.enums.hash.sha1, RSAsignedData, RSAPublicParams, data, await crypto.computeDigest(2, data)
       );
       return expect(success).to.be.true;
     });
 
     it('DSA', async function () {
       const DSAsignedData = await crypto.signature.sign(
-        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAPublicParams, DSAPrivateParams, data, await crypto.hash.digest(2, data)
+        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAPublicParams, DSAPrivateParams, data, await crypto.computeDigest(2, data)
       );
       const success = await crypto.signature.verify(
-        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, data, await crypto.hash.digest(2, data)
+        openpgp.enums.publicKey.dsa, openpgp.enums.hash.sha1, DSAsignedData, DSAPublicParams, data, await crypto.computeDigest(2, data)
       );
 
       return expect(success).to.be.true;
@@ -234,7 +234,7 @@ export default () => describe('API functional testing', function() {
       // key data from https://www.rfc-editor.org/rfc/rfc8032#section-7.4
       const seed = util.hexToUint8Array('d65df341ad13e008567688baedda8e9dcdc17dc024974ea5b4227b6530e339bff21f99e68ca6968f3cca6dfe0fb9f4fab4fa135d5542ea3f01');
       const A = util.hexToUint8Array('df9705f58edbab802c7f8363cfe5560ab1c6132c20a9f1dd163483a26f8ac53a39d6808bf4a1dfbd261b099bb03b3fb50906cb28bd8a081f00');
-      const toSign = await crypto.hash.digest(openpgp.enums.hash.sha512, data);
+      const toSign = await crypto.computeDigest(openpgp.enums.hash.sha512, data);
       const signedData = await crypto.signature.sign(
         openpgp.enums.publicKey.ed448, openpgp.enums.hash.sha512, { A }, { seed }, data, toSign
       );
@@ -257,8 +257,8 @@ export default () => describe('API functional testing', function() {
         const { blockSize } = crypto.getCipherParams(algo);
         const symmKey = crypto.generateSessionKey(algo);
         const IV = new Uint8Array(blockSize);
-        const symmencData = await crypto.mode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, config);
-        const text = util.uint8ArrayToString(await crypto.mode.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(blockSize)));
+        const symmencData = await crypto.cipherMode.cfb.encrypt(algo, symmKey, util.stringToUint8Array(plaintext), IV, config);
+        const text = util.uint8ArrayToString(await crypto.cipherMode.cfb.decrypt(algo, symmKey, symmencData, new Uint8Array(blockSize)));
         expect(text).to.equal(plaintext);
       }));
     }
