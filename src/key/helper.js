@@ -9,7 +9,7 @@ import {
   SignaturePacket
 } from '../packet';
 import enums from '../enums';
-import { getPreferredCurveHashAlgo, getHashByteLength } from '../crypto';
+import { getPreferredCurveHashAlgo, getHashByteLength, publicKey } from '../crypto';
 import util from '../util';
 import defaultConfig from '../config';
 
@@ -117,6 +117,12 @@ export async function createBindingSignature(subkey, primaryKey, options, config
  * @async
  */
 export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = new Date(), targetUserIDs = [], config) {
+  if (signingKeyPacket.algorithm === enums.publicKey.pqc_mldsa_ed25519) {
+    // For PQC, the returned hash algo MUST be set to the specified algorithm, see
+    // https://datatracker.ietf.org/doc/html/draft-ietf-openpgp-pqc#section-5.2.1.
+    return publicKey.postQuantum.signature.getRequiredHashAlgo(signingKeyPacket.algorithm);
+  }
+
   /**
    * If `preferredSenderAlgo` appears in the prefs of all recipients, we pick it; otherwise, we use the
    * strongest supported algo (`defaultAlgo` is always implicitly supported by all keys).
@@ -405,7 +411,7 @@ export function sanitizeKeyOptions(options, subkeyDefaults = {}) {
   switch (options.type) {
     case 'pqc':
       if (options.sign) {
-        throw new Error('Post-quantum signing algorithms are not yet supported.');
+        options.algorithm = enums.publicKey.pqc_mldsa_ed25519;
       } else {
         options.algorithm = enums.publicKey.pqc_mlkem_x25519;
       }
@@ -468,6 +474,7 @@ export function validateSigningKeyPacket(keyPacket, signature, config) {
     case enums.publicKey.ed25519:
     case enums.publicKey.ed448:
     case enums.publicKey.hmac:
+    case enums.publicKey.pqc_mldsa_ed25519:
       if (!signature.keyFlags && !config.allowMissingKeyFlags) {
         throw new Error('None of the key flags is set: consider passing `config.allowMissingKeyFlags`');
       }

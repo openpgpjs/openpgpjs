@@ -3,7 +3,7 @@
  * @module crypto/signature
  */
 
-import { elliptic, rsa, dsa, hmac } from './public_key';
+import { elliptic, rsa, dsa, hmac, postQuantum } from './public_key';
 import enums from '../enums';
 import util from '../util';
 import ShortByteString from '../type/short_byte_string';
@@ -70,6 +70,12 @@ export function parseSignatureParams(algo, signature) {
       const mac = new ShortByteString(); read += mac.read(signature.subarray(read));
       return { read, signatureParams: { mac } };
     }
+    case enums.publicKey.pqc_mldsa_ed25519: {
+      const eccSignatureSize = 2 * elliptic.eddsa.getPayloadSize(enums.publicKey.ed25519);
+      const eccSignature = util.readExactSubarray(signature, read, read + eccSignatureSize); read += eccSignature.length;
+      const mldsaSignature = util.readExactSubarray(signature, read, read + 3309); read += mldsaSignature.length;
+      return { read, signatureParams: { eccSignature, mldsaSignature } };
+    }
     default:
       throw new UnsupportedError('Unknown signature algorithm.');
   }
@@ -134,6 +140,10 @@ export async function verify(algo, hashAlgo, signature, publicParams, privatePar
       const { keyMaterial } = privateParams;
       return hmac.verify(algo.getValue(), keyMaterial, signature.mac.data, hashed);
     }
+    case enums.publicKey.pqc_mldsa_ed25519: {
+      const { eccPublicKey, mldsaPublicKey } = publicParams;
+      return postQuantum.signature.verify(algo, hashAlgo, eccPublicKey, mldsaPublicKey, hashed, signature);
+    }
     default:
       throw new Error('Unknown signature algorithm.');
   }
@@ -194,6 +204,11 @@ export async function sign(algo, hashAlgo, publicKeyParams, privateKeyParams, da
       const { keyMaterial } = privateKeyParams;
       const mac = await hmac.sign(algo.getValue(), keyMaterial, hashed);
       return { mac: new ShortByteString(mac) };
+    }
+    case enums.publicKey.pqc_mldsa_ed25519: {
+      const { eccPublicKey } = publicKeyParams;
+      const { eccSecretKey, mldsaSecretKey } = privateKeyParams;
+      return postQuantum.signature.sign(algo, hashAlgo, eccSecretKey, eccPublicKey, mldsaSecretKey, hashed);
     }
     default:
       throw new Error('Unknown signature algorithm.');

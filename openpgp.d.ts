@@ -704,7 +704,7 @@ export type EllipticCurveName = 'ed25519Legacy' | 'curve25519Legacy' | 'nistP256
 interface GenerateKeyOptions {
   userIDs: MaybeArray<UserID>;
   passphrase?: string;
-  type?: 'ecc' | 'rsa' | 'curve25519' | 'curve448';
+  type?: 'ecc' | 'rsa' | 'curve25519' | 'curve448' | 'pqc';
   curve?: EllipticCurveName;
   rsaBits?: number;
   keyExpirationTime?: number;
@@ -825,7 +825,7 @@ export namespace enums {
     aeadEncryptedData = 20
   }
 
-  export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsaLegacy' | 'aedh' | 'aedsa' | 'ed25519' | 'x25519' | 'ed448' | 'x448';
+  export type publicKeyNames = 'rsaEncryptSign' | 'rsaEncrypt' | 'rsaSign' | 'elgamal' | 'dsa' | 'ecdh' | 'ecdsa' | 'eddsaLegacy' | 'aedh' | 'aedsa' | 'ed25519' | 'x25519' | 'ed448' | 'x448' | 'pqc_mlkem_x25519' | 'pqc_mldsa_ed25519';
   export enum publicKey {
     rsaEncryptSign = 1,
     rsaEncrypt = 2,
@@ -840,7 +840,9 @@ export namespace enums {
     x25519 = 25,
     x448 = 26,
     ed25519 = 27,
-    ed448 = 28
+    ed448 = 28,
+    pqc_mlkem_x25519 = 105,
+    pqc_mldsa_ed25519 = 107
   }
 
   export enum curve {
