@@ -4,7 +4,8 @@
         "id": "sop-openpgpjs-branch",
         "path": "__SOP_OPENPGPJS__",
         "env": {
-          "OPENPGPJS_PATH": "__OPENPGPJS_BRANCH__"
+          "OPENPGPJS_PATH": "__OPENPGPJS_BRANCH__",
+          "OPENPGPJS_CUSTOM_PROFILES": "{\"generate-key\": { \"post-quantum\": { \"description\": \"generate post-quantum v6 keys (relying on ML-DSA + ML-KEM)\", \"options\": { \"type\": \"pqc\", \"config\": { \"v6Keys\": true } } } } }"
         }
       },
       {

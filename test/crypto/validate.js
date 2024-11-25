@@ -81,7 +81,7 @@ async function cloneKeyPacket(key) {
 }
 
 async function generatePrivateKeyObject(options) {
-  const config = { rejectCurves: new Set() };
+  const config = { rejectCurves: new Set(), ...options.config };
   const { privateKey } = await openpgp.generateKey({ ...options, userIDs: [{ name: 'Test', email: 'test@test.com' }], format: 'object', config });
   return privateKey;
 }
@@ -318,6 +318,48 @@ export default () => {
       const keyPacket = await cloneKeyPacket(rsaKey);
       const e = keyPacket.publicParams.e;
       e[0]++; // e is hard-coded so we don't take it from `anotherRsaKey`
+      await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
+    });
+  });
+
+  describe('PQC parameter validation', function() {
+    let pqcSigningKey;
+    let pqcEncryptionSubkey;
+    before(async () => {
+      pqcSigningKey = await generatePrivateKeyObject({ type: 'pqc', config: { v6Keys: true } });
+      pqcEncryptionSubkey = pqcSigningKey.subkeys[0];
+    });
+
+    it('generated params are valid', async function() {
+      await expect(pqcSigningKey.keyPacket.validate()).to.not.be.rejected;
+      await expect(pqcEncryptionSubkey.keyPacket.validate()).to.not.be.rejected;
+    });
+
+    it('detect invalid ML-KEM public key part', async function() {
+      const keyPacket = await cloneKeyPacket(pqcEncryptionSubkey);
+      const { mlkemPublicKey } = keyPacket.publicParams;
+      mlkemPublicKey[0]++;
+      await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
+    });
+
+    it('detect invalid ECC-KEM key part', async function() {
+      const keyPacket = await cloneKeyPacket(pqcEncryptionSubkey);
+      const { eccPublicKey } = keyPacket.publicParams;
+      eccPublicKey[0]++;
+      await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
+    });
+
+    it('detect invalid ML-DSA public key part', async function() {
+      const keyPacket = await cloneKeyPacket(pqcSigningKey);
+      const { mldsaPublicKey } = keyPacket.publicParams;
+      mldsaPublicKey[0]++;
+      await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
+    });
+
+    it('detect invalid ECC part', async function() {
+      const keyPacket = await cloneKeyPacket(pqcSigningKey);
+      const { eccPublicKey } = keyPacket.publicParams;
+      eccPublicKey[0]++;
       await expect(keyPacket.validate()).to.be.rejectedWith('Key is invalid');
     });
   });

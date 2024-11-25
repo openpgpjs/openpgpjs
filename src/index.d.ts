@@ -679,7 +679,7 @@ export type EllipticCurveName = 'ed25519Legacy' | 'curve25519Legacy' | 'nistP256
 interface GenerateKeyOptions {
   userIDs: MaybeArray<UserID>;
   passphrase?: string;
-  type?: 'ecc' | 'rsa' | 'curve25519' | 'curve448';
+  type?: 'ecc' | 'rsa' | 'curve25519' | 'curve448' | 'pqc';
   curve?: EllipticCurveName;
   rsaBits?: number;
   keyExpirationTime?: number;

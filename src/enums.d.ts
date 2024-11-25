@@ -90,8 +90,8 @@ declare namespace enums {
     x448 = 26,
     ed25519 = 27,
     ed448 = 28,
-    pqc_mlkem_x25519 = 105,
-    pqc_mldsa_ed25519 = 107
+    pqc_mldsa_ed25519 = 30,
+    pqc_mlkem_x25519 = 35
   }
 
   export enum curve {
