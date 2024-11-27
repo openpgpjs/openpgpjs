@@ -50,7 +50,11 @@ export async function generate(algo) {
           seed: b64ToUint8Array(privateKey.d, true)
         };
       } catch (err) {
-        if (err.name !== 'NotSupportedError' && err.name !== 'OperationError') { // Temporary (hopefully) fix for WebKit on Linux
+        if (
+          err.name !== 'NotSupportedError' &&
+          err.name !== 'OperationError' && // Temporary (hopefully) fix for WebKit on Linux
+          err.name !== 'SyntaxError' // Temporary fix for Palemoon throwing 'SyntaxError'
+        ) {
           throw err;
         }
         const seed = getRandomBytes(getPayloadSize(algo));
@@ -102,7 +106,7 @@ export async function sign(algo, hashAlgo, message, publicKey, privateKey, hashe
 
         return { RS: signature };
       } catch (err) {
-        if (err.name !== 'NotSupportedError') {
+        if (err.name !== 'NotSupportedError' && err.name !== 'SyntaxError') { // Temporary fix for Palemoon throwing 'SyntaxError'
           throw err;
         }
         const secretKey = util.concatUint8Array([privateKey, publicKey]);
@@ -148,7 +152,7 @@ export async function verify(algo, hashAlgo, { RS }, m, publicKey, hashed) {
         const verified = await webCrypto.verify('Ed25519', key, RS, hashed);
         return verified;
       } catch (err) {
-        if (err.name !== 'NotSupportedError') {
+        if (err.name !== 'NotSupportedError' && err.name !== 'SyntaxError') { // Temporary fix for Palemoon throwing 'SyntaxError'
           throw err;
         }
         return nobleEd25519Verify(RS, hashed, publicKey);
