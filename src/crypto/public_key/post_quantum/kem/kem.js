@@ -31,7 +31,7 @@ export async function decrypt(algo, eccCipherText, mlkemCipherText, eccSecretKey
 async function multiKeyCombine(algo, ecdhKeyShare, ecdhCipherText, ecdhPublicKey, mlkemKeyShare, mlkemCipherText, mlkemPublicKey) {
   // LAMPS-aligned and NIST compatible combiner, proposed in: https://mailarchive.ietf.org/arch/msg/openpgp/NMTCy707LICtxIhP3Xt1U5C8MF0/
   // 2a. KDF(mlkemSS || tradSS || tradCT || tradPK || Domain)
-  //     where Domain is "Domain" for LAMPS, and "mlkemCT || mlkemPK || algId" for OpenPGP
+  //     where Domain is "Domain" for LAMPS, and "mlkemCT || mlkemPK || algId || const" for OpenPGP
   const encData = util.concatUint8Array([
     mlkemKeyShare,
     ecdhKeyShare,
@@ -40,7 +40,8 @@ async function multiKeyCombine(algo, ecdhKeyShare, ecdhCipherText, ecdhPublicKey
     // domSep
     mlkemCipherText,
     mlkemPublicKey,
-    new Uint8Array([algo])
+    new Uint8Array([algo]),
+    util.encodeUTF8('OpenPGPCompositeKDFv1')
   ]);
 
   const kek = await computeDigest(enums.hash.sha3_256, encData);
