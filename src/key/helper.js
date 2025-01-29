@@ -127,7 +127,7 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
   const supportedAlgosPerTarget = await Promise.all(targetKeys.map(async (key, i) => {
     const selfCertification = await key.getPrimarySelfSignature(date, targetUserIDs[i], config);
     const targetPrefs = selfCertification.preferredHashAlgorithms;
-    return targetPrefs;
+    return targetPrefs || [];
   }));
   const supportedAlgosMap = new Map(); // use Map over object to preserve numeric keys
   for (const supportedAlgos of supportedAlgosPerTarget) {
@@ -151,7 +151,7 @@ export async function getPreferredHashAlgo(targetKeys, signingKeyPacket, date = 
       .filter(hashAlgo => isSupportedHashAlgo(hashAlgo))
       .sort((algoA, algoB) => getHashByteLength(algoA) - getHashByteLength(algoB));
     const strongestHashAlgo = sortedHashAlgos[0];
-    // defaultAlgo is always implicilty supported, and might be stronger than the rest
+    // defaultAlgo is always implicitly supported, and might be stronger than the rest
     return getHashByteLength(strongestHashAlgo) >= getHashByteLength(defaultAlgo) ? strongestHashAlgo : defaultAlgo;
   };
 
