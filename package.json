@@ -59,7 +59,7 @@
     "docs": "jsdoc --configure .jsdocrc.cjs --destination docs --recurse README.md src && printf '%s' 'docs.openpgpjs.org' > docs/CNAME",
     "preversion": "rm -rf dist docs node_modules && npm ci && npm test",
     "version": "npm run docs && git add -A docs",
-    "postversion": "git push && git push --tags && npm publish"
+    "postversion": "git push --follow-tags && npm publish"
   },
   "devDependencies": {
     "@noble/ciphers": "^1.0.0",
