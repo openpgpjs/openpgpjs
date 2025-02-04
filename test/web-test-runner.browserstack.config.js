@@ -28,7 +28,7 @@ export default {
     browserstackLauncher({
       capabilities: {
         ...sharedBrowserstackCapabilities,
-        browserName: 'Safari iOS 14',
+        browserName: '[Browserstack] Safari iOS 14',
         device: 'iPhone 12',
         real_mobile: true,
         os: 'ios',
@@ -38,7 +38,7 @@ export default {
     browserstackLauncher({
       capabilities: {
         ...sharedBrowserstackCapabilities,
-        browserName: 'Safari iOS latest',
+        browserName: '[Browserstack] Safari iOS latest',
         device: 'iPhone 16 Pro',
         real_mobile: true,
         os: 'ios',
