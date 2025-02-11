@@ -1,6 +1,10 @@
 version: 2
 updates:
   - package-ecosystem: "npm"
+    # The redundant target-branch directive is needed to set two different update schedules for npm,
+    # working around a dependabot limitation:
+    # see https://github.com/dependabot/dependabot-core/issues/1778#issuecomment-1988140219 .
+    target-branch: main
     directory: "/"
     schedule:
       interval: "daily"
