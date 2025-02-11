@@ -267,9 +267,9 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     for (const { vector } of vectors) {
       const lowOrderPoint = util.hexToUint8Array(vector);
       const { A: K_A, k: a } = await elliptic_curves.ecdhX.generate(openpgp.enums.publicKey.x448);
-      await expect(elliptic_curves.ecdhX.encrypt(openpgp.enums.publicKey.x448, data, lowOrderPoint)).to.be.rejectedWith(/Invalid private or public key received|expected valid u|low order point/);
+      await expect(elliptic_curves.ecdhX.encrypt(openpgp.enums.publicKey.x448, data, lowOrderPoint)).to.be.rejectedWith(/invalid private or public key received|expected valid u|low order point/);
       const dummyWrappedKey = new Uint8Array(32); // expected to be unused
-      await expect(elliptic_curves.ecdhX.decrypt(openpgp.enums.publicKey.x448, lowOrderPoint, dummyWrappedKey, K_A, a)).to.be.rejectedWith(/Invalid private or public key received|expected valid u|low order point/);
+      await expect(elliptic_curves.ecdhX.decrypt(openpgp.enums.publicKey.x448, lowOrderPoint, dummyWrappedKey, K_A, a)).to.be.rejectedWith(/invalid private or public key received|expected valid u|low order point/);
     }
   });
 
