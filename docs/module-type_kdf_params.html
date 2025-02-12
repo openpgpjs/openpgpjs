@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Module: crypto/random</title>
+    <title>JSDoc: Module: type/kdf_params</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Module: crypto/random</h1>
+    <h1 class="page-title">Module: type/kdf_params</h1>
 
     
 
@@ -38,7 +38,12 @@
     <div class="container-overview">
     
         
-            <div class="description"><p>Provides tools for retrieving secure randomness from browsers or Node.js</p></div>
+            <div class="description"><p>Implementation of type KDF parameters</p>
+<p><a href="https://tools.ietf.org/html/rfc6637#section-7">RFC 6637 7</a>:
+A key derivation function (KDF) is necessary to implement the EC
+encryption.  The Concatenation Key Derivation Function (Approved
+Alternative 1) [NIST-SP800-56A] with the KDF hash function that is
+SHA2-256 [FIPS-180-3] or stronger is REQUIRED.</p></div>
         
 
         
@@ -89,7 +94,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/random.js">crypto/random.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/random.js#L20">line 20</a>
+        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/kdf_params.js">type/kdf_params.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/kdf_params.js#L20">line 20</a>
     </li></ul></dd>
     
 
@@ -128,121 +133,12 @@
     
 
     
+        <h3 class="subsection-title">Classes</h3>
 
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id=".getRandomBigInteger"><span class="type-signature">(async, static) </span>getRandomBigInteger<span class="signature">(min, max)</span><span class="type-signature"> &rarr; {bigint}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Create a secure random BigInt that is greater than or equal to min and less than max.</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>min</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">bigint</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Lower bound, included</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>max</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">bigint</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Upper bound, excluded</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
+        <dl>
+            <dt><a href="module-type_kdf_params-KDFParams.html">KDFParams</a></dt>
+            <dd></dd>
+        </dl>
     
 
     
@@ -253,239 +149,6 @@
 
     
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/random.js">crypto/random.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/random.js#L51">line 51</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Random BigInt.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">bigint</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id=".getRandomBytes"><span class="type-signature">(static) </span>getRandomBytes<span class="signature">(length)</span><span class="type-signature"> &rarr; {Uint8Array}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Retrieve secure random byte array of the specified length</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>length</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Integer</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Length in bytes to generate</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/random.js">crypto/random.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/random.js#L34">line 34</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Random byte array.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Uint8Array</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
     
 
     

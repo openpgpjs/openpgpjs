@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Module: crypto/public_key/elgamal</title>
+    <title>JSDoc: Module: js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Module: crypto/public_key/elgamal</h1>
+    <h1 class="page-title">Module: js</h1>
 
     
 
@@ -28,34 +28,16 @@
 
 <header>
     
-        
-            
-        
-    
 </header>
 
 <article>
     <div class="container-overview">
     
         
-            <div class="description"><p>ElGamal implementation</p></div>
+            <div class="description"><p>Wrapper for enums</p></div>
         
 
         
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 <dl class="details">
@@ -89,7 +71,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js">crypto/public_key/elgamal.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js#L18">line 18</a>
+        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js">type/enum.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js#L19">line 19</a>
     </li></ul></dd>
     
 
@@ -99,24 +81,6 @@
 
     
 </dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         
@@ -126,39 +90,11 @@
     
 
     
+        <h3 class="subsection-title">Requires</h3>
 
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Members</h3>
-
-        
-            
-<h4 class="name" id="~x"><span class="type-signature">(inner) </span>x<span class="type-signature"></span></h4>
-
-
-
-
-<div class="description">
-    <p>Re-derive public key y' = g ** x mod p
-Expect y == y'</p>
-<p>Blinded exponentiation computes g**{r(p-1) + x} to compare to y</p>
-</div>
-
-
-
-
-
-
-
-<dl class="details">
-
+        <ul>
+            <li><a href="module-enums.html">module:enums</a></li>
+        </ul>
     
 
     
@@ -169,42 +105,6 @@ Expect y == y'</p>
 
     
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js">crypto/public_key/elgamal.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js#L135">line 135</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-        
     
 
     
@@ -216,7 +116,7 @@ Expect y == y'</p>
     
 
     
-    <h4 class="name" id=".decrypt"><span class="type-signature">(async, static) </span>decrypt<span class="signature">(c1, c2, p, x, randomPayload)</span><span class="type-signature"> &rarr; {Promise.&lt;Uint8Array>}</span></h4>
+    <h4 class="name" id="getName"><span class="type-signature"></span>getName<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
     
 
     
@@ -224,7 +124,7 @@ Expect y == y'</p>
 
 
 <div class="description">
-    <p>ElGamal Encryption function</p>
+    <p>Get the name of the enum entry</p>
 </div>
 
 
@@ -233,148 +133,6 @@ Expect y == y'</p>
 
 
 
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>c1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>c2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>p</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>x</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>randomPayload</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>Data to return on unpadding error, instead of throwing
-(needed for constant-time processing)</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
 
 
 
@@ -412,493 +170,7 @@ Expect y == y'</p>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js">crypto/public_key/elgamal.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js#L67">line 67</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Throws:</h5>
-
-        
-
-<dl>
-    <dt>
-        <div class="param-desc">
-        <p>on decryption error, unless <code>randomPayload</code> is given</p>
-        </div>
-    </dt>
-    <dd></dd>
-    <dt>
-        <dl>
-            <dt>
-                Type
-            </dt>
-            <dd>
-                
-<span class="param-type">Error</span>
-
-
-            </dd>
-        </dl>
-    </dt>
-    <dd></dd>
-</dl>
-
-
-    
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>Unpadded message.</p>
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise.&lt;Uint8Array></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id=".encrypt"><span class="type-signature">(async, static) </span>encrypt<span class="signature">(data, p, g, y)</span><span class="type-signature"> &rarr; {Promise.&lt;{c1: Uint8Array, c2: Uint8Array}>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>ElGamal Encryption function
-Note that in OpenPGP, the message needs to be padded with PKCS#1 (same as RSA)</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>data</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>To be padded and encrypted</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>p</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>g</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>y</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js">crypto/public_key/elgamal.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js#L38">line 38</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Promise.&lt;{c1: Uint8Array, c2: Uint8Array}></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id=".validateParams"><span class="type-signature">(async, static) </span>validateParams<span class="signature">(p, g, y, x)</span><span class="type-signature"> &rarr; {Promise.&lt;Boolean>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    <p>Validate ElGamal parameters</p>
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>p</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>ElGamal prime</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>g</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>ElGamal group generator</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>y</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>ElGamal public key</p></td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>x</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Uint8Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>ElGamal private exponent</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js">crypto/public_key/elgamal.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/crypto/public_key/elgamal.js#L86">line 86</a>
+        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js">type/enum.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js#L60">line 60</a>
     </li></ul></dd>
     
 
@@ -927,7 +199,7 @@ Note that in OpenPGP, the message needs to be padded with PKCS#1 (same as RSA)</
 
         
 <div class="param-desc">
-    <p>Whether params are valid.</p>
+    <p>The name string</p>
 </div>
 
 
@@ -938,7 +210,370 @@ Note that in OpenPGP, the message needs to be padded with PKCS#1 (same as RSA)</
     </dt>
     <dd>
         
-<span class="param-type">Promise.&lt;Boolean></span>
+<span class="param-type">string</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getValue"><span class="type-signature"></span>getValue<span class="signature">()</span><span class="type-signature"> &rarr; {Number}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Get the integer value of the enum entry</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js">type/enum.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js#L68">line 68</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The integer value</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Number</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="read"><span class="type-signature"></span>read<span class="signature">(input)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Read an enum entry</p>
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>input</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Uint8Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Where to read the symmetric algo from</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js">type/enum.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js#L42">line 42</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="write"><span class="type-signature"></span>write<span class="signature">()</span><span class="type-signature"> &rarr; {Uint8Array}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    <p>Write an enum as an integer</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js">type/enum.js</a>, <a href="https://github.com/ProtonMail/openpgpjs/blob/v6.1.0-patch.0/src/type/enum.js#L52">line 52</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>An integer representing the algorithm</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Uint8Array</span>
 
 
     </dd>
