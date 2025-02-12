@@ -73,9 +73,8 @@ async function OCB(cipher, key) {
   // `encipher` and `decipher` cannot be async, since `crypt` shares state across calls,
   // hence its execution cannot be broken up.
   // As a result, WebCrypto cannot currently be used for `encipher`.
-  const aes = nobleAesCbc(key, zeroBlock, { disablePadding: true });
-  const encipher = block => aes.encrypt(block);
-  const decipher = block => aes.decrypt(block);
+  const encipher = block => nobleAesCbc(key, zeroBlock, { disablePadding: true }).encrypt(block);
+  const decipher = block => nobleAesCbc(key, zeroBlock, { disablePadding: true }).decrypt(block);
   let mask;
 
   constructKeyVariables(cipher, key);
