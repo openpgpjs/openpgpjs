@@ -11,6 +11,7 @@ import enums from '../../../enums';
 import util from '../../../util';
 import computeHKDF from '../../hkdf';
 import { getCipherParams } from '../../cipher';
+import { b64ToUint8Array, uint8ArrayToB64 } from '../../../encoding/base64';
 
 const HKDF_INFO = {
   x25519: util.encodeUTF8('OpenPGP X25519'),
@@ -24,12 +25,27 @@ const HKDF_INFO = {
  */
 export async function generate(algo) {
   switch (algo) {
-    case enums.publicKey.x25519: {
-      // k stays in little-endian, unlike legacy ECDH over curve25519
-      const k = getRandomBytes(32);
-      const { publicKey: A } = x25519.box.keyPair.fromSecretKey(k);
-      return { A, k };
-    }
+    case enums.publicKey.x25519:
+      try {
+        const webCrypto = util.getWebCrypto();
+        const webCryptoKey = await webCrypto.generateKey('X25519', true, ['deriveKey', 'deriveBits']);
+
+        const privateKey = await webCrypto.exportKey('jwk', webCryptoKey.privateKey);
+        const publicKey = await webCrypto.exportKey('jwk', webCryptoKey.publicKey);
+
+        return {
+          A: new Uint8Array(b64ToUint8Array(publicKey.x)),
+          k: b64ToUint8Array(privateKey.d)
+        };
+      } catch (err) {
+        if (err.name !== 'NotSupportedError') {
+          throw err;
+        }
+        // k stays in little-endian, unlike legacy ECDH over curve25519
+        const k = getRandomBytes(32);
+        const { publicKey: A } = x25519.box.keyPair.fromSecretKey(k);
+        return { A, k };
+      }
 
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
@@ -171,13 +187,32 @@ export function getPayloadSize(algo) {
  */
 export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
   switch (algo) {
-    case enums.publicKey.x25519: {
-      const ephemeralSecretKey = getRandomBytes(getPayloadSize(algo));
-      const sharedSecret = x25519.scalarMult(ephemeralSecretKey, recipientA);
-      assertNonZeroArray(sharedSecret);
-      const { publicKey: ephemeralPublicKey } = x25519.box.keyPair.fromSecretKey(ephemeralSecretKey);
-      return { ephemeralPublicKey, sharedSecret };
-    }
+    case enums.publicKey.x25519:
+      try {
+        const webCrypto = util.getWebCrypto();
+        const jwk = publicKeyToJWK(algo, recipientA);
+        const ephemeralKeyPair = await webCrypto.generateKey('X25519', true, ['deriveKey', 'deriveBits']);
+        const recipientPublicKey = await webCrypto.importKey('jwk', jwk, 'X25519', false, []);
+        const sharedSecretBuffer = await webCrypto.deriveBits(
+          { name: 'X25519', public: recipientPublicKey },
+          ephemeralKeyPair.privateKey,
+          getPayloadSize(algo) * 8 // in bits
+        );
+        const ephemeralPublicKeyJwt = await webCrypto.exportKey('jwk', ephemeralKeyPair.publicKey);
+        return {
+          sharedSecret: new Uint8Array(sharedSecretBuffer),
+          ephemeralPublicKey: new Uint8Array(b64ToUint8Array(ephemeralPublicKeyJwt.x))
+        };
+      } catch (err) {
+        if (err.name !== 'NotSupportedError') {
+          throw err;
+        }
+        const ephemeralSecretKey = getRandomBytes(getPayloadSize(algo));
+        const sharedSecret = x25519.scalarMult(ephemeralSecretKey, recipientA);
+        assertNonZeroArray(sharedSecret);
+        const { publicKey: ephemeralPublicKey } = x25519.box.keyPair.fromSecretKey(ephemeralSecretKey);
+        return { ephemeralPublicKey, sharedSecret };
+      }
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
       const ephemeralSecretKey = x448.utils.randomPrivateKey();
@@ -193,11 +228,27 @@ export async function generateEphemeralEncryptionMaterial(algo, recipientA) {
 
 export async function recomputeSharedSecret(algo, ephemeralPublicKey, A, k) {
   switch (algo) {
-    case enums.publicKey.x25519: {
-      const sharedSecret = x25519.scalarMult(k, ephemeralPublicKey);
-      assertNonZeroArray(sharedSecret);
-      return sharedSecret;
-    }
+    case enums.publicKey.x25519:
+      try {
+        const webCrypto = util.getWebCrypto();
+        const privateKeyJWK = privateKeyToJWK(algo, A, k);
+        const ephemeralPublicKeyJWK = publicKeyToJWK(algo, ephemeralPublicKey);
+        const privateKey = await webCrypto.importKey('jwk', privateKeyJWK, 'X25519', false, ['deriveKey', 'deriveBits']);
+        const ephemeralPublicKeyReference = await webCrypto.importKey('jwk', ephemeralPublicKeyJWK, 'X25519', false, []);
+        const sharedSecretBuffer = await webCrypto.deriveBits(
+          { name: 'X25519', public: ephemeralPublicKeyReference },
+          privateKey,
+          getPayloadSize(algo) * 8 // in bits
+        );
+        return new Uint8Array(sharedSecretBuffer);
+      } catch (err) {
+        if (err.name !== 'NotSupportedError') {
+          throw err;
+        }
+        const sharedSecret = x25519.scalarMult(k, ephemeralPublicKey);
+        assertNonZeroArray(sharedSecret);
+        return sharedSecret;
+      }
     case enums.publicKey.x448: {
       const x448 = await util.getNobleCurve(enums.publicKey.x448);
       const sharedSecret = x448.getSharedSecret(k, ephemeralPublicKey);
@@ -222,5 +273,34 @@ function assertNonZeroArray(sharedSecret) {
   }
   if (acc === 0) {
     throw new Error('Unexpected low order point');
+  }
+}
+
+
+function publicKeyToJWK(algo, publicKey) {
+  switch (algo) {
+    case enums.publicKey.x25519: {
+      const jwk = {
+        kty: 'OKP',
+        crv: 'X25519',
+        x: uint8ArrayToB64(publicKey, true),
+        ext: true
+      };
+      return jwk;
+    }
+    default:
+      throw new Error('Unsupported ECDH algorithm');
+  }
+}
+
+function privateKeyToJWK(algo, publicKey, privateKey) {
+  switch (algo) {
+    case enums.publicKey.x25519: {
+      const jwk = publicKeyToJWK(algo, publicKey);
+      jwk.d = uint8ArrayToB64(privateKey, true);
+      return jwk;
+    }
+    default:
+      throw new Error('Unsupported ECDH algorithm');
   }
 }

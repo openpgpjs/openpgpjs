@@ -234,9 +234,9 @@ export default () => describe('ECDH key exchange @lightweight', function () {
     for (const { vector } of vectors) {
       const lowOrderPoint = util.hexToUint8Array(vector);
       const { A: K_A, k: a } = await elliptic_curves.ecdhX.generate(openpgp.enums.publicKey.x25519);
-      await expect(elliptic_curves.ecdhX.encrypt(openpgp.enums.publicKey.x25519, data, lowOrderPoint)).to.be.rejectedWith(/low order point/);
+      await expect(elliptic_curves.ecdhX.encrypt(openpgp.enums.publicKey.x25519, data, lowOrderPoint)).to.be.rejected; // OperationError, DataError or 'low order point', depending on platform
       const dummyWrappedKey = new Uint8Array(32); // expected to be unused
-      await expect(elliptic_curves.ecdhX.decrypt(openpgp.enums.publicKey.x25519, lowOrderPoint, dummyWrappedKey, K_A, a)).to.be.rejectedWith(/low order point/);
+      await expect(elliptic_curves.ecdhX.decrypt(openpgp.enums.publicKey.x25519, lowOrderPoint, dummyWrappedKey, K_A, a)).to.be.rejected; // OperationError, DataError or 'low order point', depending on platform
     }
   });
 
