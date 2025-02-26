@@ -315,7 +315,9 @@ class SignaturePacket {
     if (!this.issuerKeyID.isNull() && this.issuerKeyVersion < 5) {
       // If the version of [the] key is greater than 4, this subpacket
       // MUST NOT be included in the signature.
-      arr.push(writeSubPacket(sub.issuerKeyID, true, this.issuerKeyID.write()));
+      // Note: making this critical breaks RPM <=4.16.
+      // See: https://github.com/ProtonMail/go-crypto/issues/263
+      arr.push(writeSubPacket(sub.issuerKeyID, false, this.issuerKeyID.write()));
     }
     this.rawNotations.forEach(({ name, value, humanReadable, critical }) => {
       bytes = [new Uint8Array([humanReadable ? 0x80 : 0, 0, 0, 0])];
