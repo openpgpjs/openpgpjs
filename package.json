@@ -100,7 +100,7 @@
     "eslint-plugin-unicorn": "^48.0.1",
     "fflate": "^0.8.2",
     "mocha": "^10.7.3",
-    "playwright": "^1.50.1",
+    "playwright": "^1.51.0",
     "rollup": "^4.24.2",
     "sinon": "^18.0.1",
     "ts-node": "^10.9.2",
