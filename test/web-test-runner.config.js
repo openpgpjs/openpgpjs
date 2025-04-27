@@ -1,10 +1,10 @@
-import { existsSync } from 'fs';
-import { playwrightLauncher, playwright } from '@web/test-runner-playwright';
+import { playwrightLauncher } from '@web/test-runner-playwright';
 
 const sharedPlaywrightCIOptions = {
   // createBrowserContext: ({ browser }) => browser.newContext({ ignoreHTTPSErrors: true }),
   headless: true
 };
+
 export default {
   nodeResolve: true, // to resolve npm module imports in `unittests.html`
   files: './test/unittests.html',
@@ -29,13 +29,11 @@ export default {
           ...sharedPlaywrightCIOptions,
           product: 'firefox'
         }),
-        // try setting up webkit, but ignore if not available
-        // (e.g. on ubuntu, where we don't want to test webkit as the WebCrypto X25519 implementation has issues)
-        existsSync(playwright.webkit.executablePath()) && playwrightLauncher({
+        playwrightLauncher({
           ...sharedPlaywrightCIOptions,
           product: 'webkit'
         })
-      ].filter(Boolean)
+      ]
     }
   ]
 };
