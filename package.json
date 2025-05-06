@@ -111,7 +111,7 @@
   },
   "overrides": {
     "@web/dev-server-core": "npm:@openpgp/wtr-dev-server-core@0.7.3-patch.1",
-    "@web/test-runner-core": "npm:@openpgp/wtr-test-runner-core@0.13.4-patch.0"
+    "@web/test-runner-core": "npm:@openpgp/wtr-test-runner-core@0.13.4-patch.2"
   },
   "repository": {
     "type": "git",

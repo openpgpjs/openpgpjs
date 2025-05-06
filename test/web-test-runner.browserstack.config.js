@@ -18,6 +18,7 @@ export default {
   sslKey: './127.0.0.1-key.pem',
   sslCert: './127.0.0.1.pem',
   testsStartTimeout: 25000,
+  testsStartTimeoutMaxRetries: 3, // custom config from @openpgp/wtr-test-runner-core
   browserStartTimeout: 120000,
   testsFinishTimeout: 450000,
   concurrentBrowsers: 1,
