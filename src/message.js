@@ -604,12 +604,13 @@ export class Message {
     if (literalDataList.length !== 1) {
       throw new Error('Can only verify message with one literal data packet.');
     }
-    if (stream.isArrayStream(msg.packets.stream)) {
-      msg.packets.push(...await stream.readToEnd(msg.packets.stream, _ => _ || []));
+    let packets = msg.packets;
+    if (stream.isArrayStream(packets.stream)) {
+      packets = packets.concat(await stream.readToEnd(packets.stream, _ => _ || []));
     }
-    const onePassSigList = msg.packets.filterByTag(enums.packet.onePassSignature).reverse();
-    const signatureList = msg.packets.filterByTag(enums.packet.signature);
-    if (onePassSigList.length && !signatureList.length && util.isStream(msg.packets.stream) && !stream.isArrayStream(msg.packets.stream)) {
+    const onePassSigList = packets.filterByTag(enums.packet.onePassSignature).reverse();
+    const signatureList = packets.filterByTag(enums.packet.signature);
+    if (onePassSigList.length && !signatureList.length && util.isStream(packets.stream) && !stream.isArrayStream(packets.stream)) {
       await Promise.all(onePassSigList.map(async onePassSig => {
         onePassSig.correspondingSig = new Promise((resolve, reject) => {
           onePassSig.correspondingSigResolve = resolve;
@@ -619,7 +620,7 @@ export class Message {
         onePassSig.hashed = stream.readToEnd(await onePassSig.hash(onePassSig.signatureType, literalDataList[0], undefined, false));
         onePassSig.hashed.catch(() => {});
       }));
-      msg.packets.stream = stream.transformPair(msg.packets.stream, async (readable, writable) => {
+      packets.stream = stream.transformPair(packets.stream, async (readable, writable) => {
         const reader = stream.getReader(readable);
         const writer = stream.getWriter(writable);
         try {
