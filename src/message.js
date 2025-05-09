@@ -36,6 +36,7 @@ import {
   OnePassSignaturePacket,
   SignaturePacket
 } from './packet';
+import { getMessageGrammarValidator } from './packet/grammar';
 
 // A Message can contain the following packets
 const allowedMessagePackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -878,7 +879,7 @@ export async function readMessage({ armoredMessage, binaryMessage, config, ...re
     }
     input = data;
   }
-  const packetlist = await PacketList.fromBinary(input, allowedMessagePackets, config);
+  const packetlist = await PacketList.fromBinary(input, allowedMessagePackets, config, getMessageGrammarValidator({ delayReporting: false }));
   const message = new Message(packetlist);
   message.fromStream = streamType;
   return message;

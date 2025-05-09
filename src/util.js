@@ -315,6 +315,21 @@ const util = {
   },
 
   /**
+   * Same as Array.findLastIndex, which is not supported on Safari 14 .
+   * @param {Array} arr
+   * @param {function(element, index, arr): boolean} findFn
+   * @return index of last element matching `findFn`, -1 if not found
+   */
+  findLastIndex: function(arr, findFn) {
+    for (let i = arr.length; i >= 0; i--) {
+      if (findFn(arr[i], i, arr)) {
+        return i;
+      }
+    }
+    return -1;
+  },
+
+  /**
    * Calculates a 16bit sum of a Uint8Array by adding each character
    * codes modulus 65535
    * @param {Uint8Array} Uint8Array - To create a sum of

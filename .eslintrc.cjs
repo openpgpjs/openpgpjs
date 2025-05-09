@@ -108,8 +108,12 @@ module.exports = {
     'indent': 'off',
     '@typescript-eslint/indent': ['error', 2, { 'SwitchCase': 1 }],
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': 'error',
-
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+      }
+    ],
     // eslint-plugin-import rules:
     'import/named': 'error',
     'import/extensions': 'off', // temporary: we use them in tests (ESM compliant), but not in the lib (to limit diff)
