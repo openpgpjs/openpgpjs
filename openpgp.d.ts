@@ -11,8 +11,9 @@
 
 import type { WebStream as GenericWebStream, NodeWebStream as GenericNodeWebStream } from '@openpgp/web-stream-tools';
 import enums from './src/enums';
+import config, { type Config, type PartialConfig } from './src/config';
 
-export { enums };
+export { enums, config, Config, PartialConfig };
 
 /* ############## STREAM #################### */
 type Data = Uint8Array | string;
@@ -318,50 +319,6 @@ export class Message<T extends MaybeStream<Data>> {
    */
   public appendSignature(detachedSignature: string | Uint8Array, config?: Config): Promise<void>;
 }
-
-
-/* ############## CONFIG #################### */
-
-interface Config {
-  preferredHashAlgorithm: enums.hash;
-  preferredSymmetricAlgorithm: enums.symmetric;
-  preferredCompressionAlgorithm: enums.compression;
-  showVersion: boolean;
-  showComment: boolean;
-  aeadProtect: boolean;
-  allowUnauthenticatedMessages: boolean;
-  allowUnauthenticatedStream: boolean;
-  minRSABits: number;
-  passwordCollisionCheck: boolean;
-  ignoreUnsupportedPackets: boolean;
-  ignoreMalformedPackets: boolean;
-  versionString: string;
-  commentString: string;
-  allowInsecureDecryptionWithSigningKeys: boolean;
-  allowInsecureVerificationWithReformattedKeys: boolean;
-  allowMissingKeyFlags: boolean;
-  constantTimePKCS1Decryption: boolean;
-  constantTimePKCS1DecryptionSupportedSymmetricAlgorithms: Set<enums.symmetric>;
-  v6Keys: boolean;
-  enableParsingV5Entities: boolean;
-  preferredAEADAlgorithm: enums.aead;
-  aeadChunkSizeByte: number;
-  s2kType: enums.s2k.iterated | enums.s2k.argon2;
-  s2kIterationCountByte: number;
-  s2kArgon2Params: { passes: number, parallelism: number; memoryExponent: number; };
-  maxUserIDLength: number;
-  knownNotations: string[];
-  useEllipticFallback: boolean;
-  rejectHashAlgorithms: Set<enums.hash>;
-  rejectMessageHashAlgorithms: Set<enums.hash>;
-  rejectPublicKeyAlgorithms: Set<enums.publicKey>;
-  rejectCurves: Set<enums.curve>;
-}
-export const config: Config;
-
-// PartialConfig has the same properties as Config, but declared as optional.
-// This interface is relevant for top-level functions, which accept a subset of configuration options
-export interface PartialConfig extends Partial<Config> {}
 
 /* ############## PACKET #################### */
 

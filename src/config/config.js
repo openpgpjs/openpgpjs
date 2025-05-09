@@ -87,6 +87,8 @@ export default {
    * by v6 keys and v6 signatures, respectively.
    * However, generation of v5 entities was supported behind config flag in OpenPGP.js v5, and some other libraries,
    * hence parsing them might be necessary in some cases.
+   * @memberof module:config
+   * @property {Boolean} enableParsingV5Entities
    */
   enableParsingV5Entities: false,
   /**
