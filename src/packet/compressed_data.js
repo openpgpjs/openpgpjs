@@ -25,6 +25,7 @@ import LiteralDataPacket from './literal_data';
 import OnePassSignaturePacket from './one_pass_signature';
 import SignaturePacket from './signature';
 import PacketList from './packetlist';
+import { getMessageGrammarValidator } from './grammar';
 
 // A Compressed Data packet can contain the following packet types
 const allowedPackets = /*#__PURE__*/ util.constructAllowedPackets([
@@ -112,7 +113,8 @@ class CompressedDataPacket {
       throw new Error(`${compressionName} decompression not supported`);
     }
 
-    this.packets = await PacketList.fromBinary(await decompressionFn(this.compressed), allowedPackets, config);
+    // Decompressing a Compressed Data packet MUST also yield a valid OpenPGP Message
+    this.packets = await PacketList.fromBinary(await decompressionFn(this.compressed), allowedPackets, config, getMessageGrammarValidator({ enforceDelay: false }));
   }
 
   /**

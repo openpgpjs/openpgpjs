@@ -17,6 +17,8 @@ export interface Config {
   passwordCollisionCheck: boolean;
   ignoreUnsupportedPackets: boolean;
   ignoreMalformedPackets: boolean;
+  enforceGrammar: boolean;
+  additionalAllowedPackets: Array<{ new(): any }>;
   versionString: string;
   commentString: string;
   allowInsecureDecryptionWithSigningKeys: boolean;

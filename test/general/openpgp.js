@@ -4405,7 +4405,7 @@ habAyxd1AGKaNp1wbGFpbnRleHQgbWVzc2FnZQ==
 -----END PGP MESSAGE-----
       `;
 
-      const message = await openpgp.readMessage({ armoredMessage: skeskPlusLiteralData });
+      const message = await openpgp.readMessage({ armoredMessage: skeskPlusLiteralData, config: { enforceGrammar: false } });
       await expect(openpgp.decrypt({ message, passwords: 'password' })).to.be.rejectedWith(/No encrypted data found/);
     });
 
