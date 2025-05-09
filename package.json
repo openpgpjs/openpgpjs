@@ -39,7 +39,8 @@
   "files": [
     "dist/",
     "lightweight/",
-    "openpgp.d.ts"
+    "openpgp.d.ts",
+    "**/*.d.ts"
   ],
   "scripts": {
     "build": "rollup --config",
