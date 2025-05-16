@@ -172,20 +172,20 @@ const getBrowserTestBuild = useLightweightBuild => ({
  * https://rollupjs.org/command-line-interface/#configuration-files
  *
  * The custom options we support are:
- * @param commandLineArgs.configBuildOnly {'dist'|'node'|'lightweight'|'test'} to specify a build target;
- *    defaults to 'dist', which does not build tests.
- * @param commandLineArgs.configTestLightweightBuild {Boolean}: in the context of building browser tests,
- *    whether the lightweight build should be included instead of the standard one
+ * - "config-build-only": 'dist'|'node'|'lightweight'|'test'|string - to specify a build target;
+ *               defaults to 'dist', which does not build tests;
+ * - "config-test-lightweight-build": Boolean - in the context of building browser tests,
+ *               whether the lightweight build should be included instead of the standard one
  */
 export default commandLineArgs => Object.assign([
   nodeBuild,
   fullBrowserBuild,
   lightweightBrowserBuild,
-  getBrowserTestBuild(commandLineArgs.configTestLightweightBuild)
+  getBrowserTestBuild(commandLineArgs['config-test-lightweight-build'])
 ].filter(rollupConfig => {
   rollupConfig.output = rollupConfig.output.filter(output => {
     return (output.file || output.dir + '/' + output.entryFileNames).includes(
-      commandLineArgs.configBuildOnly || 'dist' // Don't build test bundle by default.
+      commandLineArgs['config-build-only'] || 'dist' // Don't build test bundle by default.
     );
   });
   return rollupConfig.output.length;

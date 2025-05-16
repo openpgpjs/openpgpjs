@@ -114,7 +114,7 @@ jobs:
 
       - name: Run browser tests (lightweight) # overwrite test/lib
         run: |
-          npm run build-test -- --configTestLightweightBuild
+          npm run build-test -- --config-test-lightweight-build
           npm run test-browser:ci -- --static-logging
 
   test-browsers-compatibility:
@@ -162,7 +162,7 @@ jobs:
 
       - name: Run browserstack tests (lightweight) # overwrite test/lib
         run: |
-          npm run build-test -- --configTestLightweightBuild
+          npm run build-test -- --config-test-lightweight-build
           npm run test-browserstack -- --static-logging
         env:
           LIGHTWEIGHT: true
