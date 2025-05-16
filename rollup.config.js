@@ -136,7 +136,7 @@ const lightweightBrowserBuild = {
   ]
 };
 
-const testBuild = {
+const getBrowserTestBuild = useLightweightBuild => ({
   input: 'test/unittests.js',
   output: [
     { file: 'test/lib/unittests-bundle.js', format: 'es', intro, sourcemap: true, inlineDynamicImports: true }
@@ -145,7 +145,7 @@ const testBuild = {
   plugins: [
     alias({
       entries: {
-        openpgp: `./dist/${process.env.npm_config_lightweight ? 'lightweight/' : ''}openpgp.mjs`
+        openpgp: `./dist/${useLightweightBuild ? 'lightweight/' : ''}openpgp.mjs`
       }
     }),
     resolve({
@@ -164,21 +164,31 @@ const testBuild = {
     }),
     wasm(wasmOptions.browser)
   ]
-};
+});
 
-export default Object.assign([
+/**
+ * Rollup CLI supports custom options; their name must start with `config`,
+ * e.g. see `--configDebug` example at
+ * https://rollupjs.org/command-line-interface/#configuration-files
+ *
+ * The custom options we support are:
+ * - "config-build-only": 'dist'|'node'|'lightweight'|'test'|string - to specify a build target;
+ *               defaults to 'dist', which does not build tests;
+ * - "config-test-lightweight-build": Boolean - in the context of building browser tests,
+ *               whether the lightweight build should be included instead of the standard one
+ */
+export default commandLineArgs => Object.assign([
   nodeBuild,
   fullBrowserBuild,
   lightweightBrowserBuild,
-  testBuild
-].filter(config => {
-  config.output = config.output.filter(output => {
+  getBrowserTestBuild(commandLineArgs['config-test-lightweight-build'])
+].filter(rollupConfig => {
+  rollupConfig.output = rollupConfig.output.filter(output => {
     return (output.file || output.dir + '/' + output.entryFileNames).includes(
-      process.env.npm_config_build_only || // E.g. `npm install --build-only=lightweight`.
-      'dist' // Don't build test bundle by default.
+      commandLineArgs['config-build-only'] || 'dist' // Don't build test bundle by default.
     );
   });
-  return config.output.length;
+  return rollupConfig.output.length;
 }), {
   allow_empty: true // Fake option to trick rollup into accepting empty config array when filtered above.
 });
